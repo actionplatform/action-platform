@@ -7,9 +7,10 @@ def test_render_buckets():
     out = changelog.render(
         "0.2.0",
         [
-            ":sparkles: feat: new provider",
-            "fix: crash on empty tag",
-            "chore: bump deps",
+            "⚙️ FEATURE: new provider",
+            "🪲 BUG: crash on empty tag",
+            "⬆️ CI/CD: release v0.1.9",
+            "⚠️ SECURITY: patch token leak",
         ],
     )
     assert "## v0.2.0" in out
@@ -17,6 +18,8 @@ def test_render_buckets():
     assert "- new provider" in out
     assert "### Bug Fixes" in out
     assert "- crash on empty tag" in out
+    assert "### Security" in out
+    assert "- patch token leak" in out
 
 
 def test_render_ignores_unparseable():

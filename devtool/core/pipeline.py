@@ -42,7 +42,7 @@ def release(config: Config, level: str, repo_root: Path, dry_run: bool = False) 
     (repo_root / settings.CHANGELOG_FILE).write_text(ctx.changelog)
 
     tag = f"v{ctx.next_version}"
-    git.commit(f":bookmark: chore(release): {tag}", cwd=repo_root)
+    git.commit(f"⬆️ CI/CD: release {tag}", cwd=repo_root)
     git.create_tag(tag, tag, cwd=repo_root)
     git.push(cwd=repo_root)
     git.push_tag(tag, cwd=repo_root)

@@ -53,6 +53,17 @@ class Config:
         data = tomllib.loads(path.read_text())
         project = data.get("project", {})
         return cls(
+            source_host=_build_source_host(data.get("source_host", {})),
             project_name=project.get("name", ""),
             language=project.get("language", ""),
         )
+
+
+def _build_source_host(cfg: dict) -> SourceHost | None:
+    kind = cfg.get("kind")
+    if not kind:
+        return None
+    if kind == "github":
+        from devtool.providers.source_github import SourceGithub
+        return SourceGithub(repo=cfg["repo"])
+    raise ConfigError(f"unknown source_host kind: {kind}")

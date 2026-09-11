@@ -1,4 +1,4 @@
-"""CHANGELOG generation from conventional commits."""
+"""CHANGELOG generation from icon-typed commits."""
 
 from __future__ import annotations
 
@@ -6,22 +6,21 @@ import re
 from datetime import date
 
 TYPE_RE = re.compile(
-    r"^(?::\w+:\s*)?(?P<type>feat|fix|chore|docs|refactor|test|perf|build|ci|style)"
-    r"(?:\([^)]+\))?:\s*(?P<msg>.+)$",
+    r"^(?:\S+\s+)?(?P<type>FEATURE|PEP8|ISSUE|BUG|DOCS|PyPI|TEST|CI/CD|SECURITY)"
+    r":\s*(?P<msg>.+)$",
     re.IGNORECASE,
 )
 
-SECTIONS = {
-    "feat": "Features",
-    "fix": "Bug Fixes",
-    "perf": "Performance",
-    "refactor": "Refactor",
+SECTIONS: dict[str, str] = {
+    "feature": "Features",
+    "bug": "Bug Fixes",
+    "security": "Security",
+    "pypi": "Release",
     "docs": "Docs",
     "test": "Tests",
-    "build": "Build",
-    "ci": "CI",
-    "chore": "Chore",
-    "style": "Style",
+    "ci/cd": "CI/CD",
+    "pep8": "Style",
+    "issue": "Issues",
 }
 
 
