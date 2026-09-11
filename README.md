@@ -1,16 +1,16 @@
 # devtool
 
-🛠️ Devtool padroniza **init**, **release** e **deploy** em qualquer stack.
+Standardize **init**, **release**, and **deploy** across any stack.
 
-CLI plugável — SourceHost (GitHub, GitLab), CIRunner (Jenkins, GitHub Actions), DeployTarget (PyPI, Docker, Dokploy) e Notifier (Slack, Webhook) são providers intercambiáveis.
+Pluggable CLI — SourceHost (GitHub, GitLab), CIRunner (Jenkins, GitHub Actions), and DeployTarget (PyPI, Docker, Dokploy) are interchangeable providers.
 
-## Instalação
+## Install
 
 ```bash
-pipx install devtool
+pipx install devtoolcli
 ```
 
-## Comandos
+## Commands
 
 ```bash
 devtool init python
@@ -18,20 +18,17 @@ devtool release patch
 devtool deploy --target dokploy
 ```
 
-## API programática
+## Programmatic API
 
 ```python
 from devtool import DevTool, Config
-from devtool.providers import SourceGithub, CIJenkins, DeployDokploy, NotifySlack
+from devtool.providers import SourceGithub, CIJenkins, DeployDokploy
 
 config = Config(
-    source_host=SourceGithub(repo="FernandoCelmer/owline-api"),
-    ci=[CIJenkins(url="https://jenkins.internal", job="owline-api-build")],
-    deploy=[DeployDokploy(url="https://dokploy.internal", app="owline-api-prod")],
-    notify=[NotifySlack(webhook_env="SLACK_WEBHOOK")],
+    source_host=SourceGithub(repo="owner/my-project"),
+    ci=[CIJenkins(url="https://jenkins.internal", job="my-job")],
+    deploy=[DeployDokploy(url="https://dokploy.internal", app="my-project-prod")],
 )
 
 DevTool(config=config).release("patch")
 ```
-
-Ver [PLAN.md](PLAN.md) para arquitetura completa.
