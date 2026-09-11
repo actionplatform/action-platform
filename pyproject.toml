@@ -1,0 +1,97 @@
+[project]
+name = "devtoolcli"
+version = "0.1.0"
+authors = [
+  { name="Fernando Celmer", email="email@fernandocelmer.com" },
+]
+license = {file = "LICENSE"}
+description = "Standardize init, release, and deploy."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "rich",
+  "pydantic",
+  "typing-extensions",
+  "typer",
+  "jinja2",
+  "python-ulid (>=3.0)",
+]
+keywords = [
+  "release",
+  "deploy",
+  "ci",
+  "cd",
+  "devops",
+  "automation",
+  "github",
+  "gitlab",
+  "jenkins",
+  "dokploy",
+  "pipeline",
+]
+classifiers = [
+  'Development Status :: 3 - Alpha',
+  "Operating System :: OS Independent",
+  'Intended Audience :: Developers',
+  'Natural Language :: English',
+  "License :: OSI Approved :: Apache Software License",
+  "Topic :: Software Development :: Build Tools",
+  "Topic :: Software Development :: Version Control",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+
+[project.urls]
+Homepage = "https://github.com/FernandoCelmer/devtool"
+Issues = "https://github.com/FernandoCelmer/devtool/issues"
+Repository = "https://github.com/FernandoCelmer/devtool"
+
+[project.optional-dependencies]
+github = ["PyGithub"]
+gitlab = ["python-gitlab"]
+jenkins = ["python-jenkins"]
+
+[tool.poetry]
+name = "devtoolcli"
+version = "0.1.0"
+description = "Standardize init, release, and deploy."
+authors = ["Fernando Celmer <email@fernandocelmer.com>"]
+readme = "README.md"
+license = "Apache-2.0"
+package-mode = true
+homepage = "https://github.com/FernandoCelmer/devtool"
+repository = "https://github.com/FernandoCelmer/devtool"
+
+packages = [{ include = "devtool" }]
+
+[tool.poetry.scripts]
+devtool = "devtool.main:main"
+
+[tool.poetry.dependencies]
+python = ">=3.10.0"
+rich = "^14.1.0"
+pydantic = "^2.11.7"
+typing-extensions = "^4.14.1"
+typer = "^0.15.0"
+jinja2 = "^3.1.4"
+python-ulid = "^3.0.0"
+
+[tool.poetry.group.dev.dependencies]
+build = "^1.2.2.post1"
+pytest = "^8.3.4"
+pytest-cov = "^6.0.0"
+pytest-mock = "^3.14.0"
+flake8 = "^7.1.1"
+
+[tool.poetry.group.code-quality.dependencies]
+ruff = "^0.9.0"
+mypy = "^1.13.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
