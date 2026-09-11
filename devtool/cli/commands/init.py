@@ -16,13 +16,13 @@ def run(
     language: str = typer.Argument(..., help="Target stack (python, go, node, ...)"),
     force: bool = typer.Option(False, "--force", help="Overwrite existing files"),
 ) -> None:
-    """Bootstrap .code_quality/<lang>/ and devtool.toml."""
+    """Bootstrap .code_quality/ and devtool.toml."""
     cwd = Path.cwd()
     src = TEMPLATES / "code_quality" / language
     if not src.exists():
         raise typer.BadParameter(f"unknown language: {language}")
 
-    dst_cq = cwd / ".code_quality" / language
+    dst_cq = cwd / ".code_quality"
     _copy_tree(src, dst_cq, force=force)
     logger.info("wrote %s", dst_cq)
 

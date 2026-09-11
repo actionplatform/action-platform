@@ -1,0 +1,11 @@
+[project]
+name = "devtool"
+language = "python"
+
+[source_host]
+kind = "github"
+repo = "FernandoCelmer/devtool"
+
+[release]
+strategy = "semver"
+changelog = "conventional"

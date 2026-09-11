@@ -10,6 +10,7 @@ app = typer.Typer(
     name="devtool",
     help="Standardize init, release, and deploy across any stack.",
     no_args_is_help=True,
+    pretty_exceptions_enable=False,
 )
 
 app.command("init")(init_cmd.run)
