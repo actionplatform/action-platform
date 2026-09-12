@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>From idea to production in one command — on any stack, on any cloud.</strong>
+  <strong>Your platform team, as a CLI.</strong>
 </p>
 
 <p align="center">
