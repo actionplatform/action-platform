@@ -41,6 +41,12 @@ def register(mcp: Any) -> None:
         dry_run: Annotated[
             bool, Field(description="true only computes the next version and changelog")
         ] = True,
+        component: Annotated[
+            Optional[str],
+            Field(
+                description="A [components.<name>] of platform.toml, e.g. web; default the repository"
+            ),
+        ] = None,
     ) -> dict:
         """Bump version, write CHANGELOG, tag, push and publish a release.
 
@@ -48,7 +54,7 @@ def register(mcp: Any) -> None:
         then call again with dry_run=false to publish. Off main/master the
         version becomes X.Y.Z-rc.N and the release is marked pre-release.
         """
-        ctx = _tool(project).release(level=level, dry_run=dry_run)
+        ctx = _tool(project).release(level=level, dry_run=dry_run, component=component)
 
         return {
             "current": ctx.current_version,
