@@ -66,6 +66,7 @@ def release(
 
     tag = f"v{ctx.next_version}"
 
+    git.add([settings.LAST_VERSION_FILE, settings.CHANGELOG_FILE], cwd=repo_root)
     git.commit(f"chore(release): {ctx.next_version}", cwd=repo_root)
     git.create_tag(tag, tag, cwd=repo_root)
     git.push(cwd=repo_root)

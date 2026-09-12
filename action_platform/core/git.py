@@ -71,8 +71,12 @@ def checkout_branch(branch: str, create: bool = False, cwd: Path | None = None) 
     run(args, cwd=cwd)
 
 
+def add(paths: list[str], cwd: Path | None = None) -> None:
+    run(["add", "--", *paths], cwd=cwd)
+
+
 def commit(message: str, cwd: Path | None = None) -> None:
-    run(["commit", "-am", message], cwd=cwd)
+    run(["commit", "-m", message], cwd=cwd)
 
 
 def init(cwd: Path, branch: str = "main") -> None:
