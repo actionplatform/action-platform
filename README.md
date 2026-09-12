@@ -241,8 +241,8 @@ path = "action_platform/api"
 | Command | Tag | Publishes |
 |---|---|---|
 | `action-platform release minor` | `v0.3.0` | `action-platform` on PyPI (library + CLI) |
-| `action-platform release -c api patch` | `api/v0.1.1` | `actionplatform/action-platform-api` image |
-| `action-platform release -c web minor` | `web/v0.2.0` | `actionplatform/action-platform-web` image |
+| `action-platform release -c api patch` | `api/v0.1.1` | `actionplatformio/action-platform-api` image |
+| `action-platform release -c web minor` | `web/v0.2.0` | `actionplatformio/action-platform-web` image |
 
 Each component keeps its own `LAST_VERSION` and `CHANGELOG.md` under its path; its changelog lists only the commits that touched it, and the root's excludes them. Off `master` every release is an `-rc.N` pre-release. Images go to Docker Hub and are mirrored to GHCR.
 
