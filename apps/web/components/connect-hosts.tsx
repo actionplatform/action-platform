@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, KeyRound, Settings2 } from "lucide-react";
+import { Check, ExternalLink, KeyRound, Settings2, Sparkles } from "lucide-react";
 import { useState, useTransition } from "react";
 import { saveOAuthApp } from "@/app/oauth-actions";
 import { siBitbucket, siGithub, siGitlab } from "simple-icons";
@@ -23,12 +23,15 @@ export type ConnectProps = {
   origin: string;
   orgId?: string;
   returnTo: string;
+  // slug of a GitHub App created through the manifest flow; shows the install link
+  githubApp?: string | null;
 };
 
 // "Connect with …" for each provider; when the platform has no OAuth app
 // for it yet, a small dialog collects the client id/secret first.
-export function ConnectHosts({ configured, connected, origin, orgId, returnTo }: ConnectProps) {
+export function ConnectHosts({ configured, connected, origin, orgId, returnTo, githubApp }: ConnectProps) {
   const [setup, setSetup] = useState<Provider | null>(null);
+  const [createGh, setCreateGh] = useState(false);
   const [done, setDone] = useState<Record<string, boolean>>({});
 
   const startUrl = (p: Provider) => {
@@ -52,10 +55,20 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo }:
               </ul>
             )}
             <div className="mt-auto pt-4 flex flex-col gap-2">
+              {p === "github" && githubApp && (
+                <a href={`https://github.com/apps/${githubApp}/installations/new`} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-foreground px-4 text-sm font-medium hover:bg-surface-hover">
+                  <ExternalLink className="size-4" /> Install the app on GitHub
+                </a>
+              )}
               {ready ? (
                 <a href={startUrl(p)} className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover">
                   <KeyRound className="size-4" /> {logins.length ? "Connect another" : `Connect with ${m.label}`}
                 </a>
+              ) : p === "github" ? (
+                <>
+                  <Button onClick={() => setCreateGh(true)}><Sparkles className="size-4" /> Create GitHub App</Button>
+                  <button type="button" onClick={() => setSetup(p)} className="text-xs text-muted-foreground hover:text-foreground">I already have one</button>
+                </>
               ) : (
                 <Button variant="outline" onClick={() => setSetup(p)}><Settings2 className="size-4" /> Set up OAuth app</Button>
               )}
@@ -66,7 +79,37 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo }:
       })}
 
       {setup && <OAuthAppDialog provider={setup} origin={origin} onClose={() => setSetup(null)} onSaved={() => { setDone({ ...done, [setup]: true }); setSetup(null); }} />}
+      {createGh && <CreateGitHubAppDialog orgId={orgId} returnTo={returnTo} onClose={() => setCreateGh(false)} />}
     </div>
+  );
+}
+
+// Manifest flow: GitHub creates the app for us and hands back its credentials.
+function CreateGitHubAppDialog({ orgId, returnTo, onClose }: { orgId?: string; returnTo: string; onClose: () => void }) {
+  const [org, setOrg] = useState("");
+  const q = new URLSearchParams({ return: returnTo });
+  if (orgId) q.set("orgId", orgId);
+  if (org.trim()) q.set("org", org.trim());
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      title="Create GitHub App"
+      description="GitHub opens a pre-filled form; confirm the name and the app is created with the right permissions and callback. Then install it on the account or organization whose repositories the platform should manage."
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <a href={`/api/oauth/github/manifest?${q}`} className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover">
+            <Sparkles className="size-4" /> Continue to GitHub
+          </a>
+        </>
+      }
+    >
+      <Field label="GitHub organization" hint="Leave empty to create the app under your personal account.">
+        <Input value={org} onChange={(e) => setOrg(e.target.value)} className="font-mono" placeholder="my-org" autoFocus />
+      </Field>
+    </Dialog>
   );
 }
 

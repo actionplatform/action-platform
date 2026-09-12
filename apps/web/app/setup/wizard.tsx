@@ -20,7 +20,7 @@ const steps = [
 
 type Step = 1 | 2 | 3 | 4;
 
-type OAuthInfo = { configured: Record<"github" | "gitlab" | "bitbucket", boolean>; origin: string; connected: string | null; error: string | null };
+type OAuthInfo = { configured: Record<"github" | "gitlab" | "bitbucket", boolean>; origin: string; connected: string | null; error: string | null; githubApp: string | null };
 
 export function SetupWizard({ initialStep, dbError, initialOrgId, oauth }: { initialStep: Step; dbError?: string; initialOrgId: string | null; oauth: OAuthInfo }) {
   const [step, setStep] = useState<Step>(initialStep);
@@ -204,6 +204,7 @@ function HostsStep({ orgId, oauth }: { orgId: string | null; oauth: OAuthInfo })
           origin={oauth.origin}
           orgId={orgId}
           returnTo={`/setup?org=${orgId}`}
+          githubApp={oauth.githubApp}
         />
       )}
 
