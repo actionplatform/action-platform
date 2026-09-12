@@ -8,6 +8,7 @@ from typing import Optional
 from mcp.server.mcpserver import MCPServer
 
 from action_platform import __version__
+from action_platform.mcp import prompts
 from action_platform.mcp.tools import flow, lifecycle, matrix, project
 
 INSTRUCTIONS = """Scaffold, deploy and operate projects on the Action Platform.
@@ -35,6 +36,7 @@ def build() -> MCPServer:
     project.register(mcp)
     flow.register(mcp)
     lifecycle.register(mcp)
+    prompts.register(mcp)
 
     return mcp
 
