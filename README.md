@@ -2,7 +2,7 @@
 
 Standardize **init**, **release**, and **deploy** across any stack.
 
-Pluggable CLI — SourceHost (GitHub, GitLab), CIRunner (Jenkins, GitHub Actions), and DeployTarget (PyPI, Docker, Dokploy) are interchangeable providers.
+Pluggable CLI — SourceHost, CIRunner and DeployTarget are abstract contracts; providers plug in through entry points.
 
 ## Install
 
@@ -21,7 +21,8 @@ action-platform init --list                 # show projects and clouds
 action-platform cloud set docker            # apply a deploy overlay to an existing project
 action-platform cloud list                  # clouds compatible with this project
 action-platform release patch
-action-platform deploy --target dokploy
+action-platform deploy                      # ships to the [deploy] target in platform.toml
+action-platform rollback | diagnose | destroy
 ```
 
 Templates come from [actionplatform/templates](https://github.com/actionplatform/templates), cached in `~/.cache/action-platform/templates` (`--update` refreshes it). Point `ACTION_PLATFORM_TEMPLATES` to a local checkout to develop templates.
@@ -30,13 +31,10 @@ Templates come from [actionplatform/templates](https://github.com/actionplatform
 
 ```python
 from action_platform import ActionPlatform, Config
-from action_platform.providers import SourceGithub, CIJenkins, DeployDokploy
+from action_platform.providers import SourceGithub
 
-config = Config(
-    source_host=SourceGithub(repo="owner/my-project"),
-    ci=[CIJenkins(url="https://jenkins.internal", job="my-job")],
-    deploy=[DeployDokploy(url="https://dokploy.internal", app="my-project-prod")],
-)
-
+config = Config(source_host=SourceGithub(repo="owner/my-project"))
 ActionPlatform(config=config).release("patch")
 ```
+
+Deploy targets are resolved from `[deploy] target` in `platform.toml` through the `action_platform.deploy_target` entry-point group — install a provider package to enable one.
