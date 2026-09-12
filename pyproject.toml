@@ -26,8 +26,6 @@ keywords = [
   "automation",
   "github",
   "gitlab",
-  "jenkins",
-  "dokploy",
   "pipeline",
 ]
 classifiers = [
@@ -52,7 +50,6 @@ Repository = "https://github.com/actionplatform/action-platform"
 [project.optional-dependencies]
 github = ["PyGithub"]
 gitlab = ["python-gitlab"]
-jenkins = ["python-jenkins"]
 
 [tool.poetry]
 name = "action-platform"
@@ -69,6 +66,7 @@ packages = [{ include = "action_platform" }]
 
 [tool.poetry.scripts]
 action-platform = "action_platform.main:main"
+
 
 [tool.poetry.dependencies]
 python = ">=3.10.0"

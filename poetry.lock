@@ -1029,19 +1029,6 @@ files = [
 ]
 
 [[package]]
-name = "multi-key-dict"
-version = "2.0.3"
-description = "Multi key dictionary implementation"
-optional = true
-python-versions = "*"
-groups = ["main"]
-markers = "extra == \"jenkins\""
-files = [
-    {file = "multi_key_dict-2.0.3.tar.gz", hash = "sha256:deebdec17aa30a1c432cb3f437e81f8621e1c0542a0c0617a74f71e232e9939e"},
-    {file = "multi_key_dict-2.0.3.zip", hash = "sha256:3a1e1fc705a30a7de1a153ec2992b3ca3655ccd9225d2e427fe6525c8f160d6d"},
-]
-
-[[package]]
 name = "mypy"
 version = "1.20.2"
 description = "Optional static typing for Python"
@@ -1153,22 +1140,6 @@ files = [
 hyperscan = ["hyperscan (>=0.7)"]
 optional = ["typing-extensions (>=4)"]
 re2 = ["google-re2 (>=1.1)"]
-
-[[package]]
-name = "pbr"
-version = "7.0.3"
-description = "Python Build Reasonableness"
-optional = true
-python-versions = ">=2.6"
-groups = ["main"]
-markers = "extra == \"jenkins\""
-files = [
-    {file = "pbr-7.0.3-py2.py3-none-any.whl", hash = "sha256:ff223894eb1cd271a98076b13d3badff3bb36c424074d26334cd25aebeecea6b"},
-    {file = "pbr-7.0.3.tar.gz", hash = "sha256:b46004ec30a5324672683ec848aed9e8fc500b0d261d40a3229c2d2bbfcedc29"},
-]
-
-[package.dependencies]
-setuptools = "*"
 
 [[package]]
 name = "pluggy"
@@ -1588,24 +1559,6 @@ graphql = ["gql[httpx] (>=3.5.0,<5)"]
 yaml = ["PyYaml (>=6.0.1)"]
 
 [[package]]
-name = "python-jenkins"
-version = "1.8.3"
-description = "Python bindings for the remote Jenkins API"
-optional = true
-python-versions = "*"
-groups = ["main"]
-markers = "extra == \"jenkins\""
-files = [
-    {file = "python_jenkins-1.8.3-py3-none-any.whl", hash = "sha256:2e1766b253e3b2f28f52abfd0de45ffeaa1191f98520cc8d74d2c317786e59d0"},
-    {file = "python_jenkins-1.8.3.tar.gz", hash = "sha256:8f4761c391ac11e8c1f23f771010920c10440497705ab7175d52358f5a12dc98"},
-]
-
-[package.dependencies]
-multi-key-dict = "*"
-pbr = ">=0.8.2"
-requests = "*"
-
-[[package]]
 name = "python-slugify"
 version = "9.0.0"
 description = "A Python slugify application that also handles Unicode"
@@ -1811,28 +1764,6 @@ files = [
 ]
 
 [[package]]
-name = "setuptools"
-version = "84.0.0"
-description = "Most extensible Python build backend with support for C/C++ extension modules"
-optional = true
-python-versions = ">=3.10"
-groups = ["main"]
-markers = "extra == \"jenkins\""
-files = [
-    {file = "setuptools-84.0.0-py3-none-any.whl", hash = "sha256:51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670"},
-    {file = "setuptools-84.0.0.tar.gz", hash = "sha256:f4695c21257f0d9b537ec2692c941d02ee143b7cc1276941349a546573b2ef73"},
-]
-
-[package.extras]
-check = ["pytest-checkdocs (>=2.14)", "pytest-ruff (>=0.2.1) ; sys_platform != \"cygwin\"", "ruff (>=0.13.0) ; sys_platform != \"cygwin\""]
-core = ["importlib_metadata (>=6) ; python_version < \"3.10\"", "jaraco.functools (>=4)", "jaraco.text (>=3.7)", "more_itertools", "more_itertools (>=8.8)", "packaging (>=24.2)", "tomli (>=2.0.1) ; python_version < \"3.11\"", "wheel (>=0.43.0)"]
-cover = ["pytest-cov"]
-doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "pyproject-hooks (!=1.1)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-favicon", "sphinx-inline-tabs", "sphinx-lint", "sphinx-notfound-page (>=1,<2)", "sphinx-reredirects", "sphinxcontrib-towncrier", "towncrier (<24.7)"]
-enabler = ["pytest-enabler (>=3.4)"]
-test = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "ini2toml[lite] (>=0.14)", "jaraco.develop (>=7.21) ; python_version >= \"3.9\" and sys_platform != \"cygwin\"", "jaraco.envs (>=2.2)", "jaraco.path (>=3.7.2)", "jaraco.test (>=5.5)", "packaging (>=24.2)", "pip (>=19.1)", "pyproject-hooks (!=1.1)", "pytest (>=6,!=8.1.*)", "pytest-home (>=0.5)", "pytest-perf ; sys_platform != \"cygwin\"", "pytest-subprocess", "pytest-timeout", "pytest-xdist (>=3)", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel (>=0.44.0)"]
-type = ["importlib_metadata (>=7.0.2) ; python_version < \"3.10\"", "jaraco.develop (>=7.21) ; sys_platform != \"cygwin\"", "mypy (==1.18.*)", "pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
-
-[[package]]
 name = "shellingham"
 version = "1.5.4"
 description = "Tool to Detect Surrounding Shell"
@@ -2026,9 +1957,8 @@ type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 [extras]
 github = ["PyGithub"]
 gitlab = ["python-gitlab"]
-jenkins = ["python-jenkins"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10.0"
-content-hash = "d4c4544d1822c3ce2f6d471627faa9405c5fdcb4b325e1ec175a2e4c1719c622"
+content-hash = "e0597b13016ed5a80f7bc3dd4678dbd3b3eb2d6347597a2d9466ce4f690576df"
