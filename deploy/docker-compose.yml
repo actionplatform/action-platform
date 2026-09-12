@@ -39,6 +39,7 @@ services:
 
   api:
     image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
+    pull_policy: always
     build:
       context: ..
       dockerfile: deploy/Dockerfile.api
@@ -51,6 +52,7 @@ services:
 
   web:
     image: ${AP_IMAGE_WEB:-actionplatformio/action-platform-web:latest}
+    pull_policy: always
     build:
       context: ..
       dockerfile: deploy/Dockerfile.web
