@@ -1,0 +1,20 @@
+{
+  "name": "action-platform-development",
+  "interface": {
+    "displayName": "Action Platform Development"
+  },
+  "plugins": [
+    {
+      "name": "action-platform",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

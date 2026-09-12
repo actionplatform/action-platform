@@ -1,0 +1,15 @@
+{
+  "name": "action-platform",
+  "description": "Scaffold, deploy and operate projects from your AI client \u2014 init a service from production-grade templates, overlay a cloud, add a database, release and deploy, all through platform.toml.",
+  "owner": {
+    "name": "Action Platform",
+    "url": "https://github.com/actionplatform"
+  },
+  "plugins": [
+    {
+      "name": "action-platform",
+      "source": "./",
+      "description": "Init, cloud, service, release and deploy as MCP tools with skills that keep the agent from pushing or deploying before you approve."
+    }
+  ]
+}
