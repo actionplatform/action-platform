@@ -1,13 +1,4 @@
-# Action Platform as a Dokploy "Compose" service. Dokploy's own Traefik
-# terminates TLS and routes the domain to `web:3000` (set under Domains);
-# nothing here publishes a port.
-#
-#   Dokploy → project → Create Service → Compose
-#     Provider: Git   repo https://github.com/actionplatform/action-platform   branch master
-#     Compose path: deploy/docker-compose.dokploy.yml
-#     Environment: PUBLIC_URL, POSTGRES_PASSWORD, BETTER_AUTH_SECRET (see .env.example)
-#     Domains: host <your domain> → service web, container port 3000, HTTPS on
-#   Deploy. Open the domain: first account, organization, code hosts.
+# Dokploy "Compose" service: its Traefik routes the domain to web:3000. Steps in the README.
 name: action-platform
 
 services:
