@@ -9,11 +9,11 @@ from rich.console import Console
 from rich.table import Table
 
 from action_platform.core.exception import TemplateError
-from action_platform.core.generate import apply_cloud, generate_project
+from action_platform.core.generate import apply_cloud, generate_project, push_project
 from action_platform.core.templates import Matrix, load_matrix
 from action_platform.logging import logger
 
-CI_PROVIDERS = ["github", "gitlab", "bitbucket", "jenkins"]
+CI_PROVIDERS = ["github", "gitlab", "jenkins"]
 
 console = Console()
 
@@ -36,6 +36,10 @@ def run(
     output: Path | None = typer.Option(
         None, "--output", "-o", help="Where to create the project"
     ),
+    push: bool = typer.Option(
+        False, "--push", help="Create the remote repo via [source_host] and push"
+    ),
+    private: bool = typer.Option(False, "--private", help="With --push: private repo"),
     list_: bool = typer.Option(False, "--list", "-l", help="Show the template matrix"),
     update: bool = typer.Option(False, "--update", help="Refresh the templates cache"),
 ) -> None:
@@ -72,6 +76,10 @@ def run(
     if cloud is not None:
         apply_cloud(repo, matrix.cloud(cloud), project)
         logger.info("applied cloud %s", cloud)
+
+    if push:
+        url = push_project(project, private=private)
+        logger.info("pushed to %s", url)
 
 
 def choose(label: str, options: list[str]) -> str:
@@ -112,3 +120,15 @@ def print_matrix(matrix: Matrix) -> None:
             cloud.description,
         )
     console.print(clouds)
+
+    services = Table(title="Services")
+    services.add_column("service")
+    services.add_column("providers")
+    services.add_column("description")
+
+    for service in matrix.services:
+        services.add_row(
+            service.name, ", ".join(service.providers), service.description
+        )
+
+    console.print(services)

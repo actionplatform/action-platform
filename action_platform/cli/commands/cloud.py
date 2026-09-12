@@ -28,7 +28,9 @@ def set_(
     """Apply a cloud overlay and set [deploy] target in platform.toml (replaces the previous one)."""
     repo, matrix = load_matrix(update=update)
     target = (project or Path.cwd()).resolve()
+
     apply_cloud(repo, matrix.cloud(name), target)
+
     logger.info("applied cloud %s to %s", name, target)
 
 
@@ -41,8 +43,10 @@ def list_(
     """List cloud overlays, optionally only those compatible with a project."""
     _, matrix = load_matrix()
     clouds = matrix.clouds
+
     if project is not None:
         meta = read_platform(project.resolve())
         clouds = matrix.clouds_for(meta.get("type", ""), meta.get("language", ""))
+
     for cloud in clouds:
         console.print(f"[bold]{cloud.name}[/bold]  {cloud.description}")
