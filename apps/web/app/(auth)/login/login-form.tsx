@@ -1,6 +1,7 @@
 "use client";
 
-import { Boxes } from "lucide-react";
+import { Logo } from "@/components/logo";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ export function LoginForm({ next = "/projects" }: { next?: string }) {
   return (
     <Card className="w-full max-w-sm">
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-2 font-semibold"><Boxes className="size-5" /> action-platform</div>
+        <div className="flex items-center gap-2 font-semibold"><Logo className="size-5" /> action-platform</div>
         <form onSubmit={submit} className="space-y-3">
           <Field name="email" label="Email" type="email" />
           <Field name="password" label="Password" type="password" />

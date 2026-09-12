@@ -1,9 +1,10 @@
 "use client";
 
-import { Boxes, FolderGit2, LayoutTemplate, Settings } from "lucide-react";
+import { FolderGit2, LayoutTemplate, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Org } from "@/lib/types";
+import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 import { OrgSwitcher } from "./org-switcher";
 import { UserMenu } from "./user-menu";
@@ -24,7 +25,7 @@ export function Sidebar({ version, user, org, orgs }: Props) {
     <>
       <aside className="hidden md:flex w-56 shrink-0 border-r border-border bg-sidebar flex-col sticky top-0 h-screen">
         <div className="flex items-center gap-2 px-4 h-14 border-b border-border">
-          <Boxes className="size-5" />
+          <Logo className="size-5" />
           <span className="font-semibold text-sm">action-platform</span>
         </div>
         <div className="p-2 border-b border-border">
@@ -50,7 +51,7 @@ export function Sidebar({ version, user, org, orgs }: Props) {
       </aside>
 
       <header className="md:hidden sticky top-0 z-10 flex items-center justify-between h-12 px-3 border-b border-border bg-sidebar">
-        <div className="flex items-center gap-2 text-sm font-semibold min-w-0"><Boxes className="size-4 shrink-0" /> <span className="truncate">{org.name}</span></div>
+        <div className="flex items-center gap-2 text-sm font-semibold min-w-0"><Logo className="size-4" /> <span className="truncate">{org.name}</span></div>
         <nav className="flex gap-1">
           {items.map(({ href, label, icon: Icon }) => (
             <Link

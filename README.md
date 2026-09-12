@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/actionplatform/action-platform/master/docs/assets/cover.png" alt="Action Platform" width="100%">
+  <img src="https://raw.githubusercontent.com/actionplatform/action-platform/master/docs/assets/icon.svg" alt="Action Platform" width="120">
 </p>
 
 <p align="center">
