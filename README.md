@@ -35,6 +35,8 @@ curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/mast
 
 Installs Docker if needed, generates the secrets, starts Postgres + API + web (+ Traefik with Let's Encrypt when a domain is given) and prints the URL. Open it: first account, first organization, connect a code host — done. Files live in `/opt/action-platform`; see [`deploy/`](deploy/) for the compose file and the two Dockerfiles.
 
+**Already on Dokploy?** Create a *Compose* service from this repo with path `deploy/docker-compose.dokploy.yml`, set `PUBLIC_URL`, `POSTGRES_PASSWORD` and `BETTER_AUTH_SECRET` in its environment, add your domain to the `web` service on port 3000, deploy. Dokploy's Traefik handles TLS.
+
 ## Or just the CLI
 
 ```bash

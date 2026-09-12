@@ -1,0 +1,65 @@
+# Action Platform as a Dokploy "Compose" service. Dokploy's own Traefik
+# terminates TLS and routes the domain to `web:3000` (set under Domains);
+# nothing here publishes a port.
+#
+#   Dokploy → project → Create Service → Compose
+#     Provider: Git   repo https://github.com/actionplatform/action-platform   branch master
+#     Compose path: deploy/docker-compose.dokploy.yml
+#     Environment: PUBLIC_URL, POSTGRES_PASSWORD, BETTER_AUTH_SECRET (see .env.example)
+#     Domains: host <your domain> → service web, container port 3000, HTTPS on
+#   Deploy. Open the domain: first account, organization, code hosts.
+name: action-platform
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: action_platform
+      POSTGRES_USER: action_platform
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U action_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
+    restart: unless-stopped
+    expose: ["7788"]
+    volumes:
+      - apdata:/data
+    environment:
+      ACTION_PLATFORM_TEMPLATES_REPO: ${ACTION_PLATFORM_TEMPLATES_REPO:-https://github.com/actionplatform/templates.git}
+
+  web:
+    image: ${AP_IMAGE_WEB:-actionplatformio/action-platform-web:latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+    expose: ["3000"]
+    volumes:
+      - webconfig:/app/config
+    environment:
+      AP_API: http://api:7788
+      DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@postgres:5432/action_platform
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${PUBLIC_URL}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITLAB_CLIENT_ID: ${GITLAB_CLIENT_ID:-}
+      GITLAB_CLIENT_SECRET: ${GITLAB_CLIENT_SECRET:-}
+      GITLAB_BASE_URL: ${GITLAB_BASE_URL:-}
+      BITBUCKET_CLIENT_ID: ${BITBUCKET_CLIENT_ID:-}
+      BITBUCKET_CLIENT_SECRET: ${BITBUCKET_CLIENT_SECRET:-}
+
+volumes:
+  pgdata:
+  apdata:
+  webconfig:
