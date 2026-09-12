@@ -15,6 +15,7 @@ dependencies = [
   "typer",
   "jinja2",
   "python-ulid (>=3.0)",
+  "cookiecutter",
 ]
 keywords = [
   "release",
@@ -77,6 +78,7 @@ typing-extensions = "^4.14.1"
 typer = "^0.15.0"
 jinja2 = "^3.1.4"
 python-ulid = "^3.0.0"
+cookiecutter = "^2.6.0"
 
 [tool.poetry.group.dev.dependencies]
 build = "^1.2.2.post1"
