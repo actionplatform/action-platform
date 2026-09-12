@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: testpypi
-      url: https://test.pypi.org/p/devtoolcli
+      url: https://test.pypi.org/p/action-platform
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/devtoolcli
+      url: https://pypi.org/p/action-platform
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
