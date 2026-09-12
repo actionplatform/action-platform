@@ -51,69 +51,98 @@ def repo(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
+def url(repo: Path) -> str:
+    return repo.as_uri()
+
+
+@pytest.fixture
 def client(tmp_path: Path, monkeypatch) -> TestClient:
     monkeypatch.setenv("AP_HOME", str(tmp_path / "home"))
 
     return TestClient(build())
 
 
-def test_registry_roundtrip(tmp_path: Path, repo: Path):
-    reg = Registry(tmp_path / "projects.json")
+def test_registry_clones_into_workspace(tmp_path: Path, url: str):
+    reg = Registry(tmp_path / "home")
 
-    entry = reg.add(repo)
-    assert reg.add(repo).id == entry.id
-    assert [e.name for e in reg.list()] == ["demo"]
+    entry = reg.add(url)
+    assert entry.name == "demo"
+    assert entry.default_branch == "feature/1"
+    assert Path(entry.path).is_relative_to(tmp_path / "home" / "workspaces")
+    assert (Path(entry.path) / "platform.toml").exists()
+    assert reg.add(url).id == entry.id
 
     reg.remove(entry.id)
     assert reg.list() == []
+    assert not Path(entry.path).exists()
 
 
-def test_registry_refuses_dir_without_platform(tmp_path: Path):
+def test_registry_refuses_repo_without_platform(tmp_path: Path):
+    bare = tmp_path / "plain"
+    bare.mkdir()
+    git("init", "-q", cwd=bare)
+    git("config", "user.email", "t@t", cwd=bare)
+    git("config", "user.name", "t", cwd=bare)
+    (bare / "x").write_text("x")
+    git("add", "x", cwd=bare)
+    git("commit", "-q", "-m", "chore: x", cwd=bare)
+
+    reg = Registry(tmp_path / "home")
     with pytest.raises(Exception, match="platform.toml"):
-        Registry(tmp_path / "projects.json").add(tmp_path)
+        reg.add(bare.as_uri())
+    assert not any((tmp_path / "home" / "workspaces").glob("*"))
 
 
-def test_projects_crud(client: TestClient, repo: Path):
-    assert client.get("/api/projects").json() == []
+def test_registry_refuses_non_url(tmp_path: Path):
+    with pytest.raises(Exception, match="not a git url"):
+        Registry(tmp_path / "home").add("/some/local/path")
 
-    created = client.post("/api/projects", json={"path": str(repo)})
+
+def test_apps_crud(client: TestClient, url: str):
+    assert client.get("/api/apps").json() == []
+
+    created = client.post("/api/apps", json={"url": url})
     assert created.status_code == 201
     id = created.json()["id"]
 
-    rows = client.get("/api/projects").json()
+    rows = client.get("/api/apps").json()
     assert rows[0]["name"] == "demo"
+    assert rows[0]["url"] == url
     assert rows[0]["branch"] == "feature/1"
     assert rows[0]["last_version"] == "1.2.3"
 
-    assert client.delete(f"/api/projects/{id}").status_code == 204
-    assert client.get(f"/api/projects/{id}").status_code == 400
+    assert client.post(f"/api/apps/{id}/sync").status_code == 200
+
+    assert client.delete(f"/api/apps/{id}").status_code == 204
+    assert client.get(f"/api/apps/{id}").status_code == 400
 
 
-def test_project_detail_and_git(client: TestClient, repo: Path):
-    id = client.post("/api/projects", json={"path": str(repo)}).json()["id"]
+def test_project_detail_and_git(client: TestClient, url: str):
+    id = client.post("/api/apps", json={"url": url}).json()["id"]
 
-    detail = client.get(f"/api/projects/{id}").json()
+    detail = client.get(f"/api/apps/{id}").json()
     assert detail["project"]["name"] == "demo"
+    assert detail["url"] == url
     assert detail["source_host"]["repo"] == "acme/demo"
     assert detail["latest_tag"] == "v1.2.3"
     assert detail["clean"] is True
 
-    audit = client.get(f"/api/projects/{id}/gitflow").json()
+    audit = client.get(f"/api/apps/{id}/gitflow").json()
     assert audit["ok"] is True
     assert audit["checked_commits"] == 1
 
-    commits = client.get(f"/api/projects/{id}/commits?limit=5").json()
+    commits = client.get(f"/api/apps/{id}/commits?limit=5").json()
     assert commits[0]["subject"] == "feat: add a"
 
-    branches = {b["name"]: b for b in client.get(f"/api/projects/{id}/branches").json()}
+    branches = {b["name"]: b for b in client.get(f"/api/apps/{id}/branches").json()}
     assert branches["main"]["protected"] is True
     assert branches["feature/1"]["kind"] == "feature"
 
-    assert client.get(f"/api/projects/{id}/tags").json() == ["v1.2.3"]
+    assert client.get(f"/api/apps/{id}/tags").json() == ["v1.2.3"]
 
 
 def test_unknown_project_is_400(client: TestClient):
-    assert client.get("/api/projects/nope").status_code == 400
+    assert client.get("/api/apps/nope").status_code == 400
 
 
 def test_static_endpoints(client: TestClient):
@@ -121,3 +150,96 @@ def test_static_endpoints(client: TestClient):
     rules = client.get("/api/gitflow/rules").json()
     assert "feature" in rules["kinds"]
     assert "main" in rules["protected"]
+
+
+TEMPLATE_INDEX = """
+[projects.web.python.mini]
+default = true
+description = "tiny"
+"""
+
+COOKIECUTTER = {
+    "project_name": "My Project",
+    "project_slug": "{{ cookiecutter.project_name|lower|replace(' ', '-') }}",
+    "description": "tiny",
+    "package_name": "{{ cookiecutter.project_slug|replace('-', '_') }}",
+    "github_owner": "acme",
+    "ci": ["github", "gitlab", "jenkins"],
+}
+
+
+@pytest.fixture
+def templates(tmp_path: Path, monkeypatch) -> Path:
+    import json
+
+    root = tmp_path / "templates"
+    leaf = root / "projects" / "web" / "python" / "mini"
+    slug = leaf / "{{cookiecutter.project_slug}}"
+    slug.mkdir(parents=True)
+    (root / "index.toml").write_text(TEMPLATE_INDEX)
+    (leaf / "cookiecutter.json").write_text(json.dumps(COOKIECUTTER))
+    (slug / "platform.toml").write_text(
+        '[project]\nname = "{{ cookiecutter.project_slug }}"\ntype = "web"\nlanguage = "python"\nci = "{{ cookiecutter.ci }}"\n\n'
+        '[source_host]\nkind = "github"\nrepo = "{{ cookiecutter.github_owner }}/{{ cookiecutter.project_slug }}"\n'
+    )
+    (slug / "README.md").write_text(
+        "# {{ cookiecutter.project_name }}\n{{ cookiecutter.description }}\n"
+    )
+    (slug / "{{cookiecutter.package_name}}").mkdir()
+    (slug / "{{cookiecutter.package_name}}" / "__init__.py").write_text("")
+    monkeypatch.setattr("action_platform.settings.settings.TEMPLATES_DIR", str(root))
+
+    return root
+
+
+def test_init_generates_workspace(client: TestClient, templates: Path, tmp_path: Path):
+    res = client.post(
+        "/api/apps/init",
+        json={
+            "type": "web",
+            "stack": "python",
+            "template": "mini",
+            "name": "Orders Api",
+            "description": "orders",
+            "package_name": "orders",
+            "ci": "gitlab",
+            "git_init": True,
+        },
+    )
+    assert res.status_code == 201, res.text
+    body = res.json()
+    assert body["name"] == "orders-api"
+    assert body["pushed"] is False
+    assert body["url"] == ""
+
+    path = Path(body["path"])
+    assert path.is_relative_to(tmp_path / "home" / "action-platform" / "workspaces")
+    assert (path / "orders" / "__init__.py").exists()
+    assert "orders" in (path / "README.md").read_text()
+    assert 'ci = "gitlab"' in (path / "platform.toml").read_text()
+    assert (path / ".git").is_dir()
+    assert not any(p.name.startswith(".init-") for p in path.parent.iterdir())
+
+    detail = client.get(f"/api/apps/{body['id']}").json()
+    assert detail["branch"] == "main"
+    assert detail["clean"] is True
+    assert detail["url"] == ""
+
+    rows = client.get("/api/apps").json()
+    assert rows[0]["name"] == "orders-api"
+
+
+def test_init_without_git(client: TestClient, templates: Path):
+    body = client.post(
+        "/api/apps/init",
+        json={"type": "web", "stack": "python", "name": "plain", "git_init": False},
+    ).json()
+    assert not (Path(body["path"]) / ".git").exists()
+    detail = client.get(f"/api/apps/{body['id']}").json()
+    assert detail["branch"] == ""
+
+
+def test_init_unknown_type_is_400(client: TestClient, templates: Path):
+    res = client.post("/api/apps/init", json={"type": "nope", "name": "x"})
+    assert res.status_code == 400
+    assert "unknown type" in res.json()["detail"]

@@ -44,10 +44,10 @@ class GitflowRules(BaseModel):
     types: list[str]
 
 
-class ProjectRow(BaseModel):
+class AppRow(BaseModel):
     id: str
     name: str
-    path: str
+    url: str
     exists: bool
     language: Optional[str] = None
     type: Optional[str] = None
@@ -55,13 +55,15 @@ class ProjectRow(BaseModel):
     branch: Optional[str] = None
 
 
-class ProjectEntry(BaseModel):
+class AppEntry(BaseModel):
     id: str
     name: str
+    url: str
     path: str
+    default_branch: str = ""
 
 
-class ProjectMeta(BaseModel):
+class AppMeta(BaseModel):
     name: str = ""
     type: Optional[str] = None
     stack: Optional[str] = None
@@ -70,10 +72,11 @@ class ProjectMeta(BaseModel):
     ci: Optional[str] = None
 
 
-class ProjectDetail(BaseModel):
+class AppDetail(BaseModel):
     id: str
-    path: str
-    project: ProjectMeta
+    url: str
+    default_branch: str = ""
+    project: AppMeta
     source_host: dict[str, str]
     deploy: dict
     release: dict[str, str]
@@ -128,3 +131,47 @@ class Diagnosis(BaseModel):
     version: Optional[str] = None
     url: Optional[str] = None
     details: dict[str, str] = {}
+
+
+class SourceCredentials(BaseModel):
+    kind: str
+    token: str
+    username: Optional[str] = None
+    base_url: Optional[str] = None
+    owner: Optional[str] = None
+
+
+class InitRequest(BaseModel):
+    type: str
+    stack: Optional[str] = None
+    template: Optional[str] = None
+    name: str
+    description: str = ""
+    package_name: Optional[str] = None
+    github_owner: Optional[str] = None
+    ci: Optional[str] = None
+    cloud: Optional[str] = None
+    git_init: bool = True
+    push: bool = False
+    private: bool = False
+    credentials: Optional[SourceCredentials] = None
+
+
+class InitResult(BaseModel):
+    id: str
+    name: str
+    path: str
+    url: str
+    template: str
+    cloud: Optional[str] = None
+    pushed: bool
+
+
+class PushRequest(BaseModel):
+    private: bool = False
+    credentials: Optional[SourceCredentials] = None
+
+
+class PushResult(BaseModel):
+    id: str
+    url: str

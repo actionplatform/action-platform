@@ -10,6 +10,7 @@ from action_platform.cli.commands import init as init_cmd
 from action_platform.cli.commands import mcp as mcp_cmd
 from action_platform.cli.commands import pr as pr_cmd
 from action_platform.cli.commands import install as install_cmd
+from action_platform.cli.commands import login as login_cmd
 from action_platform.cli.commands import release as release_cmd
 from action_platform.cli.commands import service as service_cmd
 from action_platform.cli.commands import api as api_cmd
@@ -33,5 +34,8 @@ app.command("diagnose")(deploy_cmd.diagnose)
 app.command("destroy")(deploy_cmd.destroy)
 app.command("mcp")(mcp_cmd.run)
 app.command("api")(api_cmd.run)
+app.command("login")(login_cmd.login)
+app.command("logout")(login_cmd.logout)
+app.command("whoami")(login_cmd.whoami)
 app.add_typer(cloud_cmd.app, name="cloud")
 app.add_typer(service_cmd.app, name="service")
