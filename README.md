@@ -99,6 +99,29 @@ target = "aws/lambda"
 postgres = "aws-rds"
 ```
 
+## Use it from an AI client
+
+The platform ships as an MCP server. Claude Code, Codex, Cursor — anything that speaks MCP — gets `list_matrix`, `init_project`, `cloud_set`, `service_add`, `release`, `deploy`, `diagnose` as tools, plus skills that make the agent preview and ask before pushing or deploying.
+
+```bash
+pip install "action-platform[mcp]"
+action-platform mcp                 # stdio
+action-platform mcp --http          # http://127.0.0.1:8765/mcp
+```
+
+Claude Code:
+
+```bash
+/plugin marketplace add actionplatform/action-platform
+/plugin install action-platform@action-platform
+```
+
+Any client — add to `.mcp.json`:
+
+```json
+{ "mcpServers": { "action-platform": { "command": "uvx", "args": ["--from", "action-platform[mcp]", "action-platform-mcp"] } } }
+```
+
 ## Extend it
 
 Deploy targets are plugins. Implement the `DeployTarget` contract — `preflight`, `create`, `deploy`, `switch_traffic`, `rollback`, `diagnose`, `delete` — publish it under the `action_platform.deploy_target` entry-point group, and `action-platform deploy` finds it by name.
