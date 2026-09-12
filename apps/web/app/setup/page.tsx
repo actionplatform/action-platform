@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { publicOrigin } from "@/lib/origin";
 import { redirect } from "next/navigation";
 import { appFor, isConfigured } from "@/lib/oauth";
 import { setupStatus } from "@/lib/setup";
@@ -12,7 +13,7 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
   const query = await searchParams;
 
   const h = await headers();
-  const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
+  const origin = publicOrigin(h);
 
   const initialStep = !status.dbOk ? 1 : !status.hasUser ? 2 : query.org ? 4 : 3;
 

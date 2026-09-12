@@ -6,6 +6,7 @@ import { API_BASE, api } from "@/lib/api";
 import { membersOf } from "@/lib/orgs";
 import { requireOrg } from "@/lib/session";
 import { headers } from "next/headers";
+import { publicOrigin } from "@/lib/origin";
 import { ConnectHosts } from "@/components/connect-hosts";
 import { appFor, isConfigured } from "@/lib/oauth";
 import { hostsOf } from "@/lib/source-hosts";
@@ -15,7 +16,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const { org } = await requireOrg();
   const [members, hosts, query] = await Promise.all([membersOf(org.id), hostsOf(org.id), searchParams]);
   const h = await headers();
-  const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
+  const origin = publicOrigin(h);
   const connected = { github: [] as string[], gitlab: [] as string[], bitbucket: [] as string[] };
   for (const host of hosts) if (host.authKind === "oauth" && host.login && host.kind in connected) connected[host.kind as keyof typeof connected].push(host.login);
   let version: string | null = null;
