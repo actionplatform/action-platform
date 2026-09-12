@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.1 — 2026-09-12
+
+### Docs
+- absolute cover image URL so it renders on PyPI
+
 ## v0.1.0 — 2026-09-12
 
 ### Features
