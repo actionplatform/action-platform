@@ -12,6 +12,7 @@ from action_platform.cli.commands import pr as pr_cmd
 from action_platform.cli.commands import install as install_cmd
 from action_platform.cli.commands import release as release_cmd
 from action_platform.cli.commands import service as service_cmd
+from action_platform.cli.commands import api as api_cmd
 
 app = typer.Typer(
     name="action-platform",
@@ -31,5 +32,6 @@ app.command("rollback")(deploy_cmd.rollback)
 app.command("diagnose")(deploy_cmd.diagnose)
 app.command("destroy")(deploy_cmd.destroy)
 app.command("mcp")(mcp_cmd.run)
+app.command("api")(api_cmd.run)
 app.add_typer(cloud_cmd.app, name="cloud")
 app.add_typer(service_cmd.app, name="service")
