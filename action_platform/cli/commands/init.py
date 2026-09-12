@@ -2,67 +2,110 @@
 
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
 import typer
+from rich.console import Console
+from rich.table import Table
 
+from action_platform.core.exception import TemplateError
+from action_platform.core.templates import Leaf, Matrix, load_matrix
 from action_platform.logging import logger
 
-TEMPLATES = Path(__file__).parents[2] / "templates"
+CI_PROVIDERS = ["github", "gitlab", "bitbucket", "jenkins"]
+
+console = Console()
 
 
 def run(
-    language: str = typer.Argument(..., help="Target stack (python, go, node, ...)"),
-    force: bool = typer.Option(False, "--force", help="Overwrite existing files"),
+    type_: str | None = typer.Argument(
+        None, metavar="TYPE", help="web, library, mcp, ..."
+    ),
+    stack: str | None = typer.Argument(None, help="python, go, android, ..."),
+    template: str | None = typer.Argument(
+        None, help="fastapi, gin, ... (default per stack)"
+    ),
+    name: str | None = typer.Option(None, "--name", "-n", help="Project name"),
+    ci: str | None = typer.Option(
+        None, "--ci", help="CI provider: " + ", ".join(CI_PROVIDERS)
+    ),
+    output: Path | None = typer.Option(
+        None, "--output", "-o", help="Where to create the project"
+    ),
+    list_: bool = typer.Option(False, "--list", "-l", help="Show the template matrix"),
+    update: bool = typer.Option(False, "--update", help="Refresh the templates cache"),
 ) -> None:
-    """Bootstrap .code_quality/ and platform.toml."""
-    cwd = Path.cwd()
-    src = TEMPLATES / "code_quality" / language
-    if not src.exists():
-        raise typer.BadParameter(f"unknown language: {language}")
+    """Bootstrap a project from the templates matrix."""
+    repo, matrix = load_matrix(update=update)
 
-    dst_cq = cwd / ".code_quality"
-    _copy_tree(src, dst_cq, force=force)
-    logger.info("wrote %s", dst_cq)
-
-    toml = cwd / "platform.toml"
-    if not toml.exists() or force:
-        toml.write_text(_render_config(language, cwd.name))
-        logger.info("wrote %s", toml)
-
-    last = cwd / "LAST_VERSION"
-    if not last.exists():
-        last.write_text("0.1.0\n")
-        logger.info("wrote %s", last)
-
-
-def _copy_tree(src: Path, dst: Path, force: bool) -> None:
-    dst.mkdir(parents=True, exist_ok=True)
-    for item in src.rglob("*"):
-        if item.is_dir():
-            continue
-        rel = item.relative_to(src)
-        _copy_file(item, dst / rel, force=force)
-
-
-def _copy_file(src: Path, dst: Path, force: bool) -> None:
-    if dst.exists() and not force:
-        logger.warning("skip %s (exists)", dst)
+    if list_:
+        _print_matrix(matrix)
         return
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src, dst)
+
+    if type_ is None:
+        type_ = _choose("type", matrix.types())
+    if stack is None and matrix.stacks(type_):
+        stack = _choose("stack", matrix.stacks(type_))
+    if template is None and stack is not None:
+        leaves = matrix.templates(type_, stack)
+        if len(leaves) > 1:
+            template = _choose("template", [leaf.template for leaf in leaves])
+
+    leaf = matrix.resolve(type_, stack, template)
+
+    if name is None:
+        name = typer.prompt("project name")
+    if ci is None and leaf.type != "empty":
+        ci = _choose("ci", CI_PROVIDERS)
+    if ci is not None and ci not in CI_PROVIDERS:
+        raise TemplateError(f"unknown ci: {ci} (available: {', '.join(CI_PROVIDERS)})")
+
+    path = _generate(repo, leaf, name=name, ci=ci, output=output or Path.cwd())
+    logger.info("created %s", path)
 
 
-def _render_config(language: str, name: str) -> str:
-    return (
-        f'[project]\n'
-        f'name = "{name}"\n'
-        f'language = "{language}"\n\n'
-        f'[source_host]\n'
-        f'kind = "github"\n'
-        f'repo = "owner/{name}"\n\n'
-        f'[release]\n'
-        f'strategy = "semver"\n'
-        f'changelog = "conventional"\n'
-    )
+def _generate(repo: Path, leaf: Leaf, name: str, ci: str | None, output: Path) -> Path:
+    from cookiecutter.exceptions import CookiecutterException
+    from cookiecutter.main import cookiecutter
+
+    extra = {"project_name": name}
+    if ci is not None:
+        extra["ci"] = ci
+    try:
+        return Path(
+            cookiecutter(
+                str(repo),
+                directory=leaf.directory,
+                no_input=True,
+                extra_context=extra,
+                output_dir=str(output),
+            )
+        )
+    except CookiecutterException as e:
+        raise TemplateError(str(e)) from e
+
+
+def _choose(label: str, options: list[str]) -> str:
+    console.print(f"[bold]{label}[/bold]")
+    for i, opt in enumerate(options, 1):
+        console.print(f"  {i}. {opt}")
+    while True:
+        raw = typer.prompt(f"{label} [1-{len(options)}]")
+        if raw in options:
+            return raw
+        if raw.isdigit() and 1 <= int(raw) <= len(options):
+            return options[int(raw) - 1]
+        console.print("[red]invalid choice[/red]")
+
+
+def _print_matrix(matrix: Matrix) -> None:
+    table = Table(title="Templates")
+    table.add_column("type")
+    table.add_column("stack")
+    table.add_column("template")
+    table.add_column("description")
+    for leaf in matrix.leaves:
+        tpl = f"{leaf.template} *" if leaf.default else leaf.template
+        table.add_row(leaf.type, leaf.stack, tpl, leaf.description)
+    console.print(table)
+    console.print("[dim]* default template for the stack[/dim]")
