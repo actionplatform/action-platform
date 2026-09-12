@@ -1,0 +1,146 @@
+import { notFound } from "next/navigation";
+import { ApiOffline } from "@/components/api-offline";
+import { PageHeader } from "@/components/layout/page";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, Td, Th } from "@/components/ui/table";
+import { api, ApiError } from "@/lib/api";
+import { DeployPanel } from "./deploy-panel";
+import { ReleasePanel } from "./release-panel";
+
+export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
+  let data;
+  try {
+    const [project, gitflow, commits, branches, tags] = await Promise.all([
+      api.projects.get(id),
+      api.projects.gitflow(id),
+      api.projects.commits(id, 15),
+      api.projects.branches(id),
+      api.projects.tags(id),
+    ]);
+    data = { project, gitflow, commits, branches, tags };
+  } catch (e) {
+    if (e instanceof ApiError && (e.status === 400 || e.status === 410)) notFound();
+    return <ApiOffline error={e} />;
+  }
+
+  const { project, gitflow, commits, branches, tags } = data;
+  const meta = project.project;
+
+  return (
+    <>
+      <PageHeader
+        title={meta.name || id}
+        description={project.path}
+        actions={
+          <div className="flex gap-2">
+            <Badge>{meta.type ?? "?"}</Badge>
+            <Badge>{meta.language ?? "?"}</Badge>
+            {meta.ci && <Badge>ci: {meta.ci}</Badge>}
+          </div>
+        }
+      />
+
+      <div className="grid gap-4 md:grid-cols-4 mb-6">
+        <Stat label="branch" value={<code className="font-mono">{project.branch}</code>} />
+        <Stat label="LAST_VERSION" value={project.last_version ?? "—"} />
+        <Stat label="latest tag" value={project.latest_tag ?? "—"} />
+        <Stat label="working tree" value={<Badge tone={project.clean ? "ok" : "bad"}>{project.clean ? "clean" : "dirty"}</Badge>} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Git-flow</CardTitle>
+            <Badge tone={gitflow.ok ? "ok" : "bad"}>{gitflow.ok ? "ok" : `${gitflow.problems.length} problem(s)`}</Badge>
+          </CardHeader>
+          <CardContent className="text-sm">
+            <div className="text-muted-foreground mb-2">{gitflow.checked_commits} commits checked on <code className="font-mono">{gitflow.branch}</code></div>
+            {gitflow.problems.length > 0 && (
+              <ul className="list-disc pl-5 space-y-1 text-destructive">
+                {gitflow.problems.map((p) => <li key={p}>{p}</li>)}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>Source & deploy</CardTitle></CardHeader>
+          <CardContent className="text-sm space-y-1">
+            <Row k="source_host" v={project.source_host.kind ? `${project.source_host.kind} · ${project.source_host.repo}` : "—"} />
+            <Row k="release" v={project.release.strategy ? `${project.release.strategy} · ${project.release.changelog}` : "—"} />
+            <Row k="deploy" v={Object.keys(project.deploy).length ? JSON.stringify(project.deploy) : "none"} />
+            <Row k="services" v={Object.keys(project.services).length ? Object.keys(project.services).join(", ") : "none"} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2 mb-6">
+        <ReleasePanel id={id} branch={project.branch} />
+        <DeployPanel id={id} hasTarget={Object.keys(project.deploy).length > 0} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3 mb-6">
+        <Card className="lg:col-span-2">
+          <CardHeader><CardTitle>Commits</CardTitle></CardHeader>
+          <Table>
+            <tbody>
+              {commits.map((c) => (
+                <tr key={c.sha}>
+                  <Td className="font-mono text-xs text-muted-foreground w-20">{c.sha}</Td>
+                  <Td>{c.subject}</Td>
+                  <Td className="text-muted-foreground text-xs whitespace-nowrap">{c.date}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Card>
+
+        <div className="space-y-4">
+          <Card>
+            <CardHeader><CardTitle>Branches</CardTitle></CardHeader>
+            <Table>
+              <tbody>
+                {branches.map((b) => (
+                  <tr key={b.name}>
+                    <Td className="font-mono text-xs">{b.name}</Td>
+                    <Td className="text-right">
+                      {b.protected ? <Badge>protected</Badge> : b.problem ? <Badge tone="bad">not git-flow</Badge> : <Badge tone="ok">{b.kind}</Badge>}
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle>Tags</CardTitle></CardHeader>
+            <CardContent className="flex flex-wrap gap-1">
+              {tags.length === 0 && <span className="text-sm text-muted-foreground">none</span>}
+              {tags.slice(0, 12).map((t) => <Badge key={t} className="font-mono">{t}</Badge>)}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <Card className="p-4">
+      <div className="text-xs text-muted-foreground mb-1">{label}</div>
+      <div className="text-sm">{value}</div>
+    </Card>
+  );
+}
+
+function Row({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="flex gap-3">
+      <span className="w-24 shrink-0 text-muted-foreground">{k}</span>
+      <span className="font-mono text-xs break-all">{v}</span>
+    </div>
+  );
+}
