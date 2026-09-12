@@ -27,6 +27,24 @@ def build_context(
     )
 
 
+def _next_version(current: str, level: str, prerelease: bool, repo_root: Path) -> str:
+    """Stable: plain bump. Pre-release: bump the stable base (or keep it when already on an rc) and add -rc.N."""
+    base = versioning.strip_pre(current)
+    _, _, _, pre = versioning.parse(current)
+
+    if not prerelease:
+        return versioning.bump(base, level)
+
+    if versioning.SEMVER_RE.match(level):
+        target = versioning.strip_pre(level)
+    elif pre:
+        target = base
+    else:
+        target = versioning.bump(base, level)
+
+    return versioning.next_rc(target, git.tags(cwd=repo_root))
+
+
 def _targets(config: Config, target_name: str | None):
     targets = (
         config.deploy
@@ -44,15 +62,35 @@ def _targets(config: Config, target_name: str | None):
 
 
 def release(
-    config: Config, level: str, repo_root: Path, dry_run: bool = False
+    config: Config,
+    level: str,
+    repo_root: Path,
+    dry_run: bool = False,
+    prerelease: bool | None = None,
 ) -> Context:
     ctx = build_context(config, repo_root, dry_run=dry_run)
 
     if not git.is_clean(cwd=repo_root):
         raise ReleaseError("working tree is dirty")
 
-    ctx.next_version = versioning.bump(ctx.current_version, level)
-    logger.info("bump %s -> %s", ctx.current_version, ctx.next_version)
+    if prerelease is None:
+        prerelease = ctx.branch not in {"main", "master"}
+
+    ctx.next_version = _next_version(ctx.current_version, level, prerelease, repo_root)
+    tag = f"v{ctx.next_version}"
+
+    if ctx.next_version == ctx.current_version:
+        raise ReleaseError(f"{ctx.current_version} is already the current version")
+
+    if tag in git.tags(cwd=repo_root) or git.remote_tag_exists(tag, cwd=repo_root):
+        raise ReleaseError(f"tag {tag} already exists")
+
+    logger.info(
+        "bump %s -> %s%s",
+        ctx.current_version,
+        ctx.next_version,
+        " (pre-release)" if prerelease else "",
+    )
 
     commits = git.commits_since(git.latest_tag(cwd=repo_root), cwd=repo_root)
     ctx.changelog = changelog.render(ctx.next_version, commits)
@@ -65,8 +103,6 @@ def release(
     changelog.prepend(repo_root / settings.CHANGELOG_FILE, ctx.changelog)
     synced = versioning.sync_files(repo_root, ctx.next_version)
 
-    tag = f"v{ctx.next_version}"
-
     git.add(
         [settings.LAST_VERSION_FILE, settings.CHANGELOG_FILE, *synced], cwd=repo_root
     )
@@ -76,7 +112,9 @@ def release(
     git.push_tag(tag, cwd=repo_root)
 
     if config.source_host:
-        config.source_host.create_release(ctx, tag=tag, notes=ctx.changelog)
+        config.source_host.create_release(
+            ctx, tag=tag, notes=ctx.changelog, prerelease=prerelease
+        )
 
     for runner in config.ci:
         run = runner.trigger(

@@ -96,3 +96,20 @@ def add_remote(url: str, cwd: Path, remote: str = "origin") -> None:
 
 def push_upstream(branch: str, cwd: Path, remote: str = "origin") -> None:
     run(["push", "-u", remote, branch], cwd=cwd)
+
+
+def tags(cwd: Path | None = None) -> list[str]:
+    out = run(["tag", "--list"], cwd=cwd)
+
+    return [t for t in out.split("\n") if t]
+
+
+def remote_tag_exists(
+    tag: str, cwd: Path | None = None, remote: str = "origin"
+) -> bool:
+    try:
+        out = run(["ls-remote", "--tags", remote, tag], cwd=cwd)
+    except subprocess.CalledProcessError:
+        return False
+
+    return bool(out.strip())

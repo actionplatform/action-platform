@@ -34,8 +34,15 @@ class ActionPlatform:
         self.config = config or Config()
         self.repo_root = repo_root or Path.cwd()
 
-    def release(self, level: str = "patch", dry_run: bool = False) -> Context:
-        return pipeline.release(self.config, level, self.repo_root, dry_run=dry_run)
+    def release(
+        self,
+        level: str = "patch",
+        dry_run: bool = False,
+        prerelease: bool | None = None,
+    ) -> Context:
+        return pipeline.release(
+            self.config, level, self.repo_root, dry_run=dry_run, prerelease=prerelease
+        )
 
     def deploy(
         self, target: str | None = None, dry_run: bool = False, stage: str | None = None

@@ -35,6 +35,24 @@ def bump(version: str, level: str) -> str:
     return level
 
 
+def strip_pre(version: str) -> str:
+    major, minor, patch, _ = parse(version)
+
+    return format(major, minor, patch)
+
+
+def next_rc(base: str, existing_tags: list[str]) -> str:
+    """`base` plus the next -rc.N not yet tagged."""
+    prefix = f"v{base}-rc."
+    taken = [
+        int(t[len(prefix) :])
+        for t in existing_tags
+        if t.startswith(prefix) and t[len(prefix) :].isdigit()
+    ]
+
+    return f"{base}-rc.{max(taken, default=0) + 1}"
+
+
 def read(path: Path) -> str:
     return path.read_text().strip() if path.exists() else "0.0.0"
 
