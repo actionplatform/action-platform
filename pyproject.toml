@@ -5,7 +5,7 @@ authors = [
   { name="Fernando Celmer", email="email@fernandocelmer.com" },
 ]
 license = {file = "LICENSE"}
-description = "From idea to production in one command: scaffold, CI, release and deploy on any stack and cloud, with git-flow and Conventional Commits enforced and an MCP server for AI agents."
+description = "Scaffold, release and deploy on any stack and cloud — one CLI, git-flow enforced, MCP for AI agents."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -72,7 +72,7 @@ mcp = ["mcp>=2.0"]
 [tool.poetry]
 name = "action-platform"
 version = "0.1.2"
-description = "From idea to production in one command: scaffold, CI, release and deploy on any stack and cloud, with git-flow and Conventional Commits enforced and an MCP server for AI agents."
+description = "Scaffold, release and deploy on any stack and cloud — one CLI, git-flow enforced, MCP for AI agents."
 authors = ["Fernando Celmer <email@fernandocelmer.com>"]
 readme = "README.md"
 license = "Apache-2.0"
