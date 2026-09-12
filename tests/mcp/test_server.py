@@ -20,6 +20,10 @@ def test_tools_exposed(server):
         "deploy",
         "rollback",
         "diagnose",
+        "gitflow_rules",
+        "start_branch",
+        "gitflow_audit",
+        "install_hooks",
     }
 
 
@@ -50,6 +54,14 @@ def test_project_info(server, tmp_path: Path):
 
     assert data["type"] == "web"
     assert data["github_owner"] == "acme"
+
+
+def test_gitflow_rules(server):
+    rules = call(server, "gitflow_rules")
+
+    assert "feature" in rules["kinds"]
+    assert rules["protected"] == ["develop", "main", "master"]
+    assert "hotfix" in rules["base"]["default branch (main/master)"]
 
 
 def test_instructions_warn_before_reaching_out(server):
