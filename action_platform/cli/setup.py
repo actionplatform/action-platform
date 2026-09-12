@@ -5,6 +5,7 @@ import typer
 from action_platform.cli.commands import cloud as cloud_cmd
 from action_platform.cli.commands import deploy as deploy_cmd
 from action_platform.cli.commands import init as init_cmd
+from action_platform.cli.commands import mcp as mcp_cmd
 from action_platform.cli.commands import release as release_cmd
 from action_platform.cli.commands import service as service_cmd
 
@@ -21,5 +22,6 @@ app.command("deploy")(deploy_cmd.run)
 app.command("rollback")(deploy_cmd.rollback)
 app.command("diagnose")(deploy_cmd.diagnose)
 app.command("destroy")(deploy_cmd.destroy)
+app.command("mcp")(mcp_cmd.run)
 app.add_typer(cloud_cmd.app, name="cloud")
 app.add_typer(service_cmd.app, name="service")
