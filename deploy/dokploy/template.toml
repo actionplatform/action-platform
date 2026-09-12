@@ -1,0 +1,18 @@
+# Dokploy template: secrets and domain are generated on import, nothing to type.
+# Import: compose service → Advanced → Import Template → paste deploy/dokploy/template.b64
+
+[variables]
+main_domain = "${domain}"
+postgres_password = "${password:32}"
+auth_secret = "${password:64}"
+
+[config]
+[[config.domains]]
+serviceName = "web"
+port = 3000
+host = "${main_domain}"
+
+[config.env]
+PUBLIC_URL = "https://${main_domain}"
+POSTGRES_PASSWORD = "${postgres_password}"
+BETTER_AUTH_SECRET = "${auth_secret}"
