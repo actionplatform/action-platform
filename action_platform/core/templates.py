@@ -224,9 +224,14 @@ def ensure_repo(update: bool = False) -> Path:
         logger.info("cloning %s", settings.TEMPLATES_REPO)
         cache.parent.mkdir(parents=True, exist_ok=True)
         _git("clone", "--depth", "1", settings.TEMPLATES_REPO, str(cache))
-    elif update:
-        logger.info("updating templates")
+        return cache
+
+    try:
         _git("-C", str(cache), "pull", "--ff-only", "--quiet")
+    except TemplateError as e:
+        if update:
+            raise
+        logger.warning("templates cache not refreshed (%s); using local copy", e)
 
     return cache
 
