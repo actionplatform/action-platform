@@ -233,8 +233,20 @@ def ensure_repo(update: bool = False) -> Path:
 
 def load_matrix(update: bool = False) -> tuple[Path, Matrix]:
     repo = ensure_repo(update=update)
+    matrix = Matrix.from_toml(repo / "index.toml")
 
-    return repo, Matrix.from_toml(repo / "index.toml")
+    if not matrix.leaves and not update and settings.TEMPLATES_DIR is None:
+        logger.info("templates cache has no projects, refreshing")
+        repo = ensure_repo(update=True)
+        matrix = Matrix.from_toml(repo / "index.toml")
+
+    if not matrix.leaves:
+        raise TemplateError(
+            f"no projects in {repo / 'index.toml'} — run with --update "
+            "or check ACTION_PLATFORM_TEMPLATES"
+        )
+
+    return repo, matrix
 
 
 def _git(*args: str) -> None:
