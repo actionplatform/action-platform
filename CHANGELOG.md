@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.2.0 — 2026-09-12
+
+### Features
+- **mcp:** prompts for new service, ship feature, release, deploy, adopt, fix git-flow; rc in gitflow_rules
+- **release:** refuse existing tags before writing; rc pre-releases off main/master
+- **install:** record ci in platform.toml and default to it
+- **release:** sync version into pyproject, package.json and __version__
+
+### Docs
+- git-flow diagram and rules, MCP prompts
+- **skills:** rc releases in start-branch and open-pull-request
+- **release:** rc behaviour in tool, skill and README
+- ci in platform.toml
+- tagline — your platform team, as a CLI
+- **pyproject:** shorter description
+
+### Tests
+- **mcp:** prompts order tools and stop before irreversible steps
+- **release:** stable on main, rc increments, tag guard, same-version guard
+- **install:** ci written and read from platform.toml
+
+### Chores
+- **platform:** align pyproject and __version__ with LAST_VERSION 0.1.2
+
 ## v0.1.2 — 2026-09-12
 
 ### CI
