@@ -14,6 +14,13 @@ def main() -> None:
     except ActionPlatformError as e:
         Console(stderr=True).print(f"[red]error:[/red] {e}")
         sys.exit(1)
+    except FileNotFoundError as e:
+        if e.filename is None:
+            Console(stderr=True).print(
+                "[red]error:[/red] current directory no longer exists — cd somewhere real"
+            )
+            sys.exit(1)
+        raise
 
 
 if __name__ == "__main__":
