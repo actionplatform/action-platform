@@ -1,4 +1,3 @@
-// better-auth core tables, mysql dialect. Keep in sync with pg.ts and sqlite.ts.
 import { boolean, int, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 export const user = mysqlTable("user", {
@@ -48,7 +47,6 @@ export const verification = mysqlTable("verification", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// better-auth deviceAuthorization plugin: CLI/MCP login through the browser.
 export const deviceCode = mysqlTable("device_code", {
   id: varchar("id", { length: 36 }).primaryKey(),
   deviceCode: varchar("device_code", { length: 255 }).notNull(),
@@ -62,7 +60,6 @@ export const deviceCode = mysqlTable("device_code", {
   scope: text("scope"),
 });
 
-// better-auth organization plugin: the tenant, its members and invitations.
 export const organization = mysqlTable("organization", {
   id: varchar("id", { length: 36 }).primaryKey(),
   name: text("name").notNull(),
@@ -91,8 +88,6 @@ export const invitation = mysqlTable("invitation", {
   inviterId: varchar("inviter_id", { length: 36 }).notNull().references(() => user.id, { onDelete: "cascade" }),
 });
 
-// Organization › Project › App. A project groups apps; an app is one git
-// repository the Python API manages (registry id in `registryId`).
 export const project = mysqlTable("project", {
   id: varchar("id", { length: 36 }).primaryKey(),
   organizationId: varchar("organization_id", { length: 36 }).notNull().references(() => organization.id, { onDelete: "cascade" }),
@@ -111,8 +106,6 @@ export const app = mysqlTable("app", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Code hosts an organization can push to: GitHub, GitLab, Bitbucket or any
-// git server. The token is encrypted with the app secret before it is stored.
 export const sourceHost = mysqlTable("source_host", {
   id: varchar("id", { length: 36 }).primaryKey(),
   organizationId: varchar("organization_id", { length: 36 }).notNull().references(() => organization.id, { onDelete: "cascade" }),

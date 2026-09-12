@@ -52,8 +52,6 @@ class SourceGithub(SourceHost):
                 "no GitHub token and no gh CLI: set ACTION_PLATFORM_GITHUB_TOKEN or install https://cli.github.com"
             )
 
-    # -- transport -----------------------------------------------------------
-
     def _rest(self, method: str, path: str, body: dict | None = None):
         return rest.call(
             method,
@@ -77,8 +75,6 @@ class SourceGithub(SourceHost):
 
         return result.stdout.strip()
 
-    # -- SourceHost ----------------------------------------------------------
-
     def detect(self, remote_url: str) -> bool:
         return "github.com" in remote_url or self.web in remote_url
 
@@ -95,7 +91,6 @@ class SourceGithub(SourceHost):
             try:
                 self._rest("POST", path, body)
             except ProviderError as e:
-                # A retry after a failed push: the repository is already there.
                 if "already exists" not in str(e):
                     raise
 

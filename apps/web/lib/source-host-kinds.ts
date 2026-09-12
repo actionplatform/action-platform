@@ -1,4 +1,3 @@
-// Shared by server and client: no node imports here.
 export const HOST_KINDS = [
   { id: "github", label: "GitHub", tokenLabel: "Personal access token", tokenHint: "Classic: repo + workflow. Fine-grained: Contents, Workflows and Administration (write).", baseUrlHint: "Leave empty for github.com; GitHub Enterprise: https://ghe.example.com/api/v3", needsUsername: false },
   { id: "gitlab", label: "GitLab", tokenLabel: "Access token", tokenHint: "Scopes: api, write_repository.", baseUrlHint: "Leave empty for gitlab.com; self-hosted: https://gitlab.example.com", needsUsername: false },

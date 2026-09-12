@@ -97,7 +97,6 @@ class Remote:
 
         return _request(method, url, body, self.token)
 
-    # apps
     def apps(self) -> list[dict]:
         return self._call("GET", "apps")
 
@@ -140,7 +139,6 @@ class Remote:
     def diagnose(self, id: str, stage: Optional[str] = None) -> list[dict]:
         return self._call("GET", f"apps/{id}/diagnose", stage=stage)
 
-    # static
     def matrix(self) -> dict:
         return self._call("GET", "matrix")
 

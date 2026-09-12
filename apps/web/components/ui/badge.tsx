@@ -1,7 +1,6 @@
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-// Monochrome: "ok" and "bad" differ by weight and inversion, never by hue.
 type Props = HTMLAttributes<HTMLSpanElement> & { tone?: "neutral" | "ok" | "bad" | "inverse" };
 
 export function Badge({ className, tone = "neutral", ...props }: Props) {

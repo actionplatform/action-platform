@@ -5,8 +5,6 @@ import { type ReactNode, useEffect, useId, useState } from "react";
 import { Button } from "./button";
 import { Field, Input } from "./input";
 
-// The app's only modal. Native confirm/prompt/alert are never used: they
-// fall outside the theme and cannot show context.
 export function Dialog({ open, onClose, title, description, children, footer, className }: {
   open: boolean;
   onClose: () => void;
@@ -44,7 +42,6 @@ export function Dialog({ open, onClose, title, description, children, footer, cl
   );
 }
 
-// Yes / no. `danger` only changes the wording weight — still monochrome.
 export function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLabel = "Confirm", cancelLabel = "Cancel", pending, danger, children }: {
   open: boolean;
   onClose: () => void;
@@ -75,7 +72,6 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, description, co
   );
 }
 
-// One value in, e.g. a new token.
 export function PromptDialog({ open, onClose, onSubmit, title, description, label, hint, placeholder, type = "text", submitLabel = "Save", pending, error }: {
   open: boolean;
   onClose: () => void;

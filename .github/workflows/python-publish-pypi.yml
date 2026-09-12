@@ -8,8 +8,6 @@ permissions:
   contents: read
   id-token: write
 
-# Only the repository release (tag vX.Y.Z) is the PyPI package; component
-# releases (web/v…, api/v…) build images instead — see images.yml.
 jobs:
   build:
     if: ${{ !contains(github.event.release.tag_name, '/') }}

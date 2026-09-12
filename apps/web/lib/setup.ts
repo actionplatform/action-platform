@@ -23,9 +23,6 @@ export async function setupStatus(): Promise<SetupStatus> {
     return { ...NONE, configured: true, error: "The saved database is unreachable. Check the connection settings." };
   }
 
-  // Pending migrations (first run, or a newer app over an older database)
-  // are applied here, once per process. drizzle's migrator is a no-op when
-  // nothing is pending.
   await migrateOnce();
 
   const hasUser = await countUsers();
@@ -36,9 +33,6 @@ export async function setupStatus(): Promise<SetupStatus> {
 let migrated: string | null = null;
 let inFlight: Promise<void> | null = null;
 
-// Concurrent first requests must not each run the migrator: two
-// `CREATE TABLE IF NOT EXISTS` at once fail on Postgres. One promise per
-// process, and a database-level advisory lock across processes.
 async function migrateOnce(): Promise<void> {
   const url = readConfig().databaseUrl!;
   if (migrated === url) return;
@@ -98,7 +92,6 @@ async function countOrgs(): Promise<boolean> {
 
 async function countUsers(): Promise<boolean> {
   const conn = await getConnection();
-  // Same query on every engine; the switch only narrows the types.
   const rows =
     conn.engine === "pg"
       ? await conn.db.select({ n: count() }).from(conn.schema.user)

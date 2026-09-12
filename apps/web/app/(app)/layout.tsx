@@ -12,7 +12,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   try {
     version = (await api.version()).version;
   } catch {
-    // API offline: the pages say so themselves.
   }
 
   return (

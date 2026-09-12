@@ -1,6 +1,3 @@
-// Typed client over the Python API. Types come from lib/api.d.ts, generated
-// with `npm run api:types` while `action-platform api` is running — the
-// Python side is the contract, the same way tRPC would be in a TS backend.
 import createClient from "openapi-fetch";
 import type { components, paths } from "./api.d";
 

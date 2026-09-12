@@ -23,12 +23,9 @@ export type ConnectProps = {
   origin: string;
   orgId?: string;
   returnTo: string;
-  // slug of a GitHub App created through the manifest flow; shows the install link
   githubApp?: string | null;
 };
 
-// "Connect with …" for each provider; when the platform has no OAuth app
-// for it yet, a small dialog collects the client id/secret first.
 export function ConnectHosts({ configured, connected, origin, orgId, returnTo, githubApp }: ConnectProps) {
   const [setup, setSetup] = useState<Provider | null>(null);
   const [createGh, setCreateGh] = useState(false);
@@ -84,7 +81,6 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
   );
 }
 
-// Manifest flow: GitHub creates the app for us and hands back its credentials.
 function CreateGitHubAppDialog({ orgId, returnTo, onClose }: { orgId?: string; returnTo: string; onClose: () => void }) {
   const [org, setOrg] = useState("");
   const q = new URLSearchParams({ return: returnTo });

@@ -21,7 +21,6 @@ export async function newProject(_prev: { error?: string } | null, formData: For
   return { error: undefined };
 }
 
-// Removes the project and every app in it, including the platform's clones.
 export async function removeProject(id: string) {
   const { org } = await requireOrg();
   const registryIds = await deleteProject(org.id, id);

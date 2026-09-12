@@ -85,7 +85,6 @@ class SourceGitlab(SourceHost):
         draft: bool = False,
         prerelease: bool = False,
     ) -> ReleaseRef:
-        # GitLab has neither drafts nor pre-releases; the notes carry the flag.
         if prerelease:
             notes = f"_Pre-release_\n\n{notes}"
 

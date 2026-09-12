@@ -10,8 +10,6 @@ import { Wizard } from "./wizard";
 
 type Search = { type?: string; stack?: string; template?: string };
 
-// Entry points: "New app" on a project (step Type) and a template card in
-// the catalog (type/stack/template preselected, opens at Configure).
 export default async function NewAppPage({ params, searchParams }: { params: Promise<{ project: string }>; searchParams: Promise<Search> }) {
   const { project: projectId } = await params;
   const query = await searchParams;

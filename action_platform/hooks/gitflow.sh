@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-# Git-flow rules. Source it for the functions, or run:
-#   gitflow.sh branch <name>              branch name is allowed
-#   gitflow.sh commit-msg <file|message>  message follows Conventional Commits
-#   gitflow.sh target <head> <base>       head may merge into base
-#   gitflow.sh protect <branch>           direct commits on this branch are refused
 set -euo pipefail
 
 AP_KINDS="${AP_KINDS:-feature|bugfix|hotfix|release|support|chore|docs|refactor|test|ci|perf}"

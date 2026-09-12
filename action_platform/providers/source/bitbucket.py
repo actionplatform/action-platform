@@ -84,7 +84,6 @@ class SourceBitbucket(SourceHost):
         draft: bool = False,
         prerelease: bool = False,
     ) -> ReleaseRef:
-        # Bitbucket has no releases; the pushed tag is the release.
         return ReleaseRef(id=tag, tag=tag, url=f"{self.web}/{self.repo}/src/{tag}/")
 
     def open_pr(

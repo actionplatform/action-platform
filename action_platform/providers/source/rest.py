@@ -43,7 +43,6 @@ def call(
         try:
             payload = json.loads(raw)
             detail = payload.get("message") or payload.get("error") or str(payload)
-            # GitHub: {"message": "Repository creation failed.", "errors": [{"message": "name already exists…"}]}
             errors = payload.get("errors")
             if isinstance(errors, list):
                 extra = [

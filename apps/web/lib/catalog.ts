@@ -1,5 +1,3 @@
-// Presentation metadata for the templates matrix: labels, copy and line
-// icons per project type and stack. The matrix itself comes from the API.
 import { BookOpen, Cloud, FileBox, Globe, type LucideIcon, Package, Puzzle, Zap } from "lucide-react";
 import {
   siApachemaven,
@@ -32,7 +30,6 @@ export const TYPES: TypeMeta[] = [
   { id: "empty", label: "Empty project", description: "Minimal platform.toml foundation.", icon: FileBox },
 ];
 
-// Brand shapes from Simple Icons, drawn in currentColor by <BrandIcon>.
 export const STACKS: Record<string, { label: string; brand: SimpleIcon }> = {
   python: { label: "Python", brand: siPython },
   go: { label: "Go", brand: siGo },
@@ -44,8 +41,6 @@ export const STACKS: Record<string, { label: string; brand: SimpleIcon }> = {
   chrome: { label: "Chrome", brand: siGooglechrome },
 };
 
-// Per-template brand when the template is itself a known project (falls
-// back to the stack's brand).
 export const TEMPLATE_BRANDS: Record<string, SimpleIcon> = {
   fastapi: siFastapi,
   fastmcp: siPython,
@@ -61,7 +56,6 @@ export const TEMPLATE_BRANDS: Record<string, SimpleIcon> = {
   vanilla: siGooglechrome,
 };
 
-// AWS marks are not in Simple Icons (trademark policy); line icons instead.
 export const CLOUD_ICONS: Record<string, { lucide?: LucideIcon; brand?: SimpleIcon }> = {
   "aws/lambda": { lucide: Zap },
   "aws/amplify": { lucide: Cloud },
@@ -99,7 +93,6 @@ export function countFor(m: Matrix, type: string, stack?: string): number {
   return m.projects.filter((p) => p.type === type && (stack === undefined || p.stack === stack)).length;
 }
 
-// Catalog filter chips → matrix types.
 export const CATEGORIES: { id: string; label: string; types?: string[]; cloud?: boolean }[] = [
   { id: "all", label: "All" },
   { id: "web", label: "Web", types: ["web"] },

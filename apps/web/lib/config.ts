@@ -1,5 +1,3 @@
-// Runtime configuration written by the setup wizard. Environment variables
-// win when present, so a hosted deploy can skip the wizard entirely.
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -9,7 +7,6 @@ export type OAuthApp = { clientId: string; clientSecret: string; baseUrl?: strin
 export type AppConfig = {
   databaseUrl?: string;
   authSecret?: string;
-  // OAuth apps registered at each provider so members can "Connect with…"
   oauth?: Partial<Record<"github" | "gitlab" | "bitbucket", OAuthApp>>;
 };
 

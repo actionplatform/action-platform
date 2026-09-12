@@ -24,8 +24,6 @@ export async function isMember(userId: string, orgId: string): Promise<boolean> 
   return rows.length > 0;
 }
 
-// The org the sidebar shows: the session's active one when it is still a
-// membership, else the first membership (and the session is pointed at it).
 export async function activeOrg(session: { user: { id: string }; session: { activeOrganizationId?: string | null } }): Promise<Org | null> {
   const orgs = await orgsOf(session.user.id);
   if (orgs.length === 0) return null;
@@ -42,7 +40,6 @@ export async function setActiveOrg(organizationId: string): Promise<void> {
   await auth.api.setActiveOrganization({ headers: await headers(), body: { organizationId } });
 }
 
-// Owner membership is written by better-auth on createOrganization.
 export async function createOrg(name: string, slug?: string): Promise<Org> {
   const auth = await getAuth();
   const org = await auth.api.createOrganization({ headers: await headers(), body: { name, slug: slug || slugify(name) } });

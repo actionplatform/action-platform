@@ -44,7 +44,6 @@ class SourceGeneric(SourceHost):
         draft: bool = False,
         prerelease: bool = False,
     ) -> ReleaseRef:
-        # No release API: the tag that was pushed is the release.
         return ReleaseRef(id=tag, tag=tag, url=f"{self.base_url}#{tag}")
 
     def open_pr(
