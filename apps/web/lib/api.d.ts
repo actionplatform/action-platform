@@ -55,111 +55,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/projects": {
+    "/api/apps": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List Projects */
-        get: operations["list_projects_api_projects_get"];
+        /** List Apps */
+        get: operations["list_apps_api_apps_get"];
         put?: never;
-        /** Add Project */
-        post: operations["add_project_api_projects_post"];
+        /** Add App */
+        post: operations["add_app_api_apps_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/projects/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Project */
-        get: operations["project_api_projects__id__get"];
-        put?: never;
-        post?: never;
-        /** Remove Project */
-        delete: operations["remove_project_api_projects__id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/projects/{id}/gitflow": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Project Gitflow */
-        get: operations["project_gitflow_api_projects__id__gitflow_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/projects/{id}/commits": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Project Commits */
-        get: operations["project_commits_api_projects__id__commits_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/projects/{id}/tags": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Project Tags */
-        get: operations["project_tags_api_projects__id__tags_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/projects/{id}/branches": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Project Branches */
-        get: operations["project_branches_api_projects__id__branches_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/projects/{id}/release": {
+    "/api/apps/init": {
         parameters: {
             query?: never;
             header?: never;
@@ -168,15 +82,21 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Project Release */
-        post: operations["project_release_api_projects__id__release_post"];
+        /**
+         * Init App
+         * @description Generate an app from the matrix into a new workspace and register it.
+         *
+         *     Nothing leaves the server unless `push` is set, which creates the
+         *     remote repository through the template's [source_host].
+         */
+        post: operations["init_app_api_apps_init_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/projects/{id}/deploy": {
+    "/api/apps/{id}/push": {
         parameters: {
             query?: never;
             header?: never;
@@ -185,23 +105,165 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Project Deploy */
-        post: operations["project_deploy_api_projects__id__deploy_post"];
+        /**
+         * Push App
+         * @description Create the remote repository through the app's [source_host] and push main.
+         *
+         *     Needs ACTION_PLATFORM_GITHUB_TOKEN (or GH_TOKEN) in the API's environment.
+         */
+        post: operations["push_app_api_apps__id__push_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/projects/{id}/diagnose": {
+    "/api/apps/{id}/sync": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Project Diagnose */
-        get: operations["project_diagnose_api_projects__id__diagnose_get"];
+        get?: never;
+        put?: never;
+        /** Sync App */
+        post: operations["sync_app_api_apps__id__sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** App Detail */
+        get: operations["app_detail_api_apps__id__get"];
+        put?: never;
+        post?: never;
+        /** Remove App */
+        delete: operations["remove_app_api_apps__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}/gitflow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** App Gitflow */
+        get: operations["app_gitflow_api_apps__id__gitflow_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}/commits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** App Commits */
+        get: operations["app_commits_api_apps__id__commits_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** App Tags */
+        get: operations["app_tags_api_apps__id__tags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}/branches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** App Branches */
+        get: operations["app_branches_api_apps__id__branches_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** App Release */
+        post: operations["app_release_api_apps__id__release_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}/deploy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** App Deploy */
+        post: operations["app_deploy_api_apps__id__deploy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}/diagnose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** App Diagnose */
+        get: operations["app_diagnose_api_apps__id__diagnose_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -214,10 +276,102 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AddProject */
-        AddProject: {
+        /** AddApp */
+        AddApp: {
+            /** Url */
+            url: string;
+            /** Name */
+            name?: string | null;
+        };
+        /** AppDetail */
+        AppDetail: {
+            /** Id */
+            id: string;
+            /** Url */
+            url: string;
+            /**
+             * Default Branch
+             * @default
+             */
+            default_branch: string;
+            project: components["schemas"]["AppMeta"];
+            /** Source Host */
+            source_host: {
+                [key: string]: string;
+            };
+            /** Deploy */
+            deploy: {
+                [key: string]: unknown;
+            };
+            /** Release */
+            release: {
+                [key: string]: string;
+            };
+            /** Services */
+            services: {
+                [key: string]: unknown;
+            };
+            /** Last Version */
+            last_version?: string | null;
+            /** Branch */
+            branch: string;
+            /** Latest Tag */
+            latest_tag?: string | null;
+            /** Clean */
+            clean: boolean;
+        };
+        /** AppEntry */
+        AppEntry: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Url */
+            url: string;
             /** Path */
             path: string;
+            /**
+             * Default Branch
+             * @default
+             */
+            default_branch: string;
+        };
+        /** AppMeta */
+        AppMeta: {
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /** Type */
+            type?: string | null;
+            /** Stack */
+            stack?: string | null;
+            /** Template */
+            template?: string | null;
+            /** Language */
+            language?: string | null;
+            /** Ci */
+            ci?: string | null;
+        };
+        /** AppRow */
+        AppRow: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Url */
+            url: string;
+            /** Exists */
+            exists: boolean;
+            /** Language */
+            language?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Last Version */
+            last_version?: string | null;
+            /** Branch */
+            branch?: string | null;
         };
         /** Branch */
         Branch: {
@@ -314,6 +468,63 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** InitRequest */
+        InitRequest: {
+            /** Type */
+            type: string;
+            /** Stack */
+            stack?: string | null;
+            /** Template */
+            template?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Package Name */
+            package_name?: string | null;
+            /** Github Owner */
+            github_owner?: string | null;
+            /** Ci */
+            ci?: string | null;
+            /** Cloud */
+            cloud?: string | null;
+            /**
+             * Git Init
+             * @default true
+             */
+            git_init: boolean;
+            /**
+             * Push
+             * @default false
+             */
+            push: boolean;
+            /**
+             * Private
+             * @default false
+             */
+            private: boolean;
+            credentials?: components["schemas"]["SourceCredentials"] | null;
+        };
+        /** InitResult */
+        InitResult: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Path */
+            path: string;
+            /** Url */
+            url: string;
+            /** Template */
+            template: string;
+            /** Cloud */
+            cloud?: string | null;
+            /** Pushed */
+            pushed: boolean;
+        };
         /** Matrix */
         Matrix: {
             /** Projects */
@@ -356,83 +567,21 @@ export interface components {
             /** Description */
             description: string;
         };
-        /** ProjectDetail */
-        ProjectDetail: {
-            /** Id */
-            id: string;
-            /** Path */
-            path: string;
-            project: components["schemas"]["ProjectMeta"];
-            /** Source Host */
-            source_host: {
-                [key: string]: string;
-            };
-            /** Deploy */
-            deploy: {
-                [key: string]: unknown;
-            };
-            /** Release */
-            release: {
-                [key: string]: string;
-            };
-            /** Services */
-            services: {
-                [key: string]: unknown;
-            };
-            /** Last Version */
-            last_version?: string | null;
-            /** Branch */
-            branch: string;
-            /** Latest Tag */
-            latest_tag?: string | null;
-            /** Clean */
-            clean: boolean;
-        };
-        /** ProjectEntry */
-        ProjectEntry: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Path */
-            path: string;
-        };
-        /** ProjectMeta */
-        ProjectMeta: {
+        /** PushRequest */
+        PushRequest: {
             /**
-             * Name
-             * @default
+             * Private
+             * @default false
              */
-            name: string;
-            /** Type */
-            type?: string | null;
-            /** Stack */
-            stack?: string | null;
-            /** Template */
-            template?: string | null;
-            /** Language */
-            language?: string | null;
-            /** Ci */
-            ci?: string | null;
+            private: boolean;
+            credentials?: components["schemas"]["SourceCredentials"] | null;
         };
-        /** ProjectRow */
-        ProjectRow: {
+        /** PushResult */
+        PushResult: {
             /** Id */
             id: string;
-            /** Name */
-            name: string;
-            /** Path */
-            path: string;
-            /** Exists */
-            exists: boolean;
-            /** Language */
-            language?: string | null;
-            /** Type */
-            type?: string | null;
-            /** Last Version */
-            last_version?: string | null;
-            /** Branch */
-            branch?: string | null;
+            /** Url */
+            url: string;
         };
         /** ReleasePreview */
         ReleasePreview: {
@@ -457,6 +606,20 @@ export interface components {
              * @default true
              */
             dry_run: boolean;
+            credentials?: components["schemas"]["SourceCredentials"] | null;
+        };
+        /** SourceCredentials */
+        SourceCredentials: {
+            /** Kind */
+            kind: string;
+            /** Token */
+            token: string;
+            /** Username */
+            username?: string | null;
+            /** Base Url */
+            base_url?: string | null;
+            /** Owner */
+            owner?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -545,7 +708,7 @@ export interface operations {
             };
         };
     };
-    list_projects_api_projects_get: {
+    list_apps_api_apps_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -560,12 +723,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectRow"][];
+                    "application/json": components["schemas"]["AppRow"][];
                 };
             };
         };
     };
-    add_project_api_projects_post: {
+    add_app_api_apps_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -574,7 +737,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AddProject"];
+                "application/json": components["schemas"]["AddApp"];
             };
         };
         responses: {
@@ -584,7 +747,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectEntry"];
+                    "application/json": components["schemas"]["AppEntry"];
                 };
             };
             /** @description Validation Error */
@@ -598,7 +761,75 @@ export interface operations {
             };
         };
     };
-    project_api_projects__id__get: {
+    init_app_api_apps_init_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InitResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    push_app_api_apps__id__push_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_app_api_apps__id__sync_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -615,7 +846,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectDetail"];
+                    "application/json": components["schemas"]["AppEntry"];
                 };
             };
             /** @description Validation Error */
@@ -629,7 +860,38 @@ export interface operations {
             };
         };
     };
-    remove_project_api_projects__id__delete: {
+    app_detail_api_apps__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_app_api_apps__id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -658,7 +920,7 @@ export interface operations {
             };
         };
     };
-    project_gitflow_api_projects__id__gitflow_get: {
+    app_gitflow_api_apps__id__gitflow_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -689,7 +951,7 @@ export interface operations {
             };
         };
     };
-    project_commits_api_projects__id__commits_get: {
+    app_commits_api_apps__id__commits_get: {
         parameters: {
             query?: {
                 limit?: number;
@@ -722,7 +984,7 @@ export interface operations {
             };
         };
     };
-    project_tags_api_projects__id__tags_get: {
+    app_tags_api_apps__id__tags_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -753,7 +1015,7 @@ export interface operations {
             };
         };
     };
-    project_branches_api_projects__id__branches_get: {
+    app_branches_api_apps__id__branches_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -784,7 +1046,7 @@ export interface operations {
             };
         };
     };
-    project_release_api_projects__id__release_post: {
+    app_release_api_apps__id__release_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -819,7 +1081,7 @@ export interface operations {
             };
         };
     };
-    project_deploy_api_projects__id__deploy_post: {
+    app_deploy_api_apps__id__deploy_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -854,7 +1116,7 @@ export interface operations {
             };
         };
     };
-    project_diagnose_api_projects__id__diagnose_get: {
+    app_diagnose_api_apps__id__diagnose_get: {
         parameters: {
             query?: {
                 stage?: string | null;

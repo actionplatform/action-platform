@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789241391034,
+      "tag": "0000_slim_wendell_rand",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789241585894,
+      "tag": "0001_lame_bishop",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789243525528,
+      "tag": "0002_quick_the_santerians",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789246086408,
+      "tag": "0003_robust_sir_ram",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789247143631,
+      "tag": "0004_mute_dracula",
+      "breakpoints": true
+    }
+  ]
+}

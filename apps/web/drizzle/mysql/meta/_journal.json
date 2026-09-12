@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1789241394742,
+      "tag": "0000_hard_riptide",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1789241588157,
+      "tag": "0001_strange_spiral",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1789243527339,
+      "tag": "0002_lying_blizzard",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1789246088717,
+      "tag": "0003_ambiguous_impossible_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1789247146361,
+      "tag": "0004_dry_dagger",
+      "breakpoints": true
+    }
+  ]
+}
