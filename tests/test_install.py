@@ -1,0 +1,94 @@
+"""Installing the platform in an existing repo: creates what is missing, keeps what exists."""
+
+from __future__ import annotations
+
+import subprocess
+from pathlib import Path
+
+import pytest
+
+from action_platform.core import install
+from action_platform.core.install import InstallError
+
+
+@pytest.fixture
+def templates(tmp_path: Path, monkeypatch) -> Path:
+    root = tmp_path / "templates"
+    leaf = root / "projects/web/python/fastapi"
+    proj = leaf / "{{cookiecutter.project_slug}}"
+    (leaf).mkdir(parents=True)
+    (leaf / "cookiecutter.json").write_text('{"_language": "python"}')
+    (proj / ".code_quality").mkdir(parents=True)
+    (proj / ".code_quality/ruff.toml").write_text("line-length = 79\n")
+    (proj / ".githooks").mkdir()
+    (proj / ".githooks/pre-commit").write_text("#!/bin/sh\nexit 0\n")
+    (proj / ".github/workflows").mkdir(parents=True)
+    for w in ["code-quality.yml", "gitflow.yml"]:
+        (proj / ".github/workflows" / w).write_text("name: x\n")
+    (proj / ".gitlab-ci.yml").write_text("image: x\n")
+    (root / "index.toml").write_text(
+        '[projects.web.python.fastapi]\ndefault = true\ndescription = "x"\n'
+    )
+    monkeypatch.setattr("action_platform.settings.settings.TEMPLATES_DIR", str(root))
+
+    return root
+
+
+@pytest.fixture
+def repo(tmp_path: Path) -> Path:
+    root = tmp_path / "existing"
+    root.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "master"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "remote", "add", "origin", "git@github.com:acme/existing.git"],
+        cwd=root,
+        check=True,
+    )
+    (root / "pyproject.toml").write_text("[project]\nname = 'x'\n")
+    (root / ".github/workflows").mkdir(parents=True)
+    (root / ".github/workflows/code-quality.yml").write_text("name: theirs\n")
+
+    return root
+
+
+def test_creates_missing_keeps_existing(repo: Path, templates: Path):
+    plan = install.install(repo)
+
+    assert plan.language == "python"
+    assert "platform.toml" in plan.created
+    assert ".githooks/" in plan.created
+    assert ".code_quality/" in plan.created
+    assert ".github/workflows/gitflow.yml" in plan.created
+    assert ".github/workflows/code-quality.yml" in plan.skipped
+    assert (repo / ".github/workflows/code-quality.yml").read_text() == "name: theirs\n"
+    assert 'repo = "acme/existing"' in (repo / "platform.toml").read_text()
+    assert plan.hooks_installed
+    hooks = subprocess.run(
+        ["git", "config", "core.hooksPath"], cwd=repo, capture_output=True, text=True
+    ).stdout.strip()
+    assert hooks == ".githooks"
+
+
+def test_dry_run_writes_nothing(repo: Path, templates: Path):
+    plan = install.install(repo, dry_run=True)
+
+    assert "platform.toml" in plan.created
+    assert not (repo / "platform.toml").exists()
+
+
+def test_gitlab_ci(repo: Path, templates: Path):
+    plan = install.install(repo, ci="gitlab")
+
+    assert ".gitlab-ci.yml" in plan.created
+
+
+def test_errors(tmp_path: Path, templates: Path):
+    with pytest.raises(InstallError, match="not a git repository"):
+        install.install(tmp_path)
+
+    bare = tmp_path / "nolang"
+    bare.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=bare, check=True)
+
+    with pytest.raises(InstallError, match="cannot detect"):
+        install.install(bare)
