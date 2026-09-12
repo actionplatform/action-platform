@@ -20,7 +20,7 @@ def run(
     ci: str = typer.Option("github", "--ci", help="github, gitlab, jenkins"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be created"),
 ) -> None:
-    """Install the platform in this repository: platform.toml, hooks, code quality, CI. Never overwrites."""
+    """Install the platform in this repository: platform.toml, hooks, code quality, CI. Only .githooks/ is refreshed; nothing else is overwritten."""
     plan = installing.install(
         Path.cwd(), type_=type_, language=language, ci=ci, dry_run=dry_run
     )

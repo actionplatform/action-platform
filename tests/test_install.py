@@ -92,3 +92,17 @@ def test_errors(tmp_path: Path, templates: Path):
 
     with pytest.raises(InstallError, match="cannot detect"):
         install.install(bare)
+
+
+def test_hooks_are_refreshed_when_stale(repo: Path, templates: Path):
+    install.install(repo)
+    (repo / ".githooks/pre-commit").write_text("#!/bin/sh\nexit 1\n")
+
+    plan = install.install(repo)
+
+    assert ".githooks/pre-commit" in plan.created
+    assert (repo / ".githooks/pre-commit").read_text() == "#!/bin/sh\nexit 0\n"
+
+    plan = install.install(repo)
+
+    assert ".githooks/" in plan.skipped
