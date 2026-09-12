@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+import subprocess
 import tomllib
 from pathlib import Path
 
@@ -124,7 +125,12 @@ def push_project(project: Path, private: bool = False, branch: str = "main") -> 
     if not git.remote_url(cwd=project):
         git.add_remote(url, project)
 
-    git.push_upstream(branch, project)
+    try:
+        git.push_upstream(branch, project)
+    except subprocess.CalledProcessError as e:
+        raise TemplateError(
+            f"push failed: {e.stderr.strip() if e.stderr else e}"
+        ) from e
 
     return url
 

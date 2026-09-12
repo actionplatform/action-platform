@@ -37,7 +37,9 @@ def run(
         None, "--output", "-o", help="Where to create the project"
     ),
     push: bool = typer.Option(
-        False, "--push", help="Create the remote repo via [source_host] and push"
+        True,
+        "--push/--no-push",
+        help="Create the remote repo via [source_host] and push (default: on)",
     ),
     private: bool = typer.Option(False, "--private", help="With --push: private repo"),
     list_: bool = typer.Option(False, "--list", "-l", help="Show the template matrix"),
