@@ -19,7 +19,10 @@ def run(args: list[str], cwd: Path | None = None) -> str:
 
 
 def current_branch(cwd: Path | None = None) -> str:
-    return run(["rev-parse", "--abbrev-ref", "HEAD"], cwd=cwd)
+    try:
+        return run(["symbolic-ref", "--short", "-q", "HEAD"], cwd=cwd)
+    except subprocess.CalledProcessError:
+        return run(["rev-parse", "--abbrev-ref", "HEAD"], cwd=cwd)
 
 
 def remote_url(cwd: Path | None = None, remote: str = "origin") -> str:

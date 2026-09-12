@@ -7,7 +7,7 @@ import subprocess
 import tomllib
 from pathlib import Path
 
-from action_platform.core import git
+from action_platform.core import git, gitflow
 from action_platform.core.config import Config
 from action_platform.core.exception import TemplateError
 from action_platform.core.templates import Cloud, Leaf, Service
@@ -108,6 +108,7 @@ def push_project(project: Path, private: bool = False, branch: str = "main") -> 
     if not (project / ".git").exists():
         git.init(project, branch=branch)
 
+    gitflow.install_hooks(project)
     git.add_all(project)
 
     if not git.is_clean(cwd=project):
