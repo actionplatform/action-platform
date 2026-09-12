@@ -19,3 +19,7 @@ class ReleaseError(ActionPlatformError):
 
 class DeployError(ActionPlatformError):
     """Deploy pipeline failed."""
+
+
+class TemplateError(ActionPlatformError):
+    """Template lookup or generation failed."""
