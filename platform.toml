@@ -9,3 +9,11 @@ repo = "actionplatform/action-platform"
 [release]
 strategy = "semver"
 changelog = "conventional"
+
+# Parts that version on their own: tag <name>/vX.Y.Z, LAST_VERSION and
+# CHANGELOG.md under `path`. The root (vX.Y.Z) is the library + CLI on PyPI.
+[components.web]
+path = "apps/web"
+
+[components.api]
+path = "action_platform/api"
