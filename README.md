@@ -91,6 +91,7 @@ name = "orders"
 type = "web"
 stack = "python"
 template = "fastapi"
+ci = "github"
 language = "python"
 
 [source_host]
