@@ -76,7 +76,7 @@ action-platform branch feature 42 login           # develop (or main) → pull �
 action-platform branch hotfix PROJ-7              # from main/master
 action-platform gitflow                           # audit current branch + commits; --install-hooks
 action-platform pr [--draft] [--dry-run]          # PR for the current branch: target from git-flow, body from commits
-action-platform release patch                     # bump, changelog, tag, GitHub release
+action-platform release patch                     # bump, changelog, tag, GitHub release; off main/master → X.Y.Z-rc.N pre-release
 action-platform deploy --stage prod
 action-platform rollback
 action-platform diagnose

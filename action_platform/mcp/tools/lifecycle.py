@@ -45,7 +45,8 @@ def register(mcp: Any) -> None:
         """Bump version, write CHANGELOG, tag, push and publish a release.
 
         Defaults to a dry run. Show the user the next version and changelog,
-        then call again with dry_run=false to publish.
+        then call again with dry_run=false to publish. Off main/master the
+        version becomes X.Y.Z-rc.N and the release is marked pre-release.
         """
         ctx = _tool(project).release(level=level, dry_run=dry_run)
 
