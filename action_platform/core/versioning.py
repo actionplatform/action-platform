@@ -41,3 +41,40 @@ def read(path: Path) -> str:
 
 def write(path: Path, version: str) -> None:
     path.write_text(f"{version}\n")
+
+
+VERSION_PATTERNS = {
+    "pyproject.toml": re.compile(r'^(version\s*=\s*")[^"]*(")', re.M),
+    "package.json": re.compile(r'^(\s*"version":\s*")[^"]*(")', re.M),
+    "Cargo.toml": re.compile(r'^(version\s*=\s*")[^"]*(")', re.M),
+    "composer.json": re.compile(r'^(\s*"version":\s*")[^"]*(")', re.M),
+}
+INIT_RE = re.compile(r'^(__version__\s*=\s*")[^"]*(")', re.M)
+
+
+def sync_files(root: Path, version: str) -> list[str]:
+    """Write `version` into every manifest and top-level `__version__` found. Returns the files touched."""
+    touched = []
+
+    for name, pattern in VERSION_PATTERNS.items():
+        path = root / name
+
+        if not path.exists():
+            continue
+
+        text = path.read_text()
+        updated = pattern.sub(rf"\g<1>{version}\g<2>", text)
+
+        if updated != text:
+            path.write_text(updated)
+            touched.append(name)
+
+    for init in sorted(root.glob("*/__init__.py")):
+        text = init.read_text()
+        updated = INIT_RE.sub(rf"\g<1>{version}\g<2>", text)
+
+        if updated != text:
+            init.write_text(updated)
+            touched.append(str(init.relative_to(root)))
+
+    return touched

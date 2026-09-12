@@ -63,10 +63,13 @@ def release(
 
     versioning.write(repo_root / settings.LAST_VERSION_FILE, ctx.next_version)
     changelog.prepend(repo_root / settings.CHANGELOG_FILE, ctx.changelog)
+    synced = versioning.sync_files(repo_root, ctx.next_version)
 
     tag = f"v{ctx.next_version}"
 
-    git.add([settings.LAST_VERSION_FILE, settings.CHANGELOG_FILE], cwd=repo_root)
+    git.add(
+        [settings.LAST_VERSION_FILE, settings.CHANGELOG_FILE, *synced], cwd=repo_root
+    )
     git.commit(f"chore(release): {ctx.next_version}", cwd=repo_root)
     git.create_tag(tag, tag, cwd=repo_root)
     git.push(cwd=repo_root)

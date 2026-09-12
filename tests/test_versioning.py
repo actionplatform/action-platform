@@ -25,3 +25,22 @@ def test_bump_explicit():
 def test_bump_invalid():
     with pytest.raises(ActionPlatformError):
         versioning.bump("not-a-version", "patch")
+
+
+def test_sync_files(tmp_path):
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "x"\nversion = "0.1.0"\n\n[tool.poetry]\nversion = "0.1.0"\n'
+    )
+    (tmp_path / "package.json").write_text(
+        '{\n  "name": "x",\n  "version": "0.1.0"\n}\n'
+    )
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "__init__.py").write_text('__version__ = "0.1.0"\n')
+
+    touched = versioning.sync_files(tmp_path, "0.2.0")
+
+    assert touched == ["pyproject.toml", "package.json", "pkg/__init__.py"]
+    assert (tmp_path / "pyproject.toml").read_text().count('version = "0.2.0"') == 2
+    assert '"version": "0.2.0"' in (tmp_path / "package.json").read_text()
+    assert '__version__ = "0.2.0"' in (tmp_path / "pkg" / "__init__.py").read_text()
+    assert versioning.sync_files(tmp_path, "0.2.0") == []
