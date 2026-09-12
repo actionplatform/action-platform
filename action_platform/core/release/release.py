@@ -51,7 +51,6 @@ def _next_version(
     else:
         target = versioning.bump(base, level)
 
-    # next_rc looks for "v<target>-rc.N": hand it the component's tags without the prefix.
     prefix = component.tag_prefix[:-1]  # "web/" or ""
     tags = [t[len(prefix) :] for t in git.tags(cwd=repo_root) if t.startswith(prefix)]
 

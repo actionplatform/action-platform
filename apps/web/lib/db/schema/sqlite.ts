@@ -1,4 +1,3 @@
-// better-auth core tables, sqlite dialect. Keep in sync with pg.ts and mysql.ts.
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
@@ -48,7 +47,6 @@ export const verification = sqliteTable("verification", {
   updatedAt: integer("updated_at", { mode: "timestamp" }),
 });
 
-// better-auth deviceAuthorization plugin: CLI/MCP login through the browser.
 export const deviceCode = sqliteTable("device_code", {
   id: text("id").primaryKey(),
   deviceCode: text("device_code").notNull(),
@@ -62,7 +60,6 @@ export const deviceCode = sqliteTable("device_code", {
   scope: text("scope"),
 });
 
-// better-auth organization plugin: the tenant, its members and invitations.
 export const organization = sqliteTable("organization", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -91,8 +88,6 @@ export const invitation = sqliteTable("invitation", {
   inviterId: text("inviter_id").notNull().references(() => user.id, { onDelete: "cascade" }),
 });
 
-// Organization › Project › App. A project groups apps; an app is one git
-// repository the Python API manages (registry id in `registryId`).
 export const project = sqliteTable("project", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
@@ -111,8 +106,6 @@ export const app = sqliteTable("app", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
 
-// Code hosts an organization can push to: GitHub, GitLab, Bitbucket or any
-// git server. The token is encrypted with the app secret before it is stored.
 export const sourceHost = sqliteTable("source_host", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),

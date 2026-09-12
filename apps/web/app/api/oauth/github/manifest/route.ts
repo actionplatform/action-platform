@@ -3,9 +3,6 @@ import { appFor, signState } from "@/lib/oauth";
 import { getSession } from "@/lib/session";
 import { setupStatus } from "@/lib/setup";
 
-// GitHub App Manifest flow: an auto-submitted form sends the manifest to
-// GitHub, the user confirms the app name, GitHub creates it and comes back
-// to /api/oauth/github/manifest/callback with a one-time code.
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const session = await getSession();

@@ -6,7 +6,6 @@ import { apiBaseUrl, type Provider, refreshToken } from "./oauth";
 export { HOST_KINDS, type HostKind, type SourceHost } from "./source-host-kinds";
 import type { HostKind, SourceHost } from "./source-host-kinds";
 
-// What the Python API receives with a push / release call.
 export type Credentials = { kind: string; token: string; username: string | null; base_url: string | null; owner: string | null };
 
 const columns = (t: Awaited<ReturnType<typeof q>>["t"]) => ({
@@ -54,9 +53,6 @@ export async function addHost(orgId: string, input: { kind: HostKind; name: stri
   return { id, organizationId: orgId, kind: input.kind, name: input.name, baseUrl: input.baseUrl || null, username: input.username || null, defaultOwner: input.defaultOwner || null, authKind: "token", login: null, createdAt };
 }
 
-// A host created by "Connect with…": the provider's user is the owner
-// default, and the refresh token (when the provider issues one) keeps it
-// alive. Reconnecting the same account replaces the tokens.
 export async function connectOAuthHost(orgId: string, provider: Provider, login: string, tokens: { accessToken: string; refreshToken: string | null; expiresAt: Date | null }): Promise<SourceHost> {
   const { db, t } = await q();
   const existing = await db
@@ -109,8 +105,6 @@ export async function removeHost(orgId: string, id: string): Promise<void> {
   await db.delete(t.sourceHost).where(and(eq(t.sourceHost.id, id), eq(t.sourceHost.organizationId, orgId)));
 }
 
-// The only place the token is decrypted: right before a call to the API.
-// Expiring OAuth tokens are refreshed here when they have under a minute left.
 export async function credentialsFor(orgId: string, id: string): Promise<Credentials | null> {
   const { db, t } = await q();
   const rows = await db.select().from(t.sourceHost).where(and(eq(t.sourceHost.id, id), eq(t.sourceHost.organizationId, orgId))).limit(1);

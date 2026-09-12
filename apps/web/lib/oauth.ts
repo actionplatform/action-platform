@@ -1,7 +1,3 @@
-// "Connect with GitHub / GitLab / Bitbucket": the authorization-code flow
-// against each provider's OAuth app (client id/secret from config), ending
-// in a source host that holds the user's access token instead of a pasted
-// one. GitLab and Bitbucket tokens expire and are refreshed on use.
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { type OAuthApp, readConfig } from "./config";
 
@@ -91,7 +87,6 @@ export async function identity(provider: Provider, accessToken: string): Promise
   return { login, name: u.name ?? u.display_name ?? null };
 }
 
-// API base the Python side needs for self-hosted instances.
 export function apiBaseUrl(provider: Provider): string | null {
   const app = appFor(provider);
   if (!app || !app.baseUrl) return null;
@@ -99,8 +94,6 @@ export function apiBaseUrl(provider: Provider): string | null {
   if (provider === "gitlab") return base(provider, app);
   return null;
 }
-
-// --- state: HMAC-signed so the callback trusts only what this app issued.
 
 export type State = { orgId: string; returnTo: string; nonce: string; ts: number };
 
@@ -126,8 +119,6 @@ export function verifyState(raw: string | null): State | null {
   if (Date.now() - state.ts > 10 * 60_000) return null;
   return state;
 }
-
-// --- helpers
 
 function basic(app: OAuthApp): Record<string, string> {
   return { authorization: `Basic ${Buffer.from(`${app.clientId}:${app.clientSecret}`).toString("base64")}` };

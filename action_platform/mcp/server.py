@@ -27,7 +27,6 @@ gitflow_rules explains the rules when in doubt.
 release and deploy default to dry runs: show the user what would happen,
 then call again with dry_run=false. rollback changes what is live; ask first."""
 
-
 REMOTE_INSTRUCTIONS = """Operate apps on a hosted Action Platform.
 
 These tools act on the platform the CLI is logged in to (`action-platform

@@ -1,5 +1,3 @@
-# Dokploy template: secrets and domain are generated on import, nothing to type.
-# Import: compose service → Advanced → Import Template → paste deploy/dokploy/template.b64
 
 [variables]
 main_domain = "${domain}"

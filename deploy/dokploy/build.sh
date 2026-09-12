@@ -1,6 +1,4 @@
 #!/usr/bin/env sh
-# Packs docker-compose.yml + template.toml the way Dokploy's "Import Template" expects:
-# base64 of JSON {"compose": "...", "config": "<template.toml>"}. Output: template.b64.
 set -eu
 cd "$(dirname "$0")"
 python3 - <<'PY'

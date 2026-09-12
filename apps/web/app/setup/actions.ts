@@ -90,8 +90,6 @@ export async function createAdmin(input: { name: string; email: string; password
   }
 }
 
-// First organization, owned by the first (only) account. No session exists
-// yet at this point, so the rows are written directly.
 export async function createFirstOrganization(input: { name: string; slug: string }): Promise<{ ok: true; orgId: string } | { ok: false; error: string }> {
   const status = await setupStatus();
   if (!status.hasUser) return { ok: false, error: "create the admin account first" };

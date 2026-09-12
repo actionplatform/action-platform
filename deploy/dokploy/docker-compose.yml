@@ -1,4 +1,3 @@
-# Dokploy "Compose" service: its Traefik routes the domain to web:3000. Steps in the README.
 name: action-platform
 
 services:

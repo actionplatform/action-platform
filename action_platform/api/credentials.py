@@ -68,7 +68,6 @@ def git_auth(creds: Optional[SourceCredentials]) -> Iterator[None]:
         "AP_GIT_USER": username,
         "AP_GIT_TOKEN": creds.token,
         "GIT_CONFIG_COUNT": "2",
-        # an empty value clears the helpers configured so far
         "GIT_CONFIG_KEY_0": "credential.helper",
         "GIT_CONFIG_VALUE_0": "",
         "GIT_CONFIG_KEY_1": "credential.helper",

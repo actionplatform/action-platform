@@ -23,7 +23,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   try {
     [version, rules] = await Promise.all([api.version().then((v) => v.version), api.gitflowRules()]);
   } catch {
-    // shown as offline below
   }
 
   return (

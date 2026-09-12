@@ -1,7 +1,3 @@
-// One connection, chosen by the URL scheme the setup wizard saved:
-//   postgres://user:pass@host:5432/db   mysql://user:pass@host:3306/db   sqlite:///abs/path.db
-// Built on first use and rebuilt when the URL changes, so the wizard can
-// switch it without a restart.
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { readConfig } from "../config";
@@ -70,7 +66,6 @@ export async function getConnection(): Promise<Connection> {
   return cached.conn;
 }
 
-// A one-shot connection: proves the URL works, then closes.
 export async function pingDb(url: string): Promise<void> {
   const conn = await open(url);
   try {
@@ -84,9 +79,6 @@ export async function pingDb(url: string): Promise<void> {
   }
 }
 
-// Servers do not create a database on connect. When the one in the URL is
-// missing, connect to the maintenance db on the same server and create it.
-// SQLite creates its file on open. Any other failure is left for the caller.
 export async function ensureDb(url: string): Promise<{ created: boolean }> {
   const engine = engineOf(url);
 

@@ -1,4 +1,3 @@
-// better-auth core tables (user, session, account, verification), postgres dialect.
 import { boolean, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -48,7 +47,6 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// better-auth deviceAuthorization plugin: CLI/MCP login through the browser.
 export const deviceCode = pgTable("device_code", {
   id: text("id").primaryKey(),
   deviceCode: text("device_code").notNull(),
@@ -62,7 +60,6 @@ export const deviceCode = pgTable("device_code", {
   scope: text("scope"),
 });
 
-// better-auth organization plugin: the tenant, its members and invitations.
 export const organization = pgTable("organization", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -91,8 +88,6 @@ export const invitation = pgTable("invitation", {
   inviterId: text("inviter_id").notNull().references(() => user.id, { onDelete: "cascade" }),
 });
 
-// Organization › Project › App. A project groups apps; an app is one git
-// repository the Python API manages (registry id in `registryId`).
 export const project = pgTable("project", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
@@ -111,8 +106,6 @@ export const app = pgTable("app", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Code hosts an organization can push to: GitHub, GitLab, Bitbucket or any
-// git server. The token is encrypted with the app secret before it is stored.
 export const sourceHost = pgTable("source_host", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),

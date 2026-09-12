@@ -1,8 +1,3 @@
-// Remote surface for the CLI and the MCP server: a bearer session (from
-// `action-platform login`) or the browser cookie, then a pass-through to
-// the Python API that runs next to this app. Path and query are forwarded
-// as-is, so /api/v1/projects/<id>/release is the same contract as the
-// Python side documents at /docs.
 import { API_BASE } from "@/lib/api";
 import { getAuth } from "@/lib/auth";
 

@@ -6,8 +6,6 @@ import { type Provider, PROVIDERS } from "@/lib/oauth";
 import { getSession } from "@/lib/session";
 import { setupStatus } from "@/lib/setup";
 
-// OAuth apps are platform-wide (one per provider), so saving one is allowed
-// to any signed-in member, and to the setup wizard before accounts exist.
 export async function saveOAuthApp(input: { provider: Provider; clientId: string; clientSecret: string; baseUrl: string }): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!(input.provider in PROVIDERS)) return { ok: false, error: "unknown provider" };
 

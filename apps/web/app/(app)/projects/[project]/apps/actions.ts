@@ -13,7 +13,6 @@ async function owned(projectId: string) {
   return { org, project };
 }
 
-// The app's source host token, decrypted for this call only.
 async function credsFor(orgId: string, projectId: string, appId: string) {
   const app = await appById(projectId, appId);
   if (!app?.sourceHostId) return null;

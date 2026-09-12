@@ -201,7 +201,6 @@ def build(cors_origins: Optional[list[str]] = None) -> FastAPI:
         finally:
             shutil.rmtree(staging, ignore_errors=True)
 
-        # The template hard-codes github; the chosen host wins.
         if creds:
             write_source_host(
                 path / settings.CONFIG_FILE,
@@ -332,7 +331,6 @@ def build(cors_origins: Optional[list[str]] = None) -> FastAPI:
 
     @app.get("/api/apps/{id}/branches")
     def app_branches(id: str) -> list[models.Branch]:
-        # Remote branches: the workspace is a clone and only checks out one.
         out = git.run(
             [
                 "for-each-ref",

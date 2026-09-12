@@ -1,8 +1,6 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// The selection mark: a small white circle with a black check. Unselected is
-// an empty ring. Used by every selectable card so selection reads the same way.
 export function CheckIndicator({ selected, className }: { selected: boolean; className?: string }) {
   return (
     <span

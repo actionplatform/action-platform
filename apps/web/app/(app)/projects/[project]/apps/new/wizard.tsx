@@ -73,7 +73,6 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
     return (c.types.length === 0 || c.types.includes(leaf.type)) && (c.languages.length === 0 || c.languages.includes(leaf.stack));
   }, [matrix, leaf]);
 
-  // Derived fields follow the name until the user edits them.
   useEffect(() => {
     setConfig((c) => ({
       ...c,

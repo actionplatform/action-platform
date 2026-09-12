@@ -1,8 +1,6 @@
 import type { SimpleIcon } from "simple-icons";
 import { cn } from "@/lib/utils";
 
-// Simple Icons path in the brand's own color. Marks that would vanish on the
-// black ground (Rust, GitHub…) fall back to the foreground color.
 export function BrandIcon({ icon, className, title, mono }: { icon: SimpleIcon; className?: string; title?: string; mono?: boolean }) {
   const fill = mono || !readable(icon.hex) ? "currentColor" : `#${icon.hex}`;
 
@@ -13,7 +11,6 @@ export function BrandIcon({ icon, className, title, mono }: { icon: SimpleIcon; 
   );
 }
 
-// Relative luminance above a small threshold: enough contrast against #080808.
 function readable(hex: string): boolean {
   const n = parseInt(hex, 16);
   const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {

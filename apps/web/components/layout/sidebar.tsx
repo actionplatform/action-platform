@@ -16,7 +16,6 @@ const items = [
 
 type Props = { version: string; user: { name: string; email: string }; org: Org; orgs: Org[] };
 
-// Fixed on the left from md up; a compact top bar below that.
 export function Sidebar({ version, user, org, orgs }: Props) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);

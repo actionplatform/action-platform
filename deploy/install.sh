@@ -1,12 +1,4 @@
 #!/usr/bin/env sh
-# Action Platform in one command, Dokploy-style:
-#
-#   curl -fsSL https://get.actionplatform.dev | sh
-#   curl -fsSL https://get.actionplatform.dev | sh -s -- platform.example.com you@example.com   # with TLS
-#
-# Installs Docker if missing, writes /opt/action-platform/.env with fresh
-# secrets, starts Postgres + API + web (+ Traefik when a domain is given)
-# and prints the URL. Everything else happens in the browser.
 set -eu
 
 DOMAIN="${1:-}"

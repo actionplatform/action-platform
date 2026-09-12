@@ -5,8 +5,6 @@ import { cn } from "@/lib/utils";
 export const STEPS = ["Type", "Stack", "Template", "Configure", "Review"] as const;
 export type StepIndex = 0 | 1 | 2 | 3 | 4;
 
-// Active: white circle, black number. Done: white circle, black check.
-// Future: dark circle, gray number. Lines follow the same rule.
 export function Stepper({ current, onJump }: { current: StepIndex; onJump: (i: StepIndex) => void }) {
   return (
     <ol className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">

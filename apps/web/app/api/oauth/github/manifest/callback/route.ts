@@ -2,8 +2,6 @@ import { redirect } from "next/navigation";
 import { writeConfig } from "@/lib/config";
 import { verifyState } from "@/lib/oauth";
 
-// GitHub redirects here with a one-time code; exchanging it returns the
-// app's credentials, which become the platform's GitHub OAuth app.
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const state = verifyState(url.searchParams.get("state"));

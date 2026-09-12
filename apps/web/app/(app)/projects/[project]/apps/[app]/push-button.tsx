@@ -10,8 +10,6 @@ import { pushApp } from "../actions";
 
 type Host = { id: string; name: string; kind: string; defaultOwner: string | null };
 
-// Shown while the app has no remote: pick a host and visibility, then the
-// repository is created there and main is pushed.
 export function PushButton({ projectId, appId, registryId, repo, hosts, current }: { projectId: string; appId: string; registryId: string; repo: string; hosts: Host[]; current: string | null }) {
   const [open, setOpen] = useState(false);
   const [hostId, setHostId] = useState<string>(current ?? hosts[0]?.id ?? "");

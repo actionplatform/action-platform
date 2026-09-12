@@ -1,6 +1,3 @@
-// Secrets at rest (source-host tokens): AES-256-GCM with a key derived
-// from the app's auth secret. Rotating the secret invalidates stored
-// tokens — they have to be re-entered.
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "node:crypto";
 import { readConfig } from "./config";
 
