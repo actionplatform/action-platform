@@ -38,8 +38,10 @@ def run(
     if plan.hooks_installed:
         console.print("  [green]✓[/green] git hooks installed (.githooks)")
 
-    if not dry_run:
-        console.print(
-            "\nnext: review platform.toml, commit on a branch "
-            "(action-platform branch chore platform), then action-platform gitflow"
-        )
+    if dry_run or not plan.created:
+        return
+
+    console.print(
+        "\nnext: review platform.toml, commit on a branch "
+        "(action-platform branch chore platform), then action-platform gitflow"
+    )
