@@ -16,7 +16,10 @@ pipx install action-platform
 action-platform init                        # interactive: type → stack → template → name → ci
 action-platform init web python             # default template for the stack
 action-platform init web python fastapi --name "My API" --ci gitlab
-action-platform init --list                 # show the template matrix
+action-platform init web python fastapi --cloud aws/lambda
+action-platform init --list                 # show projects and clouds
+action-platform cloud set docker            # apply a deploy overlay to an existing project
+action-platform cloud list                  # clouds compatible with this project
 action-platform release patch
 action-platform deploy --target dokploy
 ```
