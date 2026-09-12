@@ -33,7 +33,7 @@ Thirty seconds later you have a FastAPI service with tests, lint, CI wired, a SA
 | **Templates from production, not tutorials** | Every project template is extracted from a real shipping product. Real layout, real CI, real gotchas already fixed. |
 | **Cloud is a layer, not a fork** | Projects stay cloud-agnostic. `--cloud aws/lambda` overlays deploy files; swap to `docker` tomorrow with one command. |
 | **Your CI, your account, your git** | Runs on GitHub Actions, GitLab CI or Jenkins you already have. Infra lands in **your** AWS account through OIDC — no long-lived keys, no agent, no SaaS in the loop. |
-| **Governance that ships with the code** | Conventional Commits enforced, changelog generated, `AGENTS.md` for humans and AI agents, Trivy scans, least-privilege IAM in `requirements/`. |
+| **Governance that ships with the code** | Git-flow and Conventional Commits enforced by git hooks before a commit exists and by CI on every PR; changelog generated; `AGENTS.md` for humans and AI agents; Trivy scans; least-privilege IAM in `requirements/`. |
 | **Fix once, everywhere** | CI logic lives in versioned shared repos (`ci-scripts`, `ci-github`, `ci-gitlab`, `ci-jenkins`). Bump `v1`, every project picks it up. |
 
 ## What you get
@@ -71,6 +71,9 @@ action-platform init ... --no-push                # skip creating the remote rep
 action-platform cloud set aws/lambda              # add or switch the deploy target
 action-platform service add postgres --provider aws-rds
 
+action-platform branch feature 42 login           # develop (or main) → pull → feature/42-login → push
+action-platform branch hotfix PROJ-7              # from main/master
+action-platform gitflow                           # audit current branch + commits; --install-hooks
 action-platform release patch                     # bump, changelog, tag, GitHub release
 action-platform deploy --stage prod
 action-platform rollback
