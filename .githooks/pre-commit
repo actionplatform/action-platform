@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Refuse commits on branches that are not git-flow. Protected branches are checked in commit-msg, where the message is known.
+set -euo pipefail
+. "$(dirname "$0")/gitflow.sh"
+gitflow_branch "$(gitflow_current_branch)"

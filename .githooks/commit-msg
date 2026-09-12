@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Refuse commit messages that are not Conventional Commits.
+set -euo pipefail
+. "$(dirname "$0")/gitflow.sh"
+gitflow_commit_msg "$1"
+branch=$(gitflow_current_branch)
+gitflow_protect "$branch" "$(head -1 "$1")"
