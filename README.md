@@ -60,213 +60,34 @@ Thirty seconds later you have a FastAPI service with tests, lint, CI wired, a SA
 
 ## What you get
 
-```
-action-platform init --list
-```
+| Type | Stacks |
+|------|--------|
+| `web` | python (FastAPI, FastMCP), go (Gin), node (React) |
+| `library` | python, go, php, node, java, rust |
+| `docs` | mkdocs |
+| `plugin` | chrome |
+| `empty` | `platform.toml` + code quality only |
 
-| Type | Stacks | Ready with |
-|------|--------|-----------|
-| `web` | python (FastAPI, FastMCP), go (Gin), node (React) | `/ping`, versioned API, tests, lint, CI |
-| `library` | python, go, php, node, java, rust | packaging, version test, publish workflow |
-| `docs` | mkdocs | Material theme, strict build in CI |
-| `plugin` | chrome | Manifest V3, popup, background, tests, store zip |
-| `empty` | — | `platform.toml` + code quality only |
-
-| Cloud | Adds |
-|-------|------|
-| `aws/lambda` | SAM template, HTTP API, custom domain, deploy workflow, IAM policy |
-| `aws/amplify` | `amplify.yml`, security headers, start-job workflow, IAM policy |
-| `docker` | Dockerfile per language, compose |
-
-| Service | Providers |
-|---------|-----------|
-| `postgres` | docker (local), aws-rds (Terraform/OpenTofu + SSM) |
-
-## Commands
-
-```bash
-action-platform init                              # interactive: type → stack → template → name → ci
-action-platform init web go gin --ci gitlab       # direct
-action-platform init web python --cloud docker    # project + deploy overlay
-action-platform init ... --no-push                # skip creating the remote repo
-action-platform install [--dry-run]               # existing repo: platform.toml, hooks, code quality, CI — never overwrites
-
-action-platform cloud set aws/lambda              # add or switch the deploy target
-action-platform service add postgres --provider aws-rds
-
-action-platform branch feature 42 login           # develop (or main) → pull → feature/42-login → push
-action-platform branch hotfix PROJ-7              # from main/master
-action-platform gitflow                           # audit current branch + commits; --install-hooks
-action-platform pr [--draft] [--dry-run]          # PR for the current branch: target from git-flow, body from commits
-action-platform release patch                     # bump, changelog, tag, GitHub release; off main/master → X.Y.Z-rc.N pre-release
-action-platform deploy --stage prod
-action-platform rollback
-action-platform diagnose
-action-platform destroy
-```
+Cloud overlays `aws/lambda`, `aws/amplify`, `docker`; services `postgres` (docker, aws-rds). Every template comes with tests, lint, CI and `AGENTS.md`. → [Templates](docs/templates.md)
 
 ## Git-flow, enforced
 
-Every project follows the same flow. Git hooks refuse the wrong move before it exists; CI refuses it on the pull request; the CLI and the MCP tools guide the right one.
+Branches are `<kind>/<code>`, commits are Conventional Commits, `main`/`develop` take no direct commits. Git hooks refuse the wrong move before it exists; CI refuses it on the pull request; the CLI and the MCP tools guide the right one. → [Git-flow](docs/git-flow.md)
 
-```mermaid
-gitGraph
-    commit id: "chore: bootstrap"
-    branch develop
-    checkout develop
-    commit id: "chore(release): 0.3.2-rc.1" tag: "v0.3.2-rc.1"
-    branch feature/42-login
-    checkout feature/42-login
-    commit id: "feat(login): form"
-    commit id: "test(login): cover form"
-    checkout develop
-    merge feature/42-login id: "PR #1 → develop"
-    branch release/0.3.2
-    checkout release/0.3.2
-    commit id: "chore(release): 0.3.2-rc.2" tag: "v0.3.2-rc.2"
-    checkout main
-    merge release/0.3.2 id: "PR #2 → main"
-    commit id: "chore(release): 0.3.2" tag: "v0.3.2"
-    checkout develop
-    merge main id: "back-merge"
-    checkout main
-    branch hotfix/PROJ-7
-    checkout hotfix/PROJ-7
-    commit id: "fix(auth): expiry"
-    checkout main
-    merge hotfix/PROJ-7 id: "PR #3 → main"
-    commit id: "chore(release): 0.3.3" tag: "v0.3.3"
-    checkout develop
-    merge main id: "back-merge hotfix"
-```
+## Documentation
 
-| Branch | Starts from | Merges into | Release |
-|--------|-------------|-------------|---------|
-| `feature/<code>`, `bugfix/…`, `chore/…`, `docs/…`, `refactor/…`, `test/…`, `ci/…`, `perf/…` | `develop` (or the default branch when there is no `develop`) | `develop` | `X.Y.Z-rc.N` pre-release |
-| `release/<version>` | `develop` | `main` and `develop` | `X.Y.Z-rc.N` until merged |
-| `hotfix/<code>` | `main` | `main` and `develop` | `X.Y.Z-rc.N` until merged |
-| `main` / `master` | — | — | stable `X.Y.Z` → PyPI / npm / … |
-
-Rules the hooks and CI apply: branch names are `<kind>/<code>[-slug]`; commits are [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/); no direct commits on `main`, `master` or `develop` except `chore(release):`, `chore(platform):` and the bootstrap commit; a pull request may only target what the table allows.
-
-```bash
-action-platform branch feature 42 login     # develop → pull → feature/42-login → push
-action-platform gitflow                     # audit branch + commits
-action-platform pr                          # target and body from the rules and the commits
-action-platform release patch               # rc off main, stable on main
-```
-
-Everything a project needs is declared in one file:
-
-```toml
-[project]
-name = "orders"
-type = "web"
-stack = "python"
-template = "fastapi"
-ci = "github"
-language = "python"
-
-[source_host]
-kind = "github"
-repo = "acme/orders"
-
-[deploy]
-target = "aws/lambda"
-
-[services]
-postgres = "aws-rds"
-```
-
-## Use it from an AI client
-
-The platform ships as an MCP server. Claude Code, Codex, Cursor — anything that speaks MCP — gets 17 tools (`list_matrix`, `init_project`, `install_platform`, `start_branch`, `gitflow_audit`, `propose_pull_request`, `release`, `deploy`, `diagnose`, …), 6 prompts that put them in the right order (`new_service`, `ship_feature`, `cut_release`, `deploy_project`, `adopt_repository`, `fix_gitflow`) and 12 skills that make the agent preview and ask before anything leaves the machine.
-
-```bash
-pip install "action-platform[mcp]"
-action-platform mcp                 # stdio
-action-platform mcp --http          # http://127.0.0.1:8765/mcp
-```
-
-Claude Code:
-
-```bash
-/plugin marketplace add actionplatform/action-platform
-/plugin install action-platform@action-platform
-```
-
-Any client — add to `.mcp.json`:
-
-```json
-{ "mcpServers": { "action-platform": { "command": "uvx", "args": ["--from", "action-platform[mcp]", "action-platform-mcp"] } } }
-```
-
-## The web app
-
-[`apps/web`](apps/web) — Next.js on top of the Python API. **Organization › Project › App**: an organization is the tenant and owns its code hosts; a project groups the apps that ship together; an app is one git repository the platform clones, audits, releases and deploys.
-
-- **Setup wizard** on first run: database (SQLite, PostgreSQL or MySQL), first account, first organization, code hosts.
-- **Connect with GitHub / GitLab / Bitbucket** through OAuth (or paste a token). Tokens are encrypted at rest and refreshed when they expire.
-- **Create project** wizard: type → stack → template → configure → review, with the equivalent `action-platform init` shown. Or add an existing repository by URL.
-- Per app: git-flow audit, commits, branches, tags, release preview → confirm → publish, deploy preflight → confirm → ship.
-- Strictly monochrome UI; every confirmation is an in-app dialog.
-
-Local development:
-
-```bash
-pip install "action-platform[api]"
-action-platform api --reload              # http://127.0.0.1:7788, OpenAPI at /docs
-cd apps/web && npm install && npm run dev # http://localhost:3000 → /setup
-```
-
-Drive a hosted platform from anywhere:
-
-```bash
-action-platform login https://platform.example.com   # browser opens, approve the code
-action-platform mcp --remote                          # the MCP tools now act on that platform
-```
-
-The TypeScript client is generated from the API's OpenAPI schema (`npm run api:types`): the Python response models in `action_platform/api/models.py` are the contract both sides compile against.
-
-## Releases: three artifacts, three versions
-
-One repository, independent versions — declared in `platform.toml`:
-
-```toml
-[components.web]
-path = "apps/web"
-
-[components.api]
-path = "action_platform/api"
-```
-
-| Command | Tag | Publishes |
-|---|---|---|
-| `action-platform release minor` | `v0.3.0` | `action-platform` on PyPI (library + CLI) |
-| `action-platform release -c api patch` | `api/v0.1.1` | `actionplatformio/action-platform-api` image |
-| `action-platform release -c web minor` | `web/v0.2.0` | `actionplatformio/action-platform-web` image |
-
-Each component keeps its own `LAST_VERSION` and `CHANGELOG.md` under its path; its changelog lists only the commits that touched it, and the root's excludes them. Off `master` every release is an `-rc.N` pre-release. Images go to Docker Hub and are mirrored to GHCR.
-
-## Layout
-
-```
-action_platform/
-  core/
-    manifest/     platform.toml: read, edit tables
-    scaffold/     templates matrix, generate, install into an existing repo
-    flow/         git, git-flow rules, branching, pull requests
-    release/      versioning, changelog, release, deploy
-    config.py · context.py · exception.py · action_platform.py (facade)
-  providers/
-    source/       github, gitlab, bitbucket, generic — repositories, releases, PRs
-  api/            FastAPI for the web app: apps registry, actions, per-request credentials
-  remote/         client + device-flow login for a hosted platform
-  mcp/            MCP server: local tools, or remote tools after login
-  cli/            Typer commands
-apps/web/         the web app (see its README)
-deploy/           Dockerfiles, docker-compose, install.sh
-```
+| | |
+|---|---|
+| [Self-hosting](docs/self-hosting.md) | `install.sh`, compose, Dokploy, environment, upgrades, backups |
+| [Web app](docs/web-app.md) | organizations › projects › apps, setup wizard, code hosts, creating apps, releasing and deploying from the browser |
+| [CLI](docs/cli.md) | every command |
+| [Git-flow](docs/git-flow.md) | branch kinds, commit format, what hooks and CI refuse |
+| [`platform.toml`](docs/platform-toml.md) | the file that declares a project |
+| [Templates](docs/templates.md) | the matrix and how to add to it |
+| [MCP](docs/mcp.md) | tools and prompts for AI clients, locally or against a hosted platform |
+| [Releases](docs/releases.md) | versions per component, tags, what each publishes |
+| [Architecture](docs/architecture.md) | packages, the API, providers, how credentials travel |
+| [Development](docs/development.md) | running it locally, tests, regenerating the API client |
 
 ## Extend it
 
