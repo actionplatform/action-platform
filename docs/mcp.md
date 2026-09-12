@@ -23,6 +23,17 @@ Any client — add to `.mcp.json`:
 
 ## Local vs remote
 
+```mermaid
+flowchart LR
+    subgraph local["action-platform mcp"]
+        L1[MCP tools] --> C1[[core]] --> F[(files in cwd)]
+    end
+    subgraph remote["action-platform mcp --remote"]
+        L2[MCP tools] -->|Bearer| V["/api/v1/*"] --> API[action-platform api] --> WS[(workspaces)]
+    end
+    login["action-platform login <url>"] -.->|device flow| L2
+```
+
 | | `action-platform mcp` | `action-platform mcp --remote` |
 |---|---|---|
 | Acts on | the current directory and files on this machine | apps on the hosted platform you logged in to |

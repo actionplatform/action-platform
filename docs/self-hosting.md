@@ -34,6 +34,18 @@ Dokploy already runs Traefik, so use the compose file without it:
 
 ## The services
 
+```mermaid
+flowchart LR
+    I((internet)) -->|443| T[traefik · TLS]
+    I -.->|3000 without a domain| W
+    T --> W[web · Next.js]
+    W --> A[api · Python]
+    W --> P[(postgres)]
+    A --> D[(apdata: clones)]
+    W --> C[(webconfig: app.json)]
+    A -->|"push · release"| G{{code hosts}}
+```
+
 | Service | Image | Notes |
 |---|---|---|
 | `postgres` | `postgres:16-alpine` | volume `pgdata` |
