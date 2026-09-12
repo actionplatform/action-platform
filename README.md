@@ -1,40 +1,127 @@
-# action-platform
+<p align="center">
+  <img src="docs/assets/cover.png" alt="Action Platform" width="100%">
+</p>
 
-Standardize **init**, **release**, and **deploy** across any stack.
+<p align="center">
+  <strong>From idea to production in one command — on any stack, on any cloud.</strong>
+</p>
 
-Pluggable CLI — SourceHost, CIRunner and DeployTarget are abstract contracts; providers plug in through entry points.
+<p align="center">
+  <a href="https://pypi.org/project/action-platform/"><img alt="PyPI" src="https://img.shields.io/pypi/v/action-platform?color=2ea44f"></a>
+  <a href="https://pypi.org/project/action-platform/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/action-platform"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
+  <a href="https://github.com/actionplatform/templates"><img alt="Templates" src="https://img.shields.io/badge/templates-13%20projects%20%C2%B7%203%20clouds-6f42c1"></a>
+</p>
 
-## Install
+---
+
+Every new service costs the same week: scaffold, lint config, CI, versioning, deploy pipeline, IAM. Then the next one drifts from the last. **Action Platform** turns that week into one command and keeps every project on the same rails — without a control plane to host, a UI to learn, or a vendor to trust with your cloud.
 
 ```bash
 pipx install action-platform
+
+action-platform init web python fastapi --name "orders" --cloud aws/lambda
 ```
+
+Thirty seconds later you have a FastAPI service with tests, lint, CI wired, a SAM template, a least-privilege IAM policy, and a GitHub repo already pushed (`--no-push` to keep it local).
+
+## Why teams pick it
+
+| | |
+|---|---|
+| **One command, whole lifecycle** | `init` → `release` → `deploy` → `rollback` → `diagnose` → `destroy`. Same verbs for a Python API on Lambda, a Go service in Docker, a React app on Amplify. |
+| **Templates from production, not tutorials** | Every project template is extracted from a real shipping product. Real layout, real CI, real gotchas already fixed. |
+| **Cloud is a layer, not a fork** | Projects stay cloud-agnostic. `--cloud aws/lambda` overlays deploy files; swap to `docker` tomorrow with one command. |
+| **Your CI, your account, your git** | Runs on GitHub Actions, GitLab CI or Jenkins you already have. Infra lands in **your** AWS account through OIDC — no long-lived keys, no agent, no SaaS in the loop. |
+| **Governance that ships with the code** | Conventional Commits enforced, changelog generated, `AGENTS.md` for humans and AI agents, Trivy scans, least-privilege IAM in `requirements/`. |
+| **Fix once, everywhere** | CI logic lives in versioned shared repos (`ci-scripts`, `ci-github`, `ci-gitlab`, `ci-jenkins`). Bump `v1`, every project picks it up. |
+
+## What you get
+
+```
+action-platform init --list
+```
+
+| Type | Stacks | Ready with |
+|------|--------|-----------|
+| `web` | python (FastAPI, FastMCP), go (Gin), node (React) | `/ping`, versioned API, tests, lint, CI |
+| `library` | python, go, php, node, java, rust | packaging, version test, publish workflow |
+| `docs` | mkdocs | Material theme, strict build in CI |
+| `plugin` | chrome | Manifest V3, popup, background, tests, store zip |
+| `empty` | — | `platform.toml` + code quality only |
+
+| Cloud | Adds |
+|-------|------|
+| `aws/lambda` | SAM template, HTTP API, custom domain, deploy workflow, IAM policy |
+| `aws/amplify` | `amplify.yml`, security headers, start-job workflow, IAM policy |
+| `docker` | Dockerfile per language, compose |
+
+| Service | Providers |
+|---------|-----------|
+| `postgres` | docker (local), aws-rds (Terraform/OpenTofu + SSM) |
 
 ## Commands
 
 ```bash
-action-platform init                        # interactive: type → stack → template → name → ci
-action-platform init web python             # default template for the stack
-action-platform init web python fastapi --name "My API" --ci gitlab
-action-platform init web python fastapi --cloud aws/lambda
-action-platform init --list                 # show projects and clouds
-action-platform cloud set docker            # apply a deploy overlay to an existing project
-action-platform cloud list                  # clouds compatible with this project
-action-platform release patch
-action-platform deploy                      # ships to the [deploy] target in platform.toml
-action-platform rollback | diagnose | destroy
+action-platform init                              # interactive: type → stack → template → name → ci
+action-platform init web go gin --ci gitlab       # direct
+action-platform init web python --cloud docker    # project + deploy overlay
+action-platform init ... --no-push                # skip creating the remote repo
+
+action-platform cloud set aws/lambda              # add or switch the deploy target
+action-platform service add postgres --provider aws-rds
+
+action-platform release patch                     # bump, changelog, tag, GitHub release
+action-platform deploy --stage prod
+action-platform rollback
+action-platform diagnose
+action-platform destroy
 ```
 
-Templates come from [actionplatform/templates](https://github.com/actionplatform/templates), cached in `~/.cache/action-platform/templates` (`--update` refreshes it). Point `ACTION_PLATFORM_TEMPLATES` to a local checkout to develop templates.
+Everything a project needs is declared in one file:
 
-## Programmatic API
+```toml
+[project]
+name = "orders"
+type = "web"
+stack = "python"
+template = "fastapi"
+language = "python"
+
+[source_host]
+kind = "github"
+repo = "acme/orders"
+
+[deploy]
+target = "aws/lambda"
+
+[services]
+postgres = "aws-rds"
+```
+
+## Extend it
+
+Deploy targets are plugins. Implement the `DeployTarget` contract — `preflight`, `create`, `deploy`, `switch_traffic`, `rollback`, `diagnose`, `delete` — publish it under the `action_platform.deploy_target` entry-point group, and `action-platform deploy` finds it by name.
 
 ```python
 from action_platform import ActionPlatform, Config
 from action_platform.providers import SourceGithub
 
-config = Config(source_host=SourceGithub(repo="owner/my-project"))
-ActionPlatform(config=config).release("patch")
+tool = ActionPlatform(config=Config(source_host=SourceGithub(repo="acme/orders")))
+tool.release("minor")
 ```
 
-Deploy targets are resolved from `[deploy] target` in `platform.toml` through the `action_platform.deploy_target` entry-point group — install a provider package to enable one.
+Templates are plain cookiecutters in [actionplatform/templates](https://github.com/actionplatform/templates). Add a stack or a cloud with a pull request — the CLI reads `index.toml`, nothing to redeploy. Point `ACTION_PLATFORM_TEMPLATES` at a local checkout while you work on them.
+
+## Ecosystem
+
+| Repo | Role |
+|------|------|
+| [templates](https://github.com/actionplatform/templates) | projects, clouds, services |
+| [ci-scripts](https://github.com/actionplatform/ci-scripts) | the one implementation of setup / check / release / commit lint |
+| [ci-github](https://github.com/actionplatform/ci-github) · [ci-gitlab](https://github.com/actionplatform/ci-gitlab) · [ci-jenkins](https://github.com/actionplatform/ci-jenkins) | thin wrappers per CI |
+| [strategy](https://github.com/actionplatform/strategy) | why it is built this way |
+
+## License
+
+Apache 2.0.
