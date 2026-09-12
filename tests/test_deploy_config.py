@@ -40,7 +40,7 @@ def test_target_resolved_from_entry_points(tmp_path: Path, monkeypatch):
 def test_unknown_target(tmp_path: Path, monkeypatch):
     monkeypatch.setattr("action_platform.core.module.load_deploy_targets", lambda: {})
     with pytest.raises(ConfigError, match="no provider installed"):
-        _config(tmp_path, '[deploy]\ntarget = "aws/lambda"\n')
+        _config(tmp_path, '[deploy]\ntarget = "aws/lambda"\n').deploy
 
 
 def test_config_module_has_no_provider_imports():
@@ -48,3 +48,11 @@ def test_config_module_has_no_provider_imports():
 
     src = inspect.getsource(config_module)
     assert "deploy_aws" not in src and "deploy_docker" not in src
+
+
+def test_loading_never_needs_a_provider(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr("action_platform.core.module.load_deploy_targets", lambda: {})
+    config = _config(tmp_path, '[deploy]\ntarget = "aws/lambda"\n')
+    assert config.project_name == "my-api"
+    with pytest.raises(ConfigError):
+        config.deploy

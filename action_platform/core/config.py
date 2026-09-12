@@ -41,9 +41,18 @@ class Config:
     ) -> None:
         self.source_host = source_host
         self.ci = ci or []
-        self.deploy = deploy or []
         self.project_name = project_name
         self.language = language
+        self._deploy = deploy
+        self._deploy_spec: dict = {}
+
+    @property
+    def deploy(self) -> list[DeployTarget]:
+        """Targets resolve lazily: loading platform.toml never needs a provider installed."""
+        if self._deploy is None:
+            self._deploy = _build_deploy_targets(self._deploy_spec)
+
+        return self._deploy
 
     @classmethod
     def from_toml(cls, path: Path) -> "Config":
@@ -53,12 +62,14 @@ class Config:
         data = tomllib.loads(path.read_text())
         project = data.get("project", {})
 
-        return cls(
+        config = cls(
             source_host=_build_source_host(data.get("source_host", {})),
-            deploy=_build_deploy_targets(data.get("deploy", {})),
             project_name=project.get("name", ""),
             language=project.get("language", ""),
         )
+        config._deploy_spec = data.get("deploy", {})
+
+        return config
 
 
 def _build_source_host(cfg: dict) -> SourceHost | None:
