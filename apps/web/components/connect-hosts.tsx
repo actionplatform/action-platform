@@ -1,12 +1,12 @@
 "use client";
 
-import { Check, ExternalLink, KeyRound, Settings2, Sparkles } from "lucide-react";
+import { Check, ExternalLink, KeyRound, Settings2, Sparkles, X } from "lucide-react";
 import { useState, useTransition } from "react";
-import { saveOAuthApp } from "@/app/oauth-actions";
+import { disconnectHost, removeOAuthApp, saveOAuthApp } from "@/app/oauth-actions";
 import { siBitbucket, siGithub, siGitlab } from "simple-icons";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
+import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 
 type Provider = "github" | "gitlab" | "bitbucket";
@@ -30,6 +30,11 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
   const [setup, setSetup] = useState<Provider | null>(null);
   const [createGh, setCreateGh] = useState(false);
   const [done, setDone] = useState<Record<string, boolean>>({});
+  const [removed, setRemoved] = useState<Record<string, boolean>>({});
+  const [gone, setGone] = useState<Record<string, boolean>>({});
+  const [confirmRemove, setConfirmRemove] = useState<Provider | null>(null);
+  const [confirmDisconnect, setConfirmDisconnect] = useState<{ provider: Provider; login: string } | null>(null);
+  const [pending, start] = useTransition();
 
   const startUrl = (p: Provider) => {
     const q = new URLSearchParams({ return: returnTo });
@@ -41,14 +46,19 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
     <div className="grid gap-3 sm:grid-cols-3">
       {(Object.keys(META) as Provider[]).map((p) => {
         const m = META[p];
-        const ready = configured[p] || done[p];
-        const logins = connected[p] ?? [];
+        const ready = (configured[p] || done[p]) && !removed[p];
+        const logins = (connected[p] ?? []).filter((l) => !gone[`${p}:${l}`]);
         return (
           <div key={p} className="flex flex-col rounded-lg border border-border bg-surface p-4">
             <div className="flex items-center gap-2"><BrandIcon icon={m.icon} /><span className="font-medium">{m.label}</span></div>
             {logins.length > 0 && (
               <ul className="mt-2 space-y-1 text-xs text-secondary">
-                {logins.map((l) => <li key={l} className="flex items-center gap-1"><Check className="size-3" /> {l}</li>)}
+                {logins.map((l) => (
+                  <li key={l} className="flex items-center gap-1">
+                    <Check className="size-3" /> <span className="flex-1">{l}</span>
+                    <button type="button" title="Disconnect" onClick={() => setConfirmDisconnect({ provider: p, login: l })} className="text-muted-foreground hover:text-foreground"><X className="size-3" /></button>
+                  </li>
+                ))}
               </ul>
             )}
             <div className="mt-auto pt-4 flex flex-col gap-2">
@@ -69,7 +79,12 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
               ) : (
                 <Button variant="outline" onClick={() => setSetup(p)}><Settings2 className="size-4" /> Set up OAuth app</Button>
               )}
-              {ready && <button type="button" onClick={() => setSetup(p)} className="text-xs text-muted-foreground hover:text-foreground">Change OAuth app</button>}
+              {ready && (
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <button type="button" onClick={() => setSetup(p)} className="hover:text-foreground">Change OAuth app</button>
+                  <button type="button" onClick={() => setConfirmRemove(p)} className="hover:text-foreground">Remove OAuth app</button>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -77,6 +92,26 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
 
       {setup && <OAuthAppDialog provider={setup} origin={origin} onClose={() => setSetup(null)} onSaved={() => { setDone({ ...done, [setup]: true }); setSetup(null); }} />}
       {createGh && <CreateGitHubAppDialog orgId={orgId} returnTo={returnTo} onClose={() => setCreateGh(false)} />}
+      <ConfirmDialog
+        open={confirmRemove !== null}
+        onClose={() => setConfirmRemove(null)}
+        title={`Remove the ${confirmRemove ? META[confirmRemove].label : ""} OAuth app?`}
+        description="The platform forgets the client id and secret. Connected accounts stop refreshing their tokens; delete the app at the provider too."
+        confirmLabel="Remove"
+        danger
+        pending={pending}
+        onConfirm={() => { const p = confirmRemove; if (p) start(async () => { const r = await removeOAuthApp(p); if (r.ok) setRemoved((m) => ({ ...m, [p]: true })); setConfirmRemove(null); }); }}
+      />
+      <ConfirmDialog
+        open={confirmDisconnect !== null}
+        onClose={() => setConfirmDisconnect(null)}
+        title={`Disconnect ${confirmDisconnect?.login}?`}
+        description="The stored token is deleted. Apps that used this account lose their credentials until another host is picked. Revoke the authorization at the provider too if you want it gone there."
+        confirmLabel="Disconnect"
+        danger
+        pending={pending}
+        onConfirm={() => { const c = confirmDisconnect; if (c) start(async () => { const r = await disconnectHost(c.provider, c.login); if (r.ok) setGone((m) => ({ ...m, [`${c.provider}:${c.login}`]: true })); setConfirmDisconnect(null); }); }}
+      />
     </div>
   );
 }

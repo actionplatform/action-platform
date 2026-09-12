@@ -45,3 +45,10 @@ export function writeConfig(patch: AppConfig): AppConfig {
 
   return next;
 }
+
+export function clearOAuthApp(provider: "github" | "gitlab" | "bitbucket"): void {
+  const current: AppConfig = existsSync(FILE) ? JSON.parse(readFileSync(FILE, "utf8")) : {};
+  const oauth = { ...(current.oauth ?? {}) };
+  delete oauth[provider];
+  writeFileSync(FILE, JSON.stringify({ ...current, oauth }, null, 2) + "\n", { mode: 0o600 });
+}
