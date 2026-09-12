@@ -66,6 +66,7 @@ homepage = "https://github.com/actionplatform/action-platform"
 repository = "https://github.com/actionplatform/action-platform"
 
 packages = [{ include = "action_platform" }]
+include = [{ path = "action_platform/hooks/*", format = ["sdist", "wheel"] }]
 
 [tool.poetry.scripts]
 action-platform = "action_platform.main:main"

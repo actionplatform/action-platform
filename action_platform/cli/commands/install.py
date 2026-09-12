@@ -20,7 +20,7 @@ def run(
     ci: str = typer.Option("github", "--ci", help="github, gitlab, jenkins"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be created"),
 ) -> None:
-    """Install the platform in this repository: platform.toml, hooks, code quality, CI. Only .githooks/ is refreshed; nothing else is overwritten."""
+    """Install the platform in this repository: platform.toml, code quality, CI files (never overwritten) and git hooks into .git/hooks (always refreshed)."""
     plan = installing.install(
         Path.cwd(), type_=type_, language=language, ci=ci, dry_run=dry_run
     )
@@ -36,7 +36,9 @@ def run(
         console.print(f"  [dim]= {rel}  (exists, kept)[/dim]")
 
     if plan.hooks_installed:
-        console.print("  [green]✓[/green] git hooks installed (.githooks)")
+        console.print(
+            "  [green]✓[/green] git hooks installed (.git/hooks, unversioned)"
+        )
 
     if dry_run or not plan.created:
         return

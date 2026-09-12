@@ -92,9 +92,7 @@ def test_install_platform_dry_run(server, templates, tmp_path: Path):
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
     (repo / "pyproject.toml").write_text("[project]\nname = 'x'\n")
     proj = templates / "projects/web/python/fastapi/{{cookiecutter.project_slug}}"
-    (proj / ".githooks").mkdir(parents=True)
-    (proj / ".githooks/pre-commit").write_text("#!/bin/sh\nexit 0\n")
-    (proj / ".code_quality").mkdir()
+    (proj / ".code_quality").mkdir(parents=True)
     (templates / "projects/web/python/fastapi/cookiecutter.json").write_text(
         '{"_language": "python"}'
     )

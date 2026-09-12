@@ -34,7 +34,7 @@ Rules an AI agent (or a new contributor) follows in this repo. Added by `action-
 
 ## Commits
 
-[Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/): `type(scope)!: description` — `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`. One commit per concern; stage files explicitly — never `git add .`. Enforced by `.githooks/` and CI.
+[Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/): `type(scope)!: description` — `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`. One commit per concern; stage files explicitly — never `git add .`. Enforced by git hooks (`action-platform install`) and CI.
 
 ## Branches
 
@@ -100,7 +100,6 @@ def install(
     _write(plan, settings.LAST_VERSION_FILE, "0.1.0\n", dry_run)
     _write(plan, "AGENTS.md", AGENTS, dry_run)
 
-    _sync_tree(plan, source / ".githooks", ".githooks", dry_run)
     _copy_tree(plan, source / ".code_quality", ".code_quality", dry_run)
 
     for rel in CI_FILES[ci]:
@@ -182,36 +181,6 @@ def _copy_file(plan: Plan, source: Path, rel: str, dry_run: bool) -> None:
         shutil.copy2(source, target)
 
     plan.created.append(rel)
-
-
-def _sync_tree(plan: Plan, source: Path, rel: str, dry_run: bool) -> None:
-    """Hooks are platform-owned: refresh files whose content changed, never delete extras."""
-    if not source.is_dir():
-        return
-
-    target = plan.root / rel
-    changed = []
-
-    for item in sorted(source.iterdir()):
-        if not item.is_file():
-            continue
-
-        dest = target / item.name
-
-        if dest.exists() and dest.read_bytes() == item.read_bytes():
-            continue
-
-        changed.append(f"{rel}/{item.name}")
-
-        if not dry_run:
-            target.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(item, dest)
-
-    if not changed:
-        plan.skipped.append(rel + "/")
-        return
-
-    plan.created.extend(changed)
 
 
 def _copy_tree(plan: Plan, source: Path, rel: str, dry_run: bool) -> None:

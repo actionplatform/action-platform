@@ -20,7 +20,9 @@ def run(
         help="Check commits after this ref (default: merge base with develop/main)",
     ),
     install: bool = typer.Option(
-        False, "--install-hooks", help="Point core.hooksPath at .githooks and exit"
+        False,
+        "--install-hooks",
+        help="Install the bundled git hooks into .git/hooks and exit",
     ),
 ) -> None:
     """Check the current branch and commits against git-flow and Conventional Commits."""
@@ -28,9 +30,9 @@ def run(
 
     if install:
         if gitflow.install_hooks(cwd):
-            console.print("[green]hooks installed[/green] (.githooks)")
+            console.print("[green]hooks installed[/green] (.git/hooks)")
             return
-        raise ActionPlatformError("no .githooks directory or not a git repository")
+        raise ActionPlatformError("not a git repository")
 
     report = gitflow.audit(cwd, since=since)
     console.print(

@@ -20,8 +20,6 @@ def templates(tmp_path: Path, monkeypatch) -> Path:
     (leaf / "cookiecutter.json").write_text('{"_language": "python"}')
     (proj / ".code_quality").mkdir(parents=True)
     (proj / ".code_quality/ruff.toml").write_text("line-length = 79\n")
-    (proj / ".githooks").mkdir()
-    (proj / ".githooks/pre-commit").write_text("#!/bin/sh\nexit 0\n")
     (proj / ".github/workflows").mkdir(parents=True)
     for w in ["code-quality.yml", "gitflow.yml"]:
         (proj / ".github/workflows" / w).write_text("name: x\n")
@@ -56,17 +54,21 @@ def test_creates_missing_keeps_existing(repo: Path, templates: Path):
 
     assert plan.language == "python"
     assert "platform.toml" in plan.created
-    assert ".githooks/pre-commit" in plan.created
     assert ".code_quality/" in plan.created
     assert ".github/workflows/gitflow.yml" in plan.created
     assert ".github/workflows/code-quality.yml" in plan.skipped
     assert (repo / ".github/workflows/code-quality.yml").read_text() == "name: theirs\n"
     assert 'repo = "acme/existing"' in (repo / "platform.toml").read_text()
     assert plan.hooks_installed
-    hooks = subprocess.run(
-        ["git", "config", "core.hooksPath"], cwd=repo, capture_output=True, text=True
-    ).stdout.strip()
-    assert hooks == ".githooks"
+    assert (repo / ".git/hooks/pre-commit").exists()
+    assert (repo / ".git/hooks/gitflow.sh").exists()
+    assert not (repo / ".githooks").exists()
+    assert (
+        subprocess.run(
+            ["git", "status", "--porcelain"], cwd=repo, capture_output=True, text=True
+        ).stdout.count(".git/")
+        == 0
+    )
 
 
 def test_dry_run_writes_nothing(repo: Path, templates: Path):
@@ -94,15 +96,10 @@ def test_errors(tmp_path: Path, templates: Path):
         install.install(bare)
 
 
-def test_hooks_are_refreshed_when_stale(repo: Path, templates: Path):
+def test_hooks_are_refreshed_from_the_package(repo: Path, templates: Path):
     install.install(repo)
-    (repo / ".githooks/pre-commit").write_text("#!/bin/sh\nexit 1\n")
+    (repo / ".git/hooks/pre-commit").write_text("broken")
 
-    plan = install.install(repo)
+    install.install(repo)
 
-    assert ".githooks/pre-commit" in plan.created
-    assert (repo / ".githooks/pre-commit").read_text() == "#!/bin/sh\nexit 0\n"
-
-    plan = install.install(repo)
-
-    assert ".githooks/" in plan.skipped
+    assert "gitflow_branch" in (repo / ".git/hooks/pre-commit").read_text()
