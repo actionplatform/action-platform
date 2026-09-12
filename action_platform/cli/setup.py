@@ -2,8 +2,10 @@
 
 import typer
 
+from action_platform.cli.commands import branch as branch_cmd
 from action_platform.cli.commands import cloud as cloud_cmd
 from action_platform.cli.commands import deploy as deploy_cmd
+from action_platform.cli.commands import gitflow as gitflow_cmd
 from action_platform.cli.commands import init as init_cmd
 from action_platform.cli.commands import mcp as mcp_cmd
 from action_platform.cli.commands import release as release_cmd
@@ -17,6 +19,8 @@ app = typer.Typer(
 )
 
 app.command("init")(init_cmd.run)
+app.command("branch")(branch_cmd.run)
+app.command("gitflow")(gitflow_cmd.run)
 app.command("release")(release_cmd.run)
 app.command("deploy")(deploy_cmd.run)
 app.command("rollback")(deploy_cmd.rollback)
