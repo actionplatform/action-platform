@@ -25,6 +25,8 @@ def test_tools_exposed(server):
         "start_branch",
         "gitflow_audit",
         "install_hooks",
+        "propose_pull_request",
+        "open_pull_request",
     }
 
 
@@ -37,6 +39,8 @@ def test_irreversible_tools_are_flagged(server):
     assert tools["rollback"].annotations.destructive_hint
     assert not tools["init_project"].annotations.destructive_hint
     assert tools["start_branch"].annotations.open_world_hint
+    assert tools["open_pull_request"].annotations.open_world_hint
+    assert tools["propose_pull_request"].annotations.read_only_hint
     assert tools["gitflow_audit"].annotations.read_only_hint
     assert tools["gitflow_rules"].annotations.read_only_hint
     assert not tools["install_platform"].annotations.open_world_hint
