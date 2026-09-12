@@ -62,7 +62,7 @@ def release(
         return ctx
 
     versioning.write(repo_root / settings.LAST_VERSION_FILE, ctx.next_version)
-    (repo_root / settings.CHANGELOG_FILE).write_text(ctx.changelog)
+    changelog.prepend(repo_root / settings.CHANGELOG_FILE, ctx.changelog)
 
     tag = f"v{ctx.next_version}"
 

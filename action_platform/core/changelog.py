@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from datetime import date
+from pathlib import Path
 
 COMMIT_RE = re.compile(
     r"^(?P<type>[a-z]+)(?:\((?P<scope>[^)]+)\))?(?P<bang>!)?:\s*(?P<msg>.+)$"
@@ -52,3 +53,21 @@ def render(version: str, commits: list[str]) -> str:
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
+
+
+HEADER = "# Changelog\n"
+
+
+def prepend(path: Path, entry: str) -> None:
+    """Insert the release entry at the top; older releases stay below."""
+    previous = path.read_text() if path.exists() else ""
+
+    if previous.startswith(HEADER):
+        previous = previous[len(HEADER) :].lstrip("\n")
+
+    body = entry.rstrip("\n") + "\n"
+
+    if previous.strip():
+        body += "\n" + previous.rstrip("\n") + "\n"
+
+    path.write_text(HEADER + "\n" + body)
