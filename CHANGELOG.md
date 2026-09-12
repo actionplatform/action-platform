@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.2 — 2026-09-12
+
+### CI
+- **pypi:** fail loudly when a file already exists instead of skipping
+
 ## v0.1.1 — 2026-09-12
 
 ### Docs
