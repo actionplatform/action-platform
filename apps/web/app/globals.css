@@ -1,59 +1,53 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
+/* Strictly monochrome: black ground, near-black surfaces, white as the only
+   accent. No colored states anywhere — selection, success and errors are
+   expressed with white, borders and weight. */
 :root {
-  --background: oklch(0.99 0 0);
-  --foreground: oklch(0.15 0 0);
-  --card: oklch(1 0 0);
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.5 0 0);
-  --border: oklch(0.9 0 0);
-  --primary: oklch(0.2 0 0);
-  --primary-foreground: oklch(0.98 0 0);
-  --success: oklch(0.6 0.17 150);
-  --destructive: oklch(0.6 0.22 25);
-}
-
-.dark {
-  --background: oklch(0.13 0 0);
-  --foreground: oklch(0.96 0 0);
-  --card: oklch(0.17 0 0);
-  --muted: oklch(0.22 0 0);
-  --muted-foreground: oklch(0.65 0 0);
-  --border: oklch(0.27 0 0);
-  --primary: oklch(0.96 0 0);
-  --primary-foreground: oklch(0.15 0 0);
+  color-scheme: dark;
+  --background: #080808;
+  --sidebar: #0d0d0d;
+  --surface: #111111;
+  --surface-hover: #171717;
+  --surface-selected: #f5f5f5;
+  --border: #262626;
+  --border-hover: #525252;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+  --text-muted: #737373;
+  --action-primary: #f5f5f5;
+  --action-primary-hover: #d4d4d4;
+  --action-primary-text: #0a0a0a;
 }
 
 @theme inline {
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-selected: var(--surface-selected);
   --color-border: var(--border);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-success: var(--success);
-  --color-destructive: var(--destructive);
+  --color-border-hover: var(--border-hover);
+  --color-foreground: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-muted-foreground: var(--text-muted);
+  --color-primary: var(--action-primary);
+  --color-primary-hover: var(--action-primary-hover);
+  --color-primary-foreground: var(--action-primary-text);
+  /* legacy aliases used by earlier components */
+  --color-card: var(--surface);
+  --color-muted: var(--surface-hover);
   --font-sans: ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, monospace;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    --background: oklch(0.13 0 0);
-    --foreground: oklch(0.96 0 0);
-    --card: oklch(0.17 0 0);
-    --muted: oklch(0.22 0 0);
-    --muted-foreground: oklch(0.65 0 0);
-    --border: oklch(0.27 0 0);
-    --primary: oklch(0.96 0 0);
-    --primary-foreground: oklch(0.15 0 0);
-  }
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 body {
   @apply bg-background text-foreground font-sans antialiased;
 }
+
+input, select, textarea {
+  @apply bg-background text-foreground border border-border rounded-md placeholder:text-muted-foreground;
+  @apply focus:outline-none focus:border-foreground focus:ring-1 focus:ring-foreground;
+}
+
+::selection { background: var(--text-primary); color: var(--background); }

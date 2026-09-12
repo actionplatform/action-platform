@@ -14,7 +14,7 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
       </div>
       <button
         title="Sign out"
-        className="text-muted-foreground hover:text-foreground"
+        className="text-secondary hover:text-foreground"
         onClick={async () => { await authClient.signOut(); router.push("/login"); router.refresh(); }}
       >
         <LogOut className="size-4" />
