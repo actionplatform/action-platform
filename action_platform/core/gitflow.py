@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import shutil
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -146,16 +147,24 @@ def audit(cwd: Path, since: str | None = None) -> Report:
 
 
 def install_hooks(cwd: Path) -> bool:
-    """Point core.hooksPath at .githooks when the project ships it."""
-    hooks = cwd / ".githooks"
+    """Copy the bundled hooks into .git/hooks (unversioned) and clear any core.hooksPath."""
+    git_dir = cwd / ".git"
 
-    if not hooks.is_dir() or not (cwd / ".git").exists():
+    if not git_dir.is_dir():
         return False
 
-    for hook in hooks.iterdir():
-        hook.chmod(0o755)
+    source = Path(__file__).resolve().parent.parent / "hooks"
+    target = git_dir / "hooks"
+    target.mkdir(exist_ok=True)
 
-    git.run(["config", "core.hooksPath", ".githooks"], cwd=cwd)
+    for name in ("gitflow.sh", "pre-commit", "commit-msg", "pre-push"):
+        dest = target / name
+        shutil.copy2(source / name, dest)
+        dest.chmod(0o755)
+
+    subprocess.run(
+        ["git", "config", "--unset", "core.hooksPath"], cwd=cwd, capture_output=True
+    )
 
     return True
 
