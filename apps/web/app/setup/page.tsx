@@ -1,10 +1,10 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { isConfigured } from "@/lib/oauth";
+import { appFor, isConfigured } from "@/lib/oauth";
 import { setupStatus } from "@/lib/setup";
 import { SetupWizard } from "./wizard";
 
-type Search = { org?: string; connected?: string; oauth_error?: string };
+type Search = { org?: string; connected?: string; oauth_error?: string; github_app?: string };
 
 export default async function SetupPage({ searchParams }: { searchParams: Promise<Search> }) {
   const status = await setupStatus();
@@ -24,7 +24,7 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
         initialStep={initialStep}
         dbError={status.error}
         initialOrgId={query.org ?? null}
-        oauth={{ configured: { github: isConfigured("github"), gitlab: isConfigured("gitlab"), bitbucket: isConfigured("bitbucket") }, origin, connected: query.connected ?? null, error: query.oauth_error ?? null }}
+        oauth={{ configured: { github: isConfigured("github"), gitlab: isConfigured("gitlab"), bitbucket: isConfigured("bitbucket") }, origin, connected: query.connected ?? null, error: query.oauth_error ?? null, githubApp: appFor("github")?.slug ?? null }}
       />
     </div>
   );

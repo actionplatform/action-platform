@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
-export type OAuthApp = { clientId: string; clientSecret: string; baseUrl?: string };
+export type OAuthApp = { clientId: string; clientSecret: string; baseUrl?: string; slug?: string };
 
 export type AppConfig = {
   databaseUrl?: string;

@@ -7,11 +7,11 @@ import { membersOf } from "@/lib/orgs";
 import { requireOrg } from "@/lib/session";
 import { headers } from "next/headers";
 import { ConnectHosts } from "@/components/connect-hosts";
-import { isConfigured } from "@/lib/oauth";
+import { appFor, isConfigured } from "@/lib/oauth";
 import { hostsOf } from "@/lib/source-hosts";
 import { SourceHosts } from "./source-hosts";
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string }> }) {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
   const { org } = await requireOrg();
   const [members, hosts, query] = await Promise.all([membersOf(org.id), hostsOf(org.id), searchParams]);
   const h = await headers();
@@ -47,11 +47,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <CardContent className="space-y-3">
             {query.oauth_error && <div className="text-sm text-foreground border border-foreground rounded-md px-3 py-2">{query.oauth_error}</div>}
             {query.connected && <div className="text-sm text-secondary">Connected {query.connected}.</div>}
+            {query.github_app && <div className="text-sm text-secondary">GitHub App <code className="font-mono">{query.github_app}</code> created. Install it, then connect.</div>}
             <ConnectHosts
               configured={{ github: isConfigured("github"), gitlab: isConfigured("gitlab"), bitbucket: isConfigured("bitbucket") }}
               connected={connected}
               origin={origin}
               returnTo="/settings"
+              githubApp={appFor("github")?.slug ?? null}
             />
           </CardContent>
         </Card>

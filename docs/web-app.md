@@ -35,7 +35,11 @@ Pending migrations run on boot, so upgrading the image is enough.
 
 ## Code hosts
 
-Settings → **Connect a code host**. Each provider needs an OAuth app registered once:
+Settings → **Connect a code host**.
+
+**GitHub, in two clicks**: *Create GitHub App* opens GitHub with a pre-filled manifest (permissions: contents, workflows, administration, pull requests; callback already set); confirm the name and the app's credentials land in the platform. Then *Install the app on GitHub* on the account or organization whose repositories it should manage, and *Connect with GitHub*. Tokens from a GitHub App expire and are refreshed automatically.
+
+Otherwise each provider needs an OAuth app registered once (GitHub: *I already have one*):
 
 | Provider | Where | Callback |
 |---|---|---|
