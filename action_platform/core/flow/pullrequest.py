@@ -5,11 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from action_platform.core import branching, changelog, git, gitflow
+from action_platform.core.flow import branching, git, gitflow
+from action_platform.core.release import changelog
 from action_platform.core.config import Config
 from action_platform.core.context import PRRef
 from action_platform.core.exception import ActionPlatformError
-from action_platform.core.pipeline import build_context
+from action_platform.core.release.release import build_context
 from action_platform.settings import settings
 
 

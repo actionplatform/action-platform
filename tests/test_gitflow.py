@@ -1,6 +1,6 @@
 """Git-flow rules."""
 
-from action_platform.core import gitflow
+from action_platform.core.flow import gitflow
 
 
 def test_branch_names():

@@ -2,7 +2,7 @@
 
 import pytest
 
-from action_platform.core import versioning
+from action_platform.core.release import versioning
 from action_platform.core.exception import ActionPlatformError
 
 

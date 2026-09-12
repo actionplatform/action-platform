@@ -4,25 +4,36 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-import tomllib
 from pathlib import Path
+from typing import Protocol
 
-from action_platform.core import git, gitflow
 from action_platform.core.config import Config
 from action_platform.core.exception import TemplateError
-from action_platform.core.templates import Cloud, Leaf, Service
+from action_platform.core.flow import git, gitflow
+from action_platform.core.manifest import (
+    read_platform,
+    write_deploy_target,
+    write_service,
+)
+from action_platform.core.scaffold.templates import Cloud, Leaf, Service
 from action_platform.settings import settings
 
 
 def generate_project(
-    repo: Path, leaf: Leaf, name: str, ci: str | None, output: Path
+    repo: Path,
+    leaf: Leaf,
+    name: str,
+    ci: str | None,
+    output: Path,
+    extra: dict | None = None,
 ) -> Path:
-    extra = {"project_name": name}
+    """Render `leaf` into `output`/<slug>. `extra` overrides cookiecutter defaults (description, package_name, github_owner…)."""
+    context = {**(extra or {}), "project_name": name}
 
     if ci is not None:
-        extra["ci"] = ci
+        context["ci"] = ci
 
-    return _cookiecutter(repo, leaf.directory, output, extra)
+    return _cookiecutter(repo, leaf.directory, output, context)
 
 
 def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
@@ -52,7 +63,7 @@ def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
         overwrite=True,
     )
 
-    _write_deploy_target(project / settings.CONFIG_FILE, cloud.name)
+    write_deploy_target(project / settings.CONFIG_FILE, cloud.name)
 
     return project
 
@@ -87,18 +98,35 @@ def apply_service(
         overwrite=True,
     )
 
-    _write_service(project / settings.CONFIG_FILE, service.name, provider)
+    write_service(project / settings.CONFIG_FILE, service.name, provider)
 
     return project
 
 
-def push_project(project: Path, private: bool = False, branch: str = "main") -> str:
+def push_project(
+    project: Path,
+    private: bool = False,
+    branch: str = "main",
+    credentials: "SourceCredentialsLike | None" = None,
+) -> str:
     """git init, first commit, create the remote via [source_host], push.
 
     No secrets are written: the deploy workflow needs them, but which ones and
     from where is the operator's call — DEPLOY.md in the project lists them.
+    `credentials` (kind, token, username, base_url) override the environment's.
     """
     config = Config.from_toml(project / settings.CONFIG_FILE)
+
+    if credentials is not None and config.source_host is not None:
+        from action_platform.providers.source import build_source_host
+
+        config.source_host = build_source_host(
+            credentials.kind,
+            config.source_host.repo,
+            base_url=credentials.base_url,
+            token=credentials.token,
+            username=credentials.username,
+        )
 
     if config.source_host is None:
         raise TemplateError("platform.toml has no [source_host]; cannot push")
@@ -136,65 +164,11 @@ def push_project(project: Path, private: bool = False, branch: str = "main") -> 
     return url
 
 
-def read_platform(project: Path) -> dict:
-    path = project / settings.CONFIG_FILE
-
-    if not path.exists():
-        raise TemplateError(f"{settings.CONFIG_FILE} not found in {project}")
-
-    data = tomllib.loads(path.read_text())
-    meta = dict(data.get("project", {}))
-    repo = data.get("source_host", {}).get("repo", "")
-
-    if "/" in repo:
-        meta["github_owner"] = repo.split("/", 1)[0]
-
-    return meta
-
-
-def _write_deploy_target(path: Path, target: str) -> None:
-    text = path.read_text()
-    line = f'target = "{target}"'
-
-    if "[deploy]" not in text:
-        path.write_text(text.rstrip("\n") + f"\n\n[deploy]\n{line}\n")
-        return
-
-    lines = text.splitlines()
-
-    for i, current in enumerate(lines):
-        if current.strip().startswith("target ="):
-            lines[i] = line
-            break
-    else:
-        lines.insert(lines.index("[deploy]") + 1, line)
-
-    path.write_text("\n".join(lines) + "\n")
-
-
-def _write_service(path: Path, name: str, provider: str) -> None:
-    text = path.read_text()
-    line = f'{name} = "{provider}"'
-
-    if "[services]" not in text:
-        path.write_text(text.rstrip("\n") + f"\n\n[services]\n{line}\n")
-        return
-
-    lines = text.splitlines()
-    start = lines.index("[services]")
-    end = next(
-        (i for i in range(start + 1, len(lines)) if lines[i].startswith("[")),
-        len(lines),
-    )
-
-    for i in range(start + 1, end):
-        if lines[i].split("=")[0].strip() == name:
-            lines[i] = line
-            break
-    else:
-        lines.insert(end, line)
-
-    path.write_text("\n".join(lines) + "\n")
+class SourceCredentialsLike(Protocol):
+    kind: str
+    token: str
+    username: str | None
+    base_url: str | None
 
 
 def _cookiecutter(

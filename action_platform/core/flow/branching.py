@@ -7,7 +7,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-from action_platform.core import git, gitflow
+from action_platform.core.flow import git, gitflow
 from action_platform.core.exception import ActionPlatformError
 
 DEVELOP_BASED = {

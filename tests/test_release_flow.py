@@ -7,7 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from action_platform.core import git, pipeline
+from action_platform.core.flow import git
+from action_platform.core.release import release as releasing
 from action_platform.core.config import Config
 from action_platform.core.exception import ReleaseError
 
@@ -44,7 +45,7 @@ def repo(tmp_path: Path, monkeypatch) -> Path:
 
 
 def _release(repo: Path, level: str, prerelease=None):
-    return pipeline.release(Config(), level, repo, prerelease=prerelease)
+    return releasing.release(Config(), level, repo, prerelease=prerelease)
 
 
 def test_stable_on_main(repo: Path):

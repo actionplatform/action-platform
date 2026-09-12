@@ -8,7 +8,7 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from action_platform.core import git
+from action_platform.core.flow import git
 
 KINDS = {
     "feature",
@@ -153,7 +153,7 @@ def install_hooks(cwd: Path) -> bool:
     if not git_dir.is_dir():
         return False
 
-    source = Path(__file__).resolve().parent.parent / "hooks"
+    source = Path(__file__).resolve().parents[2] / "hooks"
     target = git_dir / "hooks"
     target.mkdir(exist_ok=True)
 

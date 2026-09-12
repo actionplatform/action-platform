@@ -6,9 +6,9 @@ import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from action_platform.core import git, gitflow
+from action_platform.core.flow import git, gitflow
 from action_platform.core.exception import ActionPlatformError
-from action_platform.core.templates import Matrix, load_matrix
+from action_platform.core.scaffold.templates import Matrix, load_matrix
 from action_platform.settings import settings
 
 MARKERS = [

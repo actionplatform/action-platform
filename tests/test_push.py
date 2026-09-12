@@ -2,7 +2,8 @@
 
 from pathlib import Path
 
-from action_platform.core import generate, git
+from action_platform.core.flow import git
+from action_platform.core.scaffold import generate
 
 
 class FakeHost:
