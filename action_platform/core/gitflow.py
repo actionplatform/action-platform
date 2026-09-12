@@ -39,7 +39,7 @@ PROTECTED = {"main", "master", "develop"}
 
 BRANCH_RE = re.compile(r"^(?P<kind>[a-z]+)/[A-Za-z0-9][A-Za-z0-9._-]*$")
 COMMIT_RE = re.compile(r"^(?P<type>[a-z]+)(\([a-z0-9._/-]+\))?!?: .+")
-RELEASE_RE = re.compile(r"^(chore\(release\): |chore: bootstrap)")
+RELEASE_RE = re.compile(r"^(chore\(release\): |chore\(platform\): |chore: bootstrap)")
 
 
 @dataclass

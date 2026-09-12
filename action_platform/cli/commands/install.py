@@ -42,6 +42,7 @@ def run(
         return
 
     console.print(
-        "\nnext: review platform.toml, commit on a branch "
-        "(action-platform branch chore platform), then action-platform gitflow"
+        "\nnext: review the files, then "
+        '[bold]git add -A && git commit -m "chore(platform): install action-platform"[/bold] '
+        "— chore(platform) commits are allowed on main"
     )
