@@ -42,6 +42,16 @@ class DeployResult:
 
 
 @dataclass
+class Diagnosis:
+    ok: bool
+    target: str
+    status: str = ""
+    version: str | None = None
+    url: str | None = None
+    details: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
 class Context:
     repo_root: Path
     remote_url: str = ""
@@ -52,3 +62,4 @@ class Context:
     artifacts: list[Path] = field(default_factory=list)
     env: dict[str, str] = field(default_factory=dict)
     dry_run: bool = False
+    stage: str = "dev"
