@@ -67,6 +67,7 @@ action-platform init                              # interactive: type → stack 
 action-platform init web go gin --ci gitlab       # direct
 action-platform init web python --cloud docker    # project + deploy overlay
 action-platform init ... --no-push                # skip creating the remote repo
+action-platform install [--dry-run]               # existing repo: platform.toml, hooks, code quality, CI — never overwrites
 
 action-platform cloud set aws/lambda              # add or switch the deploy target
 action-platform service add postgres --provider aws-rds
