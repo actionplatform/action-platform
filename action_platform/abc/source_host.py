@@ -17,6 +17,12 @@ class SourceHost(ABC):
     def detect(self, remote_url: str) -> bool:
         """Return True if this provider handles remote_url."""
 
+    def create_repository(
+        self, repo: str, description: str = "", private: bool = False
+    ) -> str:
+        """Create the remote repository; return its clone URL."""
+        raise NotImplementedError(f"{self.name} cannot create repositories")
+
     @abstractmethod
     def create_tag(self, ctx: "Context", tag: str) -> None:
         """Create annotated tag on remote."""

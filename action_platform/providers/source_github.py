@@ -40,10 +40,26 @@ class SourceGithub(SourceHost):
         )
         if result.returncode != 0:
             raise ProviderError(f"gh failed: {result.stderr.strip()}")
+
         return result.stdout.strip()
 
     def detect(self, remote_url: str) -> bool:
         return "github.com" in remote_url
+
+    def create_repository(
+        self, repo: str, description: str = "", private: bool = False
+    ) -> str:
+        args = ["gh", "repo", "create", repo, "--private" if private else "--public"]
+
+        if description:
+            args += ["--description", description]
+
+        result = subprocess.run(args, check=False, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            raise ProviderError(f"gh repo create failed: {result.stderr.strip()}")
+
+        return f"https://github.com/{repo}.git"
 
     def create_tag(self, ctx: Context, tag: str) -> None:
         return None
@@ -58,16 +74,20 @@ class SourceGithub(SourceHost):
         prerelease: bool = False,
     ) -> ReleaseRef:
         args = ["release", "create", tag, "--title", tag, "--notes", notes]
+
         if draft:
             args.append("--draft")
+
         if prerelease:
             args.append("--prerelease")
+
         if assets:
             args.extend(str(a) for a in assets)
-        url = self._gh(*args)
 
+        url = self._gh(*args)
         view = self._gh("release", "view", tag, "--json", "url")
         data = json.loads(view)
+
         return ReleaseRef(id=tag, tag=tag, url=data.get("url", url))
 
     def open_pr(
