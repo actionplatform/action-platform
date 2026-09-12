@@ -9,8 +9,12 @@ from rich.console import Console
 from rich.table import Table
 
 from action_platform.core.exception import TemplateError
-from action_platform.core.generate import apply_cloud, generate_project, push_project
-from action_platform.core.templates import Matrix, load_matrix
+from action_platform.core.scaffold.generate import (
+    apply_cloud,
+    generate_project,
+    push_project,
+)
+from action_platform.core.scaffold.templates import Matrix, load_matrix
 from action_platform.logging import logger
 
 CI_PROVIDERS = ["github", "gitlab", "jenkins"]

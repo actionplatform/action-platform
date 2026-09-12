@@ -7,7 +7,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from action_platform.core import pullrequest
+from action_platform.core.flow import pullrequest
 
 console = Console()
 

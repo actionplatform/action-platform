@@ -7,7 +7,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from action_platform.core import install as installing
+from action_platform.core.scaffold import install as installing
 
 console = Console()
 
