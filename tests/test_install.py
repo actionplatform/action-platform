@@ -56,7 +56,7 @@ def test_creates_missing_keeps_existing(repo: Path, templates: Path):
 
     assert plan.language == "python"
     assert "platform.toml" in plan.created
-    assert ".githooks/" in plan.created
+    assert ".githooks/pre-commit" in plan.created
     assert ".code_quality/" in plan.created
     assert ".github/workflows/gitflow.yml" in plan.created
     assert ".github/workflows/code-quality.yml" in plan.skipped
