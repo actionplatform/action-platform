@@ -6,7 +6,7 @@ from pathlib import Path
 
 from action_platform.core import pipeline
 from action_platform.core.config import Config
-from action_platform.core.context import Context, DeployResult
+from action_platform.core.context import Context, DeployResult, Diagnosis
 
 
 class ActionPlatform:
@@ -17,7 +17,7 @@ class ActionPlatform:
     Example:
         tool = ActionPlatform(config=Config(...))
         tool.release("patch")
-        tool.deploy(target="dokploy")
+        tool.deploy()
 
     Args:
         config (Config): configuration with injected providers.
@@ -38,6 +38,26 @@ class ActionPlatform:
         return pipeline.release(self.config, level, self.repo_root, dry_run=dry_run)
 
     def deploy(
-        self, target: str | None = None, dry_run: bool = False
+        self, target: str | None = None, dry_run: bool = False, stage: str | None = None
     ) -> list[DeployResult]:
-        return pipeline.deploy(self.config, target, self.repo_root, dry_run=dry_run)
+        return pipeline.deploy(
+            self.config, target, self.repo_root, dry_run=dry_run, stage=stage
+        )
+
+    def rollback(
+        self,
+        target: str | None = None,
+        to_version: str | None = None,
+        stage: str | None = None,
+    ) -> None:
+        pipeline.rollback(
+            self.config, target, self.repo_root, to_version=to_version, stage=stage
+        )
+
+    def diagnose(
+        self, target: str | None = None, stage: str | None = None
+    ) -> list[Diagnosis]:
+        return pipeline.diagnose(self.config, target, self.repo_root, stage=stage)
+
+    def destroy(self, target: str | None = None, stage: str | None = None) -> None:
+        pipeline.destroy(self.config, target, self.repo_root, stage=stage)
