@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.8 — 2026-09-12
+
+### Features
+- **web:** disconnect a connected account and remove an OAuth app
+
 ## v0.1.7 — 2026-09-12
 
 ### Bug Fixes
