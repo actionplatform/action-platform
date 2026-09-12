@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.4 — 2026-09-12
+
+### Features
+- **web:** create the GitHub App through the manifest flow — no manual OAuth app
+
+### Chores
+- strip comments from source, configs and workflows; nextCookies last
+
 ## v0.1.3 — 2026-09-12
 
 ### Bug Fixes
