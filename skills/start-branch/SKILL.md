@@ -11,4 +11,4 @@ Never work directly on `main`, `master` or `develop`; the hooks refuse it anyway
 2. Code is the issue or ticket the user named (`42`, `PROJ-123`). Ask when there is none — a branch without a code is not allowed.
 3. Slug is optional: two or three words, `start_branch` normalizes them.
 4. `start_branch`. It checks out `develop` (or the default branch when there is no develop; `main` for hotfix/release), pulls, creates and pushes.
-5. Report branch and base. A dirty tree or an existing name comes back as an error — relay it, do not stash or delete for the user.
+5. Report branch and base. When the work is done, the open-pull-request skill closes the loop. A dirty tree or an existing name comes back as an error — relay it, do not stash or delete for the user.
