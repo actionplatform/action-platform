@@ -1,43 +1,54 @@
-"""CHANGELOG generation from icon-typed commits."""
+"""CHANGELOG generation from Conventional Commits (https://www.conventionalcommits.org/en/v1.0.0/)."""
 
 from __future__ import annotations
 
 import re
 from datetime import date
 
-TYPE_RE = re.compile(
-    r"^(?:\S+\s+)?(?P<type>FEATURE|PEP8|ISSUE|BUG|DOCS|PyPI|TEST|CI/CD|SECURITY)"
-    r":\s*(?P<msg>.+)$",
-    re.IGNORECASE,
+COMMIT_RE = re.compile(
+    r"^(?P<type>[a-z]+)(?:\((?P<scope>[^)]+)\))?(?P<bang>!)?:\s*(?P<msg>.+)$"
 )
 
 SECTIONS: dict[str, str] = {
-    "feature": "Features",
-    "bug": "Bug Fixes",
-    "security": "Security",
-    "pypi": "Release",
+    "breaking": "Breaking Changes",
+    "feat": "Features",
+    "fix": "Bug Fixes",
+    "perf": "Performance",
+    "refactor": "Refactoring",
     "docs": "Docs",
     "test": "Tests",
-    "ci/cd": "CI/CD",
-    "pep8": "Style",
-    "issue": "Issues",
+    "build": "Build",
+    "ci": "CI",
+    "style": "Style",
+    "chore": "Chores",
+    "revert": "Reverts",
 }
 
 
 def render(version: str, commits: list[str]) -> str:
     buckets: dict[str, list[str]] = {}
+
     for line in commits:
-        match = TYPE_RE.match(line)
+        match = COMMIT_RE.match(line)
+
         if not match:
             continue
-        buckets.setdefault(match.group("type").lower(), []).append(match.group("msg"))
+
+        key = "breaking" if match.group("bang") else match.group("type")
+        scope = match.group("scope")
+        msg = f"**{scope}:** {match.group('msg')}" if scope else match.group("msg")
+        buckets.setdefault(key, []).append(msg)
 
     lines = [f"## v{version} — {date.today().isoformat()}", ""]
+
     for key, title in SECTIONS.items():
         items = buckets.get(key)
+
         if not items:
             continue
+
         lines.append(f"### {title}")
         lines.extend(f"- {msg}" for msg in items)
         lines.append("")
+
     return "\n".join(lines).rstrip() + "\n"
