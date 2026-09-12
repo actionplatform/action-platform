@@ -5,10 +5,18 @@ import { bearer, deviceAuthorization, organization } from "better-auth/plugins";
 import { readConfig } from "./config";
 import { type Connection, getConnection } from "./db";
 
+function trustedOrigins(): string[] {
+  const raw = process.env.BETTER_AUTH_URL;
+  if (!raw) return [];
+  const { host } = new URL(raw);
+  return [`http://${host}`, `https://${host}`];
+}
+
 function create(conn: Connection, authSecret: string | undefined, allowSignUp = false) {
   return betterAuth({
     secret: authSecret,
     baseURL: process.env.BETTER_AUTH_URL,
+    trustedOrigins: trustedOrigins(),
     database: drizzleAdapter(conn.db, { provider: conn.engine, schema: conn.schema }),
     emailAndPassword: { enabled: true, disableSignUp: !allowSignUp },
     plugins: [
