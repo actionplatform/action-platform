@@ -1,10 +1,10 @@
 [project]
-name = "devtool"
+name = "action-platform"
 language = "python"
 
 [source_host]
 kind = "github"
-repo = "FernandoCelmer/devtool"
+repo = "actionplatform/action-platform"
 
 [release]
 strategy = "semver"

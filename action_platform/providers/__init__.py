@@ -1,4 +1,4 @@
-"""Devtool built-in providers."""
+"""Action Platform built-in providers."""
 
 from .ci_jenkins import CIJenkins
 from .deploy_dokploy import DeployDokploy

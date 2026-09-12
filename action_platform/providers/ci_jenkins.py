@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import Iterator
 
-from devtool.abc.ci_runner import CIRunner
-from devtool.core.context import Context, RunRef, RunResult
+from action_platform.abc.ci_runner import CIRunner
+from action_platform.core.context import Context, RunRef, RunResult
 
 
 class CIJenkins(CIRunner):
     """
     Import:
-        from devtool.providers import CIJenkins
+        from action_platform.providers import CIJenkins
 
     Example:
         CIJenkins(url="https://jenkins.internal", job="my-job")
@@ -19,8 +19,8 @@ class CIJenkins(CIRunner):
     Args:
         url (str): Jenkins base URL.
         job (str): job name.
-        user (str): overrides DEVTOOL_JENKINS_USER env var.
-        token (str): overrides DEVTOOL_JENKINS_TOKEN env var.
+        user (str): overrides ACTION_PLATFORM_JENKINS_USER env var.
+        token (str): overrides ACTION_PLATFORM_JENKINS_TOKEN env var.
     """
 
     name = "jenkins"

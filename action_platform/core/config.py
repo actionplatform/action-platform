@@ -1,21 +1,21 @@
-"""Devtool Config."""
+"""Action Platform Config."""
 
 from __future__ import annotations
 
 import tomllib
 from pathlib import Path
 
-from devtool.abc.ci_runner import CIRunner
-from devtool.abc.deploy_target import DeployTarget
-from devtool.abc.source_host import SourceHost
-from devtool.core.exception import ConfigError
+from action_platform.abc.ci_runner import CIRunner
+from action_platform.abc.deploy_target import DeployTarget
+from action_platform.abc.source_host import SourceHost
+from action_platform.core.exception import ConfigError
 
 
 class Config:
     """
     Import:
-        from devtool import Config
-        from devtool.providers import SourceGithub, CIJenkins, DeployDokploy
+        from action_platform import Config
+        from action_platform.providers import SourceGithub, CIJenkins, DeployDokploy
 
     Example:
         config = Config(
@@ -49,7 +49,7 @@ class Config:
     @classmethod
     def from_toml(cls, path: Path) -> "Config":
         if not path.exists():
-            raise ConfigError(f"devtool.toml not found at {path}")
+            raise ConfigError(f"platform.toml not found at {path}")
         data = tomllib.loads(path.read_text())
         project = data.get("project", {})
         return cls(
@@ -64,6 +64,6 @@ def _build_source_host(cfg: dict) -> SourceHost | None:
     if not kind:
         return None
     if kind == "github":
-        from devtool.providers.source_github import SourceGithub
+        from action_platform.providers.source_github import SourceGithub
         return SourceGithub(repo=cfg["repo"])
     raise ConfigError(f"unknown source_host kind: {kind}")

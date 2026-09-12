@@ -1,1 +1,1 @@
-"""Devtool core module."""
+"""Action Platform core module."""

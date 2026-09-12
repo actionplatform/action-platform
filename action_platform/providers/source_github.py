@@ -7,15 +7,15 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from devtool.abc.source_host import SourceHost
-from devtool.core.context import Context, PRRef, ReleaseRef
-from devtool.core.exception import ProviderError
+from action_platform.abc.source_host import SourceHost
+from action_platform.core.context import Context, PRRef, ReleaseRef
+from action_platform.core.exception import ProviderError
 
 
 class SourceGithub(SourceHost):
     """
     Import:
-        from devtool.providers import SourceGithub
+        from action_platform.providers import SourceGithub
 
     Example:
         SourceGithub(repo="owner/my-project")

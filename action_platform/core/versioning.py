@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from devtool.core.exception import DevtoolError
+from action_platform.core.exception import ActionPlatformError
 
 SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-([\w.]+))?$")
 
@@ -13,7 +13,7 @@ SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-([\w.]+))?$")
 def parse(version: str) -> tuple[int, int, int, str | None]:
     match = SEMVER_RE.match(version.strip().lstrip("v"))
     if not match:
-        raise DevtoolError(f"Invalid semver: {version!r}")
+        raise ActionPlatformError(f"Invalid semver: {version!r}")
     major, minor, patch, pre = match.groups()
     return int(major), int(minor), int(patch), pre
 

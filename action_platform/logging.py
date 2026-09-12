@@ -1,4 +1,4 @@
-"""Devtool logging module."""
+"""Action Platform logging module."""
 
 import logging
 
@@ -11,4 +11,4 @@ logging.basicConfig(
     handlers=[RichHandler(rich_tracebacks=False, show_path=False)],
 )
 
-logger = logging.getLogger("devtool")
+logger = logging.getLogger("action_platform")

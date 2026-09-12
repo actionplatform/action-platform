@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from devtool.core.context import Context, PRRef, ReleaseRef
+    from action_platform.core.context import Context, PRRef, ReleaseRef
 
 
 class SourceHost(ABC):

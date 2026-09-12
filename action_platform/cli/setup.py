@@ -2,12 +2,12 @@
 
 import typer
 
-from devtool.cli.commands import deploy as deploy_cmd
-from devtool.cli.commands import init as init_cmd
-from devtool.cli.commands import release as release_cmd
+from action_platform.cli.commands import deploy as deploy_cmd
+from action_platform.cli.commands import init as init_cmd
+from action_platform.cli.commands import release as release_cmd
 
 app = typer.Typer(
-    name="devtool",
+    name="action-platform",
     help="Standardize init, release, and deploy across any stack.",
     no_args_is_help=True,
     pretty_exceptions_enable=False,

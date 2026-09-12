@@ -1,21 +1,21 @@
-"""Devtool exceptions."""
+"""Action Platform exceptions."""
 
 
-class DevtoolError(Exception):
+class ActionPlatformError(Exception):
     """Base exception."""
 
 
-class ConfigError(DevtoolError):
+class ConfigError(ActionPlatformError):
     """Invalid or missing configuration."""
 
 
-class ProviderError(DevtoolError):
+class ProviderError(ActionPlatformError):
     """Provider operation failed."""
 
 
-class ReleaseError(DevtoolError):
+class ReleaseError(ActionPlatformError):
     """Release pipeline failed."""
 
 
-class DeployError(DevtoolError):
+class DeployError(ActionPlatformError):
     """Deploy pipeline failed."""

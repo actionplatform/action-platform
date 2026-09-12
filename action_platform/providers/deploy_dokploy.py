@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from devtool.abc.deploy_target import DeployTarget
-from devtool.core.context import Context, DeployResult
+from action_platform.abc.deploy_target import DeployTarget
+from action_platform.core.context import Context, DeployResult
 
 
 class DeployDokploy(DeployTarget):
     """
     Import:
-        from devtool.providers import DeployDokploy
+        from action_platform.providers import DeployDokploy
 
     Example:
         DeployDokploy(url="https://dokploy.internal", app="my-project-prod")
@@ -17,7 +17,7 @@ class DeployDokploy(DeployTarget):
     Args:
         url (str): Dokploy base URL.
         app (str): application ID/slug.
-        token (str): overrides DEVTOOL_DOKPLOY_TOKEN env var.
+        token (str): overrides ACTION_PLATFORM_DOKPLOY_TOKEN env var.
     """
 
     name = "dokploy"

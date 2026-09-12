@@ -1,1 +1,1 @@
-"""Devtool CLI package."""
+"""Action Platform CLI package."""

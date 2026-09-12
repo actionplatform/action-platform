@@ -1,4 +1,4 @@
-"""`devtool init` command."""
+"""`action-platform init` command."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import typer
 
-from devtool.logging import logger
+from action_platform.logging import logger
 
 TEMPLATES = Path(__file__).parents[2] / "templates"
 
@@ -16,7 +16,7 @@ def run(
     language: str = typer.Argument(..., help="Target stack (python, go, node, ...)"),
     force: bool = typer.Option(False, "--force", help="Overwrite existing files"),
 ) -> None:
-    """Bootstrap .code_quality/ and devtool.toml."""
+    """Bootstrap .code_quality/ and platform.toml."""
     cwd = Path.cwd()
     src = TEMPLATES / "code_quality" / language
     if not src.exists():
@@ -26,7 +26,7 @@ def run(
     _copy_tree(src, dst_cq, force=force)
     logger.info("wrote %s", dst_cq)
 
-    toml = cwd / "devtool.toml"
+    toml = cwd / "platform.toml"
     if not toml.exists() or force:
         toml.write_text(_render_config(language, cwd.name))
         logger.info("wrote %s", toml)

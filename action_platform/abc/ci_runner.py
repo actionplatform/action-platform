@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Iterator
 
 if TYPE_CHECKING:
-    from devtool.core.context import Context, RunRef, RunResult
+    from action_platform.core.context import Context, RunRef, RunResult
 
 
 class CIRunner(ABC):

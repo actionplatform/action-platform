@@ -1,21 +1,21 @@
-"""DevTool orchestrator."""
+"""ActionPlatform orchestrator."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from devtool.core import pipeline
-from devtool.core.config import Config
-from devtool.core.context import Context, DeployResult
+from action_platform.core import pipeline
+from action_platform.core.config import Config
+from action_platform.core.context import Context, DeployResult
 
 
-class DevTool:
+class ActionPlatform:
     """
     Import:
-        from devtool import DevTool, Config
+        from action_platform import ActionPlatform, Config
 
     Example:
-        tool = DevTool(config=Config(...))
+        tool = ActionPlatform(config=Config(...))
         tool.release("patch")
         tool.deploy(target="dokploy")
 

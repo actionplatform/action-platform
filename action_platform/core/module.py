@@ -10,12 +10,12 @@ def load_providers(group: str) -> dict[str, type]:
 
 
 def load_source_hosts() -> dict[str, type]:
-    return load_providers("devtool.source_host")
+    return load_providers("action_platform.source_host")
 
 
 def load_ci_runners() -> dict[str, type]:
-    return load_providers("devtool.ci_runner")
+    return load_providers("action_platform.ci_runner")
 
 
 def load_deploy_targets() -> dict[str, type]:
-    return load_providers("devtool.deploy_target")
+    return load_providers("action_platform.deploy_target")

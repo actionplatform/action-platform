@@ -1,4 +1,4 @@
-"""Devtool abstract base classes."""
+"""Action Platform abstract base classes."""
 
 from .ci_runner import CIRunner
 from .deploy_target import DeployTarget

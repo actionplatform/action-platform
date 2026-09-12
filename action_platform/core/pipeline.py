@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from devtool.core import changelog, git, versioning
-from devtool.core.config import Config
-from devtool.core.context import Context, DeployResult
-from devtool.core.exception import DeployError, ReleaseError
-from devtool.logging import logger
-from devtool.settings import settings
+from action_platform.core import changelog, git, versioning
+from action_platform.core.config import Config
+from action_platform.core.context import Context, DeployResult
+from action_platform.core.exception import DeployError, ReleaseError
+from action_platform.logging import logger
+from action_platform.settings import settings
 
 
 def build_context(config: Config, repo_root: Path, dry_run: bool = False) -> Context:

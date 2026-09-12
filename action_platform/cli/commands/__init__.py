@@ -1,1 +1,1 @@
-"""Devtool CLI commands."""
+"""Action Platform CLI commands."""

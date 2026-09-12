@@ -1,17 +1,17 @@
-"""Devtool CLI entrypoint."""
+"""Action Platform CLI entrypoint."""
 
 import sys
 
 from rich.console import Console
 
-from devtool.cli.setup import app
-from devtool.core.exception import DevtoolError
+from action_platform.cli.setup import app
+from action_platform.core.exception import ActionPlatformError
 
 
 def main() -> None:
     try:
         app()
-    except DevtoolError as e:
+    except ActionPlatformError as e:
         Console(stderr=True).print(f"[red]error:[/red] {e}")
         sys.exit(1)
 
