@@ -8,6 +8,7 @@ from action_platform.cli.commands import deploy as deploy_cmd
 from action_platform.cli.commands import gitflow as gitflow_cmd
 from action_platform.cli.commands import init as init_cmd
 from action_platform.cli.commands import mcp as mcp_cmd
+from action_platform.cli.commands import pr as pr_cmd
 from action_platform.cli.commands import install as install_cmd
 from action_platform.cli.commands import release as release_cmd
 from action_platform.cli.commands import service as service_cmd
@@ -23,6 +24,7 @@ app.command("init")(init_cmd.run)
 app.command("install")(install_cmd.run)
 app.command("branch")(branch_cmd.run)
 app.command("gitflow")(gitflow_cmd.run)
+app.command("pr")(pr_cmd.run)
 app.command("release")(release_cmd.run)
 app.command("deploy")(deploy_cmd.run)
 app.command("rollback")(deploy_cmd.rollback)
