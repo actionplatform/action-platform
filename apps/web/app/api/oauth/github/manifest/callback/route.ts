@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { writeConfig } from "@/lib/config";
 import { verifyState } from "@/lib/oauth";
+import { publicOrigin } from "@/lib/origin";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -8,7 +9,7 @@ export async function GET(req: Request) {
   if (!state) return Response.json({ detail: "invalid or expired state" }, { status: 400 });
 
   const back = (query: Record<string, string>) => {
-    const target = new URL(state.returnTo, url.origin);
+    const target = new URL(state.returnTo, publicOrigin(req.headers));
     for (const [k, v] of Object.entries(query)) target.searchParams.set(k, v);
     redirect(target.pathname + target.search);
   };

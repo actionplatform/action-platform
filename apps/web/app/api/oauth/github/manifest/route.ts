@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
 import { appFor, signState } from "@/lib/oauth";
+import { publicOrigin } from "@/lib/origin";
 import { getSession } from "@/lib/session";
 import { setupStatus } from "@/lib/setup";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
+  const origin = publicOrigin(req.headers);
   const session = await getSession();
   if (!session && (await setupStatus()).complete) redirect("/login");
   if (appFor("github")) return Response.json({ detail: "a GitHub app is already configured" }, { status: 409 });
@@ -16,10 +18,10 @@ export async function GET(req: Request) {
 
   const manifest = {
     name: `Action Platform (${url.host})`.slice(0, 34),
-    url: url.origin,
-    redirect_url: `${url.origin}/api/oauth/github/manifest/callback`,
-    callback_urls: [`${url.origin}/api/oauth/github/callback`],
-    setup_url: `${url.origin}${returnTo}`,
+    url: origin,
+    redirect_url: `${origin}/api/oauth/github/manifest/callback`,
+    callback_urls: [`${origin}/api/oauth/github/callback`],
+    setup_url: `${origin}${returnTo}`,
     public: false,
     request_oauth_on_install: true,
     default_permissions: { administration: "write", contents: "write", workflows: "write", pull_requests: "write", metadata: "read" },

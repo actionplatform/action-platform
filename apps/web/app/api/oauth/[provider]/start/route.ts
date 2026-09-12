@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { authorizeUrl, isConfigured, type Provider, PROVIDERS, signState } from "@/lib/oauth";
+import { publicOrigin } from "@/lib/origin";
 import { isMember } from "@/lib/orgs";
 import { getSession } from "@/lib/session";
 import { setupStatus } from "@/lib/setup";
@@ -26,5 +27,5 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
   if (!orgId) return Response.json({ detail: "no organization" }, { status: 400 });
 
   const state = signState({ orgId, returnTo });
-  redirect(authorizeUrl(provider as Provider, url.origin, state));
+  redirect(authorizeUrl(provider as Provider, publicOrigin(req.headers), state));
 }
