@@ -40,9 +40,15 @@ class ActionPlatform:
         level: str = "patch",
         dry_run: bool = False,
         prerelease: bool | None = None,
+        component: str | None = None,
     ) -> Context:
         return releasing.release(
-            self.config, level, self.repo_root, dry_run=dry_run, prerelease=prerelease
+            self.config,
+            level,
+            self.repo_root,
+            dry_run=dry_run,
+            prerelease=prerelease,
+            component=component,
         )
 
     def deploy(
