@@ -8,18 +8,26 @@ from action_platform.core.exception import TemplateError
 from action_platform.core.templates import Matrix
 
 INDEX = """
-[web.python.fastapi]
+[project.web.python.fastapi]
 default = true
 description = "FastAPI"
 
-[web.python.django]
+[project.web.python.django]
 description = "Django"
 
-[web.go.gin]
+[project.web.go.gin]
 default = true
 
-[empty]
+[project.empty]
 description = "Only platform.toml"
+
+[cloud.aws.lambda]
+description = "SAM"
+languages = ["python"]
+types = ["web"]
+
+[cloud.docker]
+description = "Dockerfile"
 """
 
 
@@ -39,7 +47,7 @@ def test_types_and_stacks(matrix: Matrix):
 def test_resolve_default(matrix: Matrix):
     leaf = matrix.resolve("web", "python", None)
     assert leaf.template == "fastapi"
-    assert leaf.directory == "web/python/fastapi"
+    assert leaf.directory == "project/web/python/fastapi"
 
 
 def test_resolve_explicit(matrix: Matrix):
@@ -47,7 +55,7 @@ def test_resolve_explicit(matrix: Matrix):
 
 
 def test_resolve_empty(matrix: Matrix):
-    assert matrix.resolve("empty", None, None).directory == "empty"
+    assert matrix.resolve("empty", None, None).directory == "project/empty"
 
 
 def test_resolve_errors(matrix: Matrix):
@@ -59,3 +67,23 @@ def test_resolve_errors(matrix: Matrix):
         matrix.resolve("web", "rust", None)
     with pytest.raises(TemplateError):
         matrix.resolve("web", "python", "flask")
+
+
+def test_clouds(matrix: Matrix):
+    assert [c.name for c in matrix.clouds] == ["aws/lambda", "docker"]
+    lam = matrix.cloud("aws/lambda")
+    assert lam.directory == "cloud/aws/lambda"
+    assert lam.supports("web", "python")
+    assert not lam.supports("web", "go")
+    assert not lam.supports("library", "python")
+    assert matrix.cloud("docker").supports("library", "rust")
+    assert [c.name for c in matrix.clouds_for("web", "go")] == ["docker"]
+    with pytest.raises(TemplateError):
+        matrix.cloud("gcp/run")
+
+
+def test_empty_index_sections(tmp_path: Path):
+    path = tmp_path / "index.toml"
+    path.write_text("[project]\n[cloud]\n")
+    matrix = Matrix.from_toml(path)
+    assert matrix.leaves == [] and matrix.clouds == []
