@@ -19,9 +19,15 @@ def run(
         "--rc/--stable",
         help="Pre-release X.Y.Z-rc.N (default: rc off main/master, stable on them)",
     ),
+    component: str | None = typer.Option(
+        None,
+        "--component",
+        "-c",
+        help="Release one [components.<name>] of platform.toml (tag <name>/vX.Y.Z) instead of the repository",
+    ),
 ) -> None:
     """Bump version, generate changelog, tag, and publish release. Off main/master it cuts an rc."""
     config = Config.from_toml(Path.cwd() / "platform.toml")
     tool = ActionPlatform(config=config)
-    ctx = tool.release(level=level, dry_run=dry_run, prerelease=rc)
+    ctx = tool.release(level=level, dry_run=dry_run, prerelease=rc, component=component)
     logger.info("release done: %s", ctx.next_version)

@@ -45,6 +45,14 @@ class Config:
         self.language = language
         self._deploy = deploy
         self._deploy_spec: dict = {}
+        self._components_spec: dict = {}
+
+    @property
+    def components(self):
+        """Release components declared in platform.toml (root included under "")."""
+        from action_platform.core.release.components import parse
+
+        return parse(self._components_spec)
 
     @property
     def deploy(self) -> list[DeployTarget]:
@@ -68,6 +76,7 @@ class Config:
             language=project.get("language", ""),
         )
         config._deploy_spec = data.get("deploy", {})
+        config._components_spec = data.get("components", {})
 
         return config
 

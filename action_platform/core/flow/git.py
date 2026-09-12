@@ -36,16 +36,30 @@ def is_clean(cwd: Path | None = None) -> bool:
     return run(["status", "--porcelain"], cwd=cwd) == ""
 
 
-def latest_tag(cwd: Path | None = None) -> str | None:
+def latest_tag(cwd: Path | None = None, match: str | None = None) -> str | None:
+    """Closest reachable tag; `match` is a glob such as "web/v*"."""
+    args = ["describe", "--tags", "--abbrev=0"]
+
+    if match:
+        args += ["--match", match]
+
     try:
-        return run(["describe", "--tags", "--abbrev=0"], cwd=cwd)
+        return run(args, cwd=cwd)
     except subprocess.CalledProcessError:
         return None
 
 
-def commits_since(tag: str | None, cwd: Path | None = None) -> list[str]:
+def commits_since(
+    tag: str | None, cwd: Path | None = None, paths: list[str] | None = None
+) -> list[str]:
+    """Subjects since `tag`; `paths` are git pathspecs (":!dir" excludes)."""
     rng = f"{tag}..HEAD" if tag else "HEAD"
-    out = run(["log", rng, "--pretty=format:%s"], cwd=cwd)
+    args = ["log", rng, "--pretty=format:%s"]
+
+    if paths:
+        args += ["--", *paths]
+
+    out = run(args, cwd=cwd)
 
     return [line for line in out.split("\n") if line]
 

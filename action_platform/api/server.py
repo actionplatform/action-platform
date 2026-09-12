@@ -43,6 +43,7 @@ class AddApp(BaseModel):
 class ReleaseRequest(BaseModel):
     level: str = "patch"
     dry_run: bool = True
+    component: Optional[str] = None
     credentials: Optional[models.SourceCredentials] = None
 
 
@@ -369,7 +370,9 @@ def build(cors_origins: Optional[list[str]] = None) -> FastAPI:
         platform = auth.apply(tool(root_of(id)), body.credentials)
 
         with auth.git_auth(body.credentials):
-            ctx = platform.release(level=body.level, dry_run=body.dry_run)
+            ctx = platform.release(
+                level=body.level, dry_run=body.dry_run, component=body.component
+            )
 
         return {
             "current": ctx.current_version,

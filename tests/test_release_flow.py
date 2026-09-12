@@ -83,3 +83,67 @@ def test_same_version_refused(repo: Path):
 
     with pytest.raises(ReleaseError, match="already the current version"):
         _release(repo, "0.3.1")
+
+
+@pytest.fixture
+def mono(repo: Path) -> Path:
+    """Root + a `web` component under apps/web, each with its own version."""
+    (repo / "platform.toml").write_text(
+        '[project]\nname = "x"\n\n[components.web]\npath = "apps/web"\n'
+    )
+    web = repo / "apps" / "web"
+    web.mkdir(parents=True)
+    (web / "LAST_VERSION").write_text("0.1.0\n")
+    (web / "package.json").write_text('{\n  "name": "web",\n  "version": "0.1.0"\n}\n')
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "feat(web): scaffold")
+    _git(repo, "tag", "web/v0.1.0")
+    (web / "page.tsx").write_text("x")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "feat(web): page")
+    (repo / "lib.py").write_text("x")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "fix(core): lib")
+
+    return repo
+
+
+def test_component_release_has_own_version_tag_and_changelog(mono: Path):
+    config = Config.from_toml(mono / "platform.toml")
+    ctx = releasing.release(config, "minor", mono, component="web")
+
+    assert ctx.next_version == "0.2.0"
+    assert "web/v0.2.0" in git.tags(cwd=mono)
+    assert (mono / "apps/web/LAST_VERSION").read_text().strip() == "0.2.0"
+    assert (mono / "LAST_VERSION").read_text().strip() == "0.3.1"
+    assert '"version": "0.2.0"' in (mono / "apps/web/package.json").read_text()
+    assert "page" in ctx.changelog and "lib" not in ctx.changelog
+    assert (mono / "apps/web/CHANGELOG.md").exists()
+    assert not (mono / "CHANGELOG.md").exists()
+    assert _git(mono, "log", "-1", "--format=%s") == "chore(release): web 0.2.0"
+
+
+def test_root_release_excludes_component_commits(mono: Path):
+    config = Config.from_toml(mono / "platform.toml")
+    ctx = releasing.release(config, "patch", mono)
+
+    assert ctx.next_version == "0.3.2"
+    assert "v0.3.2" in git.tags(cwd=mono)
+    assert "lib" in ctx.changelog and "page" not in ctx.changelog
+    assert (mono / "apps/web/LAST_VERSION").read_text().strip() == "0.1.0"
+
+
+def test_component_rc_counts_only_its_own_tags(mono: Path):
+    _git(mono, "checkout", "-qb", "feature/2")
+    _git(mono, "tag", "v0.3.2-rc.1")  # a root rc must not bump the web rc counter
+    config = Config.from_toml(mono / "platform.toml")
+    ctx = releasing.release(config, "patch", mono, component="web")
+
+    assert ctx.next_version == "0.1.1-rc.1"
+    assert "web/v0.1.1-rc.1" in git.tags(cwd=mono)
+
+
+def test_unknown_component(mono: Path):
+    config = Config.from_toml(mono / "platform.toml")
+    with pytest.raises(ReleaseError, match="unknown component: api"):
+        releasing.release(config, "patch", mono, component="api")
