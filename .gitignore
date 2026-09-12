@@ -225,7 +225,6 @@ PLAN.md
 node_modules/
 apps/web/.next/
 apps/web/next-env.d.ts
-apps/web/data/
 apps/web/openapi.json
 
 !apps/web/lib/
