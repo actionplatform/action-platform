@@ -17,7 +17,11 @@ def run(
     language: str | None = typer.Option(
         None, "--language", help="python, go, node, php, java, rust (default: detected)"
     ),
-    ci: str = typer.Option("github", "--ci", help="github, gitlab, jenkins"),
+    ci: str | None = typer.Option(
+        None,
+        "--ci",
+        help="github, gitlab, jenkins (default: platform.toml, else github)",
+    ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be created"),
 ) -> None:
     """Install the platform in this repository: platform.toml, code quality, CI files (never overwritten) and git hooks into .git/hooks (always refreshed)."""

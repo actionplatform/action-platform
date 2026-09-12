@@ -73,7 +73,7 @@ def install(
     root: Path,
     type_: str = "web",
     language: str | None = None,
-    ci: str = "github",
+    ci: str | None = None,
     dry_run: bool = False,
 ) -> Plan:
     root = root.resolve()
@@ -81,6 +81,7 @@ def install(
     if not (root / ".git").exists():
         raise InstallError(f"{root} is not a git repository")
 
+    ci = ci or _existing_ci(root) or "github"
     language = language or detect_language(root)
 
     if language is None:
@@ -96,7 +97,9 @@ def install(
     source = _source_leaf(repo, matrix, language)
     plan = Plan(root=root, language=language, type=type_, ci=ci)
 
-    _write(plan, settings.CONFIG_FILE, _platform_toml(root, type_, language), dry_run)
+    _write(
+        plan, settings.CONFIG_FILE, _platform_toml(root, type_, language, ci), dry_run
+    )
     _write(plan, settings.LAST_VERSION_FILE, "0.1.0\n", dry_run)
     _write(plan, "AGENTS.md", AGENTS, dry_run)
 
@@ -133,16 +136,28 @@ def _language_of(leaf_dir: Path) -> str:
         return ""
 
 
-def _platform_toml(root: Path, type_: str, language: str) -> str:
+def _existing_ci(root: Path) -> str | None:
+    path = root / settings.CONFIG_FILE
+
+    if not path.exists():
+        return None
+
+    import tomllib
+
+    try:
+        return tomllib.loads(path.read_text()).get("project", {}).get("ci") or None
+    except tomllib.TOMLDecodeError:
+        return None
+
+
+def _platform_toml(root: Path, type_: str, language: str, ci: str) -> str:
     remote = git.remote_url(cwd=root)
     repo = ""
 
     if "github.com" in remote:
         repo = remote.split("github.com", 1)[1].strip(":/").removesuffix(".git")
 
-    text = (
-        f'[project]\nname = "{root.name}"\ntype = "{type_}"\nlanguage = "{language}"\n'
-    )
+    text = f'[project]\nname = "{root.name}"\ntype = "{type_}"\nci = "{ci}"\nlanguage = "{language}"\n'
 
     if repo:
         text += f'\n[source_host]\nkind = "github"\nrepo = "{repo}"\n'
