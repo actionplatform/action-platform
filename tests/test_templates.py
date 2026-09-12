@@ -8,17 +8,17 @@ from action_platform.core.exception import TemplateError
 from action_platform.core.templates import Matrix
 
 INDEX = """
-[project.web.python.fastapi]
+[projects.web.python.fastapi]
 default = true
 description = "FastAPI"
 
-[project.web.python.django]
+[projects.web.python.django]
 description = "Django"
 
-[project.web.go.gin]
+[projects.web.go.gin]
 default = true
 
-[project.empty]
+[projects.empty]
 description = "Only platform.toml"
 
 [cloud.aws.lambda]
@@ -47,7 +47,7 @@ def test_types_and_stacks(matrix: Matrix):
 def test_resolve_default(matrix: Matrix):
     leaf = matrix.resolve("web", "python", None)
     assert leaf.template == "fastapi"
-    assert leaf.directory == "project/web/python/fastapi"
+    assert leaf.directory == "projects/web/python/fastapi"
 
 
 def test_resolve_explicit(matrix: Matrix):
@@ -55,7 +55,7 @@ def test_resolve_explicit(matrix: Matrix):
 
 
 def test_resolve_empty(matrix: Matrix):
-    assert matrix.resolve("empty", None, None).directory == "project/empty"
+    assert matrix.resolve("empty", None, None).directory == "projects/empty"
 
 
 def test_resolve_errors(matrix: Matrix):
@@ -84,6 +84,20 @@ def test_clouds(matrix: Matrix):
 
 def test_empty_index_sections(tmp_path: Path):
     path = tmp_path / "index.toml"
-    path.write_text("[project]\n[cloud]\n")
+    path.write_text("[projects]\n[cloud]\n")
     matrix = Matrix.from_toml(path)
     assert matrix.leaves == [] and matrix.clouds == []
+
+
+def test_services(tmp_path: Path):
+    path = tmp_path / "index.toml"
+    path.write_text(
+        INDEX
+        + '\n[service.postgres]\ndescription = "db"\nproviders = ["docker", "aws-rds"]\n'
+    )
+    matrix = Matrix.from_toml(path)
+    svc = matrix.service("postgres")
+    assert svc.directory == "service/postgres"
+    assert svc.providers == ["docker", "aws-rds"]
+    with pytest.raises(TemplateError):
+        matrix.service("kafka")
