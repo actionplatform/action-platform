@@ -44,3 +44,12 @@ def test_sync_files(tmp_path):
     assert '"version": "0.2.0"' in (tmp_path / "package.json").read_text()
     assert '__version__ = "0.2.0"' in (tmp_path / "pkg" / "__init__.py").read_text()
     assert versioning.sync_files(tmp_path, "0.2.0") == []
+
+
+def test_strip_pre_and_next_rc():
+    assert versioning.strip_pre("0.3.2-rc.1") == "0.3.2"
+    assert versioning.next_rc("0.3.2", []) == "0.3.2-rc.1"
+    assert (
+        versioning.next_rc("0.3.2", ["v0.3.2-rc.1", "v0.3.2-rc.2", "v0.3.1"])
+        == "0.3.2-rc.3"
+    )
