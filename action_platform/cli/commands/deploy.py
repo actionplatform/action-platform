@@ -12,7 +12,9 @@ from action_platform.logging import logger
 
 
 def run(
-    target: str = typer.Option(None, "--target", help="Deploy target name (dokploy, pypi, ...)"),
+    target: str = typer.Option(
+        None, "--target", help="Deploy target name (dokploy, pypi, ...)"
+    ),
     dry_run: bool = typer.Option(False, "--dry-run"),
 ) -> None:
     """Publish artifacts or promote application via configured targets."""

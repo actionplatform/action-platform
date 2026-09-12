@@ -70,13 +70,20 @@ class SourceGithub(SourceHost):
         data = json.loads(view)
         return ReleaseRef(id=tag, tag=tag, url=data.get("url", url))
 
-    def open_pr(self, ctx: Context, base: str, head: str, title: str, body: str) -> PRRef:
+    def open_pr(
+        self, ctx: Context, base: str, head: str, title: str, body: str
+    ) -> PRRef:
         url = self._gh(
-            "pr", "create",
-            "--base", base,
-            "--head", head,
-            "--title", title,
-            "--body", body,
+            "pr",
+            "create",
+            "--base",
+            base,
+            "--head",
+            head,
+            "--title",
+            title,
+            "--body",
+            body,
         )
         view = self._gh("pr", "view", url, "--json", "number")
         data = json.loads(view)

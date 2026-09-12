@@ -22,7 +22,9 @@ def build_context(config: Config, repo_root: Path, dry_run: bool = False) -> Con
     )
 
 
-def release(config: Config, level: str, repo_root: Path, dry_run: bool = False) -> Context:
+def release(
+    config: Config, level: str, repo_root: Path, dry_run: bool = False
+) -> Context:
     ctx = build_context(config, repo_root, dry_run=dry_run)
 
     if not git.is_clean(cwd=repo_root):
@@ -51,7 +53,9 @@ def release(config: Config, level: str, repo_root: Path, dry_run: bool = False) 
         config.source_host.create_release(ctx, tag=tag, notes=ctx.changelog)
 
     for runner in config.ci:
-        run = runner.trigger(ctx, job=config.project_name, params={"version": ctx.next_version})
+        run = runner.trigger(
+            ctx, job=config.project_name, params={"version": ctx.next_version}
+        )
         result = runner.wait(ctx, run)
         if not result.ok:
             raise ReleaseError(f"CI {runner.name} failed")
@@ -59,11 +63,17 @@ def release(config: Config, level: str, repo_root: Path, dry_run: bool = False) 
     return ctx
 
 
-def deploy(config: Config, target_name: str | None, repo_root: Path, dry_run: bool = False) -> list[DeployResult]:
+def deploy(
+    config: Config, target_name: str | None, repo_root: Path, dry_run: bool = False
+) -> list[DeployResult]:
     ctx = build_context(config, repo_root, dry_run=dry_run)
     ctx.next_version = ctx.current_version
 
-    targets = config.deploy if target_name is None else [t for t in config.deploy if t.name == target_name]
+    targets = (
+        config.deploy
+        if target_name is None
+        else [t for t in config.deploy if t.name == target_name]
+    )
     if not targets:
         raise DeployError(f"no deploy target configured (filter={target_name!r})")
 
@@ -72,7 +82,9 @@ def deploy(config: Config, target_name: str | None, repo_root: Path, dry_run: bo
         logger.info("deploy target=%s version=%s", t.name, ctx.next_version)
         t.preflight(ctx)
         if dry_run:
-            results.append(DeployResult(ok=True, target=t.name, version=ctx.next_version))
+            results.append(
+                DeployResult(ok=True, target=t.name, version=ctx.next_version)
+            )
             continue
         results.append(t.deploy(ctx))
     return results

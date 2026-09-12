@@ -65,5 +65,6 @@ def _build_source_host(cfg: dict) -> SourceHost | None:
         return None
     if kind == "github":
         from action_platform.providers.source_github import SourceGithub
+
         return SourceGithub(repo=cfg["repo"])
     raise ConfigError(f"unknown source_host kind: {kind}")

@@ -46,7 +46,9 @@ def create_tag(tag: str, message: str, cwd: Path | None = None) -> None:
     run(["tag", "-a", tag, "-m", message], cwd=cwd)
 
 
-def push(refspec: str = "HEAD", remote: str = "origin", cwd: Path | None = None) -> None:
+def push(
+    refspec: str = "HEAD", remote: str = "origin", cwd: Path | None = None
+) -> None:
     run(["push", remote, refspec], cwd=cwd)
 
 
