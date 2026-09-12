@@ -119,7 +119,7 @@ def register(mcp: Any) -> None:
             bool, Field(description="true only reports what would be created")
         ] = True,
     ) -> dict:
-        """Install the platform in an existing repository: platform.toml, .githooks, .code_quality, CI checks, AGENTS.md.
+        """Install the platform in an existing repository: platform.toml, .code_quality, CI checks, AGENTS.md, and git hooks into .git/hooks.
 
         Never overwrites a file that exists. Defaults to a dry run — show the
         plan, then call again with dry_run=false. App code and existing deploy
