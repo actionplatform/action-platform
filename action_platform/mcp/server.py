@@ -13,7 +13,8 @@ from action_platform.mcp.tools import flow, lifecycle, matrix, project
 INSTRUCTIONS = """Scaffold, deploy and operate projects on the Action Platform.
 
 Start with list_matrix to learn the project types, stacks, templates,
-clouds and services that exist. init_project generates locally; nothing
+clouds and services that exist. init_project generates a new project;
+install_platform brings an existing repository in. Both work locally; nothing
 reaches a remote host until push_project, which creates a repository
 visible to others — confirm with the user before calling it.
 

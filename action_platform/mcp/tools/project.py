@@ -7,6 +7,7 @@ from typing import Annotated, Any, Optional
 
 from pydantic import Field
 
+from action_platform.core import install as installing
 from action_platform.core.generate import (
     apply_cloud,
     apply_service,
@@ -102,6 +103,42 @@ def register(mcp: Any) -> None:
         apply_service(repo, matrix.service(service), root, provider=provider)
 
         return {"path": str(root / "services" / service), "provider": provider}
+
+    @mcp.tool(annotations=WRITES_LOCAL)
+    def install_platform(
+        project: ProjectDir = None,
+        type: Annotated[str, Field(description="web, library, docs, plugin")] = "web",
+        language: Annotated[
+            Optional[str],
+            Field(
+                description="python, go, node, php, java, rust; default detected from the repo"
+            ),
+        ] = None,
+        ci: Annotated[str, Field(description="github, gitlab or jenkins")] = "github",
+        dry_run: Annotated[
+            bool, Field(description="true only reports what would be created")
+        ] = True,
+    ) -> dict:
+        """Install the platform in an existing repository: platform.toml, .githooks, .code_quality, CI checks, AGENTS.md.
+
+        Never overwrites a file that exists. Defaults to a dry run — show the
+        plan, then call again with dry_run=false. App code and existing deploy
+        files are not touched.
+        """
+        plan = installing.install(
+            _root(project), type_=type, language=language, ci=ci, dry_run=dry_run
+        )
+
+        return {
+            "path": str(plan.root),
+            "language": plan.language,
+            "type": plan.type,
+            "ci": plan.ci,
+            "created": plan.created,
+            "kept": plan.skipped,
+            "hooks_installed": plan.hooks_installed,
+            "dry_run": dry_run,
+        }
 
     @mcp.tool(annotations=READ_ONLY)
     def project_info(project: ProjectDir = None) -> dict:
