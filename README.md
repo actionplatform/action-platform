@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>Your platform team, as a CLI.</strong>
+  <strong>Your platform team: a web app, a CLI and an MCP server on one core.</strong>
 </p>
 
 <p align="center">
@@ -15,7 +15,27 @@
 
 ---
 
-Every new service costs the same week: scaffold, lint config, CI, versioning, deploy pipeline, IAM. Then the next one drifts from the last. **Action Platform** turns that week into one command and keeps every project on the same rails — without a control plane to host, a UI to learn, or a vendor to trust with your cloud.
+Every new service costs the same week: scaffold, lint config, CI, versioning, deploy pipeline, IAM. Then the next one drifts from the last. **Action Platform** turns that week into one command — or one click — and keeps every app on the same rails, in your git host and your cloud account.
+
+Three doors, one core:
+
+| | |
+|---|---|
+| **Web app** | Organizations › projects › apps. Create an app from a template, connect GitHub / GitLab / Bitbucket, cut releases, run deploys — from a browser. One command to self-host. |
+| **CLI** | `pipx install action-platform` and the same verbs on your machine: `init`, `branch`, `pr`, `release`, `deploy`, `rollback`, `diagnose`. |
+| **MCP server** | The same operations as tools for Claude Code, Codex, Cursor — locally, or against your hosted platform after `action-platform login`. |
+
+## Self-host in one command
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/master/deploy/install.sh | sudo sh
+# with a domain and TLS:
+curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/master/deploy/install.sh | sudo sh -s -- platform.example.com you@example.com
+```
+
+Installs Docker if needed, generates the secrets, starts Postgres + API + web (+ Traefik with Let's Encrypt when a domain is given) and prints the URL. Open it: first account, first organization, connect a code host — done. Files live in `/opt/action-platform`; see [`deploy/`](deploy/) for the compose file and the two Dockerfiles.
+
+## Or just the CLI
 
 ```bash
 pipx install action-platform
@@ -32,7 +52,7 @@ Thirty seconds later you have a FastAPI service with tests, lint, CI wired, a SA
 | **One command, whole lifecycle** | `init` → `release` → `deploy` → `rollback` → `diagnose` → `destroy`. Same verbs for a Python API on Lambda, a Go service in Docker, a React app on Amplify. |
 | **Templates from production, not tutorials** | Every project template is extracted from a real shipping product. Real layout, real CI, real gotchas already fixed. |
 | **Cloud is a layer, not a fork** | Projects stay cloud-agnostic. `--cloud aws/lambda` overlays deploy files; swap to `docker` tomorrow with one command. |
-| **Your CI, your account, your git** | Runs on GitHub Actions, GitLab CI or Jenkins you already have. Infra lands in **your** AWS account through OIDC — no long-lived keys, no agent, no SaaS in the loop. |
+| **Your CI, your account, your git** | Runs on GitHub Actions, GitLab CI or Jenkins you already have. Repositories on GitHub, GitLab, Bitbucket or any git server, connected with OAuth. Infra lands in **your** AWS account through OIDC — no long-lived keys, no vendor in the loop. |
 | **Governance that ships with the code** | Git-flow and Conventional Commits enforced by git hooks before a commit exists and by CI on every PR; changelog generated; `AGENTS.md` for humans and AI agents; Trivy scans; least-privilege IAM in `requirements/`. |
 | **Fix once, everywhere** | CI logic lives in versioned shared repos (`ci-scripts`, `ci-github`, `ci-gitlab`, `ci-jenkins`). Bump `v1`, every project picks it up. |
 
@@ -179,18 +199,52 @@ Any client — add to `.mcp.json`:
 { "mcpServers": { "action-platform": { "command": "uvx", "args": ["--from", "action-platform[mcp]", "action-platform-mcp"] } } }
 ```
 
-## Use it from a browser
+## The web app
 
-The same core behind the CLI and the MCP server is also a JSON API, and [`apps/web`](apps/web) is the web app on top of it: register projects, see git-flow audits, commits, branches and tags, preview and cut releases, preflight and run deploys — with a login in front.
+[`apps/web`](apps/web) — Next.js on top of the Python API. **Organization › Project › App**: an organization is the tenant and owns its code hosts; a project groups the apps that ship together; an app is one git repository the platform clones, audits, releases and deploys.
+
+- **Setup wizard** on first run: database (SQLite, PostgreSQL or MySQL), first account, first organization, code hosts.
+- **Connect with GitHub / GitLab / Bitbucket** through OAuth (or paste a token). Tokens are encrypted at rest and refreshed when they expire.
+- **Create project** wizard: type → stack → template → configure → review, with the equivalent `action-platform init` shown. Or add an existing repository by URL.
+- Per app: git-flow audit, commits, branches, tags, release preview → confirm → publish, deploy preflight → confirm → ship.
+- Strictly monochrome UI; every confirmation is an in-app dialog.
+
+Local development:
 
 ```bash
 pip install "action-platform[api]"
-action-platform api                 # http://127.0.0.1:7788, OpenAPI at /docs
-
-cd apps/web && npm install && npx drizzle-kit push && npm run dev   # http://localhost:3000
+action-platform api --reload              # http://127.0.0.1:7788, OpenAPI at /docs
+cd apps/web && npm install && npm run dev # http://localhost:3000 → /setup
 ```
 
-The TypeScript client is generated from the API's OpenAPI schema (`npm run api:types`), so the Python response models in `action_platform/api/models.py` are the contract both sides compile against.
+Drive a hosted platform from anywhere:
+
+```bash
+action-platform login https://platform.example.com   # browser opens, approve the code
+action-platform mcp --remote                          # the MCP tools now act on that platform
+```
+
+The TypeScript client is generated from the API's OpenAPI schema (`npm run api:types`): the Python response models in `action_platform/api/models.py` are the contract both sides compile against.
+
+## Layout
+
+```
+action_platform/
+  core/
+    manifest/     platform.toml: read, edit tables
+    scaffold/     templates matrix, generate, install into an existing repo
+    flow/         git, git-flow rules, branching, pull requests
+    release/      versioning, changelog, release, deploy
+    config.py · context.py · exception.py · action_platform.py (facade)
+  providers/
+    source/       github, gitlab, bitbucket, generic — repositories, releases, PRs
+  api/            FastAPI for the web app: apps registry, actions, per-request credentials
+  remote/         client + device-flow login for a hosted platform
+  mcp/            MCP server: local tools, or remote tools after login
+  cli/            Typer commands
+apps/web/         the web app (see its README)
+deploy/           Dockerfiles, docker-compose, install.sh
+```
 
 ## Extend it
 
@@ -198,7 +252,7 @@ Deploy targets are plugins. Implement the `DeployTarget` contract — `preflight
 
 ```python
 from action_platform import ActionPlatform, Config
-from action_platform.providers import SourceGithub
+from action_platform.providers.source.github import SourceGithub
 
 tool = ActionPlatform(config=Config(source_host=SourceGithub(repo="acme/orders")))
 tool.release("minor")
@@ -213,7 +267,6 @@ Templates are plain cookiecutters in [actionplatform/templates](https://github.c
 | [templates](https://github.com/actionplatform/templates) | projects, clouds, services |
 | [ci-scripts](https://github.com/actionplatform/ci-scripts) | the one implementation of setup / check / release / commit lint |
 | [ci-github](https://github.com/actionplatform/ci-github) · [ci-gitlab](https://github.com/actionplatform/ci-gitlab) · [ci-jenkins](https://github.com/actionplatform/ci-jenkins) | thin wrappers per CI |
-| [strategy](https://github.com/actionplatform/strategy) | why it is built this way |
 
 ## License
 
