@@ -47,5 +47,6 @@ class SourceHost(ABC):
         head: str,
         title: str,
         body: str,
+        draft: bool = False,
     ) -> "PRRef":
         """Open pull/merge request."""

@@ -91,9 +91,15 @@ class SourceGithub(SourceHost):
         return ReleaseRef(id=tag, tag=tag, url=data.get("url", url))
 
     def open_pr(
-        self, ctx: Context, base: str, head: str, title: str, body: str
+        self,
+        ctx: Context,
+        base: str,
+        head: str,
+        title: str,
+        body: str,
+        draft: bool = False,
     ) -> PRRef:
-        url = self._gh(
+        args = [
             "pr",
             "create",
             "--base",
@@ -104,7 +110,13 @@ class SourceGithub(SourceHost):
             title,
             "--body",
             body,
-        )
+        ]
+
+        if draft:
+            args.append("--draft")
+
+        url = self._gh(*args)
         view = self._gh("pr", "view", url, "--json", "number")
         data = json.loads(view)
+
         return PRRef(number=data["number"], url=url)
