@@ -13,6 +13,11 @@ def run(
     ),
     host: str = typer.Option("127.0.0.1", "--host"),
     port: int = typer.Option(8765, "--port", help="Port for --http"),
+    remote: bool = typer.Option(
+        False,
+        "--remote",
+        help="Act on the hosted platform from `action-platform login`, not on local files",
+    ),
 ) -> None:
     """Run the embedded MCP server so AI agents can scaffold, deploy and operate projects."""
     try:
@@ -23,4 +28,8 @@ def run(
         ) from e
 
     argv = ["--http", "--host", host, "--port", str(port)] if http else []
+
+    if remote:
+        argv.append("--remote")
+
     main(argv)

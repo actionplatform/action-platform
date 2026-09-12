@@ -7,7 +7,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from action_platform.core import gitflow
+from action_platform.core.flow import gitflow
 from action_platform.core.exception import ActionPlatformError
 
 console = Console()

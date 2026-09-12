@@ -7,7 +7,7 @@ from typing import Annotated, Any, Optional
 
 from pydantic import Field
 
-from action_platform.core import branching, gitflow, pullrequest
+from action_platform.core.flow import branching, gitflow, pullrequest
 from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL
 
 ProjectDir = Annotated[
@@ -19,7 +19,7 @@ def _root(project: Optional[str]) -> Path:
     return Path(project).resolve() if project else Path.cwd()
 
 
-def register(mcp: Any) -> None:
+def register_rules(mcp: Any) -> None:
     @mcp.tool(annotations=READ_ONLY)
     def gitflow_rules() -> dict:
         """The git-flow rules every project follows: branch kinds, their base and merge target, protected branches, commit format."""
@@ -46,6 +46,10 @@ def register(mcp: Any) -> None:
                 "chore: bootstrap ...",
             ],
         }
+
+
+def register(mcp: Any) -> None:
+    register_rules(mcp)
 
     @mcp.tool(annotations=REACHES_OUT)
     def start_branch(

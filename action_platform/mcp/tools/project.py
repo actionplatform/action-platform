@@ -7,15 +7,15 @@ from typing import Annotated, Any, Optional
 
 from pydantic import Field
 
-from action_platform.core import install as installing
-from action_platform.core.generate import (
+from action_platform.core.scaffold import install as installing
+from action_platform.core.scaffold.generate import (
     apply_cloud,
     apply_service,
     generate_project,
     push_project,
     read_platform,
 )
-from action_platform.core.templates import load_matrix
+from action_platform.core.scaffold.templates import load_matrix
 from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL
 
 ProjectDir = Annotated[

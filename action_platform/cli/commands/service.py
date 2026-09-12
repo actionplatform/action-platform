@@ -7,8 +7,8 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from action_platform.core.generate import apply_service
-from action_platform.core.templates import load_matrix
+from action_platform.core.scaffold.generate import apply_service
+from action_platform.core.scaffold.templates import load_matrix
 from action_platform.logging import logger
 
 app = typer.Typer(

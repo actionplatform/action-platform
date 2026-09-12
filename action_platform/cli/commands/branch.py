@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import typer
 
-from action_platform.core import branching
+from action_platform.core.flow import branching
 from action_platform.logging import logger
 
 

@@ -78,12 +78,9 @@ def _build_source_host(cfg: dict) -> SourceHost | None:
     if not kind:
         return None
 
-    if kind == "github":
-        from action_platform.providers.source_github import SourceGithub
+    from action_platform.providers.source import build_source_host
 
-        return SourceGithub(repo=cfg["repo"])
-
-    raise ConfigError(f"unknown source_host kind: {kind}")
+    return build_source_host(kind, cfg.get("repo", ""), cfg.get("base_url"))
 
 
 def _build_deploy_targets(cfg: dict) -> list[DeployTarget]:

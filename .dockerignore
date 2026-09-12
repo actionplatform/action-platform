@@ -1,0 +1,16 @@
+.git
+.github
+**/node_modules
+**/.next
+**/__pycache__
+**/*.pyc
+.venv
+dist
+apps/web/config
+apps/web/data
+tests
+docs
+skills
+.agents
+.claude-plugin
+.codex-plugin

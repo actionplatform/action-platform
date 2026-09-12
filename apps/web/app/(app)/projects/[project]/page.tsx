@@ -1,0 +1,73 @@
+import { Plus } from "lucide-react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ApiOffline } from "@/components/api-offline";
+import { PageHeader } from "@/components/layout/page";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Table, Td, Th } from "@/components/ui/table";
+import { api, type AppRow } from "@/lib/api";
+import { appsOf, projectById } from "@/lib/projects";
+import { requireOrg } from "@/lib/session";
+import { AddForm } from "./apps/add-form";
+import { RemoveButton } from "./apps/remove-button";
+
+export default async function ProjectPage({ params }: { params: Promise<{ project: string }> }) {
+  const { project: projectId } = await params;
+  const { org } = await requireOrg();
+  const project = await projectById(org.id, projectId);
+  if (!project) notFound();
+
+  const apps = await appsOf(project.id);
+
+  let rows: Map<string, AppRow>;
+  try {
+    rows = new Map((await api.apps.list()).map((r) => [r.id, r]));
+  } catch (e) {
+    return <ApiOffline error={e} />;
+  }
+
+  return (
+    <>
+      <PageHeader
+        title={project.name}
+        description={project.description || `Apps in ${project.name}.`}
+        actions={<Link href={`/projects/${project.id}/apps/new`}><Button><Plus className="size-4" /> New app</Button></Link>}
+      />
+
+      <div className="mb-6"><AddForm projectId={project.id} /></div>
+
+      <Card>
+        <Table>
+          <thead>
+            <tr><Th>name</Th><Th>type</Th><Th>language</Th><Th>branch</Th><Th>version</Th><Th>repository</Th><Th /></tr>
+          </thead>
+          <tbody>
+            {apps.length === 0 && (
+              <tr><Td colSpan={7} className="text-muted-foreground text-center py-8">No apps yet. Create one from a template or add a repository.</Td></tr>
+            )}
+            {apps.map((a) => {
+              const r = rows.get(a.registryId);
+              return (
+                <tr key={a.id} className="hover:bg-surface-hover">
+                  <Td>
+                    <Link href={`/projects/${project.id}/apps/${a.id}`} className="font-medium hover:underline underline-offset-4">{a.name}</Link>
+                    {r && !r.exists && <Badge tone="bad" className="ml-2">missing</Badge>}
+                    {!r && <Badge className="ml-2">not on API</Badge>}
+                  </Td>
+                  <Td>{r?.type ?? "—"}</Td>
+                  <Td>{r?.language ?? "—"}</Td>
+                  <Td><code className="font-mono text-xs">{r?.branch ?? "—"}</code></Td>
+                  <Td>{r?.last_version ?? "—"}</Td>
+                  <Td className="text-muted-foreground font-mono text-xs">{r?.url || "not pushed yet"}</Td>
+                  <Td className="text-right"><RemoveButton projectId={project.id} appId={a.id} name={a.name} /></Td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
+      </Card>
+    </>
+  );
+}

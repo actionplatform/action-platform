@@ -1,5 +1,9 @@
-"""Action Platform built-in providers."""
+"""Action Platform built-in providers.
 
-from .source_github import SourceGithub
+- `source`: GitHub, GitLab, Bitbucket, generic git — repositories, releases, pull requests.
+- deploy targets and CI runners are discovered through entry points (see core.module).
+"""
+
+from action_platform.providers.source.github import SourceGithub
 
 __all__ = ["SourceGithub"]

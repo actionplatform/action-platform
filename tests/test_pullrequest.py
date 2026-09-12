@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from action_platform.core import pullrequest
-from action_platform.core.pullrequest import PullRequestError
+from action_platform.core.flow import pullrequest
+from action_platform.core.flow.pullrequest import PullRequestError
 
 
 def _git(cwd: Path, *args: str) -> str:

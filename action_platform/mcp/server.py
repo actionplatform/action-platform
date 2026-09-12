@@ -28,8 +28,34 @@ release and deploy default to dry runs: show the user what would happen,
 then call again with dry_run=false. rollback changes what is live; ask first."""
 
 
-def build() -> MCPServer:
-    """Assemble the server. Tools call the core modules directly — same code path as the CLI."""
+REMOTE_INSTRUCTIONS = """Operate apps on a hosted Action Platform.
+
+These tools act on the platform the CLI is logged in to (`action-platform
+login <server>`), not on files on this machine. Start with whoami and
+list_apps. Every app is a repository the platform has cloned:
+sync_app before auditing or releasing so the clone is current.
+
+release and deploy default to dry runs: show the user what would happen,
+then call again with dry_run=false. remove_app deletes the platform's
+clone; ask first."""
+
+
+def build(remote: Optional[str] = None) -> MCPServer:
+    """Assemble the server. Local: tools call the core modules directly — same code path as the CLI.
+    Remote: tools call a hosted platform with the token from `action-platform login`."""
+    if remote is not None:
+        from action_platform.mcp.tools import remote as remote_tools
+        from action_platform.remote.client import Remote
+
+        client = Remote.from_credentials(remote or None)
+        mcp = MCPServer(
+            "action-platform", instructions=REMOTE_INSTRUCTIONS, version=__version__
+        )
+        remote_tools.register(mcp, client)
+        flow.register_rules(mcp)
+
+        return mcp
+
     mcp = MCPServer("action-platform", instructions=INSTRUCTIONS, version=__version__)
 
     matrix.register(mcp)
@@ -53,13 +79,21 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument(
+        "--remote",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="SERVER",
+        help="Act on the hosted platform from `action-platform login` (optionally which one) instead of local files.",
+    )
 
     return parser.parse_args(argv)
 
 
 def main(argv: Optional[list[str]] = None) -> None:
     args = parse_args(argv)
-    mcp = build()
+    mcp = build(remote=args.remote)
 
     if args.http:
         mcp.run(transport="streamable-http", host=args.host, port=args.port)

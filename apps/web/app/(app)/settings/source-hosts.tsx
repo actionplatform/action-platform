@@ -1,0 +1,111 @@
+"use client";
+
+import { GitBranch, KeyRound, Plus, Trash2, X } from "lucide-react";
+import { useActionState, useEffect, useState, useTransition } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog, PromptDialog } from "@/components/ui/dialog";
+import { Field, Input } from "@/components/ui/input";
+import { Table, Td, Th } from "@/components/ui/table";
+import { HOST_KINDS, type HostKind, type SourceHost } from "@/lib/source-host-kinds";
+import { cn } from "@/lib/utils";
+import { createHost, deleteHost, rotateHostToken } from "./actions";
+
+export function SourceHosts({ hosts }: { hosts: SourceHost[] }) {
+  const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState<HostKind>("github");
+  const [state, action, pending] = useActionState(createHost, null);
+  const [pendingRow, start] = useTransition();
+  const [removing, setRemoving] = useState<SourceHost | null>(null);
+  const [rotating, setRotating] = useState<SourceHost | null>(null);
+  const [rotateError, setRotateError] = useState<string | null>(null);
+  const meta = HOST_KINDS.find((k) => k.id === kind)!;
+
+  useEffect(() => {
+    if (state && state.error === undefined) setOpen(false);
+  }, [state]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Source hosts</CardTitle>
+        <Button size="sm" variant="ghost" onClick={() => setOpen((v) => !v)}>{open ? <X className="size-4" /> : <Plus className="size-4" />} {open ? "Close" : "Add with a token"}</Button>
+      </CardHeader>
+
+      {open && (
+        <CardContent className="border-b border-border">
+          <form action={action} className="space-y-3">
+            <input type="hidden" name="kind" value={kind} />
+            <div className="flex gap-1 rounded-md bg-surface-hover p-1 text-sm">
+              {HOST_KINDS.map((k) => (
+                <button key={k.id} type="button" onClick={() => setKind(k.id)} className={cn("flex-1 rounded px-3 py-1.5", kind === k.id ? "bg-foreground text-primary-foreground font-medium" : "text-muted-foreground hover:text-foreground")}>
+                  {k.label}
+                </button>
+              ))}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Name"><Input name="name" placeholder={meta.label} /></Field>
+              <Field label="Default owner" hint="Organization or user new repositories go under."><Input name="defaultOwner" className="font-mono" placeholder="org or user" /></Field>
+              <Field label="Base URL" hint={meta.baseUrlHint} className="sm:col-span-2"><Input name="baseUrl" className="font-mono" /></Field>
+              {meta.needsUsername && <Field label="Username"><Input name="username" required /></Field>}
+              <Field label={meta.tokenLabel} hint={`${meta.tokenHint} Stored encrypted; never shown again.`} className={meta.needsUsername ? "" : "sm:col-span-2"}><Input name="token" type="password" className="font-mono" required /></Field>
+            </div>
+            {state?.error && <div className="text-sm text-foreground border border-foreground rounded-md px-3 py-2">{state.error}</div>}
+            <div className="flex justify-end"><Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save host"}</Button></div>
+          </form>
+        </CardContent>
+      )}
+
+      <Table>
+        <thead><tr><Th>name</Th><Th>kind</Th><Th>auth</Th><Th>base url</Th><Th>owner</Th><Th /></tr></thead>
+        <tbody>
+          {hosts.length === 0 && <tr><Td colSpan={6} className="text-center text-muted-foreground py-6"><GitBranch className="inline size-4 mr-1" /> No source hosts yet. Apps cannot be pushed until one exists.</Td></tr>}
+          {hosts.map((h) => (
+            <tr key={h.id}>
+              <Td className="font-medium">{h.name}</Td>
+              <Td><Badge>{HOST_KINDS.find((k) => k.id === h.kind)?.label ?? h.kind}</Badge></Td>
+              <Td><Badge tone={h.authKind === "oauth" ? "ok" : "neutral"}>{h.authKind === "oauth" ? "connected" : "token"}</Badge></Td>
+              <Td className="font-mono text-xs text-secondary">{h.baseUrl ?? "—"}</Td>
+              <Td className="font-mono text-xs">{h.defaultOwner ?? "—"}</Td>
+              <Td className="text-right whitespace-nowrap">
+                {h.authKind === "token" && (
+                  <Button variant="ghost" size="icon" title="Update token" onClick={() => { setRotateError(null); setRotating(h); }}>
+                    <KeyRound className="size-4" />
+                  </Button>
+                )}
+                <Button variant="ghost" size="icon" title="Remove" onClick={() => setRemoving(h)}>
+                  <Trash2 className="size-4" />
+                </Button>
+              </Td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+
+      <ConfirmDialog
+        open={removing !== null}
+        onClose={() => setRemoving(null)}
+        title={`Remove ${removing?.name}?`}
+        description="Apps that use it lose their credentials until another host is picked."
+        confirmLabel="Remove host"
+        danger
+        pending={pendingRow}
+        onConfirm={() => { const h = removing; if (h) start(async () => { await deleteHost(h.id); setRemoving(null); }); }}
+      />
+      <PromptDialog
+        open={rotating !== null}
+        onClose={() => setRotating(null)}
+        title={`Update token for ${rotating?.name}`}
+        description={rotating ? HOST_KINDS.find((k) => k.id === rotating.kind)?.tokenHint : undefined}
+        label={rotating ? HOST_KINDS.find((k) => k.id === rotating.kind)!.tokenLabel : "Token"}
+        hint="Replaces the stored token; the old one is discarded."
+        type="password"
+        submitLabel="Update token"
+        pending={pendingRow}
+        error={rotateError}
+        onSubmit={(value) => { const h = rotating; if (h) start(async () => { const r = await rotateHostToken(h.id, value); if (r?.error) setRotateError(r.error); else setRotating(null); }); }}
+      />
+    </Card>
+  );
+}

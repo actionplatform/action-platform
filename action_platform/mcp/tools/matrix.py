@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from action_platform.core.templates import load_matrix
+from action_platform.core.scaffold.templates import load_matrix
 from action_platform.mcp.annotations import READ_ONLY
 
 

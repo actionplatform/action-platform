@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from action_platform.core import branching
-from action_platform.core.branching import BranchError, branch_name
+from action_platform.core.flow import branching
+from action_platform.core.flow.branching import BranchError, branch_name
 
 
 def test_branch_name():

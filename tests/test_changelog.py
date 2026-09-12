@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from action_platform.core import changelog
+from action_platform.core.release import changelog
 
 
 def test_render_buckets():

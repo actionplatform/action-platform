@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from action_platform.core import install
-from action_platform.core.install import InstallError
+from action_platform.core.scaffold import install
+from action_platform.core.scaffold.install import InstallError
 
 
 @pytest.fixture

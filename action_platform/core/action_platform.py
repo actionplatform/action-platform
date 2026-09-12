@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from action_platform.core import pipeline
+from action_platform.core.release import deploy as deploying
+from action_platform.core.release import release as releasing
 from action_platform.core.config import Config
 from action_platform.core.context import Context, DeployResult, Diagnosis
 
@@ -40,14 +41,14 @@ class ActionPlatform:
         dry_run: bool = False,
         prerelease: bool | None = None,
     ) -> Context:
-        return pipeline.release(
+        return releasing.release(
             self.config, level, self.repo_root, dry_run=dry_run, prerelease=prerelease
         )
 
     def deploy(
         self, target: str | None = None, dry_run: bool = False, stage: str | None = None
     ) -> list[DeployResult]:
-        return pipeline.deploy(
+        return deploying.deploy(
             self.config, target, self.repo_root, dry_run=dry_run, stage=stage
         )
 
@@ -57,14 +58,14 @@ class ActionPlatform:
         to_version: str | None = None,
         stage: str | None = None,
     ) -> None:
-        pipeline.rollback(
+        deploying.rollback(
             self.config, target, self.repo_root, to_version=to_version, stage=stage
         )
 
     def diagnose(
         self, target: str | None = None, stage: str | None = None
     ) -> list[Diagnosis]:
-        return pipeline.diagnose(self.config, target, self.repo_root, stage=stage)
+        return deploying.diagnose(self.config, target, self.repo_root, stage=stage)
 
     def destroy(self, target: str | None = None, stage: str | None = None) -> None:
-        pipeline.destroy(self.config, target, self.repo_root, stage=stage)
+        deploying.destroy(self.config, target, self.repo_root, stage=stage)

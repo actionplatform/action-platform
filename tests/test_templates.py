@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from action_platform.core.exception import TemplateError
-from action_platform.core.templates import Matrix
+from action_platform.core.scaffold.templates import Matrix
 
 INDEX = """
 [projects.web.python.fastapi]
