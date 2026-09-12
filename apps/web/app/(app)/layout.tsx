@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { api } from "@/lib/api";
-import { requireSession } from "@/lib/session";
+import { orgsOf } from "@/lib/orgs";
+import { requireOrg } from "@/lib/session";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const session = await requireSession();
+  const { session, org } = await requireOrg();
+  const orgs = await orgsOf(session.user.id);
 
   let version = "—";
   try {
@@ -14,9 +16,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar version={version} user={{ name: session.user.name, email: session.user.email }} />
-      <main className="flex-1 min-w-0 p-8 max-w-6xl">{children}</main>
+    <div className="min-h-screen flex flex-col md:flex-row">
+      <Sidebar version={version} user={{ name: session.user.name, email: session.user.email }} org={org} orgs={orgs} />
+      <main className="flex-1 min-w-0 px-4 py-6 md:px-8 md:py-8">
+        <div className="mx-auto max-w-6xl">{children}</div>
+      </main>
     </div>
   );
 }

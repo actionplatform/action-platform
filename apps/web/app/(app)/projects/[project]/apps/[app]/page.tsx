@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApiOffline } from "@/components/api-offline";
 import { PageHeader } from "@/components/layout/page";
@@ -5,20 +6,32 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, Td, Th } from "@/components/ui/table";
 import { api, ApiError } from "@/lib/api";
+import { appById, projectById } from "@/lib/projects";
+import { requireOrg } from "@/lib/session";
+import { hostsOf } from "@/lib/source-hosts";
 import { DeployPanel } from "./deploy-panel";
+import { PushButton } from "./push-button";
 import { ReleasePanel } from "./release-panel";
+import { SyncButton } from "./sync-button";
 
-export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function AppPage({ params }: { params: Promise<{ project: string; app: string }> }) {
+  const { project: projectId, app: appId } = await params;
+  const { org } = await requireOrg();
+  const owner = await projectById(org.id, projectId);
+  if (!owner) notFound();
+  const app = await appById(projectId, appId);
+  if (!app) notFound();
+  const id = app.registryId;
+  const hosts = await hostsOf(org.id);
 
   let data;
   try {
     const [project, gitflow, commits, branches, tags] = await Promise.all([
-      api.projects.get(id),
-      api.projects.gitflow(id),
-      api.projects.commits(id, 15),
-      api.projects.branches(id),
-      api.projects.tags(id),
+      api.apps.get(id),
+      api.apps.gitflow(id),
+      api.apps.commits(id, 15),
+      api.apps.branches(id),
+      api.apps.tags(id),
     ]);
     data = { project, gitflow, commits, branches, tags };
   } catch (e) {
@@ -31,11 +44,17 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   return (
     <>
+      <div className="mb-4 text-xs text-secondary"><Link href="/projects" className="hover:text-foreground">Projects</Link> / <Link href={`/projects/${projectId}`} className="hover:text-foreground">{owner.name}</Link> / <span className="text-foreground">{app.name}</span></div>
       <PageHeader
-        title={meta.name || id}
-        description={project.path}
+        title={meta.name || app.name}
+        description={project.url || "not pushed yet"}
         actions={
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {project.url ? (
+              <SyncButton projectId={projectId} registryId={id} />
+            ) : (
+              <PushButton projectId={projectId} appId={app.id} registryId={id} repo={project.source_host.repo ?? app.name} hosts={hosts} current={app.sourceHostId} />
+            )}
             <Badge>{meta.type ?? "?"}</Badge>
             <Badge>{meta.language ?? "?"}</Badge>
             {meta.ci && <Badge>ci: {meta.ci}</Badge>}
@@ -59,7 +78,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           <CardContent className="text-sm">
             <div className="text-muted-foreground mb-2">{gitflow.checked_commits} commits checked on <code className="font-mono">{gitflow.branch}</code></div>
             {gitflow.problems.length > 0 && (
-              <ul className="list-disc pl-5 space-y-1 text-destructive">
+              <ul className="list-disc pl-5 space-y-1 text-foreground">
                 {gitflow.problems.map((p) => <li key={p}>{p}</li>)}
               </ul>
             )}
@@ -78,8 +97,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 mb-6">
-        <ReleasePanel id={id} branch={project.branch} />
-        <DeployPanel id={id} hasTarget={Object.keys(project.deploy).length > 0} />
+        <ReleasePanel projectId={projectId} appId={app.id} registryId={id} branch={project.branch} />
+        <DeployPanel projectId={projectId} registryId={id} hasTarget={Object.keys(project.deploy).length > 0} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3 mb-6">

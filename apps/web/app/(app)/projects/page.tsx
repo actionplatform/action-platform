@@ -1,63 +1,46 @@
-import { Plus } from "lucide-react";
+import { ArrowUpRight, FolderKanban } from "lucide-react";
 import Link from "next/link";
-import { ApiOffline } from "@/components/api-offline";
 import { PageHeader } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Table, Td, Th } from "@/components/ui/table";
-import { api, type ProjectRow } from "@/lib/api";
-import { addProject } from "./actions";
-import { RemoveButton } from "./remove-button";
+import { projectsOf } from "@/lib/projects";
+import { requireOrg } from "@/lib/session";
+import { NewProjectForm } from "./new-project-form";
+import { RemoveProjectButton } from "./remove-project-button";
 
 export default async function ProjectsPage() {
-  let rows: ProjectRow[];
-  try {
-    rows = await api.projects.list();
-  } catch (e) {
-    return <ApiOffline error={e} />;
-  }
+  const { org } = await requireOrg();
+  const projects = await projectsOf(org.id);
 
   return (
     <>
-      <PageHeader title="Projects" description="Local checkouts the API knows about. Register one by path." />
+      <PageHeader title="Projects" description={`Projects in ${org.name}. A project groups the apps that ship together.`} actions={<NewProjectForm />} />
 
-      <form action={addProject} className="flex gap-2 mb-6">
-        <input
-          name="path"
-          placeholder="/path/to/project (must contain platform.toml)"
-          className="flex-1 h-9 rounded-md border border-border bg-card px-3 text-sm font-mono"
-          required
-        />
-        <Button type="submit"><Plus className="size-4" /> Add</Button>
-      </form>
-
-      <Card>
-        <Table>
-          <thead>
-            <tr><Th>name</Th><Th>type</Th><Th>language</Th><Th>branch</Th><Th>version</Th><Th>path</Th><Th /></tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 && (
-              <tr><Td colSpan={7} className="text-muted-foreground text-center py-8">No projects yet.</Td></tr>
-            )}
-            {rows.map((p) => (
-              <tr key={p.id} className="hover:bg-muted/50">
-                <Td>
-                  <Link href={`/projects/${p.id}`} className="font-medium hover:underline">{p.name}</Link>
-                  {!p.exists && <Badge tone="bad" className="ml-2">missing</Badge>}
-                </Td>
-                <Td>{p.type ?? "—"}</Td>
-                <Td>{p.language ?? "—"}</Td>
-                <Td><code className="font-mono text-xs">{p.branch ?? "—"}</code></Td>
-                <Td>{p.last_version ?? "—"}</Td>
-                <Td className="text-muted-foreground font-mono text-xs">{p.path}</Td>
-                <Td className="text-right"><RemoveButton id={p.id} /></Td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </Card>
+      {projects.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border p-10 text-center">
+          <FolderKanban className="mx-auto size-6 text-muted-foreground" />
+          <div className="mt-3 text-sm font-medium">No projects yet</div>
+          <div className="text-sm text-secondary">Create one, then add apps to it from a template or an existing repository.</div>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {projects.map((p) => (
+            <div key={p.id} className="group relative flex flex-col rounded-lg border border-border bg-surface p-4 transition-colors hover:border-border-hover hover:bg-surface-hover">
+              <Link href={`/projects/${p.id}`} className="absolute inset-0 rounded-lg focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground" aria-label={p.name} />
+              <div className="flex items-start justify-between gap-3">
+                <FolderKanban className="size-5 shrink-0" />
+                <ArrowUpRight className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />
+              </div>
+              <div className="mt-3 font-medium">{p.name}</div>
+              <div className="font-mono text-xs text-muted-foreground">{p.slug}</div>
+              {p.description && <p className="mt-1 text-sm text-secondary line-clamp-2">{p.description}</p>}
+              <div className="mt-auto flex items-center justify-between pt-3">
+                <Badge>{p.apps} {p.apps === 1 ? "app" : "apps"}</Badge>
+                <span className="relative"><RemoveProjectButton id={p.id} name={p.name} /></span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </>
   );
 }

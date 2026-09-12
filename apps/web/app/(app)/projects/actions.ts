@@ -2,35 +2,29 @@
 
 import { revalidatePath } from "next/cache";
 import { api } from "@/lib/api";
+import { createProject, deleteProject } from "@/lib/projects";
+import { requireOrg } from "@/lib/session";
 
-export async function addProject(formData: FormData) {
-  const path = String(formData.get("path") ?? "").trim();
-  if (!path) return;
-  await api.projects.add(path);
+export async function newProject(_prev: { error?: string } | null, formData: FormData): Promise<{ error?: string } | null> {
+  const { org } = await requireOrg();
+  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  if (!name) return { error: "name is required" };
+
+  try {
+    await createProject(org.id, name, description);
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+
   revalidatePath("/projects");
+  return { error: undefined };
 }
 
+// Removes the project and every app in it, including the platform's clones.
 export async function removeProject(id: string) {
-  await api.projects.remove(id);
+  const { org } = await requireOrg();
+  const registryIds = await deleteProject(org.id, id);
+  await Promise.allSettled(registryIds.map((r) => api.apps.remove(r)));
   revalidatePath("/projects");
-}
-
-export async function previewRelease(id: string, level: string) {
-  return api.projects.release(id, level, true);
-}
-
-export async function runRelease(id: string, level: string) {
-  const result = await api.projects.release(id, level, false);
-  revalidatePath(`/projects/${id}`);
-  return result;
-}
-
-export async function previewDeploy(id: string, stage: string | null) {
-  return api.projects.deploy(id, stage, true);
-}
-
-export async function runDeploy(id: string, stage: string | null) {
-  const result = await api.projects.deploy(id, stage, false);
-  revalidatePath(`/projects/${id}`);
-  return result;
 }

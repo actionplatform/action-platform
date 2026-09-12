@@ -1,0 +1,34 @@
+import { redirect } from "next/navigation";
+import { exchangeCode, identity, type Provider, PROVIDERS, verifyState } from "@/lib/oauth";
+import { connectOAuthHost } from "@/lib/source-hosts";
+
+export async function GET(req: Request, ctx: { params: Promise<{ provider: string }> }) {
+  const { provider } = await ctx.params;
+  if (!(provider in PROVIDERS)) return Response.json({ detail: "unknown provider" }, { status: 404 });
+
+  const url = new URL(req.url);
+  const state = verifyState(url.searchParams.get("state"));
+  if (!state) return Response.json({ detail: "invalid or expired state" }, { status: 400 });
+
+  const back = (query: Record<string, string>) => {
+    const target = new URL(state.returnTo, url.origin);
+    for (const [k, v] of Object.entries(query)) target.searchParams.set(k, v);
+    redirect(target.pathname + target.search);
+  };
+
+  const denied = url.searchParams.get("error");
+  if (denied) return back({ oauth_error: url.searchParams.get("error_description") || denied });
+
+  const code = url.searchParams.get("code");
+  if (!code) return back({ oauth_error: "no code from the provider" });
+
+  try {
+    const tokens = await exchangeCode(provider as Provider, url.origin, code);
+    const who = await identity(provider as Provider, tokens.accessToken);
+    await connectOAuthHost(state.orgId, provider as Provider, who.login, tokens);
+  } catch (e) {
+    return back({ oauth_error: (e as Error).message });
+  }
+
+  return back({ connected: provider });
+}
