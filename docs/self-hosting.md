@@ -25,10 +25,23 @@ Running the script again keeps the existing `.env` and only pulls and restarts �
 
 ## Dokploy
 
-Dokploy already runs Traefik, so use the compose file without it:
+Dokploy already runs Traefik, so the compose file has no proxy and publishes no port. Two ways in.
 
-1. Project → **Create Service → Compose**. Provider *Git*, repository `https://github.com/actionplatform/action-platform`, branch `master`, compose path `deploy/docker-compose.dokploy.yml`.
-2. **Environment**: `PUBLIC_URL=https://platform.example.com`, `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (`openssl rand -hex 32` each).
+### Template (nothing to type)
+
+`deploy/dokploy/` is a Dokploy template: `template.toml` declares the domain and generates `POSTGRES_PASSWORD` / `BETTER_AUTH_SECRET`; `template.b64` is the two files packed for import.
+
+1. Project → **Create Service → Compose**, any name, *Create*.
+2. In the service: **Advanced → Import Template** (or *Raw* → *Import*), paste the contents of [`deploy/dokploy/template.b64`](../deploy/dokploy/template.b64), import. Compose, environment and the `web` domain are filled in; the host is `<app>-<random>.<server ip>.traefik.me` until you change it.
+3. **Domains**: edit the host to your domain, HTTPS on. Update `PUBLIC_URL` under *Environment* to match.
+4. **Deploy**.
+
+Regenerate `template.b64` after editing the compose or the toml: `sh deploy/dokploy/build.sh`.
+
+### By hand
+
+1. **Create Service → Compose**. Provider *Git*, repository `https://github.com/actionplatform/action-platform`, branch `master`, compose path `deploy/docker-compose.dokploy.yml`.
+2. **Environment**: `PUBLIC_URL=https://platform.example.com`, `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (`openssl rand -hex 32` each). Save — the deploy fails with an unhealthy Postgres when these are empty.
 3. **Domains → Add**: your host → service `web`, container port `3000`, HTTPS on.
 4. **Deploy**. Later upgrades: *Redeploy* pulls `latest`.
 
