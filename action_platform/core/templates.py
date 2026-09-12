@@ -1,4 +1,4 @@
-"""Template matrix: fetch the templates repo and resolve type/stack/template."""
+"""Template matrix: fetch the templates repo, resolve project leaves and cloud overlays."""
 
 from __future__ import annotations
 
@@ -14,6 +14,8 @@ from action_platform.settings import settings
 
 @dataclass
 class Leaf:
+    """A project template: type/stack/template under `project/`."""
+
     type: str
     stack: str
     template: str
@@ -23,13 +25,49 @@ class Leaf:
     @property
     def directory(self) -> str:
         if not self.stack:
-            return self.type
-        return f"{self.type}/{self.stack}/{self.template}"
+            return f"project/{self.type}"
+        return f"project/{self.type}/{self.stack}/{self.template}"
+
+
+@dataclass
+class Cloud:
+    """A deploy overlay under `cloud/`, applied on top of a generated project."""
+
+    name: str  # "aws/lambda", "docker"
+    description: str = ""
+    languages: list[str] = field(default_factory=list)
+    types: list[str] = field(default_factory=list)
+
+    @property
+    def directory(self) -> str:
+        return f"cloud/{self.name}"
+
+    def supports(self, type_: str, language: str) -> bool:
+        return (not self.types or type_ in self.types) and (
+            not self.languages or language in self.languages
+        )
+
+
+def _is_leaf_table(table: dict) -> bool:
+    return not any(isinstance(v, dict) for v in table.values())
+
+
+def _walk(table: dict, path: tuple[str, ...] = ()):
+    """Yield (path, meta) for every leaf table, however deep."""
+    if not table:
+        return
+    if _is_leaf_table(table):
+        yield path, table
+        return
+    for key, value in table.items():
+        if isinstance(value, dict):
+            yield from _walk(value, (*path, key))
 
 
 @dataclass
 class Matrix:
     leaves: list[Leaf] = field(default_factory=list)
+    clouds: list[Cloud] = field(default_factory=list)
 
     @classmethod
     def from_toml(cls, path: Path) -> "Matrix":
@@ -37,24 +75,30 @@ class Matrix:
             raise TemplateError(f"index.toml not found at {path}")
         data = tomllib.loads(path.read_text())
         leaves: list[Leaf] = []
-        for type_, stacks in data.items():
-            if "description" in stacks and not any(
-                isinstance(v, dict) for v in stacks.values()
-            ):
-                leaves.append(Leaf(type_, "", "", stacks.get("description", "")))
-                continue
-            for stack, templates in stacks.items():
-                for template, meta in templates.items():
-                    leaves.append(
-                        Leaf(
-                            type_,
-                            stack,
-                            template,
-                            meta.get("description", ""),
-                            bool(meta.get("default", False)),
-                        )
-                    )
-        return cls(leaves)
+        clouds: list[Cloud] = []
+        for keys, meta in _walk(data.get("project", {})):
+            type_, stack, template = (*keys, "", "")[:3]
+            leaves.append(
+                Leaf(
+                    type_,
+                    stack,
+                    template,
+                    meta.get("description", ""),
+                    bool(meta.get("default", False)),
+                )
+            )
+        for keys, meta in _walk(data.get("cloud", {})):
+            clouds.append(
+                Cloud(
+                    "/".join(keys),
+                    meta.get("description", ""),
+                    list(meta.get("languages", [])),
+                    list(meta.get("types", [])),
+                )
+            )
+        return cls(leaves, clouds)
+
+    # -- projects --
 
     def types(self) -> list[str]:
         return sorted({leaf.type for leaf in self.leaves})
@@ -98,6 +142,18 @@ class Matrix:
         raise TemplateError(
             f"unknown template: {type_}/{stack}/{template} (available: {names})"
         )
+
+    # -- clouds --
+
+    def cloud(self, name: str) -> Cloud:
+        for cloud in self.clouds:
+            if cloud.name == name:
+                return cloud
+        names = ", ".join(c.name for c in self.clouds)
+        raise TemplateError(f"unknown cloud: {name} (available: {names})")
+
+    def clouds_for(self, type_: str, language: str) -> list[Cloud]:
+        return [c for c in self.clouds if c.supports(type_, language)]
 
 
 def ensure_repo(update: bool = False) -> Path:
