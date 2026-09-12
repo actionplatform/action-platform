@@ -13,10 +13,15 @@ pipx install action-platform
 ## Commands
 
 ```bash
-action-platform init python
+action-platform init                        # interactive: type → stack → template → name → ci
+action-platform init web python             # default template for the stack
+action-platform init web python fastapi --name "My API" --ci gitlab
+action-platform init --list                 # show the template matrix
 action-platform release patch
 action-platform deploy --target dokploy
 ```
+
+Templates come from [actionplatform/templates](https://github.com/actionplatform/templates), cached in `~/.cache/action-platform/templates` (`--update` refreshes it). Point `ACTION_PLATFORM_TEMPLATES` to a local checkout to develop templates.
 
 ## Programmatic API
 
