@@ -9,7 +9,8 @@ from rich.console import Console
 from rich.table import Table
 
 from action_platform.core.exception import TemplateError
-from action_platform.core.templates import Leaf, Matrix, load_matrix
+from action_platform.core.generate import apply_cloud, generate_project
+from action_platform.core.templates import Matrix, load_matrix
 from action_platform.logging import logger
 
 CI_PROVIDERS = ["github", "gitlab", "bitbucket", "jenkins"]
@@ -21,13 +22,16 @@ def run(
     type_: str | None = typer.Argument(
         None, metavar="TYPE", help="web, library, mcp, ..."
     ),
-    stack: str | None = typer.Argument(None, help="python, go, android, ..."),
+    stack: str | None = typer.Argument(None, help="python, go, node, ..."),
     template: str | None = typer.Argument(
         None, help="fastapi, gin, ... (default per stack)"
     ),
     name: str | None = typer.Option(None, "--name", "-n", help="Project name"),
     ci: str | None = typer.Option(
         None, "--ci", help="CI provider: " + ", ".join(CI_PROVIDERS)
+    ),
+    cloud: str | None = typer.Option(
+        None, "--cloud", help="Deploy overlay: aws/lambda, docker, ..."
     ),
     output: Path | None = typer.Option(
         None, "--output", "-o", help="Where to create the project"
@@ -39,53 +43,38 @@ def run(
     repo, matrix = load_matrix(update=update)
 
     if list_:
-        _print_matrix(matrix)
+        print_matrix(matrix)
         return
 
     if type_ is None:
-        type_ = _choose("type", matrix.types())
+        type_ = choose("type", matrix.types())
     if stack is None and matrix.stacks(type_):
-        stack = _choose("stack", matrix.stacks(type_))
+        stack = choose("stack", matrix.stacks(type_))
     if template is None and stack is not None:
         leaves = matrix.templates(type_, stack)
         if len(leaves) > 1:
-            template = _choose("template", [leaf.template for leaf in leaves])
+            template = choose("template", [leaf.template for leaf in leaves])
 
     leaf = matrix.resolve(type_, stack, template)
 
     if name is None:
         name = typer.prompt("project name")
     if ci is None and leaf.type != "empty":
-        ci = _choose("ci", CI_PROVIDERS)
+        ci = choose("ci", CI_PROVIDERS)
     if ci is not None and ci not in CI_PROVIDERS:
         raise TemplateError(f"unknown ci: {ci} (available: {', '.join(CI_PROVIDERS)})")
 
-    path = _generate(repo, leaf, name=name, ci=ci, output=output or Path.cwd())
-    logger.info("created %s", path)
+    project = generate_project(
+        repo, leaf, name=name, ci=ci, output=output or Path.cwd()
+    )
+    logger.info("created %s", project)
+
+    if cloud is not None:
+        apply_cloud(repo, matrix.cloud(cloud), project)
+        logger.info("applied cloud %s", cloud)
 
 
-def _generate(repo: Path, leaf: Leaf, name: str, ci: str | None, output: Path) -> Path:
-    from cookiecutter.exceptions import CookiecutterException
-    from cookiecutter.main import cookiecutter
-
-    extra = {"project_name": name}
-    if ci is not None:
-        extra["ci"] = ci
-    try:
-        return Path(
-            cookiecutter(
-                str(repo),
-                directory=leaf.directory,
-                no_input=True,
-                extra_context=extra,
-                output_dir=str(output),
-            )
-        )
-    except CookiecutterException as e:
-        raise TemplateError(str(e)) from e
-
-
-def _choose(label: str, options: list[str]) -> str:
+def choose(label: str, options: list[str]) -> str:
     console.print(f"[bold]{label}[/bold]")
     for i, opt in enumerate(options, 1):
         console.print(f"  {i}. {opt}")
@@ -98,8 +87,8 @@ def _choose(label: str, options: list[str]) -> str:
         console.print("[red]invalid choice[/red]")
 
 
-def _print_matrix(matrix: Matrix) -> None:
-    table = Table(title="Templates")
+def print_matrix(matrix: Matrix) -> None:
+    table = Table(title="Projects")
     table.add_column("type")
     table.add_column("stack")
     table.add_column("template")
@@ -108,4 +97,18 @@ def _print_matrix(matrix: Matrix) -> None:
         tpl = f"{leaf.template} *" if leaf.default else leaf.template
         table.add_row(leaf.type, leaf.stack, tpl, leaf.description)
     console.print(table)
-    console.print("[dim]* default template for the stack[/dim]")
+    console.print("[dim]* default template for the stack[/dim]\n")
+
+    clouds = Table(title="Clouds")
+    clouds.add_column("cloud")
+    clouds.add_column("types")
+    clouds.add_column("languages")
+    clouds.add_column("description")
+    for cloud in matrix.clouds:
+        clouds.add_row(
+            cloud.name,
+            ", ".join(cloud.types) or "any",
+            ", ".join(cloud.languages) or "any",
+            cloud.description,
+        )
+    console.print(clouds)
