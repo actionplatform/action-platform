@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { exchangeCode, identity, type Provider, PROVIDERS, verifyState } from "@/lib/oauth";
 import { publicOrigin } from "@/lib/origin";
+import { activeOrg } from "@/lib/orgs";
+import { getSession } from "@/lib/session";
 import { connectOAuthHost } from "@/lib/source-hosts";
 
 export async function GET(req: Request, ctx: { params: Promise<{ provider: string }> }) {
@@ -10,10 +12,22 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
   const url = new URL(req.url);
   const origin = publicOrigin(req.headers);
   const state = verifyState(url.searchParams.get("state"));
-  if (!state) return Response.json({ detail: "invalid or expired state" }, { status: 400 });
+  const installed = provider === "github" && url.searchParams.has("installation_id");
+
+  let orgId = state?.orgId ?? "";
+  let returnTo = state?.returnTo ?? "/settings";
+
+  if (!state) {
+    if (!installed) return Response.json({ detail: "invalid or expired state" }, { status: 400 });
+    const session = await getSession();
+    if (!session) redirect(`/login?next=${encodeURIComponent(url.pathname + url.search)}`);
+    const org = await activeOrg(session);
+    if (!org) redirect("/orgs/new");
+    orgId = org.id;
+  }
 
   const back = (query: Record<string, string>) => {
-    const target = new URL(state.returnTo, origin);
+    const target = new URL(returnTo, origin);
     for (const [k, v] of Object.entries(query)) target.searchParams.set(k, v);
     redirect(target.pathname + target.search);
   };
@@ -27,7 +41,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
   try {
     const tokens = await exchangeCode(provider as Provider, origin, code);
     const who = await identity(provider as Provider, tokens.accessToken);
-    await connectOAuthHost(state.orgId, provider as Provider, who.login, tokens);
+    await connectOAuthHost(orgId, provider as Provider, who.login, tokens);
   } catch (e) {
     return back({ oauth_error: (e as Error).message });
   }

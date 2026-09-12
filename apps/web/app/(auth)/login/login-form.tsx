@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
 
-export function LoginForm() {
+export function LoginForm({ next = "/projects" }: { next?: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -22,7 +22,7 @@ export function LoginForm() {
     const res = await authClient.signIn.email({ email, password });
     setBusy(false);
     if (res.error) return setError(res.error.message ?? "failed");
-    router.push("/projects");
+    router.push(next);
     router.refresh();
   }
 
