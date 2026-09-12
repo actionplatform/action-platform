@@ -83,6 +83,57 @@ action-platform diagnose
 action-platform destroy
 ```
 
+## Git-flow, enforced
+
+Every project follows the same flow. Git hooks refuse the wrong move before it exists; CI refuses it on the pull request; the CLI and the MCP tools guide the right one.
+
+```mermaid
+gitGraph
+    commit id: "chore: bootstrap"
+    branch develop
+    checkout develop
+    commit id: "chore(release): 0.3.2-rc.1" tag: "v0.3.2-rc.1"
+    branch feature/42-login
+    checkout feature/42-login
+    commit id: "feat(login): form"
+    commit id: "test(login): cover form"
+    checkout develop
+    merge feature/42-login id: "PR #1 → develop"
+    branch release/0.3.2
+    checkout release/0.3.2
+    commit id: "chore(release): 0.3.2-rc.2" tag: "v0.3.2-rc.2"
+    checkout main
+    merge release/0.3.2 id: "PR #2 → main"
+    commit id: "chore(release): 0.3.2" tag: "v0.3.2"
+    checkout develop
+    merge main id: "back-merge"
+    checkout main
+    branch hotfix/PROJ-7
+    checkout hotfix/PROJ-7
+    commit id: "fix(auth): expiry"
+    checkout main
+    merge hotfix/PROJ-7 id: "PR #3 → main"
+    commit id: "chore(release): 0.3.3" tag: "v0.3.3"
+    checkout develop
+    merge main id: "back-merge hotfix"
+```
+
+| Branch | Starts from | Merges into | Release |
+|--------|-------------|-------------|---------|
+| `feature/<code>`, `bugfix/…`, `chore/…`, `docs/…`, `refactor/…`, `test/…`, `ci/…`, `perf/…` | `develop` (or the default branch when there is no `develop`) | `develop` | `X.Y.Z-rc.N` pre-release |
+| `release/<version>` | `develop` | `main` and `develop` | `X.Y.Z-rc.N` until merged |
+| `hotfix/<code>` | `main` | `main` and `develop` | `X.Y.Z-rc.N` until merged |
+| `main` / `master` | — | — | stable `X.Y.Z` → PyPI / npm / … |
+
+Rules the hooks and CI apply: branch names are `<kind>/<code>[-slug]`; commits are [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/); no direct commits on `main`, `master` or `develop` except `chore(release):`, `chore(platform):` and the bootstrap commit; a pull request may only target what the table allows.
+
+```bash
+action-platform branch feature 42 login     # develop → pull → feature/42-login → push
+action-platform gitflow                     # audit branch + commits
+action-platform pr                          # target and body from the rules and the commits
+action-platform release patch               # rc off main, stable on main
+```
+
 Everything a project needs is declared in one file:
 
 ```toml
@@ -107,7 +158,7 @@ postgres = "aws-rds"
 
 ## Use it from an AI client
 
-The platform ships as an MCP server. Claude Code, Codex, Cursor — anything that speaks MCP — gets `list_matrix`, `init_project`, `cloud_set`, `service_add`, `release`, `deploy`, `diagnose` as tools, plus skills that make the agent preview and ask before pushing or deploying.
+The platform ships as an MCP server. Claude Code, Codex, Cursor — anything that speaks MCP — gets 17 tools (`list_matrix`, `init_project`, `install_platform`, `start_branch`, `gitflow_audit`, `propose_pull_request`, `release`, `deploy`, `diagnose`, …), 6 prompts that put them in the right order (`new_service`, `ship_feature`, `cut_release`, `deploy_project`, `adopt_repository`, `fix_gitflow`) and 12 skills that make the agent preview and ask before anything leaves the machine.
 
 ```bash
 pip install "action-platform[mcp]"
