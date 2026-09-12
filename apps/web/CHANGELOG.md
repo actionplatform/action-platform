@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.3 — 2026-09-12
+
+### Bug Fixes
+- **web:** run boot migrations once — in-flight promise and advisory lock
+- **web:** add public/ (robots.txt) so the image build has it
+
 ## v0.1.2 — 2026-09-12
 
 ## v0.1.1 — 2026-09-12
