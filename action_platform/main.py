@@ -1,5 +1,6 @@
 """Action Platform CLI entrypoint."""
 
+import subprocess
 import sys
 
 from rich.console import Console
@@ -14,6 +15,13 @@ def main() -> None:
     except ActionPlatformError as e:
         Console(stderr=True).print(f"[red]error:[/red] {e}")
         sys.exit(1)
+    except subprocess.CalledProcessError as e:
+        detail = (e.stderr or e.stdout or "").strip()
+        Console(stderr=True).print(
+            f"[red]error:[/red] {' '.join(e.cmd)} failed"
+            + (f"\n{detail}" if detail else "")
+        )
+        sys.exit(e.returncode or 1)
     except FileNotFoundError as e:
         if e.filename is None:
             Console(stderr=True).print(
