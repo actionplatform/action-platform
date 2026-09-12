@@ -15,14 +15,13 @@ class Config:
     """
     Import:
         from action_platform import Config
-        from action_platform.providers import SourceGithub, CIJenkins, DeployDokploy
+        from action_platform.providers import SourceGithub
 
     Example:
-        config = Config(
-            source_host=SourceGithub(repo="FernandoCelmer/my-project"),
-            ci=[CIJenkins(url="...", job="my-project-build")],
-            deploy=[DeployDokploy(url="...", app="my-project-prod")],
-        )
+        config = Config(source_host=SourceGithub(repo="actionplatform/my-project"))
+
+    CI runners and deploy targets come from `platform.toml` through the
+    `action_platform.ci_runner` / `action_platform.deploy_target` entry-point groups.
 
     Args:
         source_host (SourceHost): provider for tag/release/PR.
@@ -50,10 +49,13 @@ class Config:
     def from_toml(cls, path: Path) -> "Config":
         if not path.exists():
             raise ConfigError(f"platform.toml not found at {path}")
+
         data = tomllib.loads(path.read_text())
         project = data.get("project", {})
+
         return cls(
             source_host=_build_source_host(data.get("source_host", {})),
+            deploy=_build_deploy_targets(data.get("deploy", {})),
             project_name=project.get("name", ""),
             language=project.get("language", ""),
         )
@@ -61,10 +63,36 @@ class Config:
 
 def _build_source_host(cfg: dict) -> SourceHost | None:
     kind = cfg.get("kind")
+
     if not kind:
         return None
+
     if kind == "github":
         from action_platform.providers.source_github import SourceGithub
 
         return SourceGithub(repo=cfg["repo"])
+
     raise ConfigError(f"unknown source_host kind: {kind}")
+
+
+def _build_deploy_targets(cfg: dict) -> list[DeployTarget]:
+    """`[deploy] target = "<name>"` resolved through the `action_platform.deploy_target`
+    entry-point group; remaining keys of the table are passed to the provider."""
+    target = cfg.get("target")
+
+    if not target:
+        return []
+
+    from action_platform.core.module import load_deploy_targets
+
+    providers = load_deploy_targets()
+
+    if target not in providers:
+        installed = ", ".join(sorted(providers)) or "none"
+        raise ConfigError(
+            f"no provider installed for deploy target {target!r} (installed: {installed})"
+        )
+
+    kwargs = {k: v for k, v in cfg.items() if k != "target"}
+
+    return [providers[target](**kwargs)]
