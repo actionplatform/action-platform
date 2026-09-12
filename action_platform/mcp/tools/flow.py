@@ -100,7 +100,7 @@ def register(mcp: Any) -> None:
 
     @mcp.tool(annotations=WRITES_LOCAL)
     def install_hooks(project: ProjectDir = None) -> dict:
-        """Point core.hooksPath at the project's .githooks so git-flow is enforced before commit and push."""
+        """Install the platform git hooks into .git/hooks so git-flow is enforced before commit and push. Re-run after upgrading the CLI."""
         installed = gitflow.install_hooks(_root(project))
 
         return {"installed": installed}
