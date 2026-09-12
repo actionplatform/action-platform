@@ -1,5 +1,45 @@
 # Changelog
 
+## v0.3.0 — 2026-09-12
+
+### Features
+- **release:** --component on the CLI, MCP and API
+- **release:** components — per-path version, changelog and <name>/vX.Y.Z tags
+- **remote:** device-flow login, hosted client and MCP --remote tools
+- **api:** apps by git url in workspaces, init from templates, push, per-request source credentials, --reload
+- **web:** typed API client from OpenAPI, auth and db wiring
+- **cli:** action-platform api serves the web app's API and registers the cwd
+
+### Refactoring
+- **cli:** import from the new core packages; mcp --remote flag
+- **core:** split into manifest, scaffold, flow and release packages; providers/source registry
+
+### Docs
+- releases per component
+- web app and platform README — self-host, hierarchy, layout
+- apps/web README and the browser section in the main README
+
+### Tests
+- **release:** component releases, root exclusion, rc counters
+- **api:** registry roundtrip and read-only endpoints over a throwaway repo
+
+### Build
+- **deploy:** trim Dockerfile.api
+- **deploy:** Dockerfiles, compose with optional Traefik, one-command install.sh
+- **web:** tailwind v4, simple-icons, better-auth plugins, per-engine drizzle configs, standalone output
+- **web:** Next.js 15 app in apps/web — Tailwind v4, drizzle, better-auth, openapi-typescript
+- api extra (fastapi, uvicorn); httpx for tests
+
+### CI
+- images per component tag; PyPI only on repository releases
+- mirror images to GHCR alongside Docker Hub
+- publish images to Docker Hub instead of GHCR
+- publish api and web images to GHCR on release tags
+
+### Chores
+- **platform:** declare web and api release components
+- **platform:** align versions with 0.2.0; English __description__
+
 ## v0.2.0 — 2026-09-12
 
 ### Features
