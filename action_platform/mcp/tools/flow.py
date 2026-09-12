@@ -1,0 +1,106 @@
+"""Git-flow: start branches and audit what is on them."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Annotated, Any, Optional
+
+from pydantic import Field
+
+from action_platform.core import branching, gitflow
+from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL
+
+ProjectDir = Annotated[
+    Optional[str], Field(description="Project directory; default is the cwd.")
+]
+
+
+def _root(project: Optional[str]) -> Path:
+    return Path(project).resolve() if project else Path.cwd()
+
+
+def register(mcp: Any) -> None:
+    @mcp.tool(annotations=READ_ONLY)
+    def gitflow_rules() -> dict:
+        """The git-flow rules every project follows: branch kinds, their base and merge target, protected branches, commit format."""
+        return {
+            "kinds": sorted(gitflow.KINDS),
+            "protected": sorted(gitflow.PROTECTED),
+            "base": {
+                "develop (or default branch when no develop)": sorted(
+                    branching.DEVELOP_BASED
+                ),
+                "default branch (main/master)": sorted(branching.MAIN_BASED),
+            },
+            "merge_into": {
+                "feature, bugfix, chore, docs, refactor, test, ci, perf": "develop (or default)",
+                "release, hotfix": "main and develop",
+                "develop": "main",
+                "support": "nothing",
+            },
+            "branch_name": "<kind>/<code>[-slug], e.g. feature/42-login, hotfix/PROJ-7",
+            "commit": "Conventional Commits 1.0.0: type(scope)!: description, types "
+            + ", ".join(sorted(gitflow.TYPES)),
+            "exceptions_on_protected": [
+                "chore(release): X.Y.Z",
+                "chore: bootstrap ...",
+            ],
+        }
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def start_branch(
+        kind: Annotated[
+            str,
+            Field(
+                description="feature, bugfix, hotfix, release, support, chore, docs, refactor, test, ci, perf"
+            ),
+        ],
+        code: Annotated[
+            str,
+            Field(description="Issue or ticket code: 42, PROJ-123, 1.4.0 for release"),
+        ],
+        slug: Annotated[
+            Optional[str], Field(description="Optional words appended as a slug")
+        ] = None,
+        project: ProjectDir = None,
+        push: Annotated[bool, Field(description="Push the new branch upstream")] = True,
+    ) -> dict:
+        """Start a git-flow branch: checkout the right base (develop or main), pull, create <kind>/<code>[-slug].
+
+        Refuses a dirty working tree and an existing branch name. With push=true
+        the branch is created on origin too.
+        """
+        branch = branching.start(kind, code, slug, cwd=_root(project), push=push)
+
+        return {"branch": branch.name, "base": branch.base, "pushed": branch.pushed}
+
+    @mcp.tool(annotations=READ_ONLY)
+    def gitflow_audit(
+        project: ProjectDir = None,
+        since: Annotated[
+            Optional[str],
+            Field(
+                description="Check commits after this ref; default is the merge base with develop/main"
+            ),
+        ] = None,
+    ) -> dict:
+        """Check the current branch name and its commits against git-flow and Conventional Commits.
+
+        Returns every problem found; an empty list means the branch can be
+        pushed and opened as a pull request.
+        """
+        report = gitflow.audit(_root(project), since=since)
+
+        return {
+            "branch": report.branch,
+            "ok": report.ok,
+            "checked_commits": report.checked_commits,
+            "problems": report.problems,
+        }
+
+    @mcp.tool(annotations=WRITES_LOCAL)
+    def install_hooks(project: ProjectDir = None) -> dict:
+        """Point core.hooksPath at the project's .githooks so git-flow is enforced before commit and push."""
+        installed = gitflow.install_hooks(_root(project))
+
+        return {"installed": installed}

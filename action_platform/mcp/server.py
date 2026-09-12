@@ -8,7 +8,7 @@ from typing import Optional
 from mcp.server.mcpserver import MCPServer
 
 from action_platform import __version__
-from action_platform.mcp.tools import lifecycle, matrix, project
+from action_platform.mcp.tools import flow, lifecycle, matrix, project
 
 INSTRUCTIONS = """Scaffold, deploy and operate projects on the Action Platform.
 
@@ -16,6 +16,11 @@ Start with list_matrix to learn the project types, stacks, templates,
 clouds and services that exist. init_project generates locally; nothing
 reaches a remote host until push_project, which creates a repository
 visible to others — confirm with the user before calling it.
+
+Every project follows git-flow: work happens on <kind>/<code> branches
+started with start_branch, never directly on main or develop. Run
+gitflow_audit before proposing a pull request; gitflow_rules explains the
+rules when in doubt.
 
 release and deploy default to dry runs: show the user what would happen,
 then call again with dry_run=false. rollback changes what is live; ask first."""
@@ -27,6 +32,7 @@ def build() -> MCPServer:
 
     matrix.register(mcp)
     project.register(mcp)
+    flow.register(mcp)
     lifecycle.register(mcp)
 
     return mcp
