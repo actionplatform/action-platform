@@ -27,6 +27,8 @@ keywords = [
   "github",
   "gitlab",
   "pipeline",
+  "mcp",
+  "model-context-protocol",
 ]
 classifiers = [
   'Development Status :: 3 - Alpha',
@@ -50,6 +52,7 @@ Repository = "https://github.com/actionplatform/action-platform"
 [project.optional-dependencies]
 github = ["PyGithub"]
 gitlab = ["python-gitlab"]
+mcp = ["mcp>=2.0"]
 
 [tool.poetry]
 name = "action-platform"
@@ -66,6 +69,10 @@ packages = [{ include = "action_platform" }]
 
 [tool.poetry.scripts]
 action-platform = "action_platform.main:main"
+action-platform-mcp = "action_platform.mcp.server:main"
+
+[tool.poetry.extras]
+mcp = ["mcp"]
 
 
 [tool.poetry.dependencies]
@@ -77,6 +84,7 @@ typer = "^0.15.0"
 jinja2 = "^3.1.4"
 python-ulid = "^3.0.0"
 cookiecutter = "^2.6.0"
+mcp = { version = ">=2.0", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 build = "^1.2.2.post1"
