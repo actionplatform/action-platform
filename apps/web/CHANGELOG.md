@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.7 — 2026-09-12
+
+### Bug Fixes
+- **web:** accept the GitHub App install callback without state; login honours next
+
 ## v0.1.6 — 2026-09-12
 
 ### Bug Fixes
