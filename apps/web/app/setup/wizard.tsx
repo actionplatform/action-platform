@@ -1,10 +1,11 @@
 "use client";
 
-import { Boxes, Building2, Check, Database, GitBranch, UserRound } from "lucide-react";
+import { Building2, Check, Database, GitBranch, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 import { ConnectHosts } from "@/components/connect-hosts";
 import { HOST_KINDS, type HostKind } from "@/lib/source-host-kinds";
@@ -29,7 +30,7 @@ export function SetupWizard({ initialStep, dbError, initialOrgId, oauth }: { ini
   return (
     <Card className={cn("w-full", step === 4 ? "max-w-3xl" : "max-w-xl")}>
       <CardContent className="space-y-6">
-        <div className="flex items-center gap-2 font-semibold"><Boxes className="size-5" /> action-platform · setup</div>
+        <div className="flex items-center gap-2 font-semibold"><Logo className="size-5" /> action-platform · setup</div>
 
         <ol className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
           {steps.map(({ n, label, icon: Icon }) => (

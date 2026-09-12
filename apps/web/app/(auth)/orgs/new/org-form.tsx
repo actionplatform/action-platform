@@ -1,6 +1,7 @@
 "use client";
 
-import { Boxes } from "lucide-react";
+import { Logo } from "@/components/logo";
+
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ export function OrgForm({ first }: { first: boolean }) {
   return (
     <Card className="w-full max-w-md">
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-2 font-semibold"><Boxes className="size-5" /> action-platform</div>
+        <div className="flex items-center gap-2 font-semibold"><Logo className="size-5" /> action-platform</div>
         <div>
           <h1 className="text-lg font-semibold">{first ? "Create your organization" : "New organization"}</h1>
           <p className="text-sm text-secondary">Organizations own projects; projects group apps.</p>
