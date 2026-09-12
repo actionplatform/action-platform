@@ -179,6 +179,19 @@ Any client — add to `.mcp.json`:
 { "mcpServers": { "action-platform": { "command": "uvx", "args": ["--from", "action-platform[mcp]", "action-platform-mcp"] } } }
 ```
 
+## Use it from a browser
+
+The same core behind the CLI and the MCP server is also a JSON API, and [`apps/web`](apps/web) is the web app on top of it: register projects, see git-flow audits, commits, branches and tags, preview and cut releases, preflight and run deploys — with a login in front.
+
+```bash
+pip install "action-platform[api]"
+action-platform api                 # http://127.0.0.1:7788, OpenAPI at /docs
+
+cd apps/web && npm install && npx drizzle-kit push && npm run dev   # http://localhost:3000
+```
+
+The TypeScript client is generated from the API's OpenAPI schema (`npm run api:types`), so the Python response models in `action_platform/api/models.py` are the contract both sides compile against.
+
 ## Extend it
 
 Deploy targets are plugins. Implement the `DeployTarget` contract — `preflight`, `create`, `deploy`, `switch_traffic`, `rollback`, `diagnose`, `delete` — publish it under the `action_platform.deploy_target` entry-point group, and `action-platform deploy` finds it by name.
