@@ -1,5 +1,5 @@
 [project]
-name = "devtoolcli"
+name = "action-platform"
 version = "0.1.0"
 authors = [
   { name="Fernando Celmer", email="email@fernandocelmer.com" },
@@ -44,9 +44,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/FernandoCelmer/devtool"
-Issues = "https://github.com/FernandoCelmer/devtool/issues"
-Repository = "https://github.com/FernandoCelmer/devtool"
+Homepage = "https://github.com/actionplatform/action-platform"
+Issues = "https://github.com/actionplatform/action-platform/issues"
+Repository = "https://github.com/actionplatform/action-platform"
 
 [project.optional-dependencies]
 github = ["PyGithub"]
@@ -54,20 +54,20 @@ gitlab = ["python-gitlab"]
 jenkins = ["python-jenkins"]
 
 [tool.poetry]
-name = "devtoolcli"
+name = "action-platform"
 version = "0.1.0"
 description = "Standardize init, release, and deploy."
 authors = ["Fernando Celmer <email@fernandocelmer.com>"]
 readme = "README.md"
 license = "Apache-2.0"
 package-mode = true
-homepage = "https://github.com/FernandoCelmer/devtool"
-repository = "https://github.com/FernandoCelmer/devtool"
+homepage = "https://github.com/actionplatform/action-platform"
+repository = "https://github.com/actionplatform/action-platform"
 
-packages = [{ include = "devtool" }]
+packages = [{ include = "action_platform" }]
 
 [tool.poetry.scripts]
-devtool = "devtool.main:main"
+action-platform = "action_platform.main:main"
 
 [tool.poetry.dependencies]
 python = ">=3.10.0"
