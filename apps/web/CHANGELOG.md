@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.9 — 2026-09-12
+
+### Features
+- the Action Platform logo — favicon, sidebar, auth and setup pages, README
+
 ## v0.1.8 — 2026-09-12
 
 ### Features
