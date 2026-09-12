@@ -1,0 +1,39 @@
+"""`action-platform login` / `logout` / `whoami`."""
+
+from __future__ import annotations
+
+import typer
+
+from action_platform.core.exception import ActionPlatformError
+from action_platform.remote import credentials
+from action_platform.remote.client import Remote, login as device_login
+
+
+def login(
+    server: str = typer.Argument(
+        ..., help="URL of the hosted platform, e.g. https://platform.example.com"
+    ),
+    no_browser: bool = typer.Option(
+        False, "--no-browser", help="Print the URL instead of opening it"
+    ),
+) -> None:
+    """Sign in to a hosted Action Platform through the browser; the token is kept in ~/.action-platform."""
+    creds = device_login(server, open_browser=not no_browser, echo=typer.echo)
+    who = Remote(creds.server, creds.token).whoami().get("user", {})
+    typer.echo(f"logged in to {creds.server} as {who.get('email', '?')}")
+
+
+def logout() -> None:
+    """Forget the saved token."""
+    typer.echo("logged out" if credentials.clear() else "not logged in")
+
+
+def whoami() -> None:
+    """Show which platform and account the CLI is using."""
+    creds = credentials.load()
+
+    if creds is None:
+        raise ActionPlatformError("not logged in: run `action-platform login <server>`")
+
+    who = Remote(creds.server, creds.token).whoami().get("user", {})
+    typer.echo(f"{creds.server} — {who.get('email', '?')}")
