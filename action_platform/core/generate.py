@@ -43,6 +43,7 @@ def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
         {
             "project_name": meta.get("name", project.name),
             "project_slug": project.name,
+            "github_owner": meta.get("github_owner", "actionplatform"),
             "language": language,
             "type": type_,
             "ci": meta.get("ci", "github"),
@@ -79,6 +80,7 @@ def apply_service(
         {
             "project_name": meta.get("name", project.name),
             "project_slug": project.name,
+            "github_owner": meta.get("github_owner", "actionplatform"),
             "provider": provider,
         },
         overwrite=True,
@@ -134,8 +136,13 @@ def read_platform(project: Path) -> dict:
         raise TemplateError(f"{settings.CONFIG_FILE} not found in {project}")
 
     data = tomllib.loads(path.read_text())
+    meta = dict(data.get("project", {}))
+    repo = data.get("source_host", {}).get("repo", "")
 
-    return data.get("project", {})
+    if "/" in repo:
+        meta["github_owner"] = repo.split("/", 1)[0]
+
+    return meta
 
 
 def _write_deploy_target(path: Path, target: str) -> None:
