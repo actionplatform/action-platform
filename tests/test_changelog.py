@@ -1,5 +1,7 @@
 """Changelog rendering tests."""
 
+from pathlib import Path
+
 from action_platform.core import changelog
 
 
@@ -25,3 +27,15 @@ def test_render_buckets():
 def test_render_empty():
     out = changelog.render("0.1.0", [])
     assert out.startswith("## v0.1.0")
+
+
+def test_prepend_accumulates(tmp_path: Path):
+    path = tmp_path / "CHANGELOG.md"
+    changelog.prepend(path, changelog.render("0.1.0", ["feat: first"]))
+    changelog.prepend(path, changelog.render("0.2.0", ["fix: second"]))
+    text = path.read_text()
+
+    assert text.startswith("# Changelog\n")
+    assert text.count("# Changelog") == 1
+    assert text.index("## v0.2.0") < text.index("## v0.1.0")
+    assert "- second" in text and "- first" in text
