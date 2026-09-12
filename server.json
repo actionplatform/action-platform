@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.actionplatform/action-platform",
+  "title": "Action Platform",
+  "description": "Scaffold, deploy and operate projects: init from templates, cloud overlays, services, release, deploy.",
+  "version": "0.1.0",
+  "websiteUrl": "https://github.com/actionplatform/action-platform",
+  "repository": {
+    "url": "https://github.com/actionplatform/action-platform",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "action-platform[mcp]",
+      "version": "0.1.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "action-platform-mcp"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "ACTION_PLATFORM_TEMPLATES",
+          "description": "Local checkout of the templates repo; default clones actionplatform/templates.",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "GH_TOKEN",
+          "description": "GitHub token for push_project and release (gh CLI).",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
