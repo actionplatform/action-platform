@@ -14,6 +14,7 @@ def run(args: list[str], cwd: Path | None = None) -> str:
         capture_output=True,
         text=True,
     )
+
     return result.stdout.strip()
 
 
@@ -22,7 +23,10 @@ def current_branch(cwd: Path | None = None) -> str:
 
 
 def remote_url(cwd: Path | None = None, remote: str = "origin") -> str:
-    return run(["remote", "get-url", remote], cwd=cwd)
+    try:
+        return run(["remote", "get-url", remote], cwd=cwd)
+    except subprocess.CalledProcessError:
+        return ""
 
 
 def is_clean(cwd: Path | None = None) -> bool:
@@ -39,6 +43,7 @@ def latest_tag(cwd: Path | None = None) -> str | None:
 def commits_since(tag: str | None, cwd: Path | None = None) -> list[str]:
     rng = f"{tag}..HEAD" if tag else "HEAD"
     out = run(["log", rng, "--pretty=format:%s"], cwd=cwd)
+
     return [line for line in out.split("\n") if line]
 
 
@@ -58,11 +63,29 @@ def push_tag(tag: str, remote: str = "origin", cwd: Path | None = None) -> None:
 
 def checkout_branch(branch: str, create: bool = False, cwd: Path | None = None) -> None:
     args = ["checkout"]
+
     if create:
         args.append("-b")
+
     args.append(branch)
     run(args, cwd=cwd)
 
 
 def commit(message: str, cwd: Path | None = None) -> None:
     run(["commit", "-am", message], cwd=cwd)
+
+
+def init(cwd: Path, branch: str = "main") -> None:
+    run(["init", "-q", "-b", branch], cwd=cwd)
+
+
+def add_all(cwd: Path) -> None:
+    run(["add", "-A"], cwd=cwd)
+
+
+def add_remote(url: str, cwd: Path, remote: str = "origin") -> None:
+    run(["remote", "add", remote, url], cwd=cwd)
+
+
+def push_upstream(branch: str, cwd: Path, remote: str = "origin") -> None:
+    run(["push", "-u", remote, branch], cwd=cwd)
