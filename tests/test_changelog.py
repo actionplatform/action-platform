@@ -1,6 +1,6 @@
 """Changelog rendering tests."""
 
-from devtool.core import changelog
+from action_platform.core import changelog
 
 
 def test_render_buckets():

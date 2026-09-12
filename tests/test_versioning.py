@@ -2,8 +2,8 @@
 
 import pytest
 
-from devtool.core import versioning
-from devtool.core.exception import DevtoolError
+from action_platform.core import versioning
+from action_platform.core.exception import ActionPlatformError
 
 
 def test_bump_patch():
@@ -23,5 +23,5 @@ def test_bump_explicit():
 
 
 def test_bump_invalid():
-    with pytest.raises(DevtoolError):
+    with pytest.raises(ActionPlatformError):
         versioning.bump("not-a-version", "patch")
