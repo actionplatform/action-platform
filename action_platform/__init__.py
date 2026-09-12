@@ -1,7 +1,7 @@
 """Action Platform __init__ module."""
 
-__version__ = "0.1.2"
-__description__ = "🛠️ Action Platform padroniza init, release e deploy."
+__version__ = "0.2.0"
+__description__ = "Your platform team, as a CLI."
 
 from .core.config import Config
 from .core.context import Context
