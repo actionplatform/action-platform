@@ -5,7 +5,7 @@ authors = [
   { name="Fernando Celmer", email="email@fernandocelmer.com" },
 ]
 license = {file = "LICENSE"}
-description = "Standardize init, release, and deploy."
+description = "From idea to production in one command: scaffold, CI, release and deploy on any stack and cloud, with git-flow and Conventional Commits enforced and an MCP server for AI agents."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -18,26 +18,38 @@ dependencies = [
   "cookiecutter",
 ]
 keywords = [
-  "release",
-  "deploy",
+  "scaffolding",
+  "cookiecutter",
+  "devops",
+  "platform-engineering",
+  "internal-developer-platform",
   "ci",
   "cd",
-  "devops",
-  "automation",
+  "release",
+  "deploy",
   "github",
   "gitlab",
-  "pipeline",
+  "jenkins",
+  "aws",
+  "lambda",
+  "amplify",
+  "docker",
+  "git-flow",
+  "conventional-commits",
   "mcp",
   "model-context-protocol",
 ]
 classifiers = [
-  'Development Status :: 3 - Alpha',
+  "Development Status :: 3 - Alpha",
   "Operating System :: OS Independent",
-  'Intended Audience :: Developers',
-  'Natural Language :: English',
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
   "License :: OSI Approved :: Apache Software License",
+  "Environment :: Console",
   "Topic :: Software Development :: Build Tools",
-  "Topic :: Software Development :: Version Control",
+  "Topic :: Software Development :: Version Control :: Git",
+  "Topic :: System :: Software Distribution",
+  "Topic :: System :: Systems Administration",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -46,8 +58,11 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/actionplatform/action-platform"
-Issues = "https://github.com/actionplatform/action-platform/issues"
 Repository = "https://github.com/actionplatform/action-platform"
+Issues = "https://github.com/actionplatform/action-platform/issues"
+Changelog = "https://github.com/actionplatform/action-platform/blob/master/CHANGELOG.md"
+Templates = "https://github.com/actionplatform/templates"
+Organization = "https://github.com/actionplatform"
 
 [project.optional-dependencies]
 github = ["PyGithub"]
@@ -57,7 +72,7 @@ mcp = ["mcp>=2.0"]
 [tool.poetry]
 name = "action-platform"
 version = "0.1.0"
-description = "Standardize init, release, and deploy."
+description = "From idea to production in one command: scaffold, CI, release and deploy on any stack and cloud, with git-flow and Conventional Commits enforced and an MCP server for AI agents."
 authors = ["Fernando Celmer <email@fernandocelmer.com>"]
 readme = "README.md"
 license = "Apache-2.0"
