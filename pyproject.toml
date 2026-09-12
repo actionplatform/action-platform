@@ -1,6 +1,6 @@
 [project]
 name = "action-platform"
-version = "0.1.0"
+version = "0.1.2"
 authors = [
   { name="Fernando Celmer", email="email@fernandocelmer.com" },
 ]
@@ -71,7 +71,7 @@ mcp = ["mcp>=2.0"]
 
 [tool.poetry]
 name = "action-platform"
-version = "0.1.0"
+version = "0.1.2"
 description = "From idea to production in one command: scaffold, CI, release and deploy on any stack and cloud, with git-flow and Conventional Commits enforced and an MCP server for AI agents."
 authors = ["Fernando Celmer <email@fernandocelmer.com>"]
 readme = "README.md"
