@@ -59,6 +59,7 @@ def test_creates_missing_keeps_existing(repo: Path, templates: Path):
     assert ".github/workflows/code-quality.yml" in plan.skipped
     assert (repo / ".github/workflows/code-quality.yml").read_text() == "name: theirs\n"
     assert 'repo = "acme/existing"' in (repo / "platform.toml").read_text()
+    assert 'ci = "github"' in (repo / "platform.toml").read_text()
     assert plan.hooks_installed
     assert (repo / ".git/hooks/pre-commit").exists()
     assert (repo / ".git/hooks/gitflow.sh").exists()
@@ -103,3 +104,14 @@ def test_hooks_are_refreshed_from_the_package(repo: Path, templates: Path):
     install.install(repo)
 
     assert "gitflow_branch" in (repo / ".git/hooks/pre-commit").read_text()
+
+
+def test_ci_comes_from_platform_toml(repo: Path, templates: Path):
+    (repo / "platform.toml").write_text(
+        '[project]\nname = "x"\nci = "gitlab"\nlanguage = "python"\n'
+    )
+
+    plan = install.install(repo)
+
+    assert plan.ci == "gitlab"
+    assert ".gitlab-ci.yml" in plan.created
