@@ -12,3 +12,4 @@ Local only. Pushing and clouds are separate skills.
 3. When the stack has one template, omit `template` — the default is used. When there are several, ask which unless the user named one.
 4. `init_project` with `type`, `stack`, `name`, `ci` (`github` unless told). Leave `cloud` empty here; use the add-cloud skill if a target was named.
 5. Report the path and `project_info`. Mention that nothing was pushed.
+6. The project ships `.githooks/`; after the repository is initialized (push-project skill does it), git-flow is enforced locally. Further work goes through the start-branch skill.
