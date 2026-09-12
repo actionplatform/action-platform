@@ -19,9 +19,9 @@ reaches a remote host until push_project, which creates a repository
 visible to others — confirm with the user before calling it.
 
 Every project follows git-flow: work happens on <kind>/<code> branches
-started with start_branch, never directly on main or develop. Run
-gitflow_audit before proposing a pull request; gitflow_rules explains the
-rules when in doubt.
+started with start_branch, never directly on main or develop. Finish with
+propose_pull_request (preview) and open_pull_request (on approval);
+gitflow_rules explains the rules when in doubt.
 
 release and deploy default to dry runs: show the user what would happen,
 then call again with dry_run=false. rollback changes what is live; ask first."""

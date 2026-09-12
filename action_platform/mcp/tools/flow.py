@@ -7,7 +7,7 @@ from typing import Annotated, Any, Optional
 
 from pydantic import Field
 
-from action_platform.core import branching, gitflow
+from action_platform.core import branching, gitflow, pullrequest
 from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL
 
 ProjectDir = Annotated[
@@ -97,6 +97,48 @@ def register(mcp: Any) -> None:
             "checked_commits": report.checked_commits,
             "problems": report.problems,
         }
+
+    @mcp.tool(annotations=READ_ONLY)
+    def propose_pull_request(
+        project: ProjectDir = None,
+        base: Annotated[
+            Optional[str], Field(description="Target branch; default from git-flow")
+        ] = None,
+        title: Annotated[
+            Optional[str], Field(description="Default: first commit on the branch")
+        ] = None,
+    ) -> dict:
+        """Compute the pull request for the current branch: target, title and a body grouped by commit type.
+
+        Audits git-flow first and refuses a branch that does not pass. Nothing
+        is opened; show the result and use open_pull_request on approval.
+        """
+        proposal = pullrequest.propose(_root(project), base=base, title=title)
+
+        return {
+            "head": proposal.head,
+            "base": proposal.base,
+            "title": proposal.title,
+            "body": proposal.body,
+            "commits": proposal.commits,
+        }
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def open_pull_request(
+        project: ProjectDir = None,
+        base: Annotated[
+            Optional[str], Field(description="Target branch; default from git-flow")
+        ] = None,
+        title: Optional[str] = None,
+        body: Optional[str] = None,
+        draft: bool = False,
+    ) -> dict:
+        """Open the pull request on the source host, pushing the branch first if needed. Confirm with the user before calling."""
+        ref = pullrequest.open_pr(
+            _root(project), base=base, title=title, body=body, draft=draft
+        )
+
+        return {"number": ref.number, "url": ref.url}
 
     @mcp.tool(annotations=WRITES_LOCAL)
     def install_hooks(project: ProjectDir = None) -> dict:
