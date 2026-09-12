@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.1 — 2026-09-12
+
+### Bug Fixes
+- **core:** track core/manifest — was hidden by the MANIFEST ignore rule
+
 ## v0.3.0 — 2026-09-12
 
 ### Features
