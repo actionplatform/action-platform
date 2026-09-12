@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.6 — 2026-09-12
+
+### Bug Fixes
+- **web:** external URLs come from PUBLIC_URL, not the container's request origin
+
 ## v0.1.5 — 2026-09-12
 
 ### Bug Fixes
