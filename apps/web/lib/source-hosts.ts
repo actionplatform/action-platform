@@ -100,6 +100,13 @@ export async function updateHostToken(orgId: string, id: string, token: string):
   await db.update(t.sourceHost).set({ tokenEncrypted: encrypt(token) }).where(and(eq(t.sourceHost.id, id), eq(t.sourceHost.organizationId, orgId)));
 }
 
+export async function removeOAuthHost(orgId: string, provider: Provider, login: string): Promise<void> {
+  const { db, t } = await q();
+  await db
+    .delete(t.sourceHost)
+    .where(and(eq(t.sourceHost.organizationId, orgId), eq(t.sourceHost.kind, provider), eq(t.sourceHost.authKind, "oauth"), eq(t.sourceHost.login, login)));
+}
+
 export async function removeHost(orgId: string, id: string): Promise<void> {
   const { db, t } = await q();
   await db.delete(t.sourceHost).where(and(eq(t.sourceHost.id, id), eq(t.sourceHost.organizationId, orgId)));
