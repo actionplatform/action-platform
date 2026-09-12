@@ -21,9 +21,6 @@ class Settings:
     GITLAB_TOKEN = os.getenv("ACTION_PLATFORM_GITLAB_TOKEN") or os.getenv(
         "GITLAB_TOKEN"
     )
-    JENKINS_USER = os.getenv("ACTION_PLATFORM_JENKINS_USER")
-    JENKINS_TOKEN = os.getenv("ACTION_PLATFORM_JENKINS_TOKEN")
-    DOKPLOY_TOKEN = os.getenv("ACTION_PLATFORM_DOKPLOY_TOKEN")
     SLACK_WEBHOOK = os.getenv("SLACK_WEBHOOK")
 
 
