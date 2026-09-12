@@ -18,6 +18,18 @@ path = "apps/web"
 path = "action_platform/api"
 ```
 
+```mermaid
+flowchart LR
+    R["release [-c web|api]"] --> V{branch?}
+    V -->|main / master| S["X.Y.Z"]
+    V -->|other| RC["X.Y.Z-rc.N"]
+    S & RC --> T["tag · push · release on host"]
+    T -->|"vX.Y.Z"| P[PyPI]
+    T -->|"api/vX.Y.Z"| IA[api image]
+    T -->|"web/vX.Y.Z"| IW[web image]
+    IA & IW --> H[(Docker Hub + GHCR)]
+```
+
 ## What a release does
 
 1. Refuses a dirty tree, a version that already exists, a tag that exists locally or on `origin`.

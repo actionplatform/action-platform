@@ -1,18 +1,34 @@
 # Architecture
 
-```
-                 browser                 Claude Code / Codex / Cursor          terminal
-                    │                              │                              │
-              apps/web (Next.js)          action-platform mcp --remote     action-platform …
-              better-auth · drizzle                │  bearer token                │
-                    │  server actions              │                              │
-                    ├───────── /api/v1/* ◄─────────┘                              │
-                    ▼                                                             ▼
-          action-platform api (FastAPI)  ◄──── same core ────►  action_platform.core (in-process)
-                    │
-          ~/.action-platform/workspaces/<id>   one clone per app
-                    │
-          providers/source: GitHub · GitLab · Bitbucket · generic
+```mermaid
+flowchart TB
+    browser[Browser]
+    agent[Claude Code · Codex · Cursor]
+    term[Terminal]
+
+    subgraph web["apps/web — Next.js"]
+        ui[Pages + server actions]
+        auth[better-auth · drizzle]
+        v1["/api/v1/* (bearer proxy)"]
+    end
+
+    subgraph api["action-platform api — FastAPI"]
+        reg[apps registry]
+        ws[(workspaces: one clone per app)]
+    end
+
+    core[[action_platform.core]]
+    hosts{{GitHub · GitLab · Bitbucket · generic}}
+
+    browser --> ui
+    ui --> auth
+    ui -->|"JSON + credentials per request"| api
+    agent -->|"mcp --remote · Bearer token"| v1
+    v1 --> api
+    term -->|"action-platform …"| core
+    api --> core
+    api --> ws
+    core -->|"push · release · pull request"| hosts
 ```
 
 ## Packages
@@ -57,6 +73,29 @@ Every response is a Pydantic model in `api/models.py`; `apps/web` generates its 
 
 ## How credentials travel
 
+```mermaid
+sequenceDiagram
+    participant M as Member (browser)
+    participant W as apps/web
+    participant DB as web database
+    participant A as action-platform api
+    participant G as Code host
+
+    M->>W: Connect with GitHub
+    W->>G: OAuth authorize → code
+    G-->>W: access (+ refresh) token
+    W->>DB: source_host (token AES-256-GCM)
+
+    M->>W: Push / Release
+    W->>DB: read token (refresh if expiring)
+    W->>A: POST /api/apps/{id}/release {credentials}
+    A->>A: config.source_host = build_source_host(kind, token)
+    A->>A: git_auth(): credential helper via GIT_CONFIG_*
+    A->>G: git push · REST create release
+    A-->>W: result
+    Note over A: nothing stored
+```
+
 1. A member connects a code host in the web app (OAuth) or pastes a token. The token is AES-256-GCM encrypted (`lib/crypto.ts`, key derived from `BETTER_AUTH_SECRET`) and stored in `source_host`.
 2. An app remembers which host it uses (`app.source_host_id`).
 3. A push / release server action decrypts the token — refreshing it first for GitLab / Bitbucket — and sends it in the request body as `credentials {kind, token, username, base_url, owner}`.
@@ -65,4 +104,31 @@ Every response is a Pydantic model in `api/models.py`; `apps/web` generates its 
 
 ## The web app's data
 
-`organization`, `member`, `invitation` (better-auth), `user`, `session`, `account`, `verification`, `device_code` (device flow), `project`, `app`, `source_host`. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/`, applied on boot.
+```mermaid
+erDiagram
+    user ||--o{ member : "belongs to"
+    user ||--o{ session : has
+    user ||--o{ account : "signs in with"
+    organization ||--o{ member : has
+    organization ||--o{ invitation : sends
+    organization ||--o{ project : owns
+    organization ||--o{ source_host : "connects"
+    project ||--o{ app : groups
+    source_host o|--o{ app : "pushes with"
+    app {
+        string registry_id "id on the Python API"
+        string source_host_id
+    }
+    source_host {
+        string kind "github | gitlab | bitbucket | generic"
+        string auth_kind "oauth | token"
+        string token_encrypted
+        string refresh_token_encrypted
+        datetime expires_at
+    }
+    session {
+        string active_organization_id
+    }
+```
+
+`user`, `session`, `account`, `verification`, `device_code` come from better-auth (and its `organization` / `deviceAuthorization` plugins); `project`, `app`, `source_host` are the platform's. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/`, applied on boot.

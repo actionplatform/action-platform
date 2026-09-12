@@ -4,6 +4,18 @@
 
 ## Organization › Project › App
 
+```mermaid
+flowchart LR
+    O[Organization] --> M[members]
+    O --> H[code hosts]
+    O --> P1[Project]
+    O --> P2[Project]
+    P1 --> A1[App · repo]
+    P1 --> A2[App · repo]
+    P2 --> A3[App · repo]
+    H -.->|token| A1
+```
+
 | Level | What it is | Owns |
 |---|---|---|
 | **Organization** | the tenant (better-auth `organization` plugin); the sidebar switches between the ones you belong to | members, code hosts, projects |
@@ -38,6 +50,14 @@ The *Set up OAuth app* dialog shows the callback URL to paste and stores the cli
 Tokens are AES-256-GCM encrypted with a key derived from `BETTER_AUTH_SECRET` and decrypted only to accompany a push / release call to the API.
 
 ## Creating an app
+
+```mermaid
+flowchart LR
+    C[Catalog card] -->|type · stack · template| S4
+    N[New app] --> S1[Type] --> S2[Stack] --> S3[Template] --> S4[Configure] --> S5[Review] --> G["generate → workspace"]
+    G -->|push on| R[remote repo]
+    G --> Page[app page]
+```
 
 **Projects → project → New app**, or a template card under **Templates** (which opens the wizard at *Configure* with type, stack and template filled in).
 
