@@ -141,6 +141,10 @@ Templates are plain cookiecutters in [actionplatform/templates](https://github.c
 | [ci-scripts](https://github.com/actionplatform/ci-scripts) | the one implementation of setup / check / release / commit lint |
 | [ci-github](https://github.com/actionplatform/ci-github) · [ci-gitlab](https://github.com/actionplatform/ci-gitlab) · [ci-jenkins](https://github.com/actionplatform/ci-jenkins) | thin wrappers per CI |
 
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) first — git-flow branches, Conventional Commits, one pull request per change, discussion before anything large. Everyone in the project's spaces follows the [Code of Conduct](CODE_OF_CONDUCT.md). Vulnerabilities go through [SECURITY.md](SECURITY.md), never through a public issue.
+
 ## License
 
 Apache 2.0.
