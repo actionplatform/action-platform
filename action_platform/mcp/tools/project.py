@@ -148,6 +148,8 @@ def register(mcp: Any) -> None:
             "created": plan.created,
             "kept": plan.skipped,
             "hooks_installed": plan.hooks_installed,
+            "hooks_preserved": plan.hooks_preserved,
+            "hooks_skipped": plan.hooks_skipped,
             "dry_run": dry_run,
         }
 

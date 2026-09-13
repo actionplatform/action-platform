@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
+# action-platform hook
 # Refuse commit messages that are not Conventional Commits.
 set -euo pipefail
 . "$(dirname "$0")/gitflow.sh"
 gitflow_commit_msg "$1"
 branch=$(gitflow_current_branch)
 gitflow_protect "$branch" "$(head -1 "$1")"
+previous="$0.pre-action-platform"
+[ -x "$previous" ] && exec "$previous" "$@"
+exit 0

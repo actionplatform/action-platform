@@ -56,6 +56,8 @@ class Plan:
     created: list[str] = field(default_factory=list)
     skipped: list[str] = field(default_factory=list)
     hooks_installed: bool = False
+    hooks_preserved: list[str] = field(default_factory=list)
+    hooks_skipped: str | None = None
 
 
 def detect_language(root: Path) -> str | None:
@@ -108,7 +110,10 @@ def install(
         _copy_file(plan, source / rel, rel, dry_run)
 
     if not dry_run:
-        plan.hooks_installed = gitflow.install_hooks(root)
+        report = gitflow.install_hooks(root)
+        plan.hooks_installed = bool(report)
+        plan.hooks_preserved = list(report.preserved)
+        plan.hooks_skipped = report.skipped
 
     return plan
 

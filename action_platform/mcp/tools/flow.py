@@ -147,6 +147,11 @@ def register(mcp: Any) -> None:
     @mcp.tool(annotations=WRITES_LOCAL)
     def install_hooks(project: ProjectDir = None) -> dict:
         """Install the platform git hooks into .git/hooks so git-flow is enforced before commit and push. Re-run after upgrading the CLI."""
-        installed = gitflow.install_hooks(_root(project))
+        report = gitflow.install_hooks(_root(project))
 
-        return {"installed": installed}
+        return {
+            "installed": report.installed,
+            "directory": str(report.directory) if report.directory else None,
+            "preserved": report.preserved,
+            "skipped": report.skipped,
+        }

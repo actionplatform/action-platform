@@ -39,6 +39,14 @@ def run(
     for rel in plan.skipped:
         console.print(f"  [dim]= {rel}  (exists, kept)[/dim]")
 
+    for name in plan.hooks_preserved:
+        console.print(
+            f"  kept your {name} as {name}.pre-action-platform; it still runs after ours"
+        )
+
+    if plan.hooks_skipped:
+        console.print(f"[yellow]{plan.hooks_skipped}[/yellow]")
+
     if plan.hooks_installed:
         console.print(
             "  [green]✓[/green] git hooks installed (.git/hooks, unversioned)"

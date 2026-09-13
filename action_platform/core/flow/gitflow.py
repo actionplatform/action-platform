@@ -147,30 +147,91 @@ def audit(cwd: Path, since: str | None = None) -> Report:
     return report
 
 
-def install_hooks(cwd: Path) -> bool:
-    """Copy the bundled hooks into .git/hooks (unversioned) and clear any core.hooksPath."""
-    git_dir = cwd / ".git"
+HOOK_MARK = "# action-platform hook"
+HOOK_NAMES = ("pre-commit", "commit-msg", "pre-push")
 
-    if not git_dir.is_dir():
-        return False
+
+@dataclass
+class HooksReport:
+    installed: bool
+    directory: Path | None = None
+    preserved: list[str] = field(default_factory=list)
+    skipped: str | None = None
+
+    def __bool__(self) -> bool:
+        return self.installed
+
+
+def _hooks_dir(cwd: Path) -> tuple[Path | None, str | None]:
+    """Where git will look for hooks: core.hooksPath when set (Husky, lefthook…), else .git/hooks."""
+    result = subprocess.run(
+        ["git", "config", "--get", "core.hooksPath"],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        env=git_env(),
+    )
+    custom = result.stdout.strip()
+
+    if not custom:
+        return cwd / ".git" / "hooks", None
+
+    path = (cwd / custom).resolve() if not Path(custom).is_absolute() else Path(custom)
+
+    try:
+        tracked = (
+            subprocess.run(
+                ["git", "ls-files", "--error-unmatch", str(path)],
+                cwd=cwd,
+                capture_output=True,
+                env=git_env(),
+            ).returncode
+            == 0
+        )
+    except OSError:
+        tracked = False
+
+    if tracked:
+        return (
+            None,
+            f"core.hooksPath points at {custom}, which is versioned in the repository; hooks left untouched",
+        )
+
+    return path, None
+
+
+def install_hooks(cwd: Path) -> HooksReport:
+    """Install the bundled hooks where git looks for them, keeping any hook the user already had: it is renamed to <name>.pre-action-platform and still runs after ours."""
+    if not (cwd / ".git").is_dir():
+        return HooksReport(installed=False)
+
+    target, skipped = _hooks_dir(cwd)
+
+    if target is None:
+        return HooksReport(installed=False, skipped=skipped)
 
     source = Path(__file__).resolve().parents[2] / "hooks"
-    target = git_dir / "hooks"
-    target.mkdir(exist_ok=True)
+    target.mkdir(parents=True, exist_ok=True)
+    report = HooksReport(installed=True, directory=target)
 
-    for name in ("gitflow.sh", "pre-commit", "commit-msg", "pre-push"):
+    for name in HOOK_NAMES:
         dest = target / name
+
+        if dest.exists() and HOOK_MARK not in dest.read_text(errors="replace"):
+            keep = target / f"{name}.pre-action-platform"
+
+            if not keep.exists():
+                dest.replace(keep)
+                keep.chmod(0o755)
+                report.preserved.append(name)
+
         shutil.copy2(source / name, dest)
         dest.chmod(0o755)
 
-    subprocess.run(
-        ["git", "config", "--unset", "core.hooksPath"],
-        cwd=cwd,
-        capture_output=True,
-        env=git_env(),
-    )
+    shutil.copy2(source / "gitflow.sh", target / "gitflow.sh")
+    (target / "gitflow.sh").chmod(0o755)
 
-    return True
+    return report
 
 
 def _merge_base(cwd: Path, branch: str) -> str | None:

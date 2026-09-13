@@ -183,3 +183,56 @@ def test_platform_toml_escapes_user_values(tmp_path: Path, templates: Path):
         write_source_host(manifest, "github", 'acme/or"ders')
     with pytest.raises(TemplateError):
         check_owner("-x")
+
+
+def test_existing_hooks_are_kept_and_chained(repo: Path, templates: Path):
+    hooks = repo / ".git/hooks"
+    hooks.mkdir(exist_ok=True)
+    (hooks / "pre-commit").write_text("#!/bin/sh\necho husky > .ran\n")
+    (hooks / "pre-commit").chmod(0o755)
+
+    plan = install.install(repo)
+
+    assert plan.hooks_preserved == ["pre-commit"]
+    assert "gitflow_branch" in (hooks / "pre-commit").read_text()
+    assert (
+        (hooks / "pre-commit.pre-action-platform").read_text().startswith("#!/bin/sh")
+    )
+
+    subprocess.run(["git", "checkout", "-q", "-b", "feature/9"], cwd=repo, check=True)
+    subprocess.run([str(hooks / "pre-commit")], cwd=repo, check=True)
+    assert (repo / ".ran").read_text().strip() == "husky"
+
+    install.install(repo)
+    assert (
+        (hooks / "pre-commit.pre-action-platform").read_text().startswith("#!/bin/sh")
+    )
+
+
+def test_versioned_hooks_path_is_left_alone(repo: Path, templates: Path):
+    (repo / ".husky").mkdir()
+    (repo / ".husky" / "pre-commit").write_text("#!/bin/sh\n")
+    subprocess.run(["git", "add", ".husky"], cwd=repo, check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.email=t@t",
+            "-c",
+            "user.name=t",
+            "commit",
+            "-q",
+            "-m",
+            "chore: husky",
+        ],
+        cwd=repo,
+        check=True,
+    )
+    subprocess.run(["git", "config", "core.hooksPath", ".husky"], cwd=repo, check=True)
+
+    plan = install.install(repo)
+
+    assert plan.hooks_installed is False
+    assert "versioned" in (plan.hooks_skipped or "")
+    assert (repo / ".husky" / "pre-commit").read_text() == "#!/bin/sh\n"
+    assert not (repo / ".git/hooks/gitflow.sh").exists()
