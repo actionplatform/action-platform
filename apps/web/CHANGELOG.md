@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.0 — 2026-09-13
+
+### Features
+- **web:** repository owner per source host — set from the GitHub installation on connect, selectable in Settings
+- **web:** send AP_API_TOKEN to the API from the client and the /api/v1 proxy
+
 ## v0.3.0 — 2026-09-13
 
 ### Features
