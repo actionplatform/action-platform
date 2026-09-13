@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.2 — 2026-09-13
+
+### Bug Fixes
+- **api:** refuse repositories whose symlinks escape the workspace; resolve paths before removing
+
 ## v0.4.1 — 2026-09-13
 
 ## v0.4.0 — 2026-09-13
