@@ -183,3 +183,10 @@ export const templateSource = pgTable("template_source", {
   sourceHostId: text("source_host_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const organizationSetting = pgTable("organization_setting", {
+  organizationId: text("organization_id").primaryKey().references(() => organization.id, { onDelete: "cascade" }),
+  gitAuthorName: text("git_author_name").notNull(),
+  gitAuthorEmail: text("git_author_email").notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});

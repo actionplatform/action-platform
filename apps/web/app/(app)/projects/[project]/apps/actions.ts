@@ -5,7 +5,8 @@ import { api, ApiError, type ReleasePreview } from "@/lib/api";
 import { appById, createApp, deleteApp, markSynced, projectById, setAppHost } from "@/lib/projects";
 import { requirePermission } from "@/lib/orgs";
 import type { Permission } from "@/lib/permissions";
-import { getSession, requireOrg } from "@/lib/session";
+import { requireOrg } from "@/lib/session";
+import { gitAuthorOf } from "@/lib/org-settings";
 import { syncPullRequests } from "@/lib/pull-requests";
 import { syncReleases } from "@/lib/releases";
 import { credentialsFor, hostsOf } from "@/lib/source-hosts";
@@ -22,8 +23,8 @@ async function owned(projectId: string, permission: Permission) {
 async function credsFor(orgId: string, projectId: string, appId: string) {
   const app = await appById(projectId, appId);
   if (!app) return null;
-  const session = await getSession();
-  const author = session ? { author_name: session.user.name, author_email: session.user.email } : {};
+  const identity = await gitAuthorOf(orgId);
+  const author = { author_name: identity.name, author_email: identity.email };
 
   if (app.sourceHostId) return withAuthor(await credentialsFor(orgId, app.sourceHostId), author);
 

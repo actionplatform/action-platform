@@ -71,6 +71,13 @@
       "when": 1789271807869,
       "tag": "0009_open_tomas",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1789318962696,
+      "tag": "0010_chunky_proteus",
+      "breakpoints": true
     }
   ]
 }

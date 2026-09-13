@@ -157,6 +157,8 @@ function OrganizationStep({ onDone }: { onDone: (id: string) => void }) {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [touched, setTouched] = useState(false);
+  const [gitAuthorName, setGitAuthorName] = useState("Action Platform");
+  const [gitAuthorEmail, setGitAuthorEmail] = useState("cloud@actionplatform.io");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -166,7 +168,7 @@ function OrganizationStep({ onDone }: { onDone: (id: string) => void }) {
       onSubmit={(e) => {
         e.preventDefault();
         start(async () => {
-          const r = await createFirstOrganization({ name, slug });
+          const r = await createFirstOrganization({ name, slug, gitAuthorName, gitAuthorEmail });
           if (r.ok) onDone(r.orgId); else setError(r.error);
         });
       }}
@@ -174,6 +176,11 @@ function OrganizationStep({ onDone }: { onDone: (id: string) => void }) {
       <p className="text-sm text-muted-foreground">Organizations own projects; projects group apps. You can add more later from the sidebar.</p>
       <Field label="Name"><input value={name} onChange={(e) => { setName(e.target.value); if (!touched) setSlug(slugify(e.target.value)); }} className={input} placeholder="Acme" required autoFocus /></Field>
       <Field label="Slug"><input value={slug} onChange={(e) => { setTouched(true); setSlug(slugify(e.target.value)); }} className={cn(input, "font-mono")} required /></Field>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label="Commit author name"><input value={gitAuthorName} onChange={(e) => setGitAuthorName(e.target.value)} className={input} required /></Field>
+        <Field label="Commit author email"><input type="email" value={gitAuthorEmail} onChange={(e) => setGitAuthorEmail(e.target.value)} className={cn(input, "font-mono")} required /></Field>
+      </div>
+      <p className="text-xs text-muted-foreground">Releases and configuration commits made by the platform are signed with this identity. Change it later in Settings.</p>
       {error && <div className="text-sm text-foreground border border-foreground rounded-md px-3 py-2">{error}</div>}
       <div className="flex justify-end"><Button type="submit" disabled={pending || !name}>Create organization</Button></div>
     </form>

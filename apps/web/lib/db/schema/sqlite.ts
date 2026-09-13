@@ -183,3 +183,10 @@ export const templateSource = sqliteTable("template_source", {
   sourceHostId: text("source_host_id"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
+
+export const organizationSetting = sqliteTable("organization_setting", {
+  organizationId: text("organization_id").primaryKey().references(() => organization.id, { onDelete: "cascade" }),
+  gitAuthorName: text("git_author_name").notNull(),
+  gitAuthorEmail: text("git_author_email").notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});

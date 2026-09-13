@@ -7,6 +7,7 @@ import { syncPullRequests } from "@/lib/pull-requests";
 import { syncReleases } from "@/lib/releases";
 import { credentialsFor, hostsOf } from "@/lib/source-hosts";
 import { sourceSpecByName, sourceSpecsOf } from "@/lib/template-sources";
+import { gitAuthorOf } from "@/lib/org-settings";
 
 type Rule = { method: string; pattern: RegExp; permission: Permission | null; credentials?: boolean; imports?: boolean };
 
@@ -76,7 +77,8 @@ async function proxy(req: Request, segments: string[]): Promise<Response> {
     const hostId = app?.sourceHostId ?? (typeof parsed.url === "string" ? await hostIdForUrl(org.id, parsed.url) : null);
     if (!parsed.credentials && hostId) {
       const creds = await credentialsFor(org.id, hostId);
-      parsed.credentials = creds ? { ...creds, author_name: session.user.name, author_email: session.user.email } : null;
+      const identity = await gitAuthorOf(org.id);
+      parsed.credentials = creds ? { ...creds, author_name: identity.name, author_email: identity.email } : null;
     }
     body = JSON.stringify(parsed);
   }

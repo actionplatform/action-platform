@@ -183,3 +183,10 @@ export const templateSource = mysqlTable("template_source", {
   sourceHostId: varchar("source_host_id", { length: 36 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const organizationSetting = mysqlTable("organization_setting", {
+  organizationId: varchar("organization_id", { length: 36 }).primaryKey().references(() => organization.id, { onDelete: "cascade" }),
+  gitAuthorName: varchar("git_author_name", { length: 255 }).notNull(),
+  gitAuthorEmail: varchar("git_author_email", { length: 255 }).notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
