@@ -54,6 +54,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               configured={{ github: isConfigured("github"), gitlab: isConfigured("gitlab"), bitbucket: isConfigured("bitbucket") }}
               connected={connected}
               origin={origin}
+              orgId={org.id}
               returnTo="/settings"
               githubApp={appFor("github")?.slug ?? null}
             />

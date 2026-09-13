@@ -37,9 +37,9 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
   const [pending, start] = useTransition();
 
   const startUrl = (p: Provider) => {
-    if (p === "github" && githubApp) return `https://github.com/apps/${githubApp}/installations/select_target`;
     const q = new URLSearchParams({ return: returnTo });
     if (orgId) q.set("org", orgId);
+    if (p === "github" && githubApp) return `/api/oauth/github/install?${q}`;
     return `/api/oauth/${p}/start?${q}`;
   };
 
