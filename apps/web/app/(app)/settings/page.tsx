@@ -1,18 +1,22 @@
+import { headers } from "next/headers";
+import { ConnectHosts } from "@/components/connect-hosts";
 import { PageHeader } from "@/components/layout/page";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { API_BASE, api } from "@/lib/api";
-import { invitationsOf, membersOf, roleOf } from "@/lib/orgs";
-import { MembersPanel } from "./members-panel";
-import { can, PERMISSION_INFO, PERMISSIONS, ROLE_INFO, ROLES } from "@/lib/permissions";
-import { requireOrg } from "@/lib/session";
-import { headers } from "next/headers";
-import { publicOrigin } from "@/lib/origin";
-import { ConnectHosts } from "@/components/connect-hosts";
-import { appFor, isConfigured } from "@/lib/oauth";
-import { hostsOf } from "@/lib/source-hosts";
 import { hostAccess } from "@/lib/host-access";
+import { appFor, isConfigured } from "@/lib/oauth";
+import { invitationsOf, membersOf, roleOf } from "@/lib/orgs";
+import { publicOrigin } from "@/lib/origin";
+import { can } from "@/lib/permissions";
+import { requireOrg } from "@/lib/session";
+import { hostsOf } from "@/lib/source-hosts";
+import { ApiCard } from "./api-card";
+import { GitflowCard } from "./gitflow-card";
+import { MembersPanel } from "./members-panel";
+import { RolesCard } from "./roles-card";
 import { SourceHosts } from "./source-hosts";
+
+const DOCS_URL = "https://github.com/actionplatform/action-platform/blob/master/docs/architecture.md";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
   const { session, org } = await requireOrg();
@@ -20,21 +24,20 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const canManage = can(role, "org.manage");
   const githubSlug = appFor("github")?.slug ?? null;
   const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind !== "generic").map(async (h) => [h.id, await hostAccess(org.id, h.id, githubSlug)] as const)));
-  const h = await headers();
-  const origin = publicOrigin(h);
+  const origin = publicOrigin(await headers());
   const connected = { github: [] as string[], gitlab: [] as string[], bitbucket: [] as string[] };
   for (const host of hosts) if (host.authKind === "oauth" && host.login && host.kind in connected) connected[host.kind as keyof typeof connected].push(host.login);
+
   let version: string | null = null;
   let rules: { kinds: string[]; protected: string[]; types: string[] } | null = null;
   try {
     [version, rules] = await Promise.all([api.version().then((v) => v.version), api.gitflowRules()]);
-  } catch {
-  }
+  } catch {}
 
   return (
     <>
-      <PageHeader title="Settings" description={org.name} />
-      <div className="space-y-4">
+      <PageHeader title="Settings" description="Manage workspace connections, roles and platform configuration." />
+      <div className="space-y-5">
         <MembersPanel
           org={{ name: org.name, slug: org.slug }}
           members={members.map((m) => ({ id: m.id, userId: m.userId, name: m.name, email: m.email, role: m.role }))}
@@ -56,53 +59,16 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               origin={origin}
               orgId={org.id}
               returnTo="/settings"
-              githubApp={appFor("github")?.slug ?? null}
+              githubApp={githubSlug}
             />
           </CardContent>
         </Card>
 
-        <SourceHosts hosts={hosts} access={access} />
+        <SourceHosts hosts={hosts} access={access} canManage={canManage} />
 
-        <Card>
-          <CardHeader><CardTitle>Roles and permissions</CardTitle><Badge>{ROLES.length} roles</Badge></CardHeader>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-muted-foreground">
-                  <th className="px-4 py-2 font-medium">Permission</th>
-                  {ROLES.map((r) => <th key={r} className="px-3 py-2 text-center font-medium" title={ROLE_INFO[r].description}>{ROLE_INFO[r].label}</th>)}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-subtle border-t border-border-subtle">
-                {PERMISSIONS.map((p) => (
-                  <tr key={p}>
-                    <td className="px-4 py-2.5"><div className="font-mono text-xs">{p}</div><div className="text-[13px] text-secondary">{PERMISSION_INFO[p]}</div></td>
-                    {ROLES.map((r) => <td key={r} className="px-3 py-2.5 text-center">{can(r, p) ? <span aria-label="allowed" className="inline-block size-2 rounded-full bg-foreground" /> : <span aria-label="not allowed" className="inline-block size-2 rounded-full border border-border" />}</td>)}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle>API</CardTitle><Badge tone={version ? "ok" : "bad"}>{version ? `v${version}` : "offline"}</Badge></CardHeader>
-          <CardContent className="text-sm space-y-1">
-            <div><span className="text-muted-foreground w-24 inline-block">base url</span><code className="font-mono text-xs">{API_BASE}</code></div>
-            <div className="text-muted-foreground text-xs">Set <code className="font-mono">AP_API</code> to point the app at another host.</div>
-          </CardContent>
-        </Card>
-
-        {rules && (
-          <Card>
-            <CardHeader><CardTitle>Git-flow rules</CardTitle></CardHeader>
-            <CardContent className="text-sm space-y-3">
-              <div><div className="text-muted-foreground text-xs mb-1">branch kinds</div><div className="flex flex-wrap gap-1">{rules.kinds.map((k) => <Badge key={k} className="font-mono">{k}/</Badge>)}</div></div>
-              <div><div className="text-muted-foreground text-xs mb-1">protected</div><div className="flex flex-wrap gap-1">{rules.protected.map((k) => <Badge key={k} className="font-mono">{k}</Badge>)}</div></div>
-              <div><div className="text-muted-foreground text-xs mb-1">commit types</div><div className="flex flex-wrap gap-1">{rules.types.map((k) => <Badge key={k} className="font-mono">{k}:</Badge>)}</div></div>
-            </CardContent>
-          </Card>
-        )}
+        <RolesCard />
+        <ApiCard baseUrl={API_BASE} version={version} docsUrl={DOCS_URL} />
+        <GitflowCard rules={rules} />
       </div>
     </>
   );

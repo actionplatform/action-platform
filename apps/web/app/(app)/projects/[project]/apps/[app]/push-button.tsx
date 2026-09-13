@@ -51,7 +51,7 @@ export function PushButton({ projectId, appId, registryId, repo, hosts, current 
           </label>
           <div>
             <div className="text-xs text-secondary mb-1">Visibility</div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {[{ v: true, l: "Private", d: "Only members of the owner." }, { v: false, l: "Public", d: "Anyone can read it." }].map((o) => (
                 <button key={o.l} type="button" onClick={() => setPriv(o.v)} className={cn("flex items-start gap-3 rounded-md border p-3 text-left", priv === o.v ? "border-foreground" : "border-border hover:border-border-hover")}>
                   <div className="flex-1"><div className="text-sm font-medium">{o.l}</div><div className="text-xs text-muted-foreground">{o.d}</div></div>

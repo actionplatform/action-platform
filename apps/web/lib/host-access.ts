@@ -1,6 +1,6 @@
 import { credentialsFor } from "./source-hosts";
 
-export type Owner = { account: string; kind: "user" | "org"; repositories: "all" | "selected"; administration: string; contents: string; canCreateRepos: boolean };
+export type Owner = { account: string; kind: "user" | "org"; repositories: "all" | "selected"; administration: string; contents: string; canCreateRepos: boolean; selected?: string[]; configureUrl?: string | null };
 export type HostAccess =
   | { ok: true; kind: "github" | "gitlab" | "bitbucket"; login: string; installations: Owner[]; installUrl: string | null; problems: string[] }
   | { ok: false; error: string };
@@ -26,21 +26,29 @@ async function github(token: string, baseUrl: string | null, appSlug: string | n
   const me = await get<{ login: string }>(`${api}/user`, headers);
   if (!me.body) return { ok: false, error: `token rejected by GitHub (${me.status}); reconnect the host` };
 
-  const list = await get<{ installations: { account: { login: string; type: string }; repository_selection: string; permissions: Record<string, string> }[] }>(`${api}/user/installations`, headers);
+  const list = await get<{ installations: { id: number; account: { login: string; type: string }; repository_selection: string; permissions: Record<string, string> }[] }>(`${api}/user/installations`, headers);
   const installUrl = appSlug ? `https://github.com/apps/${appSlug}/installations/select_target` : null;
 
   if (list.status === 403 || list.status === 404) {
     return { ok: true, kind: "github", login: me.body.login, installations: [], installUrl, problems: ["This token is not from a GitHub App (personal token): repositories are created with the token's own scopes. Needs `repo` and `workflow`."] };
   }
 
-  const installations: Owner[] = (list.body?.installations ?? []).map((i) => ({
-    account: i.account.login,
-    kind: i.account.type === "Organization" ? "org" : "user",
-    repositories: i.repository_selection === "all" ? "all" : "selected",
-    administration: i.permissions.administration ?? "none",
-    contents: i.permissions.contents ?? "none",
-    canCreateRepos: i.permissions.administration === "write" && i.permissions.contents === "write",
-  }));
+  const installations: Owner[] = await Promise.all(
+    (list.body?.installations ?? []).map(async (i) => {
+      const org = i.account.type === "Organization";
+      const selected = i.repository_selection === "all" ? undefined : await selectedRepositories(api, headers, i.id);
+      return {
+        account: i.account.login,
+        kind: org ? "org" : "user",
+        repositories: i.repository_selection === "all" ? "all" : "selected",
+        administration: i.permissions.administration ?? "none",
+        contents: i.permissions.contents ?? "none",
+        canCreateRepos: i.permissions.administration === "write" && i.permissions.contents === "write",
+        selected,
+        configureUrl: org ? `https://github.com/organizations/${i.account.login}/settings/installations/${i.id}` : `https://github.com/settings/installations/${i.id}`,
+      } as Owner;
+    }),
+  );
 
   const problems: string[] = [];
   if (installations.length === 0) problems.push(`The GitHub App is not installed on any account this token can see. Install it on ${me.body.login} (or the organization that owns the repositories) with access to all repositories.`);
@@ -51,6 +59,11 @@ async function github(token: string, baseUrl: string | null, appSlug: string | n
   }
 
   return { ok: true, kind: "github", login: me.body.login, installations, installUrl, problems };
+}
+
+async function selectedRepositories(api: string, headers: Record<string, string>, installationId: number): Promise<string[]> {
+  const res = await get<{ repositories: { full_name: string }[] }>(`${api}/user/installations/${installationId}/repositories?per_page=100`, headers);
+  return (res.body?.repositories ?? []).map((r) => r.full_name);
 }
 
 async function gitlab(token: string, baseUrl: string | null): Promise<HostAccess> {

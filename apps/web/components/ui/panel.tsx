@@ -7,7 +7,7 @@ export function Panel({ className, ...props }: HTMLAttributes<HTMLElement>) {
 
 export function PanelHeader({ title, aside, className }: { title: string; aside?: ReactNode; className?: string }) {
   return (
-    <header className={cn("flex h-12 items-center justify-between gap-3 border-b border-border px-4", className)}>
+    <header className={cn("flex min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-4 py-2", className)}>
       <h2 className="text-sm font-semibold">{title}</h2>
       {aside}
     </header>

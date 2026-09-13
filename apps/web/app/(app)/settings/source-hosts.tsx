@@ -1,27 +1,29 @@
 "use client";
 
-import { GitBranch, KeyRound, Plus, Trash2, X } from "lucide-react";
-import { Fragment, useActionState, useEffect, useState, useTransition } from "react";
+import { siBitbucket, siGithub, siGitlab } from "simple-icons";
+import { Check, ChevronDown, ExternalLink, GitBranch, KeyRound, MoreHorizontal, Plus, Trash2, UserCog, X } from "lucide-react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
+import { BrandIcon } from "@/components/ui/brand-icon";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ConfirmDialog, PromptDialog } from "@/components/ui/dialog";
+import { Card } from "@/components/ui/card";
+import { ConfirmDialog, Dialog, PromptDialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
-import { Table, Td, Th } from "@/components/ui/table";
+import { Menu } from "@/components/ui/menu";
+import { Select } from "@/components/ui/select";
+import type { HostAccess } from "@/lib/host-access";
 import { HOST_KINDS, type HostKind, type SourceHost } from "@/lib/source-host-kinds";
 import { cn } from "@/lib/utils";
-import type { HostAccess } from "@/lib/host-access";
 import { changeHostOwner, createHost, deleteHost, rotateHostToken } from "./actions";
 
-export function SourceHosts({ hosts, access = {} }: { hosts: SourceHost[]; access?: Record<string, HostAccess> }) {
+const BRANDS = { github: siGithub, gitlab: siGitlab, bitbucket: siBitbucket } as const;
+
+type Props = { hosts: SourceHost[]; access?: Record<string, HostAccess>; canManage: boolean };
+
+export function SourceHosts({ hosts, access = {}, canManage }: Props) {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<HostKind>("github");
   const [state, action, pending] = useActionState(createHost, null);
-  const [pendingRow, start] = useTransition();
-  const [removing, setRemoving] = useState<SourceHost | null>(null);
-  const [rotating, setRotating] = useState<SourceHost | null>(null);
-  const [rotateError, setRotateError] = useState<string | null>(null);
   const meta = HOST_KINDS.find((k) => k.id === kind)!;
 
   useEffect(() => {
@@ -29,126 +31,211 @@ export function SourceHosts({ hosts, access = {} }: { hosts: SourceHost[]; acces
   }, [state]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Source hosts</CardTitle>
-        <Button size="sm" variant="ghost" onClick={() => setOpen((v) => !v)}>{open ? <X className="size-4" /> : <Plus className="size-4" />} {open ? "Close" : "Add with a token"}</Button>
-      </CardHeader>
+    <Card className="rounded-[11px]">
+      <header className="flex flex-col gap-3 border-b border-border px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-[15px] font-semibold">Source hosts</h2>
+          <p className="mt-1 text-[13px] text-secondary">Accounts this workspace pushes, releases and opens pull requests with.</p>
+        </div>
+        {canManage && <Button size="sm" variant="ghost" className="shrink-0" onClick={() => setOpen((v) => !v)}>{open ? <X className="size-3.5" strokeWidth={2} /> : <Plus className="size-3.5" strokeWidth={2} />} {open ? "Close" : "Add with a token"}</Button>}
+      </header>
 
       {open && (
-        <CardContent className="border-b border-border">
-          <form action={action} className="space-y-3">
-            <input type="hidden" name="kind" value={kind} />
-            <div className="flex gap-1 rounded-md bg-surface-hover p-1 text-sm">
-              {HOST_KINDS.map((k) => (
-                <button key={k.id} type="button" onClick={() => setKind(k.id)} className={cn("flex-1 rounded px-3 py-1.5", kind === k.id ? "bg-foreground text-primary-foreground font-medium" : "text-muted-foreground hover:text-foreground")}>
-                  {k.label}
-                </button>
-              ))}
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Name"><Input name="name" placeholder={meta.label} /></Field>
-              <Field label="Default owner" hint="Organization or user new repositories go under."><Input name="defaultOwner" className="font-mono" placeholder="org or user" /></Field>
-              <Field label="Base URL" hint={meta.baseUrlHint} className="sm:col-span-2"><Input name="baseUrl" className="font-mono" /></Field>
-              {meta.needsUsername && <Field label="Username"><Input name="username" required /></Field>}
-              <Field label={meta.tokenLabel} hint={`${meta.tokenHint} Stored encrypted; never shown again.`} className={meta.needsUsername ? "" : "sm:col-span-2"}><Input name="token" type="password" className="font-mono" required /></Field>
-            </div>
-            {state?.error && <div className="text-sm text-foreground border border-foreground rounded-md px-3 py-2">{state.error}</div>}
-            <div className="flex justify-end"><Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save host"}</Button></div>
-          </form>
-        </CardContent>
+        <form action={action} className="space-y-3 border-b border-border px-6 py-5">
+          <input type="hidden" name="kind" value={kind} />
+          <div className="flex gap-1 rounded-[8px] bg-surface-hover p-1 text-[13px]">
+            {HOST_KINDS.map((k) => (
+              <button key={k.id} type="button" onClick={() => setKind(k.id)} className={cn("flex-1 rounded-[6px] px-3 py-1.5 transition-colors", kind === k.id ? "bg-foreground font-medium text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>{k.label}</button>
+            ))}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Name"><Input name="name" placeholder={meta.label} /></Field>
+            <Field label="Default owner" hint="Organization or user new repositories go under."><Input name="defaultOwner" className="font-mono" placeholder="org or user" /></Field>
+            <Field label="Base URL" hint={meta.baseUrlHint} className="sm:col-span-2"><Input name="baseUrl" className="font-mono" /></Field>
+            {meta.needsUsername && <Field label="Username"><Input name="username" required /></Field>}
+            <Field label={meta.tokenLabel} hint={`${meta.tokenHint} Stored encrypted; never shown again.`} className={meta.needsUsername ? "" : "sm:col-span-2"}><Input name="token" type="password" className="font-mono" required /></Field>
+          </div>
+          {state?.error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{state.error}</div>}
+          <div className="flex justify-end"><Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save host"}</Button></div>
+        </form>
       )}
 
-      <Table>
-        <thead><tr><Th>name</Th><Th>kind</Th><Th>auth</Th><Th>base url</Th><Th>default owner</Th><Th /></tr></thead>
-        <tbody>
-          {hosts.length === 0 && <tr><Td colSpan={6} className="text-center text-muted-foreground py-6"><GitBranch className="inline size-4 mr-1" /> No source hosts yet. Apps cannot be pushed until one exists.</Td></tr>}
-          {hosts.map((h) => (
-            <Fragment key={h.id}>
-            <tr>
-              <Td className="font-medium">{h.name}</Td>
-              <Td><Badge>{HOST_KINDS.find((k) => k.id === h.kind)?.label ?? h.kind}</Badge></Td>
-              <Td><Badge tone={h.authKind === "oauth" ? "ok" : "neutral"}>{h.authKind === "oauth" ? "connected" : "token"}</Badge></Td>
-              <Td className="font-mono text-xs text-secondary">{h.baseUrl ?? "—"}</Td>
-              <Td className="font-mono text-xs">{ownerAccounts(access[h.id]).length > 0 ? <OwnerSelect host={h} accounts={ownerAccounts(access[h.id])} /> : (h.defaultOwner ?? "—")}</Td>
-              <Td className="text-right whitespace-nowrap">
-                {h.authKind === "token" && (
-                  <Button variant="ghost" size="icon" title="Update token" onClick={() => { setRotateError(null); setRotating(h); }}>
-                    <KeyRound className="size-4" />
-                  </Button>
-                )}
-                <Button variant="ghost" size="icon" title="Remove" onClick={() => setRemoving(h)}>
-                  <Trash2 className="size-4" />
-                </Button>
-              </Td>
-            </tr>
-            {access[h.id] && <AccessRow access={access[h.id]} />}
-            </Fragment>
-          ))}
-        </tbody>
-      </Table>
+      {hosts.length === 0 ? (
+        <div className="flex flex-col items-center px-6 py-12 text-center">
+          <div className="flex size-11 items-center justify-center rounded-[9px] border border-border"><GitBranch className="size-5 text-secondary" strokeWidth={1.5} /></div>
+          <div className="mt-3 text-sm font-medium">No source host yet</div>
+          <div className="mt-1 max-w-sm text-[13px] text-secondary">Connect a provider above. Apps cannot be pushed, released or imported from a private repository until then.</div>
+        </div>
+      ) : (
+        <ul className="divide-y divide-border-subtle">
+          {hosts.map((h) => <HostRow key={h.id} host={h} access={access[h.id]} canManage={canManage} />)}
+        </ul>
+      )}
 
-      <ConfirmDialog
-        open={removing !== null}
-        onClose={() => setRemoving(null)}
-        title={`Remove ${removing?.name}?`}
-        description="Apps that use it lose their credentials until another host is picked."
-        confirmLabel="Remove host"
-        danger
-        pending={pendingRow}
-        onConfirm={() => { const h = removing; if (h) start(async () => { await deleteHost(h.id); setRemoving(null); }); }}
-      />
-      <PromptDialog
-        open={rotating !== null}
-        onClose={() => setRotating(null)}
-        title={`Update token for ${rotating?.name}`}
-        description={rotating ? HOST_KINDS.find((k) => k.id === rotating.kind)?.tokenHint : undefined}
-        label={rotating ? HOST_KINDS.find((k) => k.id === rotating.kind)!.tokenLabel : "Token"}
-        hint="Replaces the stored token; the old one is discarded."
-        type="password"
-        submitLabel="Update token"
-        pending={pendingRow}
-        error={rotateError}
-        onSubmit={(value) => { const h = rotating; if (h) start(async () => { const r = await rotateHostToken(h.id, value); if (r?.error) setRotateError(r.error); else setRotating(null); }); }}
-      />
     </Card>
   );
 }
 
-function AccessRow({ access }: { access: HostAccess }) {
-  if (!access.ok) return <tr><Td colSpan={6} className="border-t-0 pt-0 text-[13px]"><span className="text-foreground">Access check failed:</span> <span className="text-secondary">{access.error}</span></Td></tr>;
+function accounts(a: HostAccess | undefined): { account: string; ok: boolean }[] {
+  if (!a || !a.ok) return [];
+  const seen = new Set<string>();
+  return a.installations.filter((i) => (seen.has(i.account) ? false : seen.add(i.account))).map((i) => ({ account: i.account, ok: i.canCreateRepos && i.repositories === "all" }));
+}
+
+function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostAccess; canManage: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [rotating, setRotating] = useState(false);
+  const [owner, setOwner] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+  const meta = HOST_KINDS.find((k) => k.id === host.kind);
+  const brand = host.kind in BRANDS ? BRANDS[host.kind as keyof typeof BRANDS] : null;
+  const chips = accounts(access);
+  const shown = chips.slice(0, 2);
+  const rest = chips.length - shown.length;
+  const problems = access?.ok ? access.problems : access ? [access.error] : [];
+
   return (
-    <tr>
-      <Td colSpan={6} className="border-t-0 pt-0">
-        <div className="space-y-1.5 text-[13px]">
-          <div className="flex flex-wrap items-center gap-2 text-secondary">
-            <span>Signed in as <span className="font-mono text-foreground">{access.login}</span>.</span>
-            {access.installations.length > 0 && <span>{access.kind === "github" ? "App installed on (each one can own new repositories):" : access.kind === "gitlab" ? "Namespaces that can own new projects:" : "Workspaces that can own new repositories:"}</span>}
-            {access.installations.map((i) => (
-              <Badge key={i.account} tone={i.canCreateRepos && i.repositories === "all" ? "ok" : "bad"} className="font-mono">{access.kind === "github" ? `${i.account} · ${i.repositories === "all" ? "all repos" : "selected repos"} · admin:${i.administration} · contents:${i.contents}` : i.account}</Badge>
-            ))}
-            {access.installUrl && <a href={access.installUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">Install on another account</a>}
+    <li className="px-6 py-4">
+      <div className="grid grid-cols-1 items-center gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto]">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-[8px] border border-border bg-background">
+            {brand ? <BrandIcon icon={brand} mono className="size-4" /> : <GitBranch className="size-4 text-secondary" strokeWidth={1.75} />}
           </div>
-          {access.problems.length > 0 ? (
-            <ul className="list-disc space-y-1 pl-5 text-foreground">{access.problems.map((p) => <li key={p}>{p}</li>)}</ul>
-          ) : (
-            <div className="text-secondary">Can create repositories and push.</div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="truncate text-sm font-medium">{host.name}</span>
+              <Badge className="h-5 px-2 text-[11px]">{meta?.label ?? host.kind}</Badge>
+            </div>
+            <div className="truncate text-[13px] text-secondary">{host.login ? `Signed in as ${host.login}` : host.username ? `Token for ${host.username}` : "Personal access token"}</div>
+          </div>
+        </div>
+
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <Badge tone={host.authKind === "oauth" ? "ok" : "neutral"} className="h-5 gap-1 px-2 text-[11px]">{host.authKind === "oauth" ? <><Check className="size-3" strokeWidth={2.5} /> Connected</> : "Token"}</Badge>
+            {problems.length > 0 && <Badge tone="inverse" className="h-5 px-2 text-[11px]">{problems.length} {problems.length === 1 ? "issue" : "issues"}</Badge>}
+          </div>
+          <div className="mt-1 truncate text-[13px] text-secondary">{host.defaultOwner ? <>Owned by <span className="font-mono text-foreground">{host.defaultOwner}</span></> : "No default owner"}</div>
+        </div>
+
+        <div className="min-w-0">
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{access?.ok && access.kind === "gitlab" ? "Namespaces" : access?.ok && access.kind === "bitbucket" ? "Workspaces" : "Installation accounts"}</div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {chips.length === 0 && <span className="text-[13px] text-muted-foreground">—</span>}
+            {shown.map((c) => <span key={c.account} className={cn("inline-flex h-6 items-center rounded-[6px] border px-2 font-mono text-[12px]", c.ok ? "border-border bg-background" : "border-border text-muted-foreground line-through")}>{c.account}</span>)}
+            {rest > 0 && <button type="button" onClick={() => setExpanded(true)} className="inline-flex h-6 items-center rounded-[6px] border border-border px-2 text-[12px] text-secondary hover:text-foreground">+{rest}</button>}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 lg:justify-end">
+          <button type="button" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded} className="inline-flex h-8 items-center gap-1 rounded-[7px] px-2.5 text-[13px] text-secondary transition-colors hover:bg-surface-hover hover:text-foreground">
+            View permissions <ChevronDown className={cn("size-3.5 transition-transform duration-150", expanded && "rotate-180")} strokeWidth={1.75} />
+          </button>
+          {canManage && (
+            <Menu
+              label={`Actions for ${host.name}`}
+              items={[
+                ...(chips.length ? [{ label: "Change default owner", icon: <UserCog className="size-4" strokeWidth={1.75} />, onSelect: () => setOwner(true) }] : []),
+                ...(host.authKind === "token" ? [{ label: "Update token", icon: <KeyRound className="size-4" strokeWidth={1.75} />, onSelect: () => { setError(null); setRotating(true); } }] : []),
+                "separator" as const,
+                { label: "Remove host", icon: <Trash2 className="size-4" strokeWidth={1.75} />, danger: true, onSelect: () => setRemoving(true) },
+              ]}
+              trigger={({ open, toggle, id }) => (
+                <button type="button" aria-label={`More actions for ${host.name}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle} className="flex size-8 items-center justify-center rounded-[7px] text-secondary transition-colors hover:bg-surface-hover hover:text-foreground">
+                  <MoreHorizontal className="size-4" strokeWidth={1.75} />
+                </button>
+              )}
+            />
           )}
         </div>
-      </Td>
-    </tr>
-  );
-}
+      </div>
 
-function OwnerSelect({ host, accounts }: { host: SourceHost; accounts: string[] }) {
-  const [pending, start] = useTransition();
-  const options = [...new Set([...(host.defaultOwner ? [host.defaultOwner] : []), ...accounts])].map((a) => ({ value: a, label: a }));
-  return (
-    <Select size="sm" mono className="w-44" aria-label={`Repository owner for ${host.name}`} value={host.defaultOwner ?? ""} disabled={pending} options={options} onChange={(v) => start(async () => { await changeHostOwner(host.id, v); })} />
-  );
-}
+      {expanded && (
+        <div className="mt-4 rounded-[9px] border border-border-subtle bg-background px-4 py-3 text-[13px]">
+          {!access ? (
+            <div className="text-secondary">Permissions are checked for GitHub, GitLab and Bitbucket hosts.</div>
+          ) : !access.ok ? (
+            <div><span className="font-medium">Access check failed.</span> <span className="text-secondary">{access.error}</span></div>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid gap-x-6 gap-y-1 sm:grid-cols-[auto_1fr]">
+                <span className="text-muted-foreground">Signed in as</span><span className="font-mono">{access.login}</span>
+                <span className="text-muted-foreground">Base URL</span><span className="font-mono">{host.baseUrl ?? "default"}</span>
+              </div>
+              {access.installations.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[13px]">
+                    <thead><tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground"><th className="py-1.5 pr-4 font-medium">Account</th><th className="py-1.5 pr-4 font-medium">Repositories</th><th className="py-1.5 pr-4 font-medium">Administration</th><th className="py-1.5 pr-4 font-medium">Contents</th><th className="py-1.5 font-medium">Can create</th></tr></thead>
+                    <tbody className="divide-y divide-border-subtle">
+                      {access.installations.map((i) => (
+                        <tr key={i.account} className="align-top">
+                          <td className="py-2 pr-4 font-mono">{i.account}</td>
+                          <td className="py-2 pr-4">
+                            {i.repositories === "all" ? "all" : (
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span>{i.selected?.length ?? 0} selected</span>
+                                  {i.configureUrl && <a href={i.configureUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-secondary hover:text-foreground">Configure <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
+                                </div>
+                                {i.selected && i.selected.length > 0 && (
+                                  <div className="mt-1.5 flex flex-wrap gap-1">
+                                    {i.selected.map((r) => <span key={r} className="inline-flex h-5 items-center rounded-[5px] border border-border bg-surface px-1.5 font-mono text-[11px]">{r.split("/")[1] ?? r}</span>)}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-2 pr-4">{i.administration}</td>
+                          <td className="py-2 pr-4">{i.contents}</td>
+                          <td className="py-2">{i.canCreateRepos && i.repositories === "all" ? <Check className="size-4" strokeWidth={2.5} /> : <span className="text-muted-foreground">—</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {access.problems.length > 0 && <ul className="list-disc space-y-1 pl-5">{access.problems.map((p) => <li key={p}>{p}</li>)}</ul>}
+              {access.installUrl && <a href={access.installUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-secondary hover:text-foreground">Install on another account <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
+            </div>
+          )}
+        </div>
+      )}
+      {error && <div className="mt-3 rounded-md border border-foreground px-3 py-2 text-[13px]">{error}</div>}
 
-function ownerAccounts(a: HostAccess | undefined): string[] {
-  if (!a || !a.ok) return [];
-  return [...new Set([...a.installations.map((i) => i.account), a.login])];
+      <ConfirmDialog
+        open={removing}
+        onClose={() => setRemoving(false)}
+        title={`Remove ${host.name}?`}
+        description="Apps that use it lose their credentials until another host is picked."
+        confirmLabel="Remove host"
+        danger
+        pending={pending}
+        onConfirm={() => start(async () => { await deleteHost(host.id); setRemoving(false); })}
+      />
+      <PromptDialog
+        open={rotating}
+        onClose={() => setRotating(false)}
+        title={`Update token for ${host.name}`}
+        description={meta?.tokenHint}
+        label={meta?.tokenLabel ?? "Token"}
+        hint="Replaces the stored token; the old one is discarded."
+        type="password"
+        submitLabel="Update token"
+        pending={pending}
+        error={error}
+        onSubmit={(value) => start(async () => { const r = await rotateHostToken(host.id, value); if (r?.error) setError(r.error); else setRotating(false); })}
+      />
+      <Dialog
+        open={owner}
+        onClose={() => !pending && setOwner(false)}
+        title="Default owner"
+        description="Pre-selected as the organization when creating an app from this host."
+        footer={<Button variant="ghost" onClick={() => setOwner(false)}>Close</Button>}
+      >
+        <Select mono value={host.defaultOwner ?? ""} disabled={pending} options={chips.map((c) => ({ value: c.account, label: c.account, hint: c.ok ? undefined : "cannot create repositories" }))} onChange={(v) => start(async () => { const r = await changeHostOwner(host.id, v); if (!r.ok) setError(r.error); else setOwner(false); })} />
+      </Dialog>
+    </li>
+  );
 }

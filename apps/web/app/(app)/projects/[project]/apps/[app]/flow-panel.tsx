@@ -103,7 +103,7 @@ function NewBranchDialog({ view, open, onClose }: { view: AppView; open: boolean
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Code" hint="Issue or ticket: 42, PROJ-7"><Input value={code} onChange={(e) => setCode(e.target.value)} className="font-mono" placeholder="42" autoFocus /></Field>
           <Field label="Slug" hint="Optional words"><Input value={slug} onChange={(e) => setSlug(e.target.value)} className="font-mono" placeholder="login" /></Field>
         </div>
