@@ -41,6 +41,6 @@ Out of scope: vulnerabilities in the code hosts, clouds or CI systems the platfo
 
 Worth knowing when you assess a report:
 
-- The API clones repositories and runs `git` and template hooks for every app; it must only be reachable by the web app (`AP_API_TOKEN`, private network). See [Self-hosting](docs/self-hosting.md).
-- Code-host tokens are stored encrypted in the web app's database and travel to the API per request; they never land on disk on the API side. See [Architecture](docs/architecture.md).
+- The API clones repositories and runs `git` and template hooks for every app; it must only be reachable by the web app (`AP_API_TOKEN`, private network). See [Self-hosting](docs/start_self_hosting.md).
+- Code-host tokens are stored encrypted in the web app's database and travel to the API per request; they never land on disk on the API side. See [Architecture](docs/contribute_architecture.md).
 - Template repositories added by an organization run their cookiecutter hooks on the platform: only add repositories you trust.

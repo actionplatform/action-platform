@@ -18,7 +18,7 @@ import { MembersPanel } from "./members-panel";
 import { RolesCard } from "./roles-card";
 import { SourceHosts } from "./source-hosts";
 
-const DOCS_URL = "https://github.com/actionplatform/action-platform/blob/master/docs/architecture.md";
+const DOCS_URL = "https://github.com/actionplatform/action-platform/blob/master/docs/use_api.md";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
   const { session, org } = await requireOrg();

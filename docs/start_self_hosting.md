@@ -56,7 +56,7 @@ flowchart LR
     W --> P[(postgres)]
     A --> D[(apdata: clones)]
     W --> C[(webconfig: app.json)]
-    A -->|"push · release"| G{{code hosts}}
+    A -->|"push · release"| G{{source hosts}}
 ```
 
 | Service | Image | Notes |
@@ -80,7 +80,7 @@ Images are published for every `api/vX.Y.Z` and `web/vX.Y.Z` tag to Docker Hub a
 | `AP_GIT_AUTHOR_NAME`, `AP_GIT_AUTHOR_EMAIL` | no | fallback identity for commits when a request carries none (defaults `Action Platform <cloud@actionplatform.io>`). Each organization sets its own commit identity in Setup and Settings → Commit identity; the web app sends it with every call. |
 | `AP_API_TOKEN` | recommended | shared secret between web and API: the API refuses every request without `Authorization: Bearer <token>` (except `/api/version`), so a neighbour on the Docker network cannot drive it. Set the same value on both services; unset, the API trusts the network (local development). |
 >>>>>>> master
-| `AP_SENTRY_DSN_API`, `AP_SENTRY_DSN_WEB` | no | Sentry DSNs, one project per component; empty keeps reporting off. Reaches the containers as `AP_SENTRY_DSN` (API) and `SENTRY_DSN` (web); `AP_SENTRY_ENVIRONMENT` / `SENTRY_ENVIRONMENT` and `*_TRACES_SAMPLE_RATE` (default 0.1) tune them. See [observability](observability.md). |
+| `AP_SENTRY_DSN_API`, `AP_SENTRY_DSN_WEB` | no | Sentry DSNs, one project per component; empty keeps reporting off. Reaches the containers as `AP_SENTRY_DSN` (API) and `SENTRY_DSN` (web); `AP_SENTRY_ENVIRONMENT` / `SENTRY_ENVIRONMENT` and `*_TRACES_SAMPLE_RATE` (default 0.1) tune them. See [observability](concept_observability.md). |
 | `BETTER_AUTH_SECRET` | yes | signs sessions and encrypts stored tokens — rotating it invalidates both |
 | `DOMAIN`, `ACME_EMAIL` | with TLS | Traefik host rule and Let's Encrypt account |
 | `WEB_PORT` | no | published port (default 3000) |
@@ -110,3 +110,13 @@ AP_IMAGE_API=action-platform-api:local AP_IMAGE_WEB=action-platform-web:local do
 
 - The API image ships Python and git only: releases work anywhere; a `deploy` to Lambda / Amplify needs `sam`, `aws` or `node` inside the container, which it does not have yet.
 - Domains are set in `.env` (or in Dokploy), not from the app's Settings.
+
+## Upgrading
+
+Each component ships on its own tag and image: `api/vX.Y.Z` → `actionplatformio/action-platform-api`, `web/vX.Y.Z` → `actionplatformio/action-platform-web`, `vX.Y.Z` → `action-platform` on PyPI ([releases](concept_releases.md)). To upgrade:
+
+1. Pull the new images (`install.sh` again, or *Redeploy* on Dokploy). Start the **api** before or together with the **web**: the web client is generated from the API's schema, so an older API may miss fields a newer web sends.
+2. The web app applies its database migrations on boot (`apps/web/drizzle/<engine>/`); nothing to run by hand. Back up the database first for a major jump.
+3. Update the CLI where people use it: `pip install -U action-platform`. Tokens minted by `action-platform login` keep working across upgrades until they expire (90 days) or are revoked.
+
+`GET /api/version` on the API and the sidebar footer in the web app (`web · api · lib`) show what is running.

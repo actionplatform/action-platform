@@ -34,7 +34,7 @@ curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/mast
 
 Installs Docker if needed, generates the secrets, starts Postgres + API + web (+ Traefik with Let's Encrypt when a domain is given) and prints the URL. Open it: first account, first organization, connect a code host — done. Files live in `/opt/action-platform`; see [`deploy/`](deploy/) for the compose file and the two Dockerfiles.
 
-**Already on Dokploy?** Create a *Compose* service and import [`deploy/dokploy/template.b64`](deploy/dokploy/template.b64): secrets and domain are generated, Dokploy's Traefik handles TLS. → [Self-hosting](docs/self-hosting.md#dokploy)
+**Already on Dokploy?** Create a *Compose* service and import [`deploy/dokploy/template.b64`](deploy/dokploy/template.b64): secrets and domain are generated, Dokploy's Traefik handles TLS. → [Self-hosting](docs/start_self_hosting.md#dokploy)
 
 ## Or just the CLI
 
@@ -68,11 +68,11 @@ Thirty seconds later you have a FastAPI service with tests, lint, CI wired, a SA
 | `plugin` | chrome |
 | `empty` | `platform.toml` + code quality only |
 
-Cloud overlays `aws/lambda`, `aws/amplify`, `docker`; services `postgres` (docker, aws-rds). Every template comes with tests, lint, CI and `AGENTS.md`. Your organization can add **any git repository** as a template — a plain starter becomes one template, a repository with an `index.toml` a whole catalog. Existing repositories join with one click: the platform installs `platform.toml`, code quality, CI and hooks, and opens the pull request. → [Templates](docs/templates.md)
+Cloud overlays `aws/lambda`, `aws/amplify`, `docker`; services `postgres` (docker, aws-rds). Every template comes with tests, lint, CI and `AGENTS.md`. Your organization can add **any git repository** as a template — a plain starter becomes one template, a repository with an `index.toml` a whole catalog. Existing repositories join with one click: the platform installs `platform.toml`, code quality, CI and hooks, and opens the pull request. → [Templates](docs/concept_templates.md)
 
 ## Git-flow, enforced
 
-Branches are `<kind>/<code>`, commits are Conventional Commits, `main`/`develop` take no direct commits. Git hooks refuse the wrong move before it exists; CI refuses it on the pull request; the CLI and the MCP tools guide the right one. → [Git-flow](docs/git-flow.md)
+Branches are `<kind>/<code>`, commits are Conventional Commits, `main`/`develop` take no direct commits. Git hooks refuse the wrong move before it exists; CI refuses it on the pull request; the CLI and the MCP tools guide the right one. → [Git-flow](docs/concept_git_flow.md)
 
 ## From the browser
 
@@ -91,16 +91,19 @@ flowchart LR
 
 | | |
 |---|---|
-| [Self-hosting](docs/self-hosting.md) | `install.sh`, compose, Dokploy, environment, upgrades, backups |
-| [Web app](docs/web-app.md) | organizations › teams › projects › apps, roles, setup wizard, code hosts, template repositories, importing, configuration, releasing from the browser |
-| [CLI](docs/cli.md) | every command |
-| [Git-flow](docs/git-flow.md) | branch kinds, commit format, what hooks and CI refuse |
-| [`platform.toml`](docs/platform-toml.md) | the file that declares a project |
-| [Templates](docs/templates.md) | the matrix, adding your own repositories, how to add to the official one |
-| [MCP](docs/mcp.md) | tools and prompts for AI clients, locally or against a hosted platform |
-| [Releases](docs/releases.md) | versions per component, tags, what each publishes |
-| [Architecture](docs/architecture.md) | packages, the API, providers, how credentials travel |
-| [Development](docs/development.md) | running it locally, tests, regenerating the API client |
+| [Getting started](docs/start_getting_started.md) | install, first project, point the CLI and an agent at a platform |
+| [Self-hosting](docs/start_self_hosting.md) | `install.sh`, compose, Dokploy, environment, upgrades, backups |
+| [Web](docs/use_web.md) | organizations › teams › projects › apps, roles, setup wizard, code hosts, template repositories, importing, configuration, releasing from the browser |
+| [CLI](docs/use_cli.md) | every command |
+| [Git-flow](docs/concept_git_flow.md) | branch kinds, commit format, what hooks and CI refuse |
+| [Manifest](docs/concept_manifest.md) | `platform.toml`, the file that declares a project |
+| [Templates](docs/concept_templates.md) | the matrix, adding your own repositories, how to add to the official one |
+| [API](docs/use_api.md) | the JSON API behind the web app |
+| [Access control](docs/concept_access_control.md) | roles, token scopes and reach |
+| [MCP](docs/use_mcp.md) | tools and prompts for AI clients, locally or against a hosted platform |
+| [Releases](docs/concept_releases.md) | versions per component, tags, what each publishes |
+| [Architecture](docs/contribute_architecture.md) | packages, the API, providers, how credentials travel |
+| [Development](docs/contribute_development.md) | running it locally, tests, regenerating the API client |
 
 ## Extend it
 

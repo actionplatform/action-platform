@@ -5,8 +5,8 @@ One repository, three artifacts, three versions.
 | Component | Path | Command | Tag | Publishes |
 |---|---|---|---|---|
 | library + CLI (root) | `.` | `action-platform release minor` | `v0.3.0` | `action-platform` on PyPI |
-| api | `action_platform/api` | `action-platform release -c api patch` | `api/v0.1.2` | `actionplatformio/action-platform-api` (Docker Hub + GHCR) |
-| web | `apps/web` | `action-platform release -c web minor` | `web/v0.2.0` | `actionplatformio/action-platform-web` (Docker Hub + GHCR) |
+| api | `action_platform/api` | `action-platform release --component api patch` | `api/v0.1.2` | `actionplatformio/action-platform-api` (Docker Hub + GHCR) |
+| web | `apps/web` | `action-platform release --component web minor` | `web/v0.2.0` | `actionplatformio/action-platform-web` (Docker Hub + GHCR) |
 
 Declared in `platform.toml`:
 
@@ -20,7 +20,7 @@ path = "action_platform/api"
 
 ```mermaid
 flowchart LR
-    R["release [-c web|api]"] --> V{branch?}
+    R["release [--component web|api]"] --> V{branch?}
     V -->|main / master| S["X.Y.Z"]
     V -->|other| RC["X.Y.Z-rc.N"]
     S & RC --> T["tag · push · release on host"]
@@ -36,7 +36,7 @@ flowchart LR
 2. Computes the next version from `<path>/LAST_VERSION`. Off `main`/`master` (or with `--rc`) it is `X.Y.Z-rc.N`, counting only that component's tags.
 3. Renders the changelog from Conventional Commits since the component's last tag, limited to commits that touched `path`; the root excludes every component path.
 4. Writes `LAST_VERSION`, prepends `CHANGELOG.md`, syncs `package.json` / `pyproject.toml` / `__version__` under `path`.
-5. Commits `chore(release): [<name> ]X.Y.Z`, tags, pushes both, publishes the release on the source host (pre-release when rc). A refused push (the branch moved on the remote meanwhile) deletes the tag and the commit again, so nothing half-published stays in the clone.
+5. Commits `chore(release): [<name> ]X.Y.Z`, tags, pushes both, publishes the release on the source host (pre-release when rc). A refused push (the branch moved on the remote meanwhile) deletes the tag and the commit again, so nothing half-published stays in the workspace.
 
 The hosted API syncs the workspace before step 1 (fetch, fast-forward, and a move to the remote when the branch had a leftover local commit), so the push in step 5 is never behind.
 
