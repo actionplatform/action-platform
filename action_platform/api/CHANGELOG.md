@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.4.0 — 2026-09-13
+
+### Features
+- **api:** optional shared token — every route but /api/version requires Authorization: Bearer AP_API_TOKEN
+
+### Bug Fixes
+- **git:** validate branch and tag names before they reach git argv and terminate options explicitly
+- **api:** clone only https urls, optionally from ACTION_PLATFORM_GIT_HOSTS; git protocol policy per subprocess
+- **api:** scope git credentials to the request with a context variable instead of mutating the process environment
+
+### Chores
+- merge master into git url policy
+
 ## v0.3.0 — 2026-09-13
 
 ### Features
