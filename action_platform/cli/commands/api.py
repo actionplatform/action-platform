@@ -21,7 +21,7 @@ def run(
 ) -> None:
     """Serve the JSON API the web app talks to: apps registry, git-flow, releases, deploys."""
     try:
-        from action_platform.api import server
+        from action_platform.api import main as server
     except ModuleNotFoundError as e:
         raise ActionPlatformError(
             "API support is not installed: pip install 'action-platform[api]'"

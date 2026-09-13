@@ -53,3 +53,32 @@ def test_strip_pre_and_next_rc():
         versioning.next_rc("0.3.2", ["v0.3.2-rc.1", "v0.3.2-rc.2", "v0.3.1"])
         == "0.3.2-rc.3"
     )
+
+
+def test_sync_files_updates_version_constants(tmp_path):
+    from pathlib import Path
+
+    from action_platform.core.release import versioning
+
+    files = {
+        "mylib.go": 'package mylib\n\nconst Version = "0.1.0"\n',
+        "internal/app/app.go": 'package app\n\nconst Version = "0.1.0"\n',
+        "manifest.json": '{\n  "name": "x",\n  "version": "0.1.0"\n}\n',
+        "pom.xml": "<project>\n  <groupId>g</groupId>\n  <version>0.1.0</version>\n  <dependencies>\n    <dependency>\n      <version>5.0.0</version>\n    </dependency>\n  </dependencies>\n</project>\n",
+        "src/lib.rs": 'pub const VERSION: &str = "0.1.0";\n',
+        "src/index.ts": 'export const VERSION = "0.1.0";\n',
+        "src/Version.php": "<?php\nfinal class Version\n{\n    public const VERSION = '0.1.0';\n}\n",
+        "src/main/java/com/acme/Version.java": 'public final class Version {\n    public static final String VERSION = "0.1.0";\n}\n',
+    }
+    for rel, text in files.items():
+        p = tmp_path / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text)
+
+    touched = versioning.sync_files(Path(tmp_path), "0.2.0")
+
+    assert set(touched) == set(files)
+    for rel in files:
+        assert "0.2.0" in (tmp_path / rel).read_text()
+        assert "0.1.0" not in (tmp_path / rel).read_text()
+    assert "<version>5.0.0</version>" in (tmp_path / "pom.xml").read_text()

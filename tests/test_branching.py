@@ -81,3 +81,12 @@ def test_refuses_dirty_tree_and_duplicates(repo: Path):
 
     with pytest.raises(BranchError, match="dirty"):
         branching.start("feature", "10", cwd=repo, push=False)
+
+
+def test_default_branch_keeps_slashes(tmp_path, monkeypatch):
+    from action_platform.core.flow import branching
+
+    monkeypatch.setattr(
+        branching.git, "run", lambda args, cwd=None: "refs/remotes/origin/release/1.2"
+    )
+    assert branching._default_branch(tmp_path) == "release/1.2"

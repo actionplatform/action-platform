@@ -105,7 +105,7 @@ def _slugify(text: str) -> str:
 def _default_branch(cwd: Path) -> str:
     try:
         ref = git.run(["symbolic-ref", "refs/remotes/origin/HEAD"], cwd=cwd)
-        return ref.rsplit("/", 1)[-1]
+        return ref.removeprefix("refs/remotes/origin/")
     except subprocess.CalledProcessError:
         pass
 

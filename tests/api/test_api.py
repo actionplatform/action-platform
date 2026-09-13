@@ -11,8 +11,8 @@ pytest.importorskip("fastapi")
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from action_platform.api.registry import Registry  # noqa: E402
-from action_platform.api.server import build  # noqa: E402
+from action_platform.api.repositories.registry import Registry  # noqa: E402
+from action_platform.api.main import build  # noqa: E402
 
 PLATFORM = """
 [project]
@@ -243,3 +243,142 @@ def test_init_unknown_type_is_400(client: TestClient, templates: Path):
     res = client.post("/api/apps/init", json={"type": "nope", "name": "x"})
     assert res.status_code == 400
     assert "unknown type" in res.json()["detail"]
+
+
+def test_releases_from_tags(client: TestClient, url: str):
+    id = client.post("/api/apps", json={"url": url}).json()["id"]
+    rows = client.get(f"/api/apps/{id}/releases").json()
+    assert rows[0]["tag"] == "v1.2.3"
+    assert rows[0]["version"] == "1.2.3"
+    assert rows[0]["latest"] is True
+    assert rows[0]["prerelease"] is False
+    assert len(rows[0]["sha"]) == 7
+
+
+def test_start_branch_and_checkout(client: TestClient, url: str, repo: Path):
+    git("checkout", "-q", "main", cwd=repo)
+    id = client.post("/api/apps", json={"url": url}).json()["id"]
+    res = client.post(
+        f"/api/apps/{id}/branches",
+        json={"kind": "feature", "code": "7", "slug": "login", "push": False},
+    )
+    assert res.status_code == 201, res.text
+    assert res.json() == {"branch": "feature/7-login", "base": "main", "pushed": False}
+    assert client.get(f"/api/apps/{id}").json()["branch"] == "feature/7-login"
+
+    assert (
+        client.post(f"/api/apps/{id}/checkout", json={"branch": "main"}).json()[
+            "branch"
+        ]
+        == "main"
+    )
+    bad = client.post(
+        f"/api/apps/{id}/branches", json={"kind": "wip", "code": "1", "push": False}
+    )
+    assert bad.status_code == 400
+
+
+def test_propose_pull_request(client: TestClient, url: str, repo: Path):
+    git("checkout", "-q", "main", cwd=repo)
+    id = client.post("/api/apps", json={"url": url}).json()["id"]
+    client.post(f"/api/apps/{id}/checkout", json={"branch": "feature/1"})
+    res = client.get(f"/api/apps/{id}/pull-request")
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["head"] == "feature/1"
+    assert body["base"] == "main"
+    assert "feat: add a" in body["title"] or body["commits"] == ["feat: add a"]
+
+
+def test_manifest_read_write_and_commit(client: TestClient, url: str, repo: Path):
+    git("checkout", "-q", "main", cwd=repo)
+    id = client.post("/api/apps", json={"url": url}).json()["id"]
+
+    content = client.get(f"/api/apps/{id}/manifest").json()["content"]
+    assert 'name = "demo"' in content
+
+    bad = client.put(f"/api/apps/{id}/manifest", json={"content": "[project\nname = "})
+    assert bad.status_code == 400
+
+    res = client.put(
+        f"/api/apps/{id}/manifest",
+        json={"content": content + '\n[deploy]\ntarget = "docker"\n'},
+    )
+    assert res.status_code == 200
+    assert client.get(f"/api/apps/{id}").json()["deploy"] == {"target": "docker"}
+    assert client.get(f"/api/apps/{id}").json()["clean"] is False
+
+    refused = client.post(f"/api/apps/{id}/commit", json={"message": "update stuff"})
+    assert refused.status_code == 400
+
+    ok = client.post(
+        f"/api/apps/{id}/commit",
+        json={"message": "chore(platform): set docker deploy target"},
+    )
+    assert ok.status_code == 201, ok.text
+    assert client.get(f"/api/apps/{id}").json()["clean"] is True
+    assert (
+        client.get(f"/api/apps/{id}/commits?limit=1")
+        .json()[0]["subject"]
+        .startswith("chore(platform)")
+    )
+
+
+def test_commit_on_new_branch(client: TestClient, url: str, repo: Path):
+    git("checkout", "-q", "main", cwd=repo)
+    id = client.post("/api/apps", json={"url": url}).json()["id"]
+    content = client.get(f"/api/apps/{id}/manifest").json()["content"]
+    client.put(
+        f"/api/apps/{id}/manifest",
+        json={"content": content + '\n[deploy]\ntarget = "docker"\n'},
+    )
+
+    res = client.post(
+        f"/api/apps/{id}/commit",
+        json={
+            "message": "chore: set docker deploy target",
+            "branch": {"kind": "chore", "code": "42", "slug": "deploy target"},
+            "push": True,
+        },
+    )
+    assert res.status_code == 201, res.text
+    body = res.json()
+    assert body["branch"] == "chore/42-deploy-target"
+    assert body["pushed"] is True
+    assert body["pull_request"] is None
+
+    state = client.get(f"/api/apps/{id}").json()
+    assert state["branch"] == "chore/42-deploy-target"
+    assert state["clean"] is True
+    assert state["deploy"] == {"target": "docker"}
+    names = {b["name"] for b in client.get(f"/api/apps/{id}/branches").json()}
+    assert "chore/42-deploy-target" in names
+
+
+def test_sync_without_upstream_is_a_noop(client: TestClient, tmp_path: Path, url: str, repo: Path):
+    git("checkout", "-q", "main", cwd=repo)
+    id = client.post("/api/apps", json={"url": url}).json()["id"]
+    path = next((tmp_path / "home" / "action-platform" / "workspaces").glob("*"))
+    git("checkout", "-q", "-b", "chore/7-local-only", cwd=path)
+
+    res = client.post(f"/api/apps/{id}/sync")
+    assert res.status_code == 200, res.text
+    assert client.get(f"/api/apps/{id}").json()["branch"] == "chore/7-local-only"
+
+
+def test_release_dry_run_from_another_branch(client: TestClient, url: str, repo: Path):
+    git("checkout", "-q", "main", cwd=repo)
+    id = client.post("/api/apps", json={"url": url}).json()["id"]
+
+    rc = client.post(f"/api/apps/{id}/release", json={"level": "minor", "branch": "feature/1"})
+    assert rc.status_code == 200, rc.text
+    assert rc.json()["branch"] == "feature/1"
+    assert rc.json()["prerelease"] is True
+    assert rc.json()["next"].startswith("1.3.0-rc.")
+
+    stable = client.post(f"/api/apps/{id}/release", json={"level": "minor", "branch": "main"})
+    assert stable.status_code == 200, stable.text
+    assert stable.json()["branch"] == "main"
+    assert stable.json()["prerelease"] is False
+    assert stable.json()["next"] == "1.3.0"
+    assert client.get(f"/api/apps/{id}").json()["branch"] == "main"

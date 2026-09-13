@@ -82,8 +82,9 @@ def open_pr(
     title: str | None = None,
     body: str | None = None,
     draft: bool = False,
+    config: Config | None = None,
 ) -> PRRef:
-    config = Config.from_toml(cwd / settings.CONFIG_FILE)
+    config = config or Config.from_toml(cwd / settings.CONFIG_FILE)
 
     if config.source_host is None:
         raise PullRequestError(

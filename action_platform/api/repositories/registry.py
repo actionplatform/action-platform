@@ -22,6 +22,10 @@ from ulid import ULID
 from action_platform.core.exception import ActionPlatformError
 from action_platform.settings import settings
 
+
+class SyncError(ActionPlatformError):
+    pass
+
 URL_RE = re.compile(r"^(https?://|git@|ssh://|file://)[^\s]+$")
 
 
@@ -141,12 +145,25 @@ class Registry:
             check=True,
             capture_output=True,
         )
-        subprocess.run(
+        upstream = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+
+        if upstream.returncode != 0:
+            return entry
+
+        pull = subprocess.run(
             ["git", "pull", "--quiet", "--ff-only"],
             cwd=root,
-            check=True,
             capture_output=True,
+            text=True,
         )
+
+        if pull.returncode != 0:
+            raise SyncError(_pull_problem(pull.stderr))
 
         return entry
 
@@ -159,6 +176,18 @@ class Registry:
 
         if path.is_relative_to(self.workspaces):
             shutil.rmtree(path, ignore_errors=True)
+
+
+def _pull_problem(stderr: str) -> str:
+    text = stderr.strip()
+
+    if "Not possible to fast-forward" in text or "diverged" in text:
+        return "local branch diverged from its remote — rebase or reset it before syncing"
+
+    if "uncommitted changes" in text or "would be overwritten" in text:
+        return "working tree has changes that the remote would overwrite — commit them first"
+
+    return text.splitlines()[-1] if text else "git pull failed"
 
 
 def _name_from(url: str) -> str:
