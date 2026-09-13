@@ -6,10 +6,16 @@ from typing import Optional
 from fastapi import HTTPException
 
 from action_platform.api.core import credentials as auth
-from action_platform.api.repositories.registry import Entry, Registry
-from action_platform.api.schemas import InitRequest, PushRequest, SourceCredentials
+from action_platform.api.repositories.registry import Entry, MissingManifest, Registry
+from action_platform.api.schemas import (
+    InitRequest,
+    InstallSpec,
+    PushRequest,
+    SourceCredentials,
+)
 from action_platform.api.services.manifest import read_manifest
 from action_platform.core.flow import git, gitflow
+from action_platform.core.scaffold.install import InstallError, install
 from action_platform.core.manifest import write_source_host
 from action_platform.core.scaffold.generate import (
     apply_cloud,
@@ -61,9 +67,36 @@ class AppService:
         url: str,
         name: Optional[str],
         credentials: Optional[SourceCredentials] = None,
+        install_spec: Optional[InstallSpec] = None,
     ) -> dict:
         with auth.git_auth(credentials):
-            return asdict(self.registry.add(url, name))
+            try:
+                entry = self.registry.add(
+                    url, name, require_manifest=install_spec is None
+                )
+            except MissingManifest as e:
+                raise HTTPException(
+                    422, {"code": "needs_install", "detail": str(e)}
+                ) from e
+
+        result = asdict(entry)
+        root = Path(entry.path)
+
+        if install_spec is not None and not (root / settings.CONFIG_FILE).exists():
+            try:
+                plan = install(
+                    root,
+                    type_=install_spec.type,
+                    language=install_spec.language,
+                    ci=install_spec.ci,
+                )
+            except InstallError as e:
+                self.registry.remove(entry.id)
+                raise HTTPException(400, str(e)) from e
+
+            result["installed"] = plan.created
+
+        return result
 
     def sync(self, id: str, credentials: Optional[SourceCredentials] = None) -> dict:
         with auth.git_auth(credentials):

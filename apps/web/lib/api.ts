@@ -25,14 +25,15 @@ export type PullRequestResult = Schemas["PullRequestResult"];
 export type Diagnosis = Schemas["Diagnosis"];
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(public status: number, message: string, public code: string | null = null) {
     super(message);
   }
 }
 
 function unwrap<T>(res: { data?: T; error?: unknown; response: Response }): T {
   if (res.error !== undefined || !res.response.ok) {
-    const detail = (res.error as { detail?: string } | undefined)?.detail;
+    const detail = (res.error as { detail?: string | { code?: string; detail?: string } } | undefined)?.detail;
+    if (detail && typeof detail === "object") throw new ApiError(res.response.status, detail.detail ?? res.response.statusText, detail.code ?? null);
     throw new ApiError(res.response.status, detail ?? res.response.statusText);
   }
   return res.data as T;
@@ -44,7 +45,7 @@ export const api = {
   gitflowRules: async () => unwrap(await client.GET("/api/gitflow/rules")),
   apps: {
     list: async () => unwrap(await client.GET("/api/apps")),
-    add: async (url: string, name?: string, credentials: SourceCredentials | null = null) => unwrap(await client.POST("/api/apps", { body: { url, name, credentials } })),
+    add: async (url: string, name?: string, credentials: SourceCredentials | null = null, install: { type: string; language?: string | null; ci?: string | null } | null = null) => unwrap(await client.POST("/api/apps", { body: { url, name, credentials, install } })),
     init: async (body: InitRequest) => unwrap(await client.POST("/api/apps/init", { body })),
     push: async (id: string, priv = false, credentials: SourceCredentials | null = null) =>
       unwrap(await client.POST("/api/apps/{id}/push", { params: { path: { id } }, body: { private: priv, credentials } })),

@@ -477,3 +477,35 @@ def test_plain_repository_source_is_one_template(
     assert detail["project"]["language"] == "python"
     assert (Path(created["path"]) / "app" / "main.py").exists()
     assert (Path(created["path"]) / "platform.toml").exists()
+
+
+def test_add_installs_platform_on_a_bare_repository(
+    client: TestClient, tmp_path: Path, monkeypatch
+):
+    monkeypatch.setenv(
+        "ACTION_PLATFORM_TEMPLATES",
+        str(_template_repo(tmp_path / "official", "web", "python", "fastapi")),
+    )
+    bare = tmp_path / "legacy"
+    bare.mkdir()
+    (bare / "pyproject.toml").write_text('[project]\nname = "legacy"\n')
+    git("init", "-q", "-b", "main", cwd=bare)
+    git("config", "user.email", "t@t", cwd=bare)
+    git("config", "user.name", "t", cwd=bare)
+    git("add", "-A", cwd=bare)
+    git("commit", "-q", "-m", "chore: legacy", cwd=bare)
+
+    refused = client.post("/api/apps", json={"url": bare.as_uri()})
+    assert refused.status_code == 422
+    assert refused.json()["detail"]["code"] == "needs_install"
+
+    res = client.post(
+        "/api/apps",
+        json={"url": bare.as_uri(), "install": {"type": "web", "ci": "github"}},
+    )
+    assert res.status_code == 201, res.text
+    body = res.json()
+    assert "platform.toml" in body["installed"]
+    detail = client.get(f"/api/apps/{body['id']}").json()
+    assert detail["project"]["language"] == "python"
+    assert detail["clean"] is False

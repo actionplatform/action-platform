@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { appById, createApp, deleteApp, markSynced, projectById, setAppHost } from "@/lib/projects";
 import { requirePermission } from "@/lib/orgs";
 import type { Permission } from "@/lib/permissions";
@@ -54,23 +54,26 @@ export async function pullReleases(projectId: string, appId: string) {
   return releases;
 }
 
-export async function addApp(projectId: string, _prev: { error?: string } | null, formData: FormData): Promise<{ error?: string } | null> {
-  const url = String(formData.get("url") ?? "").trim();
-  if (!url) return null;
+export type AddResult = { ok: true; appId: string; installed: string[] | null } | { ok: false; error: string; needsInstall?: boolean };
+
+export async function addApp(projectId: string, url: string, install: { type: string; ci: string } | null = null): Promise<AddResult> {
+  url = url.trim();
+  if (!url) return { ok: false, error: "url is required" };
   try {
     const { org } = await owned(projectId, "project.manage");
     const host = await hostFor(org.id, url);
     const credentials = host ? await credentialsFor(org.id, host.id) : null;
     const kind = kindOf(url);
-    if (kind && !credentials) return { error: `No ${kind} host is connected to this organization. Connect one in Settings so private repositories can be cloned.` };
-    const entry = await api.apps.add(url, undefined, credentials);
+    if (kind && !credentials) return { ok: false, error: `No ${kind} host is connected to this organization. Connect one in Settings so private repositories can be cloned.` };
+    const entry = await api.apps.add(url, undefined, credentials, install);
     const app = await createApp(projectId, entry.id, entry.name, host?.id ?? null);
     if (host) await Promise.all([syncReleases(org.id, app.id, host.id, repoOf(url, null)), syncPullRequests(org.id, app.id, host.id, repoOf(url, null))]);
+    revalidatePath(`/projects/${projectId}`);
+    return { ok: true, appId: app.id, installed: entry.installed ?? null };
   } catch (e) {
-    return { error: (e as Error).message };
+    if (e instanceof ApiError && e.code === "needs_install") return { ok: false, error: e.message, needsInstall: true };
+    return { ok: false, error: (e as Error).message };
   }
-  revalidatePath(`/projects/${projectId}`);
-  return null;
 }
 
 export async function removeApp(projectId: string, appId: string) {

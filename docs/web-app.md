@@ -83,6 +83,10 @@ flowchart LR
 
 **Add an existing repository** on the project page takes a git URL; the API clones it (it must already contain a `platform.toml` — run `action-platform install` there first).
 
+### Importing a repository without the platform
+
+Project → **Add an existing repository** with any git URL. When the repository has no `platform.toml` the platform offers to install it: pick the type and CI, and the clone receives `platform.toml`, `.code_quality/`, the CI files and the git hooks (the language is detected). Nothing is pushed — the app opens on Configuration with the changes uncommitted, and **Commit changes** puts them on a `chore/<code>` branch with a pull request.
+
 ## The app page
 
 - **Sync** (`git fetch` + fast-forward) or **Push to remote** while there is none

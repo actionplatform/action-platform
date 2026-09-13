@@ -100,8 +100,12 @@ class Remote:
     def apps(self) -> list[dict]:
         return self._call("GET", "apps")
 
-    def add_app(self, url: str, name: Optional[str] = None) -> dict:
-        return self._call("POST", "apps", {"url": url, "name": name})
+    def add_app(
+        self, url: str, name: Optional[str] = None, install: Optional[dict] = None
+    ) -> dict:
+        return self._call(
+            "POST", "apps", {"url": url, "name": name, "install": install}
+        )
 
     def remove_app(self, id: str) -> None:
         self._call("DELETE", f"apps/{id}")

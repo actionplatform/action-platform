@@ -394,6 +394,7 @@ export interface components {
             url: string;
             /** Name */
             name?: string | null;
+            install?: components["schemas"]["InstallSpec"] | null;
             credentials?: components["schemas"]["SourceCredentials"] | null;
         };
         /** AppDetail */
@@ -448,6 +449,8 @@ export interface components {
              * @default
              */
             default_branch: string;
+            /** Installed */
+            installed?: string[] | null;
         };
         /** AppMeta */
         AppMeta: {
@@ -701,6 +704,18 @@ export interface components {
             cloud?: string | null;
             /** Pushed */
             pushed: boolean;
+        };
+        /** InstallSpec */
+        InstallSpec: {
+            /**
+             * Type
+             * @default web
+             */
+            type: string;
+            /** Language */
+            language?: string | null;
+            /** Ci */
+            ci?: string | null;
         };
         /** ManifestBody */
         ManifestBody: {

@@ -33,9 +33,26 @@ def register(mcp: Any, remote: Remote) -> None:
     def add_app(
         url: Annotated[str, Field(description="Git url; the platform clones it")],
         name: Optional[str] = None,
+        install_type: Annotated[
+            Optional[str],
+            Field(
+                description="web, library, docs, plugin or empty: install the platform (platform.toml, code quality, CI, hooks) when the repository has none"
+            ),
+        ] = None,
+        install_ci: Annotated[
+            Optional[str],
+            Field(description="github, gitlab or jenkins; default detected or github"),
+        ] = None,
     ) -> dict:
-        """Register a repository as an app on the platform. It must already contain a platform.toml."""
-        return remote.add_app(url, name)
+        """Register a repository as an app on the platform.
+
+        A repository without platform.toml is refused with code `needs_install`;
+        call again with install_type to have the platform files added to the
+        clone, then commit them with commit_changes (branch + pull request).
+        """
+        install = {"type": install_type, "ci": install_ci} if install_type else None
+
+        return remote.add_app(url, name, install)
 
     @mcp.tool(annotations=DESTRUCTIVE)
     def remove_app(id: AppId) -> dict:

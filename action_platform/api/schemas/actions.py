@@ -20,9 +20,16 @@ class SourceSpec(BaseModel):
     credentials: Optional[SourceCredentials] = None
 
 
+class InstallSpec(BaseModel):
+    type: str = "web"
+    language: Optional[str] = None
+    ci: Optional[str] = None
+
+
 class AddAppRequest(BaseModel):
     url: str
     name: Optional[str] = None
+    install: Optional[InstallSpec] = None
     credentials: Optional[SourceCredentials] = None
 
 
