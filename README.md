@@ -7,26 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/action-platform/"><img alt="PyPI" src="https://img.shields.io/pypi/v/action-platform?style=flat-square&logo=pypi&logoColor=white&label=cli&color=2ea44f"></a>
+  <a href="https://pypi.org/project/action-platform/"><img alt="CLI" src="https://img.shields.io/pypi/v/action-platform?style=flat-square&logo=pypi&logoColor=white&label=cli&color=2ea44f"></a>
   <a href="https://hub.docker.com/r/actionplatformio/action-platform-web"><img alt="Web image" src="https://img.shields.io/docker/v/actionplatformio/action-platform-web?sort=semver&style=flat-square&logo=docker&logoColor=white&label=web&color=2496ed"></a>
   <a href="https://hub.docker.com/r/actionplatformio/action-platform-api"><img alt="API image" src="https://img.shields.io/docker/v/actionplatformio/action-platform-api?sort=semver&style=flat-square&logo=docker&logoColor=white&label=api&color=2496ed"></a>
-  <a href="https://pypi.org/project/action-platform/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/action-platform?style=flat-square&logo=python&logoColor=white"></a>
-  <a href="https://pypi.org/project/action-platform/"><img alt="Downloads" src="https://img.shields.io/pypi/dm/action-platform?style=flat-square&color=8250df"></a>
-</p>
-
-<p align="center">
-  <a href="https://github.com/actionplatform/action-platform/actions/workflows/code-quality.yml"><img alt="Code quality" src="https://img.shields.io/github/actions/workflow/status/actionplatform/action-platform/code-quality.yml?branch=master&style=flat-square&label=code%20quality"></a>
-  <a href="https://github.com/actionplatform/action-platform/actions/workflows/trivy.yml"><img alt="Trivy" src="https://img.shields.io/github/actions/workflow/status/actionplatform/action-platform/trivy.yml?branch=master&style=flat-square&label=trivy&logo=aquasecurity&logoColor=white"></a>
-  <a href="https://github.com/actionplatform/action-platform/actions/workflows/docker-publish-images.yml"><img alt="Package Docker" src="https://img.shields.io/github/actions/workflow/status/actionplatform/action-platform/docker-publish-images.yml?style=flat-square&label=images&logo=githubactions&logoColor=white"></a>
-  <a href="https://github.com/actionplatform/action-platform/releases"><img alt="Release" src="https://img.shields.io/github/v/release/actionplatform/action-platform?style=flat-square&logo=github&label=release"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square"></a>
-</p>
-
-<p align="center">
-  <a href="https://github.com/actionplatform/templates"><img alt="Templates" src="https://img.shields.io/badge/templates-13%20projects%20%C2%B7%203%20clouds%20%C2%B7%201%20service-6f42c1?style=flat-square"></a>
-  <a href="docs/mcp.md"><img alt="MCP" src="https://img.shields.io/badge/MCP-17%20local%20%C2%B7%2026%20remote%20tools-000000?style=flat-square&logo=anthropic&logoColor=white"></a>
-  <a href="docs/git-flow.md"><img alt="Git-flow" src="https://img.shields.io/badge/git--flow-enforced-orange?style=flat-square&logo=git&logoColor=white"></a>
-  <a href="https://www.conventionalcommits.org"><img alt="Conventional Commits" src="https://img.shields.io/badge/conventional%20commits-1.0.0-fe5196?style=flat-square&logo=conventionalcommits&logoColor=white"></a>
 </p>
 
 ---
