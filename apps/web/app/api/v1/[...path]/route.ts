@@ -1,14 +1,16 @@
 import { API_BASE, apiHeaders } from "@/lib/api";
 import { type Caller, authenticate } from "@/lib/api-auth";
-import { roleOf } from "@/lib/orgs";
-import { can, parseScopes, type Permission, scopeAllows } from "@/lib/permissions";
-import { appByRegistryId, registryIdsOf } from "@/lib/projects";
+import { membersOf, orgsOf, roleOf, setMemberRole } from "@/lib/orgs";
+import { can, grantableScopes, isRole, PERMISSIONS, type Permission, type Role, ROLE_INFO, ROLES, scopeAllows } from "@/lib/permissions";
+import { membersDirectory, organizationsOf, projectsDirectory, teamsDirectory } from "@/lib/directory";
+import { appById, appByRegistryId, createProject, projectById, registryIdsOf } from "@/lib/projects";
+import { addTeamMember, assignProjectTeam, createTeam } from "@/lib/teams";
 import { syncPullRequests } from "@/lib/pull-requests";
 import { syncReleases } from "@/lib/releases";
 import { credentialsFor, hostsOf } from "@/lib/source-hosts";
 import { sourceSpecByName, sourceSpecsOf } from "@/lib/template-sources";
 import { gitAuthorOf } from "@/lib/org-settings";
-import { issueToken } from "@/lib/api-tokens";
+import { formatGrant, issueToken, parseGrant } from "@/lib/api-tokens";
 
 type Rule = { method: string; pattern: RegExp; permission: Permission | null; credentials?: boolean; imports?: boolean };
 
@@ -44,8 +46,11 @@ async function proxy(req: Request, segments: string[]): Promise<Response> {
   if (!caller.org) return Response.json({ detail: "no organization" }, { status: 403 });
 
   const path = segments.join("/");
-  if (path === "me") return Response.json(me(caller));
+  if (path === "me") return Response.json(await me(caller));
   if (path === "tokens") return issue(req, caller);
+  if (path === "organizations") return Response.json(await organizationsOf(caller.user.id));
+  if (DIRECTORY.has(path) && req.method === "GET") return directory(path, caller);
+  if (DIRECTORY.has(path) && req.method === "POST") return manage(path, req, caller);
 
   const rule = ruleFor(req.method, path);
   if (!rule) return Response.json({ detail: `${req.method} /api/v1/${path} is not exposed` }, { status: 404 });
@@ -58,6 +63,8 @@ async function proxy(req: Request, segments: string[]): Promise<Response> {
   const registryId = path.startsWith("apps/") ? segments[1] : null;
   const app = registryId && registryId !== "init" ? await appByRegistryId(registryId) : null;
   if (registryId && registryId !== "init" && (!app || app.organizationId !== org.id)) return Response.json({ detail: "app not found" }, { status: 404 });
+  if (app && !withinReach(caller, app)) return Response.json({ detail: "app not found" }, { status: 404 });
+  if (!app && req.method === "POST" && /^apps(\/init)?$/.test(path) && (caller.projectId || caller.appId)) return Response.json({ detail: "this token is limited to one project; it cannot add apps" }, { status: 403 });
 
   const url = new URL(req.url);
   const target = `${API_BASE}/api/${path}${url.search}`;
@@ -94,7 +101,7 @@ async function proxy(req: Request, segments: string[]): Promise<Response> {
   });
 
   if (req.method === "GET" && path === "apps") {
-    const allowed = await registryIdsOf(org.id);
+    const allowed = await registryIdsOf(org.id, caller.projectId, caller.appId);
     const rows = (await upstream.json()) as { id: string }[];
     return Response.json(rows.filter((r) => allowed.has(r.id)), { status: upstream.status });
   }
@@ -111,20 +118,99 @@ async function proxy(req: Request, segments: string[]): Promise<Response> {
   });
 }
 
-function me(caller: Caller) {
-  return { user: { id: caller.user.id, name: caller.user.name, email: caller.user.email }, organization: caller.org, scope: caller.scope, token: caller.tokenId };
+async function me(caller: Caller) {
+  const role = caller.org ? await roleOf(caller.user.id, caller.org.id) : null;
+  const permissions = Object.fromEntries(PERMISSIONS.map((p) => [p, can(role, p) && (!caller.scope || scopeAllows(caller.scope, p))]));
+  const project = caller.projectId && caller.org ? await projectById(caller.org.id, caller.projectId) : null;
+  const app = caller.appId && project ? await appById(project.id, caller.appId) : null;
+  return {
+    user: { id: caller.user.id, name: caller.user.name, email: caller.user.email },
+    organization: caller.org,
+    role,
+    role_label: role ? ROLE_INFO[role]?.label ?? role : null,
+    scope: caller.scope,
+    permissions,
+    token: caller.tokenId,
+    project: project ? { id: project.id, name: project.name } : null,
+    app: app ? { id: app.id, name: app.name, registry_id: app.registryId } : null,
+  };
+}
+
+const DIRECTORY = new Set(["projects", "teams", "members", "teams/members", "projects/team", "members/role"]);
+
+async function directory(path: string, caller: Caller): Promise<Response> {
+  const org = caller.org!;
+  if (path === "projects") return Response.json(await projectsDirectory(org.id, caller.projectId, caller.appId));
+  if (path === "teams") return Response.json(await teamsDirectory(org.id));
+  if (path === "members") return Response.json(await membersDirectory(org.id));
+  return Response.json({ detail: `GET /api/v1/${path} is not exposed` }, { status: 404 });
+}
+
+async function manage(path: string, req: Request, caller: Caller): Promise<Response> {
+  const org = caller.org!;
+  const permission: Permission = path === "projects" || path === "projects/team" ? "project.manage" : "org.manage";
+  const role = await roleOf(caller.user.id, org.id);
+  if (!can(role, permission)) return Response.json({ detail: `your role (${role ?? "none"}) lacks ${permission}` }, { status: 403 });
+  if (caller.scope && !scopeAllows(caller.scope, permission)) return Response.json({ detail: `the token's scope (${caller.scope.join(" ")}) does not allow ${permission}` }, { status: 403 });
+  if (caller.projectId || caller.appId) return Response.json({ detail: "a token limited to a project or app cannot manage the organization" }, { status: 403 });
+  const body = (await req.json().catch(() => ({}))) as Record<string, string | null | undefined>;
+  const text = (key: string) => (typeof body[key] === "string" ? (body[key] as string).trim() : "");
+
+  try {
+    if (path === "projects") {
+      if (!text("name")) return Response.json({ detail: "name is required" }, { status: 400 });
+      const project = await createProject(org.id, text("name"), text("description"));
+      return Response.json({ id: project.id, name: project.name, slug: project.slug }, { status: 201 });
+    }
+    if (path === "teams") {
+      const team = await createTeam(org.id, text("name"), text("description"));
+      return Response.json({ id: team.id, name: team.name, slug: team.slug }, { status: 201 });
+    }
+    if (path === "teams/members") {
+      await addTeamMember(org.id, text("team_id"), text("user_id"));
+      return Response.json({ ok: true });
+    }
+    if (path === "projects/team") {
+      await assignProjectTeam(org.id, text("project_id"), text("team_id") || null);
+      return Response.json({ ok: true });
+    }
+    if (path === "members/role") {
+      if (!isRole(text("role"))) return Response.json({ detail: `role must be one of ${ROLES.join(", ")}` }, { status: 400 });
+      const member = (await membersOf(org.id)).find((m) => m.userId === text("user_id"));
+      if (!member) return Response.json({ detail: "member not found" }, { status: 404 });
+      await setMemberRole(org.id, member.id, text("role") as Role);
+      return Response.json({ ok: true });
+    }
+  } catch (e) {
+    return Response.json({ detail: (e as Error).message }, { status: 400 });
+  }
+  return Response.json({ detail: `POST /api/v1/${path} is not exposed` }, { status: 404 });
+}
+
+function withinReach(caller: Caller, app: { id: string; projectId: string }): boolean {
+  if (caller.appId) return app.id === caller.appId;
+  if (caller.projectId) return app.projectId === caller.projectId;
+  return true;
 }
 
 async function issue(req: Request, caller: Caller): Promise<Response> {
   if (req.method !== "POST") return Response.json({ detail: "POST /api/v1/tokens" }, { status: 405 });
   if (caller.scope) return Response.json({ detail: "a token cannot mint another token; sign in again" }, { status: 403 });
   const body = (await req.json().catch(() => ({}))) as { scope?: string; name?: string };
-  const requested = parseScopes(body.scope);
-  if (requested.length === 0) return Response.json({ detail: "scope must include at least one of read, write, release, admin" }, { status: 400 });
-  const scope = requested.includes("read") ? requested : ["read" as const, ...requested];
+  const grant = parseGrant(body.scope);
+  if (grant.scope.length === 0) return Response.json({ detail: "scope must include at least one of read, write, release, admin" }, { status: 400 });
+  const organization = grant.organizationId ? (await orgsOf(caller.user.id)).find((o) => o.id === grant.organizationId) ?? null : caller.org;
+  if (!organization) return Response.json({ detail: "not a member of that organization" }, { status: 403 });
+  const allowed = grantableScopes(await roleOf(caller.user.id, organization.id));
+  const granted = grant.scope.filter((s) => allowed.includes(s));
+  const scope = granted.includes("read") ? granted : ["read" as const, ...granted];
+  const project = grant.projectId ? await projectById(organization.id, grant.projectId) : null;
+  if (grant.projectId && !project) return Response.json({ detail: "project not found in that organization" }, { status: 400 });
+  const app = grant.appId && project ? await appById(project.id, grant.appId) : null;
+  if (grant.appId && !app) return Response.json({ detail: "app not found in that project" }, { status: 400 });
   const name = (body.name ?? "").trim().slice(0, 80) || "cli";
-  const { token, id, expiresAt } = await issueToken({ userId: caller.user.id, organizationId: caller.org!.id, scope, name });
-  return Response.json({ token, token_type: "Bearer", id, scope: scope.join(" "), expires_at: expiresAt.toISOString(), organization: caller.org });
+  const { token, id, expiresAt } = await issueToken({ userId: caller.user.id, organizationId: organization.id, scope, name, projectId: project?.id ?? null, appId: app?.id ?? null });
+  return Response.json({ token, token_type: "Bearer", id, scope: formatGrant({ scope, organizationId: organization.id, projectId: project?.id ?? null, appId: app?.id ?? null }), expires_at: expiresAt.toISOString(), organization, project: project ? { id: project.id, name: project.name } : null, app: app ? { id: app.id, name: app.name } : null });
 }
 
 type Ctx = { params: Promise<{ path: string[] }> };

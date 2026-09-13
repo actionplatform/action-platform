@@ -6,7 +6,7 @@ import { q } from "./db/query";
 import { eq } from "drizzle-orm";
 import type { Org } from "./types";
 
-export type Caller = { user: { id: string; name: string; email: string }; org: Org | null; scope: Scope[] | null; tokenId: string | null };
+export type Caller = { user: { id: string; name: string; email: string }; org: Org | null; scope: Scope[] | null; tokenId: string | null; projectId: string | null; appId: string | null };
 
 export async function authenticate(req: Request): Promise<Caller | null> {
   const header = req.headers.get("authorization") ?? "";
@@ -20,11 +20,11 @@ export async function authenticate(req: Request): Promise<Caller | null> {
     const user = users[0];
     if (!user) return null;
     const org = (await orgsOf(user.id)).find((o) => o.id === claims.organizationId) ?? null;
-    return { user, org, scope: claims.scope, tokenId: claims.id };
+    return { user, org, scope: claims.scope, tokenId: claims.id, projectId: claims.projectId, appId: claims.appId };
   }
 
   const auth = await getAuth();
   const session = await auth.api.getSession({ headers: req.headers });
   if (!session) return null;
-  return { user: { id: session.user.id, name: session.user.name, email: session.user.email }, org: await activeOrg(session), scope: null, tokenId: null };
+  return { user: { id: session.user.id, name: session.user.name, email: session.user.email }, org: await activeOrg(session), scope: null, tokenId: null, projectId: null, appId: null };
 }

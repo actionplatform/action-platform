@@ -77,3 +77,7 @@ export function scopeAllows(scopes: Scope[], permission: Permission | null): boo
   if (!permission) return true;
   return scopes.some((s) => SCOPE_INFO[s].permissions.includes(permission));
 }
+
+export function grantableScopes(role: string | null): Scope[] {
+  return SCOPES.filter((s) => s === "read" || SCOPE_INFO[s].permissions.every((p) => can(role, p)));
+}

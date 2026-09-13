@@ -98,8 +98,11 @@ export async function appByRegistryId(registryId: string): Promise<(App & { orga
   return rows[0] ?? null;
 }
 
-export async function registryIdsOf(orgId: string): Promise<Set<string>> {
+export async function registryIdsOf(orgId: string, projectId: string | null = null, appId: string | null = null): Promise<Set<string>> {
   const { db, t } = await q();
-  const rows = await db.select({ registryId: t.app.registryId }).from(t.app).innerJoin(t.project, eq(t.app.projectId, t.project.id)).where(eq(t.project.organizationId, orgId));
+  const filters = [eq(t.project.organizationId, orgId)];
+  if (projectId) filters.push(eq(t.app.projectId, projectId));
+  if (appId) filters.push(eq(t.app.id, appId));
+  const rows = await db.select({ registryId: t.app.registryId }).from(t.app).innerJoin(t.project, eq(t.app.projectId, t.project.id)).where(and(...filters));
   return new Set(rows.map((r) => r.registryId));
 }
