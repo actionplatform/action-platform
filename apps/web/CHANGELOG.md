@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.7 — 2026-09-13
+
+### Features
+- **web:** Authorize a device as a full-page card — client, code with copy, fixed permission set, reach incl. all organizations, expiry and error states
+- **web:** Connected apps shows which programs use each token
+- **web:** all-organization tokens resolve the organization per request; the client name is recorded on every call
+- **web:** tokens may span every organization; api_token_client records the programs using a token
+
+### Bug Fixes
+- **api:** a fetch the code host refuses fails the sync with a reason instead of a 500
+
 ## v0.6.6 — 2026-09-13
 
 ### Features
