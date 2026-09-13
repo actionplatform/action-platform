@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { ConnectHosts } from "@/components/connect-hosts";
 import { PageHeader } from "@/components/layout/page";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { API_BASE, api } from "@/lib/api";
 import { hostAccess } from "@/lib/host-access";
 import { appFor, isConfigured } from "@/lib/oauth";
@@ -49,10 +49,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           origin={origin}
         />
 
-        <Card>
-          <CardHeader><CardTitle>Connect a code host</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            {query.oauth_error && <div className="text-sm text-foreground border border-foreground rounded-md px-3 py-2">{query.oauth_error}</div>}
+        <Card className="rounded-[11px]">
+          <header className="border-b border-border px-6 py-4"><h2 className="text-[18px] font-semibold">Connect a code host</h2></header>
+          <div className="space-y-3 px-4 py-4 sm:px-6">
             {query.connected && <div className="text-sm text-secondary">Connected {query.connected}.</div>}
             {query.github_app && <div className="text-sm text-secondary">GitHub App <code className="font-mono">{query.github_app}</code> created. Install it, then connect.</div>}
             <ConnectHosts
@@ -62,8 +61,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               orgId={org.id}
               returnTo="/settings"
               githubApp={githubSlug}
+              error={query.oauth_error ?? null}
             />
-          </CardContent>
+          </div>
         </Card>
 
         <SourceHosts hosts={hosts} access={access} canManage={canManage} />
