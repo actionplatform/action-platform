@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from tests.api.support import ApiCase
+from tests.support import git
 
 
 class ManifestTest(ApiCase):
@@ -117,3 +118,81 @@ class ChangesTest(ApiCase):
         self.assertNotIn(
             "[deploy]", self.client.get(f"/api/apps/{id}/manifest").json()["content"]
         )
+
+
+class DiscardTest(ApiCase):
+    def test_discard_on_an_installed_import_leaves_the_repository_as_cloned(self):
+        from action_platform.settings import settings
+        from tests.support import template_repo
+
+        self.patch(
+            settings, "TEMPLATES_DIR", str(template_repo(self.tmp_path / "official"))
+        )
+        bare = self.tmp_path / "legacy"
+        bare.mkdir()
+        (bare / "pyproject.toml").write_text('[project]\nname = "legacy"\n')
+        git(bare, "init", "-q", "-b", "main")
+        git(bare, "add", "-A")
+        git(bare, "commit", "-q", "-m", "chore: legacy")
+        id = self.client.post(
+            "/api/apps",
+            json={"url": bare.as_uri(), "install": {"type": "web", "ci": "github"}},
+        ).json()["id"]
+
+        res = self.client.post(f"/api/apps/{id}/discard")
+
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertTrue(res.json()["clean"])
+        self.assertFalse((self.workspaces / id / "platform.toml").exists())
+        self.assertEqual(self.client.get(f"/api/apps/{id}").status_code, 400)
+
+
+class InstallPlatformTest(ApiCase):
+    def test_install_endpoint_writes_the_platform_files_again(self):
+        from action_platform.settings import settings
+        from tests.support import template_repo
+
+        self.patch(
+            settings, "TEMPLATES_DIR", str(template_repo(self.tmp_path / "official"))
+        )
+        bare = self.tmp_path / "legacy"
+        bare.mkdir()
+        (bare / "pyproject.toml").write_text('[project]\nname = "legacy"\n')
+        git(bare, "init", "-q", "-b", "main")
+        git(bare, "add", "-A")
+        git(bare, "commit", "-q", "-m", "chore: legacy")
+        id = self.client.post(
+            "/api/apps",
+            json={"url": bare.as_uri(), "install": {"type": "web", "ci": "github"}},
+        ).json()["id"]
+        (self.workspaces / id / "platform.toml").unlink()
+
+        res = self.client.post(f"/api/apps/{id}/install", json={"type": "web"})
+
+        self.assertEqual(res.status_code, 201, res.text)
+        self.assertIn("platform.toml", res.json()["installed"])
+        self.assertEqual(self.client.get(f"/api/apps/{id}").status_code, 200)
+
+    def test_an_app_without_manifest_answers_400_not_500(self):
+        from action_platform.settings import settings
+        from tests.support import template_repo
+
+        self.patch(
+            settings, "TEMPLATES_DIR", str(template_repo(self.tmp_path / "official"))
+        )
+        bare = self.tmp_path / "legacy"
+        bare.mkdir()
+        (bare / "pyproject.toml").write_text('[project]\nname = "legacy"\n')
+        git(bare, "init", "-q", "-b", "main")
+        git(bare, "add", "-A")
+        git(bare, "commit", "-q", "-m", "chore: legacy")
+        id = self.client.post(
+            "/api/apps",
+            json={"url": bare.as_uri(), "install": {"type": "web", "ci": "github"}},
+        ).json()["id"]
+        (self.workspaces / id / "platform.toml").unlink()
+
+        res = self.client.get(f"/api/apps/{id}")
+
+        self.assertEqual(res.status_code, 400)
+        self.assertIn("platform.toml", res.json()["detail"])

@@ -384,6 +384,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/apps/{id}/install": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["install_platform_api_apps__id__install_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/apps/{id}/discard": {
         parameters: {
             query?: never;
@@ -757,6 +773,11 @@ export interface components {
             language?: string | null;
             /** Ci */
             ci?: string | null;
+        };
+        /** Installed */
+        Installed: {
+            /** Installed */
+            installed: string[];
         };
         /** ManifestBody */
         ManifestBody: {
@@ -1919,6 +1940,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Changes"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    install_platform_api_apps__id__install_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InstallSpec"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Installed"];
                 };
             };
             /** @description Validation Error */

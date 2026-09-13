@@ -10,7 +10,7 @@ export default async function AppLayout({ params, children }: { params: Promise<
   const { project, app } = await params;
   const loaded = await loadApp(project, app);
 
-  if (!loaded.ok) return <AppErrorState name={loaded.name} projectId={loaded.projectId} />;
+  if (!loaded.ok) return <AppErrorState name={loaded.name} projectId={loaded.projectId} registryId={loaded.registryId} reason={loaded.reason} missingManifest={loaded.missingManifest} />;
 
   const { view } = loaded;
   return (

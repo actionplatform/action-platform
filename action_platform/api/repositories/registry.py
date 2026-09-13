@@ -210,13 +210,10 @@ class Registry:
         if upstream.returncode != 0:
             return entry
 
-        pull = subprocess.run(
-            ["git", "pull", "--quiet", "--ff-only"],
-            cwd=root,
-            capture_output=True,
-            env=git_env(),
-            text=True,
-        )
+        pull = _pull(root)
+
+        if pull.returncode != 0 and _blocked_by_local_changes(pull.stderr):
+            pull = _pull_over_local_changes(root)
 
         if pull.returncode != 0:
             raise SyncError(_pull_problem(pull.stderr))
@@ -236,6 +233,63 @@ class Registry:
             self.workspaces.resolve()
         ):
             shutil.rmtree(path, ignore_errors=True)
+
+
+def _pull(root: Path) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", "pull", "--quiet", "--ff-only"],
+        cwd=root,
+        capture_output=True,
+        env=git_env(),
+        text=True,
+    )
+
+
+def _blocked_by_local_changes(stderr: str) -> bool:
+    return "uncommitted changes" in stderr or "would be overwritten" in stderr
+
+
+def _pull_over_local_changes(root: Path) -> subprocess.CompletedProcess:
+    stash = subprocess.run(
+        ["git", "stash", "push", "--quiet", "--include-untracked"],
+        cwd=root,
+        capture_output=True,
+        env=git_env(),
+        text=True,
+    )
+
+    if stash.returncode != 0:
+        return stash
+
+    pull = _pull(root)
+    pop = subprocess.run(
+        ["git", "stash", "pop", "--quiet"],
+        cwd=root,
+        capture_output=True,
+        env=git_env(),
+        text=True,
+    )
+
+    if pop.returncode != 0:
+        for tree in ("stash@{0}^3", "stash@{0}"):
+            subprocess.run(
+                ["git", "checkout", "--quiet", tree, "--", "."],
+                cwd=root,
+                capture_output=True,
+                env=git_env(),
+            )
+
+        subprocess.run(
+            ["git", "reset", "--quiet"], cwd=root, capture_output=True, env=git_env()
+        )
+        subprocess.run(
+            ["git", "stash", "drop", "--quiet"],
+            cwd=root,
+            capture_output=True,
+            env=git_env(),
+        )
+
+    return pull
 
 
 def _pull_problem(stderr: str) -> str:

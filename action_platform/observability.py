@@ -1,0 +1,32 @@
+"""Optional Sentry reporting, shared by the CLI and the API."""
+
+from __future__ import annotations
+
+from typing import Optional
+
+from action_platform import __version__
+from action_platform.settings import settings
+
+
+def observe(component: str, dsn: Optional[str] = None) -> bool:
+    dsn = settings.SENTRY_DSN if dsn is None else dsn
+
+    if not dsn:
+        return False
+
+    try:
+        import sentry_sdk
+    except ImportError:
+        return False
+
+    sentry_sdk.init(
+        dsn=dsn,
+        release=f"{component}@{__version__}",
+        environment=settings.SENTRY_ENVIRONMENT,
+        send_default_pii=False,
+        enable_logs=True,
+        traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+    )
+    sentry_sdk.set_tag("component", component)
+
+    return True

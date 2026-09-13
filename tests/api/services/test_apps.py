@@ -159,7 +159,7 @@ class InitTest(ApiCase):
         self.assertIn("unknown type", res.json()["detail"])
 
 
-class ImportWithInstallTest(ApiCase):
+class LegacyImportCase(ApiCase):
     def setUp(self):
         super().setUp()
         self.patch(
@@ -172,6 +172,8 @@ class ImportWithInstallTest(ApiCase):
         git(self.bare, "add", "-A")
         git(self.bare, "commit", "-q", "-m", "chore: legacy")
 
+
+class ImportWithInstallTest(LegacyImportCase):
     def test_refused_without_install_then_installed(self):
         refused = self.client.post("/api/apps", json={"url": self.bare.as_uri()})
         self.assertEqual(refused.status_code, 422)
@@ -193,3 +195,48 @@ class ImportWithInstallTest(ApiCase):
         self.assertEqual(detail["project"]["language"], "python")
         self.assertEqual(detail["project"]["name"], "legacy")
         self.assertFalse(detail["clean"])
+
+
+class SyncOverLocalChangesTest(LegacyImportCase):
+    def _import(self) -> str:
+        return self.client.post(
+            "/api/apps",
+            json={
+                "url": self.bare.as_uri(),
+                "install": {"type": "web", "ci": "github"},
+            },
+        ).json()["id"]
+
+    def test_untracked_files_that_the_remote_now_has_do_not_block_sync(self):
+        id = self._import()
+        root = self.workspaces / id
+        for rel in ("platform.toml", ".last_version"):
+            if (root / rel).exists():
+                (self.bare / rel).write_text((root / rel).read_text())
+        git(self.bare, "add", "-A")
+        git(self.bare, "commit", "-q", "-m", "chore: install platform")
+
+        res = self.client.post(f"/api/apps/{id}/sync")
+
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual(
+            git(root, "log", "-1", "--format=%s"), "chore: install platform"
+        )
+        self.assertNotIn(
+            "platform.toml", git(root, "status", "--porcelain", "--untracked-files=all")
+        )
+
+    def test_local_edits_survive_a_sync(self):
+        id = self._import()
+        root = self.workspaces / id
+        (root / "pyproject.toml").write_text('[project]\nname = "legacy-local"\n')
+        (self.bare / "README.md").write_text("# legacy\n")
+        git(self.bare, "add", "-A")
+        git(self.bare, "commit", "-q", "-m", "docs: readme")
+
+        res = self.client.post(f"/api/apps/{id}/sync")
+
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertTrue((root / "README.md").exists())
+        self.assertIn("legacy-local", (root / "pyproject.toml").read_text())
+        self.assertTrue((root / "platform.toml").exists())

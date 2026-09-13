@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from action_platform.core.flow import git
+from action_platform.settings import settings
 from action_platform.core.flow.git import git_env
 
 KINDS = {
@@ -131,17 +132,17 @@ def audit(cwd: Path, since: str | None = None) -> Report:
     if problem:
         report.problems.append(problem)
 
-    base = since or _merge_base(cwd, branch)
-    commits = git.commits_since(base, cwd=cwd) if base else []
+    if since is None and branch in PROTECTED:
+        commits = _commits_on_protected(cwd)
+    else:
+        base = since or _merge_base(cwd, branch)
+        commits = git.commits_since(base, cwd=cwd) if base else []
+
     report.checked_commits = len(commits)
 
     for subject in commits:
         problem = check_commit(subject)
         if problem:
-            report.problems.append(problem)
-
-        problem = check_protected(branch, subject)
-        if problem and problem not in report.problems:
             report.problems.append(problem)
 
     return report
@@ -252,3 +253,41 @@ def _merge_base(cwd: Path, branch: str) -> str | None:
             continue
 
     return None
+
+
+def _commits_on_protected(cwd: Path) -> list[str]:
+    """Subjects to audit on main/master: after the last tag and, once the platform is committed, only on the path down from that commit — history from before the install is not the project's to fix."""
+    tag = git.latest_tag(cwd=cwd)
+    installed = _platform_commit(cwd)
+
+    if installed is None:
+        return git.commits_since(tag, cwd=cwd) if tag else []
+
+    args = [
+        "log",
+        "HEAD",
+        f"--ancestry-path={installed}",
+        f"^{installed}",
+        "--pretty=format:%s",
+    ]
+
+    if tag:
+        args.append(f"^{tag}")
+
+    out = git.run(args, cwd=cwd)
+
+    return [line for line in out.splitlines() if line.strip()]
+
+
+def _platform_commit(cwd: Path) -> str | None:
+    try:
+        out = git.run(
+            ["log", "--diff-filter=A", "--format=%H", "--", settings.CONFIG_FILE],
+            cwd=cwd,
+        )
+    except subprocess.CalledProcessError:
+        return None
+
+    lines = out.splitlines()
+
+    return lines[-1] if lines else None

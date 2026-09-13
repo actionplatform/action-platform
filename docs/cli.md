@@ -69,3 +69,7 @@ Credentials from `login` live in `~/.action-platform/credentials.json` (mode 600
 | `ACTION_PLATFORM_BITBUCKET_TOKEN`, `ACTION_PLATFORM_BITBUCKET_USERNAME` | Bitbucket |
 | `ACTION_PLATFORM_TEMPLATES`, `ACTION_PLATFORM_TEMPLATES_REPO` | local checkout / repository of the templates matrix |
 | `AP_HOME` | where the API keeps `apps.json`, workspaces and credentials (default `~/.action-platform`) |
+
+## Error reporting
+
+Optional: `pip install "action-platform[sentry]"` and export `AP_SENTRY_DSN` to send CLI crashes to Sentry. Off by default — see [observability](observability.md).

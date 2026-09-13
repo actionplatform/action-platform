@@ -50,6 +50,7 @@ action_platform/
   remote/         client (urllib) + device-flow login + credentials file
   mcp/            server (local or --remote), tools/*, prompts
   cli/            Typer commands
+  observability.py   Sentry init shared by the CLI and the API (docs/observability.md)
   hooks/          commit-msg, pre-commit, pre-push, gitflow.sh
 apps/web/         the web app
 deploy/           Dockerfiles, compose, install.sh
