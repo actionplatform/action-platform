@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.5 — 2026-09-13
+
+### Bug Fixes
+- **web:** server actions never throw past their boundary; request errors are logged as JSON; platform git email cloud@actionplatform.io
+
 ## v0.5.4 — 2026-09-13
 
 ### Bug Fixes
