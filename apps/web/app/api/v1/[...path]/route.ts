@@ -1,4 +1,4 @@
-import { API_BASE } from "@/lib/api";
+import { API_BASE, apiHeaders } from "@/lib/api";
 import { getAuth } from "@/lib/auth";
 import { activeOrg, roleOf } from "@/lib/orgs";
 import { can, type Permission } from "@/lib/permissions";
@@ -80,7 +80,7 @@ async function proxy(req: Request, segments: string[]): Promise<Response> {
 
   const upstream = await fetch(target, {
     method,
-    headers: { "content-type": req.headers.get("content-type") ?? "application/json" },
+    headers: { "content-type": req.headers.get("content-type") ?? "application/json", ...apiHeaders },
     body,
     cache: "no-store",
   });
@@ -92,7 +92,7 @@ async function proxy(req: Request, segments: string[]): Promise<Response> {
   }
 
   if (rule.imports && upstream.ok && app) {
-    const detail = await fetch(`${API_BASE}/api/apps/${app.registryId}`, { cache: "no-store" }).then((r) => (r.ok ? (r.json() as Promise<{ url: string; source_host: { repo: string | null } }>) : null)).catch(() => null);
+    const detail = await fetch(`${API_BASE}/api/apps/${app.registryId}`, { cache: "no-store", headers: apiHeaders }).then((r) => (r.ok ? (r.json() as Promise<{ url: string; source_host: { repo: string | null } }>) : null)).catch(() => null);
     const repo = detail?.source_host.repo ?? detail?.url.match(/[:/]([^/:]+\/[^/]+?)(?:\.git)?$/)?.[1] ?? null;
     await Promise.allSettled([syncReleases(org.id, app.id, app.sourceHostId, repo), syncPullRequests(org.id, app.id, app.sourceHostId, repo)]);
   }

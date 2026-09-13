@@ -117,6 +117,10 @@ Organization members, code hosts (add, update token, remove), the API URL and th
 
 Permissions are `org.manage`, `project.manage`, `app.release`, `app.configure`, `app.flow`, `app.sync` (matrix in Settings → Roles and permissions, source in `apps/web/lib/permissions.ts`). Server actions check them; the UI hides or disables what the role cannot do.
 
+### Code hosts per organization
+
+Every organization connects its own accounts: **Connect with GitHub** in organization A can be a personal account, in organization B the company's GitHub organization — nothing is shared between them. One organization can hold several GitHub connections (*Connect another account*); each one is a row in **Source hosts** with its login, the accounts and organizations the GitHub App is installed on, and the **owner** where new repositories are created — picked from those installations. Installing the app on an organization during *Connect* sets that organization as the owner. Apps remember which host they use; the wizard offers the connected hosts and pre-fills the owner.
+
 ### Members and invitations
 
 Owners and admins add people from Settings → **Members**: **Add member** creates the account (name, email, password) or attaches an existing one; **Invite** produces a link instead. No email is sent: the dialog produces a link (`/invite/<id>`, valid 7 days, bound to that address) to share. Opening it lets the person sign in or create an account and join with the invited role. 

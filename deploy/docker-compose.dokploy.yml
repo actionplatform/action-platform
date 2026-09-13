@@ -24,6 +24,7 @@ services:
     volumes:
       - apdata:/data
     environment:
+      AP_API_TOKEN: ${AP_API_TOKEN:-}
       ACTION_PLATFORM_TEMPLATES_REPO: ${ACTION_PLATFORM_TEMPLATES_REPO:-https://github.com/actionplatform/templates.git}
       ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
 
@@ -41,6 +42,7 @@ services:
       - webconfig:/app/config
     environment:
       AP_API: http://api:7788
+      AP_API_TOKEN: ${AP_API_TOKEN:-}
       DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@postgres:5432/action_platform
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${PUBLIC_URL}

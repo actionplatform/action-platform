@@ -577,3 +577,19 @@ def test_refs_that_look_like_options_are_refused(
     )
     evil = next(s for s in res.json()["sources"] if s["name"] == "evil")
     assert evil["ok"] is False and "invalid git ref" in evil["error"]
+
+
+def test_api_token_guards_every_route_but_version(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("AP_HOME", str(tmp_path / "home"))
+    guarded = TestClient(build(token="s3cret"))
+
+    assert guarded.get("/api/version").status_code == 200
+    assert guarded.get("/api/apps").status_code == 401
+    assert (
+        guarded.get("/api/apps", headers={"authorization": "Bearer nope"}).status_code
+        == 401
+    )
+    assert (
+        guarded.get("/api/apps", headers={"authorization": "Bearer s3cret"}).status_code
+        == 200
+    )

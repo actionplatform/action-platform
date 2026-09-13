@@ -132,3 +132,7 @@ erDiagram
 ```
 
 `user`, `session`, `account`, `verification`, `device_code` come from better-auth (and its `organization` / `deviceAuthorization` plugins); `project`, `app`, `source_host` are the platform's. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/`, applied on boot.
+
+## Trust between web and API
+
+The browser never talks to the Python API. The web app authenticates users (sessions, roles) and calls the API server-side over the private network; the CLI and MCP go through the web app's `/api/v1` proxy with a bearer token from `action-platform login`. Between web and API a shared secret, `AP_API_TOKEN`, is sent as `Authorization: Bearer` and checked in constant time on every route but `/api/version`, so only the web app can drive clones, git and the workspaces.

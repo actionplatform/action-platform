@@ -4,6 +4,7 @@ import { GitBranch, KeyRound, Plus, Trash2, X } from "lucide-react";
 import { Fragment, useActionState, useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog, PromptDialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
@@ -11,7 +12,7 @@ import { Table, Td, Th } from "@/components/ui/table";
 import { HOST_KINDS, type HostKind, type SourceHost } from "@/lib/source-host-kinds";
 import { cn } from "@/lib/utils";
 import type { GithubAccess } from "@/lib/github-access";
-import { createHost, deleteHost, rotateHostToken } from "./actions";
+import { changeHostOwner, createHost, deleteHost, rotateHostToken } from "./actions";
 
 export function SourceHosts({ hosts, access = {} }: { hosts: SourceHost[]; access?: Record<string, GithubAccess> }) {
   const [open, setOpen] = useState(false);
@@ -69,7 +70,7 @@ export function SourceHosts({ hosts, access = {} }: { hosts: SourceHost[]; acces
               <Td><Badge>{HOST_KINDS.find((k) => k.id === h.kind)?.label ?? h.kind}</Badge></Td>
               <Td><Badge tone={h.authKind === "oauth" ? "ok" : "neutral"}>{h.authKind === "oauth" ? "connected" : "token"}</Badge></Td>
               <Td className="font-mono text-xs text-secondary">{h.baseUrl ?? "—"}</Td>
-              <Td className="font-mono text-xs">{h.defaultOwner ?? "—"}</Td>
+              <Td className="font-mono text-xs">{ownerAccounts(access[h.id]).length > 0 ? <OwnerSelect host={h} accounts={ownerAccounts(access[h.id])} /> : (h.defaultOwner ?? "—")}</Td>
               <Td className="text-right whitespace-nowrap">
                 {h.authKind === "token" && (
                   <Button variant="ghost" size="icon" title="Update token" onClick={() => { setRotateError(null); setRotating(h); }}>
@@ -137,4 +138,17 @@ function AccessRow({ access }: { access: GithubAccess }) {
       </Td>
     </tr>
   );
+}
+
+function OwnerSelect({ host, accounts }: { host: SourceHost; accounts: string[] }) {
+  const [pending, start] = useTransition();
+  const options = [...new Set([...(host.defaultOwner ? [host.defaultOwner] : []), ...accounts])].map((a) => ({ value: a, label: a }));
+  return (
+    <Select size="sm" mono className="w-44" aria-label={`Repository owner for ${host.name}`} value={host.defaultOwner ?? ""} disabled={pending} options={options} onChange={(v) => start(async () => { await changeHostOwner(host.id, v); })} />
+  );
+}
+
+function ownerAccounts(a: GithubAccess | undefined): string[] {
+  if (!a || !a.ok) return [];
+  return [...new Set([...a.installations.map((i) => i.account), a.login])];
 }
