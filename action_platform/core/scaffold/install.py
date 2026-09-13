@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from action_platform.core.flow import git, gitflow
+from action_platform.core.manifest import toml_str
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.scaffold.templates import Matrix, load_matrix
 from action_platform.settings import settings
@@ -178,10 +179,10 @@ def _platform_toml(
         repo = remote.split("github.com", 1)[1].strip(":/").removesuffix(".git")
 
     name = name or (repo.rsplit("/", 1)[-1] if repo else root.name)
-    text = f'[project]\nname = "{name}"\ntype = "{type_}"\nci = "{ci}"\nlanguage = "{language}"\n'
+    text = f"[project]\nname = {toml_str(name)}\ntype = {toml_str(type_)}\nci = {toml_str(ci)}\nlanguage = {toml_str(language)}\n"
 
     if repo:
-        text += f'\n[source_host]\nkind = "github"\nrepo = "{repo}"\n'
+        text += f'\n[source_host]\nkind = "github"\nrepo = {toml_str(repo)}\n'
 
     text += '\n[release]\nstrategy = "semver"\nchangelog = "conventional"\n'
 

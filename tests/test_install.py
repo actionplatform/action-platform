@@ -155,3 +155,31 @@ def test_last_version_starts_at_zero_or_at_the_newest_tag(
     subprocess.run(["git", "tag", "v2.3.4"], cwd=tagged, check=True)
     install.install(tagged)
     assert (tagged / "LAST_VERSION").read_text() == "2.3.4\n"
+
+
+def test_platform_toml_escapes_user_values(tmp_path: Path, templates: Path):
+    import tomllib
+
+    from action_platform.core.manifest import (
+        check_owner,
+        toml_str,
+        write_deploy_target,
+        write_source_host,
+    )
+    from action_platform.core.exception import TemplateError
+
+    evil = 'x"\n[deploy]\ntarget = "aws/lambda'
+    assert tomllib.loads(f"v = {toml_str(evil)}\n")["v"] == evil
+
+    manifest = tmp_path / "platform.toml"
+    manifest.write_text('[project]\nname = "demo"\n')
+    write_source_host(manifest, "github", "acme/orders")
+    write_deploy_target(manifest, evil)
+    data = tomllib.loads(manifest.read_text())
+    assert data["deploy"]["target"] == evil
+    assert data["source_host"]["repo"] == "acme/orders"
+
+    with pytest.raises(TemplateError):
+        write_source_host(manifest, "github", 'acme/or"ders')
+    with pytest.raises(TemplateError):
+        check_owner("-x")

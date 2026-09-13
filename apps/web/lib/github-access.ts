@@ -20,7 +20,7 @@ export async function githubAccess(orgId: string, hostId: string, appSlug: strin
   if (!me.body) return { ok: false, error: `token rejected by GitHub (${me.status}); reconnect the host` };
 
   const list = await get<{ installations: { account: { login: string; type: string }; repository_selection: string; permissions: Record<string, string> }[] }>(api, creds.token, "/user/installations");
-  const installUrl = appSlug ? `https://github.com/apps/${appSlug}/installations/new` : null;
+  const installUrl = appSlug ? `https://github.com/apps/${appSlug}/installations/select_target` : null;
 
   if (list.status === 403 || list.status === 404) {
     return { ok: true, login: me.body.login, installations: [], installUrl, problems: ["This token is not from a GitHub App (personal token): repositories are created with the token's own scopes. Needs `repo` and `workflow`."] };

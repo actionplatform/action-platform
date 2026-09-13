@@ -12,7 +12,9 @@ from action_platform.core.config import Config
 from action_platform.core.exception import TemplateError
 from action_platform.core.flow import git, gitflow
 from action_platform.core.manifest import (
+    check_owner,
     read_platform,
+    toml_str,
     write_deploy_target,
     write_service,
 )
@@ -61,7 +63,12 @@ def _copy_repository(
     if manifest.exists():
         text = manifest.read_text()
         manifest.write_text(
-            re.sub(r'(?m)^name\s*=\s*".*"$', f'name = "{slug}"', text, count=1)
+            re.sub(
+                r'(?m)^name\s*=\s*".*"$',
+                lambda _: f"name = {toml_str(slug)}",
+                text,
+                count=1,
+            )
         )
         _replace_owner(manifest, context.get("github_owner"))
         return target
@@ -85,7 +92,7 @@ def _copy_repository(
         (target / settings.CONFIG_FILE).write_text(
             text.replace(
                 "[project]\n",
-                f'[project]\ndescription = "{context["description"]}"\n',
+                f"[project]\ndescription = {toml_str(str(context['description']))}\n",
                 1,
             )
         )
@@ -97,11 +104,17 @@ def _replace_owner(manifest: Path, owner: str | None) -> None:
     if not owner or not manifest.exists():
         return
 
+    check_owner(owner)
     text = manifest.read_text()
 
     if "[source_host]" in text:
         manifest.write_text(
-            re.sub(r'(?m)^repo\s*=\s*"[^/"]+/', f'repo = "{owner}/', text, count=1)
+            re.sub(
+                r'(?m)^repo\s*=\s*"[^/"]+/',
+                lambda _: f'repo = "{owner}/',
+                text,
+                count=1,
+            )
         )
 
 
