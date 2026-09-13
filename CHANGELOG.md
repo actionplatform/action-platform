@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.10 — 2026-09-13
+
+### Features
+- **core:** install picks GitLab CI for a GitLab remote when no CI is chosen
+
+### Docs
+- **readme:** documentation map by context, scoped tokens and connected apps, versions and changelogs
+- index links changelogs, versions, contributing, code of conduct, security and license
+- index leads with what the reader wants to do; conventions and glossary
+- one file per context and topic (start, use, concept, contribute); real routes, tools, flags and tables; access control, API and getting started guides
+
 ## v0.6.9 — 2026-09-13
 
 ### Features
