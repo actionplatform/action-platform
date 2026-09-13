@@ -7,7 +7,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from action_platform.core.flow import gitflow
+from action_platform.core.flow.workflow import GitFlow
 from action_platform.core.exception import ActionPlatformError
 
 console = Console()
@@ -29,7 +29,7 @@ def run(
     cwd = Path.cwd()
 
     if install:
-        report = gitflow.install_hooks(cwd)
+        report = GitFlow(cwd).install_hooks()
 
         if report:
             console.print(f"[green]hooks installed[/green] ({report.directory})")
@@ -43,7 +43,7 @@ def run(
             return
         raise ActionPlatformError("not a git repository")
 
-    report = gitflow.audit(cwd, since=since)
+    report = GitFlow(cwd).audit(since=since)
     console.print(
         f"branch [bold]{report.branch}[/bold], {report.checked_commits} commit(s) checked"
     )

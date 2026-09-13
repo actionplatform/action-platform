@@ -9,6 +9,9 @@ from action_platform.abc.ci_runner import CIRunner
 from action_platform.abc.deploy_target import DeployTarget
 from action_platform.abc.source_host import SourceHost
 from action_platform.core.exception import ConfigError
+from action_platform.core import module
+from action_platform.core.release.components import parse as parse_components
+from action_platform.providers.source import build_source_host
 
 
 class Config:
@@ -50,9 +53,7 @@ class Config:
     @property
     def components(self):
         """Release components declared in platform.toml (root included under "")."""
-        from action_platform.core.release.components import parse
-
-        return parse(self._components_spec)
+        return parse_components(self._components_spec)
 
     @property
     def deploy(self) -> list[DeployTarget]:
@@ -87,8 +88,6 @@ def _build_source_host(cfg: dict) -> SourceHost | None:
     if not kind:
         return None
 
-    from action_platform.providers.source import build_source_host
-
     return build_source_host(kind, cfg.get("repo", ""), cfg.get("base_url"))
 
 
@@ -100,9 +99,7 @@ def _build_deploy_targets(cfg: dict) -> list[DeployTarget]:
     if not target:
         return []
 
-    from action_platform.core.module import load_deploy_targets
-
-    providers = load_deploy_targets()
+    providers = module.load_deploy_targets()
 
     if target not in providers:
         installed = ", ".join(sorted(providers)) or "none"

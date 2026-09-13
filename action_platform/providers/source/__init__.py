@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from action_platform.abc.source_host import SourceHost
 from action_platform.core.exception import ConfigError
+from action_platform.providers.source.bitbucket import SourceBitbucket
+from action_platform.providers.source.generic import SourceGeneric
+from action_platform.providers.source.github import SourceGithub
+from action_platform.providers.source.gitlab import SourceGitlab
 
 SOURCE_HOST_KINDS = ("github", "gitlab", "bitbucket", "generic")
 
@@ -17,25 +21,17 @@ def build_source_host(
 ) -> SourceHost:
     """A SourceHost for `kind`. Tokens default to the environment (see settings)."""
     if kind == "github":
-        from action_platform.providers.source.github import SourceGithub
-
         return SourceGithub(repo=repo, token=token, base_url=base_url)
 
     if kind == "gitlab":
-        from action_platform.providers.source.gitlab import SourceGitlab
-
         return SourceGitlab(repo=repo, token=token, base_url=base_url)
 
     if kind == "bitbucket":
-        from action_platform.providers.source.bitbucket import SourceBitbucket
-
         return SourceBitbucket(
             repo=repo, token=token, username=username, base_url=base_url
         )
 
     if kind in ("generic", "other"):
-        from action_platform.providers.source.generic import SourceGeneric
-
         return SourceGeneric(
             repo=repo, token=token, username=username, base_url=base_url
         )

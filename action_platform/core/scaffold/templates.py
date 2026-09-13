@@ -1,21 +1,14 @@
-"""Template matrix: fetch the templates repo, resolve project leaves, cloud overlays and services."""
+"""The template matrix: project leaves, cloud overlays and services, resolved from index.toml or from a plain repository."""
 
 from __future__ import annotations
 
-import hashlib
-import subprocess
 import tomllib
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from action_platform.core.exception import TemplateError
-from action_platform.core.flow.git import (
-    BadRef,
-    UnsafeUrl,
-    check_ref,
-    check_remote_url,
-    git_env,
-)
+from action_platform.core.scaffold.detect import detect_language
+from action_platform.core.scaffold.store import TemplateSource, TemplateStore
 from action_platform.logging import logger
 from action_platform.settings import settings
 
@@ -233,143 +226,6 @@ class Matrix:
 OFFICIAL = "official"
 
 
-@dataclass(frozen=True)
-class TemplateSource:
-    """A git repository laid out like actionplatform/templates: index.toml plus projects/, cloud/, service/."""
-
-    url: str
-    ref: str = "v1"
-    name: str = ""
-
-    @classmethod
-    def parse(cls, spec: str, name: str = "") -> "TemplateSource":
-        """`url[@ref]`; a local path is accepted as well."""
-        url, _, ref = spec.rpartition("@")
-
-        if not url or "/" in ref or ref.startswith("git"):
-            url, ref = spec, "v1"
-
-        return cls(url=url, ref=ref or "v1", name=name)
-
-    @property
-    def label(self) -> str:
-        return self.name or self.url.rstrip("/").rsplit("/", 1)[-1].removesuffix(".git")
-
-    @property
-    def cache(self) -> Path:
-        key = hashlib.sha256(f"{self.url}@{self.ref}".encode()).hexdigest()[:16]
-
-        return settings.TEMPLATES_CACHE.parent / "sources" / key
-
-
-def ensure_source(source: TemplateSource, update: bool = False) -> Path:
-    """Return a local checkout of `source` at its ref, cloning or fetching as needed."""
-    cache = source.cache
-
-    try:
-        check_remote_url(source.url)
-        check_ref(source.ref)
-    except (UnsafeUrl, BadRef) as e:
-        raise TemplateError(str(e)) from e
-
-    if not cache.exists():
-        logger.info("cloning %s@%s", source.url, source.ref)
-        cache.parent.mkdir(parents=True, exist_ok=True)
-        _git(
-            "clone",
-            "--depth",
-            "1",
-            "--branch",
-            source.ref,
-            "--end-of-options",
-            source.url,
-            str(cache),
-        )
-        return cache
-
-    try:
-        _git(
-            "-C",
-            str(cache),
-            "fetch",
-            "--depth",
-            "1",
-            "--quiet",
-            "--end-of-options",
-            "origin",
-            source.ref,
-        )
-        _git("-C", str(cache), "checkout", "--quiet", "--force", "FETCH_HEAD")
-    except TemplateError as e:
-        if update:
-            raise
-        logger.warning(
-            "source %s not refreshed (%s); using local copy", source.label, e
-        )
-
-    return cache
-
-
-LANGUAGE_MARKERS = [
-    ("pyproject.toml", "python"),
-    ("go.mod", "go"),
-    ("package.json", "node"),
-    ("composer.json", "php"),
-    ("pom.xml", "java"),
-    ("Cargo.toml", "rust"),
-    ("requirements.txt", "python"),
-    ("setup.py", "python"),
-    ("Pipfile", "python"),
-    ("build.gradle", "java"),
-    ("build.gradle.kts", "java"),
-    ("tsconfig.json", "node"),
-]
-
-LANGUAGE_EXTENSIONS = {
-    ".py": "python",
-    ".go": "go",
-    ".ts": "node",
-    ".tsx": "node",
-    ".js": "node",
-    ".jsx": "node",
-    ".php": "php",
-    ".java": "java",
-    ".kt": "java",
-    ".rs": "rust",
-}
-
-SKIP_DIRS = {
-    ".git",
-    "node_modules",
-    "vendor",
-    "dist",
-    "build",
-    ".venv",
-    "venv",
-    "target",
-}
-
-
-def detect_language(root: Path) -> str:
-    """Language of a repository: by manifest file first, then by the most common source extension."""
-    for marker, language in LANGUAGE_MARKERS:
-        if (root / marker).exists():
-            return language
-
-    counts: dict[str, int] = {}
-
-    for path in root.rglob("*"):
-        if any(part in SKIP_DIRS for part in path.parts):
-            continue
-
-        language = LANGUAGE_EXTENSIONS.get(path.suffix)
-
-        if language and path.is_file():
-            counts[language] = counts.get(language, 0) + 1
-
-    return max(counts, key=counts.get) if counts else ""
-
-
 def plain_matrix(source: TemplateSource, repo: Path) -> Matrix:
     """A repository without index.toml is one template: its own tree, copied as-is."""
     meta: dict = {}
@@ -404,7 +260,7 @@ def plain_matrix(source: TemplateSource, repo: Path) -> Matrix:
 
 
 def load_source(source: TemplateSource, update: bool = False) -> tuple[Path, Matrix]:
-    repo = ensure_source(source, update=update)
+    repo = TemplateStore().checkout(source, update=update)
     index = repo / "index.toml"
 
     if not index.exists():
@@ -414,35 +270,11 @@ def load_source(source: TemplateSource, update: bool = False) -> tuple[Path, Mat
 
 
 def ensure_repo(update: bool = False) -> Path:
-    """Return a local checkout of the templates repo, cloning or pulling as needed."""
-    local = settings.TEMPLATES_DIR
+    return TemplateStore().official(update=update)
 
-    if local is not None:
-        path = Path(local).expanduser()
 
-        if not path.exists():
-            raise TemplateError(
-                f"ACTION_PLATFORM_TEMPLATES points to missing path: {path}"
-            )
-
-        return path
-
-    cache = settings.TEMPLATES_CACHE
-
-    if not cache.exists():
-        logger.info("cloning %s", settings.TEMPLATES_REPO)
-        cache.parent.mkdir(parents=True, exist_ok=True)
-        _git("clone", "--depth", "1", settings.TEMPLATES_REPO, str(cache))
-        return cache
-
-    try:
-        _git("-C", str(cache), "pull", "--ff-only", "--quiet")
-    except TemplateError as e:
-        if update:
-            raise
-        logger.warning("templates cache not refreshed (%s); using local copy", e)
-
-    return cache
+def ensure_source(source: TemplateSource, update: bool = False) -> Path:
+    return TemplateStore().checkout(source, update=update)
 
 
 def load_matrix(update: bool = False, source: str | None = None) -> tuple[Path, Matrix]:
@@ -464,12 +296,3 @@ def load_matrix(update: bool = False, source: str | None = None) -> tuple[Path, 
         )
 
     return repo, matrix
-
-
-def _git(*args: str) -> None:
-    result = subprocess.run(
-        ["git", *args], capture_output=True, text=True, env=git_env()
-    )
-
-    if result.returncode != 0:
-        raise TemplateError(result.stderr.strip() or "git failed")

@@ -7,7 +7,8 @@ from typing import Annotated, Any, Optional
 
 from pydantic import Field
 
-from action_platform.core.flow import branching, gitflow, pullrequest
+from action_platform.core.flow import gitflow, workflow
+from action_platform.core.flow.workflow import GitFlow
 from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL
 
 ProjectDir = Annotated[
@@ -28,9 +29,9 @@ def register_rules(mcp: Any) -> None:
             "protected": sorted(gitflow.PROTECTED),
             "base": {
                 "develop (or default branch when no develop)": sorted(
-                    branching.DEVELOP_BASED
+                    workflow.DEVELOP_BASED
                 ),
-                "default branch (main/master)": sorted(branching.MAIN_BASED),
+                "default branch (main/master)": sorted(workflow.MAIN_BASED),
             },
             "merge_into": {
                 "feature, bugfix, chore, docs, refactor, test, ci, perf": "develop (or default)",
@@ -74,7 +75,7 @@ def register(mcp: Any) -> None:
         Refuses a dirty working tree and an existing branch name. With push=true
         the branch is created on origin too.
         """
-        branch = branching.start(kind, code, slug, cwd=_root(project), push=push)
+        branch = GitFlow(_root(project)).start(kind, code, slug, push=push)
 
         return {"branch": branch.name, "base": branch.base, "pushed": branch.pushed}
 
@@ -93,7 +94,7 @@ def register(mcp: Any) -> None:
         Returns every problem found; an empty list means the branch can be
         pushed and opened as a pull request.
         """
-        report = gitflow.audit(_root(project), since=since)
+        report = GitFlow(_root(project)).audit(since=since)
 
         return {
             "branch": report.branch,
@@ -117,7 +118,7 @@ def register(mcp: Any) -> None:
         Audits git-flow first and refuses a branch that does not pass. Nothing
         is opened; show the result and use open_pull_request on approval.
         """
-        proposal = pullrequest.propose(_root(project), base=base, title=title)
+        proposal = GitFlow(_root(project)).propose(base=base, title=title)
 
         return {
             "head": proposal.head,
@@ -138,8 +139,8 @@ def register(mcp: Any) -> None:
         draft: bool = False,
     ) -> dict:
         """Open the pull request on the source host, pushing the branch first if needed. Confirm with the user before calling."""
-        ref = pullrequest.open_pr(
-            _root(project), base=base, title=title, body=body, draft=draft
+        ref = GitFlow(_root(project)).open_pr(
+            base=base, title=title, body=body, draft=draft
         )
 
         return {"number": ref.number, "url": ref.url}
@@ -147,7 +148,7 @@ def register(mcp: Any) -> None:
     @mcp.tool(annotations=WRITES_LOCAL)
     def install_hooks(project: ProjectDir = None) -> dict:
         """Install the platform git hooks into .git/hooks so git-flow is enforced before commit and push. Re-run after upgrading the CLI."""
-        report = gitflow.install_hooks(_root(project))
+        report = GitFlow(_root(project)).install_hooks()
 
         return {
             "installed": report.installed,

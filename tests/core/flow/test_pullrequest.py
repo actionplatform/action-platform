@@ -1,10 +1,10 @@
-"""action_platform.core.flow.pullrequest — proposals from a git-flow branch and opening through the host."""
+"""action_platform.core.flow.workflow — pull request proposals from a git-flow branch and opening through the host."""
 
 from __future__ import annotations
 
 from action_platform.core.context import PRRef
-from action_platform.core.flow import pullrequest
-from action_platform.core.flow.pullrequest import PullRequestError
+from action_platform.core.flow import workflow
+from action_platform.core.flow.workflow import GitFlow, PullRequestError
 from tests.support import TempCase, git, repo_with_origin
 
 
@@ -22,7 +22,7 @@ class PullRequestTest(TempCase):
         git(self.repo, "commit", "-q", "--allow-empty", "-m", "fix(login): trim email")
 
     def test_proposal_targets_develop_and_describes_commits(self):
-        proposal = pullrequest.propose(self.repo)
+        proposal = GitFlow(self.repo).propose()
 
         self.assertEqual(proposal.head, "feature/7-login")
         self.assertEqual(proposal.base, "develop")
@@ -37,22 +37,22 @@ class PullRequestTest(TempCase):
         git(self.repo, "checkout", "-qb", "hotfix/9")
         git(self.repo, "commit", "-q", "--allow-empty", "-m", "fix: prod is down")
 
-        self.assertEqual(pullrequest.propose(self.repo).base, "main")
+        self.assertEqual(GitFlow(self.repo).propose().base, "main")
 
     def test_refuses_wrong_target_and_protected_head(self):
         with self.assertRaisesRegex(PullRequestError, "may not merge"):
-            pullrequest.propose(self.repo, base="main")
+            GitFlow(self.repo).propose(base="main")
 
         git(self.repo, "checkout", "-q", "main")
 
         with self.assertRaisesRegex(PullRequestError, "protected"):
-            pullrequest.propose(self.repo)
+            GitFlow(self.repo).propose()
 
     def test_refuses_bad_commits(self):
         git(self.repo, "commit", "-q", "--allow-empty", "-m", "wip")
 
         with self.assertRaisesRegex(PullRequestError, "git-flow"):
-            pullrequest.propose(self.repo)
+            GitFlow(self.repo).propose()
 
     def test_open_pushes_and_calls_host(self):
         (self.repo / "platform.toml").write_text(
@@ -71,12 +71,12 @@ class PullRequestTest(TempCase):
                 return PRRef(number=1, url="https://example.com/pr/1")
 
         self.patch(
-            pullrequest.Config,
+            workflow.Config,
             "from_toml",
             classmethod(lambda cls, p: type("C", (), {"source_host": Host()})()),
         )
 
-        ref = pullrequest.open_pr(self.repo, draft=True)
+        ref = GitFlow(self.repo).open_pr(draft=True)
 
         self.assertEqual(ref.number, 1)
         self.assertEqual(

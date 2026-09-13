@@ -36,16 +36,16 @@ flowchart TB
 ```
 action_platform/
   core/
-    manifest/     platform.toml: read_platform, write_source_host, write_deploy_target, write_service
-    scaffold/     templates (matrix from index.toml), generate (cookiecutter, cloud/service overlays, push), install
-    flow/         git (subprocess wrapper), gitflow (rules), branching, pullrequest
-    release/      versioning, changelog, components, release, deploy (rollback, diagnose, destroy)
+    manifest/     Manifest: platform.toml as an object (project, source_host, services; set_source_host, set_deploy_target, set_service)
+    scaffold/     store (TemplateSource, TemplateStore: checkouts), templates (Matrix, Leaf, Cloud, Service), detect (LanguageDetector), install (Installer: plan/apply), generate (cookiecutter, overlays, push)
+    flow/         repository (Repository: every git command on one clone, follow_remote, stashed), workflow (GitFlow: audit, start, propose, open_pr, install_hooks), gitflow (the rules as pure functions), git (ref/url policy, per-request credentials)
+    release/      versioning (Version, VersionFiles), changelog, components, release (Releaser: plan → apply), deploy (Deployer)
     config.py     Config.from_toml → source host, deploy targets, components
     context.py    Context, DeployResult, Diagnosis, PRRef, ReleaseRef
-    action_platform.py   the facade the CLI, MCP and API call
+    action_platform.py   ActionPlatform: the facade the CLI, MCP and API call (releaser, deployer, flow)
   providers/
     source/       rest (urllib helper), github, gitlab, bitbucket, generic; build_source_host(kind, …)
-  abc/            SourceHost, CIRunner, DeployTarget contracts
+  abc/            SourceHost, CIRunner, DeployTarget, Vcs, TemplateStoreABC contracts
   api/            FastAPI: registry (apps.json + workspaces), models (the OpenAPI contract), server, credentials
   remote/         client (urllib) + device-flow login + credentials file
   mcp/            server (local or --remote), tools/*, prompts
@@ -55,6 +55,22 @@ action_platform/
 apps/web/         the web app
 deploy/           Dockerfiles, compose, install.sh
 ```
+
+### Objects in the core
+
+Every operation starts from a `Repository` — one clone, every git command as a method, credentials and identity taken from the request context — and layers on top of it:
+
+| Object | Does | Where used |
+|---|---|---|
+| `Manifest.of(root)` | reads and edits `platform.toml` table by table | install, generate, API configuration |
+| `GitFlow(repo)` | `audit()`, `start(kind, code)`, `propose()`, `open_pr()`, `install_hooks()` | CLI `branch`/`pr`/`gitflow`, MCP, API flow |
+| `Releaser(config, repo)` | `plan(level)` → `ReleasePlan` (dry run), `apply(plan)`; a refused push undoes commit and tag | CLI/MCP/API release |
+| `Deployer(config, repo)` | deploy, rollback, diagnose, destroy through the `[deploy]` targets | CLI/MCP/API deploy |
+| `Installer(root, …)` | `plan()` / `apply()`: platform.toml, LAST_VERSION, AGENTS.md, quality config, CI files, hooks | CLI `install`, API import |
+| `TemplateStore()` | `official()` and `checkout(source)` clones of template repositories | matrix loading |
+| `Version` / `VersionFiles` | semver value object; the files a project declares its version in | releaser |
+
+Rules that need no repository — branch names, commit messages, merge targets — stay pure functions in `flow/gitflow.py`, shared with `ci-scripts/gitflow.sh`. `ActionPlatform` is the facade the CLI, MCP and API call; it exposes `releaser`, `deployer` and `flow` for one project.
 
 Deploy targets and CI runners are plugins discovered through the `action_platform.deploy_target` / `action_platform.ci_runner` entry-point groups (`core/module.py`).
 

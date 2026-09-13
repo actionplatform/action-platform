@@ -8,17 +8,17 @@ import subprocess
 from pathlib import Path
 from typing import Protocol
 
+from cookiecutter.exceptions import CookiecutterException
+from cookiecutter.main import cookiecutter
+
 from action_platform.core.config import Config
 from action_platform.core.exception import TemplateError
-from action_platform.core.flow import git, gitflow
-from action_platform.core.manifest import (
-    check_owner,
-    read_platform,
-    toml_str,
-    write_deploy_target,
-    write_service,
-)
+from action_platform.core.flow.repository import Repository
+from action_platform.core.flow.workflow import GitFlow
+from action_platform.core.manifest import Manifest, check_owner, toml_str
+from action_platform.core.scaffold.install import Installer
 from action_platform.core.scaffold.templates import Cloud, Leaf, Service
+from action_platform.providers.source import build_source_host
 from action_platform.settings import settings
 
 
@@ -46,8 +46,6 @@ def _copy_repository(
     repo: Path, leaf: Leaf, name: str, ci: str | None, output: Path, context: dict
 ) -> Path:
     """Copy a plain repository as the new project and make sure it carries platform.toml, hooks and CI."""
-    from action_platform.core.scaffold.install import install
-
     slug = _slugify(name)
     target = output / slug
 
@@ -73,10 +71,10 @@ def _copy_repository(
         _replace_owner(manifest, context.get("github_owner"))
         return target
 
-    git.init(target, branch="main")
+    Repository.init(target, branch="main")
 
     if leaf.stack:
-        install(target, type_=leaf.type, language=leaf.stack, ci=ci)
+        Installer(target, type_=leaf.type, language=leaf.stack, ci=ci).apply()
     else:
         (target / settings.CONFIG_FILE).write_text(
             f'[project]\nname = "{slug}"\ntype = "{leaf.type}"\nci = "{ci or "github"}"\n'
@@ -124,7 +122,7 @@ def _slugify(text: str) -> str:
 
 def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
     """Overlay `cloud` onto an existing project directory and record it in platform.toml."""
-    meta = read_platform(project)
+    meta = Manifest.of(project).project
     type_ = meta.get("type", "")
     language = meta.get("language", "")
 
@@ -149,7 +147,7 @@ def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
         overwrite=True,
     )
 
-    write_deploy_target(project / settings.CONFIG_FILE, cloud.name)
+    Manifest.of(project).set_deploy_target(cloud.name)
 
     return project
 
@@ -158,7 +156,7 @@ def apply_service(
     repo: Path, service: Service, project: Path, provider: str | None = None
 ) -> Path:
     """Add `services/<name>/` to the project and record it under [services] in platform.toml."""
-    meta = read_platform(project)
+    meta = Manifest.of(project).project
     provider = provider or (service.providers[0] if service.providers else "")
 
     if service.providers and provider not in service.providers:
@@ -184,7 +182,7 @@ def apply_service(
         overwrite=True,
     )
 
-    write_service(project / settings.CONFIG_FILE, service.name, provider)
+    Manifest.of(project).set_service(service.name, provider)
 
     return project
 
@@ -204,8 +202,6 @@ def push_project(
     config = Config.from_toml(project / settings.CONFIG_FILE)
 
     if credentials is not None and credentials.token and config.source_host is not None:
-        from action_platform.providers.source import build_source_host
-
         config.source_host = build_source_host(
             credentials.kind,
             config.source_host.repo,
@@ -217,19 +213,18 @@ def push_project(
     if config.source_host is None:
         raise TemplateError("platform.toml has no [source_host]; cannot push")
 
-    meta = read_platform(project)
+    meta = Manifest.of(project).project
+    repo = (
+        Repository(project)
+        if (project / ".git").exists()
+        else Repository.init(project, branch=branch)
+    )
 
-    if not (project / ".git").exists():
-        git.init(project, branch=branch)
+    GitFlow(repo).install_hooks()
+    repo.add_all()
 
-    gitflow.install_hooks(project)
-    git.add_all(project)
-
-    if not git.is_clean(cwd=project):
-        git.run(
-            ["commit", "-q", "-m", "chore: bootstrap project from action-platform"],
-            cwd=project,
-        )
+    if not repo.is_clean():
+        repo.commit("chore: bootstrap project from action-platform")
 
     url = config.source_host.create_repository(
         config.source_host.repo,
@@ -237,11 +232,11 @@ def push_project(
         private=private,
     )
 
-    if not git.remote_url(cwd=project):
-        git.add_remote(url, project)
+    if not repo.remote_url():
+        repo.add_remote(url)
 
     try:
-        git.push_upstream(branch, project)
+        repo.push_upstream(branch)
     except subprocess.CalledProcessError as e:
         raise TemplateError(
             f"push failed: {e.stderr.strip() if e.stderr else e}"
@@ -260,9 +255,6 @@ class SourceCredentialsLike(Protocol):
 def _cookiecutter(
     repo: Path, directory: str, output: Path, extra: dict, overwrite: bool = False
 ) -> Path:
-    from cookiecutter.exceptions import CookiecutterException
-    from cookiecutter.main import cookiecutter
-
     try:
         result = cookiecutter(
             str(repo),

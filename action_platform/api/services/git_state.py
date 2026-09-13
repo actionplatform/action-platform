@@ -4,7 +4,9 @@ from pathlib import Path
 
 from action_platform.api.repositories.registry import Registry
 from action_platform.api.services.manifest import workspace_of
-from action_platform.core.flow import git, gitflow
+from action_platform.core.flow import gitflow
+from action_platform.core.flow.repository import Repository
+from action_platform.core.flow.workflow import GitFlow
 
 
 class GitStateService:
@@ -15,16 +17,15 @@ class GitStateService:
         return workspace_of(self.registry, id)[1]
 
     def gitflow(self, id: str) -> dict:
-        report = gitflow.audit(self._root(id))
+        report = GitFlow(self._root(id)).audit()
         data = asdict(report)
         data["ok"] = report.ok
 
         return data
 
     def commits(self, id: str, limit: int) -> list[dict]:
-        out = git.run(
-            ["log", f"-{limit}", "--format=%h%x1f%s%x1f%an%x1f%ad", "--date=short"],
-            cwd=self._root(id),
+        out = Repository(self._root(id)).run(
+            ["log", f"-{limit}", "--format=%h%x1f%s%x1f%an%x1f%ad", "--date=short"]
         )
 
         return [
@@ -34,17 +35,16 @@ class GitStateService:
         ]
 
     def tags(self, id: str) -> list[str]:
-        return list(reversed(git.tags(cwd=self._root(id))))
+        return list(reversed(Repository(self._root(id)).tags()))
 
     def releases(self, id: str) -> list[dict]:
-        out = git.run(
+        out = Repository(self._root(id)).run(
             [
                 "for-each-ref",
                 "--sort=-creatordate",
                 "--format=%(refname:short)|%(creatordate:short)|%(*objectname:short)%(objectname:short)|%(subject)",
                 "refs/tags",
-            ],
-            cwd=self._root(id),
+            ]
         )
         rows = [line.split("|", 3) for line in out.splitlines() if line]
         releases = []
@@ -66,14 +66,13 @@ class GitStateService:
         return releases
 
     def branches(self, id: str) -> list[dict]:
-        out = git.run(
+        out = Repository(self._root(id)).run(
             [
                 "for-each-ref",
                 "--sort=-committerdate",
                 "--format=%(refname:short)|%(committerdate:short)",
                 "refs/remotes/origin",
-            ],
-            cwd=self._root(id),
+            ]
         )
         rows = [line.rsplit("|", 1) for line in out.splitlines() if line]
         names = [

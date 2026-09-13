@@ -8,12 +8,12 @@ from typing import Annotated, Any, Optional
 from pydantic import Field
 
 from action_platform.core.scaffold import install as installing
+from action_platform.core.manifest import Manifest
 from action_platform.core.scaffold.generate import (
     apply_cloud,
     apply_service,
     generate_project,
     push_project,
-    read_platform,
 )
 from action_platform.core.scaffold.templates import load_matrix
 from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL
@@ -156,4 +156,4 @@ def register(mcp: Any) -> None:
     @mcp.tool(annotations=READ_ONLY)
     def project_info(project: ProjectDir = None) -> dict:
         """Read platform.toml: name, type, stack, language, deploy target, services."""
-        return read_platform(_root(project))
+        return Manifest.of(_root(project)).project

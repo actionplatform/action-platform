@@ -7,7 +7,8 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from action_platform.core.scaffold.generate import apply_cloud, read_platform
+from action_platform.core.manifest import Manifest
+from action_platform.core.scaffold.generate import apply_cloud
 from action_platform.core.scaffold.templates import load_matrix
 from action_platform.logging import logger
 
@@ -50,7 +51,7 @@ def list_(
     clouds = matrix.clouds
 
     if project is not None:
-        meta = read_platform(project.resolve())
+        meta = Manifest.of(project.resolve()).project
         clouds = matrix.clouds_for(meta.get("type", ""), meta.get("language", ""))
 
     for cloud in clouds:

@@ -7,7 +7,9 @@ only, so the CLI stays dependency-free.
 
 from __future__ import annotations
 
+import getpass
 import json
+import socket
 import time
 import urllib.error
 import urllib.parse
@@ -368,9 +370,6 @@ def login(
 
 
 def _device_name() -> str:
-    import getpass
-    import socket
-
     try:
         return f"{getpass.getuser()}@{socket.gethostname()}"
     except Exception:
