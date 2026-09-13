@@ -4,7 +4,7 @@
 
 ```bash
 poetry install --extras api --extras mcp
-poetry run pytest -q
+poetry run pytest -q                      # or: python -m unittest discover -s tests -t .
 poetry run ruff check action_platform tests && poetry run ruff format --check action_platform tests
 poetry run action-platform api --reload      # :7788, OpenAPI at /docs
 ```
@@ -33,3 +33,7 @@ Rules that come from mistakes already made:
 ## Repository conventions
 
 Git-flow and Conventional Commits, enforced by the hooks `action-platform install` puts in `.git/hooks` and by CI. Work on `<kind>/<code>` branches, open a pull request, never commit on `master`. Releases are cut from `master` with `action-platform release [-c web|api]`.
+
+## Tests
+
+`tests/` mirrors the package: `tests/core/flow/test_branching.py` covers `action_platform/core/flow/branching.py`, `tests/api/services/test_flow.py` covers `action_platform/api/services/flow.py`, and so on. Every module is a set of `unittest.TestCase` classes, one per behaviour group; pytest is only the runner. Shared builders live in `tests/support.py` (`TempCase` with a temporary directory and an isolated environment, `git()`, `repo_with_origin()`, `platform_repo()`, `template_repo()`), `tests/api/support.py` (`ApiCase`: a `TestClient` over a fresh API with a platform project reachable as `file://`) and `tests/mcp/support.py` (`McpCase`: a local server over a tiny templates index).
