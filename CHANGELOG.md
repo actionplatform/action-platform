@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.6.9 — 2026-09-13
+
+### Features
+- **mcp:** report the MCP client's name to the platform; organization argument on organization-level tools
+
+### Bug Fixes
+- **cli:** login and whoami name the project and app the token is limited to
+- **api:** a fetch the code host refuses fails the sync with a reason instead of a 500
+
+### Docs
+- device approval, all-organization tokens, connected apps
+
 ## v0.6.8 — 2026-09-13
 
 ### Features
