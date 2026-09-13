@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.13 — 2026-09-13
+
+### Features
+- Bitbucket Pipelines as a CI provider — install, wizard, import, auto-heal default to it for Bitbucket remotes
+
 ## v0.5.12 — 2026-09-13
 
 ## v0.5.11 — 2026-09-13
