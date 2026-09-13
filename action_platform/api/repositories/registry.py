@@ -19,12 +19,9 @@ from typing import Optional
 from ulid import ULID
 
 from action_platform.core.exception import ActionPlatformError
-from action_platform.core.flow.git import UnsafeUrl, check_remote_url, git_env
+from action_platform.core.flow.repository import Repository
+from action_platform.core.flow.git import UnsafeUrl, check_remote_url
 from action_platform.settings import settings
-
-
-class SyncError(ActionPlatformError):
-    pass
 
 
 class MissingManifest(ActionPlatformError):
@@ -134,13 +131,7 @@ class Registry:
         path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            subprocess.run(
-                ["git", "clone", "--quiet", url, str(path)],
-                check=True,
-                capture_output=True,
-                text=True,
-                env=git_env(),
-            )
+            repo = Repository.clone(url, path)
         except subprocess.CalledProcessError as e:
             raise ActionPlatformError(
                 f"clone failed: {(e.stderr or '').strip() or url}"
@@ -158,15 +149,9 @@ class Registry:
                 f"{settings.CONFIG_FILE} not found in {url} — install the platform on it first"
             )
 
-        branch = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            cwd=path,
-            capture_output=True,
-            env=git_env(),
-            text=True,
-        ).stdout.strip()
-
-        entry = Entry(id=id, name=name, url=url, path=str(path), default_branch=branch)
+        entry = Entry(
+            id=id, name=name, url=url, path=str(path), default_branch=repo.branch
+        )
         rows.append(entry)
         self._save(rows)
 
@@ -191,46 +176,7 @@ class Registry:
             return entry
 
         root = Path(entry.path)
-
-        subprocess.run(
-            ["git", "fetch", "--quiet", "--prune", "--tags", "origin"],
-            cwd=root,
-            check=True,
-            capture_output=True,
-            env=git_env(),
-        )
-        upstream = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"],
-            cwd=root,
-            capture_output=True,
-            env=git_env(),
-            text=True,
-        )
-
-        if upstream.returncode != 0:
-            if _tracks_a_remote(root):
-                _leave_merged_branch(root, entry.default_branch)
-                check_workspace(root)
-
-            return entry
-
-        if reset:
-            subprocess.run(
-                ["git", "clean", "-fdq"], cwd=root, capture_output=True, env=git_env()
-            )
-            pull = _reset_to_upstream(root)
-        else:
-            pull = _pull(root)
-
-        if pull.returncode != 0 and _blocked_by_local_changes(pull.stderr):
-            pull = _pull_over_local_changes(root)
-
-        if pull.returncode != 0 and _diverged(pull.stderr):
-            pull = _pull_over_local_changes(root, reset=True)
-
-        if pull.returncode != 0:
-            raise SyncError(_pull_problem(pull.stderr))
-
+        Repository(root).follow_remote(entry.default_branch, reset=reset)
         check_workspace(root)
 
         return entry
@@ -246,181 +192,6 @@ class Registry:
             self.workspaces.resolve()
         ):
             shutil.rmtree(path, ignore_errors=True)
-
-
-def _pull(root: Path) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        ["git", "pull", "--quiet", "--ff-only"],
-        cwd=root,
-        capture_output=True,
-        env=git_env(),
-        text=True,
-    )
-
-
-def _ref_exists(root: Path, ref: str) -> bool:
-    return (
-        subprocess.run(
-            ["git", "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"],
-            cwd=root,
-            capture_output=True,
-            env=git_env(),
-        ).returncode
-        == 0
-    )
-
-
-def _tracks_a_remote(root: Path) -> bool:
-    """The branch is configured to follow a remote branch that no longer exists (deleted after its pull request merged)."""
-    branch = subprocess.run(
-        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-        cwd=root,
-        capture_output=True,
-        env=git_env(),
-        text=True,
-    ).stdout.strip()
-
-    if not branch or branch == "HEAD":
-        return False
-
-    return (
-        subprocess.run(
-            ["git", "config", "--get", f"branch.{branch}.remote"],
-            cwd=root,
-            capture_output=True,
-            env=git_env(),
-        ).returncode
-        == 0
-    )
-
-
-def _leave_merged_branch(root: Path, default_branch: str) -> None:
-    """The branch was deleted on the remote (merged pull request): go back to the default branch and bring it up to date."""
-    target = default_branch or "main"
-
-    if not _ref_exists(root, f"origin/{target}"):
-        target = _remote_head(root)
-
-    if target is None:
-        return
-
-    subprocess.run(
-        ["git", "stash", "push", "--quiet", "--include-untracked"],
-        cwd=root,
-        capture_output=True,
-        env=git_env(),
-    )
-    subprocess.run(
-        ["git", "checkout", "--quiet", "-B", target, f"origin/{target}"],
-        cwd=root,
-        capture_output=True,
-        env=git_env(),
-    )
-    subprocess.run(
-        ["git", "stash", "pop", "--quiet"],
-        cwd=root,
-        capture_output=True,
-        env=git_env(),
-    )
-
-
-def _remote_head(root: Path) -> str | None:
-    subprocess.run(
-        ["git", "remote", "set-head", "origin", "--auto"],
-        cwd=root,
-        capture_output=True,
-        env=git_env(),
-    )
-    head = subprocess.run(
-        ["git", "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"],
-        cwd=root,
-        capture_output=True,
-        env=git_env(),
-        text=True,
-    )
-
-    if head.returncode != 0:
-        return None
-
-    name = head.stdout.strip().removeprefix("origin/")
-
-    return name if _ref_exists(root, f"origin/{name}") else None
-
-
-def _diverged(stderr: str) -> bool:
-    return "Not possible to fast-forward" in stderr or "diverged" in stderr
-
-
-def _reset_to_upstream(root: Path) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        ["git", "reset", "--quiet", "--hard", "@{upstream}"],
-        cwd=root,
-        capture_output=True,
-        env=git_env(),
-        text=True,
-    )
-
-
-def _blocked_by_local_changes(stderr: str) -> bool:
-    return "uncommitted changes" in stderr or "would be overwritten" in stderr
-
-
-def _pull_over_local_changes(
-    root: Path, reset: bool = False
-) -> subprocess.CompletedProcess:
-    """Keep uncommitted work across the pull. With `reset` the branch is moved to the remote first: the remote is the source of truth, a local commit the remote lacks is a leftover from a failed push."""
-    stash = subprocess.run(
-        ["git", "stash", "push", "--quiet", "--include-untracked"],
-        cwd=root,
-        capture_output=True,
-        env=git_env(),
-        text=True,
-    )
-
-    if stash.returncode != 0:
-        return stash
-
-    pull = _reset_to_upstream(root) if reset else _pull(root)
-    pop = subprocess.run(
-        ["git", "stash", "pop", "--quiet"],
-        cwd=root,
-        capture_output=True,
-        env=git_env(),
-        text=True,
-    )
-
-    if pop.returncode != 0:
-        for tree in ("stash@{0}^3", "stash@{0}"):
-            subprocess.run(
-                ["git", "checkout", "--quiet", tree, "--", "."],
-                cwd=root,
-                capture_output=True,
-                env=git_env(),
-            )
-
-        subprocess.run(
-            ["git", "reset", "--quiet"], cwd=root, capture_output=True, env=git_env()
-        )
-        subprocess.run(
-            ["git", "stash", "drop", "--quiet"],
-            cwd=root,
-            capture_output=True,
-            env=git_env(),
-        )
-
-    return pull
-
-
-def _pull_problem(stderr: str) -> str:
-    text = stderr.strip()
-
-    if _diverged(text):
-        return "could not move the branch to its remote"
-
-    if "uncommitted changes" in text or "would be overwritten" in text:
-        return "working tree has changes that the remote would overwrite — commit them first"
-
-    return text.splitlines()[-1] if text else "git pull failed"
 
 
 def _name_from(url: str) -> str:

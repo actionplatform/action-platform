@@ -11,6 +11,7 @@ from action_platform.api.services.manifest import workspace_of
 from action_platform.core.action_platform import ActionPlatform
 from action_platform.core.config import Config
 from action_platform.core.flow import git
+from action_platform.core.flow.repository import Repository
 from action_platform.settings import settings
 
 
@@ -55,23 +56,25 @@ class LifecycleService:
         except git.BadRef as e:
             raise HTTPException(400, str(e)) from e
 
-        if git.current_branch(cwd=root) == branch:
+        repo = Repository(root)
+
+        if repo.branch == branch:
             return
 
-        if not git.is_clean(cwd=root):
+        if not repo.is_clean():
             raise HTTPException(
                 409,
                 "working tree is dirty — commit or discard changes before releasing from another branch",
             )
 
-        git.run(["fetch", "--prune", "origin"], cwd=root)
+        repo.fetch(tags=False)
 
         try:
-            git.checkout_branch(branch, cwd=root)
+            repo.checkout(branch)
         except Exception as e:
             raise HTTPException(400, f"cannot check out {branch}: {e}") from e
 
-        git.run(["pull", "--ff-only", "--end-of-options", "origin", branch], cwd=root)
+        repo.run(["pull", "--ff-only", "--end-of-options", "origin", branch])
 
     def deploy(self, id: str, body: DeployRequest) -> list[dict]:
         results = self._tool(id).deploy(stage=body.stage, dry_run=body.dry_run)

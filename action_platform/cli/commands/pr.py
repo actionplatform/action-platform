@@ -7,7 +7,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from action_platform.core.flow import pullrequest
+from action_platform.core.flow.workflow import GitFlow
 
 console = Console()
 
@@ -31,11 +31,11 @@ def run(
     cwd = Path.cwd()
 
     if dry_run:
-        proposal = pullrequest.propose(cwd, base=base, title=title)
+        proposal = GitFlow(cwd).propose(base=base, title=title)
         console.print(f"[bold]{proposal.head}[/bold] → [bold]{proposal.base}[/bold]")
         console.print(f"title: {proposal.title}\n")
         console.print(body or proposal.body)
         return
 
-    ref = pullrequest.open_pr(cwd, base=base, title=title, body=body, draft=draft)
+    ref = GitFlow(cwd).open_pr(base=base, title=title, body=body, draft=draft)
     console.print(f"[green]opened[/green] #{ref.number} {ref.url}")

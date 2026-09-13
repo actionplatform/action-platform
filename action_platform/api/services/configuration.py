@@ -1,4 +1,3 @@
-import subprocess
 import tomllib
 from pathlib import Path
 
@@ -10,8 +9,9 @@ from action_platform.api.schemas import CommitRequest, SourceSpec
 from action_platform.api.services.catalog import resolve_repo
 from action_platform.api.services.manifest import workspace_of
 from action_platform.core.config import Config
-from action_platform.core.flow import branching, git, gitflow, pullrequest
-from action_platform.core.flow.branching import BranchError
+from action_platform.core.flow import gitflow
+from action_platform.core.flow.repository import Repository
+from action_platform.core.flow.workflow import BranchError, GitFlow
 from action_platform.core.scaffold.install import install
 from action_platform.core.scaffold.generate import apply_cloud, apply_service
 from action_platform.core.scaffold.templates import TemplateError
@@ -73,23 +73,14 @@ class ConfigurationService:
         }
 
     def changes(self, id: str) -> dict:
-        root = self._root(id)
-        status = subprocess.run(
-            ["git", "status", "--porcelain=v1", "--untracked-files=all", "-z"],
-            cwd=root,
-            capture_output=True,
-            text=True,
-            check=True,
-            env=git.git_env(),
-        ).stdout
-        files = [entry[3:] for entry in status.split("\0") if len(entry) > 3]
+        files = Repository(self._root(id)).changed_files()
 
         return {"files": files, "clean": not files}
 
     def discard(self, id: str) -> dict:
-        root = self._root(id)
-        git.run(["reset", "-q", "--hard", "HEAD"], cwd=root)
-        git.run(["clean", "-fdq"], cwd=root)
+        repo = Repository(self._root(id))
+        repo.reset_hard()
+        repo.clean()
 
         return {"clean": True, "files": []}
 
@@ -108,8 +99,9 @@ class ConfigurationService:
 
     def commit(self, id: str, body: CommitRequest) -> dict:
         root = self._root(id)
+        repo = Repository(root)
 
-        if git.is_clean(cwd=root):
+        if repo.is_clean():
             raise HTTPException(409, "nothing to commit")
 
         problem = gitflow.check_commit(body.message)
@@ -119,21 +111,21 @@ class ConfigurationService:
 
         with auth.git_auth(body.credentials):
             if body.branch:
-                branch = self._branch_with_changes(root, body)
+                branch = self._branch_with_changes(repo, body)
             else:
-                branch = git.current_branch(cwd=root)
+                branch = repo.branch
                 problem = gitflow.check_protected(branch, body.message)
 
                 if problem:
                     raise HTTPException(400, problem)
 
-            git.add_all(root)
-            git.commit(body.message, cwd=root)
-            sha = git.run(["rev-parse", "--short", "HEAD"], cwd=root)
+            repo.add_all()
+            repo.commit(body.message)
+            sha = repo.short_head()
             push = body.push or body.pull_request
 
             if push:
-                git.push_upstream(branch, root)
+                repo.push_upstream(branch)
 
             result = {
                 "sha": sha,
@@ -145,26 +137,20 @@ class ConfigurationService:
             if body.pull_request:
                 config = Config.from_toml(root / settings.CONFIG_FILE)
                 auth.apply(config, body.credentials)
-                ref = pullrequest.open_pr(root, config=config)
+                ref = GitFlow(repo).open_pr(config=config)
                 result["pull_request"] = {"number": ref.number, "url": ref.url}
 
         return result
 
-    def _branch_with_changes(self, root: Path, body: CommitRequest) -> str:
+    def _branch_with_changes(self, repo: Repository, body: CommitRequest) -> str:
         spec = body.branch
-        git.run(["stash", "push", "--include-untracked"], cwd=root)
 
-        try:
-            branch = branching.start(
-                spec.kind, spec.code, spec.slug, cwd=root, push=False
-            )
-        except BranchError as e:
-            git.run(["stash", "pop"], cwd=root)
-            raise HTTPException(400, str(e)) from e
-        except Exception:
-            git.run(["stash", "pop"], cwd=root)
-            raise
-
-        git.run(["stash", "pop"], cwd=root)
+        with repo.stashed():
+            try:
+                branch = GitFlow(repo).start(
+                    spec.kind, spec.code, spec.slug, push=False
+                )
+            except BranchError as e:
+                raise HTTPException(400, str(e)) from e
 
         return branch.name

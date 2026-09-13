@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import typer
 
-from action_platform.core.flow import branching
+from action_platform.core.flow import workflow
+from action_platform.core.flow.workflow import GitFlow
 from action_platform.logging import logger
 
 
@@ -14,7 +17,7 @@ def run(
         help="feature | bugfix | hotfix | release | "
         + " | ".join(
             k
-            for k in branching.KINDS
+            for k in workflow.KINDS
             if k not in {"feature", "bugfix", "hotfix", "release"}
         ),
     ),
@@ -27,7 +30,7 @@ def run(
     ),
 ) -> None:
     """Start a branch: checkout the right base (develop or main), pull, create <kind>/<code>."""
-    branch = branching.start(kind, code, slug, push=push)
+    branch = GitFlow(Path.cwd()).start(kind, code, slug, push=push)
     logger.info(
         "on %s (from %s)%s",
         branch.name,

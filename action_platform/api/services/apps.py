@@ -14,7 +14,8 @@ from action_platform.api.schemas import (
     SourceCredentials,
 )
 from action_platform.api.services.manifest import read_manifest, workspace_of
-from action_platform.core.flow import git, gitflow
+from action_platform.core.flow.repository import Repository
+from action_platform.core.flow.workflow import GitFlow
 from action_platform.core.scaffold.install import InstallError, install
 from action_platform.core.manifest import write_source_host
 from action_platform.core.scaffold.generate import (
@@ -48,7 +49,7 @@ class AppService:
                 row["last_version"] = info["last_version"]
 
                 try:
-                    row["branch"] = git.current_branch(cwd=root)
+                    row["branch"] = Repository(root).branch
                 except Exception:
                     row["branch"] = None
 
@@ -113,10 +114,12 @@ class AppService:
         info["url"] = entry.url
         info["default_branch"] = entry.default_branch
 
-        if (root / ".git").is_dir():
-            info["branch"] = git.current_branch(cwd=root)
-            info["latest_tag"] = git.latest_tag(cwd=root)
-            info["clean"] = git.is_clean(cwd=root)
+        repo = Repository(root)
+
+        if repo.exists():
+            info["branch"] = repo.branch
+            info["latest_tag"] = repo.latest_tag()
+            info["clean"] = repo.is_clean()
         else:
             info["branch"] = ""
             info["latest_tag"] = None
@@ -169,13 +172,10 @@ class AppService:
             with auth.git_auth(creds):
                 url = push_project(path, private=body.private, credentials=creds)
         elif body.git_init:
-            git.init(path, branch="main")
-            gitflow.install_hooks(path)
-            git.add_all(path)
-            git.run(
-                ["commit", "-q", "-m", "chore: bootstrap project from action-platform"],
-                cwd=path,
-            )
+            repo = Repository.init(path, branch="main")
+            GitFlow(repo).install_hooks()
+            repo.add_all()
+            repo.commit("chore: bootstrap project from action-platform")
 
         entry = self.registry.register(
             Entry(

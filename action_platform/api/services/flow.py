@@ -7,7 +7,9 @@ from action_platform.api.repositories.registry import Registry
 from action_platform.api.services.manifest import workspace_of
 from action_platform.api.schemas import PullRequestRequest, StartBranchRequest
 from action_platform.core.config import Config
-from action_platform.core.flow import branching, git, pullrequest
+from action_platform.core.flow import git
+from action_platform.core.flow.repository import Repository
+from action_platform.core.flow.workflow import GitFlow
 from action_platform.settings import settings
 
 
@@ -18,32 +20,35 @@ class FlowService:
     def _root(self, id: str) -> Path:
         return workspace_of(self.registry, id)[1]
 
+    def _repo(self, id: str) -> Repository:
+        return Repository(self._root(id))
+
     def start_branch(self, id: str, body: StartBranchRequest) -> dict:
         with auth.git_auth(body.credentials):
-            branch = branching.start(
-                body.kind, body.code, body.slug, cwd=self._root(id), push=body.push
+            branch = GitFlow(self._repo(id)).start(
+                body.kind, body.code, body.slug, push=body.push
             )
 
         return {"branch": branch.name, "base": branch.base, "pushed": branch.pushed}
 
     def checkout(self, id: str, branch: str) -> dict:
-        root = self._root(id)
+        repo = self._repo(id)
 
         try:
             git.check_ref(branch)
         except git.BadRef as e:
             raise HTTPException(400, str(e)) from e
 
-        if not git.is_clean(cwd=root):
+        if not repo.is_clean():
             raise HTTPException(409, "working tree is dirty")
 
-        git.run(["fetch", "--prune", "origin"], cwd=root)
-        git.checkout_branch(branch, cwd=root)
+        repo.fetch(tags=False)
+        repo.checkout(branch)
 
-        return {"branch": git.current_branch(cwd=root)}
+        return {"branch": repo.branch}
 
     def propose_pr(self, id: str, base: str | None, title: str | None) -> dict:
-        proposal = pullrequest.propose(self._root(id), base=base, title=title)
+        proposal = GitFlow(self._repo(id)).propose(base=base, title=title)
 
         return {
             "head": proposal.head,
@@ -59,8 +64,7 @@ class FlowService:
         auth.apply(config, body.credentials)
 
         with auth.git_auth(body.credentials):
-            ref = pullrequest.open_pr(
-                root,
+            ref = GitFlow(root).open_pr(
                 base=body.base,
                 title=body.title,
                 body=body.body,
