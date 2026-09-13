@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.9 — 2026-09-13
+
+### Features
+- **web:** Connect a code host as three aligned provider cards with status badges and a structured OAuth error alert
+
 ## v0.6.8 — 2026-09-13
 
 ### Features
