@@ -31,7 +31,6 @@ class Settings:
     )
     BITBUCKET_TOKEN = os.getenv("ACTION_PLATFORM_BITBUCKET_TOKEN")
     BITBUCKET_USERNAME = os.getenv("ACTION_PLATFORM_BITBUCKET_USERNAME")
-    SLACK_WEBHOOK = os.getenv("SLACK_WEBHOOK")
 
 
 settings = Settings()
