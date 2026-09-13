@@ -1,8 +1,8 @@
 """Action Platform core.
 
-- `manifest`: platform.toml
-- `scaffold`: templates, generate, install
-- `flow`: git, git-flow, branching, pull requests
-- `release`: versioning, changelog, release, deploy
-- `config`, `context`, `exception`, `action_platform` (facade)
+- `manifest`: `Manifest` — platform.toml as an object
+- `scaffold`: `TemplateStore`, `Matrix`, `LanguageDetector`, `Installer`, generate
+- `flow`: `Repository` (one git clone), `GitFlow` (audit, branches, pull requests, hooks), `gitflow` (the rules)
+- `release`: `Version`, `VersionFiles`, `Releaser` (plan → apply), `Deployer`, changelog
+- `config`, `context`, `exception`, `action_platform` (the `ActionPlatform` facade)
 """

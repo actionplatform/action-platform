@@ -9,6 +9,8 @@ from mcp.server.mcpserver import MCPServer
 
 from action_platform import __version__
 from action_platform.mcp import prompts
+from action_platform.mcp.tools import remote as remote_tools
+from action_platform.remote.client import Remote
 from action_platform.mcp.tools import flow, lifecycle, matrix, project
 
 INSTRUCTIONS = """Scaffold, deploy and operate projects on the Action Platform.
@@ -53,9 +55,6 @@ def build(remote: Optional[str] = None) -> MCPServer:
     """Assemble the server. Local: tools call the core modules directly — same code path as the CLI.
     Remote: tools call a hosted platform with the token from `action-platform login`."""
     if remote is not None:
-        from action_platform.mcp.tools import remote as remote_tools
-        from action_platform.remote.client import Remote
-
         client = Remote.from_credentials(remote or None)
         mcp = MCPServer(
             "action-platform", instructions=REMOTE_INSTRUCTIONS, version=__version__
