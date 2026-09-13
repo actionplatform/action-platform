@@ -2,26 +2,158 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Annotated, Any, Optional
 
 from pydantic import Field
 
 from action_platform.mcp.annotations import DESTRUCTIVE, READ_ONLY, REACHES_OUT
+from action_platform.core.flow.repository import Repository
 from action_platform.remote.client import Remote
 
 AppId = Annotated[str, Field(description="App id from list_apps")]
 
 
+def _repo_key(url: str) -> str:
+    """owner/name of a git URL, so https://github.com/a/b.git and git@github.com:a/b match."""
+    text = url.strip().removesuffix(".git").rstrip("/")
+    text = text.replace(":", "/")
+    parts = [p for p in text.split("/") if p]
+
+    return "/".join(parts[-2:]).lower() if len(parts) >= 2 else ""
+
+
 def register(mcp: Any, remote: Remote) -> None:
     @mcp.tool(annotations=READ_ONLY)
     def whoami() -> dict:
-        """Which platform and account these tools act as."""
-        who = remote.whoami().get("user", {})
+        """Who these tools act as and what they may do: account, organization, role, the token's scope and reach (project/app), and the permissions that result — call first when unsure whether an action is allowed."""
+        who = remote.whoami()
 
         return {
             "server": remote.server,
-            "email": who.get("email"),
-            "name": who.get("name"),
+            "user": who.get("user"),
+            "organization": who.get("organization"),
+            "role": who.get("role_label") or who.get("role"),
+            "scope": who.get("scope"),
+            "limited_to": {"project": who.get("project"), "app": who.get("app")},
+            "can": {k: v for k, v in (who.get("permissions") or {}).items()},
+        }
+
+    @mcp.tool(annotations=READ_ONLY)
+    def list_organizations() -> list[dict]:
+        """Every organization the account belongs to, with the role there and what a token could be granted. The current token acts on one organization only (see whoami)."""
+        return remote.organizations()
+
+    @mcp.tool(annotations=READ_ONLY)
+    def list_projects() -> list[dict]:
+        """Projects in the token's organization with their team and apps; limited to the token's project or app when it has one."""
+        return remote.projects()
+
+    @mcp.tool(annotations=READ_ONLY)
+    def list_teams() -> list[dict]:
+        """Teams in the organization: members and the projects each team owns."""
+        return remote.teams()
+
+    @mcp.tool(annotations=READ_ONLY)
+    def list_members() -> list[dict]:
+        """Members of the organization and their roles."""
+        return remote.members()
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def create_project(
+        name: str,
+        description: Annotated[str, Field(description="Optional description")] = "",
+    ) -> dict:
+        """Create a project in the token's organization (needs project.manage and an admin-scoped token)."""
+        return remote.create_project(name, description)
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def create_team(
+        name: str,
+        description: Annotated[str, Field(description="Optional description")] = "",
+    ) -> dict:
+        """Create a team in the organization (needs org.manage and an admin-scoped token)."""
+        return remote.create_team(name, description)
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def add_team_member(
+        team_id: Annotated[str, Field(description="Team id from list_teams")],
+        user_id: Annotated[str, Field(description="User id from list_members")],
+    ) -> dict:
+        """Put an organization member on a team (needs org.manage)."""
+        return remote.add_team_member(team_id, user_id)
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def assign_project_team(
+        project_id: Annotated[str, Field(description="Project id from list_projects")],
+        team_id: Annotated[
+            Optional[str], Field(description="Team id from list_teams; null unassigns")
+        ] = None,
+    ) -> dict:
+        """Give a project to a team, or take it away with team_id=null (needs project.manage)."""
+        return remote.assign_project_team(project_id, team_id)
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def set_member_role(
+        user_id: Annotated[str, Field(description="User id from list_members")],
+        role: Annotated[
+            str, Field(description="owner, admin, deployer, developer or viewer")
+        ],
+    ) -> dict:
+        """Change a member's role in the organization (needs org.manage; the last owner cannot be demoted)."""
+        return remote.set_member_role(user_id, role)
+
+    @mcp.tool(annotations=READ_ONLY)
+    def current_context(
+        project: Annotated[
+            Optional[str],
+            Field(description="Local directory to recognise; default is the cwd"),
+        ] = None,
+    ) -> dict:
+        """Recognise the local checkout the agent is working in: matches its git remote to an app on the platform and returns the app, its project, the organization and what the token may do there. Use before acting on "this project"."""
+        root = Path(project).resolve() if project else Path.cwd()
+        repo = Repository(root)
+        remote_url = repo.remote_url() if repo.exists() else ""
+        key = _repo_key(remote_url)
+        who = remote.whoami()
+        match = next(
+            (a for a in remote.apps() if key and _repo_key(a.get("url") or "") == key),
+            None,
+        )
+        projects = remote.projects() if match else []
+        owner = (
+            next(
+                (
+                    p
+                    for p in projects
+                    for a in p["apps"]
+                    if a["registry_id"] == match["id"]
+                ),
+                None,
+            )
+            if match
+            else None
+        )
+
+        return {
+            "directory": str(root),
+            "remote": remote_url or None,
+            "branch": repo.branch if repo.exists() else None,
+            "organization": who.get("organization"),
+            "project": {
+                "id": owner["id"],
+                "name": owner["name"],
+                "team": owner.get("team"),
+            }
+            if owner
+            else None,
+            "app": match,
+            "role": who.get("role_label") or who.get("role"),
+            "scope": who.get("scope"),
+            "can": who.get("permissions"),
+            "hint": None
+            if match
+            else "this directory is not an app on the platform — add_app registers it",
         }
 
     @mcp.tool(annotations=READ_ONLY)

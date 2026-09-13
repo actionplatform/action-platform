@@ -137,13 +137,13 @@ Owners and admins add people from Settings → **Members**: **Add member** creat
 
 **Teams** in the sidebar. A team has members (organization members only) and projects; a project belongs to at most one team, assigned from the team page or from the project card's menu. Deleting a team leaves its projects without one.
 
-### API tokens
+### Connected apps
 
-Settings → **Your API tokens** lists the bearer tokens `action-platform login` minted for you in this organization — name, scope, created, last used, expiry — with a revoke action. A token is a signed JWT (`HS256`, `BETTER_AUTH_SECRET`) whose `jti` is a row in `api_token`; revoking the row invalidates it on the next request.
+The key icon next to your name opens **Connected apps** (`/account`): the API tokens `action-platform login` minted for you in every organization — name (`user@host`), scope, organization, created, last used, expiry — and the browser sessions signed in as you (browser, OS, address, last activity), each with a revoke action. Revoking a session logs that browser out at once. A token is a signed JWT (`HS256`, `BETTER_AUTH_SECRET`) whose `jti` is a row in `api_token`; revoking the row invalidates it on the next request.
 
 ## CLI and MCP against a hosted instance
 
-Approving a device code (`/device`) shows the scopes the CLI asked for — read, write, release, admin — as checkboxes; what you approve becomes the token's scope. Every `/api/v1` call then needs both your role and the token's scope: a `developer` with a `release` token still cannot release, and an `owner` with a `read` token can only look.
+Approving a device code (`/device`) shows the scopes the CLI asked for — read, write, release, admin — as checkboxes, and where the token may act: the organization, optionally one project, optionally one app. Scopes your role in that organization cannot grant are greyed out — a viewer can only hand out `read`, a developer `read` and `write`, a deployer adds `release`, admins and owners everything — and the server clamps the request the same way. What you approve becomes the token's scope and reach; a token limited to a project or app sees only that app in `/api/v1/apps` and cannot add apps. Every `/api/v1` call then needs both your role and the token's scope: a `developer` with a `release` token still cannot release, and an `owner` with a `read` token can only look.
 
 ```bash
 action-platform login https://platform.example.com   # device flow: approve a code at /device

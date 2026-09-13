@@ -85,6 +85,13 @@
       "when": 1789332005374,
       "tag": "0011_nappy_siren",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789335352873,
+      "tag": "0012_panoramic_master_chief",
+      "breakpoints": true
     }
   ]
 }

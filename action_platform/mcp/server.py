@@ -36,8 +36,13 @@ These tools act on the platform the CLI is logged in to (`action-platform
 login <server>`), not on files on this machine, and with the role the
 account has in its organization (viewer, developer, deployer, admin, owner)
 narrowed by the token's scope (read, write, release, admin, chosen at
-login): a refused call names the missing permission or scope. Start with whoami and
-list_apps. Every app is a repository the platform has cloned:
+login) and reach (one organization, optionally one project or app): a
+refused call names the missing permission or scope. Start with whoami (who,
+where, what is allowed) or current_context (which platform app the local
+checkout is); list_organizations, list_projects, list_teams and
+list_members describe the organization; create_project, create_team,
+add_team_member, assign_project_team and set_member_role change it when the
+role and the token's scope allow. Every app is a repository the platform has cloned:
 sync_app before auditing, editing or releasing so the clone is current.
 
 Work follows git-flow: start_branch, then write_manifest / set_cloud /
