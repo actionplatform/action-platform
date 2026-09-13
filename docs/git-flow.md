@@ -63,4 +63,6 @@ One implementation, three enforcers:
 | [ci-scripts](https://github.com/actionplatform/ci-scripts) `gitflow.sh` | the same checks on every pull request, from GitHub Actions, GitLab CI or Jenkins |
 | `action_platform/core/flow/gitflow.py` | the rules as Python for the CLI, the MCP tools and the web app's audit |
 
+Hooks you already had are kept: an existing `pre-commit`, `commit-msg` or `pre-push` that is not ours is renamed to `<name>.pre-action-platform` and still runs after the platform's check. When `core.hooksPath` points at an unversioned directory the hooks go there instead of `.git/hooks`; when it points at a versioned one (Husky's `.husky/`, lefthook) nothing is touched and git-flow is enforced by CI only — the CLI says so.
+
 Commits allowed on protected branches: `chore(release): …`, `chore(platform): …`, `chore: bootstrap …`, merges and reverts.

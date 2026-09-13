@@ -29,8 +29,17 @@ def run(
     cwd = Path.cwd()
 
     if install:
-        if gitflow.install_hooks(cwd):
-            console.print("[green]hooks installed[/green] (.git/hooks)")
+        report = gitflow.install_hooks(cwd)
+
+        if report:
+            console.print(f"[green]hooks installed[/green] ({report.directory})")
+
+            for name in report.preserved:
+                console.print(
+                    f"  kept your {name} as {name}.pre-action-platform; it still runs after ours"
+                )
+        elif report.skipped:
+            console.print(f"[yellow]{report.skipped}[/yellow]")
             return
         raise ActionPlatformError("not a git repository")
 
