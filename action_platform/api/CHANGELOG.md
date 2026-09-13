@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.3.0 — 2026-09-13
+
+### Features
+- import a repository without platform.toml — install on add from the web, CLI/MCP, then commit on a branch with a pull request
+- **api:** template sources — merged matrix, init/cloud/service from a custom repository, remote flow and configuration tools
+
+### Bug Fixes
+- **install:** name platform.toml after the repository; skip the code-quality workflow when there is no language
+- **templates:** plain repositories get a Repositories category and resolve without a stack
+
 ## v0.2.1 — 2026-09-13
 
 ### Bug Fixes
