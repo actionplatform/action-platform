@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.1 — 2026-09-13
+
+### Bug Fixes
+- **web:** release preview and run return the error instead of throwing, so production shows the cause
+
 ## v0.5.0 — 2026-09-13
 
 ### Features

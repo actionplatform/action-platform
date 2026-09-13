@@ -1,7 +1,7 @@
 {
   "name": "action-platform-next",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.5.1",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
