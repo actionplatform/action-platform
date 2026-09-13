@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import subprocess
 import tomllib
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from action_platform.core.exception import TemplateError
@@ -147,6 +147,11 @@ class Matrix:
         ]
 
     def resolve(self, type_: str, stack: str | None, template: str | None) -> Leaf:
+        if template is not None:
+            for leaf in self.leaves:
+                if leaf.plain and leaf.template == template:
+                    return replace(leaf, type=type_ or leaf.type)
+
         if type_ not in self.types():
             raise TemplateError(
                 f"unknown type: {type_} (available: {', '.join(self.types())})"

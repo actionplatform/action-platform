@@ -66,7 +66,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
 
   const types = useMemo(() => typesIn(matrix), [matrix]);
   const stacks = useMemo(() => (type ? stacksFor(matrix, type) : []), [matrix, type]);
-  const templates = useMemo(() => (type ? [...templatesFor(matrix, type, stack), ...matrix.projects.filter((p) => p.plain && p.type === type && p.stack !== stack)] : []), [matrix, type, stack]);
+  const templates = useMemo(() => (type ? [...templatesFor(matrix, type, stack), ...matrix.projects.filter((p) => p.plain && (p.type !== type || p.stack !== stack))] : []), [matrix, type, stack]);
   const leaf: Leaf | undefined = templates.find((t) => t.template === template && t.source === source);
   const hasStack = stacks.length > 0;
   const clouds = useMemo(() => {
