@@ -1,8 +1,9 @@
+import hmac
 import os
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -10,11 +11,35 @@ from action_platform import __version__
 from action_platform.api.core.deps import get_registry
 from action_platform.api.v1 import router as v1
 from action_platform.core.exception import ActionPlatformError
+from action_platform.settings import settings
+
+OPEN_PATHS = {"/api/version", "/docs", "/openapi.json", "/redoc"}
 
 
-def build(cors_origins: Optional[list[str]] = None) -> FastAPI:
+def build(
+    cors_origins: Optional[list[str]] = None, token: Optional[str] = None
+) -> FastAPI:
     app = FastAPI(title="action-platform", version=__version__)
     get_registry.cache_clear()
+    expected = settings.API_TOKEN if token is None else token
+
+    if expected:
+
+        @app.middleware("http")
+        async def _require_token(request: Request, call_next):
+            if request.url.path in OPEN_PATHS or request.method == "OPTIONS":
+                return await call_next(request)
+
+            header = request.headers.get("authorization", "")
+            given = header[7:] if header.lower().startswith("bearer ") else ""
+
+            if not hmac.compare_digest(given, expected):
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "missing or invalid API token"},
+                )
+
+            return await call_next(request)
 
     if cors_origins:
         app.add_middleware(
