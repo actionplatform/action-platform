@@ -8,13 +8,13 @@ same token through a credential helper injected via the environment.
 
 from __future__ import annotations
 
-import os
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
 from pydantic import BaseModel
 
 from action_platform.core.config import Config
+from action_platform.core.flow import git
 from action_platform.providers.source import build_source_host
 
 GIT_USERNAMES = {
@@ -52,10 +52,12 @@ def apply(config: Config, creds: Optional[SourceCredentials]) -> Config:
 def git_auth(creds: Optional[SourceCredentials]) -> Iterator[None]:
     """Make every git subprocess in this block authenticate with `creds`.
 
-    Uses GIT_CONFIG_{COUNT,KEY,VALUE} (git ≥ 2.31) to replace the credential
-    helpers with one that answers from two environment variables, so the
-    token never lands in .git/config or on a command line — and the host's
-    own helpers (keychain, gh) never answer for the wrong account.
+    The credentials live in a context variable read by `git.git_env()`, so
+    they follow this request only — concurrent requests on other threads or
+    tasks never see them — and reach git through GIT_CONFIG_{COUNT,KEY,VALUE}
+    (git ≥ 2.31) as a credential helper that answers from two variables, so
+    the token never lands in .git/config, on a command line, or in the
+    process environment.
     """
     if creds is None:
         yield
@@ -63,24 +65,19 @@ def git_auth(creds: Optional[SourceCredentials]) -> Iterator[None]:
 
     username = creds.username or GIT_USERNAMES.get(creds.kind, "git")
     helper = '!f() { printf \'username=%s\\npassword=%s\\n\' "$AP_GIT_USER" "$AP_GIT_TOKEN"; }; f'
-    keys = {
-        "GIT_TERMINAL_PROMPT": "0",
-        "AP_GIT_USER": username,
-        "AP_GIT_TOKEN": creds.token,
-        "GIT_CONFIG_COUNT": "2",
-        "GIT_CONFIG_KEY_0": "credential.helper",
-        "GIT_CONFIG_VALUE_0": "",
-        "GIT_CONFIG_KEY_1": "credential.helper",
-        "GIT_CONFIG_VALUE_1": helper,
-    }
-    saved = {k: os.environ.get(k) for k in keys}
-    os.environ.update(keys)
+    token = git.AUTH_ENV.set(
+        {
+            "AP_GIT_USER": username,
+            "AP_GIT_TOKEN": creds.token,
+            "GIT_CONFIG_COUNT": "2",
+            "GIT_CONFIG_KEY_0": "credential.helper",
+            "GIT_CONFIG_VALUE_0": "",
+            "GIT_CONFIG_KEY_1": "credential.helper",
+            "GIT_CONFIG_VALUE_1": helper,
+        }
+    )
 
     try:
         yield
     finally:
-        for k, v in saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
+        git.AUTH_ENV.reset(token)

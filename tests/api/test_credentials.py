@@ -1,4 +1,4 @@
-"""git_auth injects a credential helper through the environment and restores it."""
+"""git_auth injects a credential helper for the current request only, never into the process environment."""
 
 from __future__ import annotations
 
@@ -11,20 +11,46 @@ import pytest
 pytest.importorskip("fastapi")
 
 from action_platform.api.core.credentials import SourceCredentials, git_auth  # noqa: E402
+from action_platform.core.flow import git  # noqa: E402
 
 
-def test_git_auth_sets_and_restores_env(monkeypatch):
+def test_git_auth_scopes_credentials_to_the_request(monkeypatch):
     monkeypatch.delenv("GIT_CONFIG_COUNT", raising=False)
     creds = SourceCredentials(kind="gitlab", token="glpat-x")
 
     with git_auth(creds):
-        assert os.environ["GIT_CONFIG_KEY_0"] == "credential.helper"
-        assert os.environ["AP_GIT_USER"] == "oauth2"
-        assert os.environ["AP_GIT_TOKEN"] == "glpat-x"
-        assert os.environ["GIT_TERMINAL_PROMPT"] == "0"
+        env = git.git_env()
+        assert env["GIT_CONFIG_KEY_0"] == "credential.helper"
+        assert env["AP_GIT_USER"] == "oauth2"
+        assert env["AP_GIT_TOKEN"] == "glpat-x"
+        assert env["GIT_TERMINAL_PROMPT"] == "0"
+        assert "AP_GIT_TOKEN" not in os.environ
 
-    assert "GIT_CONFIG_COUNT" not in os.environ
-    assert "AP_GIT_TOKEN" not in os.environ
+    assert "GIT_CONFIG_COUNT" not in git.git_env()
+    assert "AP_GIT_TOKEN" not in git.git_env()
+
+
+def test_concurrent_requests_keep_their_own_credentials():
+    """Two threads inside git_auth at the same time never see each other's token."""
+    import threading
+
+    seen: dict[str, str] = {}
+    gate = threading.Barrier(2)
+
+    def request(name: str, token: str) -> None:
+        with git_auth(SourceCredentials(kind="github", token=token)):
+            gate.wait()
+            seen[name] = git.git_env()["AP_GIT_TOKEN"]
+            gate.wait()
+
+    a = threading.Thread(target=request, args=("a", "token-a"))
+    b = threading.Thread(target=request, args=("b", "token-b"))
+    a.start()
+    b.start()
+    a.join()
+    b.join()
+
+    assert seen == {"a": "token-a", "b": "token-b"}
 
 
 def test_git_reads_helper_from_env(tmp_path: Path):
@@ -39,6 +65,7 @@ def test_git_reads_helper_from_env(tmp_path: Path):
             text=True,
             cwd=tmp_path,
             check=True,
+            env=git.git_env(),
         ).stdout
 
     assert "username=x-access-token" in out

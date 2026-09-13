@@ -2,8 +2,24 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
+from contextvars import ContextVar
 from pathlib import Path
+
+
+AUTH_ENV: ContextVar[dict[str, str] | None] = ContextVar("git_auth_env", default=None)
+
+
+def git_env() -> dict[str, str]:
+    """Environment for a git subprocess: the process environment plus the credentials of the current request, if any."""
+    extra = AUTH_ENV.get()
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+
+    if extra:
+        env.update(extra)
+
+    return env
 
 
 def run(args: list[str], cwd: Path | None = None) -> str:
@@ -13,6 +29,7 @@ def run(args: list[str], cwd: Path | None = None) -> str:
         check=True,
         capture_output=True,
         text=True,
+        env=git_env(),
     )
 
     return result.stdout.strip()
