@@ -49,6 +49,11 @@ class LifecycleService:
         }
 
     def _switch(self, root: Path, branch: str) -> None:
+        try:
+            git.check_ref(branch)
+        except git.BadRef as e:
+            raise HTTPException(400, str(e)) from e
+
         if git.current_branch(cwd=root) == branch:
             return
 
@@ -65,7 +70,7 @@ class LifecycleService:
         except Exception as e:
             raise HTTPException(400, f"cannot check out {branch}: {e}") from e
 
-        git.run(["pull", "--ff-only", "origin", branch], cwd=root)
+        git.run(["pull", "--ff-only", "--end-of-options", "origin", branch], cwd=root)
 
     def deploy(self, id: str, body: DeployRequest) -> list[dict]:
         results = self._tool(id).deploy(stage=body.stage, dry_run=body.dry_run)

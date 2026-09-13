@@ -89,7 +89,7 @@ def start(
 
     base = resolve_base(kind, cwd)
     git.checkout_branch(base, cwd=cwd)
-    git.run(["pull", "--ff-only", "origin", base], cwd=cwd)
+    git.run(["pull", "--ff-only", "--end-of-options", "origin", base], cwd=cwd)
     git.checkout_branch(name, create=True, cwd=cwd)
 
     if push:

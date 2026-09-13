@@ -33,6 +33,11 @@ class FlowService:
     def checkout(self, id: str, branch: str) -> dict:
         root = self._root(id)
 
+        try:
+            git.check_ref(branch)
+        except git.BadRef as e:
+            raise HTTPException(400, str(e)) from e
+
         if not git.is_clean(cwd=root):
             raise HTTPException(409, "working tree is dirty")
 

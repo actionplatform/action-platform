@@ -536,3 +536,44 @@ def test_only_https_urls_are_cloned(tmp_path: Path, monkeypatch, url: str):
     res = client.post("/api/apps", json={"url": "https://gitlab.com/acme/repo.git"})
     assert res.status_code == 400
     assert "not allowed" in res.json()["detail"]
+
+
+def test_refs_that_look_like_options_are_refused(
+    client: TestClient, url: str, repo: Path, tmp_path: Path, monkeypatch
+):
+    git("checkout", "-q", "main", cwd=repo)
+    id = client.post("/api/apps", json={"url": url}).json()["id"]
+
+    for bad in [
+        "--upload-pack=touch /tmp/pwned",
+        "-x",
+        "a..b",
+        "feature/@{1}",
+        "x.lock",
+        "dir/",
+    ]:
+        assert (
+            client.post(f"/api/apps/{id}/checkout", json={"branch": bad}).status_code
+            == 400
+        ), bad
+        assert (
+            client.post(
+                f"/api/apps/{id}/release", json={"level": "patch", "branch": bad}
+            ).status_code
+            == 400
+        ), bad
+
+    monkeypatch.setenv(
+        "ACTION_PLATFORM_TEMPLATES",
+        str(_template_repo(tmp_path / "official", "web", "python", "fastapi")),
+    )
+    res = client.post(
+        "/api/matrix",
+        json={
+            "sources": [
+                {"name": "evil", "url": url, "ref": "--upload-pack=touch /tmp/pwned"}
+            ]
+        },
+    )
+    evil = next(s for s in res.json()["sources"] if s["name"] == "evil")
+    assert evil["ok"] is False and "invalid git ref" in evil["error"]

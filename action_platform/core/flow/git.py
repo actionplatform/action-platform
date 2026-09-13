@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 from contextvars import ContextVar
 from pathlib import Path
@@ -13,6 +14,29 @@ AUTH_ENV: ContextVar[dict[str, str] | None] = ContextVar("git_auth_env", default
 
 class UnsafeUrl(ValueError):
     pass
+
+
+class BadRef(ValueError):
+    pass
+
+
+REF_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
+
+
+def check_ref(name: str) -> str:
+    """A branch or tag name that is safe to hand to git as an argument: no leading dash, no path tricks."""
+    if (
+        not name
+        or not REF_RE.match(name)
+        or ".." in name
+        or "@{" in name
+        or name.endswith(".lock")
+        or name.endswith("/")
+        or "//" in name
+    ):
+        raise BadRef(f"invalid git ref: {name!r}")
+
+    return name
 
 
 def check_remote_url(url: str) -> str:
@@ -144,12 +168,10 @@ def push_tag(tag: str, remote: str = "origin", cwd: Path | None = None) -> None:
 
 
 def checkout_branch(branch: str, create: bool = False, cwd: Path | None = None) -> None:
-    args = ["checkout"]
-
-    if create:
-        args.append("-b")
-
-    args.append(branch)
+    name = check_ref(branch)
+    args = (
+        ["checkout", "-b", name] if create else ["checkout", "--end-of-options", name]
+    )
     run(args, cwd=cwd)
 
 
@@ -158,7 +180,7 @@ def add(paths: list[str], cwd: Path | None = None) -> None:
 
 
 def commit(message: str, cwd: Path | None = None) -> None:
-    run(["commit", "-m", message], cwd=cwd)
+    run(["commit", "-m", message, "--end-of-options"], cwd=cwd)
 
 
 def init(cwd: Path, branch: str = "main") -> None:
@@ -174,7 +196,7 @@ def add_remote(url: str, cwd: Path, remote: str = "origin") -> None:
 
 
 def push_upstream(branch: str, cwd: Path, remote: str = "origin") -> None:
-    run(["push", "-u", remote, branch], cwd=cwd)
+    run(["push", "-u", "--end-of-options", remote, check_ref(branch)], cwd=cwd)
 
 
 def tags(cwd: Path | None = None) -> list[str]:
