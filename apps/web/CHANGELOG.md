@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.2 — 2026-09-13
+
+### Features
+- **api:** report the api component version in /api/version and Sentry; sidebar shows web, api and lib versions
+- **web:** report unexpected server action failures to Sentry through one Result helper
+- **web:** reset to remote from the app header when a sync is blocked by local commits
+
+### Chores
+- strip comments from the generated API client and the git hooks
+
 ## v0.6.1 — 2026-09-13
 
 ### Features
