@@ -5,6 +5,7 @@ from __future__ import annotations
 import unittest
 
 from action_platform.core.flow import gitflow
+from action_platform.core.flow.workflow import GitFlow
 from tests.support import TempCase, git, git_repo
 
 
@@ -67,7 +68,7 @@ class AuditOnProtectedTest(TempCase):
             "chore/1-configuration",
         )
 
-        report = gitflow.audit(repo)
+        report = GitFlow(repo).audit()
 
         self.assertEqual(report.problems, [])
         self.assertEqual(report.checked_commits, 1)
@@ -75,7 +76,7 @@ class AuditOnProtectedTest(TempCase):
         (repo / "README.md").write_text("# z\n")
         git(repo, "commit", "-qam", "bad message")
 
-        self.assertEqual(len(gitflow.audit(repo).problems), 1)
+        self.assertEqual(len(GitFlow(repo).audit().problems), 1)
 
     def test_without_platform_commit_audits_since_the_last_tag(self):
         repo = git_repo(self.tmp_path / "plain", {"README.md": "# x\n"}, "chore: init")
@@ -85,7 +86,7 @@ class AuditOnProtectedTest(TempCase):
         (repo / "README.md").write_text("# z\n")
         git(repo, "commit", "-qam", "nope")
 
-        report = gitflow.audit(repo)
+        report = GitFlow(repo).audit()
 
         self.assertEqual(report.checked_commits, 2)
         self.assertEqual(len(report.problems), 1)
