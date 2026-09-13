@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.4 — 2026-09-13
+
+### Bug Fixes
+- **web:** send the organization commit identity with every commit, with or without a code host
+
 ## v0.6.3 — 2026-09-13
 
 ### Features
