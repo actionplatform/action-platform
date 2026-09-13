@@ -67,6 +67,7 @@ def install(
     language: str | None = None,
     ci: str | None = None,
     dry_run: bool = False,
+    name: str | None = None,
 ) -> Plan:
     root = root.resolve()
 
@@ -86,7 +87,10 @@ def install(
     plan = Plan(root=root, language=language, type=type_, ci=ci)
 
     _write(
-        plan, settings.CONFIG_FILE, _platform_toml(root, type_, language, ci), dry_run
+        plan,
+        settings.CONFIG_FILE,
+        _platform_toml(root, type_, language, ci, name or root.name),
+        dry_run,
     )
     _write(plan, settings.LAST_VERSION_FILE, "0.1.0\n", dry_run)
     _write(plan, "AGENTS.md", AGENTS, dry_run)
@@ -95,6 +99,9 @@ def install(
         _copy_tree(plan, source / ".code_quality", ".code_quality", dry_run)
 
     for rel in CI_FILES[ci]:
+        if not language and "code-quality" in rel:
+            continue
+
         _copy_file(plan, source / rel, rel, dry_run)
 
     if not dry_run:
@@ -149,14 +156,17 @@ def _existing_ci(root: Path) -> str | None:
         return None
 
 
-def _platform_toml(root: Path, type_: str, language: str, ci: str) -> str:
+def _platform_toml(
+    root: Path, type_: str, language: str, ci: str, name: str | None = None
+) -> str:
     remote = git.remote_url(cwd=root)
     repo = ""
 
     if "github.com" in remote:
         repo = remote.split("github.com", 1)[1].strip(":/").removesuffix(".git")
 
-    text = f'[project]\nname = "{root.name}"\ntype = "{type_}"\nci = "{ci}"\nlanguage = "{language}"\n'
+    name = name or (repo.rsplit("/", 1)[-1] if repo else root.name)
+    text = f'[project]\nname = "{name}"\ntype = "{type_}"\nci = "{ci}"\nlanguage = "{language}"\n'
 
     if repo:
         text += f'\n[source_host]\nkind = "github"\nrepo = "{repo}"\n'

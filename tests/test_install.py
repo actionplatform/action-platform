@@ -97,6 +97,8 @@ def test_errors(tmp_path: Path, templates: Path):
     assert plan.language == ""
     assert "platform.toml" in plan.created
     assert not (bare / ".code_quality").exists()
+    assert not (bare / ".github/workflows/code-quality.yml").exists()
+    assert (bare / ".github/workflows/gitflow.yml").exists()
     assert 'language = ""' in (bare / "platform.toml").read_text()
 
 

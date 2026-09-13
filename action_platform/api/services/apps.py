@@ -89,6 +89,7 @@ class AppService:
                     type_=install_spec.type,
                     language=install_spec.language,
                     ci=install_spec.ci,
+                    name=entry.name,
                 )
             except InstallError as e:
                 self.registry.remove(entry.id)
