@@ -31,6 +31,43 @@ class MissingManifest(ActionPlatformError):
     pass
 
 
+class UnsafeWorkspace(ActionPlatformError):
+    pass
+
+
+def escaping_symlinks(root: Path) -> list[str]:
+    """Symlinks under `root` (outside .git) whose target resolves outside `root`."""
+    base = root.resolve()
+    found: list[str] = []
+
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        if ".git" in dirnames:
+            dirnames.remove(".git")
+
+        for name in dirnames + filenames:
+            candidate = Path(dirpath) / name
+
+            if not candidate.is_symlink():
+                continue
+
+            target = candidate.resolve()
+
+            if not target.is_relative_to(base):
+                found.append(str(candidate.relative_to(root)))
+
+    return found
+
+
+def check_workspace(root: Path) -> None:
+    links = escaping_symlinks(root)
+
+    if links:
+        raise UnsafeWorkspace(
+            "repository contains symlinks that point outside its tree: "
+            + ", ".join(links[:5])
+        )
+
+
 def home() -> Path:
     base = os.environ.get("AP_HOME") or os.environ.get("XDG_CONFIG_HOME")
 
@@ -109,6 +146,12 @@ class Registry:
                 f"clone failed: {(e.stderr or '').strip() or url}"
             ) from e
 
+        try:
+            check_workspace(path)
+        except UnsafeWorkspace:
+            shutil.rmtree(path, ignore_errors=True)
+            raise
+
         if require_manifest and not (path / settings.CONFIG_FILE).exists():
             shutil.rmtree(path, ignore_errors=True)
             raise MissingManifest(
@@ -178,6 +221,8 @@ class Registry:
         if pull.returncode != 0:
             raise SyncError(_pull_problem(pull.stderr))
 
+        check_workspace(root)
+
         return entry
 
     def remove(self, id: str) -> None:
@@ -187,7 +232,9 @@ class Registry:
 
         path = Path(entry.path)
 
-        if path.is_relative_to(self.workspaces):
+        if not path.is_symlink() and path.resolve().is_relative_to(
+            self.workspaces.resolve()
+        ):
             shutil.rmtree(path, ignore_errors=True)
 
 

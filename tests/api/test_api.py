@@ -593,3 +593,26 @@ def test_api_token_guards_every_route_but_version(tmp_path: Path, monkeypatch):
         guarded.get("/api/apps", headers={"authorization": "Bearer s3cret"}).status_code
         == 200
     )
+
+
+def test_repository_with_escaping_symlink_is_refused(
+    client: TestClient, tmp_path: Path
+):
+    evil = tmp_path / "evil"
+    evil.mkdir()
+    (evil / "platform.toml").write_text(
+        '[project]\nname = "evil"\ntype = "web"\nlanguage = "python"\n'
+    )
+    (evil / "secrets").symlink_to(tmp_path)
+    (evil / "inside").symlink_to("platform.toml")
+    git("init", "-q", "-b", "main", cwd=evil)
+    git("config", "user.email", "t@t", cwd=evil)
+    git("config", "user.name", "t", cwd=evil)
+    git("add", "-A", cwd=evil)
+    git("commit", "-q", "-m", "chore: evil", cwd=evil)
+
+    res = client.post("/api/apps", json={"url": evil.as_uri()})
+    assert res.status_code == 400, res.text
+    assert "symlinks that point outside" in res.json()["detail"]
+    assert "secrets" in res.json()["detail"] and "inside" not in res.json()["detail"]
+    assert client.get("/api/apps").json() == []
