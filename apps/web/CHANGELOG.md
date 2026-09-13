@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.6 — 2026-09-13
+
+### Features
+- **web:** Connected apps — your API tokens across organizations and browser sessions, with revocation
+- **web:** approve a device code with scope, organization, project and app, within your role
+- **web:** token reach (organization, project, app) and role-clamped scopes on /api/v1; organization directory and management endpoints
+- **web:** api_token remembers the project or app a token is limited to
+
 ## v0.6.5 — 2026-09-13
 
 ### Features
