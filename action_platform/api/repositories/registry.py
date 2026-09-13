@@ -225,12 +225,8 @@ class Registry:
         if pull.returncode != 0 and _blocked_by_local_changes(pull.stderr):
             pull = _pull_over_local_changes(root)
 
-        if (
-            pull.returncode != 0
-            and _diverged(pull.stderr)
-            and _nothing_only_local(root)
-        ):
-            pull = _reset_to_upstream(root)
+        if pull.returncode != 0 and _diverged(pull.stderr):
+            pull = _pull_over_local_changes(root, reset=True)
 
         if pull.returncode != 0:
             raise SyncError(_pull_problem(pull.stderr))
@@ -355,22 +351,6 @@ def _diverged(stderr: str) -> bool:
     return "Not possible to fast-forward" in stderr or "diverged" in stderr
 
 
-def _nothing_only_local(root: Path) -> bool:
-    """True when every local commit is already upstream (same patch), so the local branch can follow the remote."""
-    cherry = subprocess.run(
-        ["git", "cherry", "@{upstream}"],
-        cwd=root,
-        capture_output=True,
-        env=git_env(),
-        text=True,
-    )
-
-    if cherry.returncode != 0:
-        return False
-
-    return not any(line.startswith("+") for line in cherry.stdout.splitlines())
-
-
 def _reset_to_upstream(root: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
         ["git", "reset", "--quiet", "--hard", "@{upstream}"],
@@ -385,7 +365,10 @@ def _blocked_by_local_changes(stderr: str) -> bool:
     return "uncommitted changes" in stderr or "would be overwritten" in stderr
 
 
-def _pull_over_local_changes(root: Path) -> subprocess.CompletedProcess:
+def _pull_over_local_changes(
+    root: Path, reset: bool = False
+) -> subprocess.CompletedProcess:
+    """Keep uncommitted work across the pull. With `reset` the branch is moved to the remote first: the remote is the source of truth, a local commit the remote lacks is a leftover from a failed push."""
     stash = subprocess.run(
         ["git", "stash", "push", "--quiet", "--include-untracked"],
         cwd=root,
@@ -397,7 +380,7 @@ def _pull_over_local_changes(root: Path) -> subprocess.CompletedProcess:
     if stash.returncode != 0:
         return stash
 
-    pull = _pull(root)
+    pull = _reset_to_upstream(root) if reset else _pull(root)
     pop = subprocess.run(
         ["git", "stash", "pop", "--quiet"],
         cwd=root,
@@ -432,7 +415,7 @@ def _pull_problem(stderr: str) -> str:
     text = stderr.strip()
 
     if _diverged(text):
-        return "local branch has commits the remote does not — push them, or reset the branch, before syncing"
+        return "could not move the branch to its remote"
 
     if "uncommitted changes" in text or "would be overwritten" in text:
         return "working tree has changes that the remote would overwrite — commit them first"

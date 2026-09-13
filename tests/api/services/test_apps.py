@@ -243,7 +243,7 @@ class SyncOverLocalChangesTest(LegacyImportCase):
 
 
 class SyncDivergedTest(ApiCase):
-    def test_a_local_commit_the_remote_lacks_blocks_sync_until_reset(self):
+    def test_a_local_commit_the_remote_lacks_is_dropped_for_the_remote(self):
         id = self.add_app(on_main=True)
         root = self.workspaces / id
         (root / "local.txt").write_text("x\n")
@@ -253,14 +253,15 @@ class SyncDivergedTest(ApiCase):
         git(self.repo, "add", "remote.txt")
         git(self.repo, "commit", "-qm", "feat: remote only")
 
-        res = self.client.post(f"/api/apps/{id}/sync")
-        self.assertEqual(res.status_code, 400)
-        self.assertIn("reset the branch", res.json()["detail"])
+        (root / "draft.txt").write_text("keep me\n")
 
-        res = self.client.post(f"/api/apps/{id}/sync", json={"reset": True})
+        res = self.client.post(f"/api/apps/{id}/sync")
+
         self.assertEqual(res.status_code, 200, res.text)
         self.assertTrue((root / "remote.txt").exists())
         self.assertFalse((root / "local.txt").exists())
+        self.assertEqual((root / "draft.txt").read_text(), "keep me\n")
+        self.assertEqual(git(root, "log", "-1", "--format=%s"), "feat: remote only")
 
     def test_a_merged_branch_deleted_on_the_remote_returns_to_main(self):
         id = self.add_app(on_main=False)
