@@ -194,7 +194,7 @@ export const organizationSetting = mysqlTable("organization_setting", {
 export const apiToken = mysqlTable("api_token", {
   id: varchar("id", { length: 36 }).primaryKey(),
   userId: varchar("user_id", { length: 36 }).notNull().references(() => user.id, { onDelete: "cascade" }),
-  organizationId: varchar("organization_id", { length: 36 }).notNull().references(() => organization.id, { onDelete: "cascade" }),
+  organizationId: varchar("organization_id", { length: 36 }).references(() => organization.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
   scope: varchar("scope", { length: 255 }).notNull(),
   projectId: varchar("project_id", { length: 36 }),
@@ -203,4 +203,12 @@ export const apiToken = mysqlTable("api_token", {
   expiresAt: timestamp("expires_at").notNull(),
   lastUsedAt: timestamp("last_used_at"),
   revokedAt: timestamp("revoked_at"),
+});
+
+export const apiTokenClient = mysqlTable("api_token_client", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  tokenId: varchar("token_id", { length: 36 }).notNull().references(() => apiToken.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 120 }).notNull(),
+  firstSeenAt: timestamp("first_seen_at").notNull().defaultNow(),
+  lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(),
 });

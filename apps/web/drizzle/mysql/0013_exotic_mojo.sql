@@ -1,0 +1,1 @@
+ALTER TABLE `api_token` MODIFY COLUMN `organization_id` varchar(36);
