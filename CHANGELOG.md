@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.6.7 — 2026-09-13
+
+### Features
+- **cli:** login polls on the OAuth error code and mints a scoped bearer token (--scope, --name)
+
+### Bug Fixes
+- **core:** fall back to tracking refs when the remote cannot be asked without credentials
+
+### Refactoring
+- **api:** services, CLI and MCP tools call Repository, GitFlow, Installer and Manifest
+- module-level imports everywhere the dependency graph allows
+- **core:** TemplateStore, LanguageDetector and Installer (plan/apply) split out of templates.py and install.py
+- **core:** Manifest object over platform.toml
+- **core:** Version, VersionFiles, Releaser (plan → apply) and Deployer behind the ActionPlatform facade
+- **core:** GitFlow(repo) replaces branching, pullrequest and the audit/hooks functions; gitflow.py is the rules only
+- **core:** Repository — every git command on one clone, follow_remote and stashed included; git.py keeps only the policies
+
+### Docs
+- the objects in the core
+- token scopes, API tokens card and mobile layout
+
 ## v0.6.6 — 2026-09-13
 
 ### Features
