@@ -9,13 +9,15 @@ import { requireOrg, requireSession } from "@/lib/session";
 
 export type Choice = { id: string; name: string };
 export type OrgChoice = Choice & { role: string; grantable: Scope[] };
-export type DeviceView = { grant: Grant; clientId: string | null; organizations: OrgChoice[] };
+export type DeviceView = { grant: Grant; requested: Scope[]; clientId: string | null; expiresAt: number; organizations: OrgChoice[] };
 
 export async function inspectDevice(userCode: string): Promise<Result<DeviceView>> {
   try {
     const { session, org } = await requireOrg();
     const request = await deviceRequest(userCode.trim().toUpperCase());
-    if (!request || request.status !== "pending") return { ok: false, error: "invalid or expired code" };
+    if (!request) return { ok: false, error: "invalid code" };
+    if (request.status === "expired") return { ok: false, error: "expired" };
+    if (request.status !== "pending") return { ok: false, error: `this code was already ${request.status}` };
     const organizations = await Promise.all(
       (await orgsOf(session.user.id)).map(async (o) => {
         const role = await roleOf(session.user.id, o.id);
@@ -23,10 +25,11 @@ export async function inspectDevice(userCode: string): Promise<Result<DeviceView
       }),
     );
     const grant = { ...request.grant, scope: request.grant.scope.length ? request.grant.scope : DEFAULT_SCOPES };
-    if (!grant.organizationId || !organizations.some((o) => o.id === grant.organizationId)) grant.organizationId = org.id;
-    const allowed = organizations.find((o) => o.id === grant.organizationId)?.grantable ?? ["read"];
+    if (grant.organizationId !== "*" && (!grant.organizationId || !organizations.some((o) => o.id === grant.organizationId))) grant.organizationId = org.id;
+    const requested = grant.scope;
+    const allowed = grant.organizationId === "*" ? [...new Set(organizations.flatMap((o) => o.grantable))] : organizations.find((o) => o.id === grant.organizationId)?.grantable ?? ["read"];
     grant.scope = grant.scope.filter((s) => allowed.includes(s));
-    return { ok: true, data: { grant, clientId: request.clientId, organizations } };
+    return { ok: true, data: { grant, requested, clientId: request.clientId, expiresAt: request.expiresAt.getTime(), organizations } };
   } catch (e) {
     return failed(e);
   }
@@ -54,11 +57,17 @@ export async function appChoices(projectId: string): Promise<Result<Choice[]>> {
 export async function chooseDeviceGrant(userCode: string, input: { scope: string[]; organizationId: string; projectId: string | null; appId: string | null }): Promise<Result<Grant>> {
   try {
     const session = await requireSession();
-    if (!(await orgsOf(session.user.id)).some((o) => o.id === input.organizationId)) return { ok: false, error: "not a member of that organization" };
-    const allowed = grantableScopes(await roleOf(session.user.id, input.organizationId));
-    const chosen = parseScopes(input.scope.join(" ")).filter((s) => allowed.includes(s));
-    const grant: Grant = { scope: chosen.includes("read") ? chosen : ["read", ...chosen], organizationId: input.organizationId, projectId: input.projectId || null, appId: input.projectId ? input.appId || null : null };
-    if (!(await setDeviceGrant(userCode.trim().toUpperCase(), grant))) return { ok: false, error: "invalid or expired code" };
+    const orgs = await orgsOf(session.user.id);
+    const everywhere = input.organizationId === "*";
+    if (!everywhere && !orgs.some((o) => o.id === input.organizationId)) return { ok: false, error: "not a member of that organization" };
+    const allowed = new Set<Scope>();
+    for (const o of everywhere ? orgs : orgs.filter((o) => o.id === input.organizationId)) for (const s of grantableScopes(await roleOf(session.user.id, o.id))) allowed.add(s);
+    const chosen = parseScopes(input.scope.join(" ")).filter((s) => allowed.has(s));
+    const grant: Grant = { scope: chosen.includes("read") ? chosen : ["read", ...chosen], organizationId: input.organizationId, projectId: everywhere ? null : input.projectId || null, appId: !everywhere && input.projectId ? input.appId || null : null };
+    const current = await deviceRequest(userCode.trim().toUpperCase());
+    if (!current) return { ok: false, error: "invalid code" };
+    if (current.status === "expired") return { ok: false, error: "expired" };
+    if (!(await setDeviceGrant(userCode.trim().toUpperCase(), grant))) return { ok: false, error: "this code was already used" };
     return { ok: true, data: grant };
   } catch (e) {
     return failed(e);
