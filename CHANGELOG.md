@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.3 — 2026-09-13
+
+### Features
+- **web:** namespace choice for GitLab groups and Bitbucket workspaces when creating an app, with the same access check as GitHub
+
+### Bug Fixes
+- **gitlab:** authenticate API calls with Authorization: Bearer so OAuth tokens work, not only personal access tokens
+- **web:** pick the GitHub organization from the app's installations when creating an app
+
 ## v0.6.2 — 2026-09-13
 
 ### Bug Fixes
