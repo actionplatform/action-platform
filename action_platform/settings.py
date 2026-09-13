@@ -18,6 +18,7 @@ class Settings:
     TEMPLATES_CACHE = Path.home() / ".cache" / "action-platform" / "templates"
 
     GITHUB_TOKEN = os.getenv("ACTION_PLATFORM_GITHUB_TOKEN") or os.getenv("GH_TOKEN")
+    API_TOKEN = os.getenv("AP_API_TOKEN", "")
     GITLAB_TOKEN = os.getenv("ACTION_PLATFORM_GITLAB_TOKEN") or os.getenv(
         "GITLAB_TOKEN"
     )

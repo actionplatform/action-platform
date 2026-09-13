@@ -3,6 +3,7 @@
 main_domain = "${domain}"
 postgres_password = "${password:32}"
 auth_secret = "${password:64}"
+api_token = "${password:64}"
 
 [config]
 [[config.domains]]
@@ -14,3 +15,4 @@ host = "${main_domain}"
 PUBLIC_URL = "https://${main_domain}"
 POSTGRES_PASSWORD = "${postgres_password}"
 BETTER_AUTH_SECRET = "${auth_secret}"
+AP_API_TOKEN = "${api_token}"

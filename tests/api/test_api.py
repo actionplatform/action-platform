@@ -509,3 +509,19 @@ def test_add_installs_platform_on_a_bare_repository(
     detail = client.get(f"/api/apps/{body['id']}").json()
     assert detail["project"]["language"] == "python"
     assert detail["clean"] is False
+
+
+def test_api_token_guards_every_route_but_version(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("AP_HOME", str(tmp_path / "home"))
+    guarded = TestClient(build(token="s3cret"))
+
+    assert guarded.get("/api/version").status_code == 200
+    assert guarded.get("/api/apps").status_code == 401
+    assert (
+        guarded.get("/api/apps", headers={"authorization": "Bearer nope"}).status_code
+        == 401
+    )
+    assert (
+        guarded.get("/api/apps", headers={"authorization": "Bearer s3cret"}).status_code
+        == 200
+    )
