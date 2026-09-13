@@ -173,3 +173,13 @@ export const pullRequest = sqliteTable("pull_request", {
   source: text("source").notNull(),
   syncedAt: integer("synced_at", { mode: "timestamp" }).notNull(),
 });
+
+export const templateSource = sqliteTable("template_source", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  url: text("url").notNull(),
+  ref: text("ref").notNull().default("v1"),
+  sourceHostId: text("source_host_id"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});

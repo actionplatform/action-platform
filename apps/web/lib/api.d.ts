@@ -31,7 +31,8 @@ export interface paths {
         /** Matrix */
         get: operations["matrix_api_matrix_get"];
         put?: never;
-        post?: never;
+        /** Matrix With Sources */
+        post: operations["matrix_with_sources_api_matrix_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -393,6 +394,7 @@ export interface components {
             url: string;
             /** Name */
             name?: string | null;
+            install?: components["schemas"]["InstallSpec"] | null;
             credentials?: components["schemas"]["SourceCredentials"] | null;
         };
         /** AppDetail */
@@ -447,6 +449,8 @@ export interface components {
              * @default
              */
             default_branch: string;
+            /** Installed */
+            installed?: string[] | null;
         };
         /** AppMeta */
         AppMeta: {
@@ -516,6 +520,7 @@ export interface components {
         CloudRequest: {
             /** Target */
             target: string;
+            source?: components["schemas"]["SourceSpec"] | null;
         };
         /** Commit */
         Commit: {
@@ -680,6 +685,7 @@ export interface components {
              * @default false
              */
             private: boolean;
+            source?: components["schemas"]["SourceSpec"] | null;
             credentials?: components["schemas"]["SourceCredentials"] | null;
         };
         /** InitResult */
@@ -699,6 +705,18 @@ export interface components {
             /** Pushed */
             pushed: boolean;
         };
+        /** InstallSpec */
+        InstallSpec: {
+            /**
+             * Type
+             * @default web
+             */
+            type: string;
+            /** Language */
+            language?: string | null;
+            /** Ci */
+            ci?: string | null;
+        };
         /** ManifestBody */
         ManifestBody: {
             /** Content */
@@ -712,6 +730,11 @@ export interface components {
             clouds: components["schemas"]["MatrixCloud"][];
             /** Services */
             services: components["schemas"]["MatrixService"][];
+            /**
+             * Sources
+             * @default []
+             */
+            sources: components["schemas"]["SourceStatus"][];
         };
         /** MatrixCloud */
         MatrixCloud: {
@@ -723,6 +746,11 @@ export interface components {
             languages: string[];
             /** Description */
             description: string;
+            /**
+             * Source
+             * @default official
+             */
+            source: string;
         };
         /** MatrixProject */
         MatrixProject: {
@@ -736,6 +764,16 @@ export interface components {
             default: boolean;
             /** Description */
             description: string;
+            /**
+             * Source
+             * @default official
+             */
+            source: string;
+            /**
+             * Plain
+             * @default false
+             */
+            plain: boolean;
         };
         /** MatrixService */
         MatrixService: {
@@ -745,6 +783,11 @@ export interface components {
             providers: string[];
             /** Description */
             description: string;
+            /**
+             * Source
+             * @default official
+             */
+            source: string;
         };
         /** PullRequestProposal */
         PullRequestProposal: {
@@ -853,6 +896,7 @@ export interface components {
             name: string;
             /** Provider */
             provider?: string | null;
+            source?: components["schemas"]["SourceSpec"] | null;
         };
         /** SourceCredentials */
         SourceCredentials: {
@@ -866,6 +910,55 @@ export interface components {
             base_url?: string | null;
             /** Owner */
             owner?: string | null;
+        };
+        /** SourceSpec */
+        SourceSpec: {
+            /** Name */
+            name: string;
+            /** Url */
+            url: string;
+            /**
+             * Ref
+             * @default v1
+             */
+            ref: string;
+            credentials?: components["schemas"]["SourceCredentials"] | null;
+        };
+        /** SourceStatus */
+        SourceStatus: {
+            /** Name */
+            name: string;
+            /** Url */
+            url: string;
+            /** Ref */
+            ref: string;
+            /** Ok */
+            ok: boolean;
+            /** Error */
+            error?: string | null;
+            /**
+             * Projects
+             * @default 0
+             */
+            projects: number;
+            /**
+             * Clouds
+             * @default 0
+             */
+            clouds: number;
+            /**
+             * Services
+             * @default 0
+             */
+            services: number;
+        };
+        /** SourcesRequest */
+        SourcesRequest: {
+            /**
+             * Sources
+             * @default []
+             */
+            sources: components["schemas"]["SourceSpec"][];
         };
         /** StartBranchRequest */
         StartBranchRequest: {
@@ -949,6 +1042,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Matrix"];
+                };
+            };
+        };
+    };
+    matrix_with_sources_api_matrix_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourcesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Matrix"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

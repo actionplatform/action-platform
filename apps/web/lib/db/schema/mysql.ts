@@ -173,3 +173,13 @@ export const pullRequest = mysqlTable("pull_request", {
   source: varchar("source", { length: 32 }).notNull(),
   syncedAt: timestamp("synced_at").notNull().defaultNow(),
 });
+
+export const templateSource = mysqlTable("template_source", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  organizationId: varchar("organization_id", { length: 36 }).notNull().references(() => organization.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 64 }).notNull(),
+  url: text("url").notNull(),
+  ref: varchar("ref", { length: 128 }).notNull().default("v1"),
+  sourceHostId: varchar("source_host_id", { length: 36 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any, Optional
+
+from pydantic import Field
 
 from action_platform.core.scaffold.templates import load_matrix
 from action_platform.mcp.annotations import READ_ONLY
@@ -10,13 +12,23 @@ from action_platform.mcp.annotations import READ_ONLY
 
 def register(mcp: Any) -> None:
     @mcp.tool(annotations=READ_ONLY)
-    def list_matrix() -> dict:
+    def list_matrix(
+        source: Annotated[
+            Optional[str],
+            Field(
+                description="Another templates repository as url[@ref]; default is the official actionplatform/templates at v1"
+            ),
+        ] = None,
+    ) -> dict:
         """Projects (type/stack/template), clouds and services available to generate.
 
         Start here. `default` marks the template `init_project` picks when
         none is given; a cloud lists the `types` and `languages` it accepts.
+        Pass `source` to read a custom templates repository instead of the
+        official one; the same value then goes to init_project, cloud_set
+        and service_add.
         """
-        _, matrix = load_matrix()
+        _, matrix = load_matrix(source=source)
 
         return {
             "projects": [

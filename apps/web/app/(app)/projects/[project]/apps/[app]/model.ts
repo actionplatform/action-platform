@@ -54,7 +54,7 @@ export function toView(input: { projectId: string; projectName: string; appId: s
     projectName: input.projectName,
     appId: input.appId,
     registryId: detail.id,
-    name: meta.name || input.appName,
+    name: input.appName || meta.name,
     repository: repo,
     repositoryUrl: url,
     sourceKind: kind,

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import type { Matrix } from "@/lib/api";
@@ -14,7 +14,7 @@ import { type TemplateView, TemplatesToolbar } from "./templates-toolbar";
 
 const VIEW_KEY = "ap.templates.view";
 
-export function TemplatesCatalog({ matrix, targets, canCreate }: { matrix: Matrix; targets: OverlayTarget[]; canCreate: boolean }) {
+export function TemplatesCatalog({ matrix, targets, canCreate, sources }: { matrix: Matrix; targets: OverlayTarget[]; canCreate: boolean; sources?: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -75,6 +75,8 @@ export function TemplatesCatalog({ matrix, targets, canCreate }: { matrix: Matri
         badge={<Badge className="h-[26px] bg-surface px-2.5 text-xs font-medium">{items.length} {items.length === 1 ? "template" : "templates"}</Badge>}
         description="Start faster with production-ready foundations for apps, libraries, documentation, plugins, and cloud services."
       />
+
+      {sources}
 
       {items.length === 0 ? (
         <TemplatesNoneState />

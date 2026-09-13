@@ -27,6 +27,10 @@ class SyncError(ActionPlatformError):
     pass
 
 
+class MissingManifest(ActionPlatformError):
+    pass
+
+
 URL_RE = re.compile(r"^(https?://|git@|ssh://|file://)[^\s]+$")
 
 
@@ -71,7 +75,9 @@ class Registry:
 
         raise ActionPlatformError(f"app {id} is not registered")
 
-    def add(self, url: str, name: Optional[str] = None) -> Entry:
+    def add(
+        self, url: str, name: Optional[str] = None, require_manifest: bool = True
+    ) -> Entry:
         url = url.strip()
 
         if not URL_RE.match(url):
@@ -101,10 +107,10 @@ class Registry:
                 f"clone failed: {(e.stderr or '').strip() or url}"
             ) from e
 
-        if not (path / settings.CONFIG_FILE).exists():
+        if require_manifest and not (path / settings.CONFIG_FILE).exists():
             shutil.rmtree(path, ignore_errors=True)
-            raise ActionPlatformError(
-                f"{settings.CONFIG_FILE} not found in {url} — run `action-platform install` there first"
+            raise MissingManifest(
+                f"{settings.CONFIG_FILE} not found in {url} — install the platform on it first"
             )
 
         branch = subprocess.run(

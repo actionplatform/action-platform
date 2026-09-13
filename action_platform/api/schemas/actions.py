@@ -13,9 +13,23 @@ class SourceCredentials(BaseModel):
     owner: Optional[str] = None
 
 
+class SourceSpec(BaseModel):
+    name: str
+    url: str
+    ref: str = "v1"
+    credentials: Optional[SourceCredentials] = None
+
+
+class InstallSpec(BaseModel):
+    type: str = "web"
+    language: Optional[str] = None
+    ci: Optional[str] = None
+
+
 class AddAppRequest(BaseModel):
     url: str
     name: Optional[str] = None
+    install: Optional[InstallSpec] = None
     credentials: Optional[SourceCredentials] = None
 
 
@@ -49,6 +63,7 @@ class InitRequest(BaseModel):
     git_init: bool = True
     push: bool = False
     private: bool = False
+    source: Optional[SourceSpec] = None
     credentials: Optional[SourceCredentials] = None
 
 
@@ -139,11 +154,13 @@ class PullRequestResult(BaseModel):
 
 class CloudRequest(BaseModel):
     target: str
+    source: Optional[SourceSpec] = None
 
 
 class ServiceRequest(BaseModel):
     name: str
     provider: Optional[str] = None
+    source: Optional[SourceSpec] = None
 
 
 class ManifestBody(BaseModel):

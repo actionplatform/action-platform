@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import subprocess
 import tomllib
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from action_platform.core.exception import TemplateError
@@ -21,9 +22,13 @@ class Leaf:
     template: str
     description: str = ""
     default: bool = False
+    plain: bool = False
 
     @property
     def directory(self) -> str:
+        if self.plain:
+            return ""
+
         if not self.stack:
             return f"projects/{self.type}"
 
@@ -142,10 +147,24 @@ class Matrix:
         ]
 
     def resolve(self, type_: str, stack: str | None, template: str | None) -> Leaf:
+        if template is not None:
+            for leaf in self.leaves:
+                if leaf.plain and leaf.template == template:
+                    return replace(leaf, type=type_ or leaf.type)
+
         if type_ not in self.types():
             raise TemplateError(
                 f"unknown type: {type_} (available: {', '.join(self.types())})"
             )
+
+        if template is not None:
+            for leaf in self.leaves:
+                if (
+                    leaf.type == type_
+                    and leaf.template == template
+                    and (stack is None or leaf.stack == stack or not leaf.stack)
+                ):
+                    return leaf
 
         stacks = self.stacks(type_)
 
@@ -204,6 +223,164 @@ class Matrix:
         raise TemplateError(f"unknown service: {name} (available: {names})")
 
 
+OFFICIAL = "official"
+
+
+@dataclass(frozen=True)
+class TemplateSource:
+    """A git repository laid out like actionplatform/templates: index.toml plus projects/, cloud/, service/."""
+
+    url: str
+    ref: str = "v1"
+    name: str = ""
+
+    @classmethod
+    def parse(cls, spec: str, name: str = "") -> "TemplateSource":
+        """`url[@ref]`; a local path is accepted as well."""
+        url, _, ref = spec.rpartition("@")
+
+        if not url or "/" in ref or ref.startswith("git"):
+            url, ref = spec, "v1"
+
+        return cls(url=url, ref=ref or "v1", name=name)
+
+    @property
+    def label(self) -> str:
+        return self.name or self.url.rstrip("/").rsplit("/", 1)[-1].removesuffix(".git")
+
+    @property
+    def cache(self) -> Path:
+        key = hashlib.sha256(f"{self.url}@{self.ref}".encode()).hexdigest()[:16]
+
+        return settings.TEMPLATES_CACHE.parent / "sources" / key
+
+
+def ensure_source(source: TemplateSource, update: bool = False) -> Path:
+    """Return a local checkout of `source` at its ref, cloning or fetching as needed."""
+    cache = source.cache
+
+    if not cache.exists():
+        logger.info("cloning %s@%s", source.url, source.ref)
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        _git("clone", "--depth", "1", "--branch", source.ref, source.url, str(cache))
+        return cache
+
+    try:
+        _git("-C", str(cache), "fetch", "--depth", "1", "--quiet", "origin", source.ref)
+        _git("-C", str(cache), "checkout", "--quiet", "--force", "FETCH_HEAD")
+    except TemplateError as e:
+        if update:
+            raise
+        logger.warning(
+            "source %s not refreshed (%s); using local copy", source.label, e
+        )
+
+    return cache
+
+
+LANGUAGE_MARKERS = [
+    ("pyproject.toml", "python"),
+    ("go.mod", "go"),
+    ("package.json", "node"),
+    ("composer.json", "php"),
+    ("pom.xml", "java"),
+    ("Cargo.toml", "rust"),
+    ("requirements.txt", "python"),
+    ("setup.py", "python"),
+    ("Pipfile", "python"),
+    ("build.gradle", "java"),
+    ("build.gradle.kts", "java"),
+    ("tsconfig.json", "node"),
+]
+
+LANGUAGE_EXTENSIONS = {
+    ".py": "python",
+    ".go": "go",
+    ".ts": "node",
+    ".tsx": "node",
+    ".js": "node",
+    ".jsx": "node",
+    ".php": "php",
+    ".java": "java",
+    ".kt": "java",
+    ".rs": "rust",
+}
+
+SKIP_DIRS = {
+    ".git",
+    "node_modules",
+    "vendor",
+    "dist",
+    "build",
+    ".venv",
+    "venv",
+    "target",
+}
+
+
+def detect_language(root: Path) -> str:
+    """Language of a repository: by manifest file first, then by the most common source extension."""
+    for marker, language in LANGUAGE_MARKERS:
+        if (root / marker).exists():
+            return language
+
+    counts: dict[str, int] = {}
+
+    for path in root.rglob("*"):
+        if any(part in SKIP_DIRS for part in path.parts):
+            continue
+
+        language = LANGUAGE_EXTENSIONS.get(path.suffix)
+
+        if language and path.is_file():
+            counts[language] = counts.get(language, 0) + 1
+
+    return max(counts, key=counts.get) if counts else ""
+
+
+def plain_matrix(source: TemplateSource, repo: Path) -> Matrix:
+    """A repository without index.toml is one template: its own tree, copied as-is."""
+    meta: dict = {}
+    manifest = repo / settings.CONFIG_FILE
+
+    if manifest.exists():
+        try:
+            meta = tomllib.loads(manifest.read_text()).get("project", {})
+        except tomllib.TOMLDecodeError:
+            meta = {}
+
+    language = meta.get("language") or detect_language(repo)
+    type_ = meta.get("type") or (
+        "library"
+        if language
+        and not (repo / "Dockerfile").exists()
+        and not (repo / "app").is_dir()
+        else "web"
+    )
+
+    leaf = Leaf(
+        type=type_,
+        stack=language,
+        template=source.label,
+        description=meta.get("description")
+        or f"Repository {source.url}@{source.ref}, copied as-is",
+        default=True,
+        plain=True,
+    )
+
+    return Matrix(leaves=[leaf])
+
+
+def load_source(source: TemplateSource, update: bool = False) -> tuple[Path, Matrix]:
+    repo = ensure_source(source, update=update)
+    index = repo / "index.toml"
+
+    if not index.exists():
+        return repo, plain_matrix(source, repo)
+
+    return repo, Matrix.from_toml(index)
+
+
 def ensure_repo(update: bool = False) -> Path:
     """Return a local checkout of the templates repo, cloning or pulling as needed."""
     local = settings.TEMPLATES_DIR
@@ -236,7 +413,10 @@ def ensure_repo(update: bool = False) -> Path:
     return cache
 
 
-def load_matrix(update: bool = False) -> tuple[Path, Matrix]:
+def load_matrix(update: bool = False, source: str | None = None) -> tuple[Path, Matrix]:
+    if source:
+        return load_source(TemplateSource.parse(source), update=update)
+
     repo = ensure_repo(update=update)
     matrix = Matrix.from_toml(repo / "index.toml")
 

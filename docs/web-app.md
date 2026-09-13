@@ -57,6 +57,10 @@ The *Set up OAuth app* dialog shows the callback URL to paste and stores the cli
 
 Tokens are AES-256-GCM encrypted with a key derived from `BETTER_AUTH_SECRET` and decrypted only to accompany a push / release call to the API.
 
+## Templates
+
+The catalog merges the official repository with the ones the organization added. **Template repositories** at the top of the page lists each source with its URL, ref and counts; owners and admins add or remove repositories there — any git repository works and becomes one template (a copy of its tree), or a whole catalog when it has an `index.toml`. Custom templates carry their source name on the card, in the wizard and in Configuration → Deploy target, and are generated from their own repository. Cloud cards open *Apply to app*.
+
 ## Creating an app
 
 ```mermaid
@@ -78,6 +82,10 @@ flowchart LR
 *Create project* generates the app into a workspace on the API, registers it, and — when *push* was on — creates the repository on the host and pushes `main`. Without push, the app page offers **Push to remote** later.
 
 **Add an existing repository** on the project page takes a git URL; the API clones it (it must already contain a `platform.toml` — run `action-platform install` there first).
+
+### Importing a repository without the platform
+
+Project → **Add an existing repository** with any git URL. When the repository has no `platform.toml` the platform offers to install it: pick the type and CI, and the clone receives `platform.toml`, `.code_quality/`, the CI files and the git hooks (the language is detected). Nothing is pushed — the app opens on Configuration with the changes uncommitted, and **Commit changes** puts them on a `chore/<code>` branch with a pull request.
 
 ## The app page
 

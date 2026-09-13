@@ -1,7 +1,7 @@
 "use client";
 
 import { GitBranch, KeyRound, Plus, Trash2, X } from "lucide-react";
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { Fragment, useActionState, useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,9 +10,10 @@ import { Field, Input } from "@/components/ui/input";
 import { Table, Td, Th } from "@/components/ui/table";
 import { HOST_KINDS, type HostKind, type SourceHost } from "@/lib/source-host-kinds";
 import { cn } from "@/lib/utils";
+import type { GithubAccess } from "@/lib/github-access";
 import { createHost, deleteHost, rotateHostToken } from "./actions";
 
-export function SourceHosts({ hosts }: { hosts: SourceHost[] }) {
+export function SourceHosts({ hosts, access = {} }: { hosts: SourceHost[]; access?: Record<string, GithubAccess> }) {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<HostKind>("github");
   const [state, action, pending] = useActionState(createHost, null);
@@ -62,7 +63,8 @@ export function SourceHosts({ hosts }: { hosts: SourceHost[] }) {
         <tbody>
           {hosts.length === 0 && <tr><Td colSpan={6} className="text-center text-muted-foreground py-6"><GitBranch className="inline size-4 mr-1" /> No source hosts yet. Apps cannot be pushed until one exists.</Td></tr>}
           {hosts.map((h) => (
-            <tr key={h.id}>
+            <Fragment key={h.id}>
+            <tr>
               <Td className="font-medium">{h.name}</Td>
               <Td><Badge>{HOST_KINDS.find((k) => k.id === h.kind)?.label ?? h.kind}</Badge></Td>
               <Td><Badge tone={h.authKind === "oauth" ? "ok" : "neutral"}>{h.authKind === "oauth" ? "connected" : "token"}</Badge></Td>
@@ -79,6 +81,8 @@ export function SourceHosts({ hosts }: { hosts: SourceHost[] }) {
                 </Button>
               </Td>
             </tr>
+            {access[h.id] && <AccessRow access={access[h.id]} />}
+            </Fragment>
           ))}
         </tbody>
       </Table>
@@ -107,5 +111,30 @@ export function SourceHosts({ hosts }: { hosts: SourceHost[] }) {
         onSubmit={(value) => { const h = rotating; if (h) start(async () => { const r = await rotateHostToken(h.id, value); if (r?.error) setRotateError(r.error); else setRotating(null); }); }}
       />
     </Card>
+  );
+}
+
+function AccessRow({ access }: { access: GithubAccess }) {
+  if (!access.ok) return <tr><Td colSpan={6} className="border-t-0 pt-0 text-[13px]"><span className="text-foreground">Access check failed:</span> <span className="text-secondary">{access.error}</span></Td></tr>;
+  return (
+    <tr>
+      <Td colSpan={6} className="border-t-0 pt-0">
+        <div className="space-y-1.5 text-[13px]">
+          <div className="flex flex-wrap items-center gap-2 text-secondary">
+            <span>Signed in as <span className="font-mono text-foreground">{access.login}</span>.</span>
+            {access.installations.length > 0 && <span>App installed on:</span>}
+            {access.installations.map((i) => (
+              <Badge key={i.account} tone={i.canCreateRepos && i.repositories === "all" ? "ok" : "bad"} className="font-mono">{i.account} · {i.repositories === "all" ? "all repos" : "selected repos"} · admin:{i.administration} · contents:{i.contents}</Badge>
+            ))}
+            {access.installUrl && <a href={access.installUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">Install on another account</a>}
+          </div>
+          {access.problems.length > 0 ? (
+            <ul className="list-disc space-y-1 pl-5 text-foreground">{access.problems.map((p) => <li key={p}>{p}</li>)}</ul>
+          ) : (
+            <div className="text-secondary">Can create repositories and push.</div>
+          )}
+        </div>
+      </Td>
+    </tr>
   );
 }

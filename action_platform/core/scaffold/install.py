@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -56,11 +58,9 @@ class Plan:
 
 
 def detect_language(root: Path) -> str | None:
-    for marker, language in MARKERS:
-        if (root / marker).exists():
-            return language
+    from action_platform.core.scaffold.templates import detect_language as detect
 
-    return None
+    return detect(root) or None
 
 
 def install(
@@ -69,6 +69,7 @@ def install(
     language: str | None = None,
     ci: str | None = None,
     dry_run: bool = False,
+    name: str | None = None,
 ) -> Plan:
     root = root.resolve()
 
@@ -76,36 +77,59 @@ def install(
         raise InstallError(f"{root} is not a git repository")
 
     ci = ci or _existing_ci(root) or "github"
-    language = language or detect_language(root)
-
-    if language is None:
-        raise InstallError(
-            "cannot detect the language — pass --language "
-            "(python, go, node, php, java, rust)"
-        )
+    language = "" if language == "none" else (language or detect_language(root) or "")
 
     if ci not in CI_FILES:
         raise InstallError(f"unknown ci: {ci} (available: {', '.join(CI_FILES)})")
 
     repo, matrix = load_matrix()
-    source = _source_leaf(repo, matrix, language)
+    source = (
+        _source_leaf(repo, matrix, language) if language else _any_leaf(repo, matrix)
+    )
     plan = Plan(root=root, language=language, type=type_, ci=ci)
 
     _write(
-        plan, settings.CONFIG_FILE, _platform_toml(root, type_, language, ci), dry_run
+        plan,
+        settings.CONFIG_FILE,
+        _platform_toml(root, type_, language, ci, name or root.name),
+        dry_run,
     )
-    _write(plan, settings.LAST_VERSION_FILE, "0.1.0\n", dry_run)
+    _write(plan, settings.LAST_VERSION_FILE, f"{_seed_version(root)}\n", dry_run)
     _write(plan, "AGENTS.md", AGENTS, dry_run)
 
-    _copy_tree(plan, source / ".code_quality", ".code_quality", dry_run)
+    if language:
+        _copy_tree(plan, source / ".code_quality", ".code_quality", dry_run)
 
     for rel in CI_FILES[ci]:
+        if not language and "code-quality" in rel:
+            continue
+
         _copy_file(plan, source / rel, rel, dry_run)
 
     if not dry_run:
         plan.hooks_installed = gitflow.install_hooks(root)
 
     return plan
+
+
+def _seed_version(root: Path) -> str:
+    """LAST_VERSION for a repository joining the platform: its newest vX.Y.Z tag, or 0.0.0 when it never released."""
+    tag = git.latest_tag(cwd=root, match="v[0-9]*")
+
+    if tag and re.fullmatch(r"v?\d+\.\d+\.\d+", tag):
+        return tag.lstrip("v")
+
+    return "0.0.0"
+
+
+def _any_leaf(repo: Path, matrix: Matrix) -> Path:
+    for leaf in matrix.leaves:
+        candidate = repo / leaf.directory / "{{cookiecutter.project_slug}}"
+
+        if candidate.is_dir():
+            return candidate
+
+    raise InstallError("no template to borrow CI files from")
 
 
 def _source_leaf(repo: Path, matrix: Matrix, language: str) -> Path:
@@ -144,14 +168,17 @@ def _existing_ci(root: Path) -> str | None:
         return None
 
 
-def _platform_toml(root: Path, type_: str, language: str, ci: str) -> str:
+def _platform_toml(
+    root: Path, type_: str, language: str, ci: str, name: str | None = None
+) -> str:
     remote = git.remote_url(cwd=root)
     repo = ""
 
     if "github.com" in remote:
         repo = remote.split("github.com", 1)[1].strip(":/").removesuffix(".git")
 
-    text = f'[project]\nname = "{root.name}"\ntype = "{type_}"\nci = "{ci}"\nlanguage = "{language}"\n'
+    name = name or (repo.rsplit("/", 1)[-1] if repo else root.name)
+    text = f'[project]\nname = "{name}"\ntype = "{type_}"\nci = "{ci}"\nlanguage = "{language}"\n'
 
     if repo:
         text += f'\n[source_host]\nkind = "github"\nrepo = "{repo}"\n'

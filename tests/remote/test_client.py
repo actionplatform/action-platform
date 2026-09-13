@@ -116,7 +116,7 @@ def test_remote_calls_v1_with_bearer(monkeypatch):
     remote.release("p1", "minor", dry_run=False)
     assert seen["method"] == "POST"
     assert seen["url"] == "https://p.example/api/v1/apps/p1/release"
-    assert seen["body"] == {"level": "minor", "dry_run": False}
+    assert seen["body"] == {"level": "minor", "dry_run": False, "branch": None}
     assert seen["token"] == "tok"
 
     remote.commits("p1", limit=5)

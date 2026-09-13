@@ -22,6 +22,7 @@ class AppEntry(BaseModel):
     url: str
     path: str
     default_branch: str = ""
+    installed: Optional[list[str]] = None
 
 
 class AppMeta(BaseModel):

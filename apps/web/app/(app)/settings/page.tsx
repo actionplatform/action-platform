@@ -11,12 +11,15 @@ import { publicOrigin } from "@/lib/origin";
 import { ConnectHosts } from "@/components/connect-hosts";
 import { appFor, isConfigured } from "@/lib/oauth";
 import { hostsOf } from "@/lib/source-hosts";
+import { githubAccess } from "@/lib/github-access";
 import { SourceHosts } from "./source-hosts";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
   const { session, org } = await requireOrg();
   const [members, invitations, role, hosts, query] = await Promise.all([membersOf(org.id), invitationsOf(org.id), roleOf(session.user.id, org.id), hostsOf(org.id), searchParams]);
   const canManage = can(role, "org.manage");
+  const githubSlug = appFor("github")?.slug ?? null;
+  const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind === "github").map(async (h) => [h.id, await githubAccess(org.id, h.id, githubSlug)] as const)));
   const h = await headers();
   const origin = publicOrigin(h);
   const connected = { github: [] as string[], gitlab: [] as string[], bitbucket: [] as string[] };
@@ -57,7 +60,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </CardContent>
         </Card>
 
-        <SourceHosts hosts={hosts} />
+        <SourceHosts hosts={hosts} access={access} />
 
         <Card>
           <CardHeader><CardTitle>Roles and permissions</CardTitle><Badge>{ROLES.length} roles</Badge></CardHeader>

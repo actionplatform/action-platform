@@ -19,7 +19,7 @@ def list_apps(apps: AppService = Depends(get_app_service)) -> list[schemas.AppRo
 def add_app(
     body: schemas.AddAppRequest, apps: AppService = Depends(get_app_service)
 ) -> schemas.AppEntry:
-    return apps.add(body.url, body.name, body.credentials)
+    return apps.add(body.url, body.name, body.credentials, body.install)
 
 
 @router.post("/init", status_code=201)

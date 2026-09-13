@@ -28,9 +28,14 @@ def add(
         None, "--project", "-p", help="Project directory (default: cwd)"
     ),
     update: bool = typer.Option(False, "--update", help="Refresh the templates cache"),
+    source: str | None = typer.Option(
+        None,
+        "--source",
+        help="Another templates repository, url[@ref]; default is the official one",
+    ),
 ) -> None:
     """Add services/<name>/ with up + link scripts and record it in platform.toml."""
-    repo, matrix = load_matrix(update=update)
+    repo, matrix = load_matrix(update=update, source=source)
     target = (project or Path.cwd()).resolve()
 
     apply_service(repo, matrix.service(name), target, provider=provider)

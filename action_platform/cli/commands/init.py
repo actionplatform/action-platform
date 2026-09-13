@@ -48,9 +48,14 @@ def run(
     private: bool = typer.Option(False, "--private", help="With --push: private repo"),
     list_: bool = typer.Option(False, "--list", "-l", help="Show the template matrix"),
     update: bool = typer.Option(False, "--update", help="Refresh the templates cache"),
+    source: str | None = typer.Option(
+        None,
+        "--source",
+        help="Another templates repository, url[@ref]; default is the official one",
+    ),
 ) -> None:
     """Bootstrap a project from the templates matrix."""
-    repo, matrix = load_matrix(update=update)
+    repo, matrix = load_matrix(update=update, source=source)
 
     if list_:
         print_matrix(matrix)

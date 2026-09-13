@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { appById, createApp, deleteApp, markSynced, projectById, setAppHost } from "@/lib/projects";
 import { requirePermission } from "@/lib/orgs";
 import type { Permission } from "@/lib/permissions";
@@ -9,6 +9,7 @@ import { requireOrg } from "@/lib/session";
 import { syncPullRequests } from "@/lib/pull-requests";
 import { syncReleases } from "@/lib/releases";
 import { credentialsFor, hostsOf } from "@/lib/source-hosts";
+import { sourceSpecByName } from "@/lib/template-sources";
 
 async function owned(projectId: string, permission: Permission) {
   const { session, org } = await requireOrg();
@@ -53,20 +54,26 @@ export async function pullReleases(projectId: string, appId: string) {
   return releases;
 }
 
-export async function addApp(projectId: string, _prev: { error?: string } | null, formData: FormData): Promise<{ error?: string } | null> {
-  const url = String(formData.get("url") ?? "").trim();
-  if (!url) return null;
+export type AddResult = { ok: true; appId: string; installed: string[] | null } | { ok: false; error: string; needsInstall?: boolean };
+
+export async function addApp(projectId: string, url: string, install: { type: string; ci: string; language: string | null } | null = null): Promise<AddResult> {
+  url = url.trim();
+  if (!url) return { ok: false, error: "url is required" };
   try {
     const { org } = await owned(projectId, "project.manage");
     const host = await hostFor(org.id, url);
-    const entry = await api.apps.add(url, undefined, host ? await credentialsFor(org.id, host.id) : null);
+    const credentials = host ? await credentialsFor(org.id, host.id) : null;
+    const kind = kindOf(url);
+    if (kind && !credentials) return { ok: false, error: `No ${kind} host is connected to this organization. Connect one in Settings so private repositories can be cloned.` };
+    const entry = await api.apps.add(url, undefined, credentials, install);
     const app = await createApp(projectId, entry.id, entry.name, host?.id ?? null);
     if (host) await Promise.all([syncReleases(org.id, app.id, host.id, repoOf(url, null)), syncPullRequests(org.id, app.id, host.id, repoOf(url, null))]);
+    revalidatePath(`/projects/${projectId}`);
+    return { ok: true, appId: app.id, installed: entry.installed ?? null };
   } catch (e) {
-    return { error: (e as Error).message };
+    if (e instanceof ApiError && e.code === "needs_install") return { ok: false, error: e.message, needsInstall: true };
+    return { ok: false, error: (e as Error).message };
   }
-  revalidatePath(`/projects/${projectId}`);
-  return null;
 }
 
 export async function removeApp(projectId: string, appId: string) {
@@ -174,10 +181,10 @@ export async function saveManifest(projectId: string, registryId: string, conten
   }
 }
 
-export async function setCloudTarget(projectId: string, registryId: string, target: string): Promise<Result<{ target: string }>> {
-  await owned(projectId, "app.configure");
+export async function setCloudTarget(projectId: string, registryId: string, target: string, source: string | null = null): Promise<Result<{ target: string }>> {
+  const { org } = await owned(projectId, "app.configure");
   try {
-    const data = (await api.apps.setCloud(registryId, target)) as { target: string };
+    const data = (await api.apps.setCloud(registryId, target, await sourceSpecByName(org.id, source))) as { target: string };
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {
@@ -185,10 +192,10 @@ export async function setCloudTarget(projectId: string, registryId: string, targ
   }
 }
 
-export async function addService(projectId: string, registryId: string, name: string, provider: string | null): Promise<Result<{ name: string }>> {
-  await owned(projectId, "app.configure");
+export async function addService(projectId: string, registryId: string, name: string, provider: string | null, source: string | null = null): Promise<Result<{ name: string }>> {
+  const { org } = await owned(projectId, "app.configure");
   try {
-    const data = (await api.apps.addService(registryId, name, provider)) as { name: string };
+    const data = (await api.apps.addService(registryId, name, provider, await sourceSpecByName(org.id, source))) as { name: string };
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {

@@ -93,7 +93,7 @@ export function countFor(m: Matrix, type: string, stack?: string): number {
   return m.projects.filter((p) => p.type === type && (stack === undefined || p.stack === stack)).length;
 }
 
-export const CATEGORIES: { id: string; label: string; types?: string[]; cloud?: boolean }[] = [
+export const CATEGORIES: { id: string; label: string; types?: string[]; cloud?: boolean; plain?: boolean }[] = [
   { id: "all", label: "All" },
   { id: "web", label: "Web", types: ["web"] },
   { id: "libraries", label: "Libraries", types: ["library"] },
@@ -101,6 +101,7 @@ export const CATEGORIES: { id: string; label: string; types?: string[]; cloud?: 
   { id: "plugins", label: "Plugins", types: ["plugin"] },
   { id: "cloud", label: "Cloud", cloud: true },
   { id: "empty", label: "Empty", types: ["empty"] },
+  { id: "repos", label: "Repositories", plain: true },
 ];
 
 export function initCommand(input: {

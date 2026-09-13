@@ -1,6 +1,6 @@
 # MCP
 
-The platform ships as an MCP server. Claude Code, Codex, Cursor — anything that speaks MCP — gets 17 tools (`list_matrix`, `init_project`, `install_platform`, `start_branch`, `gitflow_audit`, `propose_pull_request`, `release`, `deploy`, `diagnose`, …), 6 prompts that put them in the right order (`new_service`, `ship_feature`, `cut_release`, `deploy_project`, `adopt_repository`, `fix_gitflow`) and 12 skills that make the agent preview and ask before anything leaves the machine.
+The platform ships as an MCP server. Claude Code, Codex, Cursor — anything that speaks MCP — gets 17 local tools (`list_matrix`, `init_project`, `install_platform`, `start_branch`, `gitflow_audit`, `propose_pull_request`, `release`, `deploy`, `diagnose`, …) or 26 remote ones (25 plus `gitflow_rules`), 6 prompts that put them in the right order (`new_service`, `ship_feature`, `cut_release`, `deploy_project`, `adopt_repository`, `fix_gitflow`) and 13 skills that make the agent preview and ask before anything leaves the machine.
 
 ```bash
 pip install "action-platform[mcp]"
@@ -37,10 +37,14 @@ flowchart LR
 | | `action-platform mcp` | `action-platform mcp --remote` |
 |---|---|---|
 | Acts on | the current directory and files on this machine | apps on the hosted platform you logged in to |
-| Tools | `list_matrix`, `init_project`, `install_platform`, `push_project`, `cloud_set`, `service_add`, `project_info`, `start_branch`, `gitflow_audit`, `install_hooks`, `propose_pull_request`, `open_pull_request`, `release`, `deploy`, `rollback`, `diagnose`, `gitflow_rules` | `whoami`, `list_apps`, `add_app`, `remove_app`, `sync_app`, `app_info`, `gitflow_audit`, `app_commits`, `app_branches`, `app_tags`, `release`, `deploy`, `diagnose`, `list_matrix`, `gitflow_rules` |
+| Tools | `list_matrix`, `init_project`, `install_platform`, `push_project`, `cloud_set`, `service_add`, `project_info`, `start_branch`, `gitflow_audit`, `install_hooks`, `propose_pull_request`, `open_pull_request`, `release`, `deploy`, `rollback`, `diagnose`, `gitflow_rules` | `whoami`, `list_apps`, `add_app`, `init_app`, `remove_app`, `sync_app`, `app_info`, `gitflow_audit`, `app_commits`, `app_branches`, `app_tags`, `app_releases`, `start_branch`, `checkout_branch`, `propose_pull_request`, `open_pull_request`, `read_manifest`, `write_manifest`, `set_cloud`, `add_service`, `commit_changes`, `release`, `deploy`, `diagnose`, `list_matrix`, `gitflow_rules` |
+| Templates | official repository, or another one with `source=url[@ref]` | official plus every repository the organization added under Templates; custom entries are addressed by `source=<name>` |
+| Permissions | whatever your user can do | the role of your account in the organization (`viewer`, `developer`, `deployer`, `admin`, `owner`); a refused call names the missing permission |
 | Credentials | your environment | the token from `action-platform login`, sent as `Authorization: Bearer` to `/api/v1/*` on the web app |
 
-Both default `release` and `deploy` to dry runs; the tool descriptions tell the agent to show the result and ask before calling again with `dry_run=false`.
+Both default `release` and `deploy` to dry runs; the tool descriptions tell the agent to show the result and ask before calling again with `dry_run=false`. `release` accepts `branch`: stable versions come only from `main`/`master`, any other branch yields `X.Y.Z-rc.N`.
+
+Remote editing follows the same loop as the web app: `write_manifest` / `set_cloud` / `add_service` change the platform's clone, `commit_changes` commits — on a new `<kind>/<code>` branch with `branch_kind` + `branch_code` when the clone sits on a protected branch — and, with `pull_request=true`, pushes and opens the PR in one call. The web app's `/api/v1` proxy injects the organization's code-host credentials, so private repositories, pushes and pull requests work without any token on the client.
 
 Point Claude Code at a hosted platform:
 

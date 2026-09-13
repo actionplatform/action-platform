@@ -388,3 +388,124 @@ def test_release_dry_run_from_another_branch(client: TestClient, url: str, repo:
     assert stable.json()["prerelease"] is False
     assert stable.json()["next"] == "1.3.0"
     assert client.get(f"/api/apps/{id}").json()["branch"] == "main"
+
+
+def test_matrix_merges_a_custom_source(client: TestClient, tmp_path: Path, monkeypatch):
+    monkeypatch.setenv(
+        "ACTION_PLATFORM_TEMPLATES",
+        str(_template_repo(tmp_path / "official", "web", "python", "fastapi")),
+    )
+    custom = _template_repo(tmp_path / "custom", "web", "go", "gin")
+    git("init", "-q", "-b", "v1", cwd=custom)
+    git("config", "user.email", "t@t", cwd=custom)
+    git("config", "user.name", "t", cwd=custom)
+    git("add", "-A", cwd=custom)
+    git("commit", "-q", "-m", "chore: bootstrap templates", cwd=custom)
+
+    res = client.post(
+        "/api/matrix",
+        json={
+            "sources": [
+                {"name": "acme", "url": custom.as_uri(), "ref": "v1"},
+                {"name": "broken", "url": (tmp_path / "missing").as_uri()},
+            ]
+        },
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    sources = {s["name"]: s for s in body["sources"]}
+    assert sources["official"]["ok"] and sources["acme"]["ok"]
+    assert sources["broken"]["ok"] is False and sources["broken"]["error"]
+    by_source = {(p["source"], p["stack"]) for p in body["projects"]}
+    assert ("official", "python") in by_source
+    assert ("acme", "go") in by_source
+
+
+def _template_repo(root: Path, type_: str, stack: str, template: str) -> Path:
+    leaf = root / "projects" / type_ / stack / template
+    (leaf / "{{cookiecutter.project_slug}}").mkdir(parents=True)
+    (leaf / "cookiecutter.json").write_text(
+        '{"project_name": "x", "project_slug": "x", "description": "", "package_name": "x", "github_owner": "o", "ci": "github"}'
+    )
+    (leaf / "{{cookiecutter.project_slug}}" / "platform.toml").write_text(
+        f'[project]\nname = "x"\ntype = "{type_}"\nlanguage = "{stack}"\n'
+    )
+    (root / "index.toml").write_text(
+        f'[projects.{type_}.{stack}.{template}]\ndefault = true\ndescription = "{template}"\n'
+    )
+    return root
+
+
+def test_plain_repository_source_is_one_template(
+    client: TestClient, tmp_path: Path, monkeypatch
+):
+    monkeypatch.setenv(
+        "ACTION_PLATFORM_TEMPLATES",
+        str(_template_repo(tmp_path / "official", "web", "python", "fastapi")),
+    )
+    plain = tmp_path / "starter"
+    (plain / "app").mkdir(parents=True)
+    (plain / "app" / "main.py").write_text("print('hi')\n")
+    (plain / "pyproject.toml").write_text('[project]\nname = "starter"\n')
+    git("init", "-q", "-b", "main", cwd=plain)
+    git("config", "user.email", "t@t", cwd=plain)
+    git("config", "user.name", "t", cwd=plain)
+    git("add", "-A", cwd=plain)
+    git("commit", "-q", "-m", "chore: starter", cwd=plain)
+
+    spec = {"name": "starter", "url": plain.as_uri(), "ref": "main"}
+    matrix = client.post("/api/matrix", json={"sources": [spec]}).json()
+    mine = [p for p in matrix["projects"] if p["source"] == "starter"]
+    assert len(mine) == 1
+    assert mine[0]["stack"] == "python" and mine[0]["template"] == "starter"
+
+    res = client.post(
+        "/api/apps/init",
+        json={
+            "type": mine[0]["type"],
+            "stack": "python",
+            "template": "starter",
+            "name": "My Service",
+            "source": spec,
+            "push": False,
+        },
+    )
+    assert res.status_code == 201, res.text
+    created = res.json()
+    detail = client.get(f"/api/apps/{created['id']}").json()
+    assert created["name"] == "my-service"
+    assert detail["project"]["language"] == "python"
+    assert (Path(created["path"]) / "app" / "main.py").exists()
+    assert (Path(created["path"]) / "platform.toml").exists()
+
+
+def test_add_installs_platform_on_a_bare_repository(
+    client: TestClient, tmp_path: Path, monkeypatch
+):
+    monkeypatch.setenv(
+        "ACTION_PLATFORM_TEMPLATES",
+        str(_template_repo(tmp_path / "official", "web", "python", "fastapi")),
+    )
+    bare = tmp_path / "legacy"
+    bare.mkdir()
+    (bare / "pyproject.toml").write_text('[project]\nname = "legacy"\n')
+    git("init", "-q", "-b", "main", cwd=bare)
+    git("config", "user.email", "t@t", cwd=bare)
+    git("config", "user.name", "t", cwd=bare)
+    git("add", "-A", cwd=bare)
+    git("commit", "-q", "-m", "chore: legacy", cwd=bare)
+
+    refused = client.post("/api/apps", json={"url": bare.as_uri()})
+    assert refused.status_code == 422
+    assert refused.json()["detail"]["code"] == "needs_install"
+
+    res = client.post(
+        "/api/apps",
+        json={"url": bare.as_uri(), "install": {"type": "web", "ci": "github"}},
+    )
+    assert res.status_code == 201, res.text
+    body = res.json()
+    assert "platform.toml" in body["installed"]
+    detail = client.get(f"/api/apps/{body['id']}").json()
+    assert detail["project"]["language"] == "python"
+    assert detail["clean"] is False

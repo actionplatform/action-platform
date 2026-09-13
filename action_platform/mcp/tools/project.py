@@ -23,6 +23,14 @@ ProjectDir = Annotated[
 ]
 
 
+TemplateSourceArg = Annotated[
+    Optional[str],
+    Field(
+        description="Templates repository as url[@ref]; default is the official one. Use the same value given to list_matrix."
+    ),
+]
+
+
 def _root(project: Optional[str]) -> Path:
     return Path(project).resolve() if project else Path.cwd()
 
@@ -42,6 +50,7 @@ def register(mcp: Any) -> None:
         output: Annotated[
             Optional[str], Field(description="Parent directory; default is the cwd.")
         ] = None,
+        source: TemplateSourceArg = None,
     ) -> dict:
         """Generate a project from the templates matrix, optionally with a cloud overlay.
 
@@ -49,7 +58,7 @@ def register(mcp: Any) -> None:
         the remote repository. Call `list_matrix` first when unsure of the
         type, stack or template names.
         """
-        repo, matrix = load_matrix()
+        repo, matrix = load_matrix(source=source)
         leaf = matrix.resolve(type, stack, template)
         project = generate_project(repo, leaf, name=name, ci=ci, output=_root(output))
         result = {"path": str(project), "template": leaf.directory}
@@ -76,13 +85,14 @@ def register(mcp: Any) -> None:
     def cloud_set(
         cloud: Annotated[str, Field(description="aws/lambda, aws/amplify, docker")],
         project: ProjectDir = None,
+        source: TemplateSourceArg = None,
     ) -> dict:
         """Apply a deploy overlay to an existing project and set [deploy] target in platform.toml.
 
         Replaces the previous target. The overlay refuses a project whose
         type or language it does not support.
         """
-        repo, matrix = load_matrix()
+        repo, matrix = load_matrix(source=source)
         root = _root(project)
         apply_cloud(repo, matrix.cloud(cloud), root)
 
@@ -96,9 +106,10 @@ def register(mcp: Any) -> None:
             Field(description="docker, aws-rds, ...; default is the first listed"),
         ] = None,
         project: ProjectDir = None,
+        source: TemplateSourceArg = None,
     ) -> dict:
         """Add a dependency as services/<name>/ with `up` (provision) and `link` (env vars) scripts."""
-        repo, matrix = load_matrix()
+        repo, matrix = load_matrix(source=source)
         root = _root(project)
         apply_service(repo, matrix.service(service), root, provider=provider)
 

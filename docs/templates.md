@@ -45,6 +45,22 @@ providers = ["docker", "aws-rds"]
 
 Every template ships `platform.toml`, `.code_quality/`, `AGENTS.md`, tests and a CI file for the chosen provider that calls the shared [ci-scripts](https://github.com/actionplatform/ci-scripts).
 
+## Other repositories
+
+The official catalog always comes from [actionplatform/templates](https://github.com/actionplatform/templates) at `v1`. Next to it an organization can add **any git repository**:
+
+- a plain repository (a starter, a reference service) becomes **one template**: a new app starts as a copy of that tree at the chosen branch or tag; the platform detects the language (`pyproject.toml`, `go.mod`, `package.json`…), keeps an existing `platform.toml` (renaming the project) or adds `platform.toml`, `.code_quality/`, CI files and hooks the same way `action-platform install` does;
+- a repository with an `index.toml` at the root is read as a **catalog** with the official layout (`projects/`, `cloud/`, `service/`).
+
+| Where | How |
+|---|---|
+| Web app | Templates → **Template repositories** → *Add repository* (name, git URL, branch or tag). Owners and admins only. Private repositories are cloned with the organization's connected code host. Every template, cloud and service then shows its source; the wizard, Configuration and the cloud overlays use the right repository automatically. |
+| CLI | `action-platform init --source https://github.com/acme/templates.git@main` (also `cloud set --source`, `service add --source`). |
+| MCP (local) | `list_matrix(source="url[@ref]")`, then the same `source` on `init_project`, `cloud_set`, `service_add`. |
+| MCP (remote) | `list_matrix` already merges the organization's repositories; pass the source's `name` to `init_app`, `set_cloud`, `add_service`. |
+
+Names are unique per organization and `official` is reserved. A repository that cannot be cloned shows as *Unavailable* with the error, without hiding the others.
+
 ## Adding one
 
 1. In the templates repository, add `projects/<type>/<stack>/<name>/` with a `cookiecutter.json` (`project_name`, `project_slug`, `description`, `package_name`, `github_owner`, `ci`) and a `{{cookiecutter.project_slug}}/` tree.

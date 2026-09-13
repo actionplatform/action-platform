@@ -5,12 +5,13 @@ from fastapi import HTTPException
 
 from action_platform.api.core import credentials as auth
 from action_platform.api.repositories.registry import Registry
-from action_platform.api.schemas import CommitRequest
+from action_platform.api.schemas import CommitRequest, SourceSpec
+from action_platform.api.services.catalog import resolve_repo
 from action_platform.core.config import Config
 from action_platform.core.flow import branching, git, gitflow, pullrequest
 from action_platform.core.flow.branching import BranchError
 from action_platform.core.scaffold.generate import apply_cloud, apply_service
-from action_platform.core.scaffold.templates import TemplateError, load_matrix
+from action_platform.core.scaffold.templates import TemplateError
 from action_platform.settings import settings
 
 
@@ -40,8 +41,8 @@ class ConfigurationService:
 
         return {"content": path.read_text()}
 
-    def set_cloud(self, id: str, target: str) -> dict:
-        repo, matrix = load_matrix()
+    def set_cloud(self, id: str, target: str, source: SourceSpec | None = None) -> dict:
+        repo, matrix = resolve_repo(source)
 
         try:
             apply_cloud(repo, matrix.cloud(target), self._root(id))
@@ -50,8 +51,10 @@ class ConfigurationService:
 
         return {"target": target}
 
-    def add_service(self, id: str, name: str, provider: str | None) -> dict:
-        repo, matrix = load_matrix()
+    def add_service(
+        self, id: str, name: str, provider: str | None, source: SourceSpec | None = None
+    ) -> dict:
+        repo, matrix = resolve_repo(source)
         service = next((s for s in matrix.services if s.name == name), None)
 
         if service is None:

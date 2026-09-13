@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ArrowUpRight, BookOpen, Cloud, FileBox, Globe, type LucideIcon, Package, Puzzle } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BookOpen, Cloud, FileBox, GitFork, Globe, type LucideIcon, Package, Puzzle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -14,9 +14,10 @@ import { cn } from "@/lib/utils";
 import type { TemplateItem } from "./template-item";
 
 const TYPE_ICONS: Record<string, LucideIcon> = { web: Globe, library: Package, docs: BookOpen, plugin: Puzzle, cloud: Cloud, empty: FileBox };
+const REPO_ICON = GitFork;
 
 export function TemplateLogo({ item, className }: { item: TemplateItem; className?: string }) {
-  const Fallback = item.cloud?.lucide ?? TYPE_ICONS[item.type] ?? FileBox;
+  const Fallback = item.plain ? REPO_ICON : (item.cloud?.lucide ?? TYPE_ICONS[item.type] ?? FileBox);
   return (
     <div className={cn("flex size-[42px] shrink-0 items-center justify-center rounded-lg border border-[#292929] bg-[#0e0e0e]", className)}>
       {item.brand ? <BrandIcon icon={item.brand} className="size-6" /> : <Fallback className="size-[22px] text-secondary" strokeWidth={1.5} />}
@@ -25,7 +26,7 @@ export function TemplateLogo({ item, className }: { item: TemplateItem; classNam
 }
 
 export function TemplateMeta({ item, className }: { item: TemplateItem; className?: string }) {
-  const TypeIcon = TYPE_ICONS[item.type] ?? FileBox;
+  const TypeIcon = item.plain ? REPO_ICON : (TYPE_ICONS[item.type] ?? FileBox);
   return (
     <div className={cn("flex min-w-0 items-center gap-2.5 text-[13px] text-secondary", className)}>
       <span className="flex items-center gap-1.5"><TypeIcon className="size-4" strokeWidth={1.75} />{item.categoryLabel}</span>
@@ -57,7 +58,7 @@ function ApplyOverlayDialog({ item, targets, open, onClose }: { item: TemplateIt
       onClose={() => !pending && onClose()}
       title={`Apply ${item.name}`}
       description="Writes the overlay files into the app's workspace and sets its deploy target. Commit the result from the app's Configuration page."
-      footer={<><Button variant="ghost" onClick={onClose} disabled={pending}>Cancel</Button><Button disabled={pending || !chosen} onClick={() => { if (!chosen) return; start(async () => { setError(null); const r = await setCloudTarget(chosen.projectId, chosen.registryId, item.name); if (r.ok) { onClose(); router.push(`/projects/${chosen.projectId}/apps/${chosen.id}/configuration`); } else setError(r.error); }); }}>{pending ? "Applying…" : "Apply overlay"}</Button></>}
+      footer={<><Button variant="ghost" onClick={onClose} disabled={pending}>Cancel</Button><Button disabled={pending || !chosen} onClick={() => { if (!chosen) return; start(async () => { setError(null); const r = await setCloudTarget(chosen.projectId, chosen.registryId, item.name, item.source); if (r.ok) { onClose(); router.push(`/projects/${chosen.projectId}/apps/${chosen.id}/configuration`); } else setError(r.error); }); }}>{pending ? "Applying…" : "Apply overlay"}</Button></>}
     >
       {targets.length === 0 ? (
         <p className="text-sm text-secondary">No apps in this organization yet. Create one from a project first.</p>
@@ -84,6 +85,7 @@ export function TemplateCard({ item, targets }: { item: TemplateItem; targets: O
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-mono text-base font-semibold leading-6">{item.name}</h3>
             {item.isDefault && <Badge tone="inverse" className="h-6 px-[9px]">Default</Badge>}
+            {item.source !== "official" && <Badge className="h-6 px-[9px] font-mono">{item.source}</Badge>}
           </div>
           <p className="mt-1 line-clamp-2 text-sm leading-5 text-secondary">{item.description}</p>
         </div>
@@ -121,6 +123,7 @@ export function TemplateListItem({ item, targets }: { item: TemplateItem; target
         <div className="flex items-center gap-2">
           <span className="truncate font-mono text-[15px] font-semibold">{item.name}</span>
           {item.isDefault && <Badge tone="inverse" className="h-5 px-2 md:hidden">Default</Badge>}
+          {item.source !== "official" && <Badge className="h-5 px-2 font-mono">{item.source}</Badge>}
         </div>
         <p className="truncate text-[13px] text-secondary">{item.description}</p>
       </div>
