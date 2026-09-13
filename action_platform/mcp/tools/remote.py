@@ -188,7 +188,9 @@ def register(mcp: Any, remote: Remote) -> None:
         ] = None,
         install_ci: Annotated[
             Optional[str],
-            Field(description="github, gitlab or jenkins; default detected or github"),
+            Field(
+                description="github, gitlab, jenkins or bitbucket; default from the remote"
+            ),
         ] = None,
     ) -> dict:
         """Register a repository as an app on the platform.
@@ -385,7 +387,9 @@ def register(mcp: Any, remote: Remote) -> None:
         name: Annotated[str, Field(description="Human name; the slug is derived")],
         stack: Optional[str] = None,
         template: Optional[str] = None,
-        ci: Annotated[str, Field(description="github, gitlab or jenkins")] = "github",
+        ci: Annotated[
+            str, Field(description="github, gitlab, jenkins or bitbucket")
+        ] = "github",
         cloud: Optional[str] = None,
         source: Annotated[
             Optional[str],

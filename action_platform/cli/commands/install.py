@@ -20,7 +20,7 @@ def run(
     ci: str | None = typer.Option(
         None,
         "--ci",
-        help="github, gitlab, jenkins (default: platform.toml, else github)",
+        help="github, gitlab, jenkins, bitbucket (default: platform.toml, else from the remote)",
     ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be created"),
 ) -> None:

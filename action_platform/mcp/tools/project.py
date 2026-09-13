@@ -42,7 +42,9 @@ def register(mcp: Any) -> None:
         name: Annotated[str, Field(description="Human name; the slug is derived.")],
         stack: Optional[str] = None,
         template: Optional[str] = None,
-        ci: Annotated[str, Field(description="github, gitlab or jenkins")] = "github",
+        ci: Annotated[
+            str, Field(description="github, gitlab, jenkins or bitbucket")
+        ] = "github",
         cloud: Annotated[
             Optional[str],
             Field(description="Deploy overlay: aws/lambda, aws/amplify, docker"),
@@ -125,7 +127,9 @@ def register(mcp: Any) -> None:
                 description="python, go, node, php, java, rust; default detected from the repo"
             ),
         ] = None,
-        ci: Annotated[str, Field(description="github, gitlab or jenkins")] = "github",
+        ci: Annotated[
+            str, Field(description="github, gitlab, jenkins or bitbucket")
+        ] = "github",
         dry_run: Annotated[
             bool, Field(description="true only reports what would be created")
         ] = True,

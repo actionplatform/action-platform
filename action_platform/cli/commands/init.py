@@ -17,7 +17,7 @@ from action_platform.core.scaffold.generate import (
 from action_platform.core.scaffold.templates import Matrix, load_matrix
 from action_platform.logging import logger
 
-CI_PROVIDERS = ["github", "gitlab", "jenkins"]
+CI_PROVIDERS = ["github", "gitlab", "jenkins", "bitbucket"]
 
 console = Console()
 
