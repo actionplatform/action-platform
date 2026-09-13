@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.3 — 2026-09-13
+
+### Features
+- **web:** land on Activity with a review-and-merge banner after opening a pull request
+
+### Refactoring
+- **web:** drop the manual install and reset actions the API now handles itself
+
 ## v0.6.2 — 2026-09-13
 
 ### Features
