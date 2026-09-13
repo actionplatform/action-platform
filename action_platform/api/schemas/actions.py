@@ -37,6 +37,7 @@ class AddAppRequest(BaseModel):
 
 class SyncRequest(BaseModel):
     credentials: Optional[SourceCredentials] = None
+    reset: bool = False
 
 
 class ReleaseRequest(BaseModel):

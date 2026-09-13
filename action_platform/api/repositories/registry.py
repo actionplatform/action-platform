@@ -183,8 +183,8 @@ class Registry:
 
         return entry
 
-    def sync(self, id: str) -> Entry:
-        """fetch + fast-forward the workspace to its remote. No-op without a remote."""
+    def sync(self, id: str, reset: bool = False) -> Entry:
+        """fetch + fast-forward the workspace to its remote. No-op without a remote. `reset` drops local commits and changes so the branch matches the remote."""
         entry = self.get(id)
 
         if not entry.url:
@@ -208,12 +208,29 @@ class Registry:
         )
 
         if upstream.returncode != 0:
+            if _tracks_a_remote(root):
+                _leave_merged_branch(root, entry.default_branch)
+                check_workspace(root)
+
             return entry
 
-        pull = _pull(root)
+        if reset:
+            subprocess.run(
+                ["git", "clean", "-fdq"], cwd=root, capture_output=True, env=git_env()
+            )
+            pull = _reset_to_upstream(root)
+        else:
+            pull = _pull(root)
 
         if pull.returncode != 0 and _blocked_by_local_changes(pull.stderr):
             pull = _pull_over_local_changes(root)
+
+        if (
+            pull.returncode != 0
+            and _diverged(pull.stderr)
+            and _nothing_only_local(root)
+        ):
+            pull = _reset_to_upstream(root)
 
         if pull.returncode != 0:
             raise SyncError(_pull_problem(pull.stderr))
@@ -238,6 +255,125 @@ class Registry:
 def _pull(root: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
         ["git", "pull", "--quiet", "--ff-only"],
+        cwd=root,
+        capture_output=True,
+        env=git_env(),
+        text=True,
+    )
+
+
+def _ref_exists(root: Path, ref: str) -> bool:
+    return (
+        subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"],
+            cwd=root,
+            capture_output=True,
+            env=git_env(),
+        ).returncode
+        == 0
+    )
+
+
+def _tracks_a_remote(root: Path) -> bool:
+    """The branch is configured to follow a remote branch that no longer exists (deleted after its pull request merged)."""
+    branch = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        cwd=root,
+        capture_output=True,
+        env=git_env(),
+        text=True,
+    ).stdout.strip()
+
+    if not branch or branch == "HEAD":
+        return False
+
+    return (
+        subprocess.run(
+            ["git", "config", "--get", f"branch.{branch}.remote"],
+            cwd=root,
+            capture_output=True,
+            env=git_env(),
+        ).returncode
+        == 0
+    )
+
+
+def _leave_merged_branch(root: Path, default_branch: str) -> None:
+    """The branch was deleted on the remote (merged pull request): go back to the default branch and bring it up to date."""
+    target = default_branch or "main"
+
+    if not _ref_exists(root, f"origin/{target}"):
+        target = _remote_head(root)
+
+    if target is None:
+        return
+
+    subprocess.run(
+        ["git", "stash", "push", "--quiet", "--include-untracked"],
+        cwd=root,
+        capture_output=True,
+        env=git_env(),
+    )
+    subprocess.run(
+        ["git", "checkout", "--quiet", "-B", target, f"origin/{target}"],
+        cwd=root,
+        capture_output=True,
+        env=git_env(),
+    )
+    subprocess.run(
+        ["git", "stash", "pop", "--quiet"],
+        cwd=root,
+        capture_output=True,
+        env=git_env(),
+    )
+
+
+def _remote_head(root: Path) -> str | None:
+    subprocess.run(
+        ["git", "remote", "set-head", "origin", "--auto"],
+        cwd=root,
+        capture_output=True,
+        env=git_env(),
+    )
+    head = subprocess.run(
+        ["git", "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"],
+        cwd=root,
+        capture_output=True,
+        env=git_env(),
+        text=True,
+    )
+
+    if head.returncode != 0:
+        return None
+
+    name = head.stdout.strip().removeprefix("origin/")
+
+    return name if _ref_exists(root, f"origin/{name}") else None
+
+
+def _diverged(stderr: str) -> bool:
+    return "Not possible to fast-forward" in stderr or "diverged" in stderr
+
+
+def _nothing_only_local(root: Path) -> bool:
+    """True when every local commit is already upstream (same patch), so the local branch can follow the remote."""
+    cherry = subprocess.run(
+        ["git", "cherry", "@{upstream}"],
+        cwd=root,
+        capture_output=True,
+        env=git_env(),
+        text=True,
+    )
+
+    if cherry.returncode != 0:
+        return False
+
+    return not any(line.startswith("+") for line in cherry.stdout.splitlines())
+
+
+def _reset_to_upstream(root: Path) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", "reset", "--quiet", "--hard", "@{upstream}"],
         cwd=root,
         capture_output=True,
         env=git_env(),
@@ -295,10 +431,8 @@ def _pull_over_local_changes(root: Path) -> subprocess.CompletedProcess:
 def _pull_problem(stderr: str) -> str:
     text = stderr.strip()
 
-    if "Not possible to fast-forward" in text or "diverged" in text:
-        return (
-            "local branch diverged from its remote — rebase or reset it before syncing"
-        )
+    if _diverged(text):
+        return "local branch has commits the remote does not — push them, or reset the branch, before syncing"
 
     if "uncommitted changes" in text or "would be overwritten" in text:
         return "working tree has changes that the remote would overwrite — commit them first"
