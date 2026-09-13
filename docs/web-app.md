@@ -57,6 +57,10 @@ The *Set up OAuth app* dialog shows the callback URL to paste and stores the cli
 
 Tokens are AES-256-GCM encrypted with a key derived from `BETTER_AUTH_SECRET` and decrypted only to accompany a push / release call to the API.
 
+## Templates
+
+The catalog merges the official repository with the ones the organization added. **Template repositories** at the top of the page lists each source with its URL, ref and counts; owners and admins add or remove repositories there. Custom templates carry their source name on the card, in the wizard and in Configuration → Deploy target, and are generated from their own repository. Cloud cards open *Apply to app*.
+
 ## Creating an app
 
 ```mermaid
