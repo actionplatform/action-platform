@@ -42,6 +42,8 @@ gitGraph
 
 Rules the hooks and CI apply: branch names are `<kind>/<code>[-slug]`; commits are [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/); no direct commits on `main`, `master` or `develop` except `chore(release):`, `chore(platform):` and the bootstrap commit; a pull request may only target what the table allows.
 
+What the audit (`action-platform gitflow`, the app's *Branch policy* card) looks at: on a work branch, the commits since it left `develop`/`main`; on `main`, `master` or `develop`, the commits after the last tag — and once `platform.toml` is in the history, only those on the path down from the commit that added it. A repository imported with years of commits in another style is not asked to rewrite them, and merged pull requests are not "direct commits". The hooks, not the audit, are what stop a commit landing on a protected branch.
+
 ```bash
 action-platform branch feature 42 login     # develop → pull → feature/42-login → push
 action-platform gitflow                     # audit branch + commits

@@ -5,6 +5,7 @@ from __future__ import annotations
 import unittest
 
 from action_platform.core.flow import gitflow
+from tests.support import TempCase, git, git_repo
 
 
 class RulesTest(unittest.TestCase):
@@ -41,3 +42,50 @@ class RulesTest(unittest.TestCase):
         self.assertIsNone(gitflow.check_target("develop", "main", "main", True))
         self.assertIsNotNone(gitflow.check_target("main", "develop", "main", True))
         self.assertIsNotNone(gitflow.check_target("support/1", "main", "main", True))
+
+
+class AuditOnProtectedTest(TempCase):
+    def test_history_before_the_platform_install_is_not_audited(self):
+        repo = git_repo(
+            self.tmp_path / "legacy", {"README.md": "# x\n"}, "📦 PyPI: 0.1.0"
+        )
+        git(repo, "tag", "v0.1.0")
+        (repo / "README.md").write_text("# y\n")
+        git(repo, "commit", "-qam", "📦 PyPI: Update version to 0.2.0")
+        git(repo, "checkout", "-qb", "chore/1-configuration", "v0.1.0")
+        (repo / "platform.toml").write_text("[project]\nname = 'x'\n")
+        git(repo, "add", "platform.toml")
+        git(repo, "commit", "-qm", "chore(platform): install")
+        git(repo, "checkout", "-q", "main")
+        git(
+            repo,
+            "merge",
+            "-q",
+            "--no-ff",
+            "-m",
+            "Merge pull request #1",
+            "chore/1-configuration",
+        )
+
+        report = gitflow.audit(repo)
+
+        self.assertEqual(report.problems, [])
+        self.assertEqual(report.checked_commits, 1)
+
+        (repo / "README.md").write_text("# z\n")
+        git(repo, "commit", "-qam", "bad message")
+
+        self.assertEqual(len(gitflow.audit(repo).problems), 1)
+
+    def test_without_platform_commit_audits_since_the_last_tag(self):
+        repo = git_repo(self.tmp_path / "plain", {"README.md": "# x\n"}, "chore: init")
+        git(repo, "tag", "v1.0.0")
+        (repo / "README.md").write_text("# y\n")
+        git(repo, "commit", "-qam", "feat: y")
+        (repo / "README.md").write_text("# z\n")
+        git(repo, "commit", "-qam", "nope")
+
+        report = gitflow.audit(repo)
+
+        self.assertEqual(report.checked_commits, 2)
+        self.assertEqual(len(report.problems), 1)
