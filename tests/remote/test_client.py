@@ -54,6 +54,7 @@ def test_login_polls_until_approved(monkeypatch):
             },
             client.RemoteError(400, "authorization_pending"),
             client.RemoteError(400, "slow_down"),
+            client.ActionPlatformError("cannot reach https://p.example: timed out"),
             {"access_token": "session-token", "token_type": "Bearer"},
         ]
     )
@@ -79,7 +80,7 @@ def test_login_polls_until_approved(monkeypatch):
     assert any("ABCD-EFGH" in line for line in shown)
     assert calls[0] == ("POST", "https://p.example/api/auth/device/code")
     assert calls[-1] == ("POST", "https://p.example/api/auth/device/token")
-    assert len(calls) == 4
+    assert len(calls) == 5
 
 
 def test_login_denied(monkeypatch):
@@ -147,3 +148,50 @@ def test_remote_mcp_tools():
     } <= names
     assert "init_project" not in names
     assert "install_hooks" not in names
+
+
+def _device_login(monkeypatch, *answers):
+    replies = iter(
+        [
+            {
+                "device_code": "dc",
+                "user_code": "X",
+                "verification_uri": "/device",
+                "interval": 0,
+                "expires_in": 60,
+            },
+            *answers,
+        ]
+    )
+
+    def fake_request(method, url, body=None, token=None, timeout=60):
+        answer = next(replies)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    monkeypatch.setattr(client, "_request", fake_request)
+    monkeypatch.setattr(client.time, "sleep", lambda s: None)
+    monkeypatch.setattr(client.webbrowser, "open", lambda u: None)
+
+
+def test_login_reports_denied_and_expired(monkeypatch):
+    _device_login(monkeypatch, client.RemoteError(400, "access_denied"))
+    with pytest.raises(client.ActionPlatformError, match="denied"):
+        client.login("https://p.example", echo=lambda s: None)
+
+    _device_login(monkeypatch, client.RemoteError(400, "expired_token"))
+    with pytest.raises(client.ActionPlatformError, match="expired"):
+        client.login("https://p.example", echo=lambda s: None)
+
+    _device_login(monkeypatch, client.RemoteError(400, "request pending review"))
+    with pytest.raises(client.RemoteError):
+        client.login("https://p.example", echo=lambda s: None)
+
+
+def test_login_gives_up_after_repeated_network_failures(monkeypatch):
+    _device_login(
+        monkeypatch, *[client.ActionPlatformError("cannot reach") for _ in range(7)]
+    )
+    with pytest.raises(client.ActionPlatformError, match="giving up"):
+        client.login("https://p.example", echo=lambda s: None)
