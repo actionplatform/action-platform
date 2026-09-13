@@ -28,9 +28,9 @@ const appItems = [
 
 const link = "mx-2.5 my-1 flex h-11 items-center gap-3 rounded-[7px] px-3.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground";
 
-type Props = { version: string; user: { name: string; email: string }; org: Org; orgs: Org[] };
+type Props = { versions: { web: string; api: string; lib: string }; user: { name: string; email: string }; org: Org; orgs: Org[] };
 
-export function Sidebar({ version, user, org, orgs }: Props) {
+export function Sidebar({ versions, user, org, orgs }: Props) {
   const pathname = usePathname();
   const { scope } = useScope();
   const [open, setOpen] = useState(false);
@@ -97,7 +97,11 @@ export function Sidebar({ version, user, org, orgs }: Props) {
         </nav>
       )}
       <UserMenu name={user.name} email={user.email} />
-      <div className="border-t border-border-subtle px-5 py-2.5 text-xs text-muted-foreground">v{version}</div>
+      <div className="flex flex-wrap gap-x-3 border-t border-border-subtle px-5 py-2.5 font-mono text-[11px] text-muted-foreground">
+        <span>web {versions.web}</span>
+        <span>api {versions.api}</span>
+        <span>lib {versions.lib}</span>
+      </div>
     </div>
   );
 

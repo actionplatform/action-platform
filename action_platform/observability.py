@@ -8,7 +8,9 @@ from action_platform import __version__
 from action_platform.settings import settings
 
 
-def observe(component: str, dsn: Optional[str] = None) -> bool:
+def observe(
+    component: str, dsn: Optional[str] = None, version: Optional[str] = None
+) -> bool:
     dsn = settings.SENTRY_DSN if dsn is None else dsn
 
     if not dsn:
@@ -21,7 +23,7 @@ def observe(component: str, dsn: Optional[str] = None) -> bool:
 
     sentry_sdk.init(
         dsn=dsn,
-        release=f"{component}@{__version__}",
+        release=f"{component}@{version or __version__}",
         environment=settings.SENTRY_ENVIRONMENT,
         send_default_pii=False,
         enable_logs=True,

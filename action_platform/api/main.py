@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from action_platform import __version__
+from action_platform.api import api_version
 from action_platform.api.core.deps import get_registry
 from action_platform.api.v1 import router as v1
 from action_platform.core.exception import ActionPlatformError
@@ -20,8 +20,8 @@ OPEN_PATHS = {"/api/version", "/docs", "/openapi.json", "/redoc"}
 def build(
     cors_origins: Optional[list[str]] = None, token: Optional[str] = None
 ) -> FastAPI:
-    observe("api")
-    app = FastAPI(title="action-platform", version=__version__)
+    observe("api", version=api_version())
+    app = FastAPI(title="action-platform", version=api_version())
     get_registry.cache_clear()
     expected = settings.API_TOKEN if token is None else token
 

@@ -1,4 +1,5 @@
 from action_platform import __version__
+from action_platform.api import api_version
 from action_platform.api.core import credentials as auth
 from action_platform.api.schemas import SourceSpec
 from action_platform.core.exception import ActionPlatformError
@@ -64,7 +65,7 @@ def _serialize(m: Matrix, source: str) -> dict:
 
 class CatalogService:
     def version(self) -> dict:
-        return {"version": __version__}
+        return {"version": __version__, "api": api_version()}
 
     def matrix(self, sources: list[SourceSpec] | None = None) -> dict:
         _, official = load_matrix()
