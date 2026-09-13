@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # action-platform hook
-# Refuse pushing a protected branch unless every new commit is a release commit. Tags pass.
 set -euo pipefail
 . "$(dirname "$0")/gitflow.sh"
 while read -r local_ref local_sha remote_ref remote_sha; do
