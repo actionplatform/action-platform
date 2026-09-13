@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Link2, Mail, Plus, Trash2, UserMinus, UserPlus } from "lucide-react";
+import { Check, Copy, Link2, Mail, Trash2, UserMinus, UserPlus } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -36,7 +36,7 @@ export function ReleasesTable({ stored, fromGit, repositoryUrl }: { stored: Stor
         </div>
       ) : (
         <>
-          <table className="hidden w-full text-sm md:table">
+          <div className="overflow-x-auto"><table className="hidden w-full min-w-[640px] text-sm md:table">
             <thead><tr className="text-left text-xs text-muted-foreground"><th className="px-4 py-2 font-medium">Version</th><th className="py-2 font-medium">Tag</th><th className="py-2 font-medium">Name</th><th className="py-2 font-medium">Author</th><th className="py-2 font-medium">Commit</th><th className="py-2 pr-4 font-medium">Published</th></tr></thead>
             <tbody className="divide-y divide-border-subtle border-t border-border-subtle">
               {rows.map((r, i) => (
@@ -57,7 +57,7 @@ export function ReleasesTable({ stored, fromGit, repositoryUrl }: { stored: Stor
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
           <ul className="divide-y divide-border-subtle md:hidden">
             {rows.map((r, i) => (
               <li key={r.tag} className="px-4 py-3 text-sm">

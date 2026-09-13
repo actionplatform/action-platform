@@ -23,7 +23,7 @@ export function CommitsCard({ commits, repositoryUrl, base, limit = 8, title = "
         </div>
       ) : (
         <>
-          <table className="hidden w-full text-sm md:table">
+          <div className="overflow-x-auto"><table className="hidden w-full min-w-[640px] text-sm md:table">
             <thead><tr className="text-left text-xs text-muted-foreground"><th className="px-4 py-2 font-medium">Commit</th><th className="py-2 font-medium">Message</th><th className="py-2 font-medium">Author</th><th className="py-2 pr-4 font-medium">Date</th></tr></thead>
             <tbody className="divide-y divide-border-subtle border-t border-border-subtle">
               {rows.map((c) => (
@@ -35,7 +35,7 @@ export function CommitsCard({ commits, repositoryUrl, base, limit = 8, title = "
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
           <ul className="divide-y divide-border-subtle md:hidden">
             {rows.map((c) => (
               <li key={c.sha} className="px-4 py-3 text-sm">

@@ -103,7 +103,7 @@ export function Sidebar({ version, user, org, orgs }: Props) {
 
   return (
     <>
-      <aside className="hidden lg:block fixed inset-y-0 left-0 w-[272px] border-r border-border bg-sidebar">{panel}</aside>
+      <aside className="hidden lg:block fixed inset-y-0 left-0 w-[280px] border-r border-border bg-sidebar">{panel}</aside>
 
       <header className="lg:hidden sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-sidebar px-4">
         <button type="button" aria-label="Open navigation" aria-expanded={open} aria-controls="mobile-nav" onClick={() => setOpen(true)} className="flex size-10 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground">
@@ -116,7 +116,7 @@ export function Sidebar({ version, user, org, orgs }: Props) {
       {open && (
         <div className="lg:hidden fixed inset-0 z-40" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
           <div className="absolute inset-0 bg-background/80" />
-          <aside id="mobile-nav" className="absolute inset-y-0 left-0 w-[272px] max-w-[85vw] border-r border-border bg-sidebar">{panel}</aside>
+          <aside id="mobile-nav" className="absolute inset-y-0 left-0 w-[280px] max-w-[85vw] border-r border-border bg-sidebar">{panel}</aside>
         </div>
       )}
     </>

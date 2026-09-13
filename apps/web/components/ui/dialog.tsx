@@ -28,7 +28,7 @@ export function Dialog({ open, onClose, title, description, children, footer, cl
 
   return createPortal(
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div role="dialog" aria-modal aria-labelledby={id} className={`w-full max-w-md rounded-lg border border-border bg-surface ${className ?? ""}`}>
+      <div role="dialog" aria-modal aria-labelledby={id} className={`max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-lg border border-border bg-surface ${className ?? ""}`}>
         <div className="flex items-start justify-between gap-4 px-4 pt-4">
           <div>
             <h2 id={id} className="text-base font-semibold">{title}</h2>
