@@ -12,6 +12,9 @@ from action_platform.providers.source import rest
 from action_platform.settings import settings
 
 
+OAUTH_USERNAME = "x-token-auth"
+
+
 class SourceBitbucket(SourceHost):
     """
     Args:
@@ -44,7 +47,8 @@ class SourceBitbucket(SourceHost):
             )
 
     def _headers(self) -> dict[str, str]:
-        if self.username:
+        """An app password goes as Basic with the username; an OAuth access token (username `x-token-auth`, the name git uses for it) goes as Bearer — Basic with that pseudo-user answers 401 on the REST API."""
+        if self.username and self.username != OAUTH_USERNAME:
             raw = base64.b64encode(f"{self.username}:{self.token}".encode()).decode()
 
             return {"authorization": f"Basic {raw}"}
