@@ -49,7 +49,8 @@ class SourceGithub(SourceHost):
 
         if not self.token and not shutil.which("gh"):
             raise ProviderError(
-                "no GitHub token and no gh CLI: set ACTION_PLATFORM_GITHUB_TOKEN or install https://cli.github.com"
+                "no GitHub credentials for this repository: on the platform, connect a GitHub host "
+                "in Settings; on the CLI, set ACTION_PLATFORM_GITHUB_TOKEN or install https://cli.github.com"
             )
 
     def _rest(self, method: str, path: str, body: dict | None = None):
