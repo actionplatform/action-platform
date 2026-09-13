@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.6.2 — 2026-09-13
+
+### Bug Fixes
+- **hooks:** keep and chain existing git hooks; honour core.hooksPath and never touch a versioned hooks directory
+- **api:** refuse repositories whose symlinks escape the workspace; resolve paths before removing
+
+### Docs
+- code of conduct, contributing guide and security policy
+
+### Tests
+- unittest classes mirroring the package layout; shared builders in tests/support
+
 ## v0.6.1 — 2026-09-13
 
 ### Bug Fixes
