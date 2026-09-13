@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.2 — 2026-09-13
+
+### Bug Fixes
+- **api:** clone and sync private repositories with the source host credentials
+
 ## v0.2.1 — 2026-09-13
 
 ### Bug Fixes
