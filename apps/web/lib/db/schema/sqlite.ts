@@ -88,12 +88,29 @@ export const invitation = sqliteTable("invitation", {
   inviterId: text("inviter_id").notNull().references(() => user.id, { onDelete: "cascade" }),
 });
 
+export const team = sqliteTable("team", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  description: text("description"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export const teamMember = sqliteTable("team_member", {
+  id: text("id").primaryKey(),
+  teamId: text("team_id").notNull().references(() => team.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
 export const project = sqliteTable("project", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   slug: text("slug").notNull(),
   description: text("description"),
+  teamId: text("team_id"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
 
@@ -103,6 +120,7 @@ export const app = sqliteTable("app", {
   registryId: text("registry_id").notNull().unique(),
   name: text("name").notNull(),
   sourceHostId: text("source_host_id"),
+  lastSyncedAt: integer("last_synced_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
 
@@ -120,4 +138,38 @@ export const sourceHost = sqliteTable("source_host", {
   refreshTokenEncrypted: text("refresh_token_encrypted"),
   expiresAt: integer("expires_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export const release = sqliteTable("release", {
+  id: text("id").primaryKey(),
+  appId: text("app_id").notNull().references(() => app.id, { onDelete: "cascade" }),
+  tag: text("tag").notNull(),
+  name: text("name"),
+  body: text("body"),
+  url: text("url"),
+  author: text("author"),
+  sha: text("sha"),
+  prerelease: integer("prerelease", { mode: "boolean" }).notNull().default(false),
+  draft: integer("draft", { mode: "boolean" }).notNull().default(false),
+  publishedAt: integer("published_at", { mode: "timestamp" }),
+  source: text("source").notNull(),
+  syncedAt: integer("synced_at", { mode: "timestamp" }).notNull(),
+});
+
+export const pullRequest = sqliteTable("pull_request", {
+  id: text("id").primaryKey(),
+  appId: text("app_id").notNull().references(() => app.id, { onDelete: "cascade" }),
+  number: integer("number").notNull(),
+  title: text("title").notNull(),
+  url: text("url").notNull(),
+  author: text("author"),
+  head: text("head").notNull(),
+  base: text("base").notNull(),
+  state: text("state").notNull(),
+  draft: integer("draft", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  mergedAt: integer("merged_at", { mode: "timestamp" }),
+  source: text("source").notNull(),
+  syncedAt: integer("synced_at", { mode: "timestamp" }).notNull(),
 });

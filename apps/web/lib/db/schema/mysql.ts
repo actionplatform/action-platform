@@ -88,12 +88,29 @@ export const invitation = mysqlTable("invitation", {
   inviterId: varchar("inviter_id", { length: 36 }).notNull().references(() => user.id, { onDelete: "cascade" }),
 });
 
+export const team = mysqlTable("team", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  organizationId: varchar("organization_id", { length: 36 }).notNull().references(() => organization.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  slug: varchar("slug", { length: 255 }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const teamMember = mysqlTable("team_member", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  teamId: varchar("team_id", { length: 36 }).notNull().references(() => team.id, { onDelete: "cascade" }),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const project = mysqlTable("project", {
   id: varchar("id", { length: 36 }).primaryKey(),
   organizationId: varchar("organization_id", { length: 36 }).notNull().references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   slug: varchar("slug", { length: 255 }).notNull(),
   description: text("description"),
+  teamId: varchar("team_id", { length: 36 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -103,6 +120,7 @@ export const app = mysqlTable("app", {
   registryId: varchar("registry_id", { length: 64 }).notNull().unique(),
   name: text("name").notNull(),
   sourceHostId: varchar("source_host_id", { length: 36 }),
+  lastSyncedAt: timestamp("last_synced_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -120,4 +138,38 @@ export const sourceHost = mysqlTable("source_host", {
   refreshTokenEncrypted: text("refresh_token_encrypted"),
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const release = mysqlTable("release", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  appId: varchar("app_id", { length: 36 }).notNull().references(() => app.id, { onDelete: "cascade" }),
+  tag: varchar("tag", { length: 255 }).notNull(),
+  name: text("name"),
+  body: text("body"),
+  url: text("url"),
+  author: text("author"),
+  sha: varchar("sha", { length: 64 }),
+  prerelease: boolean("prerelease").notNull().default(false),
+  draft: boolean("draft").notNull().default(false),
+  publishedAt: timestamp("published_at"),
+  source: varchar("source", { length: 16 }).notNull(),
+  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+});
+
+export const pullRequest = mysqlTable("pull_request", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  appId: varchar("app_id", { length: 36 }).notNull().references(() => app.id, { onDelete: "cascade" }),
+  number: int("number").notNull(),
+  title: text("title").notNull(),
+  url: text("url").notNull(),
+  author: text("author"),
+  head: text("head").notNull(),
+  base: text("base").notNull(),
+  state: varchar("state", { length: 16 }).notNull(),
+  draft: boolean("draft").notNull().default(false),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+  mergedAt: timestamp("merged_at"),
+  source: varchar("source", { length: 32 }).notNull(),
+  syncedAt: timestamp("synced_at").notNull().defaultNow(),
 });

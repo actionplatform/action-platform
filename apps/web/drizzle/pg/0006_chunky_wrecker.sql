@@ -1,0 +1,1 @@
+ALTER TABLE "app" ADD COLUMN "last_synced_at" timestamp;

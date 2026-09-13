@@ -88,12 +88,29 @@ export const invitation = pgTable("invitation", {
   inviterId: text("inviter_id").notNull().references(() => user.id, { onDelete: "cascade" }),
 });
 
+export const team = pgTable("team", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const teamMember = pgTable("team_member", {
+  id: text("id").primaryKey(),
+  teamId: text("team_id").notNull().references(() => team.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const project = pgTable("project", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   slug: text("slug").notNull(),
   description: text("description"),
+  teamId: text("team_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -103,6 +120,7 @@ export const app = pgTable("app", {
   registryId: text("registry_id").notNull().unique(),
   name: text("name").notNull(),
   sourceHostId: text("source_host_id"),
+  lastSyncedAt: timestamp("last_synced_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -120,4 +138,38 @@ export const sourceHost = pgTable("source_host", {
   refreshTokenEncrypted: text("refresh_token_encrypted"),
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const release = pgTable("release", {
+  id: text("id").primaryKey(),
+  appId: text("app_id").notNull().references(() => app.id, { onDelete: "cascade" }),
+  tag: text("tag").notNull(),
+  name: text("name"),
+  body: text("body"),
+  url: text("url"),
+  author: text("author"),
+  sha: text("sha"),
+  prerelease: boolean("prerelease").notNull().default(false),
+  draft: boolean("draft").notNull().default(false),
+  publishedAt: timestamp("published_at"),
+  source: text("source").notNull(),
+  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+});
+
+export const pullRequest = pgTable("pull_request", {
+  id: text("id").primaryKey(),
+  appId: text("app_id").notNull().references(() => app.id, { onDelete: "cascade" }),
+  number: integer("number").notNull(),
+  title: text("title").notNull(),
+  url: text("url").notNull(),
+  author: text("author"),
+  head: text("head").notNull(),
+  base: text("base").notNull(),
+  state: text("state").notNull(),
+  draft: boolean("draft").notNull().default(false),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+  mergedAt: timestamp("merged_at"),
+  source: text("source").notNull(),
+  syncedAt: timestamp("synced_at").notNull().defaultNow(),
 });
