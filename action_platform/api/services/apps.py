@@ -155,7 +155,7 @@ class AppService:
         finally:
             shutil.rmtree(staging, ignore_errors=True)
 
-        if creds:
+        if creds and creds.kind:
             write_source_host(
                 path / settings.CONFIG_FILE,
                 creds.kind,
@@ -203,7 +203,7 @@ class AppService:
         if entry.url:
             raise HTTPException(409, f"already pushed to {entry.url}")
 
-        if body.credentials:
+        if body.credentials and body.credentials.kind:
             self._point_source_host(root, entry, body.credentials)
 
         with auth.git_auth(body.credentials):
