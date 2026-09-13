@@ -1,5 +1,34 @@
 # Changelog
 
+## v0.4.0 — 2026-09-13
+
+### Features
+- **api:** modular api/v1 with configuration, flow, branch-aware release and resilient sync
+- the Action Platform logo — favicon, sidebar, auth and setup pages, README
+- **web:** create the GitHub App through the manifest flow — no manual OAuth app
+- **deploy:** Dokploy template — generated secrets and domain, one-paste import
+
+### Bug Fixes
+- **deploy:** always pull images on redeploy
+
+### Docs
+- web app teams, roles, configuration and sync
+- mermaid diagrams — topology, credentials flow, data model, releases, hierarchy, wizard, mcp
+- handbook under docs/ — self-hosting, web app, CLI, git-flow, platform.toml, templates, MCP, releases, architecture, development; README indexes it
+- **deploy:** one-line header on the Dokploy compose
+- **deploy:** compose file and steps for Dokploy
+
+### CI
+- **trivy:** fail on findings, upload sarif only on public repositories
+- name the docker workflow Package Docker, grant actions:read to trivy sarif upload
+- Docker Hub namespace actionplatformio
+
+### Style
+- ruff format api services and tests
+
+### Chores
+- strip comments from source, configs and workflows; nextCookies last
+
 ## v0.3.1 — 2026-09-12
 
 ### Bug Fixes
