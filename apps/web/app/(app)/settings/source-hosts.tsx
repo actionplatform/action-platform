@@ -60,7 +60,7 @@ export function SourceHosts({ hosts, access = {} }: { hosts: SourceHost[]; acces
       )}
 
       <Table>
-        <thead><tr><Th>name</Th><Th>kind</Th><Th>auth</Th><Th>base url</Th><Th>owner</Th><Th /></tr></thead>
+        <thead><tr><Th>name</Th><Th>kind</Th><Th>auth</Th><Th>base url</Th><Th>default owner</Th><Th /></tr></thead>
         <tbody>
           {hosts.length === 0 && <tr><Td colSpan={6} className="text-center text-muted-foreground py-6"><GitBranch className="inline size-4 mr-1" /> No source hosts yet. Apps cannot be pushed until one exists.</Td></tr>}
           {hosts.map((h) => (
@@ -123,7 +123,7 @@ function AccessRow({ access }: { access: GithubAccess }) {
         <div className="space-y-1.5 text-[13px]">
           <div className="flex flex-wrap items-center gap-2 text-secondary">
             <span>Signed in as <span className="font-mono text-foreground">{access.login}</span>.</span>
-            {access.installations.length > 0 && <span>App installed on:</span>}
+            {access.installations.length > 0 && <span>App installed on (each one can own new repositories):</span>}
             {access.installations.map((i) => (
               <Badge key={i.account} tone={i.canCreateRepos && i.repositories === "all" ? "ok" : "bad"} className="font-mono">{i.account} · {i.repositories === "all" ? "all repos" : "selected repos"} · admin:{i.administration} · contents:{i.contents}</Badge>
             ))}

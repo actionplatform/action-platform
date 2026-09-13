@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, Copy } from "lucide-react";
+import { ArrowRight, Check, Copy, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -36,7 +36,7 @@ const CI_PROVIDERS = ["github", "gitlab", "jenkins"];
 const CONTINUE = ["Continue to stack", "Continue to template", "Continue to configuration", "Continue to review", "Create project"];
 
 type ProjectOption = { id: string; name: string };
-type HostOption = { id: string; name: string; kind: string; defaultOwner: string | null };
+type HostOption = { id: string; name: string; kind: string; defaultOwner: string | null; owners: readonly string[]; installUrl: string | null };
 
 export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix: Matrix; preset: Preset; projectId: string | null; projects: ProjectOption[]; hosts: HostOption[] }) {
   const router = useRouter();
@@ -240,8 +240,15 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                 <Field label="Source host" hint={hosts.length ? "Where the repository will live." : "None configured — Settings → Source hosts."}>
                   <Select value={hostId} onChange={setHostId} disabled={hosts.length === 0} placeholder="No source host" options={hosts.map((h) => ({ value: h.id, label: h.name }))} />
                 </Field>
-                <Field label="Repository owner" hint="Organization or user; defaults to the host's.">
-                  <Input className="font-mono" value={config.githubOwner} onChange={(e) => setConfig({ ...config, githubOwner: e.target.value })} placeholder={host?.defaultOwner ?? "my-org"} />
+                <Field label="Organization" hint={host?.owners.length ? "Where the repository is created — an account or organization the GitHub App is installed on." : "Account or organization that owns the repository."}>
+                  {host?.owners.length ? (
+                    <div className="space-y-1.5">
+                      <Select mono value={config.githubOwner || host.defaultOwner || host.owners[0]} onChange={(v) => setConfig({ ...config, githubOwner: v })} options={[...new Set([...host.owners, ...(host.defaultOwner ? [host.defaultOwner] : [])])].map((o) => ({ value: o, label: o }))} />
+                      {host.installUrl && <a href={host.installUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-secondary hover:text-foreground">Another organization? Install the GitHub App on it <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
+                    </div>
+                  ) : (
+                    <Input className="font-mono" value={config.githubOwner} onChange={(e) => setConfig({ ...config, githubOwner: e.target.value })} placeholder={host?.defaultOwner ?? "my-org"} />
+                  )}
                 </Field>
               </div>
 

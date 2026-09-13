@@ -52,7 +52,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
         return (
           <div key={p} className="flex flex-col rounded-lg border border-border bg-surface p-4">
             <div className="flex items-center gap-2"><BrandIcon icon={m.icon} /><span className="font-medium">{m.label}</span></div>
-            {p === "github" && githubApp && <p className="mt-1 text-xs text-muted-foreground">GitHub asks which account or organization to install on; that owner is where repositories are created. Already installed somewhere? Pick the organization there anyway — it then shows up as an owner under Source hosts.</p>}
+            {p === "github" && githubApp && <p className="mt-1 text-xs text-muted-foreground">One connection per GitHub user. GitHub asks where to install the app: every account or organization you install it on becomes selectable as the repository owner when you create an app.</p>}
             {logins.length > 0 && (
               <ul className="mt-2 space-y-1 text-xs text-secondary">
                 {logins.map((l) => (
@@ -67,7 +67,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
               {ready ? (
                 <a href={startUrl(p)} className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover">
                   {p === "github" && githubApp ? <ExternalLink className="size-4" /> : <KeyRound className="size-4" />}
-                  {logins.length ? "Connect another account" : `Connect with ${m.label}`}
+                  {logins.length ? (p === "github" && githubApp ? "Install on another organization" : "Connect another account") : `Connect with ${m.label}`}
                 </a>
               ) : p === "github" ? (
                 <>
