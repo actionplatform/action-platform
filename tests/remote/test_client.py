@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from action_platform.core.exception import ActionPlatformError
 from action_platform.remote import client, credentials
 from tests.support import TempCase
@@ -42,17 +44,27 @@ class LoginCase(TempCase):
 class LoginTest(LoginCase):
     def test_polls_until_approved_and_survives_a_network_blip(self):
         self.answers(
-            client.RemoteError(400, "authorization_pending"),
+            client.RemoteError(
+                400, "Authorization pending", code="authorization_pending"
+            ),
             client.RemoteError(400, "slow_down"),
             ActionPlatformError("cannot reach https://p.example: timed out"),
-            {"access_token": "session-token", "token_type": "Bearer"},
+            {
+                "access_token": "session-token",
+                "token_type": "Bearer",
+                "scope": "read write",
+            },
+            {"token": "jwt-token", "scope": "read write"},
         )
         shown: list[str] = []
 
-        creds = client.login("https://p.example/", echo=shown.append)
+        creds = client.login(
+            "https://p.example/", echo=shown.append, scope="read,write"
+        )
 
         self.assertEqual(
-            creds, credentials.Credentials("https://p.example", "session-token")
+            creds,
+            credentials.Credentials("https://p.example", "jwt-token", "read write"),
         )
         self.assertEqual(credentials.load(), creds)
         self.assertEqual(self.opened, ["https://p.example/device"])
@@ -60,7 +72,20 @@ class LoginTest(LoginCase):
         self.assertEqual(
             self.calls[0], ("POST", "https://p.example/api/auth/device/code")
         )
-        self.assertEqual(len(self.calls), 5)
+        self.assertEqual(self.calls[-1], ("POST", "https://p.example/api/v1/tokens"))
+        self.assertEqual(len(self.calls), 6)
+
+    def test_scope_is_validated_before_anything_is_sent(self):
+        self.answers()
+
+        with self.assertRaisesRegex(ActionPlatformError, "unknown scope"):
+            client.login("https://p.example", echo=lambda s: None, scope="read,root")
+
+        self.assertEqual(self.calls, [])
+        self.assertEqual(client.parse_scope("write"), ["read", "write"])
+        self.assertEqual(
+            client.parse_scope("admin, read release"), ["read", "release", "admin"]
+        )
 
     def test_denied_expired_and_unknown_errors(self):
         self.answers(client.RemoteError(400, "access_denied"))
@@ -74,6 +99,29 @@ class LoginTest(LoginCase):
         self.answers(client.RemoteError(400, "request pending review"))
         with self.assertRaises(client.RemoteError):
             client.login("https://p.example", echo=lambda s: None)
+
+    def test_reads_the_oauth_error_code_from_the_body(self):
+        import io
+        import urllib.error
+
+        body = json.dumps(
+            {
+                "error": "authorization_pending",
+                "error_description": "Authorization pending",
+            }
+        ).encode()
+        err = urllib.error.HTTPError("u", 400, "Bad Request", {}, io.BytesIO(body))
+        self.patch(
+            client.urllib.request,
+            "urlopen",
+            lambda *a, **k: (_ for _ in ()).throw(err),
+        )
+
+        with self.assertRaises(client.RemoteError) as caught:
+            client._request("POST", "https://p.example/x", {})
+
+        self.assertEqual(caught.exception.code, "authorization_pending")
+        self.assertEqual(caught.exception.detail, "Authorization pending")
 
     def test_gives_up_after_repeated_network_failures(self):
         self.answers(*[ActionPlatformError("cannot reach") for _ in range(7)])
