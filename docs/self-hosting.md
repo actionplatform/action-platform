@@ -11,7 +11,7 @@ curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/mast
 ```
 
 - installs Docker when missing
-- writes `/opt/action-platform/.env` with fresh `POSTGRES_PASSWORD` and `BETTER_AUTH_SECRET`
+- writes `/opt/action-platform/.env` with fresh `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` and `AP_API_TOKEN`
 - `PUBLIC_URL=http://<public ip>:3000`
 - `docker compose up -d`, prints the URL
 
@@ -29,7 +29,7 @@ Dokploy already runs Traefik, so the compose file has no proxy and publishes no 
 
 ### Template (nothing to type)
 
-`deploy/dokploy/` is a Dokploy template: `template.toml` declares the domain and generates `POSTGRES_PASSWORD` / `BETTER_AUTH_SECRET`; `template.b64` is the two files packed for import.
+`deploy/dokploy/` is a Dokploy template: `template.toml` declares the domain and generates `POSTGRES_PASSWORD` / `BETTER_AUTH_SECRET` / `AP_API_TOKEN`; `template.b64` is the two files packed for import.
 
 1. Project → **Create Service → Compose**, any name, *Create*.
 2. In the service: **Advanced → Import Template** (or *Raw* → *Import*), paste the contents of [`deploy/dokploy/template.b64`](../deploy/dokploy/template.b64), import. Compose, environment and the `web` domain are filled in; the host is `<app>-<random>.<server ip>.traefik.me` until you change it.
@@ -41,7 +41,7 @@ Regenerate `template.b64` after editing the compose or the toml: `sh deploy/dokp
 ### By hand
 
 1. **Create Service → Compose**. Provider *Git*, repository `https://github.com/actionplatform/action-platform`, branch `master`, compose path `deploy/docker-compose.dokploy.yml`.
-2. **Environment**: `PUBLIC_URL=https://platform.example.com`, `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (`openssl rand -hex 32` each). Save — the deploy fails with an unhealthy Postgres when these are empty.
+2. **Environment**: `PUBLIC_URL=https://platform.example.com`, `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, `AP_API_TOKEN` (`openssl rand -hex 32` each). Save — the deploy fails with an unhealthy Postgres when these are empty.
 3. **Domains → Add**: your host → service `web`, container port `3000`, HTTPS on.
 4. **Deploy**. Later upgrades: *Redeploy* pulls `latest`.
 
@@ -74,6 +74,7 @@ Images are published for every `api/vX.Y.Z` and `web/vX.Y.Z` tag to Docker Hub a
 |---|---|---|
 | `PUBLIC_URL` | yes | where browsers reach the app; also the OAuth callback origin |
 | `POSTGRES_PASSWORD` | yes | Postgres password; `DATABASE_URL` is derived from it in the compose file |
+| `AP_API_TOKEN` | recommended | shared secret between web and API: the API refuses every request without `Authorization: Bearer <token>` (except `/api/version`), so a neighbour on the Docker network cannot drive it. Set the same value on both services; unset, the API trusts the network (local development). |
 | `BETTER_AUTH_SECRET` | yes | signs sessions and encrypts stored tokens — rotating it invalidates both |
 | `DOMAIN`, `ACME_EMAIL` | with TLS | Traefik host rule and Let's Encrypt account |
 | `WEB_PORT` | no | published port (default 3000) |

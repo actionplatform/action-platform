@@ -32,6 +32,7 @@ else
   sed -i "s|^PUBLIC_URL=.*|PUBLIC_URL=$URL|; s|^DOMAIN=.*|DOMAIN=$DOMAIN|; s|^ACME_EMAIL=.*|ACME_EMAIL=$EMAIL|" .env
   sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$(openssl rand -hex 24)|" .env
   sed -i "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$(openssl rand -hex 32)|" .env
+sed -i "s|^AP_API_TOKEN=.*|AP_API_TOKEN=$(openssl rand -hex 32)|" .env
   chmod 600 .env
 fi
 
