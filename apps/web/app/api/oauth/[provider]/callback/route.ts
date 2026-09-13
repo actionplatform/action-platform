@@ -5,6 +5,17 @@ import { activeOrg } from "@/lib/orgs";
 import { getSession } from "@/lib/session";
 import { connectOAuthHost } from "@/lib/source-hosts";
 
+async function installationOwner(token: string, installationId: string): Promise<string | null> {
+  try {
+    const res = await fetch("https://api.github.com/user/installations", { headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json", "user-agent": "action-platform" }, cache: "no-store" });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { installations: { id: number; account: { login: string } }[] };
+    return data.installations.find((i) => String(i.id) === installationId)?.account.login ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(req: Request, ctx: { params: Promise<{ provider: string }> }) {
   const { provider } = await ctx.params;
   if (!(provider in PROVIDERS)) return Response.json({ detail: "unknown provider" }, { status: 404 });
@@ -41,7 +52,9 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
   try {
     const tokens = await exchangeCode(provider as Provider, origin, code);
     const who = await identity(provider as Provider, tokens.accessToken);
-    await connectOAuthHost(orgId, provider as Provider, who.login, tokens);
+    const installationId = url.searchParams.get("installation_id");
+    const owner = installationId ? await installationOwner(tokens.accessToken, installationId) : null;
+    await connectOAuthHost(orgId, provider as Provider, who.login, tokens, owner);
   } catch (e) {
     return back({ oauth_error: (e as Error).message });
   }
