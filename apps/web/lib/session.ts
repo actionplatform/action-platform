@@ -13,7 +13,7 @@ export async function requireSession() {
   if (!status.complete) redirect("/setup");
 
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect(await loginUrl());
 
   return session;
 }
@@ -24,4 +24,10 @@ export async function requireOrg(): Promise<{ session: Awaited<ReturnType<typeof
   if (!org) redirect("/orgs/new");
 
   return { session, org };
+}
+
+async function loginUrl(): Promise<string> {
+  const path = (await headers()).get("x-request-path");
+  const next = path && path.startsWith("/") && !path.startsWith("/login") && path !== "/projects" ? `?next=${encodeURIComponent(path)}` : "";
+  return `/login${next}`;
 }
