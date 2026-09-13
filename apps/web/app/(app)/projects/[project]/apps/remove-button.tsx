@@ -12,7 +12,7 @@ export function RemoveButton({ projectId, appId, name }: { projectId: string; ap
 
   return (
     <>
-      <Button variant="ghost" size="icon" title="Remove app" onClick={() => setOpen(true)}><Trash2 className="size-4" /></Button>
+      <Button variant="ghost" size="icon" title="Remove app" aria-label={`Remove ${name}`} onClick={() => setOpen(true)} className="size-11 shrink-0 md:size-8"><Trash2 className="size-4" /></Button>
       <ConfirmDialog
         open={open}
         onClose={() => setOpen(false)}
