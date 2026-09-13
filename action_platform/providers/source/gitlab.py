@@ -111,15 +111,26 @@ class SourceGitlab(SourceHost):
         body: str,
         draft: bool = False,
     ) -> PRRef:
-        data = self._rest(
-            "POST",
-            f"/projects/{self._id}/merge_requests",
-            {
-                "source_branch": head,
-                "target_branch": base,
-                "title": f"Draft: {title}" if draft else title,
-                "description": body,
-            },
-        )
+        try:
+            data = self._rest(
+                "POST",
+                f"/projects/{self._id}/merge_requests",
+                {
+                    "source_branch": head,
+                    "target_branch": base,
+                    "title": f"Draft: {title}" if draft else title,
+                    "description": body,
+                },
+            )
+        except ProviderError as e:
+            if "already exists" not in str(e):
+                raise
+            rows = self._rest(
+                "GET",
+                f"/projects/{self._id}/merge_requests?state=opened&source_branch={head}",
+            )
+            if not rows:
+                raise
+            data = rows[0]
 
         return PRRef(number=data["iid"], url=data["web_url"])

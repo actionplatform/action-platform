@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { authorizeUrl, isConfigured, type Provider, PROVIDERS, signState } from "@/lib/oauth";
 import { publicOrigin } from "@/lib/origin";
-import { isMember } from "@/lib/orgs";
+import { isMember, roleOf } from "@/lib/orgs";
+import { can } from "@/lib/permissions";
 import { getSession } from "@/lib/session";
 import { setupStatus } from "@/lib/setup";
 
@@ -18,6 +19,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
   if (session) {
     const requested = url.searchParams.get("org");
     orgId = requested && (await isMember(session.user.id, requested)) ? requested : (session.session.activeOrganizationId ?? null);
+    if (orgId && !can(await roleOf(session.user.id, orgId), "org.manage")) return Response.json({ detail: "only owners and admins can connect code hosts" }, { status: 403 });
   } else {
     const status = await setupStatus();
     if (status.complete) redirect("/login");

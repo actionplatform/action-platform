@@ -36,6 +36,34 @@
       "when": 1789247143631,
       "tag": "0004_mute_dracula",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789260114147,
+      "tag": "0005_tricky_gorilla_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789261895251,
+      "tag": "0006_chunky_wrecker",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789262303796,
+      "tag": "0007_conscious_payback",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789264193042,
+      "tag": "0008_abnormal_captain_universe",
+      "breakpoints": true
     }
   ]
 }

@@ -63,6 +63,18 @@ class SourceGithub(SourceHost):
             body,
         )
 
+    def _existing_pr(self, head: str) -> dict:
+        owner = self.repo.split("/")[0]
+        rows = self._rest(
+            "GET",
+            f"/repos/{self.repo}/pulls?state=open&head={owner}:{head}",
+        )
+
+        if not rows:
+            raise ProviderError(f"a pull request for {head} exists but was not found")
+
+        return rows[0]
+
     def _gh(self, *args: str) -> str:
         result = subprocess.run(
             ["gh", *args, "--repo", self.repo],
@@ -162,17 +174,22 @@ class SourceGithub(SourceHost):
         draft: bool = False,
     ) -> PRRef:
         if self.token:
-            data = self._rest(
-                "POST",
-                f"/repos/{self.repo}/pulls",
-                {
-                    "base": base,
-                    "head": head,
-                    "title": title,
-                    "body": body,
-                    "draft": draft,
-                },
-            )
+            try:
+                data = self._rest(
+                    "POST",
+                    f"/repos/{self.repo}/pulls",
+                    {
+                        "base": base,
+                        "head": head,
+                        "title": title,
+                        "body": body,
+                        "draft": draft,
+                    },
+                )
+            except ProviderError as e:
+                if "already exists" not in str(e):
+                    raise
+                data = self._existing_pr(head)
 
             return PRRef(number=data["number"], url=data["html_url"])
 

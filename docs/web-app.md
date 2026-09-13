@@ -7,9 +7,12 @@
 ```mermaid
 flowchart LR
     O[Organization] --> M[members]
+    O --> T[Team]
     O --> H[code hosts]
     O --> P1[Project]
     O --> P2[Project]
+    M -.-> T
+    T -.->|owns| P1
     P1 --> A1[App · repo]
     P1 --> A2[App · repo]
     P2 --> A3[App · repo]
@@ -18,9 +21,10 @@ flowchart LR
 
 | Level | What it is | Owns |
 |---|---|---|
-| **Organization** | the tenant (better-auth `organization` plugin); the sidebar switches between the ones you belong to | members, code hosts, projects |
+| **Organization** | the tenant (better-auth `organization` plugin); the sidebar switches between the ones you belong to | members, teams, code hosts, projects |
+| **Team** | a group of organization members (`platform`, `payments`) | projects, at most one team per project |
 | **Project** | the apps that ship together (`orders-platform`) | apps |
-| **App** | one git repository, cloned by the API into `~/.action-platform/workspaces/<id>` (`/data` in Docker) | git-flow audit, commits, branches, tags, releases, deploys |
+| **App** | one git repository, cloned by the API into `~/.action-platform/workspaces/<id>` (`/data` in Docker) | git-flow audit, commits, branches, tags, releases, configuration |
 
 ## First run: the setup wizard
 
@@ -81,13 +85,37 @@ flowchart LR
 - git-flow audit of the current branch and its commits
 - commits, remote branches with their git-flow kind, tags
 - **Release**: level → *Preview* (dry run: next version and changelog) → *Release* dialog → tag, push, release on the host. Off `main`/`master` it is an `-rc.N` pre-release.
-- **Deploy**: stage → *Preflight* (dry run) → *Deploy* dialog. Needs a `[deploy]` target in `platform.toml`.
+- **Activity**: git-flow (start a `<kind>/<code>` branch, check out a branch, propose and open a pull request) and the pull requests stored for the app (state, merged date, head → base).
+- **Configuration**: pick a deploy target (applies the cloud overlay from the templates repository), add a service, edit `platform.toml`. Edits stay in the workspace until **Commit changes** (Conventional Commit, optional push, optional pull request). On `main`/`master`/`develop` the dialog requires a new `<kind>/<code>` branch: the changes are stashed, the branch starts from the right base, the commit lands there, and a pull request is opened when asked.
+- **Sync** does `git fetch --prune --tags` + fast-forward in the workspace (skipped when the branch has no upstream), then imports releases and pull requests from the code host into the `release` and `pull_request` tables (upsert by tag / number). Adding an app, releasing and opening a pull request run the same import. **Last synced** is stored per app and shown in the header.
+
+Deploying is done by the CI of the repository (see [templates](templates.md)), not by the web app.
 
 Every confirmation is an in-app dialog; the UI is strictly monochrome.
 
 ## Settings
 
 Organization members, code hosts (add, update token, remove), the API URL and the git-flow rules.
+
+### Roles
+
+| Role | Can |
+|---|---|
+| `owner` | everything; at least one per organization |
+| `admin` | members, teams, code hosts, projects, every app action |
+| `deployer` | releases, configuration, branches, pull requests, sync |
+| `developer` | configuration, branches, pull requests, sync |
+| `viewer` | read-only |
+
+Permissions are `org.manage`, `project.manage`, `app.release`, `app.configure`, `app.flow`, `app.sync` (matrix in Settings → Roles and permissions, source in `apps/web/lib/permissions.ts`). Server actions check them; the UI hides or disables what the role cannot do.
+
+### Members and invitations
+
+Owners and admins add people from Settings → **Members**: **Add member** creates the account (name, email, password) or attaches an existing one; **Invite** produces a link instead. No email is sent: the dialog produces a link (`/invite/<id>`, valid 7 days, bound to that address) to share. Opening it lets the person sign in or create an account and join with the invited role. 
+
+### Teams
+
+**Teams** in the sidebar. A team has members (organization members only) and projects; a project belongs to at most one team, assigned from the team page or from the project card's menu. Deleting a team leaves its projects without one.
 
 ## CLI and MCP against a hosted instance
 

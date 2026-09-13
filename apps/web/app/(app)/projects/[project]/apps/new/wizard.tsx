@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { CheckIndicator } from "@/components/ui/check-indicator";
@@ -27,7 +28,7 @@ type Config = {
   gitInit: boolean;
   ci: boolean;
   ciProvider: string;
-  docker: boolean;
+  cloud: string | null;
   push: boolean;
 };
 
@@ -55,7 +56,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
     gitInit: true,
     ci: true,
     ciProvider: "github",
-    docker: false,
+    cloud: null,
     push: false,
   });
   const [touched, setTouched] = useState({ directory: false, packageName: false });
@@ -67,11 +68,14 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
   const templates = useMemo(() => (type ? templatesFor(matrix, type, stack) : []), [matrix, type, stack]);
   const leaf: Leaf | undefined = templates.find((t) => t.template === template);
   const hasStack = stacks.length > 0;
-  const dockerAllowed = useMemo(() => {
-    const c = matrix.clouds.find((x) => x.name === "docker");
-    if (!c || !leaf) return false;
-    return (c.types.length === 0 || c.types.includes(leaf.type)) && (c.languages.length === 0 || c.languages.includes(leaf.stack));
+  const clouds = useMemo(() => {
+    if (!leaf) return [];
+    return matrix.clouds.filter((c) => (c.types.length === 0 || c.types.includes(leaf.type)) && (c.languages.length === 0 || c.languages.includes(leaf.stack)));
   }, [matrix, leaf]);
+
+  useEffect(() => {
+    setConfig((c) => (c.cloud && !clouds.some((x) => x.name === c.cloud) ? { ...c, cloud: null } : c));
+  }, [clouds]);
 
   useEffect(() => {
     setConfig((c) => ({
@@ -118,7 +122,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
     template: templates.length > 1 ? template : null,
     name: config.name,
     ci: config.ci && type !== "empty" ? config.ciProvider : null,
-    cloud: config.docker ? "docker" : null,
+    cloud: config.cloud,
     push: config.push,
   });
 
@@ -134,7 +138,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
         package_name: config.packageName || null,
         github_owner: config.githubOwner || null,
         ci: config.ci && type !== "empty" ? config.ciProvider : null,
-        cloud: config.docker ? "docker" : null,
+        cloud: config.cloud,
         git_init: config.gitInit,
         push: config.push,
         private: false,
@@ -213,10 +217,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
               <div className="grid gap-4 sm:grid-cols-2">
                 {!projectId && (
                   <Field label="Project" hint="Which project this app belongs to." className="sm:col-span-2">
-                    <select value={project} onChange={(e) => setProject(e.target.value)} className="h-9 w-full px-3 text-sm" required>
-                      <option value="" disabled>Select a project…</option>
-                      {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
+                    <Select value={project} onChange={setProject} placeholder="Select a project…" options={projects.map((p) => ({ value: p.id, label: p.name }))} />
                   </Field>
                 )}
                 <Field label="Project name" hint="Human name; the slug is derived from it." className="sm:col-span-2">
@@ -232,10 +233,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                   <Input value={config.description} onChange={(e) => setConfig({ ...config, description: e.target.value })} placeholder={leaf?.description ?? ""} />
                 </Field>
                 <Field label="Source host" hint={hosts.length ? "Where the repository will live." : "None configured — Settings → Source hosts."}>
-                  <select value={hostId} onChange={(e) => setHostId(e.target.value)} className="h-9 w-full px-3 text-sm" disabled={hosts.length === 0}>
-                    {hosts.length === 0 && <option value="">no source host</option>}
-                    {hosts.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
-                  </select>
+                  <Select value={hostId} onChange={setHostId} disabled={hosts.length === 0} placeholder="No source host" options={hosts.map((h) => ({ value: h.id, label: h.name }))} />
                 </Field>
                 <Field label="Repository owner" hint="Organization or user; defaults to the host's.">
                   <Input className="font-mono" value={config.githubOwner} onChange={(e) => setConfig({ ...config, githubOwner: e.target.value })} placeholder={host?.defaultOwner ?? "my-org"} />
@@ -257,8 +255,17 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                       )}
                     </Option>
                   )}
-                  <Option checked={config.docker} disabled={!dockerAllowed} onChange={(v) => setConfig({ ...config, docker: v })} label="Include Docker configuration" hint={dockerAllowed ? "Dockerfile and compose overlay; deploy target set to docker." : "Not available for this template."} />
-                  <Option checked disabled onChange={() => {}} label="Include code quality configuration" hint="Always on: .code_quality/ ships with every template." />
+                  {clouds.length > 0 && (
+                    <Option checked={config.cloud !== null} onChange={(v) => setConfig({ ...config, cloud: v ? clouds[0].name : null })} label="Include a deploy target" hint="Overlays the cloud files on top of the template and sets [deploy] target.">
+                      {config.cloud !== null && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {clouds.map((c) => (
+                            <Chip key={c.name} active={config.cloud === c.name} onClick={() => setConfig({ ...config, cloud: c.name })}>{c.name}</Chip>
+                          ))}
+                        </div>
+                      )}
+                    </Option>
+                  )}
                   <Option checked={config.push} disabled={!host} onChange={(v) => setConfig({ ...config, push: v, gitInit: v || config.gitInit })} label="Create remote repository and push" hint={host ? `On ${host.name}, as ${config.githubOwner || host.defaultOwner || "the token's user"}/${config.directory || "<directory>"}.` : "Needs a source host."} />
                 </div>
               </div>
@@ -285,8 +292,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                       {[
                         config.gitInit && "Git repository",
                         config.ci && type !== "empty" && `CI: ${config.ciProvider}`,
-                        config.docker && "Docker",
-                        "Code quality",
+                        config.cloud && `Deploy: ${config.cloud}`,
                         config.push && "Push to remote",
                       ].filter(Boolean).map((o) => <Badge key={String(o)} tone="ok">{o}</Badge>)}
                     </div>

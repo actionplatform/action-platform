@@ -10,7 +10,7 @@ import pytest
 
 pytest.importorskip("fastapi")
 
-from action_platform.api.credentials import SourceCredentials, git_auth  # noqa: E402
+from action_platform.api.core.credentials import SourceCredentials, git_auth  # noqa: E402
 
 
 def test_git_auth_sets_and_restores_env(monkeypatch):
@@ -50,3 +50,21 @@ def test_git_auth_none_is_noop():
     with git_auth(None):
         pass
     assert dict(os.environ) == before
+
+
+def test_apply_replaces_source_host_on_config(tmp_path: Path):
+    from action_platform.api.core.credentials import apply
+    from action_platform.core.config import Config
+
+    (tmp_path / "platform.toml").write_text(
+        '[project]\nname = "x"\n\n[source_host]\nkind = "github"\nrepo = "a/b"\n'
+    )
+    config = Config.from_toml(tmp_path / "platform.toml")
+    apply(
+        config,
+        SourceCredentials(kind="gitlab", token="glpat", base_url="https://gl.example"),
+    )
+
+    assert config.source_host is not None
+    assert config.source_host.name == "gitlab"
+    assert config.source_host.repo == "a/b"

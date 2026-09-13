@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { type ReactNode, useEffect, useId, useState } from "react";
 import { Button } from "./button";
@@ -25,7 +26,7 @@ export function Dialog({ open, onClose, title, description, children, footer, cl
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/80 p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div role="dialog" aria-modal aria-labelledby={id} className={`w-full max-w-md rounded-lg border border-border bg-surface ${className ?? ""}`}>
         <div className="flex items-start justify-between gap-4 px-4 pt-4">
@@ -39,7 +40,7 @@ export function Dialog({ open, onClose, title, description, children, footer, cl
         {footer && <div className="flex flex-wrap justify-end gap-2 border-t border-border px-4 py-3">{footer}</div>}
       </div>
     </div>
-  );
+  , document.body);
 }
 
 export function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLabel = "Confirm", cancelLabel = "Cancel", pending, danger, children }: {

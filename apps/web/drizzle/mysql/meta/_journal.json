@@ -36,6 +36,34 @@
       "when": 1789247146361,
       "tag": "0004_dry_dagger",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1789260116170,
+      "tag": "0005_cynical_fixer",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1789261897316,
+      "tag": "0006_smiling_kinsey_walden",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1789262304538,
+      "tag": "0007_gray_wolfsbane",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1789264193941,
+      "tag": "0008_chubby_ink",
+      "breakpoints": true
     }
   ]
 }

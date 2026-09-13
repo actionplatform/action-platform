@@ -24,13 +24,13 @@ export function OrgSwitcher({ org, orgs }: { org: Org; orgs: Org[] }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-surface-hover"
+        className="flex w-full items-center gap-3 rounded-[7px] px-2.5 py-2 text-left text-sm hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground"
         aria-expanded={open}
       >
-        <span className="flex size-6 items-center justify-center rounded border border-border bg-background"><Building2 className="size-3.5" /></span>
+        <span className="flex size-8 items-center justify-center rounded-md border border-border bg-background"><Building2 className="size-4" strokeWidth={1.75} /></span>
         <span className="min-w-0 flex-1">
           <span className="block truncate font-medium">{org.name}</span>
-          <span className="block truncate text-xs text-muted-foreground">{org.slug}</span>
+          <span className="block truncate font-mono text-xs text-secondary">{org.slug}</span>
         </span>
         <ChevronsUpDown className="size-4 text-muted-foreground" />
       </button>
