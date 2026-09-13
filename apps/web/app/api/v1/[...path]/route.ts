@@ -75,10 +75,10 @@ async function proxy(req: Request, segments: string[]): Promise<Response> {
   if (rule.credentials && body !== undefined) {
     const parsed = body ? (JSON.parse(body) as Record<string, unknown>) : {};
     const hostId = app?.sourceHostId ?? (typeof parsed.url === "string" ? await hostIdForUrl(org.id, parsed.url) : null);
-    if (!parsed.credentials && hostId) {
-      const creds = await credentialsFor(org.id, hostId);
+    if (!parsed.credentials) {
+      const creds = hostId ? await credentialsFor(org.id, hostId) : null;
       const identity = await gitAuthorOf(org.id);
-      parsed.credentials = creds ? { ...creds, author_name: identity.name, author_email: identity.email } : null;
+      parsed.credentials = { ...(creds ?? {}), author_name: identity.name, author_email: identity.email };
     }
     body = JSON.stringify(parsed);
   }

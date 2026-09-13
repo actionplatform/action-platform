@@ -2,7 +2,7 @@
 
 import { failed, type Result } from "@/lib/result";
 import { revalidatePath } from "next/cache";
-import { api, ApiError, type ReleasePreview } from "@/lib/api";
+import { type SourceCredentials, api, ApiError, type ReleasePreview } from "@/lib/api";
 import { appById, createApp, deleteApp, markSynced, projectById, setAppHost } from "@/lib/projects";
 import { requirePermission } from "@/lib/orgs";
 import type { Permission } from "@/lib/permissions";
@@ -21,24 +21,28 @@ async function owned(projectId: string, permission: Permission) {
   return { org, project };
 }
 
-async function credsFor(orgId: string, projectId: string, appId: string) {
+async function identityOf(orgId: string) {
+  const identity = await gitAuthorOf(orgId);
+  return { author_name: identity.name, author_email: identity.email };
+}
+
+async function credsFor(orgId: string, projectId: string, appId: string): Promise<SourceCredentials | null> {
   const app = await appById(projectId, appId);
   if (!app) return null;
-  const identity = await gitAuthorOf(orgId);
-  const author = { author_name: identity.name, author_email: identity.email };
+  const author = await identityOf(orgId);
 
   if (app.sourceHostId) return withAuthor(await credentialsFor(orgId, app.sourceHostId), author);
 
   const detail = await api.apps.get(app.registryId).catch(() => null);
   const host = detail?.url ? await hostFor(orgId, detail.url) : null;
-  if (!host) return null;
+  if (!host) return author;
 
   await setAppHost(projectId, appId, host.id);
   return withAuthor(await credentialsFor(orgId, host.id), author);
 }
 
-function withAuthor(creds: Awaited<ReturnType<typeof credentialsFor>>, author: { author_name?: string; author_email?: string }) {
-  return creds ? { ...creds, ...author } : null;
+function withAuthor(creds: Awaited<ReturnType<typeof credentialsFor>>, author: { author_name: string; author_email: string }): SourceCredentials {
+  return creds ? { ...creds, ...author } : author;
 }
 
 function repoOf(url: string, fromToml: string | null | undefined): string | null {
@@ -138,8 +142,8 @@ export async function pushApp(projectId: string, appId: string, registryId: stri
   try {
     const { org } = await owned(projectId, "app.flow");
     if (sourceHostId) await setAppHost(projectId, appId, sourceHostId);
-    const creds = sourceHostId ? await credentialsFor(org.id, sourceHostId) : await credsFor(org.id, projectId, appId);
-    if (!creds) return { ok: false, error: "pick a source host first (Settings → Source hosts)" };
+    const creds = sourceHostId ? withAuthor(await credentialsFor(org.id, sourceHostId), await identityOf(org.id)) : await credsFor(org.id, projectId, appId);
+    if (!creds?.token) return { ok: false, error: "pick a source host first (Settings → Source hosts)" };
     const r = await api.apps.push(registryId, priv, creds);
     await pullReleases(projectId, appId);
     revalidatePath(`/projects/${projectId}`, "layout");
@@ -153,7 +157,7 @@ export async function pushApp(projectId: string, appId: string, registryId: stri
 export async function startBranch(projectId: string, appId: string, registryId: string, input: { kind: string; code: string; slug: string; push: boolean }): Promise<Result<{ branch: string; base: string; pushed: boolean }>> {
   try {
     const { org } = await owned(projectId, "app.flow");
-    const data = await api.apps.startBranch(registryId, { ...input, slug: input.slug || null, credentials: input.push ? await credsFor(org.id, projectId, appId) : null });
+    const data = await api.apps.startBranch(registryId, { ...input, slug: input.slug || null, credentials: await credsFor(org.id, projectId, appId) });
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {
@@ -237,7 +241,7 @@ export async function commitChanges(projectId: string, appId: string, registryId
       push: input.push,
       branch: input.branch ? { kind: input.branch.kind, code: input.branch.code, slug: input.branch.slug || null } : null,
       pull_request: input.pullRequest,
-      credentials: remote ? await credsFor(org.id, projectId, appId) : null,
+      credentials: await credsFor(org.id, projectId, appId),
     });
     if (data.pull_request) await pullReleases(projectId, appId);
     revalidatePath(`/projects/${projectId}`, "layout");
