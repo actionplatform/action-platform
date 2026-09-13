@@ -30,14 +30,20 @@ class SourceGitlab(SourceHost):
         self.web = (base_url or "https://gitlab.com").rstrip("/")
         self.api = f"{self.web}/api/v4"
 
+    def _require_credentials(self) -> None:
         if not self.token:
-            raise ProviderError("no GitLab token: set ACTION_PLATFORM_GITLAB_TOKEN")
+            raise ProviderError(
+                "no GitLab credentials for this repository: on the platform, connect a GitLab host "
+                "in Settings; on the CLI, set ACTION_PLATFORM_GITLAB_TOKEN"
+            )
 
     @property
     def _id(self) -> str:
         return urllib.parse.quote(self.repo, safe="")
 
     def _rest(self, method: str, path: str, body: dict | None = None):
+        self._require_credentials()
+
         return rest.call(
             method,
             f"{self.api}{path}",

@@ -36,9 +36,11 @@ class SourceBitbucket(SourceHost):
         self.api = "https://api.bitbucket.org/2.0"
         self.web = "https://bitbucket.org"
 
+    def _require_credentials(self) -> None:
         if not self.token:
             raise ProviderError(
-                "no Bitbucket credentials: set ACTION_PLATFORM_BITBUCKET_TOKEN"
+                "no Bitbucket credentials for this repository: on the platform, connect a Bitbucket "
+                "host in Settings; on the CLI, set ACTION_PLATFORM_BITBUCKET_TOKEN"
             )
 
     def _headers(self) -> dict[str, str]:
@@ -50,6 +52,8 @@ class SourceBitbucket(SourceHost):
         return {"authorization": f"Bearer {self.token}"}
 
     def _rest(self, method: str, path: str, body: dict | None = None):
+        self._require_credentials()
+
         return rest.call(method, f"{self.api}{path}", self._headers(), body)
 
     def detect(self, remote_url: str) -> bool:
