@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.6.4 — 2026-09-13
+
+### Features
+- **api:** optional Sentry reporting for the API and the CLI via AP_SENTRY_DSN
+- **web:** commit identity per organization, set in setup and settings, sent with every platform commit
+
+### Bug Fixes
+- **core:** audit protected branches from the platform install commit and stop flagging merged pull requests as direct commits
+- **api:** sync stashes local changes around the pull instead of refusing
+- **api:** answer 400 instead of 500 when a clone has no platform.toml, and add POST /apps/{id}/install to write it again
+- **web:** server actions never throw past their boundary; request errors are logged as JSON; platform git email cloud@actionplatform.io
+- **api:** commits on the platform are authored by the signed-in user, with a platform default identity
+- list and discard uncommitted changes in the workspace, undo release writes when the commit fails, show the sync error
+- **providers:** check credentials when a call is made, not when platform.toml is read — the API applies the request token after loading the config
+- **web:** apps without a remembered host pick the organization's matching host before push, release and pull request
+- **web:** create the GitHub App as public so it can be installed on any organization; say so when GitHub skips the account picker
+
+### Docs
+- observability guide, Sentry variables in the compose files and the reinstall flow
+- **readme:** keep only the cli, web and api version badges
+
 ## v0.6.3 — 2026-09-13
 
 ### Features
