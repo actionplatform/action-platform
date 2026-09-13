@@ -23,7 +23,7 @@ const RULES: Rule[] = [
   { method: "POST", pattern: /^apps\/[^/]+\/deploy$/, permission: "app.release" },
   { method: "POST", pattern: /^apps\/[^/]+\/(push|branches|checkout|pull-request)$/, permission: "app.flow", credentials: true, imports: true },
   { method: "PUT", pattern: /^apps\/[^/]+\/manifest$/, permission: "app.configure" },
-  { method: "POST", pattern: /^apps\/[^/]+\/(cloud|services)$/, permission: "app.configure" },
+  { method: "POST", pattern: /^apps\/[^/]+\/(cloud|services|install|discard)$/, permission: "app.configure" },
   { method: "POST", pattern: /^apps\/[^/]+\/commit$/, permission: "app.configure", credentials: true, imports: true },
 ];
 

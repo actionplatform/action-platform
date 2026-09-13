@@ -13,7 +13,7 @@ export type Host = { id: string; name: string; kind: string; defaultOwner: strin
 
 export type Loaded =
   | { ok: true; view: AppView; hosts: Host[]; currentHost: string | null; releases: Release[]; stored: StoredRelease[] }
-  | { ok: false; name: string; projectId: string };
+  | { ok: false; name: string; projectId: string; registryId: string; reason: string | null; missingManifest: boolean };
 
 export const loadApp = cache(async (projectId: string, appId: string): Promise<Loaded> => {
   const { session, org } = await requireOrg();
@@ -38,7 +38,8 @@ export const loadApp = cache(async (projectId: string, appId: string): Promise<L
     const view = toView({ projectId, projectName: project.name, appId: app.id, appName: app.name, detail, health, commits, branches, tags, lastSyncedAt: app.lastSyncedAt, manifest: manifest.content, changes, grants: grantsOf(await roleOf(session.user.id, org.id)) });
     return { ok: true, view, hosts: hosts.map((h) => ({ id: h.id, name: h.name, kind: h.kind, defaultOwner: h.defaultOwner })), currentHost: app.sourceHostId, releases, stored };
   } catch (e) {
-    if (e instanceof ApiError && (e.status === 400 || e.status === 410)) notFound();
-    return { ok: false, name: app.name, projectId };
+    if (e instanceof ApiError && e.status === 410) notFound();
+    const reason = e instanceof Error ? e.message : null;
+    return { ok: false, name: app.name, projectId, registryId: app.registryId, reason, missingManifest: !!reason && reason.includes("platform.toml") };
   }
 });

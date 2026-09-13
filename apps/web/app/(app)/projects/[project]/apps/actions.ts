@@ -257,3 +257,14 @@ export async function discardChanges(projectId: string, registryId: string): Pro
     return { ok: false, error: (e as Error).message };
   }
 }
+
+export async function reinstallPlatform(projectId: string, registryId: string): Promise<Result<{ installed: string[] }>> {
+  try {
+    await owned(projectId, "app.configure");
+    const data = await api.apps.install(registryId);
+    revalidatePath(`/projects/${projectId}`, "layout");
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
