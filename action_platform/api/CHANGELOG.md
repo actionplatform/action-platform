@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.9 — 2026-09-13
+
+### Bug Fixes
+- **api:** configuration commits are made with the identity sent in the request, not only the push
+- **api:** one SourceCredentials model where the token and the commit identity are each optional
+
 ## v0.5.8 — 2026-09-13
 
 ### Features
