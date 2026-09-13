@@ -5,7 +5,7 @@ import { api, ApiError, type ReleasePreview } from "@/lib/api";
 import { appById, createApp, deleteApp, markSynced, projectById, setAppHost } from "@/lib/projects";
 import { requirePermission } from "@/lib/orgs";
 import type { Permission } from "@/lib/permissions";
-import { requireOrg } from "@/lib/session";
+import { getSession, requireOrg } from "@/lib/session";
 import { syncPullRequests } from "@/lib/pull-requests";
 import { syncReleases } from "@/lib/releases";
 import { credentialsFor, hostsOf } from "@/lib/source-hosts";
@@ -22,14 +22,21 @@ async function owned(projectId: string, permission: Permission) {
 async function credsFor(orgId: string, projectId: string, appId: string) {
   const app = await appById(projectId, appId);
   if (!app) return null;
-  if (app.sourceHostId) return credentialsFor(orgId, app.sourceHostId);
+  const session = await getSession();
+  const author = session ? { author_name: session.user.name, author_email: session.user.email } : {};
+
+  if (app.sourceHostId) return withAuthor(await credentialsFor(orgId, app.sourceHostId), author);
 
   const detail = await api.apps.get(app.registryId).catch(() => null);
   const host = detail?.url ? await hostFor(orgId, detail.url) : null;
   if (!host) return null;
 
   await setAppHost(projectId, appId, host.id);
-  return credentialsFor(orgId, host.id);
+  return withAuthor(await credentialsFor(orgId, host.id), author);
+}
+
+function withAuthor(creds: Awaited<ReturnType<typeof credentialsFor>>, author: { author_name?: string; author_email?: string }) {
+  return creds ? { ...creds, ...author } : null;
 }
 
 function repoOf(url: string, fromToml: string | null | undefined): string | null {

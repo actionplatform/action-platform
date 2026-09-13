@@ -27,6 +27,8 @@ class Settings:
 
     GITHUB_TOKEN = os.getenv("ACTION_PLATFORM_GITHUB_TOKEN") or os.getenv("GH_TOKEN")
     API_TOKEN = os.getenv("AP_API_TOKEN", "")
+    GIT_AUTHOR_NAME = os.getenv("AP_GIT_AUTHOR_NAME", "Action Platform")
+    GIT_AUTHOR_EMAIL = os.getenv("AP_GIT_AUTHOR_EMAIL", "platform@actionplatform.io")
     GITLAB_TOKEN = os.getenv("ACTION_PLATFORM_GITLAB_TOKEN") or os.getenv(
         "GITLAB_TOKEN"
     )
