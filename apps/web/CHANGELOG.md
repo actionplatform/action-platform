@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.1 — 2026-09-13
+
+### Features
+- **web:** optional Sentry reporting with the DSN read at runtime from SENTRY_DSN
+
+### Bug Fixes
+- **web:** app page offers to install the platform files instead of a 404 when the clone lost platform.toml
+- **web:** drop public/icon.svg, which conflicted with the app/icon.svg favicon route
+
 ## v0.6.0 — 2026-09-13
 
 ### Features
