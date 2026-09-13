@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.2.0 — 2026-09-13
+
+### Features
+- **api:** modular api/v1 with configuration, flow, branch-aware release and resilient sync
+
+### Style
+- ruff format api services and tests
+
+### Chores
+- strip comments from source, configs and workflows; nextCookies last
+
 ## v0.1.2 — 2026-09-12
 
 ## v0.1.1 — 2026-09-12
