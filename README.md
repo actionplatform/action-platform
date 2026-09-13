@@ -7,10 +7,26 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/action-platform/"><img alt="PyPI" src="https://img.shields.io/pypi/v/action-platform?color=2ea44f"></a>
-  <a href="https://pypi.org/project/action-platform/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/action-platform"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
-  <a href="https://github.com/actionplatform/templates"><img alt="Templates" src="https://img.shields.io/badge/templates-13%20projects%20%C2%B7%203%20clouds-6f42c1"></a>
+  <a href="https://pypi.org/project/action-platform/"><img alt="PyPI" src="https://img.shields.io/pypi/v/action-platform?style=flat-square&logo=pypi&logoColor=white&label=cli&color=2ea44f"></a>
+  <a href="https://hub.docker.com/r/actionplatformio/action-platform-web"><img alt="Web image" src="https://img.shields.io/docker/v/actionplatformio/action-platform-web?sort=semver&style=flat-square&logo=docker&logoColor=white&label=web&color=2496ed"></a>
+  <a href="https://hub.docker.com/r/actionplatformio/action-platform-api"><img alt="API image" src="https://img.shields.io/docker/v/actionplatformio/action-platform-api?sort=semver&style=flat-square&logo=docker&logoColor=white&label=api&color=2496ed"></a>
+  <a href="https://pypi.org/project/action-platform/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/action-platform?style=flat-square&logo=python&logoColor=white"></a>
+  <a href="https://pypi.org/project/action-platform/"><img alt="Downloads" src="https://img.shields.io/pypi/dm/action-platform?style=flat-square&color=8250df"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/actionplatform/action-platform/actions/workflows/code-quality.yml"><img alt="Code quality" src="https://img.shields.io/github/actions/workflow/status/actionplatform/action-platform/code-quality.yml?branch=master&style=flat-square&label=code%20quality"></a>
+  <a href="https://github.com/actionplatform/action-platform/actions/workflows/trivy.yml"><img alt="Trivy" src="https://img.shields.io/github/actions/workflow/status/actionplatform/action-platform/trivy.yml?branch=master&style=flat-square&label=trivy&logo=aquasecurity&logoColor=white"></a>
+  <a href="https://github.com/actionplatform/action-platform/actions/workflows/docker-publish-images.yml"><img alt="Package Docker" src="https://img.shields.io/github/actions/workflow/status/actionplatform/action-platform/docker-publish-images.yml?style=flat-square&label=images&logo=githubactions&logoColor=white"></a>
+  <a href="https://github.com/actionplatform/action-platform/releases"><img alt="Release" src="https://img.shields.io/github/v/release/actionplatform/action-platform?style=flat-square&logo=github&label=release"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/actionplatform/templates"><img alt="Templates" src="https://img.shields.io/badge/templates-13%20projects%20%C2%B7%203%20clouds%20%C2%B7%201%20service-6f42c1?style=flat-square"></a>
+  <a href="docs/mcp.md"><img alt="MCP" src="https://img.shields.io/badge/MCP-17%20local%20%C2%B7%2026%20remote%20tools-000000?style=flat-square&logo=anthropic&logoColor=white"></a>
+  <a href="docs/git-flow.md"><img alt="Git-flow" src="https://img.shields.io/badge/git--flow-enforced-orange?style=flat-square&logo=git&logoColor=white"></a>
+  <a href="https://www.conventionalcommits.org"><img alt="Conventional Commits" src="https://img.shields.io/badge/conventional%20commits-1.0.0-fe5196?style=flat-square&logo=conventionalcommits&logoColor=white"></a>
 </p>
 
 ---
@@ -21,7 +37,7 @@ Three doors, one core:
 
 | | |
 |---|---|
-| **Web app** | Organizations › projects › apps. Create an app from a template, connect GitHub / GitLab / Bitbucket, cut releases, run deploys — from a browser. One command to self-host. |
+| **Web app** | Organizations › teams › projects › apps, with roles (`owner`, `admin`, `deployer`, `developer`, `viewer`). Create an app from a template or import any repository, connect GitHub / GitLab / Bitbucket, edit `platform.toml`, open pull requests, cut releases — from a browser. One command to self-host. |
 | **CLI** | `pipx install action-platform` and the same verbs on your machine: `init`, `branch`, `pr`, `release`, `deploy`, `rollback`, `diagnose`. |
 | **MCP server** | The same operations as tools for Claude Code, Codex, Cursor — locally, or against your hosted platform after `action-platform login`. |
 
@@ -57,6 +73,7 @@ Thirty seconds later you have a FastAPI service with tests, lint, CI wired, a SA
 | **Your CI, your account, your git** | Runs on GitHub Actions, GitLab CI or Jenkins you already have. Repositories on GitHub, GitLab, Bitbucket or any git server, connected with OAuth. Infra lands in **your** AWS account through OIDC — no long-lived keys, no vendor in the loop. |
 | **Governance that ships with the code** | Git-flow and Conventional Commits enforced by git hooks before a commit exists and by CI on every PR; changelog generated; `AGENTS.md` for humans and AI agents; Trivy scans; least-privilege IAM in `requirements/`. |
 | **Fix once, everywhere** | CI logic lives in versioned shared repos (`ci-scripts`, `ci-github`, `ci-gitlab`, `ci-jenkins`). Bump `v1`, every project picks it up. |
+| **Roles, not shared tokens** | Members join by invitation or are added with an account; `viewer` reads, `developer` branches and commits, `deployer` releases, `admin` and `owner` run the organization. Code-host credentials stay on the platform — the CLI and MCP act with your role through the hosted API. |
 
 ## What you get
 
@@ -68,22 +85,35 @@ Thirty seconds later you have a FastAPI service with tests, lint, CI wired, a SA
 | `plugin` | chrome |
 | `empty` | `platform.toml` + code quality only |
 
-Cloud overlays `aws/lambda`, `aws/amplify`, `docker`; services `postgres` (docker, aws-rds). Every template comes with tests, lint, CI and `AGENTS.md`. → [Templates](docs/templates.md)
+Cloud overlays `aws/lambda`, `aws/amplify`, `docker`; services `postgres` (docker, aws-rds). Every template comes with tests, lint, CI and `AGENTS.md`. Your organization can add **any git repository** as a template — a plain starter becomes one template, a repository with an `index.toml` a whole catalog. Existing repositories join with one click: the platform installs `platform.toml`, code quality, CI and hooks, and opens the pull request. → [Templates](docs/templates.md)
 
 ## Git-flow, enforced
 
 Branches are `<kind>/<code>`, commits are Conventional Commits, `main`/`develop` take no direct commits. Git hooks refuse the wrong move before it exists; CI refuses it on the pull request; the CLI and the MCP tools guide the right one. → [Git-flow](docs/git-flow.md)
+
+## From the browser
+
+```mermaid
+flowchart LR
+    T[Templates<br/>official + your repositories] --> A[App<br/>clone on the platform]
+    R[Existing repository] -->|install platform.toml, CI, hooks| A
+    A --> C[Configuration<br/>deploy target · services · platform.toml]
+    C -->|commit on chore/&lt;code&gt;| P[Pull request]
+    A --> B[Activity<br/>branches · pull requests]
+    A --> V[Releases<br/>stable from main · rc elsewhere]
+    V --> I[(images · PyPI · GitHub release)]
+```
 
 ## Documentation
 
 | | |
 |---|---|
 | [Self-hosting](docs/self-hosting.md) | `install.sh`, compose, Dokploy, environment, upgrades, backups |
-| [Web app](docs/web-app.md) | organizations › projects › apps, setup wizard, code hosts, creating apps, releasing and deploying from the browser |
+| [Web app](docs/web-app.md) | organizations › teams › projects › apps, roles, setup wizard, code hosts, template repositories, importing, configuration, releasing from the browser |
 | [CLI](docs/cli.md) | every command |
 | [Git-flow](docs/git-flow.md) | branch kinds, commit format, what hooks and CI refuse |
 | [`platform.toml`](docs/platform-toml.md) | the file that declares a project |
-| [Templates](docs/templates.md) | the matrix and how to add to it |
+| [Templates](docs/templates.md) | the matrix, adding your own repositories, how to add to the official one |
 | [MCP](docs/mcp.md) | tools and prompts for AI clients, locally or against a hosted platform |
 | [Releases](docs/releases.md) | versions per component, tags, what each publishes |
 | [Architecture](docs/architecture.md) | packages, the API, providers, how credentials travel |
@@ -101,7 +131,7 @@ tool = ActionPlatform(config=Config(source_host=SourceGithub(repo="acme/orders")
 tool.release("minor")
 ```
 
-Templates are plain cookiecutters in [actionplatform/templates](https://github.com/actionplatform/templates). Add a stack or a cloud with a pull request — the CLI reads `index.toml`, nothing to redeploy. Point `ACTION_PLATFORM_TEMPLATES` at a local checkout while you work on them.
+Templates are plain cookiecutters in [actionplatform/templates](https://github.com/actionplatform/templates). Add a stack or a cloud with a pull request — the CLI reads `index.toml`, nothing to redeploy. Point `ACTION_PLATFORM_TEMPLATES` at a local checkout while you work on them, or keep your own repository next to the official one: `action-platform init --source https://github.com/acme/templates.git@main`, or Templates → *Add repository* in the web app.
 
 ## Ecosystem
 
