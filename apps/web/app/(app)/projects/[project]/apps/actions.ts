@@ -56,7 +56,7 @@ export async function pullReleases(projectId: string, appId: string) {
 
 export type AddResult = { ok: true; appId: string; installed: string[] | null } | { ok: false; error: string; needsInstall?: boolean };
 
-export async function addApp(projectId: string, url: string, install: { type: string; ci: string } | null = null): Promise<AddResult> {
+export async function addApp(projectId: string, url: string, install: { type: string; ci: string; language: string | null } | null = null): Promise<AddResult> {
   url = url.trim();
   if (!url) return { ok: false, error: "url is required" };
   try {

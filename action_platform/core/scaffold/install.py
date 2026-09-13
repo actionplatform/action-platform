@@ -74,19 +74,15 @@ def install(
         raise InstallError(f"{root} is not a git repository")
 
     ci = ci or _existing_ci(root) or "github"
-    language = language or detect_language(root)
-
-    if language is None:
-        raise InstallError(
-            "cannot detect the language — pass --language "
-            "(python, go, node, php, java, rust)"
-        )
+    language = "" if language == "none" else (language or detect_language(root) or "")
 
     if ci not in CI_FILES:
         raise InstallError(f"unknown ci: {ci} (available: {', '.join(CI_FILES)})")
 
     repo, matrix = load_matrix()
-    source = _source_leaf(repo, matrix, language)
+    source = (
+        _source_leaf(repo, matrix, language) if language else _any_leaf(repo, matrix)
+    )
     plan = Plan(root=root, language=language, type=type_, ci=ci)
 
     _write(
@@ -95,7 +91,8 @@ def install(
     _write(plan, settings.LAST_VERSION_FILE, "0.1.0\n", dry_run)
     _write(plan, "AGENTS.md", AGENTS, dry_run)
 
-    _copy_tree(plan, source / ".code_quality", ".code_quality", dry_run)
+    if language:
+        _copy_tree(plan, source / ".code_quality", ".code_quality", dry_run)
 
     for rel in CI_FILES[ci]:
         _copy_file(plan, source / rel, rel, dry_run)
@@ -104,6 +101,16 @@ def install(
         plan.hooks_installed = gitflow.install_hooks(root)
 
     return plan
+
+
+def _any_leaf(repo: Path, matrix: Matrix) -> Path:
+    for leaf in matrix.leaves:
+        candidate = repo / leaf.directory / "{{cookiecutter.project_slug}}"
+
+        if candidate.is_dir():
+            return candidate
+
+    raise InstallError("no template to borrow CI files from")
 
 
 def _source_leaf(repo: Path, matrix: Matrix, language: str) -> Path:

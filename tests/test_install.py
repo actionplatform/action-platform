@@ -93,8 +93,11 @@ def test_errors(tmp_path: Path, templates: Path):
     bare.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=bare, check=True)
 
-    with pytest.raises(InstallError, match="cannot detect"):
-        install.install(bare)
+    plan = install.install(bare)
+    assert plan.language == ""
+    assert "platform.toml" in plan.created
+    assert not (bare / ".code_quality").exists()
+    assert 'language = ""' in (bare / "platform.toml").read_text()
 
 
 def test_hooks_are_refreshed_from_the_package(repo: Path, templates: Path):

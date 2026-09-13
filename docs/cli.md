@@ -14,6 +14,7 @@ action-platform init web go gin --ci gitlab       # direct
 action-platform init web python --cloud docker    # project + deploy overlay
 action-platform init ... --no-push                # keep it local
 action-platform init --list                       # the templates matrix
+action-platform install --language none         # config, CI and hooks only, no language tooling
 action-platform init --source URL[@ref] ...       # templates from another repository (also cloud set, service add)
 action-platform install [--dry-run]               # existing repo: platform.toml, hooks, code quality, CI — never overwrites
 action-platform cloud set aws/lambda              # add or switch the deploy target
