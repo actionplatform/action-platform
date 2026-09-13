@@ -55,6 +55,9 @@ def _copy_repository(
     shutil.copytree(repo, target, ignore=shutil.ignore_patterns(".git"))
     manifest = target / settings.CONFIG_FILE
 
+    if not (target / settings.LAST_VERSION_FILE).exists():
+        (target / settings.LAST_VERSION_FILE).write_text("0.0.0\n")
+
     if manifest.exists():
         text = manifest.read_text()
         manifest.write_text(
@@ -72,7 +75,7 @@ def _copy_repository(
             f'[project]\nname = "{slug}"\ntype = "{leaf.type}"\nci = "{ci or "github"}"\n'
             '\n[release]\nstrategy = "semver"\nchangelog = "conventional"\n'
         )
-        (target / settings.LAST_VERSION_FILE).write_text("0.1.0\n")
+        (target / settings.LAST_VERSION_FILE).write_text("0.0.0\n")
 
     shutil.rmtree(target / ".git", ignore_errors=True)
     _replace_owner(target / settings.CONFIG_FILE, context.get("github_owner"))

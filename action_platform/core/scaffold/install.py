@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -92,7 +94,7 @@ def install(
         _platform_toml(root, type_, language, ci, name or root.name),
         dry_run,
     )
-    _write(plan, settings.LAST_VERSION_FILE, "0.1.0\n", dry_run)
+    _write(plan, settings.LAST_VERSION_FILE, f"{_seed_version(root)}\n", dry_run)
     _write(plan, "AGENTS.md", AGENTS, dry_run)
 
     if language:
@@ -108,6 +110,16 @@ def install(
         plan.hooks_installed = gitflow.install_hooks(root)
 
     return plan
+
+
+def _seed_version(root: Path) -> str:
+    """LAST_VERSION for a repository joining the platform: its newest vX.Y.Z tag, or 0.0.0 when it never released."""
+    tag = git.latest_tag(cwd=root, match="v[0-9]*")
+
+    if tag and re.fullmatch(r"v?\d+\.\d+\.\d+", tag):
+        return tag.lstrip("v")
+
+    return "0.0.0"
 
 
 def _any_leaf(repo: Path, matrix: Matrix) -> Path:

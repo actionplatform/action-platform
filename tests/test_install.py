@@ -120,3 +120,38 @@ def test_ci_comes_from_platform_toml(repo: Path, templates: Path):
 
     assert plan.ci == "gitlab"
     assert ".gitlab-ci.yml" in plan.created
+
+
+def test_last_version_starts_at_zero_or_at_the_newest_tag(
+    tmp_path: Path, templates: Path
+):
+    fresh = tmp_path / "fresh"
+    fresh.mkdir()
+    (fresh / "pyproject.toml").write_text('[project]\nname = "fresh"\n')
+    subprocess.run(["git", "init", "-q"], cwd=fresh, check=True)
+    install.install(fresh)
+    assert (fresh / "LAST_VERSION").read_text() == "0.0.0\n"
+
+    tagged = tmp_path / "tagged"
+    tagged.mkdir()
+    (tagged / "pyproject.toml").write_text('[project]\nname = "tagged"\n')
+    subprocess.run(["git", "init", "-q"], cwd=tagged, check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.email=t@t",
+            "-c",
+            "user.name=t",
+            "commit",
+            "-q",
+            "--allow-empty",
+            "-m",
+            "chore: first",
+        ],
+        cwd=tagged,
+        check=True,
+    )
+    subprocess.run(["git", "tag", "v2.3.4"], cwd=tagged, check=True)
+    install.install(tagged)
+    assert (tagged / "LAST_VERSION").read_text() == "2.3.4\n"
