@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.8 — 2026-09-13
+
+### Features
+- **web:** CI provider follows the selected source host in the wizard and the import dialog
+
+### Bug Fixes
+- **web:** send redirect_uri on the Bitbucket token exchange, which Bitbucket requires once it was sent to authorize
+
+### Docs
+- one file per context and topic (start, use, concept, contribute); real routes, tools, flags and tables; access control, API and getting started guides
+
 ## v0.6.7 — 2026-09-13
 
 ### Features
