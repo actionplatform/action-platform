@@ -117,34 +117,36 @@ class ConfigurationService:
         if problem:
             raise HTTPException(400, problem)
 
-        if body.branch:
-            branch = self._branch_with_changes(root, body)
-        else:
-            branch = git.current_branch(cwd=root)
-            problem = gitflow.check_protected(branch, body.message)
+        with auth.git_auth(body.credentials):
+            if body.branch:
+                branch = self._branch_with_changes(root, body)
+            else:
+                branch = git.current_branch(cwd=root)
+                problem = gitflow.check_protected(branch, body.message)
 
-            if problem:
-                raise HTTPException(400, problem)
+                if problem:
+                    raise HTTPException(400, problem)
 
-        git.add_all(root)
-        git.commit(body.message, cwd=root)
-        sha = git.run(["rev-parse", "--short", "HEAD"], cwd=root)
-        push = body.push or body.pull_request
+            git.add_all(root)
+            git.commit(body.message, cwd=root)
+            sha = git.run(["rev-parse", "--short", "HEAD"], cwd=root)
+            push = body.push or body.pull_request
 
-        if push:
-            with auth.git_auth(body.credentials):
+            if push:
                 git.push_upstream(branch, root)
 
-        result = {"sha": sha, "branch": branch, "pushed": push, "pull_request": None}
+            result = {
+                "sha": sha,
+                "branch": branch,
+                "pushed": push,
+                "pull_request": None,
+            }
 
-        if body.pull_request:
-            config = Config.from_toml(root / settings.CONFIG_FILE)
-            auth.apply(config, body.credentials)
-
-            with auth.git_auth(body.credentials):
+            if body.pull_request:
+                config = Config.from_toml(root / settings.CONFIG_FILE)
+                auth.apply(config, body.credentials)
                 ref = pullrequest.open_pr(root, config=config)
-
-            result["pull_request"] = {"number": ref.number, "url": ref.url}
+                result["pull_request"] = {"number": ref.number, "url": ref.url}
 
         return result
 
@@ -153,10 +155,9 @@ class ConfigurationService:
         git.run(["stash", "push", "--include-untracked"], cwd=root)
 
         try:
-            with auth.git_auth(body.credentials):
-                branch = branching.start(
-                    spec.kind, spec.code, spec.slug, cwd=root, push=False
-                )
+            branch = branching.start(
+                spec.kind, spec.code, spec.slug, cwd=root, push=False
+            )
         except BranchError as e:
             git.run(["stash", "pop"], cwd=root)
             raise HTTPException(400, str(e)) from e

@@ -202,3 +202,30 @@ class InstallPlatformTest(ApiCase):
         self.assertEqual(res.status_code, 200, res.text)
         self.assertIn("[project]", res.json()["content"])
         self.assertTrue((self.workspaces / id / "platform.toml").exists())
+
+
+class IdentityWithoutTokenTest(ApiCase):
+    def test_a_local_commit_carries_the_organization_identity(self):
+        id = self.add_app(on_main=False)
+        root = self.workspaces / id
+        (root / "platform.toml").write_text(
+            (root / "platform.toml").read_text()
+            + '\n[services.cache]\nkind = "redis"\n'
+        )
+
+        res = self.client.post(
+            f"/api/apps/{id}/commit",
+            json={
+                "message": "chore(platform): add cache",
+                "push": False,
+                "credentials": {
+                    "author_name": "Ada",
+                    "author_email": "ada@example.com",
+                },
+            },
+        )
+
+        self.assertEqual(res.status_code, 201, res.text)
+        self.assertEqual(
+            git(root, "log", "-1", "--format=%an <%ae>"), "Ada <ada@example.com>"
+        )
