@@ -34,7 +34,7 @@ export function TemplateSources({ sources, canManage }: { sources: SourceRow[]; 
             <li key={s.name} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm">
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <span className="font-mono">{s.name}</span>
-                {s.official ? <Badge tone="inverse">Official</Badge> : <Badge>Custom</Badge>}
+                {s.official ? <Badge tone="inverse">Official</Badge> : <Badge>{s.projects === 1 && s.clouds === 0 && s.services === 0 ? "Repository" : "Catalog"}</Badge>}
                 {!s.ok && <Badge tone="bad">Unavailable</Badge>}
               </div>
               <div className="flex min-w-0 items-center gap-2 font-mono text-xs text-secondary">
@@ -66,22 +66,22 @@ export function TemplateSources({ sources, canManage }: { sources: SourceRow[]; 
 function AddSourceDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
-  const [ref, setRef] = useState("v1");
+  const [ref, setRef] = useState("main");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const close = () => { if (pending) return; onClose(); setName(""); setUrl(""); setRef("v1"); setError(null); };
+  const close = () => { if (pending) return; onClose(); setName(""); setUrl(""); setRef("main"); setError(null); };
 
   return (
     <Dialog
       open={open}
       onClose={close}
       title="Add a template repository"
-      description={<>A git repository laid out like the official one: <span className="font-mono">index.toml</span> plus <span className="font-mono">projects/</span>, <span className="font-mono">cloud/</span> and <span className="font-mono">service/</span>. Private repositories use the connected code host.</>}
+      description="Any git repository. It becomes a template: new apps start as a copy of it, and the platform adds platform.toml, hooks and CI when they are missing. A repository with an index.toml is read as a full catalog instead. Private repositories use the connected code host."
       footer={<><Button variant="ghost" onClick={close} disabled={pending}>Cancel</Button><Button disabled={pending || !name.trim() || !url.trim()} onClick={() => start(async () => { setError(null); const r = await addSource({ name, url, ref }); if (r.ok) close(); else setError(r.error); })}>{pending ? "Adding…" : "Add repository"}</Button></>}
     >
       <div className="space-y-3">
-        <Field label="Name" hint="Shown on each template as its source"><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="acme" className="font-mono" autoFocus /></Field>
-        <Field label="Git URL"><Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://github.com/acme/templates.git" className="font-mono" /></Field>
+        <Field label="Name" hint="Shown on the template card"><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="starter-api" className="font-mono" autoFocus /></Field>
+        <Field label="Git URL"><Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://github.com/acme/starter-api.git" className="font-mono" /></Field>
         <Field label="Branch or tag"><Input value={ref} onChange={(e) => setRef(e.target.value)} className="font-mono" /></Field>
         {error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
       </div>

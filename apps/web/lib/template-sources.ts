@@ -34,7 +34,7 @@ export async function addTemplateSource(orgId: string, input: { name: string; ur
   const { db, t } = await q();
   const name = slugify(input.name.trim());
   const url = input.url.trim();
-  const ref = input.ref.trim() || "v1";
+  const ref = input.ref.trim() || "main";
   if (!name) throw new Error("name is required");
   if (name === "official") throw new Error("official is reserved");
   if (!/^(https?:\/\/|git@|ssh:\/\/|file:\/\/)/.test(url)) throw new Error("enter a git url");

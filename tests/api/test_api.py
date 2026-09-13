@@ -434,3 +434,46 @@ def _template_repo(root: Path, type_: str, stack: str, template: str) -> Path:
         f'[projects.{type_}.{stack}.{template}]\ndefault = true\ndescription = "{template}"\n'
     )
     return root
+
+
+def test_plain_repository_source_is_one_template(
+    client: TestClient, tmp_path: Path, monkeypatch
+):
+    monkeypatch.setenv(
+        "ACTION_PLATFORM_TEMPLATES",
+        str(_template_repo(tmp_path / "official", "web", "python", "fastapi")),
+    )
+    plain = tmp_path / "starter"
+    (plain / "app").mkdir(parents=True)
+    (plain / "app" / "main.py").write_text("print('hi')\n")
+    (plain / "pyproject.toml").write_text('[project]\nname = "starter"\n')
+    git("init", "-q", "-b", "main", cwd=plain)
+    git("config", "user.email", "t@t", cwd=plain)
+    git("config", "user.name", "t", cwd=plain)
+    git("add", "-A", cwd=plain)
+    git("commit", "-q", "-m", "chore: starter", cwd=plain)
+
+    spec = {"name": "starter", "url": plain.as_uri(), "ref": "main"}
+    matrix = client.post("/api/matrix", json={"sources": [spec]}).json()
+    mine = [p for p in matrix["projects"] if p["source"] == "starter"]
+    assert len(mine) == 1
+    assert mine[0]["stack"] == "python" and mine[0]["template"] == "starter"
+
+    res = client.post(
+        "/api/apps/init",
+        json={
+            "type": mine[0]["type"],
+            "stack": "python",
+            "template": "starter",
+            "name": "My Service",
+            "source": spec,
+            "push": False,
+        },
+    )
+    assert res.status_code == 201, res.text
+    created = res.json()
+    detail = client.get(f"/api/apps/{created['id']}").json()
+    assert created["name"] == "my-service"
+    assert detail["project"]["language"] == "python"
+    assert (Path(created["path"]) / "app" / "main.py").exists()
+    assert (Path(created["path"]) / "platform.toml").exists()

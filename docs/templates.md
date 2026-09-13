@@ -47,7 +47,10 @@ Every template ships `platform.toml`, `.code_quality/`, `AGENTS.md`, tests and a
 
 ## Other repositories
 
-The official catalog always comes from [actionplatform/templates](https://github.com/actionplatform/templates) at `v1`. Any git repository with the same layout (`index.toml` + `projects/`, `cloud/`, `service/`) can be added next to it:
+The official catalog always comes from [actionplatform/templates](https://github.com/actionplatform/templates) at `v1`. Next to it an organization can add **any git repository**:
+
+- a plain repository (a starter, a reference service) becomes **one template**: a new app starts as a copy of that tree at the chosen branch or tag; the platform detects the language (`pyproject.toml`, `go.mod`, `package.json`…), keeps an existing `platform.toml` (renaming the project) or adds `platform.toml`, `.code_quality/`, CI files and hooks the same way `action-platform install` does;
+- a repository with an `index.toml` at the root is read as a **catalog** with the official layout (`projects/`, `cloud/`, `service/`).
 
 | Where | How |
 |---|---|
@@ -56,7 +59,7 @@ The official catalog always comes from [actionplatform/templates](https://github
 | MCP (local) | `list_matrix(source="url[@ref]")`, then the same `source` on `init_project`, `cloud_set`, `service_add`. |
 | MCP (remote) | `list_matrix` already merges the organization's repositories; pass the source's `name` to `init_app`, `set_cloud`, `add_service`. |
 
-Names are unique per organization and `official` is reserved. A repository that cannot be read shows as *Unavailable* with the error, without hiding the others.
+Names are unique per organization and `official` is reserved. A repository that cannot be cloned shows as *Unavailable* with the error, without hiding the others.
 
 ## Adding one
 

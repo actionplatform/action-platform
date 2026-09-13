@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -33,7 +34,67 @@ def generate_project(
     if ci is not None:
         context["ci"] = ci
 
+    if leaf.plain:
+        return _copy_repository(repo, leaf, name, ci, output, context)
+
     return _cookiecutter(repo, leaf.directory, output, context)
+
+
+def _copy_repository(
+    repo: Path, leaf: Leaf, name: str, ci: str | None, output: Path, context: dict
+) -> Path:
+    """Copy a plain repository as the new project and make sure it carries platform.toml, hooks and CI."""
+    from action_platform.core.scaffold.install import install
+
+    slug = _slugify(name)
+    target = output / slug
+
+    if target.exists():
+        raise TemplateError(f"{target} already exists")
+
+    shutil.copytree(repo, target, ignore=shutil.ignore_patterns(".git"))
+    manifest = target / settings.CONFIG_FILE
+
+    if manifest.exists():
+        text = manifest.read_text()
+        manifest.write_text(
+            re.sub(r'(?m)^name\s*=\s*".*"$', f'name = "{slug}"', text, count=1)
+        )
+        _replace_owner(manifest, context.get("github_owner"))
+        return target
+
+    git.init(target, branch="main")
+    install(target, type_=leaf.type, language=leaf.stack or None, ci=ci)
+    shutil.rmtree(target / ".git", ignore_errors=True)
+    _replace_owner(target / settings.CONFIG_FILE, context.get("github_owner"))
+
+    if context.get("description"):
+        text = (target / settings.CONFIG_FILE).read_text()
+        (target / settings.CONFIG_FILE).write_text(
+            text.replace(
+                "[project]\n",
+                f'[project]\ndescription = "{context["description"]}"\n',
+                1,
+            )
+        )
+
+    return target
+
+
+def _replace_owner(manifest: Path, owner: str | None) -> None:
+    if not owner or not manifest.exists():
+        return
+
+    text = manifest.read_text()
+
+    if "[source_host]" in text:
+        manifest.write_text(
+            re.sub(r'(?m)^repo\s*=\s*"[^/"]+/', f'repo = "{owner}/', text, count=1)
+        )
+
+
+def _slugify(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
 
 
 def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:

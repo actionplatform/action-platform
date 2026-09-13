@@ -22,9 +22,13 @@ class Leaf:
     template: str
     description: str = ""
     default: bool = False
+    plain: bool = False
 
     @property
     def directory(self) -> str:
+        if self.plain:
+            return ""
+
         if not self.stack:
             return f"projects/{self.type}"
 
@@ -260,15 +264,57 @@ def ensure_source(source: TemplateSource, update: bool = False) -> Path:
     return cache
 
 
+LANGUAGE_MARKERS = [
+    ("pyproject.toml", "python"),
+    ("go.mod", "go"),
+    ("package.json", "node"),
+    ("composer.json", "php"),
+    ("pom.xml", "java"),
+    ("Cargo.toml", "rust"),
+]
+
+
+def plain_matrix(source: TemplateSource, repo: Path) -> Matrix:
+    """A repository without index.toml is one template: its own tree, copied as-is."""
+    meta: dict = {}
+    manifest = repo / settings.CONFIG_FILE
+
+    if manifest.exists():
+        try:
+            meta = tomllib.loads(manifest.read_text()).get("project", {})
+        except tomllib.TOMLDecodeError:
+            meta = {}
+
+    language = meta.get("language") or next(
+        (lang for marker, lang in LANGUAGE_MARKERS if (repo / marker).exists()), ""
+    )
+    type_ = meta.get("type") or (
+        "library"
+        if language
+        and not (repo / "Dockerfile").exists()
+        and not (repo / "app").is_dir()
+        else "web"
+    )
+
+    leaf = Leaf(
+        type=type_,
+        stack=language,
+        template=source.label,
+        description=meta.get("description")
+        or f"Repository {source.url}@{source.ref}, copied as-is",
+        default=True,
+        plain=True,
+    )
+
+    return Matrix(leaves=[leaf])
+
+
 def load_source(source: TemplateSource, update: bool = False) -> tuple[Path, Matrix]:
     repo = ensure_source(source, update=update)
     index = repo / "index.toml"
 
     if not index.exists():
-        raise TemplateError(
-            f"{source.url}@{source.ref} is not a templates repository: no index.toml "
-            "at the root (expected index.toml plus projects/, cloud/ and service/)"
-        )
+        return repo, plain_matrix(source, repo)
 
     return repo, Matrix.from_toml(index)
 
