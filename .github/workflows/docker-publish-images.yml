@@ -1,4 +1,4 @@
-name: Images
+name: Package Docker
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       component:
-        description: api or web
+        description: Component to build
         required: true
         type: choice
         options: [api, web]
@@ -19,47 +19,112 @@ permissions:
   contents: read
   packages: write
 
+concurrency:
+  group: images-${{ github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
-  build:
+  resolve:
+    name: Resolve component and version
     runs-on: ubuntu-latest
-    env:
-      COMPONENT: ${{ inputs.component || '' }}
+    outputs:
+      component: ${{ steps.which.outputs.component }}
+      version: ${{ steps.which.outputs.version }}
+      latest: ${{ steps.which.outputs.latest }}
+      prerelease: ${{ steps.which.outputs.prerelease }}
     steps:
-      - uses: actions/checkout@v4
-      - id: which
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read component and version from the tag
+        id: which
+        env:
+          COMPONENT: ${{ inputs.component || '' }}
         run: |
           ref="${GITHUB_REF_NAME}"
           comp="${COMPONENT:-${ref%%/*}}"
           version="${ref#*/v}"
           [ "$version" = "$ref" ] && version="$(cat "$([ "$comp" = web ] && echo apps/web || echo action_platform/api)/LAST_VERSION")"
-          echo "component=$comp" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          case "$version" in *-rc.*) echo "latest=false" >> "$GITHUB_OUTPUT" ;; *) echo "latest=true" >> "$GITHUB_OUTPUT" ;; esac
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+          case "$version" in
+            *-rc.*) latest=false; prerelease=true ;;
+            *) latest=true; prerelease=false ;;
+          esac
+          {
+            echo "component=$comp"
+            echo "version=$version"
+            echo "latest=$latest"
+            echo "prerelease=$prerelease"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          {
+            echo "### action-platform-${{ steps.which.outputs.component }} ${{ steps.which.outputs.version }}"
+            echo
+            echo "- Pre-release: ${{ steps.which.outputs.prerelease }}"
+            echo "- Moves \`latest\`: ${{ steps.which.outputs.latest }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: Build and push ${{ needs.resolve.outputs.component }} ${{ needs.resolve.outputs.version }}
+    needs: resolve
+    runs-on: ubuntu-latest
+    environment:
+      name: images
+      url: https://hub.docker.com/r/${{ vars.DOCKERHUB_NAMESPACE || 'actionplatformio' }}/action-platform-${{ needs.resolve.outputs.component }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Sign in to Docker Hub
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - uses: docker/login-action@v3
+
+      - name: Sign in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - id: meta
+
+      - name: Image names and tags
+        id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
-            docker.io/${{ vars.DOCKERHUB_NAMESPACE || 'actionplatformio' }}/action-platform-${{ steps.which.outputs.component }}
-            ghcr.io/${{ github.repository_owner }}/action-platform-${{ steps.which.outputs.component }}
+            docker.io/${{ vars.DOCKERHUB_NAMESPACE || 'actionplatformio' }}/action-platform-${{ needs.resolve.outputs.component }}
+            ghcr.io/${{ github.repository_owner }}/action-platform-${{ needs.resolve.outputs.component }}
           tags: |
-            type=raw,value=${{ steps.which.outputs.version }}
-            type=raw,value=latest,enable=${{ steps.which.outputs.latest }}
-      - uses: docker/build-push-action@v6
+            type=raw,value=${{ needs.resolve.outputs.version }}
+            type=raw,value=latest,enable=${{ needs.resolve.outputs.latest }}
+          labels: |
+            org.opencontainers.image.title=action-platform-${{ needs.resolve.outputs.component }}
+            org.opencontainers.image.description=Action Platform ${{ needs.resolve.outputs.component }}
+            org.opencontainers.image.vendor=Action Platform
+            org.opencontainers.image.version=${{ needs.resolve.outputs.version }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
         with:
           context: .
-          file: deploy/Dockerfile.${{ steps.which.outputs.component }}
+          file: deploy/Dockerfile.${{ needs.resolve.outputs.component }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ steps.which.outputs.component }}
-          cache-to: type=gha,mode=max,scope=${{ steps.which.outputs.component }}
+          cache-from: type=gha,scope=${{ needs.resolve.outputs.component }}
+          cache-to: type=gha,mode=max,scope=${{ needs.resolve.outputs.component }}
+
+      - name: Summary
+        run: |
+          {
+            echo "### Pushed"
+            echo
+            echo '```'
+            echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

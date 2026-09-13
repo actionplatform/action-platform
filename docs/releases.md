@@ -45,7 +45,7 @@ flowchart LR
 | Workflow | Trigger | Does |
 |---|---|---|
 | `python-publish-pypi.yml` | release published for `vX.Y.Z` (skips `*/v*`) | builds and uploads to PyPI through a Trusted Publisher (environment `pypi`) |
-| `images.yml` | tag `api/v*` or `web/v*`, or manual dispatch with a component | builds `deploy/Dockerfile.<component>`, pushes `:X.Y.Z` (and `:latest` for stable) to Docker Hub and GHCR |
+| `docker-publish-images.yml` (Package Docker) | tag `api/v*` or `web/v*`, or manual dispatch with a component | builds `deploy/Dockerfile.<component>`, pushes `:X.Y.Z` (and `:latest` for stable) to Docker Hub and GHCR |
 | `code-quality.yml`, `conventional-commit.yml`, `gitflow.yml`, `trivy.yml` | pull requests and pushes | the shared checks from ci-scripts |
 
 Secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` (read & write); variable `DOCKERHUB_NAMESPACE` when the Hub account is not `actionplatformio`. GHCR uses `GITHUB_TOKEN`.
