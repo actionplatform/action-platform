@@ -98,16 +98,16 @@ export async function removeApp(projectId: string, appId: string) {
 }
 
 export async function syncApp(projectId: string, appId: string, registryId: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { org } = await owned(projectId, "app.sync");
   try {
+    const { org } = await owned(projectId, "app.sync");
     await api.apps.sync(registryId, await credsFor(org.id, projectId, appId));
+    await pullReleases(projectId, appId);
+    await markSynced(projectId, appId);
+    revalidatePath(`/projects/${projectId}`, "layout");
+    return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message || "sync failed" };
   }
-  await pullReleases(projectId, appId);
-  await markSynced(projectId, appId);
-  revalidatePath(`/projects/${projectId}`, "layout");
-  return { ok: true };
 }
 
 export async function previewRelease(registryId: string, level: string, branch: string | null = null): Promise<Result<ReleasePreview>> {
@@ -133,8 +133,8 @@ export async function runRelease(projectId: string, appId: string, registryId: s
 }
 
 export async function pushApp(projectId: string, appId: string, registryId: string, priv: boolean, sourceHostId: string | null): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
-  const { org } = await owned(projectId, "app.flow");
   try {
+    const { org } = await owned(projectId, "app.flow");
     if (sourceHostId) await setAppHost(projectId, appId, sourceHostId);
     const creds = sourceHostId ? await credentialsFor(org.id, sourceHostId) : await credsFor(org.id, projectId, appId);
     if (!creds) return { ok: false, error: "pick a source host first (Settings → Source hosts)" };
@@ -150,8 +150,8 @@ export async function pushApp(projectId: string, appId: string, registryId: stri
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export async function startBranch(projectId: string, appId: string, registryId: string, input: { kind: string; code: string; slug: string; push: boolean }): Promise<Result<{ branch: string; base: string; pushed: boolean }>> {
-  const { org } = await owned(projectId, "app.flow");
   try {
+    const { org } = await owned(projectId, "app.flow");
     const data = await api.apps.startBranch(registryId, { ...input, slug: input.slug || null, credentials: input.push ? await credsFor(org.id, projectId, appId) : null });
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
@@ -161,8 +161,8 @@ export async function startBranch(projectId: string, appId: string, registryId: 
 }
 
 export async function checkoutBranch(projectId: string, registryId: string, branch: string): Promise<Result<{ branch: string }>> {
-  await owned(projectId, "app.flow");
   try {
+    await owned(projectId, "app.flow");
     const data = (await api.apps.checkout(registryId, branch)) as { branch: string };
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
@@ -172,8 +172,8 @@ export async function checkoutBranch(projectId: string, registryId: string, bran
 }
 
 export async function proposePullRequest(projectId: string, registryId: string): Promise<Result<{ head: string; base: string; title: string; body: string; commits: string[] }>> {
-  await owned(projectId, "app.flow");
   try {
+    await owned(projectId, "app.flow");
     return { ok: true, data: await api.apps.proposePullRequest(registryId) };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
@@ -181,8 +181,8 @@ export async function proposePullRequest(projectId: string, registryId: string):
 }
 
 export async function openPullRequest(projectId: string, appId: string, registryId: string, input: { base: string; title: string; body: string; draft: boolean }): Promise<Result<{ number: number; url: string }>> {
-  const { org } = await owned(projectId, "app.flow");
   try {
+    const { org } = await owned(projectId, "app.flow");
     const data = await api.apps.openPullRequest(registryId, { ...input, credentials: await credsFor(org.id, projectId, appId) });
     await pullReleases(projectId, appId);
     revalidatePath(`/projects/${projectId}`, "layout");
@@ -193,8 +193,8 @@ export async function openPullRequest(projectId: string, appId: string, registry
 }
 
 export async function saveManifest(projectId: string, registryId: string, content: string): Promise<Result<{ content: string }>> {
-  await owned(projectId, "app.configure");
   try {
+    await owned(projectId, "app.configure");
     const data = await api.apps.writeManifest(registryId, content);
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
@@ -204,8 +204,8 @@ export async function saveManifest(projectId: string, registryId: string, conten
 }
 
 export async function setCloudTarget(projectId: string, registryId: string, target: string, source: string | null = null): Promise<Result<{ target: string }>> {
-  const { org } = await owned(projectId, "app.configure");
   try {
+    const { org } = await owned(projectId, "app.configure");
     const data = (await api.apps.setCloud(registryId, target, await sourceSpecByName(org.id, source))) as { target: string };
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
@@ -215,8 +215,8 @@ export async function setCloudTarget(projectId: string, registryId: string, targ
 }
 
 export async function addService(projectId: string, registryId: string, name: string, provider: string | null, source: string | null = null): Promise<Result<{ name: string }>> {
-  const { org } = await owned(projectId, "app.configure");
   try {
+    const { org } = await owned(projectId, "app.configure");
     const data = (await api.apps.addService(registryId, name, provider, await sourceSpecByName(org.id, source))) as { name: string };
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
@@ -228,9 +228,9 @@ export async function addService(projectId: string, registryId: string, name: st
 export type CommitInput = { message: string; push: boolean; branch: { kind: string; code: string; slug: string } | null; pullRequest: boolean };
 
 export async function commitChanges(projectId: string, appId: string, registryId: string, input: CommitInput): Promise<Result<{ sha: string; branch: string; pushed: boolean; pull_request?: { number: number; url: string } | null }>> {
-  const { org } = await owned(projectId, "app.configure");
   const remote = input.push || input.pullRequest;
   try {
+    const { org } = await owned(projectId, "app.configure");
     const data = await api.apps.commit(registryId, {
       message: input.message,
       push: input.push,
