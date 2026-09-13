@@ -12,7 +12,7 @@ const button = cva(
         ghost: "text-secondary hover:bg-surface-hover hover:text-foreground",
         destructive: "border border-border text-foreground hover:border-foreground hover:bg-surface-hover",
       },
-      size: { sm: "h-8 px-3", md: "h-9 px-4", icon: "h-8 w-8" },
+      size: { sm: "h-8 px-3", md: "h-9 px-4", lg: "h-[42px] px-[18px] rounded-[7px]", icon: "h-8 w-8" },
     },
     defaultVariants: { variant: "default", size: "md" },
   },

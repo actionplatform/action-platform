@@ -37,6 +37,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
   const [pending, start] = useTransition();
 
   const startUrl = (p: Provider) => {
+    if (p === "github" && githubApp) return `https://github.com/apps/${githubApp}/installations/new`;
     const q = new URLSearchParams({ return: returnTo });
     if (orgId) q.set("org", orgId);
     return `/api/oauth/${p}/start?${q}`;
@@ -51,6 +52,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
         return (
           <div key={p} className="flex flex-col rounded-lg border border-border bg-surface p-4">
             <div className="flex items-center gap-2"><BrandIcon icon={m.icon} /><span className="font-medium">{m.label}</span></div>
+            {p === "github" && githubApp && <p className="mt-1 text-xs text-muted-foreground">GitHub asks which account or organization to install on; that owner is where repositories are created.</p>}
             {logins.length > 0 && (
               <ul className="mt-2 space-y-1 text-xs text-secondary">
                 {logins.map((l) => (
@@ -62,14 +64,10 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
               </ul>
             )}
             <div className="mt-auto pt-4 flex flex-col gap-2">
-              {p === "github" && githubApp && (
-                <a href={`https://github.com/apps/${githubApp}/installations/new`} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-foreground px-4 text-sm font-medium hover:bg-surface-hover">
-                  <ExternalLink className="size-4" /> Install the app on GitHub
-                </a>
-              )}
               {ready ? (
                 <a href={startUrl(p)} className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover">
-                  <KeyRound className="size-4" /> {logins.length ? "Connect another" : `Connect with ${m.label}`}
+                  {p === "github" && githubApp ? <ExternalLink className="size-4" /> : <KeyRound className="size-4" />}
+                  {logins.length ? "Connect another account" : `Connect with ${m.label}`}
                 </a>
               ) : p === "github" ? (
                 <>
