@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.10 — 2026-09-13
+
+### Features
+- **web:** Bitbucket Pipelines in the CI choices and labels
+
+### Bug Fixes
+- **web:** a Bitbucket connection defaults to a real workspace slug and the wizard sends the namespace it shows
+
 ## v0.6.9 — 2026-09-13
 
 ### Features
