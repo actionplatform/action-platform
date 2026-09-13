@@ -36,10 +36,15 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
   const [confirmDisconnect, setConfirmDisconnect] = useState<{ provider: Provider; login: string } | null>(null);
   const [pending, start] = useTransition();
 
+  const installUrl = () => {
+    const q = new URLSearchParams({ return: returnTo });
+    if (orgId) q.set("org", orgId);
+    return `/api/oauth/github/install?${q}`;
+  };
+
   const startUrl = (p: Provider) => {
     const q = new URLSearchParams({ return: returnTo });
     if (orgId) q.set("org", orgId);
-    if (p === "github" && githubApp) return `/api/oauth/github/install?${q}`;
     return `/api/oauth/${p}/start?${q}`;
   };
 
@@ -52,7 +57,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
         return (
           <div key={p} className="flex flex-col rounded-lg border border-border bg-surface p-4">
             <div className="flex items-center gap-2"><BrandIcon icon={m.icon} /><span className="font-medium">{m.label}</span></div>
-            {p === "github" && githubApp && <p className="mt-1 text-xs text-muted-foreground">One connection per GitHub user. GitHub asks where to install the app: every account or organization you install it on becomes selectable as the repository owner when you create an app.</p>}
+            {p === "github" && githubApp && <p className="mt-1 text-xs text-muted-foreground">Connect signs this organization in with your GitHub user. Install puts the GitHub App on more accounts or organizations; each one becomes selectable as the repository owner when you create an app.</p>}
             {logins.length > 0 && (
               <ul className="mt-2 space-y-1 text-xs text-secondary">
                 {logins.map((l) => (
@@ -65,10 +70,18 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
             )}
             <div className="mt-auto pt-4 flex flex-col gap-2">
               {ready ? (
-                <a href={startUrl(p)} className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover">
-                  {p === "github" && githubApp ? <ExternalLink className="size-4" /> : <KeyRound className="size-4" />}
-                  {logins.length ? (p === "github" && githubApp ? "Install on another organization" : "Connect another account") : `Connect with ${m.label}`}
-                </a>
+                <>
+                  <a href={startUrl(p)} className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover">
+                    <KeyRound className="size-4" />
+                    {logins.length ? "Connect another account" : `Connect with ${m.label}`}
+                  </a>
+                  {p === "github" && githubApp && (
+                    <a href={installUrl()} className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm hover:bg-surface-hover">
+                      <ExternalLink className="size-4" />
+                      Install on another organization
+                    </a>
+                  )}
+                </>
               ) : p === "github" ? (
                 <>
                   <Button onClick={() => setCreateGh(true)}><Sparkles className="size-4" /> Create GitHub App</Button>
