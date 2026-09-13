@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.6.6 — 2026-09-13
+
+### Features
+- **api:** sync moves a branch with leftover local commits to its remote, keeping uncommitted work
+- **api:** put the platform files back whenever a clone is opened without platform.toml
+
+### Bug Fixes
+- **api:** configuration commits are made with the identity sent in the request, not only the push
+- **api:** one SourceCredentials model where the token and the commit identity are each optional
+
+### Docs
+- commit identity travels with every request
+- self-healing clones, automatic sync reset and the pull request banner
+
 ## v0.6.5 — 2026-09-13
 
 ### Features
