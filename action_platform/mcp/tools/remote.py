@@ -12,6 +12,12 @@ from action_platform.core.flow.repository import Repository
 from action_platform.remote.client import Remote
 
 AppId = Annotated[str, Field(description="App id from list_apps")]
+OrgId = Annotated[
+    Optional[str],
+    Field(
+        description="Organization id or slug; needed only when the token spans every organization (see whoami)"
+    ),
+]
 
 
 def _repo_key(url: str) -> str:
@@ -33,6 +39,8 @@ def register(mcp: Any, remote: Remote) -> None:
             "server": remote.server,
             "user": who.get("user"),
             "organization": who.get("organization"),
+            "organizations": who.get("organizations"),
+            "spans_every_organization": who.get("organization") is None,
             "role": who.get("role_label") or who.get("role"),
             "scope": who.get("scope"),
             "limited_to": {"project": who.get("project"), "app": who.get("app")},
@@ -45,43 +53,46 @@ def register(mcp: Any, remote: Remote) -> None:
         return remote.organizations()
 
     @mcp.tool(annotations=READ_ONLY)
-    def list_projects() -> list[dict]:
-        """Projects in the token's organization with their team and apps; limited to the token's project or app when it has one."""
-        return remote.projects()
+    def list_projects(organization: OrgId = None) -> list[dict]:
+        """Projects with their team and apps; limited to the token's project or app when it has one. A token that spans every organization lists them all (each with its organization) unless `organization` narrows it."""
+        return remote.projects(organization=organization)
 
     @mcp.tool(annotations=READ_ONLY)
-    def list_teams() -> list[dict]:
+    def list_teams(organization: OrgId = None) -> list[dict]:
         """Teams in the organization: members and the projects each team owns."""
-        return remote.teams()
+        return remote.teams(organization=organization)
 
     @mcp.tool(annotations=READ_ONLY)
-    def list_members() -> list[dict]:
+    def list_members(organization: OrgId = None) -> list[dict]:
         """Members of the organization and their roles."""
-        return remote.members()
+        return remote.members(organization=organization)
 
     @mcp.tool(annotations=REACHES_OUT)
     def create_project(
         name: str,
         description: Annotated[str, Field(description="Optional description")] = "",
+        organization: OrgId = None,
     ) -> dict:
-        """Create a project in the token's organization (needs project.manage and an admin-scoped token)."""
-        return remote.create_project(name, description)
+        """Create a project in the organization (needs project.manage and an admin-scoped token)."""
+        return remote.create_project(name, description, organization=organization)
 
     @mcp.tool(annotations=REACHES_OUT)
     def create_team(
         name: str,
         description: Annotated[str, Field(description="Optional description")] = "",
+        organization: OrgId = None,
     ) -> dict:
         """Create a team in the organization (needs org.manage and an admin-scoped token)."""
-        return remote.create_team(name, description)
+        return remote.create_team(name, description, organization=organization)
 
     @mcp.tool(annotations=REACHES_OUT)
     def add_team_member(
         team_id: Annotated[str, Field(description="Team id from list_teams")],
         user_id: Annotated[str, Field(description="User id from list_members")],
+        organization: OrgId = None,
     ) -> dict:
         """Put an organization member on a team (needs org.manage)."""
-        return remote.add_team_member(team_id, user_id)
+        return remote.add_team_member(team_id, user_id, organization=organization)
 
     @mcp.tool(annotations=REACHES_OUT)
     def assign_project_team(
@@ -89,9 +100,12 @@ def register(mcp: Any, remote: Remote) -> None:
         team_id: Annotated[
             Optional[str], Field(description="Team id from list_teams; null unassigns")
         ] = None,
+        organization: OrgId = None,
     ) -> dict:
         """Give a project to a team, or take it away with team_id=null (needs project.manage)."""
-        return remote.assign_project_team(project_id, team_id)
+        return remote.assign_project_team(
+            project_id, team_id, organization=organization
+        )
 
     @mcp.tool(annotations=REACHES_OUT)
     def set_member_role(
@@ -99,9 +113,10 @@ def register(mcp: Any, remote: Remote) -> None:
         role: Annotated[
             str, Field(description="owner, admin, deployer, developer or viewer")
         ],
+        organization: OrgId = None,
     ) -> dict:
         """Change a member's role in the organization (needs org.manage; the last owner cannot be demoted)."""
-        return remote.set_member_role(user_id, role)
+        return remote.set_member_role(user_id, role, organization=organization)
 
     @mcp.tool(annotations=READ_ONLY)
     def current_context(
@@ -157,9 +172,9 @@ def register(mcp: Any, remote: Remote) -> None:
         }
 
     @mcp.tool(annotations=READ_ONLY)
-    def list_apps() -> list[dict]:
-        """Apps the platform manages — one git repository each: id, name, url, branch, version."""
-        return remote.apps()
+    def list_apps(organization: OrgId = None) -> list[dict]:
+        """Apps the platform manages — one git repository each: id, name, url, branch, version. A token that spans every organization lists them all unless `organization` narrows it."""
+        return remote.apps(organization=organization)
 
     @mcp.tool(annotations=REACHES_OUT)
     def add_app(

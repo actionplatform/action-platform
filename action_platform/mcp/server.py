@@ -36,7 +36,9 @@ These tools act on the platform the CLI is logged in to (`action-platform
 login <server>`), not on files on this machine, and with the role the
 account has in its organization (viewer, developer, deployer, admin, owner)
 narrowed by the token's scope (read, write, release, admin, chosen at
-login) and reach (one organization, optionally one project or app): a
+login) and reach (one organization or all of them, optionally one project
+or app — pass `organization` to organization-level tools when it spans
+all): a
 refused call names the missing permission or scope. Start with whoami (who,
 where, what is allowed) or current_context (which platform app the local
 checkout is); list_organizations, list_projects, list_teams and
@@ -66,6 +68,7 @@ def build(remote: Optional[str] = None) -> MCPServer:
         )
         remote_tools.register(mcp, client)
         flow.register_rules(mcp)
+        mcp.middleware.append(_name_the_client(client))
 
         return mcp
 
@@ -78,6 +81,22 @@ def build(remote: Optional[str] = None) -> MCPServer:
     prompts.register(mcp)
 
     return mcp
+
+
+def _name_the_client(client: Remote):
+    """Every message carries the session; its `clientInfo` is the program on the other side (Claude Code, Codex, Cursor…). Hand that name to the platform so the token page can show who uses it."""
+
+    async def middleware(ctx, call_next):
+        params = getattr(ctx.session, "client_params", None)
+        info = getattr(params, "clientInfo", None)
+
+        if info is not None and getattr(info, "name", None):
+            version = getattr(info, "version", None)
+            client.client = f"{info.name}/{version}" if version else str(info.name)
+
+        return await call_next(ctx)
+
+    return middleware
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:

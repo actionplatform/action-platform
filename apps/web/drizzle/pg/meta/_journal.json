@@ -92,6 +92,20 @@
       "when": 1789335352873,
       "tag": "0012_panoramic_master_chief",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1789337171346,
+      "tag": "0013_daffy_the_leader",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789337925727,
+      "tag": "0014_naive_rictor",
+      "breakpoints": true
     }
   ]
 }

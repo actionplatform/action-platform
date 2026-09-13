@@ -284,3 +284,15 @@ class SyncDivergedTest(ApiCase):
         self.assertEqual(res.status_code, 200, res.text)
         self.assertEqual(git(root, "rev-parse", "--abbrev-ref", "HEAD"), "main")
         self.assertEqual(git(root, "log", "-1", "--format=%s"), "Merge pull request #1")
+
+
+class SyncWithoutAccessTest(ApiCase):
+    def test_a_fetch_the_host_refuses_is_a_400_with_a_reason(self):
+        id = self.add_app()
+        root = self.workspaces / id
+        git(root, "remote", "set-url", "origin", "https://github.com/acme/private.git")
+
+        res = self.client.post(f"/api/apps/{id}/sync")
+
+        self.assertEqual(res.status_code, 400, res.text)
+        self.assertIn("code host", res.json()["detail"])

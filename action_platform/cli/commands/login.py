@@ -51,12 +51,20 @@ def whoami() -> None:
     )
 
 
+def _name(part: object) -> str:
+    return (
+        str(part.get("name") or part.get("id") or "?")
+        if isinstance(part, dict)
+        else str(part)
+    )
+
+
 def _describe(creds: credentials.Credentials, who: dict) -> str:
     email = who.get("user", {}).get("email", "?")
-    org = (who.get("organization") or {}).get("name")
+    org = who.get("organization")
     scope = " ".join(who.get("scope") or []) or creds.scope or "session"
     reach = " / ".join(
-        part for part in (org, who.get("project"), who.get("app")) if part
+        _name(part) for part in (org, who.get("project"), who.get("app")) if part
     )
 
     return f"{email} — scope: {scope}" + (f" — on {reach}" if reach else "")

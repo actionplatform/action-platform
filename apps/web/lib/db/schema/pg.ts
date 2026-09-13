@@ -194,7 +194,7 @@ export const organizationSetting = pgTable("organization_setting", {
 export const apiToken = pgTable("api_token", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   scope: text("scope").notNull(),
   projectId: text("project_id"),
@@ -203,4 +203,12 @@ export const apiToken = pgTable("api_token", {
   expiresAt: timestamp("expires_at").notNull(),
   lastUsedAt: timestamp("last_used_at"),
   revokedAt: timestamp("revoked_at"),
+});
+
+export const apiTokenClient = pgTable("api_token_client", {
+  id: text("id").primaryKey(),
+  tokenId: text("token_id").notNull().references(() => apiToken.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  firstSeenAt: timestamp("first_seen_at").notNull().defaultNow(),
+  lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(),
 });

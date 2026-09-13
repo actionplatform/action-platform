@@ -283,7 +283,10 @@ class Repository(Vcs):
         self, default_branch: str | None = None, reset: bool = False
     ) -> None:
         """Bring the clone level with its remote: fetch, fast-forward; uncommitted work survives the pull; a branch deleted on the remote (its pull request merged) is left for the default branch; a branch with commits the remote lacks is moved to the remote — the remote is the source of truth and such a commit is only ever a leftover from a failed push. `reset` drops everything local first."""
-        self.fetch()
+        try:
+            self.fetch()
+        except subprocess.CalledProcessError as e:
+            raise SyncError(_fetch_problem(e.stderr or "")) from e
 
         if self.upstream() is None:
             if self.tracks_a_remote():
@@ -365,6 +368,25 @@ def _diverged(stderr: str) -> bool:
 
 def _blocked_by_local_changes(stderr: str) -> bool:
     return "uncommitted changes" in stderr or "would be overwritten" in stderr
+
+
+def _fetch_problem(stderr: str) -> str:
+    text = stderr.strip()
+
+    if (
+        "could not read Username" in text
+        or "Authentication failed" in text
+        or "403" in text
+    ):
+        return "the code host refused the credentials — reconnect the source host in Settings"
+
+    if "Could not resolve host" in text or "unable to access" in text:
+        return "the code host could not be reached"
+
+    if "not found" in text.lower() or "does not appear to be a git repository" in text:
+        return "the repository no longer exists on the code host, or the account cannot see it"
+
+    return text.splitlines()[-1] if text else "git fetch failed"
 
 
 def _pull_problem(stderr: str) -> str:

@@ -194,7 +194,7 @@ export const organizationSetting = sqliteTable("organization_setting", {
 export const apiToken = sqliteTable("api_token", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   scope: text("scope").notNull(),
   projectId: text("project_id"),
@@ -203,4 +203,12 @@ export const apiToken = sqliteTable("api_token", {
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
   lastUsedAt: integer("last_used_at", { mode: "timestamp" }),
   revokedAt: integer("revoked_at", { mode: "timestamp" }),
+});
+
+export const apiTokenClient = sqliteTable("api_token_client", {
+  id: text("id").primaryKey(),
+  tokenId: text("token_id").notNull().references(() => apiToken.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  firstSeenAt: integer("first_seen_at", { mode: "timestamp" }).notNull(),
+  lastSeenAt: integer("last_seen_at", { mode: "timestamp" }).notNull(),
 });

@@ -64,7 +64,7 @@ class FakeRemote:
 
 
 CASES: list[tuple[str, dict[str, Any], str, tuple, dict]] = [
-    ("list_apps", {}, "apps", (), {}),
+    ("list_apps", {}, "apps", (), {"organization": None}),
     (
         "add_app",
         {"url": "https://x/y.git"},
@@ -217,31 +217,35 @@ class RemoteToolsTest(TempCase):
 
     def test_management_tools_send_their_arguments(self):
         for tool, args, expected in (
-            ("create_project", {"name": "Shop"}, ("create_project", ("Shop", ""), {})),
+            (
+                "create_project",
+                {"name": "Shop"},
+                ("create_project", ("Shop", ""), {"organization": None}),
+            ),
             (
                 "create_team",
-                {"name": "Core", "description": "d"},
-                ("create_team", ("Core", "d"), {}),
+                {"name": "Core", "description": "d", "organization": "acme"},
+                ("create_team", ("Core", "d"), {"organization": "acme"}),
             ),
             (
                 "add_team_member",
                 {"team_id": "t1", "user_id": "u1"},
-                ("add_team_member", ("t1", "u1"), {}),
+                ("add_team_member", ("t1", "u1"), {"organization": None}),
             ),
             (
                 "assign_project_team",
                 {"project_id": "p1", "team_id": "t1"},
-                ("assign_project_team", ("p1", "t1"), {}),
+                ("assign_project_team", ("p1", "t1"), {"organization": None}),
             ),
             (
                 "assign_project_team",
                 {"project_id": "p1"},
-                ("assign_project_team", ("p1", None), {}),
+                ("assign_project_team", ("p1", None), {"organization": None}),
             ),
             (
                 "set_member_role",
                 {"user_id": "u1", "role": "deployer"},
-                ("set_member_role", ("u1", "deployer"), {}),
+                ("set_member_role", ("u1", "deployer"), {"organization": None}),
             ),
         ):
             with self.subTest(tool=tool):
