@@ -355,7 +355,9 @@ def test_commit_on_new_branch(client: TestClient, url: str, repo: Path):
     assert "chore/42-deploy-target" in names
 
 
-def test_sync_without_upstream_is_a_noop(client: TestClient, tmp_path: Path, url: str, repo: Path):
+def test_sync_without_upstream_is_a_noop(
+    client: TestClient, tmp_path: Path, url: str, repo: Path
+):
     git("checkout", "-q", "main", cwd=repo)
     id = client.post("/api/apps", json={"url": url}).json()["id"]
     path = next((tmp_path / "home" / "action-platform" / "workspaces").glob("*"))
@@ -370,13 +372,17 @@ def test_release_dry_run_from_another_branch(client: TestClient, url: str, repo:
     git("checkout", "-q", "main", cwd=repo)
     id = client.post("/api/apps", json={"url": url}).json()["id"]
 
-    rc = client.post(f"/api/apps/{id}/release", json={"level": "minor", "branch": "feature/1"})
+    rc = client.post(
+        f"/api/apps/{id}/release", json={"level": "minor", "branch": "feature/1"}
+    )
     assert rc.status_code == 200, rc.text
     assert rc.json()["branch"] == "feature/1"
     assert rc.json()["prerelease"] is True
     assert rc.json()["next"].startswith("1.3.0-rc.")
 
-    stable = client.post(f"/api/apps/{id}/release", json={"level": "minor", "branch": "main"})
+    stable = client.post(
+        f"/api/apps/{id}/release", json={"level": "minor", "branch": "main"}
+    )
     assert stable.status_code == 200, stable.text
     assert stable.json()["branch"] == "main"
     assert stable.json()["prerelease"] is False

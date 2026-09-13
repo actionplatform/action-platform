@@ -26,6 +26,7 @@ from action_platform.settings import settings
 class SyncError(ActionPlatformError):
     pass
 
+
 URL_RE = re.compile(r"^(https?://|git@|ssh://|file://)[^\s]+$")
 
 
@@ -182,7 +183,9 @@ def _pull_problem(stderr: str) -> str:
     text = stderr.strip()
 
     if "Not possible to fast-forward" in text or "diverged" in text:
-        return "local branch diverged from its remote — rebase or reset it before syncing"
+        return (
+            "local branch diverged from its remote — rebase or reset it before syncing"
+        )
 
     if "uncommitted changes" in text or "would be overwritten" in text:
         return "working tree has changes that the remote would overwrite — commit them first"

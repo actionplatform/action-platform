@@ -53,7 +53,10 @@ class LifecycleService:
             return
 
         if not git.is_clean(cwd=root):
-            raise HTTPException(409, "working tree is dirty — commit or discard changes before releasing from another branch")
+            raise HTTPException(
+                409,
+                "working tree is dirty — commit or discard changes before releasing from another branch",
+            )
 
         git.run(["fetch", "--prune", "origin"], cwd=root)
 

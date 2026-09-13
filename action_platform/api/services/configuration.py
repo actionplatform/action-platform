@@ -112,7 +112,9 @@ class ConfigurationService:
 
         try:
             with auth.git_auth(body.credentials):
-                branch = branching.start(spec.kind, spec.code, spec.slug, cwd=root, push=False)
+                branch = branching.start(
+                    spec.kind, spec.code, spec.slug, cwd=root, push=False
+                )
         except BranchError as e:
             git.run(["stash", "pop"], cwd=root)
             raise HTTPException(400, str(e)) from e
