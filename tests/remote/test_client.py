@@ -31,7 +31,7 @@ class LoginCase(TempCase):
     def answers(self, *replies) -> None:
         it = iter([DEVICE_CODE, *replies])
 
-        def fake_request(method, url, body=None, token=None, timeout=60):
+        def fake_request(method, url, body=None, token=None, timeout=60, client=None):
             self.calls.append((method, url))
             answer = next(it)
             if isinstance(answer, Exception):
@@ -138,8 +138,10 @@ class RemoteClientTest(TempCase):
         self.delenv("AP_TOKEN")
         self.seen: dict = {}
 
-        def fake_request(method, url, body=None, token=None, timeout=60):
-            self.seen.update(method=method, url=url, body=body, token=token)
+        def fake_request(method, url, body=None, token=None, timeout=60, client=None):
+            self.seen.update(
+                method=method, url=url, body=body, token=token, client=client
+            )
             return {"ok": True}
 
         self.patch(client, "_request", fake_request)
@@ -154,6 +156,11 @@ class RemoteClientTest(TempCase):
             self.seen["body"], {"level": "minor", "dry_run": False, "branch": None}
         )
         self.assertEqual(self.seen["token"], "tok")
+        self.assertEqual(self.seen["client"], "action-platform-cli")
+
+        remote.client = "claude-code/2.1"
+        remote.apps()
+        self.assertEqual(self.seen["client"], "claude-code/2.1")
 
         remote.commits("p1", limit=5)
         self.assertEqual(

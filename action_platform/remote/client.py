@@ -17,6 +17,7 @@ import urllib.request
 import webbrowser
 from typing import Any, Optional
 
+from action_platform import __version__
 from action_platform.core.exception import ActionPlatformError
 from action_platform.remote.credentials import Credentials, load, save
 
@@ -41,9 +42,16 @@ def _request(
     body: Optional[dict] = None,
     token: Optional[str] = None,
     timeout: float = 60,
+    client: Optional[str] = None,
 ) -> Any:
     data = json.dumps(body).encode() if body is not None else None
-    headers = {"accept": "application/json"}
+    headers = {
+        "accept": "application/json",
+        "user-agent": f"action-platform/{__version__}",
+    }
+
+    if client:
+        headers["x-action-platform-client"] = client[:80]
 
     if data is not None:
         headers["content-type"] = "application/json"
@@ -78,9 +86,12 @@ def _request(
 
 
 class Remote:
-    def __init__(self, server: str, token: str) -> None:
+    """The hosted platform as seen from one client. `client` names the program driving these calls (an MCP client such as Claude Code, Codex or Cursor; the CLI otherwise) so the platform can show which apps use a token."""
+
+    def __init__(self, server: str, token: str, client: Optional[str] = None) -> None:
         self.server = server.rstrip("/")
         self.token = token
+        self.client = client or "action-platform-cli"
 
     @classmethod
     def from_credentials(cls, server: Optional[str] = None) -> "Remote":
@@ -104,10 +115,10 @@ class Remote:
         if q:
             url += "?" + urllib.parse.urlencode(q)
 
-        return _request(method, url, body, self.token)
+        return _request(method, url, body, self.token, client=self.client)
 
-    def apps(self) -> list[dict]:
-        return self._call("GET", "apps")
+    def apps(self, organization: Optional[str] = None) -> list[dict]:
+        return self._call("GET", "apps", organization=organization)
 
     def add_app(
         self, url: str, name: Optional[str] = None, install: Optional[dict] = None
@@ -247,7 +258,12 @@ class Remote:
         return self._call("GET", "version")
 
     def whoami(self) -> dict:
-        return _request("GET", f"{self.server}/api/v1/me", token=self.token) or {}
+        return (
+            _request(
+                "GET", f"{self.server}/api/v1/me", token=self.token, client=self.client
+            )
+            or {}
+        )
 
     def organizations(self) -> list[dict]:
         return self._call("GET", "organizations")
