@@ -21,8 +21,15 @@ async function owned(projectId: string, permission: Permission) {
 
 async function credsFor(orgId: string, projectId: string, appId: string) {
   const app = await appById(projectId, appId);
-  if (!app?.sourceHostId) return null;
-  return credentialsFor(orgId, app.sourceHostId);
+  if (!app) return null;
+  if (app.sourceHostId) return credentialsFor(orgId, app.sourceHostId);
+
+  const detail = await api.apps.get(app.registryId).catch(() => null);
+  const host = detail?.url ? await hostFor(orgId, detail.url) : null;
+  if (!host) return null;
+
+  await setAppHost(projectId, appId, host.id);
+  return credentialsFor(orgId, host.id);
 }
 
 function repoOf(url: string, fromToml: string | null | undefined): string | null {
