@@ -197,6 +197,8 @@ export const apiToken = mysqlTable("api_token", {
   organizationId: varchar("organization_id", { length: 36 }).notNull().references(() => organization.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
   scope: varchar("scope", { length: 255 }).notNull(),
+  projectId: varchar("project_id", { length: 36 }),
+  appId: varchar("app_id", { length: 36 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   expiresAt: timestamp("expires_at").notNull(),
   lastUsedAt: timestamp("last_used_at"),

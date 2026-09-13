@@ -197,6 +197,8 @@ export const apiToken = pgTable("api_token", {
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   scope: text("scope").notNull(),
+  projectId: text("project_id"),
+  appId: text("app_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   expiresAt: timestamp("expires_at").notNull(),
   lastUsedAt: timestamp("last_used_at"),

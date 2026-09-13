@@ -197,6 +197,8 @@ export const apiToken = sqliteTable("api_token", {
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   scope: text("scope").notNull(),
+  projectId: text("project_id"),
+  appId: text("app_id"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
   lastUsedAt: integer("last_used_at", { mode: "timestamp" }),
