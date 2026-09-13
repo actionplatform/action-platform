@@ -32,6 +32,10 @@ type Config = {
   push: boolean;
 };
 
+function ciFor(kind: string | undefined): string {
+  return kind === "gitlab" ? "gitlab" : "github";
+}
+
 const CI_PROVIDERS = ["github", "gitlab", "jenkins"];
 const CONTINUE = ["Continue to stack", "Continue to template", "Continue to configuration", "Continue to review", "Create project"];
 
@@ -44,6 +48,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
   const [project, setProject] = useState<string>(projectId ?? (projects.length === 1 ? projects[0].id : ""));
   const [hostId, setHostId] = useState<string>(hosts[0]?.id ?? "");
   const host = hosts.find((h) => h.id === hostId) ?? null;
+  const [ciTouched, setCiTouched] = useState(false);
   const [step, setStep] = useState<StepIndex>(preset ? 3 : 0);
   const [type, setType] = useState<string | null>(preset?.type ?? null);
   const [stack, setStack] = useState<string | null>(preset?.stack ?? null);
@@ -57,7 +62,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
     githubOwner: "",
     gitInit: true,
     ci: true,
-    ciProvider: "github",
+    ciProvider: ciFor(hosts[0]?.kind),
     cloud: null,
     push: false,
   });
@@ -239,7 +244,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                   <Input value={config.description} onChange={(e) => setConfig({ ...config, description: e.target.value })} placeholder={leaf?.description ?? ""} />
                 </Field>
                 <Field label="Source host" hint={hosts.length ? "Where the repository will live." : "None configured — Settings → Source hosts."}>
-                  <Select value={hostId} onChange={setHostId} disabled={hosts.length === 0} placeholder="No source host" options={hosts.map((h) => ({ value: h.id, label: h.name }))} />
+                  <Select value={hostId} onChange={(v) => { setHostId(v); if (!ciTouched) setConfig((c) => ({ ...c, ciProvider: ciFor(hosts.find((h) => h.id === v)?.kind) })); }} disabled={hosts.length === 0} placeholder="No source host" options={hosts.map((h) => ({ value: h.id, label: h.name }))} />
                 </Field>
                 <Field label={host?.kind === "gitlab" ? "Namespace" : host?.kind === "bitbucket" ? "Workspace" : "Organization"} hint={host?.owners.length ? (host.kind === "gitlab" ? "Your user or a group where you can create projects." : host.kind === "bitbucket" ? "A workspace where you can create repositories." : "Where the repository is created — an account or organization the GitHub App is installed on.") : "Account or organization that owns the repository."}>
                   {host?.owners.length ? (
@@ -262,7 +267,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                       {config.ci && (
                         <div className="flex gap-1 mt-2">
                           {CI_PROVIDERS.map((p) => (
-                            <Chip key={p} active={config.ciProvider === p} onClick={() => setConfig({ ...config, ciProvider: p })}>{p}</Chip>
+                            <Chip key={p} active={config.ciProvider === p} onClick={() => { setCiTouched(true); setConfig({ ...config, ciProvider: p }); }}>{p}</Chip>
                           ))}
                         </div>
                       )}

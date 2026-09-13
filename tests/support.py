@@ -192,6 +192,9 @@ def template_repo(
     for w in ["code-quality.yml", "gitflow.yml"]:
         (slug / ".github" / "workflows" / w).write_text("name: x\n")
 
+    (slug / ".gitlab-ci.yml").write_text("image: x\n")
+    (slug / "Jenkinsfile").write_text("pipeline {}\n")
+
     if rendered:
         (slug / "README.md").write_text(
             "# {{ cookiecutter.project_name }}\n{{ cookiecutter.description }}\n"

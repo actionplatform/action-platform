@@ -60,7 +60,7 @@ export async function exchangeCode(provider: Provider, origin: string, code: str
     const data = await postForm(`${base(provider, app)}/oauth/token`, { client_id: app.clientId, client_secret: app.clientSecret, code, grant_type: "authorization_code", redirect_uri: redirect });
     return token(data);
   }
-  const data = await postForm("https://bitbucket.org/site/oauth2/access_token", { grant_type: "authorization_code", code }, basic(app));
+  const data = await postForm("https://bitbucket.org/site/oauth2/access_token", { grant_type: "authorization_code", code, redirect_uri: redirect }, basic(app));
   return token(data);
 }
 

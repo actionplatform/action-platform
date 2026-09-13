@@ -95,7 +95,7 @@ class Installer:
         if not self.repo.exists():
             raise InstallError(f"{self.root} is not a git repository")
 
-        ci = self.requested_ci or _existing_ci(self.root) or "github"
+        ci = self.requested_ci or _existing_ci(self.root) or _ci_for_remote(self.repo)
         language = (
             ""
             if self.requested_language == "none"
@@ -195,6 +195,11 @@ def _language_of(leaf_dir: Path) -> str:
         )
     except (OSError, ValueError):
         return ""
+
+
+def _ci_for_remote(repo: Repository) -> str:
+    """The CI that matches where the repository lives: GitLab CI for a GitLab remote, GitHub Actions otherwise."""
+    return "gitlab" if "gitlab" in repo.remote_url() else "github"
 
 
 def _existing_ci(root: Path) -> str | None:
