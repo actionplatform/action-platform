@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.11 — 2026-09-13
+
+### Bug Fixes
+- **providers:** Bitbucket sends an OAuth access token as Bearer instead of Basic with the git pseudo-user
+
 ## v0.6.10 — 2026-09-13
 
 ### Features
