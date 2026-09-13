@@ -23,7 +23,7 @@ export function TemplateSources({ sources, canManage }: { sources: SourceRow[]; 
 
   return (
     <section className="mb-6 overflow-hidden rounded-[9px] border border-border bg-surface">
-      <header className="flex h-12 items-center justify-between gap-3 border-b border-border px-4">
+      <header className="flex min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-4 py-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold"><BookMarked className="size-4 text-secondary" strokeWidth={1.75} /> Template repositories</h2>
         {canManage && <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus className="size-3.5" strokeWidth={2} /> Add repository</Button>}
       </header>
@@ -31,18 +31,19 @@ export function TemplateSources({ sources, canManage }: { sources: SourceRow[]; 
         {sources.map((s) => {
           const link = webUrl(s.url);
           return (
-            <li key={s.name} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm">
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <span className="font-mono">{s.name}</span>
-                {s.official ? <Badge tone="inverse">Official</Badge> : <Badge>{s.projects === 1 && s.clouds === 0 && s.services === 0 ? "Repository" : "Catalog"}</Badge>}
-                {!s.ok && <Badge tone="bad">Unavailable</Badge>}
+            <li key={s.name} className="flex flex-col gap-1.5 px-4 py-3 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-1">
+              <div className="flex min-w-0 items-center gap-2 sm:flex-1">
+                <span className="truncate font-mono">{s.name}</span>
+                {s.official ? <Badge tone="inverse" className="shrink-0">Official</Badge> : <Badge className="shrink-0">{s.projects === 1 && s.clouds === 0 && s.services === 0 ? "Repository" : "Catalog"}</Badge>}
+                {!s.ok && <Badge tone="bad" className="shrink-0">Unavailable</Badge>}
+                {canManage && !s.official && <button type="button" title="Remove repository" aria-label={`Remove ${s.name}`} disabled={pending} onClick={() => setRemoving(s)} className="ml-auto flex size-11 shrink-0 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground sm:hidden"><Trash2 className="size-4" strokeWidth={1.75} /></button>}
               </div>
               <div className="flex min-w-0 items-center gap-2 font-mono text-xs text-secondary">
-                {link ? <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 truncate hover:text-foreground">{s.url.replace(/^https?:\/\//, "").replace(/\.git$/, "")} <ExternalLink className="size-3" strokeWidth={1.75} /></a> : <span className="truncate">{s.url}</span>}
-                <span aria-hidden>@</span><span>{s.ref}</span>
+                {link ? <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 items-center gap-1 hover:text-foreground"><span className="truncate">{s.url.replace(/^https?:\/\//, "").replace(/\.git$/, "")}</span> <ExternalLink className="size-3 shrink-0" strokeWidth={1.75} /></a> : <span className="truncate">{s.url}</span>}
+                <span aria-hidden className="shrink-0">@</span><span className="shrink-0">{s.ref}</span>
               </div>
               <div className="text-xs text-secondary">{s.ok ? `${s.projects} projects · ${s.clouds} clouds · ${s.services} services` : s.error}</div>
-              {canManage && !s.official && <button type="button" title="Remove repository" aria-label={`Remove ${s.name}`} disabled={pending} onClick={() => setRemoving(s)} className="flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><Trash2 className="size-4" strokeWidth={1.75} /></button>}
+              {canManage && !s.official && <button type="button" title="Remove repository" aria-label={`Remove ${s.name}`} disabled={pending} onClick={() => setRemoving(s)} className="hidden size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground sm:flex"><Trash2 className="size-4" strokeWidth={1.75} /></button>}
             </li>
           );
         })}
