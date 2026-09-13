@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.8 — 2026-09-13
+
+### Features
+- **mcp:** whoami with role, scope and permissions; current_context; organization, project, team and member tools including management
+
+### Docs
+- token reach, connected apps, MCP orientation and management tools
+
 ## v0.6.7 — 2026-09-13
 
 ### Features
