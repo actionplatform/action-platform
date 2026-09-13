@@ -36,7 +36,8 @@ const CI_PROVIDERS = ["github", "gitlab", "jenkins"];
 const CONTINUE = ["Continue to stack", "Continue to template", "Continue to configuration", "Continue to review", "Create project"];
 
 type ProjectOption = { id: string; name: string };
-type HostOption = { id: string; name: string; kind: string; defaultOwner: string | null; owners: readonly string[]; installUrl: string | null };
+type OwnerOption = { account: string; ok: boolean; why: string | null };
+type HostOption = { id: string; name: string; kind: string; defaultOwner: string | null; owners: readonly OwnerOption[]; installUrl: string | null };
 
 export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix: Matrix; preset: Preset; projectId: string | null; projects: ProjectOption[]; hosts: HostOption[] }) {
   const router = useRouter();
@@ -243,7 +244,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                 <Field label={host?.kind === "gitlab" ? "Namespace" : host?.kind === "bitbucket" ? "Workspace" : "Organization"} hint={host?.owners.length ? (host.kind === "gitlab" ? "Your user or a group where you can create projects." : host.kind === "bitbucket" ? "A workspace where you can create repositories." : "Where the repository is created — an account or organization the GitHub App is installed on.") : "Account or organization that owns the repository."}>
                   {host?.owners.length ? (
                     <div className="space-y-1.5">
-                      <Select mono value={config.githubOwner || host.defaultOwner || host.owners[0]} onChange={(v) => setConfig({ ...config, githubOwner: v })} options={[...new Set([...host.owners, ...(host.defaultOwner ? [host.defaultOwner] : [])])].map((o) => ({ value: o, label: o }))} />
+                      <Select mono value={config.githubOwner || host.defaultOwner || host.owners[0].account} onChange={(v) => setConfig({ ...config, githubOwner: v })} options={[...host.owners.map((o) => ({ value: o.account, label: o.account, hint: o.why ?? undefined, disabled: !o.ok })), ...(host.defaultOwner && !host.owners.some((o) => o.account === host.defaultOwner) ? [{ value: host.defaultOwner, label: host.defaultOwner }] : [])]} />
                       {host.installUrl && <a href={host.installUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-secondary hover:text-foreground">Another organization? Install the GitHub App on it <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
                     </div>
                   ) : (
