@@ -37,7 +37,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
   const [pending, start] = useTransition();
 
   const startUrl = (p: Provider) => {
-    if (p === "github" && githubApp) return `https://github.com/apps/${githubApp}/installations/new`;
+    if (p === "github" && githubApp) return `https://github.com/apps/${githubApp}/installations/select_target`;
     const q = new URLSearchParams({ return: returnTo });
     if (orgId) q.set("org", orgId);
     return `/api/oauth/${p}/start?${q}`;
@@ -52,7 +52,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
         return (
           <div key={p} className="flex flex-col rounded-lg border border-border bg-surface p-4">
             <div className="flex items-center gap-2"><BrandIcon icon={m.icon} /><span className="font-medium">{m.label}</span></div>
-            {p === "github" && githubApp && <p className="mt-1 text-xs text-muted-foreground">GitHub asks which account or organization to install on; that owner is where repositories are created.</p>}
+            {p === "github" && githubApp && <p className="mt-1 text-xs text-muted-foreground">GitHub asks which account or organization to install on; that owner is where repositories are created. Already installed somewhere? Pick the organization there anyway — it then shows up as an owner under Source hosts.</p>}
             {logins.length > 0 && (
               <ul className="mt-2 space-y-1 text-xs text-secondary">
                 {logins.map((l) => (
