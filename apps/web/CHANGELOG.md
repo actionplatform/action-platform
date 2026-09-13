@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.6.5 — 2026-09-13
+
+### Features
+- **web:** project apps as cards on mobile, stacked add-repository form
+- **web:** mobile header, navigation drawer and bottom navigation below 768px
+- **web:** list and revoke your API tokens in Settings
+- **web:** choose the token scope when approving a device code
+- **web:** scoped JWT tokens for /api/v1 — read, write, release, admin on top of the role
+- **web:** api_token table
+
+### Bug Fixes
+- **web:** source hosts and template repositories laid out for phones
+- **web:** every redirect to login keeps the requested path, so the device code survives sign-in
+
 ## v0.6.4 — 2026-09-13
 
 ### Bug Fixes
