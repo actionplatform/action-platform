@@ -25,7 +25,13 @@ def ensure_platform(entry: Entry, root: Path) -> list[str]:
     if (root / settings.CONFIG_FILE).exists() or not (root / ".git").exists():
         return []
 
-    ci = "gitlab" if "gitlab" in entry.url else "github"
+    ci = (
+        "gitlab"
+        if "gitlab" in entry.url
+        else "bitbucket"
+        if "bitbucket" in entry.url
+        else "github"
+    )
 
     try:
         plan = install(root, type_="web", ci=ci, name=entry.name)

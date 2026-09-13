@@ -175,3 +175,23 @@ class CiFollowsTheRemoteTest(TempCase):
         self.assertEqual(plan.ci, "gitlab")
         self.assertIn(".gitlab-ci.yml", plan.created)
         self.assertFalse(any(".github" in f for f in plan.created))
+
+    def test_a_bitbucket_remote_gets_bitbucket_pipelines(self):
+        from action_platform.settings import settings
+        from tests.support import git, template_repo
+
+        self.patch(
+            settings, "TEMPLATES_DIR", str(template_repo(self.tmp_path / "official"))
+        )
+        repo = self.tmp_path / "svc"
+        repo.mkdir()
+        (repo / "pyproject.toml").write_text('[project]\nname = "svc"\n')
+        git(repo, "init", "-q", "-b", "main")
+        git(repo, "remote", "add", "origin", "https://bitbucket.org/acme/svc.git")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-q", "-m", "chore: init")
+
+        plan = install.install(repo)
+
+        self.assertEqual(plan.ci, "bitbucket")
+        self.assertIn("bitbucket-pipelines.yml", plan.created)

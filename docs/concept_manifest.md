@@ -26,7 +26,7 @@ postgres = "aws-rds"
 
 | Table | Keys | Who reads it |
 |---|---|---|
-| `[project]` | `name`, `type` (web, library, docs, plugin, empty), `stack`, `template`, `language`, `ci` (github, gitlab, jenkins) | templates, CI scripts (`language` picks the setup/check commands), the web app |
+| `[project]` | `name`, `type` (web, library, docs, plugin, empty), `stack`, `template`, `language`, `ci` (github, gitlab, jenkins, bitbucket) | templates, CI scripts (`language` picks the setup/check commands), the web app |
 | `[source_host]` | `kind` (github, gitlab, bitbucket, generic), `repo` (`owner/name`), `base_url` (self-hosted) | `init --push`, `release`, `pr` |
 | `[release]` | `strategy = "semver"`, `changelog = "conventional"` | `release` |
 | `[deploy]` | `target` (aws/lambda, aws/amplify, docker, …) plus target-specific keys | `deploy`, `rollback`, `diagnose`, `destroy` |

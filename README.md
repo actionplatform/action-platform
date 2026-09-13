@@ -53,9 +53,9 @@ Thirty seconds later you have a FastAPI service with tests, lint, CI wired, a SA
 | **One command, whole lifecycle** | `init` → `release` → `deploy` → `rollback` → `diagnose` → `destroy`. Same verbs for a Python API on Lambda, a Go service in Docker, a React app on Amplify. |
 | **Templates from production, not tutorials** | Every project template is extracted from a real shipping product. Real layout, real CI, real gotchas already fixed. |
 | **Cloud is a layer, not a fork** | Projects stay cloud-agnostic. `--cloud aws/lambda` overlays deploy files; swap to `docker` tomorrow with one command. |
-| **Your CI, your account, your git** | Runs on GitHub Actions, GitLab CI or Jenkins you already have. Repositories on GitHub, GitLab, Bitbucket or any git server, connected with OAuth. Infra lands in **your** AWS account through OIDC — no long-lived keys, no vendor in the loop. |
+| **Your CI, your account, your git** | Runs on GitHub Actions, GitLab CI, Jenkins or Bitbucket Pipelines you already have. Repositories on GitHub, GitLab, Bitbucket or any git server, connected with OAuth. Infra lands in **your** AWS account through OIDC — no long-lived keys, no vendor in the loop. |
 | **Governance that ships with the code** | Git-flow and Conventional Commits enforced by git hooks before a commit exists and by CI on every PR; changelog generated; `AGENTS.md` for humans and AI agents; Trivy scans; least-privilege IAM in `requirements/`. |
-| **Fix once, everywhere** | CI logic lives in versioned shared repos (`ci-scripts`, `ci-github`, `ci-gitlab`, `ci-jenkins`). Bump `v1`, every project picks it up. |
+| **Fix once, everywhere** | CI logic lives in versioned shared repos (`ci-scripts`, `ci-github`, `ci-gitlab`, `ci-jenkins`, `ci-bitbucket`). Bump `v1`, every project picks it up. |
 | **Roles, scoped tokens** | Members join by invitation or are added with an account; `viewer` reads, `developer` branches and commits, `deployer` releases, `admin` and `owner` run the organization. `action-platform login` mints a token with a scope (`read`, `write`, `release`, `admin`) and a reach (one organization or all, a project, an app) that never exceeds your role. **Connected apps** shows every token, which program uses it — Claude Code, Codex, Cursor, the CLI — and every browser session, all revocable. Source-host credentials stay on the platform. |
 
 ## What you get
@@ -120,7 +120,7 @@ Templates are plain cookiecutters in [actionplatform/templates](https://github.c
 |------|------|
 | [templates](https://github.com/actionplatform/templates) | projects, clouds, services |
 | [ci-scripts](https://github.com/actionplatform/ci-scripts) | the one implementation of setup / check / release / commit lint |
-| [ci-github](https://github.com/actionplatform/ci-github) · [ci-gitlab](https://github.com/actionplatform/ci-gitlab) · [ci-jenkins](https://github.com/actionplatform/ci-jenkins) | thin wrappers per CI |
+| [ci-github](https://github.com/actionplatform/ci-github) · [ci-gitlab](https://github.com/actionplatform/ci-gitlab) · [ci-jenkins](https://github.com/actionplatform/ci-jenkins) · [ci-bitbucket](https://github.com/actionplatform/ci-bitbucket) | thin wrappers per CI |
 
 ## Contributing
 

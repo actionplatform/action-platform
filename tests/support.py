@@ -194,6 +194,7 @@ def template_repo(
 
     (slug / ".gitlab-ci.yml").write_text("image: x\n")
     (slug / "Jenkinsfile").write_text("pipeline {}\n")
+    (slug / "bitbucket-pipelines.yml").write_text("image: x\n")
 
     if rendered:
         (slug / "README.md").write_text(

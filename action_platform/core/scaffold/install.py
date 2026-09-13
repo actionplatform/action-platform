@@ -32,6 +32,7 @@ CI_FILES = {
     "github": [".github/workflows/" + w for w in WORKFLOWS],
     "gitlab": [".gitlab-ci.yml"],
     "jenkins": ["Jenkinsfile"],
+    "bitbucket": ["bitbucket-pipelines.yml"],
 }
 
 AGENTS = """# AGENTS.md
@@ -198,8 +199,16 @@ def _language_of(leaf_dir: Path) -> str:
 
 
 def _ci_for_remote(repo: Repository) -> str:
-    """The CI that matches where the repository lives: GitLab CI for a GitLab remote, GitHub Actions otherwise."""
-    return "gitlab" if "gitlab" in repo.remote_url() else "github"
+    """The CI that matches where the repository lives: GitLab CI, Bitbucket Pipelines, else GitHub Actions."""
+    remote = repo.remote_url()
+
+    if "gitlab" in remote:
+        return "gitlab"
+
+    if "bitbucket" in remote:
+        return "bitbucket"
+
+    return "github"
 
 
 def _existing_ci(root: Path) -> str | None:
