@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.5.0 — 2026-09-13
+
+### Features
+- **install:** LAST_VERSION starts at 0.0.0 or at the newest tag; app header prefers the registered name
+- **install:** work without a detectable language; language choice when importing from the web
+- import a repository without platform.toml — install on add from the web, CLI/MCP, then commit on a branch with a pull request
+- **templates:** any git repository can be a template source — copied as-is, platform files added when missing
+- **api:** template sources — merged matrix, init/cloud/service from a custom repository, remote flow and configuration tools
+
+### Bug Fixes
+- **install:** name platform.toml after the repository; skip the code-quality workflow when there is no language
+- **github:** explain a 403 from a GitHub App that cannot create repositories
+- **templates:** a plain repository template resolves under any type; the chosen type wins
+- **templates:** detect language by manifest or source files; plain repositories without one still get platform.toml
+- **templates:** plain repositories get a Repositories category and resolve without a stack
+- **templates:** explain a source without index.toml
+
+### Docs
+- template repositories, remote MCP tools, edit-configuration skill
+
 ## v0.4.0 — 2026-09-13
 
 ### Features
