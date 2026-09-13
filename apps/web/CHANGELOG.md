@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.4 — 2026-09-13
+
+### Bug Fixes
+- **web:** create the GitHub App as public so it can be installed on any organization; say so when GitHub skips the account picker
+- **web:** the wizard lists every GitHub installation, disabling the ones that cannot create repositories and saying why
+
 ## v0.4.3 — 2026-09-13
 
 ### Features
