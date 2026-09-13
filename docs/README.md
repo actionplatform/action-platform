@@ -48,11 +48,18 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 | [Architecture](contribute_architecture.md) | packages, the objects in the core, providers, how credentials travel, the web app's data |
 | [Development](contribute_development.md) | running everything locally, tests, regenerating the API client |
 
-## Conventions
+## Project
 
-Files are named `<context>_<topic>.md`; the context is one of `start`, `use`, `concept`, `contribute`. Each guide answers one question and links out instead of repeating.
+| | |
+|---|---|
+| [Changelog](../CHANGELOG.md) · [web](../apps/web/CHANGELOG.md) · [api](../action_platform/api/CHANGELOG.md) | what changed in each release of the library and CLI, the web app and the API |
+| [`LAST_VERSION`](../LAST_VERSION) · [web](../apps/web/LAST_VERSION) · [api](../action_platform/api/LAST_VERSION) | the current version of each component — the same files `action-platform release` bumps |
+| [Contributing](../CONTRIBUTING.md) | branches, commits, pull requests, what a change must ship with |
+| [Code of conduct](../CODE_OF_CONDUCT.md) | how we treat each other |
+| [Security](../SECURITY.md) | reporting a vulnerability, what is in scope |
+| [License](../LICENSE) | Apache 2.0 |
 
-The same words everywhere:
+## Glossary
 
 | Term | Means |
 |---|---|
