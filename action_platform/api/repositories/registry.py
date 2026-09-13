@@ -20,6 +20,7 @@ from typing import Optional
 from ulid import ULID
 
 from action_platform.core.exception import ActionPlatformError
+from action_platform.core.flow.git import git_env
 from action_platform.settings import settings
 
 
@@ -100,7 +101,7 @@ class Registry:
                 check=True,
                 capture_output=True,
                 text=True,
-                env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
+                env=git_env(),
             )
         except subprocess.CalledProcessError as e:
             raise ActionPlatformError(
@@ -117,6 +118,7 @@ class Registry:
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
             cwd=path,
             capture_output=True,
+            env=git_env(),
             text=True,
         ).stdout.strip()
 
@@ -151,11 +153,13 @@ class Registry:
             cwd=root,
             check=True,
             capture_output=True,
+            env=git_env(),
         )
         upstream = subprocess.run(
             ["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"],
             cwd=root,
             capture_output=True,
+            env=git_env(),
             text=True,
         )
 
@@ -166,6 +170,7 @@ class Registry:
             ["git", "pull", "--quiet", "--ff-only"],
             cwd=root,
             capture_output=True,
+            env=git_env(),
             text=True,
         )
 

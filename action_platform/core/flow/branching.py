@@ -127,6 +127,7 @@ def _local_has(cwd: Path, branch: str) -> bool:
         ["git", "rev-parse", "--verify", "--quiet", f"refs/heads/{branch}"],
         cwd=cwd,
         capture_output=True,
+        env=git.git_env(),
     )
 
     return result.returncode == 0

@@ -9,6 +9,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from action_platform.core.exception import TemplateError
+from action_platform.core.flow.git import git_env
 from action_platform.logging import logger
 from action_platform.settings import settings
 
@@ -435,7 +436,9 @@ def load_matrix(update: bool = False, source: str | None = None) -> tuple[Path, 
 
 
 def _git(*args: str) -> None:
-    result = subprocess.run(["git", *args], capture_output=True, text=True)
+    result = subprocess.run(
+        ["git", *args], capture_output=True, text=True, env=git_env()
+    )
 
     if result.returncode != 0:
         raise TemplateError(result.stderr.strip() or "git failed")

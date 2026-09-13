@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from action_platform.core.flow import git
+from action_platform.core.flow.git import git_env
 
 KINDS = {
     "feature",
@@ -163,7 +164,10 @@ def install_hooks(cwd: Path) -> bool:
         dest.chmod(0o755)
 
     subprocess.run(
-        ["git", "config", "--unset", "core.hooksPath"], cwd=cwd, capture_output=True
+        ["git", "config", "--unset", "core.hooksPath"],
+        cwd=cwd,
+        capture_output=True,
+        env=git_env(),
     )
 
     return True

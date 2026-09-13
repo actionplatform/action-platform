@@ -99,7 +99,7 @@ sequenceDiagram
 1. A member connects a code host in the web app (OAuth) or pastes a token. The token is AES-256-GCM encrypted (`lib/crypto.ts`, key derived from `BETTER_AUTH_SECRET`) and stored in `source_host`.
 2. An app remembers which host it uses (`app.source_host_id`).
 3. A push / release server action decrypts the token — refreshing it first for GitLab / Bitbucket — and sends it in the request body as `credentials {kind, token, username, base_url, owner}`.
-4. The API rebuilds `config.source_host` with that token (`api/credentials.py: apply`) and wraps the git calls in `git_auth()`, which injects a credential helper through `GIT_CONFIG_COUNT/KEY/VALUE` so git authenticates without the token touching `.git/config` or a command line. The host's own helpers (keychain, `gh`) are cleared for that call.
+4. The API rebuilds `config.source_host` with that token (`api/core/credentials.py: apply`) and wraps the git calls in `git_auth()`. The credentials go into a `contextvars.ContextVar` that `core/flow/git.git_env()` reads when it spawns git, so they belong to that request only — concurrent requests on other threads never see them and the process environment is never touched. Git receives them as a credential helper through `GIT_CONFIG_COUNT/KEY/VALUE`, so the token never lands in `.git/config` or on a command line, and the host's own helpers (keychain, `gh`) are cleared for that call.
 5. Nothing is stored on the API side.
 
 ## The web app's data
