@@ -82,13 +82,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Init App
-         * @description Generate an app from the matrix into a new workspace and register it.
-         *
-         *     Nothing leaves the server unless `push` is set, which creates the
-         *     remote repository through the template's [source_host].
-         */
+        /** Init App */
         post: operations["init_app_api_apps_init_post"];
         delete?: never;
         options?: never;
@@ -96,23 +90,19 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/apps/{id}/push": {
+    "/api/apps/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** App Detail */
+        get: operations["app_detail_api_apps__id__get"];
         put?: never;
-        /**
-         * Push App
-         * @description Create the remote repository through the app's [source_host] and push main.
-         *
-         *     Needs ACTION_PLATFORM_GITHUB_TOKEN (or GH_TOKEN) in the API's environment.
-         */
-        post: operations["push_app_api_apps__id__push_post"];
-        delete?: never;
+        post?: never;
+        /** Remove App */
+        delete: operations["remove_app_api_apps__id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -135,19 +125,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/apps/{id}": {
+    "/api/apps/{id}/push": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** App Detail */
-        get: operations["app_detail_api_apps__id__get"];
+        get?: never;
         put?: never;
-        post?: never;
-        /** Remove App */
-        delete: operations["remove_app_api_apps__id__delete"];
+        /** Push App */
+        post: operations["push_app_api_apps__id__push_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -204,6 +193,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/apps/{id}/releases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** App Releases */
+        get: operations["app_releases_api_apps__id__releases_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/apps/{id}/branches": {
         parameters: {
             query?: never;
@@ -214,7 +220,8 @@ export interface paths {
         /** App Branches */
         get: operations["app_branches_api_apps__id__branches_get"];
         put?: never;
-        post?: never;
+        /** Start Branch */
+        post: operations["start_branch_api_apps__id__branches_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -272,12 +279,116 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/apps/{id}/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Checkout */
+        post: operations["checkout_api_apps__id__checkout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}/pull-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Propose Pull Request */
+        get: operations["propose_pull_request_api_apps__id__pull_request_get"];
+        put?: never;
+        /** Open Pull Request */
+        post: operations["open_pull_request_api_apps__id__pull_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}/manifest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Manifest */
+        get: operations["read_manifest_api_apps__id__manifest_get"];
+        /** Write Manifest */
+        put: operations["write_manifest_api_apps__id__manifest_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}/cloud": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Cloud */
+        post: operations["set_cloud_api_apps__id__cloud_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Service */
+        post: operations["add_service_api_apps__id__services_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Commit */
+        post: operations["commit_api_apps__id__commit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AddApp */
-        AddApp: {
+        /** AddAppRequest */
+        AddAppRequest: {
             /** Url */
             url: string;
             /** Name */
@@ -386,6 +497,25 @@ export interface components {
             /** Problem */
             problem?: string | null;
         };
+        /** BranchResult */
+        BranchResult: {
+            /** Branch */
+            branch: string;
+            /** Base */
+            base: string;
+            /** Pushed */
+            pushed: boolean;
+        };
+        /** CheckoutRequest */
+        CheckoutRequest: {
+            /** Branch */
+            branch: string;
+        };
+        /** CloudRequest */
+        CloudRequest: {
+            /** Target */
+            target: string;
+        };
         /** Commit */
         Commit: {
             /** Sha */
@@ -396,6 +526,49 @@ export interface components {
             author: string;
             /** Date */
             date: string;
+        };
+        /** CommitBranch */
+        CommitBranch: {
+            /** Kind */
+            kind: string;
+            /** Code */
+            code: string;
+            /** Slug */
+            slug?: string | null;
+        };
+        /** CommitPullRequest */
+        CommitPullRequest: {
+            /** Number */
+            number: number;
+            /** Url */
+            url: string;
+        };
+        /** CommitRequest */
+        CommitRequest: {
+            /** Message */
+            message: string;
+            /**
+             * Push
+             * @default false
+             */
+            push: boolean;
+            branch?: components["schemas"]["CommitBranch"] | null;
+            /**
+             * Pull Request
+             * @default false
+             */
+            pull_request: boolean;
+            credentials?: components["schemas"]["SourceCredentials"] | null;
+        };
+        /** CommitResult */
+        CommitResult: {
+            /** Sha */
+            sha: string;
+            /** Branch */
+            branch: string;
+            /** Pushed */
+            pushed: boolean;
+            pull_request?: components["schemas"]["CommitPullRequest"] | null;
         };
         /** DeployRequest */
         DeployRequest: {
@@ -525,6 +698,11 @@ export interface components {
             /** Pushed */
             pushed: boolean;
         };
+        /** ManifestBody */
+        ManifestBody: {
+            /** Content */
+            content: string;
+        };
         /** Matrix */
         Matrix: {
             /** Projects */
@@ -567,6 +745,41 @@ export interface components {
             /** Description */
             description: string;
         };
+        /** PullRequestProposal */
+        PullRequestProposal: {
+            /** Head */
+            head: string;
+            /** Base */
+            base: string;
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /** Commits */
+            commits: string[];
+        };
+        /** PullRequestRequest */
+        PullRequestRequest: {
+            /** Base */
+            base?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Body */
+            body?: string | null;
+            /**
+             * Draft
+             * @default false
+             */
+            draft: boolean;
+            credentials?: components["schemas"]["SourceCredentials"] | null;
+        };
+        /** PullRequestResult */
+        PullRequestResult: {
+            /** Number */
+            number: number;
+            /** Url */
+            url: string;
+        };
         /** PushRequest */
         PushRequest: {
             /**
@@ -583,6 +796,23 @@ export interface components {
             /** Url */
             url: string;
         };
+        /** Release */
+        Release: {
+            /** Tag */
+            tag: string;
+            /** Version */
+            version: string;
+            /** Date */
+            date: string;
+            /** Sha */
+            sha: string;
+            /** Subject */
+            subject: string;
+            /** Prerelease */
+            prerelease: boolean;
+            /** Latest */
+            latest: boolean;
+        };
         /** ReleasePreview */
         ReleasePreview: {
             /** Current */
@@ -591,6 +821,10 @@ export interface components {
             next: string;
             /** Changelog */
             changelog: string;
+            /** Branch */
+            branch: string;
+            /** Prerelease */
+            prerelease: boolean;
             /** Dry Run */
             dry_run: boolean;
         };
@@ -606,7 +840,18 @@ export interface components {
              * @default true
              */
             dry_run: boolean;
+            /** Branch */
+            branch?: string | null;
+            /** Component */
+            component?: string | null;
             credentials?: components["schemas"]["SourceCredentials"] | null;
+        };
+        /** ServiceRequest */
+        ServiceRequest: {
+            /** Name */
+            name: string;
+            /** Provider */
+            provider?: string | null;
         };
         /** SourceCredentials */
         SourceCredentials: {
@@ -620,6 +865,21 @@ export interface components {
             base_url?: string | null;
             /** Owner */
             owner?: string | null;
+        };
+        /** StartBranchRequest */
+        StartBranchRequest: {
+            /** Kind */
+            kind: string;
+            /** Code */
+            code: string;
+            /** Slug */
+            slug?: string | null;
+            /**
+             * Push
+             * @default true
+             */
+            push: boolean;
+            credentials?: components["schemas"]["SourceCredentials"] | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -737,7 +997,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AddApp"];
+                "application/json": components["schemas"]["AddAppRequest"];
             };
         };
         responses: {
@@ -781,72 +1041,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InitResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    push_app_api_apps__id__push_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PushRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PushResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    sync_app_api_apps__id__sync_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AppEntry"];
                 };
             };
             /** @description Validation Error */
@@ -908,6 +1102,72 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_app_api_apps__id__sync_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppEntry"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    push_app_api_apps__id__push_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushResult"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -1015,6 +1275,37 @@ export interface operations {
             };
         };
     };
+    app_releases_api_apps__id__releases_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Release"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     app_branches_api_apps__id__branches_get: {
         parameters: {
             query?: never;
@@ -1033,6 +1324,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Branch"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_branch_api_apps__id__branches_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartBranchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BranchResult"];
                 };
             };
             /** @description Validation Error */
@@ -1136,6 +1462,287 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Diagnosis"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    checkout_api_apps__id__checkout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    propose_pull_request_api_apps__id__pull_request_get: {
+        parameters: {
+            query?: {
+                base?: string | null;
+                title?: string | null;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PullRequestProposal"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_pull_request_api_apps__id__pull_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PullRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PullRequestResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_manifest_api_apps__id__manifest_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManifestBody"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    write_manifest_api_apps__id__manifest_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManifestBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManifestBody"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_cloud_api_apps__id__cloud_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloudRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_service_api_apps__id__services_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    commit_api_apps__id__commit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitResult"];
                 };
             };
             /** @description Validation Error */
