@@ -20,6 +20,7 @@ from action_platform.remote.credentials import Credentials, load, save
 
 CLIENT_ID = "action-platform-cli"
 DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
+MAX_POLL_FAILURES = 5
 
 
 class RemoteError(ActionPlatformError):
@@ -268,6 +269,8 @@ def login(server: str, open_browser: bool = True, echo=print) -> Credentials:
     if open_browser:
         webbrowser.open(verify)
 
+    failures = 0
+
     while time.monotonic() < expires:
         time.sleep(interval)
 
@@ -282,16 +285,30 @@ def login(server: str, open_browser: bool = True, echo=print) -> Credentials:
                 },
             )
         except RemoteError as e:
-            if (
-                e.detail in ("authorization_pending", "slow_down")
-                or "pending" in e.detail
-            ):
-                if e.detail == "slow_down":
-                    interval += 5
+            if e.detail == "authorization_pending":
                 continue
-            if "denied" in e.detail:
+            if e.detail == "slow_down":
+                interval += 5
+                continue
+            if e.detail == "access_denied":
                 raise ActionPlatformError("login denied in the browser") from e
+            if e.detail == "expired_token":
+                raise ActionPlatformError(
+                    "the code expired before it was confirmed — run login again"
+                ) from e
             raise
+        except ActionPlatformError as e:
+            failures += 1
+
+            if failures > MAX_POLL_FAILURES:
+                raise ActionPlatformError(
+                    f"cannot reach {server} — giving up after {failures} attempts: {e}"
+                ) from e
+
+            echo(f"({e}; retrying)")
+            continue
+
+        failures = 0
 
         access = token.get("access_token")
 

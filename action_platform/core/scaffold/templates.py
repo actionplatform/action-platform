@@ -9,7 +9,13 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from action_platform.core.exception import TemplateError
-from action_platform.core.flow.git import git_env
+from action_platform.core.flow.git import (
+    BadRef,
+    UnsafeUrl,
+    check_ref,
+    check_remote_url,
+    git_env,
+)
 from action_platform.logging import logger
 from action_platform.settings import settings
 
@@ -260,14 +266,39 @@ def ensure_source(source: TemplateSource, update: bool = False) -> Path:
     """Return a local checkout of `source` at its ref, cloning or fetching as needed."""
     cache = source.cache
 
+    try:
+        check_remote_url(source.url)
+        check_ref(source.ref)
+    except (UnsafeUrl, BadRef) as e:
+        raise TemplateError(str(e)) from e
+
     if not cache.exists():
         logger.info("cloning %s@%s", source.url, source.ref)
         cache.parent.mkdir(parents=True, exist_ok=True)
-        _git("clone", "--depth", "1", "--branch", source.ref, source.url, str(cache))
+        _git(
+            "clone",
+            "--depth",
+            "1",
+            "--branch",
+            source.ref,
+            "--end-of-options",
+            source.url,
+            str(cache),
+        )
         return cache
 
     try:
-        _git("-C", str(cache), "fetch", "--depth", "1", "--quiet", "origin", source.ref)
+        _git(
+            "-C",
+            str(cache),
+            "fetch",
+            "--depth",
+            "1",
+            "--quiet",
+            "--end-of-options",
+            "origin",
+            source.ref,
+        )
         _git("-C", str(cache), "checkout", "--quiet", "--force", "FETCH_HEAD")
     except TemplateError as e:
         if update:
