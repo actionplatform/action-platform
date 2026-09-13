@@ -31,7 +31,7 @@ flowchart LR
     subgraph remote["action-platform mcp --remote"]
         L2[MCP tools] -->|Bearer| V["/api/v1/*"] --> API[action-platform api] --> WS[(workspaces)]
     end
-    login["action-platform login <url>"] -.->|device flow| L2
+    login["action-platform login <url> --scope read,write"] -.->|device flow · scoped JWT| L2
 ```
 
 | | `action-platform mcp` | `action-platform mcp --remote` |
@@ -40,7 +40,7 @@ flowchart LR
 | Tools | `list_matrix`, `init_project`, `install_platform`, `push_project`, `cloud_set`, `service_add`, `project_info`, `start_branch`, `gitflow_audit`, `install_hooks`, `propose_pull_request`, `open_pull_request`, `release`, `deploy`, `rollback`, `diagnose`, `gitflow_rules` | `whoami`, `list_apps`, `add_app`, `init_app`, `remove_app`, `sync_app`, `app_info`, `gitflow_audit`, `app_commits`, `app_branches`, `app_tags`, `app_releases`, `start_branch`, `checkout_branch`, `propose_pull_request`, `open_pull_request`, `read_manifest`, `write_manifest`, `set_cloud`, `add_service`, `commit_changes`, `release`, `deploy`, `diagnose`, `list_matrix`, `gitflow_rules` |
 | Templates | official repository, or another one with `source=url[@ref]` | official plus every repository the organization added under Templates; custom entries are addressed by `source=<name>` |
 | Permissions | whatever your user can do | the role of your account in the organization (`viewer`, `developer`, `deployer`, `admin`, `owner`); a refused call names the missing permission |
-| Credentials | your environment | the token from `action-platform login`, sent as `Authorization: Bearer` to `/api/v1/*` on the web app |
+| Credentials | your environment | the token from `action-platform login` (add `--scope read` for a read-only assistant, `--scope read,write,release` for one that ships) — `action-platform login`, sent as `Authorization: Bearer` to `/api/v1/*` on the web app |
 
 Both default `release` and `deploy` to dry runs; the tool descriptions tell the agent to show the result and ask before calling again with `dry_run=false`. `release` accepts `branch`: stable versions come only from `main`/`master`, any other branch yields `X.Y.Z-rc.N`.
 
