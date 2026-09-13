@@ -30,6 +30,8 @@ class SourceCredentials(BaseModel):
     username: Optional[str] = None
     base_url: Optional[str] = None
     owner: Optional[str] = None
+    author_name: Optional[str] = None
+    author_email: Optional[str] = None
 
 
 def apply(config: Config, creds: Optional[SourceCredentials]) -> Config:
@@ -65,17 +67,25 @@ def git_auth(creds: Optional[SourceCredentials]) -> Iterator[None]:
 
     username = creds.username or GIT_USERNAMES.get(creds.kind, "git")
     helper = '!f() { printf \'username=%s\\npassword=%s\\n\' "$AP_GIT_USER" "$AP_GIT_TOKEN"; }; f'
-    token = git.AUTH_ENV.set(
-        {
-            "AP_GIT_USER": username,
-            "AP_GIT_TOKEN": creds.token,
-            "GIT_CONFIG_COUNT": "2",
-            "GIT_CONFIG_KEY_0": "credential.helper",
-            "GIT_CONFIG_VALUE_0": "",
-            "GIT_CONFIG_KEY_1": "credential.helper",
-            "GIT_CONFIG_VALUE_1": helper,
-        }
-    )
+    env = {
+        "AP_GIT_USER": username,
+        "AP_GIT_TOKEN": creds.token,
+        "GIT_CONFIG_COUNT": "2",
+        "GIT_CONFIG_KEY_0": "credential.helper",
+        "GIT_CONFIG_VALUE_0": "",
+        "GIT_CONFIG_KEY_1": "credential.helper",
+        "GIT_CONFIG_VALUE_1": helper,
+    }
+
+    if creds.author_name and creds.author_email:
+        env.update(
+            GIT_AUTHOR_NAME=creds.author_name,
+            GIT_AUTHOR_EMAIL=creds.author_email,
+            GIT_COMMITTER_NAME=creds.author_name,
+            GIT_COMMITTER_EMAIL=creds.author_email,
+        )
+
+    token = git.AUTH_ENV.set(env)
 
     try:
         yield

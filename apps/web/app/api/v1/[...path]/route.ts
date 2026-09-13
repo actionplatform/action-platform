@@ -74,7 +74,10 @@ async function proxy(req: Request, segments: string[]): Promise<Response> {
   if (rule.credentials && body !== undefined) {
     const parsed = body ? (JSON.parse(body) as Record<string, unknown>) : {};
     const hostId = app?.sourceHostId ?? (typeof parsed.url === "string" ? await hostIdForUrl(org.id, parsed.url) : null);
-    if (!parsed.credentials && hostId) parsed.credentials = await credentialsFor(org.id, hostId);
+    if (!parsed.credentials && hostId) {
+      const creds = await credentialsFor(org.id, hostId);
+      parsed.credentials = creds ? { ...creds, author_name: session.user.name, author_email: session.user.email } : null;
+    }
     body = JSON.stringify(parsed);
   }
 

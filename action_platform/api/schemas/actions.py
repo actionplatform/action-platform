@@ -10,6 +10,8 @@ class SourceCredentials(BaseModel):
     token: str
     username: Optional[str] = None
     base_url: Optional[str] = None
+    author_name: Optional[str] = None
+    author_email: Optional[str] = None
     owner: Optional[str] = None
 
 

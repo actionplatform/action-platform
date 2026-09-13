@@ -74,6 +74,10 @@ def git_env() -> dict[str, str]:
     from action_platform.settings import settings
 
     env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+    env.setdefault("GIT_AUTHOR_NAME", settings.GIT_AUTHOR_NAME)
+    env.setdefault("GIT_AUTHOR_EMAIL", settings.GIT_AUTHOR_EMAIL)
+    env.setdefault("GIT_COMMITTER_NAME", settings.GIT_AUTHOR_NAME)
+    env.setdefault("GIT_COMMITTER_EMAIL", settings.GIT_AUTHOR_EMAIL)
     extra = {**(AUTH_ENV.get() or {})}
     count = int(extra.get("GIT_CONFIG_COUNT", "0"))
     policy = {

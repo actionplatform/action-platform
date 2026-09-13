@@ -6,7 +6,7 @@ import { apiBaseUrl, type Provider, refreshToken } from "./oauth";
 export { HOST_KINDS, type HostKind, type SourceHost } from "./source-host-kinds";
 import type { HostKind, SourceHost } from "./source-host-kinds";
 
-export type Credentials = { kind: string; token: string; username: string | null; base_url: string | null; owner: string | null };
+export type Credentials = { kind: string; token: string; username: string | null; base_url: string | null; owner: string | null; author_name?: string | null; author_email?: string | null };
 
 const columns = (t: Awaited<ReturnType<typeof q>>["t"]) => ({
   id: t.sourceHost.id,

@@ -949,6 +949,10 @@ export interface components {
             username?: string | null;
             /** Base Url */
             base_url?: string | null;
+            /** Author Name */
+            author_name?: string | null;
+            /** Author Email */
+            author_email?: string | null;
             /** Owner */
             owner?: string | null;
         };
