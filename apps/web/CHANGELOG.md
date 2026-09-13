@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.0 — 2026-09-13
+
+### Features
+- **web:** commit identity per organization, set in setup and settings, sent with every platform commit
+
 ## v0.5.5 — 2026-09-13
 
 ### Bug Fixes
