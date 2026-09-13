@@ -754,6 +754,11 @@ export interface components {
              * @default official
              */
             source: string;
+            /**
+             * Plain
+             * @default false
+             */
+            plain: boolean;
         };
         /** MatrixService */
         MatrixService: {

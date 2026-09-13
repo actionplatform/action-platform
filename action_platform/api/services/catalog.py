@@ -36,6 +36,7 @@ def _serialize(m: Matrix, source: str) -> dict:
                 "default": leaf.default,
                 "description": leaf.description,
                 "source": source,
+                "plain": leaf.plain,
             }
             for leaf in m.leaves
         ],

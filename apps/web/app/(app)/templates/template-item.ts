@@ -15,6 +15,7 @@ export type TemplateItem = {
   brand: ReturnType<typeof templateBrand>;
   cloud: (typeof CLOUD_ICONS)[string] | null;
   source: string;
+  plain: boolean;
 };
 
 const categoryOf = (type: string) => CATEGORIES.find((c) => c.types?.includes(type))?.id ?? "all";
@@ -24,8 +25,8 @@ export function itemsFrom(m: Matrix): TemplateItem[] {
     id: `${p.source}:${p.type}/${p.stack}/${p.template}`,
     name: p.template,
     description: p.description,
-    categoryId: categoryOf(p.type),
-    categoryLabel: typeMeta(p.type).label,
+    categoryId: p.plain ? "repos" : categoryOf(p.type),
+    categoryLabel: p.plain ? "Repository" : typeMeta(p.type).label,
     type: p.type,
     stack: p.stack || null,
     language: p.stack ? stackMeta(p.stack).label : null,
@@ -34,6 +35,7 @@ export function itemsFrom(m: Matrix): TemplateItem[] {
     brand: templateBrand(p.template, p.stack),
     cloud: null,
     source: p.source,
+    plain: p.plain,
   }));
   const clouds = m.clouds.map<TemplateItem>((c) => ({
     id: `${c.source}:cloud/${c.name}`,
@@ -49,6 +51,7 @@ export function itemsFrom(m: Matrix): TemplateItem[] {
     brand: CLOUD_ICONS[c.name]?.brand ?? null,
     cloud: CLOUD_ICONS[c.name] ?? null,
     source: c.source,
+    plain: false,
   }));
   return [...projects, ...clouds];
 }
@@ -61,4 +64,5 @@ export const LIST_TITLES: Record<string, string> = {
   plugins: "Plugin templates",
   cloud: "Cloud templates",
   empty: "Empty templates",
+  repos: "Repositories added by your organization",
 };

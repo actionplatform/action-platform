@@ -152,6 +152,15 @@ class Matrix:
                 f"unknown type: {type_} (available: {', '.join(self.types())})"
             )
 
+        if template is not None:
+            for leaf in self.leaves:
+                if (
+                    leaf.type == type_
+                    and leaf.template == template
+                    and (stack is None or leaf.stack == stack or not leaf.stack)
+                ):
+                    return leaf
+
         stacks = self.stacks(type_)
 
         if not stacks:

@@ -18,6 +18,7 @@ class MatrixProject(BaseModel):
     default: bool
     description: str
     source: str = "official"
+    plain: bool = False
 
 
 class MatrixCloud(BaseModel):

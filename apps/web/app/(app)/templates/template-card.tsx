@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ArrowUpRight, BookOpen, Cloud, FileBox, Globe, type LucideIcon, Package, Puzzle } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BookOpen, Cloud, FileBox, GitFork, Globe, type LucideIcon, Package, Puzzle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -14,9 +14,10 @@ import { cn } from "@/lib/utils";
 import type { TemplateItem } from "./template-item";
 
 const TYPE_ICONS: Record<string, LucideIcon> = { web: Globe, library: Package, docs: BookOpen, plugin: Puzzle, cloud: Cloud, empty: FileBox };
+const REPO_ICON = GitFork;
 
 export function TemplateLogo({ item, className }: { item: TemplateItem; className?: string }) {
-  const Fallback = item.cloud?.lucide ?? TYPE_ICONS[item.type] ?? FileBox;
+  const Fallback = item.plain ? REPO_ICON : (item.cloud?.lucide ?? TYPE_ICONS[item.type] ?? FileBox);
   return (
     <div className={cn("flex size-[42px] shrink-0 items-center justify-center rounded-lg border border-[#292929] bg-[#0e0e0e]", className)}>
       {item.brand ? <BrandIcon icon={item.brand} className="size-6" /> : <Fallback className="size-[22px] text-secondary" strokeWidth={1.5} />}
@@ -25,7 +26,7 @@ export function TemplateLogo({ item, className }: { item: TemplateItem; classNam
 }
 
 export function TemplateMeta({ item, className }: { item: TemplateItem; className?: string }) {
-  const TypeIcon = TYPE_ICONS[item.type] ?? FileBox;
+  const TypeIcon = item.plain ? REPO_ICON : (TYPE_ICONS[item.type] ?? FileBox);
   return (
     <div className={cn("flex min-w-0 items-center gap-2.5 text-[13px] text-secondary", className)}>
       <span className="flex items-center gap-1.5"><TypeIcon className="size-4" strokeWidth={1.75} />{item.categoryLabel}</span>
