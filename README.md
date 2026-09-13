@@ -22,7 +22,7 @@ Three doors, one core:
 |---|---|
 | **Web app** | Organizations › teams › projects › apps, with roles (`owner`, `admin`, `deployer`, `developer`, `viewer`). Create an app from a template or import any repository, connect GitHub / GitLab / Bitbucket, edit `platform.toml`, open pull requests, cut releases — from a browser. One command to self-host. |
 | **CLI** | `pipx install action-platform` and the same verbs on your machine: `init`, `branch`, `pr`, `release`, `deploy`, `rollback`, `diagnose`. |
-| **MCP server** | The same operations as tools for Claude Code, Codex, Cursor — locally, or against your hosted platform after `action-platform login`. |
+| **MCP server** | The same operations as tools for Claude Code, Codex, Cursor — locally, or against your hosted platform after `action-platform login`: 36 remote tools that know who you are, which app the current directory is, what your token may do, and can manage projects, teams and members. |
 
 ## Self-host in one command
 
@@ -32,7 +32,7 @@ curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/mast
 curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/master/deploy/install.sh | sudo sh -s -- platform.example.com you@example.com
 ```
 
-Installs Docker if needed, generates the secrets, starts Postgres + API + web (+ Traefik with Let's Encrypt when a domain is given) and prints the URL. Open it: first account, first organization, connect a code host — done. Files live in `/opt/action-platform`; see [`deploy/`](deploy/) for the compose file and the two Dockerfiles.
+Installs Docker if needed, generates the secrets, starts Postgres + API + web (+ Traefik with Let's Encrypt when a domain is given) and prints the URL. Open it: first account, first organization, connect a source host — done. Files live in `/opt/action-platform`; see [`deploy/`](deploy/) for the compose file and the two Dockerfiles.
 
 **Already on Dokploy?** Create a *Compose* service and import [`deploy/dokploy/template.b64`](deploy/dokploy/template.b64): secrets and domain are generated, Dokploy's Traefik handles TLS. → [Self-hosting](docs/start_self_hosting.md#dokploy)
 
@@ -56,7 +56,7 @@ Thirty seconds later you have a FastAPI service with tests, lint, CI wired, a SA
 | **Your CI, your account, your git** | Runs on GitHub Actions, GitLab CI or Jenkins you already have. Repositories on GitHub, GitLab, Bitbucket or any git server, connected with OAuth. Infra lands in **your** AWS account through OIDC — no long-lived keys, no vendor in the loop. |
 | **Governance that ships with the code** | Git-flow and Conventional Commits enforced by git hooks before a commit exists and by CI on every PR; changelog generated; `AGENTS.md` for humans and AI agents; Trivy scans; least-privilege IAM in `requirements/`. |
 | **Fix once, everywhere** | CI logic lives in versioned shared repos (`ci-scripts`, `ci-github`, `ci-gitlab`, `ci-jenkins`). Bump `v1`, every project picks it up. |
-| **Roles, not shared tokens** | Members join by invitation or are added with an account; `viewer` reads, `developer` branches and commits, `deployer` releases, `admin` and `owner` run the organization. Code-host credentials stay on the platform — the CLI and MCP act with your role through the hosted API. |
+| **Roles, scoped tokens** | Members join by invitation or are added with an account; `viewer` reads, `developer` branches and commits, `deployer` releases, `admin` and `owner` run the organization. `action-platform login` mints a token with a scope (`read`, `write`, `release`, `admin`) and a reach (one organization or all, a project, an app) that never exceeds your role. **Connected apps** shows every token, which program uses it — Claude Code, Codex, Cursor, the CLI — and every browser session, all revocable. Source-host credentials stay on the platform. |
 
 ## What you get
 
@@ -89,21 +89,16 @@ flowchart LR
 
 ## Documentation
 
+[`docs/`](docs/README.md) is organized by what you want to do — **start**, **use**, **concept**, **contribute**:
+
 | | |
 |---|---|
-| [Getting started](docs/start_getting_started.md) | install, first project, point the CLI and an agent at a platform |
-| [Self-hosting](docs/start_self_hosting.md) | `install.sh`, compose, Dokploy, environment, upgrades, backups |
-| [Web](docs/use_web.md) | organizations › teams › projects › apps, roles, setup wizard, code hosts, template repositories, importing, configuration, releasing from the browser |
-| [CLI](docs/use_cli.md) | every command |
-| [Git-flow](docs/concept_git_flow.md) | branch kinds, commit format, what hooks and CI refuse |
-| [Manifest](docs/concept_manifest.md) | `platform.toml`, the file that declares a project |
-| [Templates](docs/concept_templates.md) | the matrix, adding your own repositories, how to add to the official one |
-| [API](docs/use_api.md) | the JSON API behind the web app |
-| [Access control](docs/concept_access_control.md) | roles, token scopes and reach |
-| [MCP](docs/use_mcp.md) | tools and prompts for AI clients, locally or against a hosted platform |
-| [Releases](docs/concept_releases.md) | versions per component, tags, what each publishes |
-| [Architecture](docs/contribute_architecture.md) | packages, the API, providers, how credentials travel |
-| [Development](docs/contribute_development.md) | running it locally, tests, regenerating the API client |
+| Start | [Getting started](docs/start_getting_started.md) · [Self-hosting](docs/start_self_hosting.md) |
+| Use | [Web](docs/use_web.md) · [CLI](docs/use_cli.md) · [MCP](docs/use_mcp.md) · [API](docs/use_api.md) |
+| Concept | [Access control](docs/concept_access_control.md) · [Git-flow](docs/concept_git_flow.md) · [Manifest](docs/concept_manifest.md) · [Templates](docs/concept_templates.md) · [Releases](docs/concept_releases.md) · [Observability](docs/concept_observability.md) |
+| Contribute | [Architecture](docs/contribute_architecture.md) · [Development](docs/contribute_development.md) |
+
+Versions and history: [`LAST_VERSION`](LAST_VERSION) / [`CHANGELOG.md`](CHANGELOG.md) for the library and CLI, [`apps/web`](apps/web/CHANGELOG.md) and [`action_platform/api`](action_platform/api/CHANGELOG.md) for the web app and the API.
 
 ## Extend it
 
