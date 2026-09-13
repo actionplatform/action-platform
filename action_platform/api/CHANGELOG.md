@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.10 — 2026-09-13
+
+### Refactoring
+- **api:** services, CLI and MCP tools call Repository, GitFlow, Installer and Manifest
+
 ## v0.5.9 — 2026-09-13
 
 ### Bug Fixes
