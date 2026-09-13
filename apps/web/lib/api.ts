@@ -43,12 +43,12 @@ export const api = {
   gitflowRules: async () => unwrap(await client.GET("/api/gitflow/rules")),
   apps: {
     list: async () => unwrap(await client.GET("/api/apps")),
-    add: async (url: string, name?: string) => unwrap(await client.POST("/api/apps", { body: { url, name } })),
+    add: async (url: string, name?: string, credentials: SourceCredentials | null = null) => unwrap(await client.POST("/api/apps", { body: { url, name, credentials } })),
     init: async (body: InitRequest) => unwrap(await client.POST("/api/apps/init", { body })),
     push: async (id: string, priv = false, credentials: SourceCredentials | null = null) =>
       unwrap(await client.POST("/api/apps/{id}/push", { params: { path: { id } }, body: { private: priv, credentials } })),
-    sync: async (id: string) =>
-      unwrap(await client.POST("/api/apps/{id}/sync", { params: { path: { id } } })),
+    sync: async (id: string, credentials: SourceCredentials | null = null) =>
+      unwrap(await client.POST("/api/apps/{id}/sync", { params: { path: { id } }, body: { credentials } })),
     remove: async (id: string) =>
       unwrap(await client.DELETE("/api/apps/{id}", { params: { path: { id } } })),
     get: async (id: string) =>

@@ -16,6 +16,11 @@ class SourceCredentials(BaseModel):
 class AddAppRequest(BaseModel):
     url: str
     name: Optional[str] = None
+    credentials: Optional[SourceCredentials] = None
+
+
+class SyncRequest(BaseModel):
+    credentials: Optional[SourceCredentials] = None
 
 
 class ReleaseRequest(BaseModel):

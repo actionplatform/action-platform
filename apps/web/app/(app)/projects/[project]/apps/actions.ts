@@ -59,7 +59,7 @@ export async function addApp(projectId: string, _prev: { error?: string } | null
   try {
     const { org } = await owned(projectId, "project.manage");
     const host = await hostFor(org.id, url);
-    const entry = await api.apps.add(url);
+    const entry = await api.apps.add(url, undefined, host ? await credentialsFor(org.id, host.id) : null);
     const app = await createApp(projectId, entry.id, entry.name, host?.id ?? null);
     if (host) await Promise.all([syncReleases(org.id, app.id, host.id, repoOf(url, null)), syncPullRequests(org.id, app.id, host.id, repoOf(url, null))]);
   } catch (e) {
@@ -77,11 +77,11 @@ export async function removeApp(projectId: string, appId: string) {
 }
 
 export async function syncApp(projectId: string, appId: string, registryId: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  await owned(projectId, "app.sync");
+  const { org } = await owned(projectId, "app.sync");
   try {
-    await api.apps.sync(registryId);
-  } catch {
-    return { ok: false, error: "sync failed" };
+    await api.apps.sync(registryId, await credsFor(org.id, projectId, appId));
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || "sync failed" };
   }
   await pullReleases(projectId, appId);
   await markSynced(projectId, appId);

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 
 from action_platform.api import schemas
@@ -17,7 +19,7 @@ def list_apps(apps: AppService = Depends(get_app_service)) -> list[schemas.AppRo
 def add_app(
     body: schemas.AddAppRequest, apps: AppService = Depends(get_app_service)
 ) -> schemas.AppEntry:
-    return apps.add(body.url, body.name)
+    return apps.add(body.url, body.name, body.credentials)
 
 
 @router.post("/init", status_code=201)
@@ -40,8 +42,12 @@ def remove_app(id: str, apps: AppService = Depends(get_app_service)) -> None:
 
 
 @router.post("/{id}/sync")
-def sync_app(id: str, apps: AppService = Depends(get_app_service)) -> schemas.AppEntry:
-    return apps.sync(id)
+def sync_app(
+    id: str,
+    body: Optional[schemas.SyncRequest] = None,
+    apps: AppService = Depends(get_app_service),
+) -> schemas.AppEntry:
+    return apps.sync(id, body.credentials if body else None)
 
 
 @router.post("/{id}/push")
