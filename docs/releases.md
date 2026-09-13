@@ -38,7 +38,7 @@ flowchart LR
 4. Writes `LAST_VERSION`, prepends `CHANGELOG.md`, syncs `package.json` / `pyproject.toml` / `__version__` under `path`.
 5. Commits `chore(release): [<name> ]X.Y.Z`, tags, pushes both, publishes the release on the source host (pre-release when rc). A refused push (the branch moved on the remote meanwhile) deletes the tag and the commit again, so nothing half-published stays in the clone.
 
-The hosted API fast-forwards the workspace's branch before step 1; a branch with local commits the remote lacks is refused with 409 until the app is synced with *Reset to remote*.
+The hosted API syncs the workspace before step 1 (fetch, fast-forward, and a move to the remote when the branch had a leftover local commit), so the push in step 5 is never behind.
 
 `--dry-run` stops after step 3 and prints the version and changelog.
 
