@@ -103,6 +103,14 @@ class SourceGithub(SourceHost):
             try:
                 self._rest("POST", path, body)
             except ProviderError as e:
+                if "not accessible by integration" in str(e):
+                    raise ProviderError(
+                        f"the GitHub App cannot create repositories for {owner}: install it on that "
+                        "account or organization with access to all repositories, and make sure its "
+                        "repository permission 'Administration' is read and write (GitHub → Settings → "
+                        "Developer settings → GitHub Apps → Permissions & events)"
+                    ) from e
+
                 if "already exists" not in str(e):
                     raise
 
