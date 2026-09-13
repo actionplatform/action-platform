@@ -1,5 +1,6 @@
 "use server";
 
+import { failed, type Result } from "@/lib/result";
 import { revalidatePath } from "next/cache";
 import { addMemberAccount, cancelInvitation, createInvitation, removeMember, requireManager, type Role, ROLES, setMemberRole } from "@/lib/orgs";
 import { requireOrg } from "@/lib/session";
@@ -55,7 +56,6 @@ export async function rotateHostToken(id: string, token: string): Promise<{ erro
   return null;
 }
 
-type Result<T = null> = { ok: true; data: T } | { ok: false; error: string };
 
 export async function inviteMember(email: string, role: Role): Promise<Result<{ id: string }>> {
   const { session, org } = await requireOrg();
@@ -67,7 +67,7 @@ export async function inviteMember(email: string, role: Role): Promise<Result<{ 
     revalidatePath("/settings");
     return { ok: true, data: { id: invitation.id } };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -79,7 +79,7 @@ export async function revokeInvitation(id: string): Promise<Result> {
     revalidatePath("/settings");
     return { ok: true, data: null };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -92,7 +92,7 @@ export async function changeRole(memberId: string, role: Role): Promise<Result> 
     revalidatePath("/settings");
     return { ok: true, data: null };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -105,7 +105,7 @@ export async function kickMember(memberId: string): Promise<Result> {
     revalidatePath("/teams");
     return { ok: true, data: null };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -119,7 +119,7 @@ export async function addMember(input: { name: string; email: string; password: 
     revalidatePath("/teams");
     return { ok: true, data: { existed: r.existed } };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -131,7 +131,7 @@ export async function changeHostOwner(id: string, owner: string): Promise<Result
     revalidatePath("/settings");
     return { ok: true, data: null };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -143,6 +143,6 @@ export async function saveGitAuthor(author: { name: string; email: string }): Pr
     revalidatePath("/settings");
     return { ok: true, data };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }

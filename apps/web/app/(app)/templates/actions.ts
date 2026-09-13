@@ -1,11 +1,11 @@
 "use server";
 
+import { failed, type Result } from "@/lib/result";
 import { revalidatePath } from "next/cache";
 import { requireManager } from "@/lib/orgs";
 import { requireOrg } from "@/lib/session";
 import { addTemplateSource, removeTemplateSource } from "@/lib/template-sources";
 
-type Result<T = null> = { ok: true; data: T } | { ok: false; error: string };
 
 export async function addSource(input: { name: string; url: string; ref: string }): Promise<Result<{ id: string }>> {
   const { session, org } = await requireOrg();
@@ -15,7 +15,7 @@ export async function addSource(input: { name: string; url: string; ref: string 
     revalidatePath("/templates");
     return { ok: true, data: { id: row.id } };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -27,6 +27,6 @@ export async function removeSource(id: string): Promise<Result> {
     revalidatePath("/templates");
     return { ok: true, data: null };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }

@@ -1,5 +1,6 @@
 "use server";
 
+import { failed } from "@/lib/result";
 import { resolve } from "node:path";
 import { getSetupAuth } from "@/lib/auth";
 import { writeConfig } from "@/lib/config";
@@ -87,7 +88,7 @@ export async function createAdmin(input: { name: string; email: string; password
     await (await getSetupAuth()).api.signUpEmail({ body: input });
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -110,7 +111,7 @@ export async function createFirstOrganization(input: { name: string; slug: strin
     await setGitAuthor(orgId, { name: input.gitAuthorName || DEFAULT_GIT_AUTHOR.name, email: input.gitAuthorEmail || DEFAULT_GIT_AUTHOR.email });
     return { ok: true, orgId };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -124,6 +125,6 @@ export async function addSetupHost(orgId: string, input: HostInput): Promise<Res
     await addHost(orgId, input);
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
