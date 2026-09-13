@@ -51,8 +51,8 @@ export const api = {
     init: async (body: InitRequest) => unwrap(await client.POST("/api/apps/init", { body })),
     push: async (id: string, priv = false, credentials: SourceCredentials | null = null) =>
       unwrap(await client.POST("/api/apps/{id}/push", { params: { path: { id } }, body: { private: priv, credentials } })),
-    sync: async (id: string, credentials: SourceCredentials | null = null) =>
-      unwrap(await client.POST("/api/apps/{id}/sync", { params: { path: { id } }, body: { credentials } })),
+    sync: async (id: string, credentials: SourceCredentials | null = null, reset = false) =>
+      unwrap(await client.POST("/api/apps/{id}/sync", { params: { path: { id } }, body: { credentials, reset } })),
     remove: async (id: string) =>
       unwrap(await client.DELETE("/api/apps/{id}", { params: { path: { id } } })),
     get: async (id: string) =>

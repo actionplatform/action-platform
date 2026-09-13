@@ -47,7 +47,9 @@ def sync_app(
     body: Optional[schemas.SyncRequest] = None,
     apps: AppService = Depends(get_app_service),
 ) -> schemas.AppEntry:
-    return apps.sync(id, body.credentials if body else None)
+    return apps.sync(
+        id, body.credentials if body else None, reset=bool(body and body.reset)
+    )
 
 
 @router.post("/{id}/push")

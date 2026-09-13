@@ -1,10 +1,12 @@
 import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
+import { version } from "./package.json";
 
 const config: NextConfig = {
   reactStrictMode: true,
   output: "standalone",
   serverExternalPackages: ["postgres", "mysql2", "@libsql/client"],
+  env: { WEB_VERSION: version },
 };
 
 export default withSentryConfig(config, {
@@ -16,5 +18,5 @@ export default withSentryConfig(config, {
   telemetry: false,
   widenClientFileUpload: true,
   webpack: { treeshake: { removeDebugLogging: true } },
-  release: { name: process.env.SENTRY_RELEASE, create: !!process.env.SENTRY_AUTH_TOKEN },
+  release: { name: process.env.SENTRY_RELEASE ?? `web@${version}`, create: !!process.env.SENTRY_AUTH_TOKEN },
 });

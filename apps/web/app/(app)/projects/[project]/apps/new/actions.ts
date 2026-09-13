@@ -1,5 +1,6 @@
 "use server";
 
+import { failed } from "@/lib/result";
 import { revalidatePath } from "next/cache";
 import { api, type InitRequest } from "@/lib/api";
 import { createApp, projectById } from "@/lib/projects";
@@ -14,7 +15,7 @@ export async function createAppFromTemplate(projectId: string, sourceHostId: str
   try {
     await requirePermission(session.user.id, org.id, "project.manage");
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
   const project = await projectById(org.id, projectId);
   if (!project) return { ok: false, error: "project not found" };
@@ -28,6 +29,6 @@ export async function createAppFromTemplate(projectId: string, sourceHostId: str
     revalidatePath(`/projects/${project.id}`);
     return { ok: true, href: `/projects/${project.id}/apps/${app.id}` };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }

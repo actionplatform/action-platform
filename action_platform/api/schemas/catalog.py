@@ -9,6 +9,7 @@ from action_platform.api.schemas.actions import SourceSpec
 
 class Version(BaseModel):
     version: str
+    api: str
 
 
 class MatrixProject(BaseModel):

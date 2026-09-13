@@ -4,7 +4,7 @@ Every component reports to [Sentry](https://sentry.io) when given a DSN, and sta
 
 | Component | Variable | Release tag | Extra |
 |---|---|---|---|
-| API | `AP_SENTRY_DSN` | `api@<version>` | installed with `pip install "action-platform[api]"` |
+| API | `AP_SENTRY_DSN` | `api@<version>` (the api component version, `action_platform/api/LAST_VERSION`) | installed with `pip install "action-platform[api]"` |
 | CLI | `AP_SENTRY_DSN` | `cli@<version>` | opt-in: `pip install "action-platform[sentry]"` and export the DSN |
 | Web | `SENTRY_DSN` | `web@<version>` | `@sentry/nextjs`; browser, server and edge |
 
@@ -12,7 +12,7 @@ With the compose files and Dokploy, set `AP_SENTRY_DSN_API` and `AP_SENTRY_DSN_W
 
 ## What is sent
 
-- Unhandled exceptions and HTTP 5xx, with the request route (never the body) and the release.
+- Unhandled exceptions and HTTP 5xx, with the request route (never the body) and the release. In the web app every server action that answers `{ ok: false }` also reports the underlying error unless it is an expected API answer below 500 (`lib/result.ts`).
 - Python `logging` records at warning and above, as Sentry logs.
 - Traces for a sample of requests — `AP_SENTRY_TRACES_SAMPLE_RATE` / `SENTRY_TRACES_SAMPLE_RATE`, default `0.1`.
 - In the browser, a session replay only when an error happens, with all text masked and media blocked.

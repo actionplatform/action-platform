@@ -1,5 +1,6 @@
 "use server";
 
+import { failed } from "@/lib/result";
 import { getSetupAuth } from "@/lib/auth";
 import { acceptInvitation, invitationById } from "@/lib/orgs";
 import { getSession } from "@/lib/session";
@@ -13,7 +14,7 @@ export async function acceptInvite(id: string): Promise<Result> {
     await acceptInvitation(id, session.user.id, session.user.email);
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -25,7 +26,7 @@ export async function joinWithNewAccount(id: string, name: string, password: str
   try {
     await (await getSetupAuth()).api.signUpEmail({ body: { name: name.trim(), email: invitation.email, password } });
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
   const session = await getSession();
   if (!session) return { ok: false, error: "account created; sign in to join" };

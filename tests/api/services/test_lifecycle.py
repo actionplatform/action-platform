@@ -80,3 +80,43 @@ class GitIdentityTest(ApiCase):
         self.assertEqual(
             git(workspace, "log", "-1", "--format=%an <%ae>"), "Ada <ada@example.com>"
         )
+
+
+class ReleasePushTest(ApiCase):
+    def test_a_rejected_push_rolls_the_release_back(self):
+        id = self.add_app()
+        root = self.workspaces / id
+        before = git(root, "rev-parse", "HEAD")
+
+        res = self.client.post(
+            f"/api/apps/{id}/release", json={"level": "patch", "dry_run": False}
+        )
+
+        self.assertEqual(res.status_code, 400, res.text)
+        self.assertIn("nothing was published", res.json()["detail"])
+        self.assertEqual(git(root, "rev-parse", "HEAD"), before)
+        self.assertNotIn("v1.2.4", git(root, "tag"))
+        self.assertEqual(git(root, "status", "--porcelain"), "")
+
+    def test_a_workspace_behind_the_remote_is_brought_level_first(self):
+        from action_platform.providers.source.github import SourceGithub
+
+        self.patch(SourceGithub, "create_release", lambda *a, **k: None)
+        git(self.repo, "config", "receive.denyCurrentBranch", "updateInstead")
+        id = self.add_app()
+        root = self.workspaces / id
+        (self.repo / "b.txt").write_text("b")
+        git(self.repo, "add", "b.txt")
+        git(self.repo, "commit", "-qm", "feat: add b")
+
+        res = self.client.post(
+            f"/api/apps/{id}/release", json={"level": "patch", "dry_run": False}
+        )
+
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual(res.json()["next"], "1.2.4")
+        self.assertTrue((root / "b.txt").exists())
+        self.assertEqual(
+            git(self.repo, "log", "-1", "--format=%s"), "chore(release): 1.2.4"
+        )
+        self.assertIn("v1.2.4", git(self.repo, "tag"))

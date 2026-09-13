@@ -1,5 +1,6 @@
 "use server";
 
+import { failed, type Result } from "@/lib/result";
 import { revalidatePath } from "next/cache";
 import { api, ApiError, type ReleasePreview } from "@/lib/api";
 import { appById, createApp, deleteApp, markSynced, projectById, setAppHost } from "@/lib/projects";
@@ -87,7 +88,7 @@ export async function addApp(projectId: string, url: string, install: { type: st
     return { ok: true, appId: app.id, installed: entry.installed ?? null };
   } catch (e) {
     if (e instanceof ApiError && e.code === "needs_install") return { ok: false, error: e.message, needsInstall: true };
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -98,16 +99,16 @@ export async function removeApp(projectId: string, appId: string) {
   revalidatePath(`/projects/${projectId}`);
 }
 
-export async function syncApp(projectId: string, appId: string, registryId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function syncApp(projectId: string, appId: string, registryId: string, reset = false): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const { org } = await owned(projectId, "app.sync");
-    await api.apps.sync(registryId, await credsFor(org.id, projectId, appId));
+    const { org } = await owned(projectId, reset ? "app.flow" : "app.sync");
+    await api.apps.sync(registryId, await credsFor(org.id, projectId, appId), reset);
     await pullReleases(projectId, appId);
     await markSynced(projectId, appId);
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: (e as Error).message || "sync failed" };
+    return failed(e, "sync failed");
   }
 }
 
@@ -117,7 +118,7 @@ export async function previewRelease(registryId: string, level: string, branch: 
     await requirePermission(session.user.id, org.id, "app.release");
     return { ok: true, data: await api.apps.release(registryId, level, true, null, branch) };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -129,7 +130,7 @@ export async function runRelease(projectId: string, appId: string, registryId: s
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -144,11 +145,10 @@ export async function pushApp(projectId: string, appId: string, registryId: stri
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, url: r.url };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
-type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export async function startBranch(projectId: string, appId: string, registryId: string, input: { kind: string; code: string; slug: string; push: boolean }): Promise<Result<{ branch: string; base: string; pushed: boolean }>> {
   try {
@@ -157,7 +157,7 @@ export async function startBranch(projectId: string, appId: string, registryId: 
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -168,7 +168,7 @@ export async function checkoutBranch(projectId: string, registryId: string, bran
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -177,7 +177,7 @@ export async function proposePullRequest(projectId: string, registryId: string):
     await owned(projectId, "app.flow");
     return { ok: true, data: await api.apps.proposePullRequest(registryId) };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -189,7 +189,7 @@ export async function openPullRequest(projectId: string, appId: string, registry
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -200,7 +200,7 @@ export async function saveManifest(projectId: string, registryId: string, conten
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -211,7 +211,7 @@ export async function setCloudTarget(projectId: string, registryId: string, targ
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -222,7 +222,7 @@ export async function addService(projectId: string, registryId: string, name: st
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -243,7 +243,7 @@ export async function commitChanges(projectId: string, appId: string, registryId
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -254,7 +254,7 @@ export async function discardChanges(projectId: string, registryId: string): Pro
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -265,6 +265,6 @@ export async function reinstallPlatform(projectId: string, registryId: string): 
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }

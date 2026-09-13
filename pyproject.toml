@@ -85,6 +85,7 @@ repository = "https://github.com/actionplatform/action-platform"
 packages = [{ include = "action_platform" }]
 include = [
   { path = "action_platform/hooks/*", format = ["sdist", "wheel"] },
+  { path = "action_platform/api/LAST_VERSION", format = ["sdist", "wheel"] },
 ]
 
 [tool.poetry.scripts]

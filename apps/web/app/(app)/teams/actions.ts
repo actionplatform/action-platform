@@ -1,11 +1,11 @@
 "use server";
 
+import { failed, type Result } from "@/lib/result";
 import { revalidatePath } from "next/cache";
 import { requireManager } from "@/lib/orgs";
 import { requireOrg } from "@/lib/session";
 import { addTeamMember, assignProjectTeam, createTeam, deleteTeam, removeTeamMember, updateTeam } from "@/lib/teams";
 
-type Result<T = null> = { ok: true; data: T } | { ok: false; error: string };
 
 async function manager() {
   const { session, org } = await requireOrg();
@@ -26,7 +26,7 @@ export async function newTeam(name: string, description: string): Promise<Result
     refresh();
     return { ok: true, data: { id: team.id } };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -37,7 +37,7 @@ export async function editTeam(teamId: string, name: string, description: string
     refresh(teamId);
     return { ok: true, data: null };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -48,7 +48,7 @@ export async function removeTeam(teamId: string): Promise<Result> {
     refresh(teamId);
     return { ok: true, data: null };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -59,7 +59,7 @@ export async function addMemberToTeam(teamId: string, userId: string): Promise<R
     refresh(teamId);
     return { ok: true, data: null };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -70,7 +70,7 @@ export async function removeMemberFromTeam(teamId: string, id: string): Promise<
     refresh(teamId);
     return { ok: true, data: null };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }
 
@@ -81,6 +81,6 @@ export async function setProjectTeam(teamId: string, projectId: string, assign: 
     refresh(teamId);
     return { ok: true, data: null };
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
 }

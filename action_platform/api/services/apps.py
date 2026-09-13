@@ -99,9 +99,14 @@ class AppService:
 
         return result
 
-    def sync(self, id: str, credentials: Optional[SourceCredentials] = None) -> dict:
+    def sync(
+        self,
+        id: str,
+        credentials: Optional[SourceCredentials] = None,
+        reset: bool = False,
+    ) -> dict:
         with auth.git_auth(credentials):
-            return asdict(self.registry.sync(id))
+            return asdict(self.registry.sync(id, reset=reset))
 
     def remove(self, id: str) -> None:
         self.registry.get(id)

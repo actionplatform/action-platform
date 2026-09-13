@@ -240,3 +240,46 @@ class SyncOverLocalChangesTest(LegacyImportCase):
         self.assertTrue((root / "README.md").exists())
         self.assertIn("legacy-local", (root / "pyproject.toml").read_text())
         self.assertTrue((root / "platform.toml").exists())
+
+
+class SyncDivergedTest(ApiCase):
+    def test_a_local_commit_the_remote_lacks_blocks_sync_until_reset(self):
+        id = self.add_app(on_main=True)
+        root = self.workspaces / id
+        (root / "local.txt").write_text("x\n")
+        git(root, "add", "local.txt")
+        git(root, "commit", "-qm", "feat: local only")
+        (self.repo / "remote.txt").write_text("y\n")
+        git(self.repo, "add", "remote.txt")
+        git(self.repo, "commit", "-qm", "feat: remote only")
+
+        res = self.client.post(f"/api/apps/{id}/sync")
+        self.assertEqual(res.status_code, 400)
+        self.assertIn("reset the branch", res.json()["detail"])
+
+        res = self.client.post(f"/api/apps/{id}/sync", json={"reset": True})
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertTrue((root / "remote.txt").exists())
+        self.assertFalse((root / "local.txt").exists())
+
+    def test_a_merged_branch_deleted_on_the_remote_returns_to_main(self):
+        id = self.add_app(on_main=False)
+        root = self.workspaces / id
+        self.assertEqual(git(root, "rev-parse", "--abbrev-ref", "HEAD"), "feature/1")
+        git(self.repo, "checkout", "-q", "main")
+        git(
+            self.repo,
+            "merge",
+            "-q",
+            "--no-ff",
+            "-m",
+            "Merge pull request #1",
+            "feature/1",
+        )
+        git(self.repo, "branch", "-q", "-D", "feature/1")
+
+        res = self.client.post(f"/api/apps/{id}/sync")
+
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual(git(root, "rev-parse", "--abbrev-ref", "HEAD"), "main")
+        self.assertEqual(git(root, "log", "-1", "--format=%s"), "Merge pull request #1")

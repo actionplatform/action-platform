@@ -1,5 +1,6 @@
 "use server";
 
+import { failed } from "@/lib/result";
 import { revalidatePath } from "next/cache";
 import { api } from "@/lib/api";
 import { createProject, deleteProject } from "@/lib/projects";
@@ -42,7 +43,7 @@ export async function assignTeam(projectId: string, teamId: string | null): Prom
     await requirePermission(session.user.id, org.id, "project.manage");
     await assignProjectTeam(org.id, projectId, teamId);
   } catch (e) {
-    return { ok: false, error: (e as Error).message };
+    return failed(e);
   }
   revalidatePath("/projects");
   revalidatePath("/teams");
