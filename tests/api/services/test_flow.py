@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from tests.api.support import ApiCase
+from tests.support import git
 
 
 class FlowTest(ApiCase):
@@ -103,3 +104,20 @@ class FlowTest(ApiCase):
             ).status_code,
             400,
         )
+
+
+class ProposeWithoutRemoteAccessTest(ApiCase):
+    def test_uses_the_tracking_refs_when_the_remote_needs_credentials(self):
+        id = self.add_app(on_main=False)
+        root = self.workspaces / id
+        git(root, "remote", "set-url", "origin", "https://github.com/acme/private.git")
+        git(root, "remote", "set-head", "origin", "main")
+        (root / "b.txt").write_text("b")
+        git(root, "add", "b.txt")
+        git(root, "commit", "-qm", "feat: add b")
+
+        res = self.client.get(f"/api/apps/{id}/pull-request")
+
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual(res.json()["head"], "feature/1")
+        self.assertEqual(res.json()["base"], "main")
