@@ -41,6 +41,20 @@ def add_service(
     return config.add_service(id, body.name, body.provider, body.source)
 
 
+@router.get("/{id}/changes")
+def changes(
+    id: str, config: ConfigurationService = Depends(get_configuration)
+) -> schemas.Changes:
+    return config.changes(id)
+
+
+@router.post("/{id}/discard")
+def discard(
+    id: str, config: ConfigurationService = Depends(get_configuration)
+) -> schemas.Changes:
+    return config.discard(id)
+
+
 @router.post("/{id}/commit", status_code=201)
 def commit(
     id: str,

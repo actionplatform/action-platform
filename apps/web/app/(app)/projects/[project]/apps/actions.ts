@@ -238,3 +238,14 @@ export async function commitChanges(projectId: string, appId: string, registryId
     return { ok: false, error: (e as Error).message };
   }
 }
+
+export async function discardChanges(projectId: string, registryId: string): Promise<Result<{ files: string[]; clean: boolean }>> {
+  try {
+    await owned(projectId, "app.configure");
+    const data = await api.apps.discard(registryId);
+    revalidatePath(`/projects/${projectId}`, "layout");
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}

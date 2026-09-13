@@ -95,3 +95,25 @@ class ManifestTest(ApiCase):
             ).status_code,
             409,
         )
+
+
+class ChangesTest(ApiCase):
+    def test_lists_and_discards_uncommitted_changes(self):
+        id = self.add_app()
+        content = self.client.get(f"/api/apps/{id}/manifest").json()["content"]
+        self.client.put(
+            f"/api/apps/{id}/manifest",
+            json={"content": content + '\n[deploy]\ntarget = "docker"\n'},
+        )
+
+        changes = self.client.get(f"/api/apps/{id}/changes").json()
+        self.assertEqual(changes, {"files": ["platform.toml"], "clean": False})
+
+        self.assertEqual(
+            self.client.post(f"/api/apps/{id}/discard").json(),
+            {"files": [], "clean": True},
+        )
+        self.assertTrue(self.client.get(f"/api/apps/{id}").json()["clean"])
+        self.assertNotIn(
+            "[deploy]", self.client.get(f"/api/apps/{id}/manifest").json()["content"]
+        )

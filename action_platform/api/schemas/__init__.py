@@ -1,6 +1,7 @@
 from action_platform.api.schemas.actions import (
     AddAppRequest,
     BranchResult,
+    Changes,
     CheckoutRequest,
     CloudRequest,
     CommitBranch,
@@ -51,6 +52,7 @@ from action_platform.api.schemas.catalog import (
 __all__ = [
     "AddAppRequest",
     "BranchResult",
+    "Changes",
     "CheckoutRequest",
     "CloudRequest",
     "CommitBranch",

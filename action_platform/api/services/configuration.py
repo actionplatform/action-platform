@@ -1,3 +1,4 @@
+import subprocess
 import tomllib
 from pathlib import Path
 
@@ -66,6 +67,27 @@ class ConfigurationService:
             "name": name,
             "provider": provider or (service.providers[0] if service.providers else ""),
         }
+
+    def changes(self, id: str) -> dict:
+        root = self._root(id)
+        status = subprocess.run(
+            ["git", "status", "--porcelain=v1", "--untracked-files=all", "-z"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=True,
+            env=git.git_env(),
+        ).stdout
+        files = [entry[3:] for entry in status.split("\0") if len(entry) > 3]
+
+        return {"files": files, "clean": not files}
+
+    def discard(self, id: str) -> dict:
+        root = self._root(id)
+        git.run(["reset", "-q", "--hard", "HEAD"], cwd=root)
+        git.run(["clean", "-fdq"], cwd=root)
+
+        return {"files": [], "clean": True}
 
     def commit(self, id: str, body: CommitRequest) -> dict:
         root = self._root(id)

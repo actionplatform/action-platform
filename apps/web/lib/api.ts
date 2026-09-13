@@ -79,6 +79,8 @@ export const api = {
       unwrap(await client.POST("/api/apps/{id}/cloud", { params: { path: { id } }, body: { target, source } })),
     addService: async (id: string, name: string, provider: string | null, source: SourceSpec | null = null) =>
       unwrap(await client.POST("/api/apps/{id}/services", { params: { path: { id } }, body: { name, provider, source } })),
+    changes: async (id: string) => unwrap(await client.GET("/api/apps/{id}/changes", { params: { path: { id } } })),
+    discard: async (id: string) => unwrap(await client.POST("/api/apps/{id}/discard", { params: { path: { id } } })),
     commit: async (id: string, body: { message: string; push: boolean; branch: { kind: string; code: string; slug: string | null } | null; pull_request: boolean; credentials: SourceCredentials | null }) =>
       unwrap(await client.POST("/api/apps/{id}/commit", { params: { path: { id } }, body })),
     releases: async (id: string) =>
