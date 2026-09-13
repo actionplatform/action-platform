@@ -1,11 +1,18 @@
 import tomllib
 from pathlib import Path
 
+from fastapi import HTTPException
+
 from action_platform.settings import settings
 
 
 def read_manifest(root: Path) -> dict:
-    data = tomllib.loads((root / settings.CONFIG_FILE).read_text())
+    path = root / settings.CONFIG_FILE
+
+    if not path.exists():
+        raise HTTPException(400, f"{settings.CONFIG_FILE} not found in {root}")
+
+    data = tomllib.loads(path.read_text())
     last = root / settings.LAST_VERSION_FILE
 
     return {

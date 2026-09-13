@@ -11,6 +11,7 @@ from action_platform.api.services.catalog import resolve_repo
 from action_platform.core.config import Config
 from action_platform.core.flow import branching, git, gitflow, pullrequest
 from action_platform.core.flow.branching import BranchError
+from action_platform.core.scaffold.install import install
 from action_platform.core.scaffold.generate import apply_cloud, apply_service
 from action_platform.core.scaffold.templates import TemplateError
 from action_platform.settings import settings
@@ -87,7 +88,17 @@ class ConfigurationService:
         git.run(["reset", "-q", "--hard", "HEAD"], cwd=root)
         git.run(["clean", "-fdq"], cwd=root)
 
-        return {"files": [], "clean": True}
+        return {"clean": True, "files": []}
+
+    def install_platform(
+        self, id: str, type_: str, language: str | None, ci: str | None
+    ) -> dict:
+        root = self._root(id)
+        plan = install(
+            root, type_=type_, language=language, ci=ci, name=self.registry.get(id).name
+        )
+
+        return {"installed": plan.created}
 
     def commit(self, id: str, body: CommitRequest) -> dict:
         root = self._root(id)

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 
 from action_platform.api import schemas
@@ -46,6 +48,17 @@ def changes(
     id: str, config: ConfigurationService = Depends(get_configuration)
 ) -> schemas.Changes:
     return config.changes(id)
+
+
+@router.post("/{id}/install", status_code=201)
+def install_platform(
+    id: str,
+    body: Optional[schemas.InstallSpec] = None,
+    config: ConfigurationService = Depends(get_configuration),
+) -> schemas.Installed:
+    spec = body or schemas.InstallSpec()
+
+    return config.install_platform(id, spec.type, spec.language, spec.ci)
 
 
 @router.post("/{id}/discard")

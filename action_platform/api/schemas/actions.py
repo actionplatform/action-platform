@@ -169,6 +169,10 @@ class ManifestBody(BaseModel):
     content: str
 
 
+class Installed(BaseModel):
+    installed: list[str]
+
+
 class Changes(BaseModel):
     files: list[str]
     clean: bool
