@@ -26,8 +26,8 @@ def test_git_auth_scopes_credentials_to_the_request(monkeypatch):
         assert env["GIT_TERMINAL_PROMPT"] == "0"
         assert "AP_GIT_TOKEN" not in os.environ
 
-    assert "GIT_CONFIG_COUNT" not in git.git_env()
     assert "AP_GIT_TOKEN" not in git.git_env()
+    assert "credential.helper" not in git.git_env().values()
 
 
 def test_concurrent_requests_keep_their_own_credentials():

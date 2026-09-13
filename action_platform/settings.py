@@ -17,6 +17,14 @@ class Settings:
     TEMPLATES_DIR = os.getenv("ACTION_PLATFORM_TEMPLATES")
     TEMPLATES_CACHE = Path.home() / ".cache" / "action-platform" / "templates"
 
+    ALLOW_FILE_URLS = os.getenv("AP_ALLOW_FILE_URLS") == "1"
+    ALLOW_INSECURE_HTTP = os.getenv("AP_ALLOW_INSECURE_HTTP") == "1"
+    GIT_HOSTS = [
+        h.strip().lower()
+        for h in os.getenv("ACTION_PLATFORM_GIT_HOSTS", "").split(",")
+        if h.strip()
+    ]
+
     GITHUB_TOKEN = os.getenv("ACTION_PLATFORM_GITHUB_TOKEN") or os.getenv("GH_TOKEN")
     GITLAB_TOKEN = os.getenv("ACTION_PLATFORM_GITLAB_TOKEN") or os.getenv(
         "GITLAB_TOKEN"

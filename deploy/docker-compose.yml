@@ -49,6 +49,7 @@ services:
       - apdata:/data
     environment:
       ACTION_PLATFORM_TEMPLATES_REPO: ${ACTION_PLATFORM_TEMPLATES_REPO:-https://github.com/actionplatform/templates.git}
+      ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
 
   web:
     image: ${AP_IMAGE_WEB:-actionplatformio/action-platform-web:latest}

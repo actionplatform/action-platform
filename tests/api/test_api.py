@@ -12,6 +12,7 @@ pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
 from action_platform.api.repositories.registry import Registry  # noqa: E402
+from action_platform.settings import settings  # noqa: E402
 from action_platform.api.main import build  # noqa: E402
 
 PLATFORM = """
@@ -55,6 +56,11 @@ def url(repo: Path) -> str:
     return repo.as_uri()
 
 
+@pytest.fixture(autouse=True)
+def _file_urls(monkeypatch):
+    monkeypatch.setattr(settings, "ALLOW_FILE_URLS", True)
+
+
 @pytest.fixture
 def client(tmp_path: Path, monkeypatch) -> TestClient:
     monkeypatch.setenv("AP_HOME", str(tmp_path / "home"))
@@ -94,7 +100,7 @@ def test_registry_refuses_repo_without_platform(tmp_path: Path):
 
 
 def test_registry_refuses_non_url(tmp_path: Path):
-    with pytest.raises(Exception, match="not a git url"):
+    with pytest.raises(Exception, match="https:// only"):
         Registry(tmp_path / "home").add("/some/local/path")
 
 
@@ -509,3 +515,24 @@ def test_add_installs_platform_on_a_bare_repository(
     detail = client.get(f"/api/apps/{body['id']}").json()
     assert detail["project"]["language"] == "python"
     assert detail["clean"] is False
+
+
+def test_only_https_urls_are_cloned(tmp_path: Path, monkeypatch, url: str):
+    monkeypatch.setenv("AP_HOME", str(tmp_path / "home"))
+    monkeypatch.setattr(settings, "ALLOW_FILE_URLS", False)
+    client = TestClient(build())
+
+    for bad in [
+        url,
+        "ssh://git@github.com/acme/repo.git",
+        "git@github.com:acme/repo.git",
+        "/tmp/repo",
+    ]:
+        res = client.post("/api/apps", json={"url": bad})
+        assert res.status_code == 400, bad
+        assert "https:// only" in res.json()["detail"]
+
+    monkeypatch.setattr(settings, "GIT_HOSTS", ["github.com"])
+    res = client.post("/api/apps", json={"url": "https://gitlab.com/acme/repo.git"})
+    assert res.status_code == 400
+    assert "not allowed" in res.json()["detail"]

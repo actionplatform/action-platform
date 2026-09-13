@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import shutil
 import subprocess
 from dataclasses import asdict, dataclass
@@ -20,7 +19,7 @@ from typing import Optional
 from ulid import ULID
 
 from action_platform.core.exception import ActionPlatformError
-from action_platform.core.flow.git import git_env
+from action_platform.core.flow.git import UnsafeUrl, check_remote_url, git_env
 from action_platform.settings import settings
 
 
@@ -30,9 +29,6 @@ class SyncError(ActionPlatformError):
 
 class MissingManifest(ActionPlatformError):
     pass
-
-
-URL_RE = re.compile(r"^(https?://|git@|ssh://|file://)[^\s]+$")
 
 
 def home() -> Path:
@@ -81,8 +77,13 @@ class Registry:
     ) -> Entry:
         url = url.strip()
 
-        if not URL_RE.match(url):
+        if not url.strip() or any(c.isspace() for c in url):
             raise ActionPlatformError(f"not a git url: {url}")
+
+        try:
+            check_remote_url(url)
+        except UnsafeUrl as e:
+            raise ActionPlatformError(str(e)) from e
 
         rows = self._load()
 

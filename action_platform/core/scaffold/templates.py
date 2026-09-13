@@ -9,7 +9,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from action_platform.core.exception import TemplateError
-from action_platform.core.flow.git import git_env
+from action_platform.core.flow.git import UnsafeUrl, check_remote_url, git_env
 from action_platform.logging import logger
 from action_platform.settings import settings
 
@@ -259,6 +259,11 @@ class TemplateSource:
 def ensure_source(source: TemplateSource, update: bool = False) -> Path:
     """Return a local checkout of `source` at its ref, cloning or fetching as needed."""
     cache = source.cache
+
+    try:
+        check_remote_url(source.url)
+    except UnsafeUrl as e:
+        raise TemplateError(str(e)) from e
 
     if not cache.exists():
         logger.info("cloning %s@%s", source.url, source.ref)

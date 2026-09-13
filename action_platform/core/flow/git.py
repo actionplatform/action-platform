@@ -11,13 +11,61 @@ from pathlib import Path
 AUTH_ENV: ContextVar[dict[str, str] | None] = ContextVar("git_auth_env", default=None)
 
 
-def git_env() -> dict[str, str]:
-    """Environment for a git subprocess: the process environment plus the credentials of the current request, if any."""
-    extra = AUTH_ENV.get()
-    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+class UnsafeUrl(ValueError):
+    pass
 
-    if extra:
-        env.update(extra)
+
+def check_remote_url(url: str) -> str:
+    """Only https (and http / file when the operator opted in) may be cloned or fetched on behalf of a user; ACTION_PLATFORM_GIT_HOSTS narrows the hosts further."""
+    from urllib.parse import urlsplit
+
+    from action_platform.settings import settings
+
+    parts = urlsplit(url)
+    allowed = (
+        parts.scheme == "https"
+        or (parts.scheme == "http" and settings.ALLOW_INSECURE_HTTP)
+        or (parts.scheme == "file" and settings.ALLOW_FILE_URLS)
+    )
+
+    if not allowed:
+        raise UnsafeUrl(f"unsupported git url: {url} (https:// only)")
+
+    host = (parts.hostname or "").lower()
+
+    if (
+        parts.scheme != "file"
+        and settings.GIT_HOSTS
+        and not any(host == h or host.endswith("." + h) for h in settings.GIT_HOSTS)
+    ):
+        raise UnsafeUrl(
+            f"git host {host} is not allowed (ACTION_PLATFORM_GIT_HOSTS: {', '.join(settings.GIT_HOSTS)})"
+        )
+
+    return url
+
+
+def git_env() -> dict[str, str]:
+    """Environment for a git subprocess: the process environment, the credentials of the current request, and a protocol policy: https always, http only when opted in, ssh/git never, local paths only for direct commands (never from submodules)."""
+    from action_platform.settings import settings
+
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+    extra = {**(AUTH_ENV.get() or {})}
+    count = int(extra.get("GIT_CONFIG_COUNT", "0"))
+    policy = {
+        "protocol.allow": "never",
+        "protocol.https.allow": "always",
+        "protocol.http.allow": "always" if settings.ALLOW_INSECURE_HTTP else "never",
+        "protocol.file.allow": "always" if settings.ALLOW_FILE_URLS else "user",
+    }
+
+    for key, value in policy.items():
+        extra[f"GIT_CONFIG_KEY_{count}"] = key
+        extra[f"GIT_CONFIG_VALUE_{count}"] = value
+        count += 1
+
+    extra["GIT_CONFIG_COUNT"] = str(count)
+    env.update(extra)
 
     return env
 
