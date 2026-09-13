@@ -16,7 +16,7 @@ const RULES: Rule[] = [
   { method: "POST", pattern: /^apps\/init$/, permission: "project.manage", credentials: true },
   { method: "GET", pattern: /^apps\/[^/]+(\/.*)?$/, permission: null },
   { method: "DELETE", pattern: /^apps\/[^/]+$/, permission: "project.manage" },
-  { method: "POST", pattern: /^apps\/[^/]+\/sync$/, permission: "app.sync", imports: true },
+  { method: "POST", pattern: /^apps\/[^/]+\/sync$/, permission: "app.sync", credentials: true, imports: true },
   { method: "POST", pattern: /^apps\/[^/]+\/release$/, permission: "app.release", credentials: true, imports: true },
   { method: "POST", pattern: /^apps\/[^/]+\/deploy$/, permission: "app.release" },
   { method: "POST", pattern: /^apps\/[^/]+\/(push|branches|checkout|pull-request)$/, permission: "app.flow", credentials: true, imports: true },

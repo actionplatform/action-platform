@@ -393,6 +393,7 @@ export interface components {
             url: string;
             /** Name */
             name?: string | null;
+            credentials?: components["schemas"]["SourceCredentials"] | null;
         };
         /** AppDetail */
         AppDetail: {
@@ -881,6 +882,10 @@ export interface components {
             push: boolean;
             credentials?: components["schemas"]["SourceCredentials"] | null;
         };
+        /** SyncRequest */
+        SyncRequest: {
+            credentials?: components["schemas"]["SourceCredentials"] | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -1123,7 +1128,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SyncRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

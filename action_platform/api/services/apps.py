@@ -56,11 +56,18 @@ class AppService:
 
         return rows
 
-    def add(self, url: str, name: Optional[str]) -> dict:
-        return asdict(self.registry.add(url, name))
+    def add(
+        self,
+        url: str,
+        name: Optional[str],
+        credentials: Optional[SourceCredentials] = None,
+    ) -> dict:
+        with auth.git_auth(credentials):
+            return asdict(self.registry.add(url, name))
 
-    def sync(self, id: str) -> dict:
-        return asdict(self.registry.sync(id))
+    def sync(self, id: str, credentials: Optional[SourceCredentials] = None) -> dict:
+        with auth.git_auth(credentials):
+            return asdict(self.registry.sync(id))
 
     def remove(self, id: str) -> None:
         self.registry.get(id)
