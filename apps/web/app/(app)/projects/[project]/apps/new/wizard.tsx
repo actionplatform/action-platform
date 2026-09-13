@@ -33,10 +33,10 @@ type Config = {
 };
 
 function ciFor(kind: string | undefined): string {
-  return kind === "gitlab" ? "gitlab" : "github";
+  return kind === "gitlab" ? "gitlab" : kind === "bitbucket" ? "bitbucket" : "github";
 }
 
-const CI_PROVIDERS = ["github", "gitlab", "jenkins"];
+const CI_PROVIDERS = ["github", "gitlab", "jenkins", "bitbucket"];
 const CONTINUE = ["Continue to stack", "Continue to template", "Continue to configuration", "Continue to review", "Create project"];
 
 type ProjectOption = { id: string; name: string };
@@ -146,7 +146,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
         name: config.name.trim(),
         description: config.description,
         package_name: config.packageName || null,
-        github_owner: config.githubOwner || null,
+        github_owner: config.githubOwner || host?.defaultOwner || host?.owners[0]?.account || null,
         ci: config.ci && type !== "empty" ? config.ciProvider : null,
         cloud: config.cloud,
         git_init: config.gitInit,

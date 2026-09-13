@@ -16,6 +16,18 @@ async function installationOwner(token: string, installationId: string): Promise
   }
 }
 
+async function firstWorkspace(token: string): Promise<string | null> {
+  try {
+    const res = await fetch("https://api.bitbucket.org/2.0/user/permissions/workspaces?pagelen=100", { headers: { authorization: `Bearer ${token}`, accept: "application/json", "user-agent": "action-platform" }, cache: "no-store" });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { values: { workspace: { slug: string }; permission: string }[] };
+    const spaces = data.values ?? [];
+    return (spaces.find((w) => w.permission === "owner") ?? spaces.find((w) => w.permission === "collaborator") ?? spaces[0])?.workspace.slug ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(req: Request, ctx: { params: Promise<{ provider: string }> }) {
   const { provider } = await ctx.params;
   if (!(provider in PROVIDERS)) return Response.json({ detail: "unknown provider" }, { status: 404 });
@@ -53,7 +65,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
     const tokens = await exchangeCode(provider as Provider, origin, code);
     const who = await identity(provider as Provider, tokens.accessToken);
     const installationId = url.searchParams.get("installation_id");
-    const owner = installationId ? await installationOwner(tokens.accessToken, installationId) : null;
+    const owner = installationId ? await installationOwner(tokens.accessToken, installationId) : provider === "bitbucket" ? await firstWorkspace(tokens.accessToken) : null;
     await connectOAuthHost(orgId, provider as Provider, who.login, tokens, owner);
   } catch (e) {
     return back({ oauth_error: (e as Error).message });
