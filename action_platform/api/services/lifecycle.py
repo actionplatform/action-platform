@@ -1,4 +1,3 @@
-import subprocess
 from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
@@ -8,6 +7,7 @@ from fastapi import HTTPException
 from action_platform.api.core import credentials as auth
 from action_platform.api.repositories.registry import Registry
 from action_platform.api.schemas import DeployRequest, ReleaseRequest
+from action_platform.api.services.manifest import workspace_of
 from action_platform.core.action_platform import ActionPlatform
 from action_platform.core.config import Config
 from action_platform.core.flow import git
@@ -19,10 +19,7 @@ class LifecycleService:
         self.registry = registry
 
     def _tool(self, id: str) -> ActionPlatform:
-        root = Path(self.registry.get(id).path)
-
-        if not root.is_dir():
-            raise HTTPException(410, f"{root} no longer exists")
+        _, root = workspace_of(self.registry, id)
 
         return ActionPlatform(
             config=Config.from_toml(root / settings.CONFIG_FILE), repo_root=root
@@ -37,7 +34,7 @@ class LifecycleService:
                 self._switch(platform.repo_root, body.branch)
 
             if not body.dry_run:
-                self._fast_forward(platform.repo_root)
+                self.registry.sync(id)
 
             ctx = platform.release(
                 level=body.level, dry_run=body.dry_run, component=body.component
@@ -75,38 +72,6 @@ class LifecycleService:
             raise HTTPException(400, f"cannot check out {branch}: {e}") from e
 
         git.run(["pull", "--ff-only", "--end-of-options", "origin", branch], cwd=root)
-
-    def _fast_forward(self, root: Path) -> None:
-        """A release commits on the current branch: bring it level with the remote first, or the push is refused."""
-        try:
-            git.run(["fetch", "--quiet", "--prune", "origin"], cwd=root)
-        except subprocess.CalledProcessError:
-            return
-
-        upstream = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "@{upstream}"],
-            cwd=root,
-            capture_output=True,
-            text=True,
-            env=git.git_env(),
-        )
-
-        if upstream.returncode != 0:
-            return
-
-        pull = subprocess.run(
-            ["git", "pull", "--quiet", "--ff-only"],
-            cwd=root,
-            capture_output=True,
-            text=True,
-            env=git.git_env(),
-        )
-
-        if pull.returncode != 0:
-            raise HTTPException(
-                409,
-                "the branch has local commits the remote does not — sync the app (reset to remote) before releasing",
-            )
 
     def deploy(self, id: str, body: DeployRequest) -> list[dict]:
         results = self._tool(id).deploy(stage=body.stage, dry_run=body.dry_run)

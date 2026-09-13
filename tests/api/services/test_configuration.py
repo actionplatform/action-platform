@@ -144,7 +144,12 @@ class DiscardTest(ApiCase):
         self.assertEqual(res.status_code, 200, res.text)
         self.assertTrue(res.json()["clean"])
         self.assertFalse((self.workspaces / id / "platform.toml").exists())
-        self.assertEqual(self.client.get(f"/api/apps/{id}").status_code, 400)
+
+        detail = self.client.get(f"/api/apps/{id}")
+
+        self.assertEqual(detail.status_code, 200, detail.text)
+        self.assertEqual(detail.json()["project"]["name"], "legacy")
+        self.assertFalse(detail.json()["clean"])
 
 
 class InstallPlatformTest(ApiCase):
@@ -173,7 +178,7 @@ class InstallPlatformTest(ApiCase):
         self.assertIn("platform.toml", res.json()["installed"])
         self.assertEqual(self.client.get(f"/api/apps/{id}").status_code, 200)
 
-    def test_an_app_without_manifest_answers_400_not_500(self):
+    def test_a_clone_that_lost_its_manifest_gets_it_back_on_the_next_request(self):
         from action_platform.settings import settings
         from tests.support import template_repo
 
@@ -192,7 +197,8 @@ class InstallPlatformTest(ApiCase):
         ).json()["id"]
         (self.workspaces / id / "platform.toml").unlink()
 
-        res = self.client.get(f"/api/apps/{id}")
+        res = self.client.get(f"/api/apps/{id}/manifest")
 
-        self.assertEqual(res.status_code, 400)
-        self.assertIn("platform.toml", res.json()["detail"])
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertIn("[project]", res.json()["content"])
+        self.assertTrue((self.workspaces / id / "platform.toml").exists())
