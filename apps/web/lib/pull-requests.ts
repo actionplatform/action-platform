@@ -96,7 +96,7 @@ async function github(creds: Credentials, repo: string): Promise<PullRequest[]> 
 async function gitlab(creds: Credentials, repo: string): Promise<PullRequest[]> {
   const base = creds.base_url?.replace(/\/$/, "") || "https://gitlab.com";
   type R = { iid: number; title: string; web_url: string; author?: { username: string }; source_branch: string; target_branch: string; state: string; draft: boolean; created_at: string; updated_at: string; merged_at: string | null };
-  const rows = await getPages<R>(`${base}/api/v4/projects/${encodeURIComponent(repo)}/merge_requests?state=all&order_by=updated_at`, { "private-token": creds.token });
+  const rows = await getPages<R>(`${base}/api/v4/projects/${encodeURIComponent(repo)}/merge_requests?state=all&order_by=updated_at`, { authorization: `Bearer ${creds.token}` });
   return rows.map((r) => ({
     number: r.iid,
     title: r.title,

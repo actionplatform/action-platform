@@ -39,7 +39,10 @@ class SourceGitlab(SourceHost):
 
     def _rest(self, method: str, path: str, body: dict | None = None):
         return rest.call(
-            method, f"{self.api}{path}", {"private-token": self.token}, body
+            method,
+            f"{self.api}{path}",
+            {"authorization": f"Bearer {self.token}"},
+            body,
         )
 
     def detect(self, remote_url: str) -> bool:

@@ -99,7 +99,7 @@ async function github(creds: Credentials, repo: string): Promise<Remote[]> {
 async function gitlab(creds: Credentials, repo: string): Promise<Remote[]> {
   const base = creds.base_url?.replace(/\/$/, "") || "https://gitlab.com";
   type R = { tag_name: string; name: string | null; description: string | null; _links?: { self?: string }; author?: { username: string }; commit?: { id: string }; upcoming_release: boolean; released_at: string | null; created_at: string };
-  const rows = await getPages<R>(`${base}/api/v4/projects/${encodeURIComponent(repo)}/releases`, { "private-token": creds.token });
+  const rows = await getPages<R>(`${base}/api/v4/projects/${encodeURIComponent(repo)}/releases`, { authorization: `Bearer ${creds.token}` });
   return rows.map((r) => ({
     tag: r.tag_name,
     name: r.name,
