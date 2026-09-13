@@ -47,6 +47,7 @@ class SourceGithub(SourceHost):
             else self.api.removesuffix("/api/v3")
         )
 
+    def _require_credentials(self) -> None:
         if not self.token and not shutil.which("gh"):
             raise ProviderError(
                 "no GitHub credentials for this repository: on the platform, connect a GitHub host "
@@ -54,6 +55,8 @@ class SourceGithub(SourceHost):
             )
 
     def _rest(self, method: str, path: str, body: dict | None = None):
+        self._require_credentials()
+
         return rest.call(
             method,
             f"{self.api}{path}",
@@ -77,6 +80,7 @@ class SourceGithub(SourceHost):
         return rows[0]
 
     def _gh(self, *args: str) -> str:
+        self._require_credentials()
         result = subprocess.run(
             ["gh", *args, "--repo", self.repo],
             check=False,

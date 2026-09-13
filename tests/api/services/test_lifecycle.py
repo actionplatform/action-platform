@@ -25,3 +25,20 @@ class ReleaseTest(ApiCase):
         self.assertFalse(stable.json()["prerelease"])
         self.assertEqual(stable.json()["next"], "1.3.0")
         self.assertEqual(self.client.get(f"/api/apps/{id}").json()["branch"], "main")
+
+
+class CredentialsArriveWithTheRequestTest(ApiCase):
+    def test_manifest_with_a_source_host_loads_without_a_token(self):
+        from unittest import mock
+
+        from action_platform.settings import settings
+
+        with (
+            mock.patch.object(settings, "GITHUB_TOKEN", None),
+            mock.patch("shutil.which", lambda _: None),
+        ):
+            id = self.add_app()
+            res = self.client.post(f"/api/apps/{id}/release", json={"level": "patch"})
+
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual(res.json()["next"], "1.2.4")
