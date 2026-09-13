@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from action_platform.core.config import Config
 from action_platform.core.exception import ReleaseError
-from action_platform.core.flow import git
+from action_platform.core.flow.repository import Repository
 from action_platform.core.release import release as releasing
 from tests.support import TempCase, git as run, repo_with_origin
 
@@ -32,7 +32,7 @@ class SingleProjectTest(ReleaseCase):
         ctx = self.release("patch")
 
         self.assertEqual(ctx.next_version, "0.3.2")
-        self.assertIn("v0.3.2", git.tags(cwd=self.repo))
+        self.assertIn("v0.3.2", Repository(self.repo).tags())
 
     def test_rc_off_main_and_increments(self):
         run(self.repo, "checkout", "-qb", "feature/1")
@@ -87,7 +87,7 @@ class ComponentTest(ReleaseCase):
         ctx = releasing.release(self.config, "minor", self.repo, component="web")
 
         self.assertEqual(ctx.next_version, "0.2.0")
-        self.assertIn("web/v0.2.0", git.tags(cwd=self.repo))
+        self.assertIn("web/v0.2.0", Repository(self.repo).tags())
         self.assertEqual(
             (self.repo / "apps/web/LAST_VERSION").read_text().strip(), "0.2.0"
         )
@@ -107,7 +107,7 @@ class ComponentTest(ReleaseCase):
         ctx = releasing.release(self.config, "patch", self.repo)
 
         self.assertEqual(ctx.next_version, "0.3.2")
-        self.assertIn("v0.3.2", git.tags(cwd=self.repo))
+        self.assertIn("v0.3.2", Repository(self.repo).tags())
         self.assertIn("lib", ctx.changelog)
         self.assertNotIn("page", ctx.changelog)
         self.assertEqual(
@@ -121,7 +121,7 @@ class ComponentTest(ReleaseCase):
         ctx = releasing.release(self.config, "patch", self.repo, component="web")
 
         self.assertEqual(ctx.next_version, "0.1.1-rc.1")
-        self.assertIn("web/v0.1.1-rc.1", git.tags(cwd=self.repo))
+        self.assertIn("web/v0.1.1-rc.1", Repository(self.repo).tags())
 
     def test_unknown_component(self):
         with self.assertRaisesRegex(ReleaseError, "unknown component: api"):

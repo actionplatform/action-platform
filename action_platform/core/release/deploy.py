@@ -1,30 +1,98 @@
-"""Deploy, rollback, diagnose, destroy against the [deploy] targets."""
+"""Deploy, rollback, diagnose, destroy against the [deploy] targets of one repository."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
+from action_platform.abc.deploy_target import DeployTarget
 from action_platform.core.config import Config
-from action_platform.core.context import DeployResult, Diagnosis
+from action_platform.core.context import Context, DeployResult, Diagnosis
 from action_platform.core.exception import DeployError
-from action_platform.core.release.release import build_context
+from action_platform.core.flow.repository import Repository
+from action_platform.core.release.release import Releaser
 from action_platform.logging import logger
 
 
-def _targets(config: Config, target_name: str | None):
-    targets = (
-        config.deploy
-        if target_name is None
-        else [t for t in config.deploy if t.name == target_name]
-    )
+class Deployer:
+    def __init__(self, config: Config, repo: Repository | Path) -> None:
+        self.config = config
+        self.repo = repo if isinstance(repo, Repository) else Repository(repo)
 
-    if not targets:
-        raise DeployError(
-            f"no deploy target configured (filter={target_name!r}) — "
-            "run `action-platform cloud set <cloud>`"
+    def targets(self, name: str | None = None) -> list[DeployTarget]:
+        targets = (
+            self.config.deploy
+            if name is None
+            else [t for t in self.config.deploy if t.name == name]
         )
 
-    return targets
+        if not targets:
+            raise DeployError(
+                f"no deploy target configured (filter={name!r}) — "
+                "run `action-platform cloud set <cloud>`"
+            )
+
+        return targets
+
+    def _context(self, dry_run: bool = False, stage: str | None = None) -> Context:
+        ctx = Releaser(self.config, self.repo).context(dry_run=dry_run, stage=stage)
+        ctx.next_version = ctx.current_version
+
+        return ctx
+
+    def deploy(
+        self, target: str | None = None, dry_run: bool = False, stage: str | None = None
+    ) -> list[DeployResult]:
+        ctx = self._context(dry_run=dry_run, stage=stage)
+        results: list[DeployResult] = []
+
+        for t in self.targets(target):
+            logger.info(
+                "deploy target=%s stage=%s version=%s",
+                t.name,
+                ctx.stage,
+                ctx.next_version,
+            )
+            t.preflight(ctx)
+
+            if dry_run:
+                results.append(
+                    DeployResult(ok=True, target=t.name, version=ctx.next_version)
+                )
+                continue
+
+            results.append(t.deploy(ctx))
+
+        return results
+
+    def rollback(
+        self,
+        target: str | None = None,
+        to_version: str | None = None,
+        stage: str | None = None,
+    ) -> None:
+        ctx = self._context(stage=stage)
+
+        for t in self.targets(target):
+            logger.info(
+                "rollback target=%s stage=%s to=%s", t.name, ctx.stage, to_version
+            )
+            t.preflight(ctx)
+            t.rollback(ctx, to_version)
+
+    def diagnose(
+        self, target: str | None = None, stage: str | None = None
+    ) -> list[Diagnosis]:
+        ctx = self._context(stage=stage)
+
+        return [t.diagnose(ctx) for t in self.targets(target)]
+
+    def destroy(self, target: str | None = None, stage: str | None = None) -> None:
+        ctx = self._context(stage=stage)
+
+        for t in self.targets(target):
+            logger.info("delete target=%s stage=%s", t.name, ctx.stage)
+            t.preflight(ctx)
+            t.delete(ctx)
 
 
 def deploy(
@@ -34,26 +102,7 @@ def deploy(
     dry_run: bool = False,
     stage: str | None = None,
 ) -> list[DeployResult]:
-    ctx = build_context(config, repo_root, dry_run=dry_run, stage=stage)
-    ctx.next_version = ctx.current_version
-
-    results: list[DeployResult] = []
-
-    for t in _targets(config, target_name):
-        logger.info(
-            "deploy target=%s stage=%s version=%s", t.name, ctx.stage, ctx.next_version
-        )
-        t.preflight(ctx)
-
-        if dry_run:
-            results.append(
-                DeployResult(ok=True, target=t.name, version=ctx.next_version)
-            )
-            continue
-
-        results.append(t.deploy(ctx))
-
-    return results
+    return Deployer(config, repo_root).deploy(target_name, dry_run=dry_run, stage=stage)
 
 
 def rollback(
@@ -63,29 +112,18 @@ def rollback(
     to_version: str | None = None,
     stage: str | None = None,
 ) -> None:
-    ctx = build_context(config, repo_root, stage=stage)
-
-    for t in _targets(config, target_name):
-        logger.info("rollback target=%s stage=%s to=%s", t.name, ctx.stage, to_version)
-        t.preflight(ctx)
-        t.rollback(ctx, to_version)
+    Deployer(config, repo_root).rollback(
+        target_name, to_version=to_version, stage=stage
+    )
 
 
 def diagnose(
     config: Config, target_name: str | None, repo_root: Path, stage: str | None = None
 ) -> list[Diagnosis]:
-    ctx = build_context(config, repo_root, stage=stage)
-    ctx.next_version = ctx.current_version
-
-    return [t.diagnose(ctx) for t in _targets(config, target_name)]
+    return Deployer(config, repo_root).diagnose(target_name, stage=stage)
 
 
 def destroy(
     config: Config, target_name: str | None, repo_root: Path, stage: str | None = None
 ) -> None:
-    ctx = build_context(config, repo_root, stage=stage)
-
-    for t in _targets(config, target_name):
-        logger.info("delete target=%s stage=%s", t.name, ctx.stage)
-        t.preflight(ctx)
-        t.delete(ctx)
+    Deployer(config, repo_root).destroy(target_name, stage=stage)
