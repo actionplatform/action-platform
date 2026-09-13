@@ -36,7 +36,9 @@ flowchart LR
 2. Computes the next version from `<path>/LAST_VERSION`. Off `main`/`master` (or with `--rc`) it is `X.Y.Z-rc.N`, counting only that component's tags.
 3. Renders the changelog from Conventional Commits since the component's last tag, limited to commits that touched `path`; the root excludes every component path.
 4. Writes `LAST_VERSION`, prepends `CHANGELOG.md`, syncs `package.json` / `pyproject.toml` / `__version__` under `path`.
-5. Commits `chore(release): [<name> ]X.Y.Z`, tags, pushes both, publishes the release on the source host (pre-release when rc).
+5. Commits `chore(release): [<name> ]X.Y.Z`, tags, pushes both, publishes the release on the source host (pre-release when rc). A refused push (the branch moved on the remote meanwhile) deletes the tag and the commit again, so nothing half-published stays in the clone.
+
+The hosted API fast-forwards the workspace's branch before step 1; a branch with local commits the remote lacks is refused with 409 until the app is synced with *Reset to remote*.
 
 `--dry-run` stops after step 3 and prints the version and changelog.
 
