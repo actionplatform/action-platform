@@ -64,6 +64,13 @@
       "when": 1789264194893,
       "tag": "0008_premium_ravenous",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1789271808710,
+      "tag": "0009_chemical_joystick",
+      "breakpoints": true
     }
   ]
 }

@@ -57,7 +57,7 @@ function ApplyOverlayDialog({ item, targets, open, onClose }: { item: TemplateIt
       onClose={() => !pending && onClose()}
       title={`Apply ${item.name}`}
       description="Writes the overlay files into the app's workspace and sets its deploy target. Commit the result from the app's Configuration page."
-      footer={<><Button variant="ghost" onClick={onClose} disabled={pending}>Cancel</Button><Button disabled={pending || !chosen} onClick={() => { if (!chosen) return; start(async () => { setError(null); const r = await setCloudTarget(chosen.projectId, chosen.registryId, item.name); if (r.ok) { onClose(); router.push(`/projects/${chosen.projectId}/apps/${chosen.id}/configuration`); } else setError(r.error); }); }}>{pending ? "Applying…" : "Apply overlay"}</Button></>}
+      footer={<><Button variant="ghost" onClick={onClose} disabled={pending}>Cancel</Button><Button disabled={pending || !chosen} onClick={() => { if (!chosen) return; start(async () => { setError(null); const r = await setCloudTarget(chosen.projectId, chosen.registryId, item.name, item.source); if (r.ok) { onClose(); router.push(`/projects/${chosen.projectId}/apps/${chosen.id}/configuration`); } else setError(r.error); }); }}>{pending ? "Applying…" : "Apply overlay"}</Button></>}
     >
       {targets.length === 0 ? (
         <p className="text-sm text-secondary">No apps in this organization yet. Create one from a project first.</p>
@@ -84,6 +84,7 @@ export function TemplateCard({ item, targets }: { item: TemplateItem; targets: O
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-mono text-base font-semibold leading-6">{item.name}</h3>
             {item.isDefault && <Badge tone="inverse" className="h-6 px-[9px]">Default</Badge>}
+            {item.source !== "official" && <Badge className="h-6 px-[9px] font-mono">{item.source}</Badge>}
           </div>
           <p className="mt-1 line-clamp-2 text-sm leading-5 text-secondary">{item.description}</p>
         </div>
@@ -121,6 +122,7 @@ export function TemplateListItem({ item, targets }: { item: TemplateItem; target
         <div className="flex items-center gap-2">
           <span className="truncate font-mono text-[15px] font-semibold">{item.name}</span>
           {item.isDefault && <Badge tone="inverse" className="h-5 px-2 md:hidden">Default</Badge>}
+          {item.source !== "official" && <Badge className="h-5 px-2 font-mono">{item.source}</Badge>}
         </div>
         <p className="truncate text-[13px] text-secondary">{item.description}</p>
       </div>

@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils";
 import { addService, commitChanges, saveManifest, setCloudTarget } from "../actions";
 import type { AppView } from "./model";
 
-type CloudOption = { name: string; description: string };
-type ServiceOption = { name: string; providers: string[]; description: string };
+type CloudOption = { name: string; description: string; source: string };
+type ServiceOption = { name: string; providers: string[]; description: string; source: string };
 
 export function ConfigurationPanels({ view, clouds, services }: { view: AppView; clouds: CloudOption[]; services: ServiceOption[] }) {
   return (
@@ -120,7 +120,7 @@ function CommitBar({ view }: { view: AppView }) {
 function DeployTargetPanel({ view, clouds }: { view: AppView; clouds: CloudOption[] }) {
   const router = useRouter();
   const current = typeof view.deploy.target === "string" ? String(view.deploy.target) : null;
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<CloudOption | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -136,9 +136,9 @@ function DeployTargetPanel({ view, clouds }: { view: AppView; clouds: CloudOptio
             {clouds.map((c) => {
               const active = c.name === current;
               return (
-                <button key={c.name} type="button" disabled={pending || active || !view.can["app.configure"]} onClick={() => setPicked(c.name)} className={cn("flex items-start gap-3 rounded-md border p-3 text-left transition-colors", active ? "border-foreground" : "border-border hover:border-border-hover")}>
+                <button key={`${c.source}:${c.name}`} type="button" disabled={pending || active || !view.can["app.configure"]} onClick={() => setPicked(c)} className={cn("flex items-start gap-3 rounded-md border p-3 text-left transition-colors", active ? "border-foreground" : "border-border hover:border-border-hover")}>
                   <Cloud className="mt-0.5 size-4 shrink-0 text-secondary" strokeWidth={1.75} />
-                  <span className="min-w-0 flex-1"><span className="block font-mono text-sm">{c.name}</span><span className="block text-xs text-muted-foreground">{c.description}</span></span>
+                  <span className="min-w-0 flex-1"><span className="flex items-center gap-2 font-mono text-sm">{c.name}{c.source !== "official" && <Badge className="font-mono">{c.source}</Badge>}</span><span className="block text-xs text-muted-foreground">{c.description}</span></span>
                   <CheckIndicator selected={active} />
                 </button>
               );
@@ -150,11 +150,11 @@ function DeployTargetPanel({ view, clouds }: { view: AppView; clouds: CloudOptio
       <ConfirmDialog
         open={picked !== null}
         onClose={() => setPicked(null)}
-        title={`Set deploy target to ${picked}?`}
+        title={`Set deploy target to ${picked?.name}?`}
         description={current ? `Replaces ${current}. Overlay files are written into the workspace; commit them afterwards.` : "Overlay files are written into the workspace; commit them afterwards."}
         confirmLabel="Apply overlay"
         pending={pending}
-        onConfirm={() => { const t = picked; if (t) start(async () => { setError(null); const r = await setCloudTarget(view.projectId, view.registryId, t); setPicked(null); if (r.ok) router.refresh(); else setError(r.error); }); }}
+        onConfirm={() => { const t = picked; if (t) start(async () => { setError(null); const r = await setCloudTarget(view.projectId, view.registryId, t.name, t.source); setPicked(null); if (r.ok) router.refresh(); else setError(r.error); }); }}
       />
     </Panel>
   );
@@ -185,11 +185,11 @@ function ServicesPanel({ view, services }: { view: AppView; services: ServiceOpt
         onClose={() => !pending && setOpen(false)}
         title="Add service"
         description="Writes services/<name>/ into the workspace and records it under [services]."
-        footer={<><Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>Cancel</Button><Button disabled={pending || !name} onClick={() => start(async () => { setError(null); const r = await addService(view.projectId, view.registryId, name, provider || null); if (r.ok) { setOpen(false); router.refresh(); } else setError(r.error); })}>{pending ? "Adding…" : "Add service"}</Button></>}
+        footer={<><Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>Cancel</Button><Button disabled={pending || !name} onClick={() => start(async () => { setError(null); const r = await addService(view.projectId, view.registryId, name, provider || null, chosen?.source ?? null); if (r.ok) { setOpen(false); router.refresh(); } else setError(r.error); })}>{pending ? "Adding…" : "Add service"}</Button></>}
       >
         <div className="space-y-3">
           <label className="block text-sm"><span className="mb-1 block text-xs text-secondary">Service</span>
-            <Select mono value={name} onChange={(v) => { setName(v); setProvider(services.find((s) => s.name === v)?.providers[0] ?? ""); }} options={services.map((s) => ({ value: s.name, label: s.name }))} />
+            <Select mono value={name} onChange={(v) => { setName(v); setProvider(services.find((s) => s.name === v)?.providers[0] ?? ""); }} options={services.map((s) => ({ value: s.name, label: s.name, hint: s.source !== "official" ? s.source : undefined }))} />
           </label>
           {chosen && chosen.providers.length > 0 && (
             <label className="block text-sm"><span className="mb-1 block text-xs text-secondary">Provider</span>

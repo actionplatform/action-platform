@@ -173,3 +173,13 @@ export const pullRequest = pgTable("pull_request", {
   source: text("source").notNull(),
   syncedAt: timestamp("synced_at").notNull().defaultNow(),
 });
+
+export const templateSource = pgTable("template_source", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  url: text("url").notNull(),
+  ref: text("ref").notNull().default("v1"),
+  sourceHostId: text("source_host_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});

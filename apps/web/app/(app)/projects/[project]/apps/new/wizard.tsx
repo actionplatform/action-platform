@@ -17,7 +17,7 @@ import { cn, slugify } from "@/lib/utils";
 import { createAppFromTemplate } from "./actions";
 import { type StepIndex, Stepper } from "./stepper";
 
-type Preset = { type: string; stack: string | null; template: string } | null;
+type Preset = { type: string; stack: string | null; template: string; source?: string } | null;
 
 type Config = {
   name: string;
@@ -47,6 +47,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
   const [type, setType] = useState<string | null>(preset?.type ?? null);
   const [stack, setStack] = useState<string | null>(preset?.stack ?? null);
   const [template, setTemplate] = useState<string | null>(preset?.template ?? null);
+  const [source, setSource] = useState<string>(preset?.source ?? "official");
   const [config, setConfig] = useState<Config>({
     name: "",
     directory: "",
@@ -66,11 +67,11 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
   const types = useMemo(() => typesIn(matrix), [matrix]);
   const stacks = useMemo(() => (type ? stacksFor(matrix, type) : []), [matrix, type]);
   const templates = useMemo(() => (type ? templatesFor(matrix, type, stack) : []), [matrix, type, stack]);
-  const leaf: Leaf | undefined = templates.find((t) => t.template === template);
+  const leaf: Leaf | undefined = templates.find((t) => t.template === template && t.source === source);
   const hasStack = stacks.length > 0;
   const clouds = useMemo(() => {
     if (!leaf) return [];
-    return matrix.clouds.filter((c) => (c.types.length === 0 || c.types.includes(leaf.type)) && (c.languages.length === 0 || c.languages.includes(leaf.stack)));
+    return matrix.clouds.filter((c) => c.source === leaf.source && (c.types.length === 0 || c.types.includes(leaf.type)) && (c.languages.length === 0 || c.languages.includes(leaf.stack)));
   }, [matrix, leaf]);
 
   useEffect(() => {
@@ -90,11 +91,14 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
     setStack(null);
     const only = templatesFor(matrix, id, null);
     setTemplate(only.length === 1 ? only[0].template : null);
+    setSource(only.length === 1 ? only[0].source : "official");
   };
   const pickStack = (id: string) => {
     setStack(id);
     const tpls = templatesFor(matrix, type!, id);
-    setTemplate(tpls.find((t) => t.default)?.template ?? (tpls.length === 1 ? tpls[0].template : null));
+    const pick = tpls.find((t) => t.default) ?? (tpls.length === 1 ? tpls[0] : null);
+    setTemplate(pick?.template ?? null);
+    setSource(pick?.source ?? "official");
   };
 
   const canContinue =
@@ -142,7 +146,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
         git_init: config.gitInit,
         push: config.push,
         private: false,
-      });
+      }, source);
       if (r.ok) router.push(r.href);
       else setError(r.error);
     });
@@ -193,12 +197,13 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
             <Section title="Choose a template" description="Select the foundation that best fits your project.">
               <div className="grid gap-3 sm:grid-cols-2">
                 {templates.map((t) => (
-                  <SelectCard key={t.template} selected={template === t.template} onClick={() => setTemplate(t.template)}>
+                  <SelectCard key={`${t.source}:${t.template}`} selected={template === t.template && source === t.source} onClick={() => { setTemplate(t.template); setSource(t.source); }}>
                     {(() => { const b = templateBrand(t.template, t.stack); return b ? <BrandIcon icon={b} className="mt-0.5" /> : null; })()}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-medium">{t.template}</span>
                         {t.default && <Badge tone="inverse">Default</Badge>}
+                        {t.source !== "official" && <Badge className="font-mono">{t.source}</Badge>}
                       </div>
                       <div className="text-sm text-secondary mt-1">{t.description}</div>
                       <div className="flex gap-2 mt-3 text-xs text-muted-foreground">

@@ -6,9 +6,10 @@ import { api, type Matrix } from "@/lib/api";
 import { projectById, projectsOf } from "@/lib/projects";
 import { requireOrg } from "@/lib/session";
 import { hostsOf } from "@/lib/source-hosts";
+import { sourceSpecsOf } from "@/lib/template-sources";
 import { Wizard } from "./wizard";
 
-type Search = { type?: string; stack?: string; template?: string };
+type Search = { type?: string; stack?: string; template?: string; source?: string };
 
 export default async function NewAppPage({ params, searchParams }: { params: Promise<{ project: string }>; searchParams: Promise<Search> }) {
   const { project: projectId } = await params;
@@ -22,12 +23,12 @@ export default async function NewAppPage({ params, searchParams }: { params: Pro
 
   let matrix: Matrix;
   try {
-    matrix = await api.matrix();
+    matrix = await api.matrix(await sourceSpecsOf(org.id));
   } catch (e) {
     return <ApiOffline error={e} />;
   }
 
-  const preset = query.template && query.type ? { type: query.type, stack: query.stack ?? null, template: query.template } : null;
+  const preset = query.template && query.type ? { type: query.type, stack: query.stack ?? null, template: query.template, source: query.source ?? "official" } : null;
 
   return (
     <>

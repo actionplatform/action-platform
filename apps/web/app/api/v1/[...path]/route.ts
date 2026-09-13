@@ -5,14 +5,15 @@ import { can, type Permission } from "@/lib/permissions";
 import { appByRegistryId, registryIdsOf } from "@/lib/projects";
 import { syncPullRequests } from "@/lib/pull-requests";
 import { syncReleases } from "@/lib/releases";
-import { credentialsFor } from "@/lib/source-hosts";
+import { credentialsFor, hostsOf } from "@/lib/source-hosts";
+import { sourceSpecByName, sourceSpecsOf } from "@/lib/template-sources";
 
 type Rule = { method: string; pattern: RegExp; permission: Permission | null; credentials?: boolean; imports?: boolean };
 
 const RULES: Rule[] = [
   { method: "GET", pattern: /^(version|matrix|gitflow\/rules)$/, permission: null },
   { method: "GET", pattern: /^apps$/, permission: null },
-  { method: "POST", pattern: /^apps$/, permission: "project.manage" },
+  { method: "POST", pattern: /^apps$/, permission: "project.manage", credentials: true },
   { method: "POST", pattern: /^apps\/init$/, permission: "project.manage", credentials: true },
   { method: "GET", pattern: /^apps\/[^/]+(\/.*)?$/, permission: null },
   { method: "DELETE", pattern: /^apps\/[^/]+$/, permission: "project.manage" },
@@ -24,6 +25,12 @@ const RULES: Rule[] = [
   { method: "POST", pattern: /^apps\/[^/]+\/(cloud|services)$/, permission: "app.configure" },
   { method: "POST", pattern: /^apps\/[^/]+\/commit$/, permission: "app.configure", credentials: true, imports: true },
 ];
+
+async function hostIdForUrl(orgId: string, url: string): Promise<string | null> {
+  const kind = url.includes("github.com") ? "github" : url.includes("gitlab") ? "gitlab" : url.includes("bitbucket.org") ? "bitbucket" : null;
+  if (!kind) return null;
+  return (await hostsOf(orgId)).find((h) => h.kind === kind)?.id ?? null;
+}
 
 function ruleFor(method: string, path: string): Rule | null {
   return RULES.find((r) => r.method === method && r.pattern.test(path)) ?? null;
@@ -50,16 +57,29 @@ async function proxy(req: Request, segments: string[]): Promise<Response> {
 
   const url = new URL(req.url);
   const target = `${API_BASE}/api/${path}${url.search}`;
+  let method = req.method;
   let body = req.method === "GET" || req.method === "HEAD" ? undefined : await req.text();
 
-  if (rule.credentials && body !== undefined && app?.sourceHostId) {
+  if (req.method === "GET" && path === "matrix") {
+    method = "POST";
+    body = JSON.stringify({ sources: await sourceSpecsOf(org.id) });
+  }
+
+  if (body !== undefined && /^apps\/(init|[^/]+\/(cloud|services))$/.test(path)) {
     const parsed = body ? (JSON.parse(body) as Record<string, unknown>) : {};
-    if (!parsed.credentials) parsed.credentials = await credentialsFor(org.id, app.sourceHostId);
+    if (typeof parsed.source === "string") parsed.source = await sourceSpecByName(org.id, parsed.source);
+    body = JSON.stringify(parsed);
+  }
+
+  if (rule.credentials && body !== undefined) {
+    const parsed = body ? (JSON.parse(body) as Record<string, unknown>) : {};
+    const hostId = app?.sourceHostId ?? (typeof parsed.url === "string" ? await hostIdForUrl(org.id, parsed.url) : null);
+    if (!parsed.credentials && hostId) parsed.credentials = await credentialsFor(org.id, hostId);
     body = JSON.stringify(parsed);
   }
 
   const upstream = await fetch(target, {
-    method: req.method,
+    method,
     headers: { "content-type": req.headers.get("content-type") ?? "application/json" },
     body,
     cache: "no-store",

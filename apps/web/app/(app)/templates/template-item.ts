@@ -14,13 +14,14 @@ export type TemplateItem = {
   href: string | null;
   brand: ReturnType<typeof templateBrand>;
   cloud: (typeof CLOUD_ICONS)[string] | null;
+  source: string;
 };
 
 const categoryOf = (type: string) => CATEGORIES.find((c) => c.types?.includes(type))?.id ?? "all";
 
 export function itemsFrom(m: Matrix): TemplateItem[] {
   const projects = m.projects.map<TemplateItem>((p) => ({
-    id: `${p.type}/${p.stack}/${p.template}`,
+    id: `${p.source}:${p.type}/${p.stack}/${p.template}`,
     name: p.template,
     description: p.description,
     categoryId: categoryOf(p.type),
@@ -29,12 +30,13 @@ export function itemsFrom(m: Matrix): TemplateItem[] {
     stack: p.stack || null,
     language: p.stack ? stackMeta(p.stack).label : null,
     isDefault: p.default,
-    href: `/projects/_/apps/new?type=${p.type}${p.stack ? `&stack=${p.stack}` : ""}&template=${p.template}`,
+    href: `/projects/_/apps/new?type=${p.type}${p.stack ? `&stack=${p.stack}` : ""}&template=${p.template}${p.source !== "official" ? `&source=${p.source}` : ""}`,
     brand: templateBrand(p.template, p.stack),
     cloud: null,
+    source: p.source,
   }));
   const clouds = m.clouds.map<TemplateItem>((c) => ({
-    id: `cloud/${c.name}`,
+    id: `${c.source}:cloud/${c.name}`,
     name: c.name,
     description: c.description,
     categoryId: "cloud",
@@ -46,6 +48,7 @@ export function itemsFrom(m: Matrix): TemplateItem[] {
     href: null,
     brand: CLOUD_ICONS[c.name]?.brand ?? null,
     cloud: CLOUD_ICONS[c.name] ?? null,
+    source: c.source,
   }));
   return [...projects, ...clouds];
 }

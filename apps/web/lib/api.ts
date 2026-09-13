@@ -14,6 +14,7 @@ export type Branch = Schemas["Branch"];
 export type Matrix = Schemas["Matrix"];
 export type ReleasePreview = Schemas["ReleasePreview"];
 export type InitRequest = Schemas["InitRequest"];
+export type SourceSpec = Schemas["SourceSpec"];
 export type SourceCredentials = Schemas["SourceCredentials"];
 export type InitResult = Schemas["InitResult"];
 export type DeployResult = Schemas["DeployResult"];
@@ -39,7 +40,7 @@ function unwrap<T>(res: { data?: T; error?: unknown; response: Response }): T {
 
 export const api = {
   version: async () => unwrap(await client.GET("/api/version")),
-  matrix: async () => unwrap(await client.GET("/api/matrix")),
+  matrix: async (sources: SourceSpec[] = []) => (sources.length ? unwrap(await client.POST("/api/matrix", { body: { sources } })) : unwrap(await client.GET("/api/matrix"))),
   gitflowRules: async () => unwrap(await client.GET("/api/gitflow/rules")),
   apps: {
     list: async () => unwrap(await client.GET("/api/apps")),
@@ -71,10 +72,10 @@ export const api = {
       unwrap(await client.GET("/api/apps/{id}/manifest", { params: { path: { id } } })),
     writeManifest: async (id: string, content: string) =>
       unwrap(await client.PUT("/api/apps/{id}/manifest", { params: { path: { id } }, body: { content } })),
-    setCloud: async (id: string, target: string) =>
-      unwrap(await client.POST("/api/apps/{id}/cloud", { params: { path: { id } }, body: { target } })),
-    addService: async (id: string, name: string, provider: string | null) =>
-      unwrap(await client.POST("/api/apps/{id}/services", { params: { path: { id } }, body: { name, provider } })),
+    setCloud: async (id: string, target: string, source: SourceSpec | null = null) =>
+      unwrap(await client.POST("/api/apps/{id}/cloud", { params: { path: { id } }, body: { target, source } })),
+    addService: async (id: string, name: string, provider: string | null, source: SourceSpec | null = null) =>
+      unwrap(await client.POST("/api/apps/{id}/services", { params: { path: { id } }, body: { name, provider, source } })),
     commit: async (id: string, body: { message: string; push: boolean; branch: { kind: string; code: string; slug: string | null } | null; pull_request: boolean; credentials: SourceCredentials | null }) =>
       unwrap(await client.POST("/api/apps/{id}/commit", { params: { path: { id } }, body })),
     releases: async (id: string) =>
