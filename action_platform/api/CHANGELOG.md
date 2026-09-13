@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.6 — 2026-09-13
+
+### Features
+- **api:** optional Sentry reporting for the API and the CLI via AP_SENTRY_DSN
+
+### Bug Fixes
+- **api:** sync stashes local changes around the pull instead of refusing
+- **api:** answer 400 instead of 500 when a clone has no platform.toml, and add POST /apps/{id}/install to write it again
+
 ## v0.5.5 — 2026-09-13
 
 ## v0.5.4 — 2026-09-13
