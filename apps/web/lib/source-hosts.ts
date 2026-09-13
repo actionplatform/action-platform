@@ -53,7 +53,7 @@ export async function addHost(orgId: string, input: { kind: HostKind; name: stri
   return { id, organizationId: orgId, kind: input.kind, name: input.name, baseUrl: input.baseUrl || null, username: input.username || null, defaultOwner: input.defaultOwner || null, authKind: "token", login: null, createdAt };
 }
 
-export async function connectOAuthHost(orgId: string, provider: Provider, login: string, tokens: { accessToken: string; refreshToken: string | null; expiresAt: Date | null }): Promise<SourceHost> {
+export async function connectOAuthHost(orgId: string, provider: Provider, login: string, tokens: { accessToken: string; refreshToken: string | null; expiresAt: Date | null }, owner: string | null = null): Promise<SourceHost> {
   const { db, t } = await q();
   const existing = await db
     .select({ id: t.sourceHost.id })
@@ -68,7 +68,7 @@ export async function connectOAuthHost(orgId: string, provider: Provider, login:
   };
 
   if (existing[0]) {
-    await db.update(t.sourceHost).set(values).where(eq(t.sourceHost.id, existing[0].id));
+    await db.update(t.sourceHost).set(owner ? { ...values, defaultOwner: owner } : values).where(eq(t.sourceHost.id, existing[0].id));
     return (await hostByIdAny(existing[0].id))!;
   }
 
@@ -80,7 +80,7 @@ export async function connectOAuthHost(orgId: string, provider: Provider, login:
     kind: provider,
     name: `${provider === "github" ? "GitHub" : provider === "gitlab" ? "GitLab" : "Bitbucket"} · ${login}`,
     username: provider === "bitbucket" ? "x-token-auth" : null,
-    defaultOwner: login,
+    defaultOwner: owner ?? login,
     authKind: "oauth",
     login,
     createdAt,
@@ -130,4 +130,9 @@ export async function credentialsFor(orgId: string, id: string): Promise<Credent
   }
 
   return { kind: row.kind, token, username: row.username, base_url: row.baseUrl, owner: row.defaultOwner };
+}
+
+export async function setHostOwner(orgId: string, id: string, owner: string): Promise<void> {
+  const { db, t } = await q();
+  await db.update(t.sourceHost).set({ defaultOwner: owner.trim() || null }).where(and(eq(t.sourceHost.id, id), eq(t.sourceHost.organizationId, orgId)));
 }
