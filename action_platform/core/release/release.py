@@ -120,8 +120,16 @@ def release(
         raise ReleaseError(f"could not commit the release: {_stderr(e) or e}") from e
 
     git.create_tag(tag, tag, cwd=repo_root)
-    git.push(cwd=repo_root)
-    git.push_tag(tag, cwd=repo_root)
+
+    try:
+        git.push(cwd=repo_root)
+        git.push_tag(tag, cwd=repo_root)
+    except Exception as e:
+        git.run(["tag", "-d", tag], cwd=repo_root)
+        git.run(["reset", "-q", "--hard", "HEAD~1"], cwd=repo_root)
+        raise ReleaseError(
+            f"could not push the release, nothing was published: {_stderr(e) or e}"
+        ) from e
 
     if config.source_host:
         config.source_host.create_release(
