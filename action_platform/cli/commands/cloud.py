@@ -24,9 +24,14 @@ def set_(
         None, "--project", "-p", help="Project directory (default: cwd)"
     ),
     update: bool = typer.Option(False, "--update", help="Refresh the templates cache"),
+    source: str | None = typer.Option(
+        None,
+        "--source",
+        help="Another templates repository, url[@ref]; default is the official one",
+    ),
 ) -> None:
     """Apply a cloud overlay and set [deploy] target in platform.toml (replaces the previous one)."""
-    repo, matrix = load_matrix(update=update)
+    repo, matrix = load_matrix(update=update, source=source)
     target = (project or Path.cwd()).resolve()
 
     apply_cloud(repo, matrix.cloud(name), target)

@@ -16,7 +16,7 @@ from action_platform.core.scaffold.generate import (
     generate_project,
     push_project,
 )
-from action_platform.core.scaffold.templates import load_matrix
+from action_platform.api.services.catalog import resolve_repo
 from action_platform.settings import settings
 
 
@@ -92,7 +92,7 @@ class AppService:
         return info
 
     def init(self, body: InitRequest) -> dict:
-        repo, m = load_matrix()
+        repo, m = resolve_repo(body.source)
         leaf = m.resolve(body.type, body.stack, body.template)
         id = self.registry.new_id()
         staging = self.registry.workspaces / f".init-{id}"

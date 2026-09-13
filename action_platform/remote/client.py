@@ -124,10 +124,98 @@ class Remote:
     def tags(self, id: str) -> list[str]:
         return self._call("GET", f"apps/{id}/tags")
 
-    def release(self, id: str, level: str = "patch", dry_run: bool = True) -> dict:
+    def release(
+        self,
+        id: str,
+        level: str = "patch",
+        dry_run: bool = True,
+        branch: Optional[str] = None,
+    ) -> dict:
         return self._call(
-            "POST", f"apps/{id}/release", {"level": level, "dry_run": dry_run}
+            "POST",
+            f"apps/{id}/release",
+            {"level": level, "dry_run": dry_run, "branch": branch},
         )
+
+    def releases(self, id: str) -> list[dict]:
+        return self._call("GET", f"apps/{id}/releases")
+
+    def start_branch(
+        self, id: str, kind: str, code: str, slug: Optional[str], push: bool
+    ) -> dict:
+        return self._call(
+            "POST",
+            f"apps/{id}/branches",
+            {"kind": kind, "code": code, "slug": slug, "push": push},
+        )
+
+    def checkout(self, id: str, branch: str) -> dict:
+        return self._call("POST", f"apps/{id}/checkout", {"branch": branch})
+
+    def propose_pr(
+        self, id: str, base: Optional[str] = None, title: Optional[str] = None
+    ) -> dict:
+        return self._call("GET", f"apps/{id}/pull-request", base=base, title=title)
+
+    def open_pr(
+        self,
+        id: str,
+        base: Optional[str],
+        title: Optional[str],
+        body: Optional[str],
+        draft: bool,
+    ) -> dict:
+        return self._call(
+            "POST",
+            f"apps/{id}/pull-request",
+            {"base": base, "title": title, "body": body, "draft": draft},
+        )
+
+    def manifest(self, id: str) -> dict:
+        return self._call("GET", f"apps/{id}/manifest")
+
+    def write_manifest(self, id: str, content: str) -> dict:
+        return self._call("PUT", f"apps/{id}/manifest", {"content": content})
+
+    def set_cloud(self, id: str, target: str, source: Optional[str] = None) -> dict:
+        return self._call(
+            "POST", f"apps/{id}/cloud", {"target": target, "source": source}
+        )
+
+    def add_service(
+        self,
+        id: str,
+        name: str,
+        provider: Optional[str] = None,
+        source: Optional[str] = None,
+    ) -> dict:
+        return self._call(
+            "POST",
+            f"apps/{id}/services",
+            {"name": name, "provider": provider, "source": source},
+        )
+
+    def commit(
+        self,
+        id: str,
+        message: str,
+        push: bool = False,
+        branch: Optional[dict] = None,
+        pull_request: bool = False,
+    ) -> dict:
+        return self._call(
+            "POST",
+            f"apps/{id}/commit",
+            {
+                "message": message,
+                "push": push,
+                "branch": branch,
+                "pull_request": pull_request,
+            },
+        )
+
+    def init(self, body: dict) -> dict:
+        return self._call("POST", "apps/init", body)
 
     def deploy(
         self, id: str, stage: Optional[str] = None, dry_run: bool = True

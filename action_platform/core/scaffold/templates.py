@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import subprocess
 import tomllib
 from dataclasses import dataclass, field
@@ -204,6 +205,67 @@ class Matrix:
         raise TemplateError(f"unknown service: {name} (available: {names})")
 
 
+OFFICIAL = "official"
+
+
+@dataclass(frozen=True)
+class TemplateSource:
+    """A git repository laid out like actionplatform/templates: index.toml plus projects/, cloud/, service/."""
+
+    url: str
+    ref: str = "v1"
+    name: str = ""
+
+    @classmethod
+    def parse(cls, spec: str, name: str = "") -> "TemplateSource":
+        """`url[@ref]`; a local path is accepted as well."""
+        url, _, ref = spec.rpartition("@")
+
+        if not url or "/" in ref or ref.startswith("git"):
+            url, ref = spec, "v1"
+
+        return cls(url=url, ref=ref or "v1", name=name)
+
+    @property
+    def label(self) -> str:
+        return self.name or self.url.rstrip("/").rsplit("/", 1)[-1].removesuffix(".git")
+
+    @property
+    def cache(self) -> Path:
+        key = hashlib.sha256(f"{self.url}@{self.ref}".encode()).hexdigest()[:16]
+
+        return settings.TEMPLATES_CACHE.parent / "sources" / key
+
+
+def ensure_source(source: TemplateSource, update: bool = False) -> Path:
+    """Return a local checkout of `source` at its ref, cloning or fetching as needed."""
+    cache = source.cache
+
+    if not cache.exists():
+        logger.info("cloning %s@%s", source.url, source.ref)
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        _git("clone", "--depth", "1", "--branch", source.ref, source.url, str(cache))
+        return cache
+
+    try:
+        _git("-C", str(cache), "fetch", "--depth", "1", "--quiet", "origin", source.ref)
+        _git("-C", str(cache), "checkout", "--quiet", "--force", "FETCH_HEAD")
+    except TemplateError as e:
+        if update:
+            raise
+        logger.warning(
+            "source %s not refreshed (%s); using local copy", source.label, e
+        )
+
+    return cache
+
+
+def load_source(source: TemplateSource, update: bool = False) -> tuple[Path, Matrix]:
+    repo = ensure_source(source, update=update)
+
+    return repo, Matrix.from_toml(repo / "index.toml")
+
+
 def ensure_repo(update: bool = False) -> Path:
     """Return a local checkout of the templates repo, cloning or pulling as needed."""
     local = settings.TEMPLATES_DIR
@@ -236,7 +298,10 @@ def ensure_repo(update: bool = False) -> Path:
     return cache
 
 
-def load_matrix(update: bool = False) -> tuple[Path, Matrix]:
+def load_matrix(update: bool = False, source: str | None = None) -> tuple[Path, Matrix]:
+    if source:
+        return load_source(TemplateSource.parse(source), update=update)
+
     repo = ensure_repo(update=update)
     matrix = Matrix.from_toml(repo / "index.toml")
 

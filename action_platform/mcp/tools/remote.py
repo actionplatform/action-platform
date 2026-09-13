@@ -74,6 +74,11 @@ def register(mcp: Any, remote: Remote) -> None:
         """Tags, newest first."""
         return remote.tags(id)
 
+    @mcp.tool(annotations=READ_ONLY)
+    def app_releases(id: AppId) -> list[dict]:
+        """Releases known from tags: version, tag, sha, date, whether it is a pre-release."""
+        return remote.releases(id)
+
     @mcp.tool(annotations=REACHES_OUT)
     def release(
         id: AppId,
@@ -83,9 +88,166 @@ def register(mcp: Any, remote: Remote) -> None:
         dry_run: Annotated[
             bool, Field(description="true only computes the next version and changelog")
         ] = True,
+        branch: Annotated[
+            Optional[str],
+            Field(
+                description="Release from this branch instead of the current one; the clone must be clean. main/master cut a stable version, anything else an rc"
+            ),
+        ] = None,
     ) -> dict:
-        """Bump, changelog, tag and publish a release on the platform. Defaults to a dry run: show it, then call again with dry_run=false."""
-        return remote.release(id, level, dry_run)
+        """Bump, changelog, tag and publish a release on the platform.
+
+        Defaults to a dry run: show `next`, `branch` and `prerelease`, then
+        call again with dry_run=false. Stable versions come only from
+        main/master; any other branch produces X.Y.Z-rc.N.
+        """
+        return remote.release(id, level, dry_run, branch)
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def start_branch(
+        id: AppId,
+        kind: Annotated[
+            str,
+            Field(
+                description="feature, bugfix, hotfix, release, support, chore, docs, refactor, test, ci, perf"
+            ),
+        ],
+        code: Annotated[str, Field(description="Issue or ticket code: 42, PROJ-123")],
+        slug: Optional[str] = None,
+        push: Annotated[bool, Field(description="Push the new branch upstream")] = True,
+    ) -> dict:
+        """Start a git-flow branch on the platform's clone: right base, pull, create <kind>/<code>[-slug]."""
+        return remote.start_branch(id, kind, code, slug, push)
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def checkout_branch(id: AppId, branch: str) -> dict:
+        """Switch the platform's clone to another branch. Refuses a dirty clone."""
+        return remote.checkout(id, branch)
+
+    @mcp.tool(annotations=READ_ONLY)
+    def propose_pull_request(
+        id: AppId, base: Optional[str] = None, title: Optional[str] = None
+    ) -> dict:
+        """Compute the pull request for the clone's current branch: target, title, body, commits. Nothing is opened."""
+        return remote.propose_pr(id, base, title)
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def open_pull_request(
+        id: AppId,
+        base: Optional[str] = None,
+        title: Optional[str] = None,
+        body: Optional[str] = None,
+        draft: bool = False,
+    ) -> dict:
+        """Open the pull request on the code host with the platform's credentials. Confirm with the user first."""
+        return remote.open_pr(id, base, title, body, draft)
+
+    @mcp.tool(annotations=READ_ONLY)
+    def read_manifest(id: AppId) -> dict:
+        """The app's platform.toml as text."""
+        return remote.manifest(id)
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def write_manifest(
+        id: AppId, content: Annotated[str, Field(description="Full platform.toml")]
+    ) -> dict:
+        """Replace platform.toml in the clone. Validated as TOML; commit afterwards with commit_changes."""
+        return remote.write_manifest(id, content)
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def set_cloud(
+        id: AppId,
+        target: Annotated[str, Field(description="aws/lambda, aws/amplify, docker")],
+        source: Annotated[
+            Optional[str],
+            Field(
+                description="Name of a custom template repository from list_matrix; default official"
+            ),
+        ] = None,
+    ) -> dict:
+        """Apply a deploy overlay to the clone and set [deploy] target. Commit afterwards with commit_changes."""
+        return remote.set_cloud(id, target, source)
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def add_service(
+        id: AppId,
+        name: Annotated[str, Field(description="postgres, ...")],
+        provider: Optional[str] = None,
+        source: Annotated[
+            Optional[str],
+            Field(
+                description="Name of a custom template repository from list_matrix; default official"
+            ),
+        ] = None,
+    ) -> dict:
+        """Add services/<name>/ to the clone. Commit afterwards with commit_changes."""
+        return remote.add_service(id, name, provider, source)
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def commit_changes(
+        id: AppId,
+        message: Annotated[str, Field(description="Conventional Commit message")],
+        push: bool = False,
+        branch_kind: Annotated[
+            Optional[str],
+            Field(
+                description="With branch_code: commit on a new <kind>/<code> branch first"
+            ),
+        ] = None,
+        branch_code: Optional[str] = None,
+        branch_slug: Optional[str] = None,
+        pull_request: Annotated[
+            bool, Field(description="Push and open a pull request for the branch")
+        ] = False,
+    ) -> dict:
+        """Commit what write_manifest, set_cloud or add_service changed in the clone.
+
+        Protected branches (main, master, develop) refuse direct commits
+        except chore(platform): messages — pass branch_kind and branch_code
+        to move the changes onto a new branch, and pull_request=true to open
+        the PR in the same call.
+        """
+        branch = (
+            {"kind": branch_kind, "code": branch_code, "slug": branch_slug}
+            if branch_kind and branch_code
+            else None
+        )
+
+        return remote.commit(id, message, push, branch, pull_request)
+
+    @mcp.tool(annotations=REACHES_OUT)
+    def init_app(
+        type: Annotated[str, Field(description="web, library, docs, plugin, empty")],
+        name: Annotated[str, Field(description="Human name; the slug is derived")],
+        stack: Optional[str] = None,
+        template: Optional[str] = None,
+        ci: Annotated[str, Field(description="github, gitlab or jenkins")] = "github",
+        cloud: Optional[str] = None,
+        source: Annotated[
+            Optional[str],
+            Field(
+                description="Name of a custom template repository from list_matrix; default official"
+            ),
+        ] = None,
+        push: Annotated[
+            bool, Field(description="Create the repository on the code host and push")
+        ] = False,
+        private: bool = False,
+    ) -> dict:
+        """Generate a new app on the platform from a template and register it. With push=true the repository is created on the code host — confirm with the user first."""
+        return remote.init(
+            {
+                "type": type,
+                "stack": stack,
+                "template": template,
+                "name": name,
+                "ci": ci,
+                "cloud": cloud,
+                "source": source,
+                "push": push,
+                "private": private,
+            }
+        )
 
     @mcp.tool(annotations=REACHES_OUT)
     def deploy(
@@ -105,5 +267,11 @@ def register(mcp: Any, remote: Remote) -> None:
 
     @mcp.tool(annotations=READ_ONLY)
     def list_matrix() -> dict:
-        """Project types, stacks, templates, clouds and services the platform can generate."""
+        """Project types, stacks, templates, clouds and services the platform can generate.
+
+        Merges the official repository with every template repository the
+        organization added; each entry carries its `source`, and `sources`
+        lists them with their status. Pass a custom source's name to
+        init_app, set_cloud and add_service.
+        """
         return remote.matrix()

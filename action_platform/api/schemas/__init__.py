@@ -12,6 +12,7 @@ from action_platform.api.schemas.actions import (
     PullRequestProposal,
     PullRequestRequest,
     PullRequestResult,
+    SourceSpec,
     StartBranchRequest,
     SyncRequest,
     DeployRequest,
@@ -41,6 +42,8 @@ from action_platform.api.schemas.catalog import (
     MatrixCloud,
     MatrixProject,
     MatrixService,
+    SourceStatus,
+    SourcesRequest,
     Version,
 )
 
@@ -78,6 +81,9 @@ __all__ = [
     "MatrixCloud",
     "MatrixProject",
     "MatrixService",
+    "SourceSpec",
+    "SourceStatus",
+    "SourcesRequest",
     "PushRequest",
     "PushResult",
     "Release",

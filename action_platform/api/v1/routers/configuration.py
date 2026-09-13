@@ -29,7 +29,7 @@ def set_cloud(
     body: schemas.CloudRequest,
     config: ConfigurationService = Depends(get_configuration),
 ) -> dict:
-    return config.set_cloud(id, body.target)
+    return config.set_cloud(id, body.target, body.source)
 
 
 @router.post("/{id}/services", status_code=201)
@@ -38,7 +38,7 @@ def add_service(
     body: schemas.ServiceRequest,
     config: ConfigurationService = Depends(get_configuration),
 ) -> dict:
-    return config.add_service(id, body.name, body.provider)
+    return config.add_service(id, body.name, body.provider, body.source)
 
 
 @router.post("/{id}/commit", status_code=201)

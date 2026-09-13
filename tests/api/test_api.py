@@ -388,3 +388,49 @@ def test_release_dry_run_from_another_branch(client: TestClient, url: str, repo:
     assert stable.json()["prerelease"] is False
     assert stable.json()["next"] == "1.3.0"
     assert client.get(f"/api/apps/{id}").json()["branch"] == "main"
+
+
+def test_matrix_merges_a_custom_source(client: TestClient, tmp_path: Path, monkeypatch):
+    monkeypatch.setenv(
+        "ACTION_PLATFORM_TEMPLATES",
+        str(_template_repo(tmp_path / "official", "web", "python", "fastapi")),
+    )
+    custom = _template_repo(tmp_path / "custom", "web", "go", "gin")
+    git("init", "-q", "-b", "v1", cwd=custom)
+    git("config", "user.email", "t@t", cwd=custom)
+    git("config", "user.name", "t", cwd=custom)
+    git("add", "-A", cwd=custom)
+    git("commit", "-q", "-m", "chore: bootstrap templates", cwd=custom)
+
+    res = client.post(
+        "/api/matrix",
+        json={
+            "sources": [
+                {"name": "acme", "url": custom.as_uri(), "ref": "v1"},
+                {"name": "broken", "url": (tmp_path / "missing").as_uri()},
+            ]
+        },
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    sources = {s["name"]: s for s in body["sources"]}
+    assert sources["official"]["ok"] and sources["acme"]["ok"]
+    assert sources["broken"]["ok"] is False and sources["broken"]["error"]
+    by_source = {(p["source"], p["stack"]) for p in body["projects"]}
+    assert ("official", "python") in by_source
+    assert ("acme", "go") in by_source
+
+
+def _template_repo(root: Path, type_: str, stack: str, template: str) -> Path:
+    leaf = root / "projects" / type_ / stack / template
+    (leaf / "{{cookiecutter.project_slug}}").mkdir(parents=True)
+    (leaf / "cookiecutter.json").write_text(
+        '{"project_name": "x", "project_slug": "x", "description": "", "package_name": "x", "github_owner": "o", "ci": "github"}'
+    )
+    (leaf / "{{cookiecutter.project_slug}}" / "platform.toml").write_text(
+        f'[project]\nname = "x"\ntype = "{type_}"\nlanguage = "{stack}"\n'
+    )
+    (root / "index.toml").write_text(
+        f'[projects.{type_}.{stack}.{template}]\ndefault = true\ndescription = "{template}"\n'
+    )
+    return root
