@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.1 — 2026-09-13
+
+### Bug Fixes
+- **web:** GitHub install link opens the account picker even when the app is already installed elsewhere
+
 ## v0.4.0 — 2026-09-13
 
 ### Features
