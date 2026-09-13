@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, type ReleasePreview } from "@/lib/api";
 import { appById, createApp, deleteApp, markSynced, projectById, setAppHost } from "@/lib/projects";
 import { requirePermission } from "@/lib/orgs";
 import type { Permission } from "@/lib/permissions";
@@ -96,18 +96,26 @@ export async function syncApp(projectId: string, appId: string, registryId: stri
   return { ok: true };
 }
 
-export async function previewRelease(registryId: string, level: string, branch: string | null = null) {
-  const { session, org } = await requireOrg();
-  await requirePermission(session.user.id, org.id, "app.release");
-  return api.apps.release(registryId, level, true, null, branch);
+export async function previewRelease(registryId: string, level: string, branch: string | null = null): Promise<Result<ReleasePreview>> {
+  try {
+    const { session, org } = await requireOrg();
+    await requirePermission(session.user.id, org.id, "app.release");
+    return { ok: true, data: await api.apps.release(registryId, level, true, null, branch) };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
 }
 
-export async function runRelease(projectId: string, appId: string, registryId: string, level: string, branch: string | null = null) {
-  const { org } = await owned(projectId, "app.release");
-  const result = await api.apps.release(registryId, level, false, await credsFor(org.id, projectId, appId), branch);
-  await pullReleases(projectId, appId);
-  revalidatePath(`/projects/${projectId}`, "layout");
-  return result;
+export async function runRelease(projectId: string, appId: string, registryId: string, level: string, branch: string | null = null): Promise<Result<ReleasePreview>> {
+  try {
+    const { org } = await owned(projectId, "app.release");
+    const data = await api.apps.release(registryId, level, false, await credsFor(org.id, projectId, appId), branch);
+    await pullReleases(projectId, appId);
+    revalidatePath(`/projects/${projectId}`, "layout");
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
 }
 
 export async function pushApp(projectId: string, appId: string, registryId: string, priv: boolean, sourceHostId: string | null): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
