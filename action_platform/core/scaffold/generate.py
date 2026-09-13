@@ -64,7 +64,16 @@ def _copy_repository(
         return target
 
     git.init(target, branch="main")
-    install(target, type_=leaf.type, language=leaf.stack or None, ci=ci)
+
+    if leaf.stack:
+        install(target, type_=leaf.type, language=leaf.stack, ci=ci)
+    else:
+        (target / settings.CONFIG_FILE).write_text(
+            f'[project]\nname = "{slug}"\ntype = "{leaf.type}"\nci = "{ci or "github"}"\n'
+            '\n[release]\nstrategy = "semver"\nchangelog = "conventional"\n'
+        )
+        (target / settings.LAST_VERSION_FILE).write_text("0.1.0\n")
+
     shutil.rmtree(target / ".git", ignore_errors=True)
     _replace_owner(target / settings.CONFIG_FILE, context.get("github_owner"))
 

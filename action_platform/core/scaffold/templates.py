@@ -280,7 +280,57 @@ LANGUAGE_MARKERS = [
     ("composer.json", "php"),
     ("pom.xml", "java"),
     ("Cargo.toml", "rust"),
+    ("requirements.txt", "python"),
+    ("setup.py", "python"),
+    ("Pipfile", "python"),
+    ("build.gradle", "java"),
+    ("build.gradle.kts", "java"),
+    ("tsconfig.json", "node"),
 ]
+
+LANGUAGE_EXTENSIONS = {
+    ".py": "python",
+    ".go": "go",
+    ".ts": "node",
+    ".tsx": "node",
+    ".js": "node",
+    ".jsx": "node",
+    ".php": "php",
+    ".java": "java",
+    ".kt": "java",
+    ".rs": "rust",
+}
+
+SKIP_DIRS = {
+    ".git",
+    "node_modules",
+    "vendor",
+    "dist",
+    "build",
+    ".venv",
+    "venv",
+    "target",
+}
+
+
+def detect_language(root: Path) -> str:
+    """Language of a repository: by manifest file first, then by the most common source extension."""
+    for marker, language in LANGUAGE_MARKERS:
+        if (root / marker).exists():
+            return language
+
+    counts: dict[str, int] = {}
+
+    for path in root.rglob("*"):
+        if any(part in SKIP_DIRS for part in path.parts):
+            continue
+
+        language = LANGUAGE_EXTENSIONS.get(path.suffix)
+
+        if language and path.is_file():
+            counts[language] = counts.get(language, 0) + 1
+
+    return max(counts, key=counts.get) if counts else ""
 
 
 def plain_matrix(source: TemplateSource, repo: Path) -> Matrix:
@@ -294,9 +344,7 @@ def plain_matrix(source: TemplateSource, repo: Path) -> Matrix:
         except tomllib.TOMLDecodeError:
             meta = {}
 
-    language = meta.get("language") or next(
-        (lang for marker, lang in LANGUAGE_MARKERS if (repo / marker).exists()), ""
-    )
+    language = meta.get("language") or detect_language(repo)
     type_ = meta.get("type") or (
         "library"
         if language

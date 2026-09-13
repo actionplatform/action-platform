@@ -56,11 +56,9 @@ class Plan:
 
 
 def detect_language(root: Path) -> str | None:
-    for marker, language in MARKERS:
-        if (root / marker).exists():
-            return language
+    from action_platform.core.scaffold.templates import detect_language as detect
 
-    return None
+    return detect(root) or None
 
 
 def install(
