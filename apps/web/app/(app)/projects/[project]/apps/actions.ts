@@ -59,7 +59,10 @@ export async function addApp(projectId: string, _prev: { error?: string } | null
   try {
     const { org } = await owned(projectId, "project.manage");
     const host = await hostFor(org.id, url);
-    const entry = await api.apps.add(url, undefined, host ? await credentialsFor(org.id, host.id) : null);
+    const credentials = host ? await credentialsFor(org.id, host.id) : null;
+    const kind = kindOf(url);
+    if (kind && !credentials) return { error: `No ${kind} host is connected to this organization. Connect one in Settings so private repositories can be cloned.` };
+    const entry = await api.apps.add(url, undefined, credentials);
     const app = await createApp(projectId, entry.id, entry.name, host?.id ?? null);
     if (host) await Promise.all([syncReleases(org.id, app.id, host.id, repoOf(url, null)), syncPullRequests(org.id, app.id, host.id, repoOf(url, null))]);
   } catch (e) {
