@@ -11,7 +11,7 @@ import { publicOrigin } from "@/lib/origin";
 import { ConnectHosts } from "@/components/connect-hosts";
 import { appFor, isConfigured } from "@/lib/oauth";
 import { hostsOf } from "@/lib/source-hosts";
-import { githubAccess } from "@/lib/github-access";
+import { hostAccess } from "@/lib/host-access";
 import { SourceHosts } from "./source-hosts";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
@@ -19,7 +19,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const [members, invitations, role, hosts, query] = await Promise.all([membersOf(org.id), invitationsOf(org.id), roleOf(session.user.id, org.id), hostsOf(org.id), searchParams]);
   const canManage = can(role, "org.manage");
   const githubSlug = appFor("github")?.slug ?? null;
-  const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind === "github").map(async (h) => [h.id, await githubAccess(org.id, h.id, githubSlug)] as const)));
+  const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind !== "generic").map(async (h) => [h.id, await hostAccess(org.id, h.id, githubSlug)] as const)));
   const h = await headers();
   const origin = publicOrigin(h);
   const connected = { github: [] as string[], gitlab: [] as string[], bitbucket: [] as string[] };
@@ -54,6 +54,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               configured={{ github: isConfigured("github"), gitlab: isConfigured("gitlab"), bitbucket: isConfigured("bitbucket") }}
               connected={connected}
               origin={origin}
+              orgId={org.id}
               returnTo="/settings"
               githubApp={appFor("github")?.slug ?? null}
             />

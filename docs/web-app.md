@@ -119,7 +119,9 @@ Permissions are `org.manage`, `project.manage`, `app.release`, `app.configure`, 
 
 ### Code hosts per organization
 
-Every organization connects its own accounts: **Connect with GitHub** in organization A can be a personal account, in organization B the company's GitHub organization — nothing is shared between them. One organization can hold several GitHub connections (*Connect another account*); each one is a row in **Source hosts** with its login, the accounts and organizations the GitHub App is installed on, and the **owner** where new repositories are created — picked from those installations. Installing the app on an organization during *Connect* sets that organization as the owner. Apps remember which host they use; the wizard offers the connected hosts and pre-fills the owner.
+Every organization connects its own accounts: **Connect with GitHub** in organization A can be a personal account, in organization B the company's GitHub organization — nothing is shared between them. There is one connection per GitHub user; **Install on another organization** installs the GitHub App on more accounts or organizations. Each one becomes selectable as the **Organization** that owns the repository when creating an app (the wizard lists every account the app is installed on with permission to create repositories, with a link to install it elsewhere). **Source hosts** shows the login, where the app is installed, and the *default owner* the wizard pre-selects. Apps remember which host they use.
+
+GitLab and Bitbucket work the same way with one OAuth application registered once (Settings → *Set up OAuth app*): **Connect with GitLab** signs the organization in with your GitLab user, and the wizard offers your user plus every group you can create projects in (Bitbucket: every workspace) as the namespace that owns the new repository.
 
 ### Members and invitations
 

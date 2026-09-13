@@ -11,10 +11,10 @@ import { Field, Input } from "@/components/ui/input";
 import { Table, Td, Th } from "@/components/ui/table";
 import { HOST_KINDS, type HostKind, type SourceHost } from "@/lib/source-host-kinds";
 import { cn } from "@/lib/utils";
-import type { GithubAccess } from "@/lib/github-access";
+import type { HostAccess } from "@/lib/host-access";
 import { changeHostOwner, createHost, deleteHost, rotateHostToken } from "./actions";
 
-export function SourceHosts({ hosts, access = {} }: { hosts: SourceHost[]; access?: Record<string, GithubAccess> }) {
+export function SourceHosts({ hosts, access = {} }: { hosts: SourceHost[]; access?: Record<string, HostAccess> }) {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<HostKind>("github");
   const [state, action, pending] = useActionState(createHost, null);
@@ -60,7 +60,7 @@ export function SourceHosts({ hosts, access = {} }: { hosts: SourceHost[]; acces
       )}
 
       <Table>
-        <thead><tr><Th>name</Th><Th>kind</Th><Th>auth</Th><Th>base url</Th><Th>owner</Th><Th /></tr></thead>
+        <thead><tr><Th>name</Th><Th>kind</Th><Th>auth</Th><Th>base url</Th><Th>default owner</Th><Th /></tr></thead>
         <tbody>
           {hosts.length === 0 && <tr><Td colSpan={6} className="text-center text-muted-foreground py-6"><GitBranch className="inline size-4 mr-1" /> No source hosts yet. Apps cannot be pushed until one exists.</Td></tr>}
           {hosts.map((h) => (
@@ -115,7 +115,7 @@ export function SourceHosts({ hosts, access = {} }: { hosts: SourceHost[]; acces
   );
 }
 
-function AccessRow({ access }: { access: GithubAccess }) {
+function AccessRow({ access }: { access: HostAccess }) {
   if (!access.ok) return <tr><Td colSpan={6} className="border-t-0 pt-0 text-[13px]"><span className="text-foreground">Access check failed:</span> <span className="text-secondary">{access.error}</span></Td></tr>;
   return (
     <tr>
@@ -123,9 +123,9 @@ function AccessRow({ access }: { access: GithubAccess }) {
         <div className="space-y-1.5 text-[13px]">
           <div className="flex flex-wrap items-center gap-2 text-secondary">
             <span>Signed in as <span className="font-mono text-foreground">{access.login}</span>.</span>
-            {access.installations.length > 0 && <span>App installed on:</span>}
+            {access.installations.length > 0 && <span>{access.kind === "github" ? "App installed on (each one can own new repositories):" : access.kind === "gitlab" ? "Namespaces that can own new projects:" : "Workspaces that can own new repositories:"}</span>}
             {access.installations.map((i) => (
-              <Badge key={i.account} tone={i.canCreateRepos && i.repositories === "all" ? "ok" : "bad"} className="font-mono">{i.account} · {i.repositories === "all" ? "all repos" : "selected repos"} · admin:{i.administration} · contents:{i.contents}</Badge>
+              <Badge key={i.account} tone={i.canCreateRepos && i.repositories === "all" ? "ok" : "bad"} className="font-mono">{access.kind === "github" ? `${i.account} · ${i.repositories === "all" ? "all repos" : "selected repos"} · admin:${i.administration} · contents:${i.contents}` : i.account}</Badge>
             ))}
             {access.installUrl && <a href={access.installUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">Install on another account</a>}
           </div>
@@ -148,7 +148,7 @@ function OwnerSelect({ host, accounts }: { host: SourceHost; accounts: string[] 
   );
 }
 
-function ownerAccounts(a: GithubAccess | undefined): string[] {
+function ownerAccounts(a: HostAccess | undefined): string[] {
   if (!a || !a.ok) return [];
   return [...new Set([...a.installations.map((i) => i.account), a.login])];
 }
