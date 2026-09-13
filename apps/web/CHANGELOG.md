@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.0 — 2026-09-13
+
+### Features
+- **web:** teams, members, editable configuration, activity pull requests, role-gated ui
+- **ui:** custom select, loader, skeletons, page transition and portal dialogs
+- **web:** permissions, teams, invitations, pull request and release sync libraries
+- **web:** teams, pull requests and last-synced schema with migrations 0006-0008
+
 ## v0.1.9 — 2026-09-12
 
 ### Features
