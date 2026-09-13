@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.3 — 2026-09-13
+
+### Bug Fixes
+- list and discard uncommitted changes in the workspace, undo release writes when the commit fails, show the sync error
+
 ## v0.5.2 — 2026-09-13
 
 ## v0.5.1 — 2026-09-13
