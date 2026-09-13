@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { appFor, signState } from "@/lib/oauth";
 import { publicOrigin } from "@/lib/origin";
+import { roleOf } from "@/lib/orgs";
+import { can } from "@/lib/permissions";
 import { getSession } from "@/lib/session";
 import { setupStatus } from "@/lib/setup";
 
@@ -9,6 +11,7 @@ export async function GET(req: Request) {
   const origin = publicOrigin(req.headers);
   const session = await getSession();
   if (!session && (await setupStatus()).complete) redirect("/login");
+  if (session?.session.activeOrganizationId && !can(await roleOf(session.user.id, session.session.activeOrganizationId), "org.manage")) return Response.json({ detail: "only owners and admins can create the GitHub app" }, { status: 403 });
   if (appFor("github")) return Response.json({ detail: "a GitHub app is already configured" }, { status: 409 });
 
   const org = url.searchParams.get("org")?.trim() || "";

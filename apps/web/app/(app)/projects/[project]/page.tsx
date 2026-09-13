@@ -9,14 +9,17 @@ import { Card } from "@/components/ui/card";
 import { Table, Td, Th } from "@/components/ui/table";
 import { api, type AppRow } from "@/lib/api";
 import { appsOf, projectById } from "@/lib/projects";
+import { roleOf } from "@/lib/orgs";
+import { can } from "@/lib/permissions";
 import { requireOrg } from "@/lib/session";
 import { AddForm } from "./apps/add-form";
 import { RemoveButton } from "./apps/remove-button";
 
 export default async function ProjectPage({ params }: { params: Promise<{ project: string }> }) {
   const { project: projectId } = await params;
-  const { org } = await requireOrg();
+  const { session, org } = await requireOrg();
   const project = await projectById(org.id, projectId);
+  const manage = can(await roleOf(session.user.id, org.id), "project.manage");
   if (!project) notFound();
 
   const apps = await appsOf(project.id);
@@ -33,10 +36,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
       <PageHeader
         title={project.name}
         description={project.description || `Apps in ${project.name}.`}
-        actions={<Link href={`/projects/${project.id}/apps/new`}><Button><Plus className="size-4" /> New app</Button></Link>}
+        actions={manage ? <Link href={`/projects/${project.id}/apps/new`}><Button><Plus className="size-4" /> New app</Button></Link> : undefined}
       />
 
-      <div className="mb-6"><AddForm projectId={project.id} /></div>
+      {manage && <div className="mb-6"><AddForm projectId={project.id} /></div>}
 
       <Card>
         <Table>
@@ -61,7 +64,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
                   <Td><code className="font-mono text-xs">{r?.branch ?? "—"}</code></Td>
                   <Td>{r?.last_version ?? "—"}</Td>
                   <Td className="text-muted-foreground font-mono text-xs">{r?.url || "not pushed yet"}</Td>
-                  <Td className="text-right"><RemoveButton projectId={project.id} appId={a.id} name={a.name} /></Td>
+                  <Td className="text-right">{manage && <RemoveButton projectId={project.id} appId={a.id} name={a.name} />}</Td>
                 </tr>
               );
             })}

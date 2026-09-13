@@ -3,6 +3,7 @@
 import { Upload } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { CheckIndicator } from "@/components/ui/check-indicator";
 import { cn } from "@/lib/utils";
@@ -46,10 +47,7 @@ export function PushButton({ projectId, appId, registryId, repo, hosts, current 
         <div className="space-y-4">
           <label className="block text-sm">
             <span className="block text-xs text-secondary mb-1">Source host</span>
-            <select value={hostId} onChange={(e) => setHostId(e.target.value)} className="h-9 w-full px-3 text-sm" disabled={hosts.length === 0}>
-              {hosts.length === 0 && <option value="">no source host</option>}
-              {hosts.map((h) => <option key={h.id} value={h.id}>{h.name}</option>)}
-            </select>
+            <Select value={hostId} onChange={setHostId} disabled={hosts.length === 0} placeholder="No source host" options={hosts.map((h) => ({ value: h.id, label: h.name }))} />
           </label>
           <div>
             <div className="text-xs text-secondary mb-1">Visibility</div>

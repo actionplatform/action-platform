@@ -1,9 +1,10 @@
 import { PageHeader } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, Td, Th } from "@/components/ui/table";
 import { API_BASE, api } from "@/lib/api";
-import { membersOf } from "@/lib/orgs";
+import { invitationsOf, membersOf, roleOf } from "@/lib/orgs";
+import { MembersPanel } from "./members-panel";
+import { can, PERMISSION_INFO, PERMISSIONS, ROLE_INFO, ROLES } from "@/lib/permissions";
 import { requireOrg } from "@/lib/session";
 import { headers } from "next/headers";
 import { publicOrigin } from "@/lib/origin";
@@ -13,8 +14,9 @@ import { hostsOf } from "@/lib/source-hosts";
 import { SourceHosts } from "./source-hosts";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
-  const { org } = await requireOrg();
-  const [members, hosts, query] = await Promise.all([membersOf(org.id), hostsOf(org.id), searchParams]);
+  const { session, org } = await requireOrg();
+  const [members, invitations, role, hosts, query] = await Promise.all([membersOf(org.id), invitationsOf(org.id), roleOf(session.user.id, org.id), hostsOf(org.id), searchParams]);
+  const canManage = can(role, "org.manage");
   const h = await headers();
   const origin = publicOrigin(h);
   const connected = { github: [] as string[], gitlab: [] as string[], bitbucket: [] as string[] };
@@ -30,17 +32,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     <>
       <PageHeader title="Settings" description={org.name} />
       <div className="space-y-4">
-        <Card>
-          <CardHeader><CardTitle>Organization</CardTitle><Badge className="font-mono">{org.slug}</Badge></CardHeader>
-          <Table>
-            <thead><tr><Th>member</Th><Th>email</Th><Th>role</Th></tr></thead>
-            <tbody>
-              {members.map((m) => (
-                <tr key={m.id}><Td>{m.name}</Td><Td className="text-secondary">{m.email}</Td><Td><Badge>{m.role}</Badge></Td></tr>
-              ))}
-            </tbody>
-          </Table>
-        </Card>
+        <MembersPanel
+          org={{ name: org.name, slug: org.slug }}
+          members={members.map((m) => ({ id: m.id, userId: m.userId, name: m.name, email: m.email, role: m.role }))}
+          invitations={invitations.map((i) => ({ id: i.id, email: i.email, role: i.role, inviter: i.inviter, expiresAt: i.expiresAt.toISOString() }))}
+          me={session.user.id}
+          canManage={canManage}
+          origin={origin}
+        />
 
         <Card>
           <CardHeader><CardTitle>Connect a code host</CardTitle></CardHeader>
@@ -59,6 +58,28 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </Card>
 
         <SourceHosts hosts={hosts} />
+
+        <Card>
+          <CardHeader><CardTitle>Roles and permissions</CardTitle><Badge>{ROLES.length} roles</Badge></CardHeader>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-muted-foreground">
+                  <th className="px-4 py-2 font-medium">Permission</th>
+                  {ROLES.map((r) => <th key={r} className="px-3 py-2 text-center font-medium" title={ROLE_INFO[r].description}>{ROLE_INFO[r].label}</th>)}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-subtle border-t border-border-subtle">
+                {PERMISSIONS.map((p) => (
+                  <tr key={p}>
+                    <td className="px-4 py-2.5"><div className="font-mono text-xs">{p}</div><div className="text-[13px] text-secondary">{PERMISSION_INFO[p]}</div></td>
+                    {ROLES.map((r) => <td key={r} className="px-3 py-2.5 text-center">{can(r, p) ? <span aria-label="allowed" className="inline-block size-2 rounded-full bg-foreground" /> : <span aria-label="not allowed" className="inline-block size-2 rounded-full border border-border" />}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
 
         <Card>
           <CardHeader><CardTitle>API</CardTitle><Badge tone={version ? "ok" : "bad"}>{version ? `v${version}` : "offline"}</Badge></CardHeader>
