@@ -167,6 +167,11 @@ class ManifestBody(BaseModel):
     content: str
 
 
+class Changes(BaseModel):
+    files: list[str]
+    clean: bool
+
+
 class CommitBranch(BaseModel):
     kind: str
     code: str

@@ -102,6 +102,7 @@ def release(
         logger.info("dry-run enabled, skipping writes")
         return ctx
 
+    had_changelog = (where / settings.CHANGELOG_FILE).exists()
     versioning.write(where / settings.LAST_VERSION_FILE, ctx.next_version)
     changelog.prepend(where / settings.CHANGELOG_FILE, ctx.changelog)
     synced = versioning.sync_files(where, ctx.next_version)
@@ -111,8 +112,13 @@ def release(
         for f in (settings.LAST_VERSION_FILE, settings.CHANGELOG_FILE, *synced)
     ]
 
-    git.add(touched, cwd=repo_root)
-    git.commit(f"chore(release): {comp.label(ctx.next_version)}", cwd=repo_root)
+    try:
+        git.add(touched, cwd=repo_root)
+        git.commit(f"chore(release): {comp.label(ctx.next_version)}", cwd=repo_root)
+    except Exception as e:
+        _undo_writes(repo_root, touched, had_changelog, where)
+        raise ReleaseError(f"could not commit the release: {_stderr(e) or e}") from e
+
     git.create_tag(tag, tag, cwd=repo_root)
     git.push(cwd=repo_root)
     git.push_tag(tag, cwd=repo_root)
@@ -132,3 +138,22 @@ def release(
             raise ReleaseError(f"CI {runner.name} failed")
 
     return ctx
+
+
+def _undo_writes(
+    repo_root: Path, touched: list[str], had_changelog: bool, where: Path
+) -> None:
+    git.run(["reset", "-q", "--", *touched], cwd=repo_root)
+    tracked = [
+        f for f in touched if had_changelog or not f.endswith(settings.CHANGELOG_FILE)
+    ]
+
+    if tracked:
+        git.run(["checkout", "--", *tracked], cwd=repo_root)
+
+    if not had_changelog:
+        (where / settings.CHANGELOG_FILE).unlink(missing_ok=True)
+
+
+def _stderr(e: Exception) -> str:
+    return getattr(e, "stderr", "") or ""

@@ -11,7 +11,7 @@ import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
-import { addService, commitChanges, saveManifest, setCloudTarget } from "../actions";
+import { addService, commitChanges, discardChanges, saveManifest, setCloudTarget } from "../actions";
 import type { AppView } from "./model";
 
 type CloudOption = { name: string; description: string; source: string };
@@ -50,6 +50,7 @@ function CommitBar({ view }: { view: AppView }) {
   const [pullRequest, setPullRequest] = useState(hasRemote && onProtected);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ branch: string; url: string | null } | null>(null);
+  const [discarding, setDiscarding] = useState(false);
   const [pending, start] = useTransition();
 
   const branchName = `${kind}/${code.trim() || "<code>"}${slugify(slug) ? `-${slugify(slug)}` : ""}`;
@@ -72,12 +73,31 @@ function CommitBar({ view }: { view: AppView }) {
   const close = () => { if (pending) return; setOpen(false); setDone(null); setError(null); };
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-foreground/60 bg-surface px-4 py-3 sm:flex-row sm:items-center">
-      <div className="flex-1 text-sm">
+    <div className="flex flex-col gap-3 rounded-lg border border-foreground/60 bg-surface px-4 py-3 sm:flex-row sm:items-start">
+      <div className="min-w-0 flex-1 text-sm">
         <div className="font-medium">Uncommitted changes on <span className="font-mono">{view.branch}</span></div>
         <div className="text-[13px] text-secondary">{onProtected ? "Protected branch: changes go to a new branch and a pull request." : "Configuration edits live in the workspace until you commit them."}</div>
+        {view.changes.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {view.changes.slice(0, 12).map((f) => <span key={f} className="inline-flex h-5 items-center rounded border border-border bg-background px-1.5 font-mono text-[11px]">{f}</span>)}
+            {view.changes.length > 12 && <span className="text-[11px] text-muted-foreground">+{view.changes.length - 12}</span>}
+          </div>
+        )}
       </div>
-      <Button onClick={() => setOpen(true)}><GitCommitHorizontal className="size-4" strokeWidth={1.75} /> Commit changes</Button>
+      <div className="flex shrink-0 gap-2">
+        <Button variant="outline" onClick={() => setDiscarding(true)}>Discard</Button>
+        <Button onClick={() => setOpen(true)}><GitCommitHorizontal className="size-4" strokeWidth={1.75} /> Commit changes</Button>
+      </div>
+      <ConfirmDialog
+        open={discarding}
+        onClose={() => setDiscarding(false)}
+        title="Discard uncommitted changes?"
+        description={`${view.changes.length} ${view.changes.length === 1 ? "file goes" : "files go"} back to the last commit; untracked files are deleted. This cannot be undone.`}
+        confirmLabel="Discard changes"
+        danger
+        pending={pending}
+        onConfirm={() => start(async () => { const r = await discardChanges(view.projectId, view.registryId); setDiscarding(false); if (r.ok) router.refresh(); else setError(r.error); })}
+      />
       <Dialog
         open={open}
         onClose={close}

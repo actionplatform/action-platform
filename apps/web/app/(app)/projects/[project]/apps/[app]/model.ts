@@ -27,6 +27,7 @@ export type AppView = {
   isStableBranch: boolean;
   lastSyncedAt: string | null;
   manifest: string;
+  changes: string[];
   can: Grants;
   type: string | null;
   language: string | null;
@@ -43,7 +44,7 @@ export function ciLabel(ci: string | null): string | null {
   return ci ? (CIS[ci] ?? ci) : null;
 }
 
-export function toView(input: { projectId: string; projectName: string; appId: string; appName: string; detail: AppDetail; health: GitflowReport; commits: Commit[]; branches: Branch[]; tags: string[]; lastSyncedAt: Date | null; manifest: string; grants: Grants }): AppView {
+export function toView(input: { projectId: string; projectName: string; appId: string; appName: string; detail: AppDetail; health: GitflowReport; commits: Commit[]; branches: Branch[]; tags: string[]; lastSyncedAt: Date | null; manifest: string; changes: string[]; grants: Grants }): AppView {
   const { detail } = input;
   const meta = detail.project;
   const repo = detail.source_host.repo || null;
@@ -75,6 +76,7 @@ export function toView(input: { projectId: string; projectName: string; appId: s
     isStableBranch: ["main", "master"].includes(detail.branch),
     lastSyncedAt: input.lastSyncedAt ? input.lastSyncedAt.toISOString() : null,
     manifest: input.manifest,
+    changes: input.changes,
     can: input.grants,
     type: meta.type ?? null,
     language: meta.language ?? null,

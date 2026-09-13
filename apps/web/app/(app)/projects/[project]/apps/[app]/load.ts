@@ -34,7 +34,8 @@ export const loadApp = cache(async (projectId: string, appId: string): Promise<L
       releasesOf(app.id),
       api.apps.manifest(app.registryId),
     ]);
-    const view = toView({ projectId, projectName: project.name, appId: app.id, appName: app.name, detail, health, commits, branches, tags, lastSyncedAt: app.lastSyncedAt, manifest: manifest.content, grants: grantsOf(await roleOf(session.user.id, org.id)) });
+    const changes = detail.clean ? [] : (await api.apps.changes(app.registryId).catch(() => ({ files: [] as string[] }))).files;
+    const view = toView({ projectId, projectName: project.name, appId: app.id, appName: app.name, detail, health, commits, branches, tags, lastSyncedAt: app.lastSyncedAt, manifest: manifest.content, changes, grants: grantsOf(await roleOf(session.user.id, org.id)) });
     return { ok: true, view, hosts: hosts.map((h) => ({ id: h.id, name: h.name, kind: h.kind, defaultOwner: h.defaultOwner })), currentHost: app.sourceHostId, releases, stored };
   } catch (e) {
     if (e instanceof ApiError && (e.status === 400 || e.status === 410)) notFound();

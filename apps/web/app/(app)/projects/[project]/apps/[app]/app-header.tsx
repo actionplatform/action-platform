@@ -21,6 +21,7 @@ const BRANDS = { github: siGithub, gitlab: siGitlab, bitbucket: siBitbucket } as
 export function AppHeader({ view }: { view: AppView }) {
   const router = useRouter();
   const [status, setStatus] = useState<SyncStatus>("idle");
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [syncedAt, setSyncedAt] = useState<number | null>(view.lastSyncedAt ? new Date(view.lastSyncedAt).getTime() : null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [now, setNow] = useState<number | null>(null);
@@ -43,11 +44,11 @@ export function AppHeader({ view }: { view: AppView }) {
     start(async () => {
       setStatus("syncing");
       const r = await syncApp(view.projectId, view.appId, view.registryId);
-      if (r.ok) { setSyncedAt(Date.now()); setStatus("success"); router.refresh(); } else setStatus("error");
+      if (r.ok) { setSyncedAt(Date.now()); setStatus("success"); setSyncError(null); router.refresh(); } else { setStatus("error"); setSyncError(r.error); }
     });
 
   const syncLabel = status === "syncing" ? "Syncing..." : status === "success" ? "Synced" : status === "error" ? "Sync failed" : "Sync";
-  const syncHint = status === "success" ? "Just now" : syncedAt ? (now ? `Last synced ${relativeTime(new Date(syncedAt), now)}` : "Last synced") : status === "error" ? "Try again" : view.repositoryUrl ? "Never synced" : "No remote";
+  const syncHint = status === "error" ? (syncError ?? "Try again") : status === "success" ? "Just now" : syncedAt ? (now ? `Last synced ${relativeTime(new Date(syncedAt), now)}` : "Last synced") : view.repositoryUrl ? "Never synced" : "No remote";
 
   return (
     <header>
@@ -94,7 +95,7 @@ export function AppHeader({ view }: { view: AppView }) {
               {status === "success" ? <Check className="size-4" strokeWidth={2} /> : <RefreshCw className={cn("size-4", status === "syncing" && "animate-spin")} strokeWidth={1.75} />}
               {syncLabel}
             </button>
-            <span className="hidden text-[13px] text-muted-foreground sm:block">{syncHint}</span>
+            <span className={cn("hidden max-w-md text-[13px] sm:block", status === "error" ? "text-foreground" : "text-muted-foreground")}>{syncHint}</span>
           </div>
 
           <Menu
