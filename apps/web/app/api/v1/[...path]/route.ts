@@ -1,13 +1,14 @@
 import { API_BASE, apiHeaders } from "@/lib/api";
-import { getAuth } from "@/lib/auth";
-import { activeOrg, roleOf } from "@/lib/orgs";
-import { can, type Permission } from "@/lib/permissions";
+import { type Caller, authenticate } from "@/lib/api-auth";
+import { roleOf } from "@/lib/orgs";
+import { can, parseScopes, type Permission, scopeAllows } from "@/lib/permissions";
 import { appByRegistryId, registryIdsOf } from "@/lib/projects";
 import { syncPullRequests } from "@/lib/pull-requests";
 import { syncReleases } from "@/lib/releases";
 import { credentialsFor, hostsOf } from "@/lib/source-hosts";
 import { sourceSpecByName, sourceSpecsOf } from "@/lib/template-sources";
 import { gitAuthorOf } from "@/lib/org-settings";
+import { issueToken } from "@/lib/api-tokens";
 
 type Rule = { method: string; pattern: RegExp; permission: Permission | null; credentials?: boolean; imports?: boolean };
 
@@ -38,19 +39,21 @@ function ruleFor(method: string, path: string): Rule | null {
 }
 
 async function proxy(req: Request, segments: string[]): Promise<Response> {
-  const auth = await getAuth();
-  const session = await auth.api.getSession({ headers: req.headers });
-  if (!session) return Response.json({ detail: "unauthorized" }, { status: 401 });
-
-  const org = await activeOrg(session);
-  if (!org) return Response.json({ detail: "no organization" }, { status: 403 });
+  const caller = await authenticate(req);
+  if (!caller) return Response.json({ detail: "unauthorized" }, { status: 401 });
+  if (!caller.org) return Response.json({ detail: "no organization" }, { status: 403 });
 
   const path = segments.join("/");
+  if (path === "me") return Response.json(me(caller));
+  if (path === "tokens") return issue(req, caller);
+
   const rule = ruleFor(req.method, path);
   if (!rule) return Response.json({ detail: `${req.method} /api/v1/${path} is not exposed` }, { status: 404 });
 
-  const role = await roleOf(session.user.id, org.id);
+  const org = caller.org;
+  const role = await roleOf(caller.user.id, org.id);
   if (rule.permission && !can(role, rule.permission)) return Response.json({ detail: `your role (${role ?? "none"}) lacks ${rule.permission}` }, { status: 403 });
+  if (caller.scope && !scopeAllows(caller.scope, rule.permission)) return Response.json({ detail: `the token's scope (${caller.scope.join(" ")}) does not allow ${rule.permission ?? "read"}` }, { status: 403 });
 
   const registryId = path.startsWith("apps/") ? segments[1] : null;
   const app = registryId && registryId !== "init" ? await appByRegistryId(registryId) : null;
@@ -106,6 +109,22 @@ async function proxy(req: Request, segments: string[]): Promise<Response> {
     status: upstream.status,
     headers: { "content-type": upstream.headers.get("content-type") ?? "application/json" },
   });
+}
+
+function me(caller: Caller) {
+  return { user: { id: caller.user.id, name: caller.user.name, email: caller.user.email }, organization: caller.org, scope: caller.scope, token: caller.tokenId };
+}
+
+async function issue(req: Request, caller: Caller): Promise<Response> {
+  if (req.method !== "POST") return Response.json({ detail: "POST /api/v1/tokens" }, { status: 405 });
+  if (caller.scope) return Response.json({ detail: "a token cannot mint another token; sign in again" }, { status: 403 });
+  const body = (await req.json().catch(() => ({}))) as { scope?: string; name?: string };
+  const requested = parseScopes(body.scope);
+  if (requested.length === 0) return Response.json({ detail: "scope must include at least one of read, write, release, admin" }, { status: 400 });
+  const scope = requested.includes("read") ? requested : ["read" as const, ...requested];
+  const name = (body.name ?? "").trim().slice(0, 80) || "cli";
+  const { token, id, expiresAt } = await issueToken({ userId: caller.user.id, organizationId: caller.org!.id, scope, name });
+  return Response.json({ token, token_type: "Bearer", id, scope: scope.join(" "), expires_at: expiresAt.toISOString(), organization: caller.org });
 }
 
 type Ctx = { params: Promise<{ path: string[] }> };

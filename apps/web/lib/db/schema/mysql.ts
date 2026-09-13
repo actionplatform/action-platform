@@ -190,3 +190,15 @@ export const organizationSetting = mysqlTable("organization_setting", {
   gitAuthorEmail: varchar("git_author_email", { length: 255 }).notNull(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+export const apiToken = mysqlTable("api_token", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => user.id, { onDelete: "cascade" }),
+  organizationId: varchar("organization_id", { length: 36 }).notNull().references(() => organization.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  scope: varchar("scope", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+  revokedAt: timestamp("revoked_at"),
+});

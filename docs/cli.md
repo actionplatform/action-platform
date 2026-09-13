@@ -70,6 +70,10 @@ Credentials from `login` live in `~/.action-platform/credentials.json` (mode 600
 | `ACTION_PLATFORM_TEMPLATES`, `ACTION_PLATFORM_TEMPLATES_REPO` | local checkout / repository of the templates matrix |
 | `AP_HOME` | where the API keeps `apps.json`, workspaces and credentials (default `~/.action-platform`) |
 
+## Tokens and scopes
+
+`action-platform login <server> [--scope read,write] [--name label]` runs the device flow: the browser shows the code, you pick what the token may do — `read` (always), `write` (configuration, branches, pull requests, commits, sync), `release`, `admin` (projects, members, hosts, settings) — and the CLI swaps the approved session for a bearer JWT with that scope, valid 90 days, kept in `~/.action-platform/credentials.json`. Scope narrows your role; it never widens it. `action-platform whoami` prints server, account and scope; tokens are listed and revoked under Settings → *Your API tokens*. `AP_SERVER` / `AP_TOKEN` (and `AP_SCOPE` for display) override the file.
+
 ## Error reporting
 
 Optional: `pip install "action-platform[sentry]"` and export `AP_SENTRY_DSN` to send CLI crashes to Sentry. Off by default — see [observability](observability.md).

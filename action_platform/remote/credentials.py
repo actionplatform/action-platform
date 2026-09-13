@@ -20,13 +20,14 @@ def path() -> Path:
 class Credentials:
     server: str
     token: str
+    scope: str = ""
 
 
 def load() -> Optional[Credentials]:
     env_server, env_token = os.environ.get("AP_SERVER"), os.environ.get("AP_TOKEN")
 
     if env_server and env_token:
-        return Credentials(env_server, env_token)
+        return Credentials(env_server, env_token, os.environ.get("AP_SCOPE", ""))
 
     file = path()
 
@@ -38,7 +39,7 @@ def load() -> Optional[Credentials]:
     if not data.get("server") or not data.get("token"):
         return None
 
-    return Credentials(data["server"], data["token"])
+    return Credentials(data["server"], data["token"], data.get("scope", ""))
 
 
 def save(creds: Credentials) -> None:

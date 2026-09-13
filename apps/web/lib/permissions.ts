@@ -49,3 +49,31 @@ export function can(role: string | null, permission: Permission): boolean {
 export function grantsOf(role: string | null): Grants {
   return Object.fromEntries(PERMISSIONS.map((p) => [p, can(role, p)])) as Grants;
 }
+
+export const SCOPES = ["read", "write", "release", "admin"] as const;
+export type Scope = (typeof SCOPES)[number];
+
+export const SCOPE_INFO: Record<Scope, { label: string; description: string; permissions: Permission[] }> = {
+  read: { label: "Read", description: "List projects, apps, releases, branches and activity", permissions: [] },
+  write: { label: "Write", description: "Configuration, branches, pull requests, commits and sync", permissions: ["app.configure", "app.flow", "app.sync"] },
+  release: { label: "Release", description: "Create releases", permissions: ["app.release"] },
+  admin: { label: "Admin", description: "Projects, apps, members, code hosts and settings", permissions: ["project.manage", "org.manage"] },
+};
+
+export const DEFAULT_SCOPES: Scope[] = ["read", "write"];
+
+export function isScope(value: string): value is Scope {
+  return (SCOPES as readonly string[]).includes(value);
+}
+
+export function parseScopes(value: string | null | undefined): Scope[] {
+  const seen = new Set<Scope>();
+  for (const part of (value ?? "").split(/[\s,]+/)) if (isScope(part)) seen.add(part);
+  return SCOPES.filter((s) => seen.has(s));
+}
+
+export function scopeAllows(scopes: Scope[], permission: Permission | null): boolean {
+  if (!scopes.includes("read")) return false;
+  if (!permission) return true;
+  return scopes.some((s) => SCOPE_INFO[s].permissions.includes(permission));
+}

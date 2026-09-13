@@ -1,7 +1,7 @@
 "use client";
 
 import { siBitbucket, siGithub, siGitlab } from "simple-icons";
-import { Check, ChevronDown, ExternalLink, GitBranch, KeyRound, MoreHorizontal, Plus, Trash2, UserCog, X } from "lucide-react";
+import { Check, ChevronDown, ExternalLink, GitBranch, KeyRound, MoreHorizontal, Plus, Trash2, TriangleAlert, UserCog, X } from "lucide-react";
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { BrandIcon } from "@/components/ui/brand-icon";
@@ -11,7 +11,7 @@ import { ConfirmDialog, Dialog, PromptDialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
-import type { HostAccess } from "@/lib/host-access";
+import type { HostAccess, Owner } from "@/lib/host-access";
 import { HOST_KINDS, type HostKind, type SourceHost } from "@/lib/source-host-kinds";
 import { cn } from "@/lib/utils";
 import { changeHostOwner, createHost, deleteHost, rotateHostToken } from "./actions";
@@ -37,7 +37,7 @@ export function SourceHosts({ hosts, access = {}, canManage }: Props) {
           <h2 className="text-[15px] font-semibold">Source hosts</h2>
           <p className="mt-1 text-[13px] text-secondary">Accounts this workspace pushes, releases and opens pull requests with.</p>
         </div>
-        {canManage && <Button size="sm" variant="ghost" className="shrink-0" onClick={() => setOpen((v) => !v)}>{open ? <X className="size-3.5" strokeWidth={2} /> : <Plus className="size-3.5" strokeWidth={2} />} {open ? "Close" : "Add with a token"}</Button>}
+        {canManage && <Button size="sm" variant="outline" className="h-11 w-full shrink-0 sm:h-8 sm:w-auto sm:border-transparent sm:bg-transparent sm:text-secondary sm:hover:border-transparent sm:hover:text-foreground" onClick={() => setOpen((v) => !v)}>{open ? <X className="size-3.5" strokeWidth={2} /> : <Plus className="size-3.5" strokeWidth={2} />} {open ? "Close" : "Add with a token"}</Button>}
       </header>
 
       {open && (
@@ -96,9 +96,51 @@ function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostA
   const rest = chips.length - shown.length;
   const problems = access?.ok ? access.problems : access ? [access.error] : [];
 
+  const menu = canManage ? (
+    <Menu
+      label={`Actions for ${host.name}`}
+      items={[
+        ...(chips.length ? [{ label: "Change default owner", icon: <UserCog className="size-4" strokeWidth={1.75} />, onSelect: () => setOwner(true) }] : []),
+        ...(host.authKind === "token" ? [{ label: "Update token", icon: <KeyRound className="size-4" strokeWidth={1.75} />, onSelect: () => { setError(null); setRotating(true); } }] : []),
+        "separator" as const,
+        { label: "Remove host", icon: <Trash2 className="size-4" strokeWidth={1.75} />, danger: true, onSelect: () => setRemoving(true) },
+      ]}
+      trigger={({ open, toggle, id }) => (
+        <button type="button" aria-label="Open source host actions" aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle} className="flex size-11 shrink-0 items-center justify-center rounded-[7px] text-secondary transition-colors hover:bg-surface-hover hover:text-foreground md:size-8">
+          <MoreHorizontal className="size-4" strokeWidth={1.75} />
+        </button>
+      )}
+    />
+  ) : null;
+
+  const status = (
+    <>
+      <Badge tone={host.authKind === "oauth" ? "ok" : "neutral"} className="h-5 gap-1 px-2 text-[11px]">{host.authKind === "oauth" ? <><Check className="size-3" strokeWidth={2.5} /> Connected</> : "Token"}</Badge>
+      {problems.length > 0 && <Badge tone="inverse" className="h-5 px-2 text-[11px]">{problems.length} {problems.length === 1 ? "issue" : "issues"}</Badge>}
+    </>
+  );
+
   return (
-    <li className="px-6 py-4">
-      <div className="grid grid-cols-1 items-center gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto]">
+    <li className="px-4 py-4 md:px-6">
+      <div className="rounded-[10px] border border-border bg-background p-4 md:hidden">
+        <div className="flex items-start gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-[8px] border border-border bg-surface">
+            {brand ? <BrandIcon icon={brand} mono className="size-4" /> : <GitBranch className="size-4 text-secondary" strokeWidth={1.75} />}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium">{meta?.label ?? host.kind} · {host.name}</div>
+            <div className="truncate text-[13px] text-secondary">{host.login ? `Signed in as ${host.login}` : host.username ? `Token for ${host.username}` : "Personal access token"}</div>
+          </div>
+          {menu}
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">{status}</div>
+        <button type="button" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded} className="mt-3 flex h-11 w-full items-center justify-center gap-1.5 rounded-[8px] border border-border text-sm text-foreground transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">
+          View permissions <ChevronDown className={cn("size-4 transition-transform duration-150", expanded && "rotate-180")} strokeWidth={1.75} />
+        </button>
+        {expanded && <HostDetails host={host} access={access} mobile />}
+      </div>
+
+      <div className="hidden grid-cols-1 items-center gap-4 md:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto]">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-[8px] border border-border bg-background">
             {brand ? <BrandIcon icon={brand} mono className="size-4" /> : <GitBranch className="size-4 text-secondary" strokeWidth={1.75} />}
@@ -113,10 +155,7 @@ function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostA
         </div>
 
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <Badge tone={host.authKind === "oauth" ? "ok" : "neutral"} className="h-5 gap-1 px-2 text-[11px]">{host.authKind === "oauth" ? <><Check className="size-3" strokeWidth={2.5} /> Connected</> : "Token"}</Badge>
-            {problems.length > 0 && <Badge tone="inverse" className="h-5 px-2 text-[11px]">{problems.length} {problems.length === 1 ? "issue" : "issues"}</Badge>}
-          </div>
+          <div className="flex items-center gap-2">{status}</div>
           <div className="mt-1 truncate text-[13px] text-secondary">{host.defaultOwner ? <>Owned by <span className="font-mono text-foreground">{host.defaultOwner}</span></> : "No default owner"}</div>
         </div>
 
@@ -133,75 +172,11 @@ function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostA
           <button type="button" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded} className="inline-flex h-8 items-center gap-1 rounded-[7px] px-2.5 text-[13px] text-secondary transition-colors hover:bg-surface-hover hover:text-foreground">
             View permissions <ChevronDown className={cn("size-3.5 transition-transform duration-150", expanded && "rotate-180")} strokeWidth={1.75} />
           </button>
-          {canManage && (
-            <Menu
-              label={`Actions for ${host.name}`}
-              items={[
-                ...(chips.length ? [{ label: "Change default owner", icon: <UserCog className="size-4" strokeWidth={1.75} />, onSelect: () => setOwner(true) }] : []),
-                ...(host.authKind === "token" ? [{ label: "Update token", icon: <KeyRound className="size-4" strokeWidth={1.75} />, onSelect: () => { setError(null); setRotating(true); } }] : []),
-                "separator" as const,
-                { label: "Remove host", icon: <Trash2 className="size-4" strokeWidth={1.75} />, danger: true, onSelect: () => setRemoving(true) },
-              ]}
-              trigger={({ open, toggle, id }) => (
-                <button type="button" aria-label={`More actions for ${host.name}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle} className="flex size-8 items-center justify-center rounded-[7px] text-secondary transition-colors hover:bg-surface-hover hover:text-foreground">
-                  <MoreHorizontal className="size-4" strokeWidth={1.75} />
-                </button>
-              )}
-            />
-          )}
+          {menu}
         </div>
       </div>
 
-      {expanded && (
-        <div className="mt-4 rounded-[9px] border border-border-subtle bg-background px-4 py-3 text-[13px]">
-          {!access ? (
-            <div className="text-secondary">Permissions are checked for GitHub, GitLab and Bitbucket hosts.</div>
-          ) : !access.ok ? (
-            <div><span className="font-medium">Access check failed.</span> <span className="text-secondary">{access.error}</span></div>
-          ) : (
-            <div className="space-y-3">
-              <div className="grid gap-x-6 gap-y-1 sm:grid-cols-[auto_1fr]">
-                <span className="text-muted-foreground">Signed in as</span><span className="font-mono">{access.login}</span>
-                <span className="text-muted-foreground">Base URL</span><span className="font-mono">{host.baseUrl ?? "default"}</span>
-              </div>
-              {access.installations.length > 0 && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-[13px]">
-                    <thead><tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground"><th className="py-1.5 pr-4 font-medium">Account</th><th className="py-1.5 pr-4 font-medium">Repositories</th><th className="py-1.5 pr-4 font-medium">Administration</th><th className="py-1.5 pr-4 font-medium">Contents</th><th className="py-1.5 font-medium">Can create</th></tr></thead>
-                    <tbody className="divide-y divide-border-subtle">
-                      {access.installations.map((i) => (
-                        <tr key={i.account} className="align-top">
-                          <td className="py-2 pr-4 font-mono">{i.account}</td>
-                          <td className="py-2 pr-4">
-                            {i.repositories === "all" ? "all" : (
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span>{i.selected?.length ?? 0} selected</span>
-                                  {i.configureUrl && <a href={i.configureUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-secondary hover:text-foreground">Configure <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
-                                </div>
-                                {i.selected && i.selected.length > 0 && (
-                                  <div className="mt-1.5 flex flex-wrap gap-1">
-                                    {i.selected.map((r) => <span key={r} className="inline-flex h-5 items-center rounded-[5px] border border-border bg-surface px-1.5 font-mono text-[11px]">{r.split("/")[1] ?? r}</span>)}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-2 pr-4">{i.administration}</td>
-                          <td className="py-2 pr-4">{i.contents}</td>
-                          <td className="py-2">{i.canCreateRepos && i.repositories === "all" ? <Check className="size-4" strokeWidth={2.5} /> : <span className="text-muted-foreground">—</span>}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              {access.problems.length > 0 && <ul className="list-disc space-y-1 pl-5">{access.problems.map((p) => <li key={p}>{p}</li>)}</ul>}
-              {access.installUrl && <a href={access.installUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-secondary hover:text-foreground">Install on another account <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
-            </div>
-          )}
-        </div>
-      )}
+      {expanded && <div className="hidden md:block"><HostDetails host={host} access={access} /></div>}
       {error && <div className="mt-3 rounded-md border border-foreground px-3 py-2 text-[13px]">{error}</div>}
 
       <ConfirmDialog
@@ -236,6 +211,110 @@ function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostA
       >
         <Select mono value={host.defaultOwner ?? ""} disabled={pending} options={chips.map((c) => ({ value: c.account, label: c.account, hint: c.ok ? undefined : "cannot create repositories" }))} onChange={(v) => start(async () => { const r = await changeHostOwner(host.id, v); if (!r.ok) setError(r.error); else setOwner(false); })} />
       </Dialog>
+    </li>
+  );
+}
+
+function HostDetails({ host, access, mobile = false }: { host: SourceHost; access?: HostAccess; mobile?: boolean }) {
+  return (
+    <div className={cn("rounded-[9px] border border-border-subtle bg-background text-[13px]", mobile ? "mt-3 border-border bg-surface px-3 py-3" : "mt-4 px-4 py-3")}>
+          {!access ? (
+            <div className="text-secondary">Permissions are checked for GitHub, GitLab and Bitbucket hosts.</div>
+          ) : !access.ok ? (
+            <div><span className="font-medium">Access check failed.</span> <span className="text-secondary">{access.error}</span></div>
+          ) : (
+            <div className="space-y-3">
+              {mobile ? (
+                <dl className="divide-y divide-border-subtle rounded-[8px] border border-border bg-background px-3">
+                  <div className="flex items-center justify-between gap-3 py-2"><dt className="text-muted-foreground">Signed in as</dt><dd className="truncate font-mono text-foreground">{access.login}</dd></div>
+                  <div className="flex items-center justify-between gap-3 py-2"><dt className="text-muted-foreground">Base URL</dt><dd className="truncate font-mono text-foreground">{host.baseUrl ?? "default"}</dd></div>
+                </dl>
+              ) : (
+                <div className="grid gap-x-6 gap-y-1 sm:grid-cols-[auto_1fr]">
+                  <span className="text-muted-foreground">Signed in as</span><span className="font-mono">{access.login}</span>
+                  <span className="text-muted-foreground">Base URL</span><span className="font-mono">{host.baseUrl ?? "default"}</span>
+                </div>
+              )}
+              {access.installations.length > 0 && mobile && (
+                <div>
+                  <div className="mt-4 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{access.kind === "gitlab" ? "Namespaces" : access.kind === "bitbucket" ? "Workspaces" : "Installation accounts"}</div>
+                  <ul className="mt-2 space-y-2">
+                    {access.installations.map((i) => <InstallationCard key={i.account} installation={i} />)}
+                  </ul>
+                </div>
+              )}
+              {access.installations.length > 0 && !mobile && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[13px]">
+                    <thead><tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground"><th className="py-1.5 pr-4 font-medium">Account</th><th className="py-1.5 pr-4 font-medium">Repositories</th><th className="py-1.5 pr-4 font-medium">Administration</th><th className="py-1.5 pr-4 font-medium">Contents</th><th className="py-1.5 font-medium">Can create</th></tr></thead>
+                    <tbody className="divide-y divide-border-subtle">
+                      {access.installations.map((i) => (
+                        <tr key={i.account} className="align-top">
+                          <td className="py-2 pr-4 font-mono">{i.account}</td>
+                          <td className="py-2 pr-4">
+                            {i.repositories === "all" ? "all" : (
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span>{i.selected?.length ?? 0} selected</span>
+                                  {i.configureUrl && <a href={i.configureUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-secondary hover:text-foreground">Configure <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
+                                </div>
+                                {i.selected && i.selected.length > 0 && (
+                                  <div className="mt-1.5 flex flex-wrap gap-1">
+                                    {i.selected.map((r) => <span key={r} className="inline-flex h-5 items-center rounded-[5px] border border-border bg-surface px-1.5 font-mono text-[11px]">{r.split("/")[1] ?? r}</span>)}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-2 pr-4">{i.administration}</td>
+                          <td className="py-2 pr-4">{i.contents}</td>
+                          <td className="py-2">{i.canCreateRepos && i.repositories === "all" ? <Check className="size-4" strokeWidth={2.5} /> : <span className="text-muted-foreground">—</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {access.problems.length > 0 && mobile && (
+                <ul className="space-y-2">
+                  {access.problems.map((p) => (
+                    <li key={p} className="flex gap-2.5 rounded-[8px] border border-border border-l-2 border-l-secondary bg-background px-3 py-2.5 text-[13px] text-secondary">
+                      <TriangleAlert className="mt-0.5 size-3.5 shrink-0" strokeWidth={1.75} />
+                      <span className="min-w-0 [overflow-wrap:anywhere]">{p}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {access.problems.length > 0 && !mobile && <ul className="list-disc space-y-1 pl-5">{access.problems.map((p) => <li key={p}>{p}</li>)}</ul>}
+              {access.installUrl && mobile && (
+                <a href={access.installUrl} target="_blank" rel="noopener noreferrer" className="flex h-11 w-full items-center justify-center gap-1.5 rounded-[8px] border border-border bg-background text-sm text-foreground transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">Install on another account <ExternalLink className="size-3.5" strokeWidth={1.75} /></a>
+              )}
+              {access.installUrl && !mobile && <a href={access.installUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-secondary hover:text-foreground">Install on another account <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
+            </div>
+          )}
+    </div>
+  );
+}
+
+function InstallationCard({ installation: i }: { installation: Owner }) {
+  const canCreate = i.canCreateRepos && i.repositories === "all";
+  return (
+    <li className="min-w-0 rounded-[8px] border border-border bg-background p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate font-mono text-[13px]">{i.account}</span>
+        <Badge className="h-5 shrink-0 px-2 text-[11px]">{i.repositories === "all" ? "all repositories" : `${i.selected?.length ?? 0} selected`}</Badge>
+      </div>
+      {i.repositories !== "all" && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {(i.selected ?? []).map((r) => <span key={r} className="inline-flex max-w-full items-center rounded-[5px] border border-border bg-surface px-1.5 py-0.5 font-mono text-[11px] [overflow-wrap:anywhere]">{r.split("/")[1] ?? r}</span>)}
+          {i.configureUrl && <a href={i.configureUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-1 text-[11px] text-secondary hover:text-foreground">Configure <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
+        </div>
+      )}
+      <dl className="mt-3 grid grid-cols-1 gap-2 min-[360px]:grid-cols-3">
+        <div className="min-w-0"><dt className="text-[11px] text-muted-foreground">Administration</dt><dd className="truncate text-[13px] text-foreground">{i.administration}</dd></div>
+        <div className="min-w-0"><dt className="text-[11px] text-muted-foreground">Contents</dt><dd className="truncate text-[13px] text-foreground">{i.contents}</dd></div>
+        <div className="min-w-0"><dt className="text-[11px] text-muted-foreground">Can create</dt><dd className="text-[13px] text-foreground">{canCreate ? <Check className="size-4" strokeWidth={2.5} /> : <span className="text-muted-foreground">—</span>}</dd></div>
+      </dl>
     </li>
   );
 }

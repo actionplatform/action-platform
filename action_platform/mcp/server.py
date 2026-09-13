@@ -32,8 +32,9 @@ REMOTE_INSTRUCTIONS = """Operate apps on a hosted Action Platform.
 
 These tools act on the platform the CLI is logged in to (`action-platform
 login <server>`), not on files on this machine, and with the role the
-account has in its organization (viewer, developer, deployer, admin, owner):
-a refused call names the missing permission. Start with whoami and
+account has in its organization (viewer, developer, deployer, admin, owner)
+narrowed by the token's scope (read, write, release, admin, chosen at
+login): a refused call names the missing permission or scope. Start with whoami and
 list_apps. Every app is a repository the platform has cloned:
 sync_app before auditing, editing or releasing so the clone is current.
 

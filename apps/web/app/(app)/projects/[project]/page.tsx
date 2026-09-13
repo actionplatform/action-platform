@@ -13,6 +13,7 @@ import { roleOf } from "@/lib/orgs";
 import { can } from "@/lib/permissions";
 import { requireOrg } from "@/lib/session";
 import { AddForm } from "./apps/add-form";
+import { AppCards } from "./apps/app-cards";
 import { RemoveButton } from "./apps/remove-button";
 
 export default async function ProjectPage({ params }: { params: Promise<{ project: string }> }) {
@@ -41,7 +42,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
 
       {manage && <div className="mb-6"><AddForm projectId={project.id} /></div>}
 
-      <Card>
+      <div className="md:hidden">
+        <AppCards projectId={project.id} apps={apps.map((a) => ({ id: a.id, name: a.name, registryId: a.registryId }))} rows={rows} manage={manage} />
+      </div>
+
+      <Card className="hidden md:block">
         <Table>
           <thead>
             <tr><Th>name</Th><Th>type</Th><Th>language</Th><Th>branch</Th><Th>version</Th><Th>repository</Th><Th /></tr>

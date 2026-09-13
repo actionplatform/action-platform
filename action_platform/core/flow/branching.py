@@ -117,9 +117,24 @@ def _default_branch(cwd: Path) -> str:
 
 
 def _remote_has(cwd: Path, branch: str) -> bool:
-    out = git.run(["ls-remote", "--heads", "origin", branch], cwd=cwd)
+    """Whether origin has `branch`: asked live, or from the tracking refs of the last fetch when the remote cannot be reached without credentials."""
+    try:
+        out = git.run(["ls-remote", "--heads", "origin", branch], cwd=cwd)
+    except subprocess.CalledProcessError:
+        return _tracking_has(cwd, branch)
 
     return bool(out.strip())
+
+
+def _tracking_has(cwd: Path, branch: str) -> bool:
+    result = subprocess.run(
+        ["git", "rev-parse", "--verify", "--quiet", f"refs/remotes/origin/{branch}"],
+        cwd=cwd,
+        capture_output=True,
+        env=git.git_env(),
+    )
+
+    return result.returncode == 0
 
 
 def _local_has(cwd: Path, branch: str) -> bool:

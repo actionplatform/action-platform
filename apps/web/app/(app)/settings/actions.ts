@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { addMemberAccount, cancelInvitation, createInvitation, removeMember, requireManager, type Role, ROLES, setMemberRole } from "@/lib/orgs";
 import { requireOrg } from "@/lib/session";
 import { setGitAuthor } from "@/lib/org-settings";
+import { revokeToken } from "@/lib/api-tokens";
 import { addHost, HOST_KINDS, type HostKind, removeHost, setHostOwner, updateHostToken } from "@/lib/source-hosts";
 
 export async function createHost(_prev: { error?: string } | null, formData: FormData): Promise<{ error?: string } | null> {
@@ -142,6 +143,17 @@ export async function saveGitAuthor(author: { name: string; email: string }): Pr
     const data = await setGitAuthor(org.id, author);
     revalidatePath("/settings");
     return { ok: true, data };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
+export async function revokeApiToken(id: string): Promise<Result> {
+  try {
+    const { session } = await requireOrg();
+    if (!(await revokeToken(session.user.id, id))) return { ok: false, error: "token not found" };
+    revalidatePath("/settings");
+    return { ok: true, data: null };
   } catch (e) {
     return failed(e);
   }

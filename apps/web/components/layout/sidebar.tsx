@@ -26,7 +26,7 @@ const appItems = [
   { tab: "settings", label: "Settings", icon: Settings },
 ];
 
-const link = "mx-2.5 my-1 flex h-11 items-center gap-3 rounded-[7px] px-3.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground";
+const link = "mx-2.5 my-1 flex h-11 min-h-11 items-center gap-3 rounded-[7px] px-3.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground";
 
 type Props = { versions: { web: string; api: string; lib: string }; user: { name: string; email: string }; org: Org; orgs: Org[] };
 
@@ -52,7 +52,7 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
       <div className="flex h-[66px] items-center gap-2.5 border-b border-border px-5">
         <Logo className="size-5" />
         <span className="text-[15px] font-semibold">action-platform</span>
-        <button type="button" aria-label="Close navigation" onClick={() => setOpen(false)} className="ml-auto text-secondary hover:text-foreground lg:hidden"><X className="size-4" /></button>
+        <button type="button" aria-label="Close navigation" onClick={() => setOpen(false)} className="ml-auto flex size-11 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground md:hidden"><X className="size-4" /></button>
       </div>
       <div className="border-b border-border px-3 py-3">
         <OrgSwitcher org={org} orgs={orgs} />
@@ -107,20 +107,20 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
 
   return (
     <>
-      <aside className="hidden lg:block fixed inset-y-0 left-0 w-[280px] border-r border-border bg-sidebar">{panel}</aside>
+      <aside className="hidden md:block fixed inset-y-0 left-0 w-[280px] border-r border-border bg-sidebar">{panel}</aside>
 
-      <header className="lg:hidden sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-sidebar px-4">
-        <button type="button" aria-label="Open navigation" aria-expanded={open} aria-controls="mobile-nav" onClick={() => setOpen(true)} className="flex size-10 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground">
+      <header className="md:hidden sticky top-0 z-30 flex h-16 items-center gap-2.5 border-b border-border bg-sidebar pl-5 pr-2">
+        <Logo className="size-5" />
+        <span className="truncate text-[15px] font-semibold">action-platform</span>
+        <button type="button" aria-label="Open navigation" aria-expanded={open} aria-controls="mobile-nav" onClick={() => setOpen(true)} className="ml-auto flex size-11 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">
           <Menu className="size-5" />
         </button>
-        <Logo className="size-4" />
-        <span className="truncate text-sm font-semibold">{org.name}</span>
       </header>
 
       {open && (
-        <div className="lg:hidden fixed inset-0 z-40" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
+        <div className="md:hidden fixed inset-0 z-40" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
           <div className="absolute inset-0 bg-background/80" />
-          <aside id="mobile-nav" className="absolute inset-y-0 left-0 w-[280px] max-w-[85vw] border-r border-border bg-sidebar">{panel}</aside>
+          <aside id="mobile-nav" role="dialog" aria-modal="true" aria-label="Navigation" className="absolute inset-y-0 right-0 w-[300px] max-w-[88vw] border-l border-border bg-sidebar">{panel}</aside>
         </div>
       )}
     </>

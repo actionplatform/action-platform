@@ -24,10 +24,13 @@ MAX_POLL_FAILURES = 5
 
 
 class RemoteError(ActionPlatformError):
-    def __init__(self, status: int, detail: str) -> None:
+    """An HTTP error from the platform: `detail` is the human message, `code` the machine one when the server sends both (OAuth's `error` + `error_description`)."""
+
+    def __init__(self, status: int, detail: str, code: str | None = None) -> None:
         super().__init__(f"{status}: {detail}")
         self.status = status
         self.detail = detail
+        self.code = code or detail
 
 
 def _request(
@@ -58,13 +61,16 @@ def _request(
             payload = json.loads(raw)
         except ValueError:
             payload = {"detail": raw.decode(errors="replace") or e.reason}
+        if not isinstance(payload, dict):
+            payload = {"detail": str(payload)}
         detail = (
             payload.get("detail")
             or payload.get("error_description")
             or payload.get("error")
             or str(payload)
         )
-        raise RemoteError(e.code, detail) from e
+        code = payload.get("error") if isinstance(payload.get("error"), str) else None
+        raise RemoteError(e.code, str(detail), code) from e
     except urllib.error.URLError as e:
         raise ActionPlatformError(f"cannot reach {url}: {e.reason}") from e
 
@@ -239,16 +245,43 @@ class Remote:
         return self._call("GET", "version")
 
     def whoami(self) -> dict:
-        return (
-            _request("GET", f"{self.server}/api/auth/get-session", token=self.token)
-            or {}
+        return _request("GET", f"{self.server}/api/v1/me", token=self.token) or {}
+
+
+SCOPES = ("read", "write", "release", "admin")
+DEFAULT_SCOPE = "read,write"
+
+
+def parse_scope(value: str) -> list[str]:
+    """`read,write` / `read write` → ordered, deduplicated, validated; `read` is always included."""
+    wanted = {part for part in value.replace(",", " ").split() if part}
+    unknown = sorted(wanted - set(SCOPES))
+
+    if unknown:
+        raise ActionPlatformError(
+            f"unknown scope: {', '.join(unknown)} (choose from {', '.join(SCOPES)})"
         )
 
+    wanted.add("read")
 
-def login(server: str, open_browser: bool = True, echo=print) -> Credentials:
-    """OAuth device flow against the web app: show a code, open the browser, poll for the token."""
+    return [s for s in SCOPES if s in wanted]
+
+
+def login(
+    server: str,
+    open_browser: bool = True,
+    echo=print,
+    scope: str = DEFAULT_SCOPE,
+    name: str | None = None,
+) -> Credentials:
+    """OAuth device flow against the web app: show a code, open the browser, poll for approval, then swap the session for a scoped bearer token."""
     server = server.rstrip("/")
-    start = _request("POST", f"{server}/api/auth/device/code", {"client_id": CLIENT_ID})
+    scopes = parse_scope(scope)
+    start = _request(
+        "POST",
+        f"{server}/api/auth/device/code",
+        {"client_id": CLIENT_ID, "scope": " ".join(scopes)},
+    )
 
     user_code = start["user_code"]
     device_code = start["device_code"]
@@ -285,14 +318,14 @@ def login(server: str, open_browser: bool = True, echo=print) -> Credentials:
                 },
             )
         except RemoteError as e:
-            if e.detail == "authorization_pending":
+            if e.code == "authorization_pending":
                 continue
-            if e.detail == "slow_down":
+            if e.code == "slow_down":
                 interval += 5
                 continue
-            if e.detail == "access_denied":
+            if e.code == "access_denied":
                 raise ActionPlatformError("login denied in the browser") from e
-            if e.detail == "expired_token":
+            if e.code == "expired_token":
                 raise ActionPlatformError(
                     "the code expired before it was confirmed — run login again"
                 ) from e
@@ -315,9 +348,30 @@ def login(server: str, open_browser: bool = True, echo=print) -> Credentials:
         if not access:
             raise ActionPlatformError(f"unexpected token response: {token}")
 
-        creds = Credentials(server=server, token=access)
+        granted = (token.get("scope") or " ".join(scopes)).replace(",", " ")
+        minted = _request(
+            "POST",
+            f"{server}/api/v1/tokens",
+            {"scope": granted, "name": name or _device_name()},
+            token=access,
+        )
+        creds = Credentials(
+            server=server,
+            token=minted["token"],
+            scope=minted.get("scope") or granted,
+        )
         save(creds)
 
         return creds
 
     raise ActionPlatformError("login timed out — run it again")
+
+
+def _device_name() -> str:
+    import getpass
+    import socket
+
+    try:
+        return f"{getpass.getuser()}@{socket.gethostname()}"
+    except Exception:
+        return "cli"

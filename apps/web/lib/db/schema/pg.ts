@@ -190,3 +190,15 @@ export const organizationSetting = pgTable("organization_setting", {
   gitAuthorEmail: text("git_author_email").notNull(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+export const apiToken = pgTable("api_token", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  scope: text("scope").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+  revokedAt: timestamp("revoked_at"),
+});
