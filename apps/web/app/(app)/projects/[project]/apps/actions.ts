@@ -99,10 +99,10 @@ export async function removeApp(projectId: string, appId: string) {
   revalidatePath(`/projects/${projectId}`);
 }
 
-export async function syncApp(projectId: string, appId: string, registryId: string, reset = false): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function syncApp(projectId: string, appId: string, registryId: string): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const { org } = await owned(projectId, reset ? "app.flow" : "app.sync");
-    await api.apps.sync(registryId, await credsFor(org.id, projectId, appId), reset);
+    const { org } = await owned(projectId, "app.sync");
+    await api.apps.sync(registryId, await credsFor(org.id, projectId, appId));
     await pullReleases(projectId, appId);
     await markSynced(projectId, appId);
     revalidatePath(`/projects/${projectId}`, "layout");
@@ -251,17 +251,6 @@ export async function discardChanges(projectId: string, registryId: string): Pro
   try {
     await owned(projectId, "app.configure");
     const data = await api.apps.discard(registryId);
-    revalidatePath(`/projects/${projectId}`, "layout");
-    return { ok: true, data };
-  } catch (e) {
-    return failed(e);
-  }
-}
-
-export async function reinstallPlatform(projectId: string, registryId: string): Promise<Result<{ installed: string[] }>> {
-  try {
-    await owned(projectId, "app.configure");
-    const data = await api.apps.install(registryId);
     revalidatePath(`/projects/${projectId}`, "layout");
     return { ok: true, data };
   } catch (e) {

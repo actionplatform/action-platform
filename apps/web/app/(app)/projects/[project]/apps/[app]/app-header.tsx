@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { siBitbucket, siGithub, siGitlab } from "simple-icons";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
@@ -25,7 +24,6 @@ export function AppHeader({ view }: { view: AppView }) {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncedAt, setSyncedAt] = useState<number | null>(view.lastSyncedAt ? new Date(view.lastSyncedAt).getTime() : null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
   const [now, setNow] = useState<number | null>(null);
   const [pending, start] = useTransition();
 
@@ -42,15 +40,12 @@ export function AppHeader({ view }: { view: AppView }) {
     return () => clearTimeout(t);
   }, [status]);
 
-  const sync = (reset = false) =>
+  const sync = () =>
     start(async () => {
       setStatus("syncing");
-      setConfirmReset(false);
-      const r = await syncApp(view.projectId, view.appId, view.registryId, reset);
+      const r = await syncApp(view.projectId, view.appId, view.registryId);
       if (r.ok) { setSyncedAt(Date.now()); setStatus("success"); setSyncError(null); router.refresh(); } else { setStatus("error"); setSyncError(r.error); }
     });
-
-  const canReset = status === "error" && !!syncError && /local commits|reset/i.test(syncError) && view.can["app.flow"];
 
   const syncLabel = status === "syncing" ? "Syncing..." : status === "success" ? "Synced" : status === "error" ? "Sync failed" : "Sync";
   const syncHint = status === "error" ? (syncError ?? "Try again") : status === "success" ? "Just now" : syncedAt ? (now ? `Last synced ${relativeTime(new Date(syncedAt), now)}` : "Last synced") : view.repositoryUrl ? "Never synced" : "No remote";
@@ -101,7 +96,6 @@ export function AppHeader({ view }: { view: AppView }) {
               {syncLabel}
             </button>
             <span className={cn("hidden max-w-md text-[13px] sm:block", status === "error" ? "text-foreground" : "text-muted-foreground")}>{syncHint}</span>
-            {canReset && <Button size="sm" variant="outline" onClick={() => setConfirmReset(true)}>Reset to remote</Button>}
           </div>
 
           <Menu
@@ -119,16 +113,6 @@ export function AppHeader({ view }: { view: AppView }) {
         </div>
       </div>
 
-      <ConfirmDialog
-        open={confirmReset}
-        onClose={() => setConfirmReset(false)}
-        title="Reset the clone to the remote?"
-        description={`The platform's clone of ${view.name} goes back to exactly what the remote has on ${view.branch || "this branch"}. Local commits that were never pushed and uncommitted changes are lost. The repository itself is untouched.`}
-        confirmLabel="Reset to remote"
-        danger
-        pending={pending}
-        onConfirm={() => sync(true)}
-      />
       <ConfirmDialog
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
