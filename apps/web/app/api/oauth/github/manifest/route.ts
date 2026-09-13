@@ -25,7 +25,7 @@ export async function GET(req: Request) {
     redirect_url: `${origin}/api/oauth/github/manifest/callback`,
     callback_urls: [`${origin}/api/oauth/github/callback`],
     setup_url: `${origin}${returnTo}`,
-    public: false,
+    public: true,
     request_oauth_on_install: true,
     default_permissions: { administration: "write", contents: "write", workflows: "write", pull_requests: "write", metadata: "read" },
   };

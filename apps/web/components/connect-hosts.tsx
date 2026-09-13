@@ -57,7 +57,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
         return (
           <div key={p} className="flex flex-col rounded-lg border border-border bg-surface p-4">
             <div className="flex items-center gap-2"><BrandIcon icon={m.icon} /><span className="font-medium">{m.label}</span></div>
-            {p === "github" && githubApp && <p className="mt-1 text-xs text-muted-foreground">Connect signs this organization in with your GitHub user. Install puts the GitHub App on more accounts or organizations; each one becomes selectable as the repository owner when you create an app.</p>}
+            {p === "github" && githubApp && <p className="mt-1 text-xs text-muted-foreground">Connect signs this organization in with your GitHub user. Install puts the GitHub App on more accounts or organizations; each one becomes selectable as the repository owner when you create an app. If GitHub never asks where to install, the app is private: make it public under GitHub → Settings → Developer settings → GitHub Apps → Advanced.</p>}
             {logins.length > 0 && (
               <ul className="mt-2 space-y-1 text-xs text-secondary">
                 {logins.map((l) => (
