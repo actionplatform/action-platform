@@ -152,3 +152,26 @@ class HooksTest(InstallCase):
             (self.repo / ".husky" / "pre-commit").read_text(), "#!/bin/sh\n"
         )
         self.assertFalse((self.repo / ".git/hooks/gitflow.sh").exists())
+
+
+class CiFollowsTheRemoteTest(TempCase):
+    def test_a_gitlab_remote_gets_gitlab_ci(self):
+        from action_platform.settings import settings
+        from tests.support import git, template_repo
+
+        self.patch(
+            settings, "TEMPLATES_DIR", str(template_repo(self.tmp_path / "official"))
+        )
+        repo = self.tmp_path / "svc"
+        repo.mkdir()
+        (repo / "pyproject.toml").write_text('[project]\nname = "svc"\n')
+        git(repo, "init", "-q", "-b", "main")
+        git(repo, "remote", "add", "origin", "https://gitlab.com/acme/svc.git")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-q", "-m", "chore: init")
+
+        plan = install.install(repo)
+
+        self.assertEqual(plan.ci, "gitlab")
+        self.assertIn(".gitlab-ci.yml", plan.created)
+        self.assertFalse(any(".github" in f for f in plan.created))
