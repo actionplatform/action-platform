@@ -31,7 +31,7 @@ postgres = "aws-rds"
 | `[release]` | `strategy = "semver"`, `changelog = "conventional"` | `release` |
 | `[deploy]` | `target` (aws/lambda, aws/amplify, docker, …) plus target-specific keys | `deploy`, `rollback`, `diagnose`, `destroy` |
 | `[services]` | `<service> = "<provider>"`, e.g. `postgres = "aws-rds"` | `service add`, templates |
-| `[components.<name>]` | `path` | `release -c <name>` — see [releases](releases.md) |
+| `[components.<name>]` | `path` | `release -c <name>` — see [releases](concept_releases.md) |
 
 `LAST_VERSION` next to it holds the current version; `CHANGELOG.md` is generated.
 

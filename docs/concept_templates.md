@@ -54,7 +54,7 @@ The official catalog always comes from [actionplatform/templates](https://github
 
 | Where | How |
 |---|---|
-| Web app | Templates → **Template repositories** → *Add repository* (name, git URL, branch or tag). Owners and admins only. Private repositories are cloned with the organization's connected code host. Every template, cloud and service then shows its source; the wizard, Configuration and the cloud overlays use the right repository automatically. |
+| Web app | Templates → **Template repositories** → *Add repository* (name, git URL, branch or tag). Owners and admins only. Private repositories are cloned with the organization's connected source host. Every template, cloud and service then shows its source; the wizard, Configuration and the cloud overlays use the right repository automatically. |
 | CLI | `action-platform init --source https://github.com/acme/templates.git@main` (also `cloud set --source`, `service add --source`). |
 | MCP (local) | `list_matrix(source="url[@ref]")`, then the same `source` on `init_project`, `cloud_set`, `service_add`. |
 | MCP (remote) | `list_matrix` already merges the organization's repositories; pass the source's `name` to `init_app`, `set_cloud`, `add_service`. |

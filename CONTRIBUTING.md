@@ -48,7 +48,7 @@ Even "improvements" increase review complexity. Cleanups and refactors go in sep
 - Python: `ruff check` and `ruff format` must pass; type hints on public functions.
 - Web (`apps/web`): `npx tsc --noEmit` must pass; the design system is monochrome — use `components/ui/*`, never native `confirm`/`prompt`/`alert`.
 - **No comments in source code.** Names explain the how; `docs/` explains the why. A change that needs explaining gets a paragraph in the relevant `docs/*.md`, not an inline comment.
-- Every behaviour change ships with a test. Tests are `unittest.TestCase` classes under `tests/`, laid out like the package (`tests/core/flow/test_branching.py` covers `action_platform/core/flow/branching.py`). See [Development](docs/development.md).
+- Every behaviour change ships with a test. Tests are `unittest.TestCase` classes under `tests/`, laid out like the package (`tests/core/flow/test_git.py` covers `action_platform/core/flow/git.py`). See [Development](docs/contribute_development.md).
 - Nothing reaches a code host, a cloud or the network in tests; use the builders in `tests/support.py`.
 
 ## Discussion is required for larger changes
@@ -177,4 +177,4 @@ It usually means the change did not match the project's direction or needed more
 
 # Development
 
-[docs/development.md](docs/development.md) covers running the API and the web app locally, tests, regenerating the typed API client and working on templates with `ACTION_PLATFORM_TEMPLATES`. [docs/architecture.md](docs/architecture.md) explains the packages, the providers and how credentials travel.
+[docs/contribute_development.md](docs/contribute_development.md) covers running the API and the web app locally, tests, regenerating the typed API client and working on templates with `ACTION_PLATFORM_TEMPLATES`. [docs/contribute_architecture.md](docs/contribute_architecture.md) explains the packages, the providers and how credentials travel.

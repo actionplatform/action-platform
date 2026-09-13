@@ -46,11 +46,14 @@ action_platform/
   providers/
     source/       rest (urllib helper), github, gitlab, bitbucket, generic; build_source_host(kind, …)
   abc/            SourceHost, CIRunner, DeployTarget, Vcs, TemplateStoreABC contracts
-  api/            FastAPI: registry (apps.json + workspaces), models (the OpenAPI contract), server, credentials
-  remote/         client (urllib) + device-flow login + credentials file
-  mcp/            server (local or --remote), tools/*, prompts
-  cli/            Typer commands
-  observability.py   Sentry init shared by the CLI and the API (docs/observability.md)
+  api/            FastAPI: main (app factory, AP_API_TOKEN middleware, Sentry), v1/routers (apps, catalog, configuration, flow, actions),
+                  services (apps, catalog, configuration, flow, git_state, lifecycle, manifest), repositories/registry (apps.json + workspaces),
+                  schemas (the Pydantic models behind the OpenAPI contract), core/credentials (per-request token + identity), LAST_VERSION
+  remote/         client (urllib): device-flow login, scoped token exchange, every /api/v1 call; credentials file
+  mcp/            server (local or --remote), tools/{matrix,project,flow,lifecycle,remote}, prompts, annotations
+  cli/            Typer commands: init install branch gitflow pr release deploy rollback diagnose destroy cloud service mcp api login logout whoami
+  observability.py   Sentry init shared by the CLI and the API (docs/concept_observability.md)
+  observability.py   Sentry init shared by the CLI and the API (docs/concept_observability.md)
   hooks/          commit-msg, pre-commit, pre-push, gitflow.sh
 apps/web/         the web app
 deploy/           Dockerfiles, compose, install.sh
@@ -76,17 +79,7 @@ Deploy targets and CI runners are plugins discovered through the `action_platfor
 
 ## The API
 
-`action-platform api` — one process, file-backed, single-tenant. Multi-tenancy (organizations, projects, who may touch which app) is the web app's job; the API trusts its caller.
-
-| Endpoint | |
-|---|---|
-| `GET /api/matrix`, `GET /api/gitflow/rules`, `GET /api/version` | static |
-| `GET/POST /api/apps`, `POST /api/apps/init`, `DELETE /api/apps/{id}` | registry: add by git url (clone), generate from a template, remove (deletes the clone) |
-| `POST /api/apps/{id}/sync`, `/push` | fetch + fast-forward; create the remote and push |
-| `GET /api/apps/{id}`, `/gitflow`, `/commits`, `/branches`, `/tags` | state of the clone |
-| `POST /api/apps/{id}/release`, `/deploy`, `GET /diagnose` | actions; `dry_run` defaults to true |
-
-Every response is a Pydantic model in `api/models.py`; `apps/web` generates its TypeScript client from the resulting OpenAPI schema (`npm run api:types`).
+One process, file-backed, single-tenant; every route, the credentials contract and the OpenAPI client are in [api](use_api.md).
 
 ## How credentials travel
 
@@ -103,17 +96,17 @@ sequenceDiagram
     G-->>W: access (+ refresh) token
     W->>DB: source_host (token AES-256-GCM)
 
-    M->>W: Push / Release
-    W->>DB: read token (refresh if expiring)
-    W->>A: POST /api/apps/{id}/release {credentials}
+    M->>W: Push / Release / Commit
+    W->>DB: read token (refresh if expiring) + organization commit identity
+    W->>A: POST /api/apps/{id}/release {credentials + author}
     A->>A: config.source_host = build_source_host(kind, token)
-    A->>A: git_auth(): credential helper via GIT_CONFIG_*
+    A->>A: git_auth(): credential helper + GIT_AUTHOR_* via GIT_CONFIG_* / env
     A->>G: git push · REST create release
     A-->>W: result
     Note over A: nothing stored
 ```
 
-1. A member connects a code host in the web app (OAuth) or pastes a token. The token is AES-256-GCM encrypted (`lib/crypto.ts`, key derived from `BETTER_AUTH_SECRET`) and stored in `source_host`.
+1. A member connects a source host in the web app (OAuth) or pastes a token. The token is AES-256-GCM encrypted (`lib/crypto.ts`, key derived from `BETTER_AUTH_SECRET`) and stored in `source_host`.
 2. An app remembers which host it uses (`app.source_host_id`).
 3. A push / release server action decrypts the token — refreshing it first for GitLab / Bitbucket — and sends it in the request body as `credentials {kind, token, username, base_url, owner}`.
 4. The API rebuilds `config.source_host` with that token (`api/core/credentials.py: apply`) and wraps the git calls in `git_auth()`. The credentials go into a `contextvars.ContextVar` that `core/flow/git.git_env()` reads when it spawns git, so they belong to that request only — concurrent requests on other threads never see them and the process environment is never touched. Git receives them as a credential helper through `GIT_CONFIG_COUNT/KEY/VALUE`, so the token never lands in `.git/config` or on a command line, and the host's own helpers (keychain, `gh`) are cleared for that call.
@@ -130,11 +123,29 @@ erDiagram
     organization ||--o{ invitation : sends
     organization ||--o{ project : owns
     organization ||--o{ source_host : "connects"
+    organization ||--o{ team : has
+    organization ||--o{ template_source : adds
+    organization ||--o| organization_setting : "commit identity"
+    team ||--o{ team_member : has
+    team o|--o{ project : owns
     project ||--o{ app : groups
     source_host o|--o{ app : "pushes with"
+    app ||--o{ release : "imported"
+    app ||--o{ pull_request : "imported"
+    user ||--o{ api_token : "mints"
+    api_token ||--o{ api_token_client : "used by"
     app {
         string registry_id "id on the Python API"
         string source_host_id
+        datetime last_synced_at
+    }
+    api_token {
+        string organization_id "null = every organization"
+        string scope "read write release admin"
+        string project_id
+        string app_id
+        datetime expires_at
+        datetime revoked_at
     }
     source_host {
         string kind "github | gitlab | bitbucket | generic"
@@ -148,7 +159,7 @@ erDiagram
     }
 ```
 
-`user`, `session`, `account`, `verification`, `device_code` come from better-auth (and its `organization` / `deviceAuthorization` plugins); `project`, `app`, `source_host` are the platform's. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/`, applied on boot.
+`user`, `session`, `account`, `verification`, `device_code`, `organization`, `member`, `invitation` come from better-auth (and its `organization` / `deviceAuthorization` plugins); `team`, `team_member`, `project`, `app`, `source_host`, `release`, `pull_request`, `template_source`, `organization_setting`, `api_token`, `api_token_client` are the platform's. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/` (0001–0014), applied on boot.
 
 ## Trust between web and API
 

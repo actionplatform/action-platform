@@ -8,7 +8,7 @@
 flowchart LR
     O[Organization] --> M[members]
     O --> T[Team]
-    O --> H[code hosts]
+    O --> H[source hosts]
     O --> P1[Project]
     O --> P2[Project]
     M -.-> T
@@ -21,7 +21,7 @@ flowchart LR
 
 | Level | What it is | Owns |
 |---|---|---|
-| **Organization** | the tenant (better-auth `organization` plugin); the sidebar switches between the ones you belong to | members, teams, code hosts, projects |
+| **Organization** | the tenant (better-auth `organization` plugin); the sidebar switches between the ones you belong to | members, teams, source hosts, projects |
 | **Team** | a group of organization members (`platform`, `payments`) | projects, at most one team per project |
 | **Project** | the apps that ship together (`orders-platform`) | apps |
 | **App** | one git repository, cloned by the API into `~/.action-platform/workspaces/<id>` (`/data` in Docker) | git-flow audit, commits, branches, tags, releases, configuration |
@@ -85,7 +85,7 @@ flowchart LR
 
 ### Importing a repository without the platform
 
-Project → **Add an existing repository** with any git URL. When the repository has no `platform.toml` the platform offers to install it: pick the type and CI, and the clone receives `platform.toml`, `.code_quality/`, the CI files and the git hooks (the language is detected). Nothing is pushed — the app opens on Configuration with the changes uncommitted, and **Commit changes** puts them on a `chore/<code>` branch with a pull request. Opening a pull request lands on **Activity** with a banner naming it: the changes are not on the default branch until someone reviews and merges it on the code host, and the next sync brings the result back.
+Project → **Add an existing repository** with any git URL. When the repository has no `platform.toml` the platform offers to install it: pick the type and CI, and the workspace receives `platform.toml`, `.code_quality/`, the CI files and the git hooks (the language is detected). Nothing is pushed — the app opens on Configuration with the changes uncommitted, and **Commit changes** puts them on a `chore/<code>` branch with a pull request. Opening a pull request lands on **Activity** with a banner naming it: the changes are not on the default branch until someone reviews and merges it on the source host, and the next sync brings the result back.
 
 **Discard changes** resets the clone to `HEAD` and deletes untracked files. On an imported app whose platform files were never committed that removes `platform.toml` too — and the next request puts it back: every API call that opens a clone installs the platform files again when they are missing (type `web`, language detected, CI matching the host), uncommitted, so the app never shows an error for something the platform can fix itself. `POST /api/apps/{id}/install` does the same with an explicit type, language and CI.
 
@@ -97,15 +97,15 @@ Project → **Add an existing repository** with any git URL. When the repository
 - **Release**: level → *Preview* (dry run: next version and changelog) → *Release* dialog → tag, push, release on the host. Off `main`/`master` it is an `-rc.N` pre-release.
 - **Activity**: git-flow (start a `<kind>/<code>` branch, check out a branch, propose and open a pull request) and the pull requests stored for the app (state, merged date, head → base).
 - **Configuration**: pick a deploy target (applies the cloud overlay from the templates repository), add a service, edit `platform.toml`. Edits stay in the workspace until **Commit changes** (Conventional Commit, optional push, optional pull request). On `main`/`master`/`develop` the dialog requires a new `<kind>/<code>` branch: the changes are stashed, the branch starts from the right base, the commit lands there, and a pull request is opened when asked.
-- **Sync** does `git fetch --prune --tags` + fast-forward in the workspace (skipped when the branch has no upstream). Uncommitted changes are stashed around the pull and put back; a branch whose remote counterpart was deleted (its pull request merged) is left for the default branch; local commits that the remote already has under another hash are dropped in favour of the remote. A branch with local commits the remote does not have is moved to the remote as well, keeping uncommitted work: the remote is the source of truth and such a commit is only ever a leftover from a failed push. `POST /api/apps/{id}/sync {reset: true}` forces the same from a client. It then imports releases and pull requests from the code host into the `release` and `pull_request` tables (upsert by tag / number). Adding an app, releasing and opening a pull request run the same import. **Last synced** is stored per app and shown in the header.
+- **Sync** does `git fetch --prune --tags` + fast-forward in the workspace (skipped when the branch has no upstream). Uncommitted changes are stashed around the pull and put back; a branch whose remote counterpart was deleted (its pull request merged) is left for the default branch; local commits that the remote already has under another hash are dropped in favour of the remote. A branch with local commits the remote does not have is moved to the remote as well, keeping uncommitted work: the remote is the source of truth and such a commit is only ever a leftover from a failed push. `POST /api/apps/{id}/sync {reset: true}` forces the same from a client. It then imports releases and pull requests from the source host into the `release` and `pull_request` tables (upsert by tag / number). Adding an app, releasing and opening a pull request run the same import. **Last synced** is stored per app and shown in the header.
 
-Deploying is done by the CI of the repository (see [templates](templates.md)), not by the web app.
+Deploying is done by the CI of the repository (see [templates](concept_templates.md)), not by the web app.
 
 Every confirmation is an in-app dialog; the UI is strictly monochrome.
 
 ## Settings
 
-Organization members, code hosts (add, update token, remove), the API URL and the git-flow rules.
+Organization members, source hosts (add, update token, remove), the API URL and the git-flow rules.
 
 ### Commit identity
 
@@ -113,15 +113,7 @@ Releases and configuration commits are made by the platform on its clone, signed
 
 ### Roles
 
-| Role | Can |
-|---|---|
-| `owner` | everything; at least one per organization |
-| `admin` | members, teams, code hosts, projects, every app action |
-| `deployer` | releases, configuration, branches, pull requests, sync |
-| `developer` | configuration, branches, pull requests, sync |
-| `viewer` | read-only |
-
-Permissions are `org.manage`, `project.manage`, `app.release`, `app.configure`, `app.flow`, `app.sync` (matrix in Settings → Roles and permissions, source in `apps/web/lib/permissions.ts`). Server actions check them; the UI hides or disables what the role cannot do.
+Five roles — `owner`, `admin`, `deployer`, `developer`, `viewer` — over six permissions; the matrix is in Settings → **Roles and permissions** and explained in [access control](concept_access_control.md).
 
 ### Code hosts per organization
 
@@ -139,7 +131,7 @@ Owners and admins add people from Settings → **Members**: **Add member** creat
 
 ### Connected apps
 
-The key icon next to your name opens **Connected apps** (`/account`): the API tokens `action-platform login` minted for you in every organization — name (`user@host`), scope, organization, created, last used, expiry — plus, under each token, the programs that have used it (Claude Code, Codex, Cursor, the CLI…) with their last activity — the MCP server reports its client's name on every call — and the browser sessions signed in as you (browser, OS, address, last activity), each with a revoke action. Revoking a session logs that browser out at once. A token is a signed JWT (`HS256`, `BETTER_AUTH_SECRET`) whose `jti` is a row in `api_token`; revoking the row invalidates it on the next request.
+The key icon next to your name opens **Connected apps** (`/account`): your API tokens across organizations — name (`user@host`), scope, reach, the programs that used them (Claude Code, Codex, Cursor, the CLI…), created, last used, expiry — and the browser sessions signed in as you, each with a revoke action. Revoking a session logs that browser out at once. How tokens work: [access control](concept_access_control.md).
 
 ## CLI and MCP against a hosted instance
 
