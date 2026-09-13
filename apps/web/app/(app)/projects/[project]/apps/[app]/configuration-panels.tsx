@@ -65,12 +65,15 @@ function CommitBar({ view }: { view: AppView }) {
       pullRequest,
     });
     if (r.ok) {
-      setDone({ branch: r.data.branch, url: r.data.pull_request?.url ?? null });
-      router.refresh();
+      if (r.data.pull_request) {
+        router.push(`/projects/${view.projectId}/apps/${view.appId}/activity?opened=${r.data.pull_request.number}`);
+        return;
+      }
+      setDone({ branch: r.data.branch, url: null });
     } else setError(r.error);
   });
 
-  const close = () => { if (pending) return; setOpen(false); setDone(null); setError(null); };
+  const close = () => { if (pending) return; setOpen(false); setError(null); if (done) { setDone(null); router.refresh(); } };
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-foreground/60 bg-surface px-4 py-3 sm:flex-row sm:items-start">
