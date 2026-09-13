@@ -12,8 +12,6 @@ import { requireOrg } from "@/lib/session";
 import { hostsOf } from "@/lib/source-hosts";
 import { gitAuthorOf } from "@/lib/org-settings";
 import { ApiCard } from "./api-card";
-import { TokensCard } from "./tokens-card";
-import { tokensOf } from "@/lib/api-tokens";
 import { GitflowCard } from "./gitflow-card";
 import { IdentityCard } from "./identity-card";
 import { MembersPanel } from "./members-panel";
@@ -24,7 +22,7 @@ const DOCS_URL = "https://github.com/actionplatform/action-platform/blob/master/
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
   const { session, org } = await requireOrg();
-  const [members, invitations, role, hosts, query, author, tokens] = await Promise.all([membersOf(org.id), invitationsOf(org.id), roleOf(session.user.id, org.id), hostsOf(org.id), searchParams, gitAuthorOf(org.id), tokensOf(session.user.id, org.id)]);
+  const [members, invitations, role, hosts, query, author] = await Promise.all([membersOf(org.id), invitationsOf(org.id), roleOf(session.user.id, org.id), hostsOf(org.id), searchParams, gitAuthorOf(org.id)]);
   const canManage = can(role, "org.manage");
   const githubSlug = appFor("github")?.slug ?? null;
   const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind !== "generic").map(async (h) => [h.id, await hostAccess(org.id, h.id, githubSlug)] as const)));
@@ -73,7 +71,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <IdentityCard author={author} canManage={canManage} />
         <RolesCard />
         <ApiCard baseUrl={API_BASE} version={version} docsUrl={DOCS_URL} />
-        <TokensCard tokens={tokens} now={Date.now()} />
         <GitflowCard rules={rules} />
       </div>
     </>

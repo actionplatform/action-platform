@@ -1,0 +1,61 @@
+"use client";
+
+import { Monitor, Smartphone, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/dialog";
+import { describeAgent } from "@/lib/user-agent";
+import { relativeTime } from "@/lib/time";
+import { revokeBrowserSession } from "./actions";
+
+type Row = { id: string; createdAt: Date; updatedAt: Date; expiresAt: Date; ipAddress: string | null; userAgent: string | null; current: boolean };
+
+export function SessionsCard({ sessions, now }: { sessions: Row[]; now: number }) {
+  const router = useRouter();
+  const [revoking, setRevoking] = useState<Row | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  return (
+    <Card className="rounded-[11px]">
+      <header className="border-b border-border px-6 py-5">
+        <h2 className="text-[15px] font-semibold">Browser sessions</h2>
+        <p className="mt-1 text-[13px] text-secondary">Where this account is signed in. Signing out a session logs that browser out immediately.</p>
+      </header>
+      <ul className="divide-y divide-border-subtle">
+        {sessions.map((s) => {
+          const agent = describeAgent(s.userAgent);
+          const mobile = agent.os === "iOS" || agent.os === "Android";
+          return (
+            <li key={s.id} className="flex items-center gap-3 px-6 py-4">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-[8px] border border-border bg-background">
+                {mobile ? <Smartphone className="size-4 text-secondary" strokeWidth={1.75} /> : <Monitor className="size-4 text-secondary" strokeWidth={1.75} />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="truncate text-sm font-medium">{agent.browser}{agent.os ? ` on ${agent.os}` : ""}</span>
+                  {s.current && <Badge tone="inverse" className="h-5 px-2 text-[11px]">This browser</Badge>}
+                </div>
+                <div className="mt-0.5 truncate text-[13px] text-secondary">{s.ipAddress ?? "unknown address"} · active {relativeTime(s.updatedAt, now)} · signed in {relativeTime(s.createdAt, now)}</div>
+              </div>
+              {!s.current && <button type="button" aria-label="Sign out this session" onClick={() => setRevoking(s)} className="flex size-11 shrink-0 items-center justify-center rounded-[7px] text-secondary transition-colors hover:bg-surface-hover hover:text-foreground sm:size-8"><Trash2 className="size-4" strokeWidth={1.75} /></button>}
+            </li>
+          );
+        })}
+      </ul>
+      {error && <div className="border-t border-border px-6 py-3 text-sm">{error}</div>}
+      <ConfirmDialog
+        open={!!revoking}
+        onClose={() => setRevoking(null)}
+        title="Sign out this session?"
+        description="That browser is logged out at once and has to sign in again."
+        confirmLabel="Sign out"
+        danger
+        pending={pending}
+        onConfirm={() => start(async () => { if (!revoking) return; const r = await revokeBrowserSession(revoking.id); setRevoking(null); if (r.ok) router.refresh(); else setError(r.error); })}
+      />
+    </Card>
+  );
+}

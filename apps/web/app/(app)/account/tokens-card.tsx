@@ -6,21 +6,21 @@ import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
-import type { ApiToken } from "@/lib/api-tokens";
+import type { UserToken } from "@/lib/api-tokens";
 import { SCOPE_INFO } from "@/lib/permissions";
 import { relativeTime } from "@/lib/time";
 import { revokeApiToken } from "./actions";
 
-export function TokensCard({ tokens, now }: { tokens: ApiToken[]; now: number }) {
+export function TokensCard({ tokens, now }: { tokens: UserToken[]; now: number }) {
   const router = useRouter();
-  const [revoking, setRevoking] = useState<ApiToken | null>(null);
+  const [revoking, setRevoking] = useState<UserToken | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
   return (
     <Card className="rounded-[11px]">
       <header className="border-b border-border px-6 py-5">
-        <h2 className="text-[15px] font-semibold">Your API tokens</h2>
+        <h2 className="text-[15px] font-semibold">API tokens</h2>
         <p className="mt-1 text-[13px] text-secondary">Bearer tokens issued to the CLI and MCP servers by <code className="font-mono">action-platform login</code>. Each carries a scope on top of your role; revoke what you no longer use.</p>
       </header>
       {tokens.length === 0 ? (
@@ -37,6 +37,12 @@ export function TokensCard({ tokens, now }: { tokens: ApiToken[]; now: number })
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="truncate text-sm font-medium">{t.name}</span>
                   {t.scope.map((s) => <Badge key={s} className="h-5 px-2 text-[11px]">{SCOPE_INFO[s].label}</Badge>)}
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-1 text-[12px] text-secondary">
+                  <span className="inline-flex h-5 items-center rounded-[5px] border border-border bg-background px-1.5 font-mono text-[11px] text-foreground">{t.organization.name}</span>
+                  {t.project && <><span aria-hidden>/</span><span className="inline-flex h-5 items-center rounded-[5px] border border-border bg-background px-1.5 font-mono text-[11px] text-foreground">{t.project.name}</span></>}
+                  {t.app && <><span aria-hidden>/</span><span className="inline-flex h-5 items-center rounded-[5px] border border-border bg-background px-1.5 font-mono text-[11px] text-foreground">{t.app.name}</span></>}
+                  {!t.project && <span>· every project</span>}
                 </div>
                 <div className="mt-0.5 text-[13px] text-secondary">Created {relativeTime(t.createdAt, now)} · {t.lastUsedAt ? `last used ${relativeTime(t.lastUsedAt, now)}` : "never used"} · expires {relativeTime(t.expiresAt, now)}</div>
               </div>
