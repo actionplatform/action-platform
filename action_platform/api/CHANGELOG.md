@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.8 — 2026-09-13
+
+### Features
+- **api:** sync moves a branch with leftover local commits to its remote, keeping uncommitted work
+- **api:** put the platform files back whenever a clone is opened without platform.toml
+
 ## v0.5.7 — 2026-09-13
 
 ### Features
