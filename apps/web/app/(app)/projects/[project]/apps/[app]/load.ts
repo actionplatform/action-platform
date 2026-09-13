@@ -13,7 +13,7 @@ export type Host = { id: string; name: string; kind: string; defaultOwner: strin
 
 export type Loaded =
   | { ok: true; view: AppView; hosts: Host[]; currentHost: string | null; releases: Release[]; stored: StoredRelease[] }
-  | { ok: false; name: string; projectId: string; registryId: string; reason: string | null; missingManifest: boolean };
+  | { ok: false; name: string; projectId: string; reason: string | null };
 
 export const loadApp = cache(async (projectId: string, appId: string): Promise<Loaded> => {
   const { session, org } = await requireOrg();
@@ -39,7 +39,6 @@ export const loadApp = cache(async (projectId: string, appId: string): Promise<L
     return { ok: true, view, hosts: hosts.map((h) => ({ id: h.id, name: h.name, kind: h.kind, defaultOwner: h.defaultOwner })), currentHost: app.sourceHostId, releases, stored };
   } catch (e) {
     if (e instanceof ApiError && e.status === 410) notFound();
-    const reason = e instanceof Error ? e.message : null;
-    return { ok: false, name: app.name, projectId, registryId: app.registryId, reason, missingManifest: !!reason && reason.includes("platform.toml") };
+    return { ok: false, name: app.name, projectId, reason: e instanceof Error ? e.message : null };
   }
 });

@@ -4,6 +4,7 @@ from fastapi import HTTPException
 
 from action_platform.api.core import credentials as auth
 from action_platform.api.repositories.registry import Registry
+from action_platform.api.services.manifest import workspace_of
 from action_platform.api.schemas import PullRequestRequest, StartBranchRequest
 from action_platform.core.config import Config
 from action_platform.core.flow import branching, git, pullrequest
@@ -15,12 +16,7 @@ class FlowService:
         self.registry = registry
 
     def _root(self, id: str) -> Path:
-        root = Path(self.registry.get(id).path)
-
-        if not root.is_dir():
-            raise HTTPException(410, f"{root} no longer exists")
-
-        return root
+        return workspace_of(self.registry, id)[1]
 
     def start_branch(self, id: str, body: StartBranchRequest) -> dict:
         with auth.git_auth(body.credentials):

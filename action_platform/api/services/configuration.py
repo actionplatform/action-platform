@@ -8,6 +8,7 @@ from action_platform.api.core import credentials as auth
 from action_platform.api.repositories.registry import Registry
 from action_platform.api.schemas import CommitRequest, SourceSpec
 from action_platform.api.services.catalog import resolve_repo
+from action_platform.api.services.manifest import workspace_of
 from action_platform.core.config import Config
 from action_platform.core.flow import branching, git, gitflow, pullrequest
 from action_platform.core.flow.branching import BranchError
@@ -22,15 +23,17 @@ class ConfigurationService:
         self.registry = registry
 
     def _root(self, id: str) -> Path:
-        root = Path(self.registry.get(id).path)
-
-        if not root.is_dir():
-            raise HTTPException(410, f"{root} no longer exists")
-
-        return root
+        return workspace_of(self.registry, id)[1]
 
     def manifest(self, id: str) -> dict:
-        return {"content": (self._root(id) / settings.CONFIG_FILE).read_text()}
+        manifest = self._root(id) / settings.CONFIG_FILE
+
+        if not manifest.exists():
+            raise HTTPException(
+                400, f"{settings.CONFIG_FILE} not found in {manifest.parent}"
+            )
+
+        return {"content": manifest.read_text()}
 
     def write_manifest(self, id: str, content: str) -> dict:
         try:
@@ -93,10 +96,13 @@ class ConfigurationService:
     def install_platform(
         self, id: str, type_: str, language: str | None, ci: str | None
     ) -> dict:
-        root = self._root(id)
-        plan = install(
-            root, type_=type_, language=language, ci=ci, name=self.registry.get(id).name
-        )
+        entry = self.registry.get(id)
+        root = Path(entry.path)
+
+        if not root.is_dir():
+            raise HTTPException(410, f"{root} no longer exists")
+
+        plan = install(root, type_=type_, language=language, ci=ci, name=entry.name)
 
         return {"installed": plan.created}
 

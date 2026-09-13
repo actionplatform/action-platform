@@ -13,7 +13,7 @@ from action_platform.api.schemas import (
     PushRequest,
     SourceCredentials,
 )
-from action_platform.api.services.manifest import read_manifest
+from action_platform.api.services.manifest import read_manifest, workspace_of
 from action_platform.core.flow import git, gitflow
 from action_platform.core.scaffold.install import InstallError, install
 from action_platform.core.manifest import write_source_host
@@ -31,13 +31,7 @@ class AppService:
         self.registry = registry
 
     def workspace(self, id: str) -> tuple[Entry, Path]:
-        entry = self.registry.get(id)
-        root = Path(entry.path)
-
-        if not root.is_dir():
-            raise HTTPException(410, f"{root} no longer exists")
-
-        return entry, root
+        return workspace_of(self.registry, id)
 
     def list(self) -> list[dict]:
         rows = []

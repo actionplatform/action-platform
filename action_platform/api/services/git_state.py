@@ -1,9 +1,9 @@
 from dataclasses import asdict
 from pathlib import Path
 
-from fastapi import HTTPException
 
 from action_platform.api.repositories.registry import Registry
+from action_platform.api.services.manifest import workspace_of
 from action_platform.core.flow import git, gitflow
 
 
@@ -12,12 +12,7 @@ class GitStateService:
         self.registry = registry
 
     def _root(self, id: str) -> Path:
-        root = Path(self.registry.get(id).path)
-
-        if not root.is_dir():
-            raise HTTPException(410, f"{root} no longer exists")
-
-        return root
+        return workspace_of(self.registry, id)[1]
 
     def gitflow(self, id: str) -> dict:
         report = gitflow.audit(self._root(id))
