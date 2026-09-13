@@ -262,8 +262,15 @@ def ensure_source(source: TemplateSource, update: bool = False) -> Path:
 
 def load_source(source: TemplateSource, update: bool = False) -> tuple[Path, Matrix]:
     repo = ensure_source(source, update=update)
+    index = repo / "index.toml"
 
-    return repo, Matrix.from_toml(repo / "index.toml")
+    if not index.exists():
+        raise TemplateError(
+            f"{source.url}@{source.ref} is not a templates repository: no index.toml "
+            "at the root (expected index.toml plus projects/, cloud/ and service/)"
+        )
+
+    return repo, Matrix.from_toml(index)
 
 
 def ensure_repo(update: bool = False) -> Path:
