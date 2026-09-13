@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.2 — 2026-09-13
+
+### Bug Fixes
+- **web:** apps without a remembered host pick the organization's matching host before push, release and pull request
+
 ## v0.5.1 — 2026-09-13
 
 ### Bug Fixes
