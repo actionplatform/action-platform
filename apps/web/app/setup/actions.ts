@@ -9,6 +9,7 @@ import { setupStatus } from "@/lib/setup";
 import { type HostKind } from "@/lib/source-host-kinds";
 import { addHost } from "@/lib/source-hosts";
 import { slugify } from "@/lib/utils";
+import { DEFAULT_GIT_AUTHOR, setGitAuthor } from "@/lib/org-settings";
 
 export type DbForm = {
   engine: Engine;
@@ -90,7 +91,7 @@ export async function createAdmin(input: { name: string; email: string; password
   }
 }
 
-export async function createFirstOrganization(input: { name: string; slug: string }): Promise<{ ok: true; orgId: string } | { ok: false; error: string }> {
+export async function createFirstOrganization(input: { name: string; slug: string; gitAuthorName?: string; gitAuthorEmail?: string }): Promise<{ ok: true; orgId: string } | { ok: false; error: string }> {
   const status = await setupStatus();
   if (!status.hasUser) return { ok: false, error: "create the admin account first" };
   if (status.hasOrg) return { ok: false, error: "an organization already exists" };
@@ -106,6 +107,7 @@ export async function createFirstOrganization(input: { name: string; slug: strin
     const now = new Date();
     await db.insert(t.organization).values({ id: orgId, name, slug, createdAt: now });
     await db.insert(t.member).values({ id: newId(), organizationId: orgId, userId: admin.id, role: "owner", createdAt: now });
+    await setGitAuthor(orgId, { name: input.gitAuthorName || DEFAULT_GIT_AUTHOR.name, email: input.gitAuthorEmail || DEFAULT_GIT_AUTHOR.email });
     return { ok: true, orgId };
   } catch (e) {
     return { ok: false, error: (e as Error).message };

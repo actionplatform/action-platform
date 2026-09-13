@@ -105,6 +105,10 @@ Every confirmation is an in-app dialog; the UI is strictly monochrome.
 
 Organization members, code hosts (add, update token, remove), the API URL and the git-flow rules.
 
+### Commit identity
+
+Releases and configuration commits are made by the platform on its clone, signed with the organization's commit identity — name and email chosen in Setup (default `Action Platform <cloud@actionplatform.io>`) and editable under Settings → **Commit identity**. Stored per organization in `organization_setting`.
+
 ### Roles
 
 | Role | Can |

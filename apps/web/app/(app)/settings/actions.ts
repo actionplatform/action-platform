@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { addMemberAccount, cancelInvitation, createInvitation, removeMember, requireManager, type Role, ROLES, setMemberRole } from "@/lib/orgs";
 import { requireOrg } from "@/lib/session";
+import { setGitAuthor } from "@/lib/org-settings";
 import { addHost, HOST_KINDS, type HostKind, removeHost, setHostOwner, updateHostToken } from "@/lib/source-hosts";
 
 export async function createHost(_prev: { error?: string } | null, formData: FormData): Promise<{ error?: string } | null> {
@@ -129,6 +130,18 @@ export async function changeHostOwner(id: string, owner: string): Promise<Result
     await setHostOwner(org.id, id, owner);
     revalidatePath("/settings");
     return { ok: true, data: null };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+export async function saveGitAuthor(author: { name: string; email: string }): Promise<Result<{ name: string; email: string }>> {
+  const { session, org } = await requireOrg();
+  try {
+    await requireManager(session.user.id, org.id);
+    const data = await setGitAuthor(org.id, author);
+    revalidatePath("/settings");
+    return { ok: true, data };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
