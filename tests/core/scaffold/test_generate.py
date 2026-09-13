@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from action_platform.core.flow import git
+from action_platform.core.flow.repository import Repository
 from action_platform.core.scaffold import generate
 from tests.support import TempCase
 
@@ -33,16 +33,17 @@ class PushProjectTest(TempCase):
             classmethod(lambda cls, p: type("C", (), {"source_host": host})()),
         )
         self.patch(
-            git,
+            Repository,
             "push_upstream",
-            lambda branch, cwd, remote="origin": pushed.update(branch=branch),
+            lambda self, branch, remote="origin": pushed.update(branch=branch),
         )
 
         url = generate.push_project(self.tmp_path, private=True)
+        repo = Repository(self.tmp_path)
 
         self.assertEqual(url, "https://example.com/owner/demo.git")
         self.assertEqual(host.created, [("owner/demo", "", True)])
         self.assertEqual(pushed, {"branch": "main"})
-        self.assertTrue(git.is_clean(cwd=self.tmp_path))
-        self.assertEqual(git.remote_url(cwd=self.tmp_path), url)
-        self.assertEqual(git.current_branch(cwd=self.tmp_path), "main")
+        self.assertTrue(repo.is_clean())
+        self.assertEqual(repo.remote_url(), url)
+        self.assertEqual(repo.branch, "main")

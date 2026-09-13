@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+import json
 import re
-
 import shutil
+import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from action_platform.core.flow import git, gitflow
+from action_platform.core.flow.repository import Repository
+from action_platform.core.flow.workflow import GitFlow
 from action_platform.core.manifest import toml_str
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.scaffold.templates import Matrix, load_matrix
+from action_platform.core.scaffold.templates import detect_language as detect
 from action_platform.settings import settings
 
 MARKERS = [
@@ -61,9 +64,84 @@ class Plan:
 
 
 def detect_language(root: Path) -> str | None:
-    from action_platform.core.scaffold.templates import detect_language as detect
-
     return detect(root) or None
+
+
+class Installer:
+    """Bring an existing repository onto the platform: platform.toml, LAST_VERSION, AGENTS.md, the quality config and CI files borrowed from the closest template, the git hooks. `plan()` says what would happen; `apply()` does it."""
+
+    def __init__(
+        self,
+        root: Path,
+        type_: str = "web",
+        language: str | None = None,
+        ci: str | None = None,
+        name: str | None = None,
+    ) -> None:
+        self.root = Path(root).resolve()
+        self.repo = Repository(self.root)
+        self.type = type_
+        self.requested_language = language
+        self.requested_ci = ci
+        self.name = name
+
+    def plan(self) -> Plan:
+        return self._run(dry_run=True)
+
+    def apply(self) -> Plan:
+        return self._run(dry_run=False)
+
+    def _run(self, dry_run: bool) -> Plan:
+        if not self.repo.exists():
+            raise InstallError(f"{self.root} is not a git repository")
+
+        ci = self.requested_ci or _existing_ci(self.root) or "github"
+        language = (
+            ""
+            if self.requested_language == "none"
+            else (self.requested_language or detect_language(self.root) or "")
+        )
+
+        if ci not in CI_FILES:
+            raise InstallError(f"unknown ci: {ci} (available: {', '.join(CI_FILES)})")
+
+        repo, matrix = load_matrix()
+        source = (
+            _source_leaf(repo, matrix, language)
+            if language
+            else _any_leaf(repo, matrix)
+        )
+        plan = Plan(root=self.root, language=language, type=self.type, ci=ci)
+
+        _write(
+            plan,
+            settings.CONFIG_FILE,
+            _platform_toml(
+                self.repo, self.type, language, ci, self.name or self.root.name
+            ),
+            dry_run,
+        )
+        _write(
+            plan, settings.LAST_VERSION_FILE, f"{_seed_version(self.repo)}\n", dry_run
+        )
+        _write(plan, "AGENTS.md", AGENTS, dry_run)
+
+        if language:
+            _copy_tree(plan, source / ".code_quality", ".code_quality", dry_run)
+
+        for rel in CI_FILES[ci]:
+            if not language and "code-quality" in rel:
+                continue
+
+            _copy_file(plan, source / rel, rel, dry_run)
+
+        if not dry_run:
+            report = GitFlow(self.repo).install_hooks()
+            plan.hooks_installed = bool(report)
+            plan.hooks_preserved = list(report.preserved)
+            plan.hooks_skipped = report.skipped
+
+        return plan
 
 
 def install(
@@ -74,53 +152,14 @@ def install(
     dry_run: bool = False,
     name: str | None = None,
 ) -> Plan:
-    root = root.resolve()
+    installer = Installer(root, type_=type_, language=language, ci=ci, name=name)
 
-    if not (root / ".git").exists():
-        raise InstallError(f"{root} is not a git repository")
-
-    ci = ci or _existing_ci(root) or "github"
-    language = "" if language == "none" else (language or detect_language(root) or "")
-
-    if ci not in CI_FILES:
-        raise InstallError(f"unknown ci: {ci} (available: {', '.join(CI_FILES)})")
-
-    repo, matrix = load_matrix()
-    source = (
-        _source_leaf(repo, matrix, language) if language else _any_leaf(repo, matrix)
-    )
-    plan = Plan(root=root, language=language, type=type_, ci=ci)
-
-    _write(
-        plan,
-        settings.CONFIG_FILE,
-        _platform_toml(root, type_, language, ci, name or root.name),
-        dry_run,
-    )
-    _write(plan, settings.LAST_VERSION_FILE, f"{_seed_version(root)}\n", dry_run)
-    _write(plan, "AGENTS.md", AGENTS, dry_run)
-
-    if language:
-        _copy_tree(plan, source / ".code_quality", ".code_quality", dry_run)
-
-    for rel in CI_FILES[ci]:
-        if not language and "code-quality" in rel:
-            continue
-
-        _copy_file(plan, source / rel, rel, dry_run)
-
-    if not dry_run:
-        report = gitflow.install_hooks(root)
-        plan.hooks_installed = bool(report)
-        plan.hooks_preserved = list(report.preserved)
-        plan.hooks_skipped = report.skipped
-
-    return plan
+    return installer.plan() if dry_run else installer.apply()
 
 
-def _seed_version(root: Path) -> str:
+def _seed_version(repo: Repository) -> str:
     """LAST_VERSION for a repository joining the platform: its newest vX.Y.Z tag, or 0.0.0 when it never released."""
-    tag = git.latest_tag(cwd=root, match="v[0-9]*")
+    tag = repo.latest_tag(match="v[0-9]*")
 
     if tag and re.fullmatch(r"v?\d+\.\d+\.\d+", tag):
         return tag.lstrip("v")
@@ -150,8 +189,6 @@ def _source_leaf(repo: Path, matrix: Matrix, language: str) -> Path:
 
 
 def _language_of(leaf_dir: Path) -> str:
-    import json
-
     try:
         return json.loads((leaf_dir / "cookiecutter.json").read_text()).get(
             "_language", ""
@@ -166,8 +203,6 @@ def _existing_ci(root: Path) -> str | None:
     if not path.exists():
         return None
 
-    import tomllib
-
     try:
         return tomllib.loads(path.read_text()).get("project", {}).get("ci") or None
     except tomllib.TOMLDecodeError:
@@ -175,19 +210,19 @@ def _existing_ci(root: Path) -> str | None:
 
 
 def _platform_toml(
-    root: Path, type_: str, language: str, ci: str, name: str | None = None
+    repo: Repository, type_: str, language: str, ci: str, name: str | None = None
 ) -> str:
-    remote = git.remote_url(cwd=root)
-    repo = ""
+    remote = repo.remote_url()
+    slug = ""
 
     if "github.com" in remote:
-        repo = remote.split("github.com", 1)[1].strip(":/").removesuffix(".git")
+        slug = remote.split("github.com", 1)[1].strip(":/").removesuffix(".git")
 
-    name = name or (repo.rsplit("/", 1)[-1] if repo else root.name)
+    name = name or (slug.rsplit("/", 1)[-1] if slug else repo.path.name)
     text = f"[project]\nname = {toml_str(name)}\ntype = {toml_str(type_)}\nci = {toml_str(ci)}\nlanguage = {toml_str(language)}\n"
 
-    if repo:
-        text += f'\n[source_host]\nkind = "github"\nrepo = {toml_str(repo)}\n'
+    if slug:
+        text += f'\n[source_host]\nkind = "github"\nrepo = {toml_str(slug)}\n'
 
     text += '\n[release]\nstrategy = "semver"\nchangelog = "conventional"\n'
 
