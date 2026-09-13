@@ -1,6 +1,6 @@
 [project]
 name = "action-platform"
-version = "0.6.0"
+version = "0.6.1"
 authors = [
   { name="Fernando Celmer", email="email@fernandocelmer.com" },
 ]
@@ -72,7 +72,7 @@ api = ["fastapi>=0.115", "uvicorn>=0.30"]
 
 [tool.poetry]
 name = "action-platform"
-version = "0.6.0"
+version = "0.6.1"
 description = "Your platform team, as a CLI."
 authors = ["Fernando Celmer <email@fernandocelmer.com>"]
 readme = "README.md"

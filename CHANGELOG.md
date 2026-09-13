@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.1 — 2026-09-13
+
+### Bug Fixes
+- **manifest:** serialize user values as TOML strings and validate owner/repo before writing platform.toml
+
 ## v0.6.0 — 2026-09-13
 
 ### Features
