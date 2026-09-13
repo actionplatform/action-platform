@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.3.0 — 2026-09-13
+
+### Features
+- **install:** LAST_VERSION starts at 0.0.0 or at the newest tag; app header prefers the registered name
+- **install:** work without a detectable language; language choice when importing from the web
+- import a repository without platform.toml — install on add from the web, CLI/MCP, then commit on a branch with a pull request
+- **web:** GitHub access check per host — installations, permissions and what blocks repository creation
+- **templates:** any git repository can be a template source — copied as-is, platform files added when missing
+- **web:** template repositories per organization, source-aware catalog, wizard, configuration and proxy
+
+### Bug Fixes
+- **templates:** a plain repository template resolves under any type; the chosen type wins
+- **templates:** plain repositories get a Repositories category and resolve without a stack
+
 ## v0.2.2 — 2026-09-13
 
 ### Bug Fixes
