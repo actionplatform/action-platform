@@ -10,5 +10,6 @@
 | [Templates](templates.md) | Project types, stacks, cloud overlays, services; how to add one |
 | [MCP](mcp.md) | Tools, prompts and skills for AI clients — locally or against a hosted platform |
 | [Releases](releases.md) | Versions per component, tags, what each one publishes |
+| [Observability](observability.md) | Sentry per component: variables, what is sent, what is not |
 | [Architecture](architecture.md) | Packages, the API, providers, how credentials travel |
 | [Development](development.md) | Running everything locally, tests, regenerating the API client |

@@ -80,6 +80,7 @@ Images are published for every `api/vX.Y.Z` and `web/vX.Y.Z` tag to Docker Hub a
 | `AP_GIT_AUTHOR_NAME`, `AP_GIT_AUTHOR_EMAIL` | no | fallback identity for commits when a request carries none (defaults `Action Platform <cloud@actionplatform.io>`). Each organization sets its own commit identity in Setup and Settings → Commit identity; the web app sends it with every call. |
 | `AP_API_TOKEN` | recommended | shared secret between web and API: the API refuses every request without `Authorization: Bearer <token>` (except `/api/version`), so a neighbour on the Docker network cannot drive it. Set the same value on both services; unset, the API trusts the network (local development). |
 >>>>>>> master
+| `AP_SENTRY_DSN_API`, `AP_SENTRY_DSN_WEB` | no | Sentry DSNs, one project per component; empty keeps reporting off. Reaches the containers as `AP_SENTRY_DSN` (API) and `SENTRY_DSN` (web); `AP_SENTRY_ENVIRONMENT` / `SENTRY_ENVIRONMENT` and `*_TRACES_SAMPLE_RATE` (default 0.1) tune them. See [observability](observability.md). |
 | `BETTER_AUTH_SECRET` | yes | signs sessions and encrypts stored tokens — rotating it invalidates both |
 | `DOMAIN`, `ACME_EMAIL` | with TLS | Traefik host rule and Let's Encrypt account |
 | `WEB_PORT` | no | published port (default 3000) |

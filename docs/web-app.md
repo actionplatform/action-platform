@@ -87,6 +87,8 @@ flowchart LR
 
 Project → **Add an existing repository** with any git URL. When the repository has no `platform.toml` the platform offers to install it: pick the type and CI, and the clone receives `platform.toml`, `.code_quality/`, the CI files and the git hooks (the language is detected). Nothing is pushed — the app opens on Configuration with the changes uncommitted, and **Commit changes** puts them on a `chore/<code>` branch with a pull request.
 
+**Discard changes** resets the clone to `HEAD` and deletes untracked files. On an imported app whose platform files were never committed that removes `platform.toml` too, so the app page then shows *This repository has no platform.toml* with an **Install platform files** button (`POST /api/apps/{id}/install`) to start over.
+
 ## The app page
 
 - **Sync** (`git fetch` + fast-forward) or **Push to remote** while there is none
