@@ -663,8 +663,8 @@ export interface components {
             source?: components["schemas"]["SourceSpec"] | null;
         };
         SourceCredentials: {
-            kind: string;
-            token: string;
+            kind?: string | null;
+            token?: string | null;
             username?: string | null;
             base_url?: string | null;
             author_name?: string | null;

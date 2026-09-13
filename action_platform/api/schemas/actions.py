@@ -6,8 +6,10 @@ from pydantic import BaseModel
 
 
 class SourceCredentials(BaseModel):
-    kind: str
-    token: str
+    """A code-host token for this request and the identity commits are made with. Either half may be absent: identity alone still names the author."""
+
+    kind: Optional[str] = None
+    token: Optional[str] = None
     username: Optional[str] = None
     base_url: Optional[str] = None
     author_name: Optional[str] = None

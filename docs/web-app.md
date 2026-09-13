@@ -109,7 +109,7 @@ Organization members, code hosts (add, update token, remove), the API URL and th
 
 ### Commit identity
 
-Releases and configuration commits are made by the platform on its clone, signed with the organization's commit identity — name and email chosen in Setup (default `Action Platform <cloud@actionplatform.io>`) and editable under Settings → **Commit identity**. Stored per organization in `organization_setting`.
+Releases and configuration commits are made by the platform on its clone, signed with the organization's commit identity — name and email chosen in Setup (default `Action Platform <cloud@actionplatform.io>`) and editable under Settings → **Commit identity**. Stored per organization in `organization_setting`. The web app sends it on every request that may commit — with the code-host token when the app has one, alone otherwise (`credentials.author_name/author_email`) — so a local commit without a push carries it too; the API's `AP_GIT_AUTHOR_*` only apply when nothing arrives.
 
 ### Roles
 

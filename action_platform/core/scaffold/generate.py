@@ -203,7 +203,7 @@ def push_project(
     """
     config = Config.from_toml(project / settings.CONFIG_FILE)
 
-    if credentials is not None and config.source_host is not None:
+    if credentials is not None and credentials.token and config.source_host is not None:
         from action_platform.providers.source import build_source_host
 
         config.source_host = build_source_host(

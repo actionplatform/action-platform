@@ -11,8 +11,8 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
-from pydantic import BaseModel
 
+from action_platform.api.schemas.actions import SourceCredentials
 from action_platform.core.config import Config
 from action_platform.core.flow import git
 from action_platform.providers.source import build_source_host
@@ -24,19 +24,9 @@ GIT_USERNAMES = {
 }
 
 
-class SourceCredentials(BaseModel):
-    kind: str
-    token: str
-    username: Optional[str] = None
-    base_url: Optional[str] = None
-    owner: Optional[str] = None
-    author_name: Optional[str] = None
-    author_email: Optional[str] = None
-
-
 def apply(config: Config, creds: Optional[SourceCredentials]) -> Config:
     """Rebuild config.source_host with the request's token instead of the environment's."""
-    if creds is None or config.source_host is None:
+    if creds is None or config.source_host is None or not creds.token:
         return config
 
     config.source_host = build_source_host(
@@ -65,17 +55,20 @@ def git_auth(creds: Optional[SourceCredentials]) -> Iterator[None]:
         yield
         return
 
-    username = creds.username or GIT_USERNAMES.get(creds.kind, "git")
-    helper = '!f() { printf \'username=%s\\npassword=%s\\n\' "$AP_GIT_USER" "$AP_GIT_TOKEN"; }; f'
-    env = {
-        "AP_GIT_USER": username,
-        "AP_GIT_TOKEN": creds.token,
-        "GIT_CONFIG_COUNT": "2",
-        "GIT_CONFIG_KEY_0": "credential.helper",
-        "GIT_CONFIG_VALUE_0": "",
-        "GIT_CONFIG_KEY_1": "credential.helper",
-        "GIT_CONFIG_VALUE_1": helper,
-    }
+    env: dict[str, str] = {}
+
+    if creds.token:
+        username = creds.username or GIT_USERNAMES.get(creds.kind or "", "git")
+        helper = '!f() { printf \'username=%s\\npassword=%s\\n\' "$AP_GIT_USER" "$AP_GIT_TOKEN"; }; f'
+        env.update(
+            AP_GIT_USER=username,
+            AP_GIT_TOKEN=creds.token,
+            GIT_CONFIG_COUNT="2",
+            GIT_CONFIG_KEY_0="credential.helper",
+            GIT_CONFIG_VALUE_0="",
+            GIT_CONFIG_KEY_1="credential.helper",
+            GIT_CONFIG_VALUE_1=helper,
+        )
 
     if creds.author_name and creds.author_email:
         env.update(
