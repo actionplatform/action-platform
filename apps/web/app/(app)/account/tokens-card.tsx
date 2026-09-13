@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyRound, Trash2 } from "lucide-react";
+import { Bot, KeyRound, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -20,8 +20,8 @@ export function TokensCard({ tokens, now }: { tokens: UserToken[]; now: number }
   return (
     <Card className="rounded-[11px]">
       <header className="border-b border-border px-6 py-5">
-        <h2 className="text-[15px] font-semibold">API tokens</h2>
-        <p className="mt-1 text-[13px] text-secondary">Bearer tokens issued to the CLI and MCP servers by <code className="font-mono">action-platform login</code>. Each carries a scope on top of your role; revoke what you no longer use.</p>
+        <h2 className="text-[15px] font-semibold">API tokens and the apps using them</h2>
+        <p className="mt-1 text-[13px] text-secondary">Bearer tokens issued by <code className="font-mono">action-platform login</code>. Each token shows which programs have used it — Claude Code, Codex, Cursor, the CLI — and carries a scope on top of your role. Revoke what you no longer recognise.</p>
       </header>
       {tokens.length === 0 ? (
         <div className="flex flex-col items-center px-6 py-10 text-center">
@@ -39,11 +39,16 @@ export function TokensCard({ tokens, now }: { tokens: UserToken[]; now: number }
                   {t.scope.map((s) => <Badge key={s} className="h-5 px-2 text-[11px]">{SCOPE_INFO[s].label}</Badge>)}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-1 text-[12px] text-secondary">
-                  <span className="inline-flex h-5 items-center rounded-[5px] border border-border bg-background px-1.5 font-mono text-[11px] text-foreground">{t.organization.name}</span>
+                  <span className="inline-flex h-5 items-center rounded-[5px] border border-border bg-background px-1.5 font-mono text-[11px] text-foreground">{t.organization?.name ?? "all organizations"}</span>
                   {t.project && <><span aria-hidden>/</span><span className="inline-flex h-5 items-center rounded-[5px] border border-border bg-background px-1.5 font-mono text-[11px] text-foreground">{t.project.name}</span></>}
                   {t.app && <><span aria-hidden>/</span><span className="inline-flex h-5 items-center rounded-[5px] border border-border bg-background px-1.5 font-mono text-[11px] text-foreground">{t.app.name}</span></>}
                   {!t.project && <span>· every project</span>}
                 </div>
+                {t.clients.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    {t.clients.map((c) => <span key={c.name} className="inline-flex h-6 items-center gap-1.5 rounded-[6px] border border-border bg-background px-2 text-[12px]"><Bot className="size-3.5 text-secondary" strokeWidth={1.75} aria-hidden="true" />{c.product}{c.version && <span className="font-mono text-[11px] text-muted-foreground">{c.version}</span>}<span className="text-muted-foreground">· {relativeTime(c.lastSeenAt, now)}</span></span>)}
+                  </div>
+                )}
                 <div className="mt-0.5 text-[13px] text-secondary">Created {relativeTime(t.createdAt, now)} · {t.lastUsedAt ? `last used ${relativeTime(t.lastUsedAt, now)}` : "never used"} · expires {relativeTime(t.expiresAt, now)}</div>
               </div>
               <button type="button" aria-label={`Revoke ${t.name}`} onClick={() => setRevoking(t)} className="flex size-11 shrink-0 items-center justify-center self-end rounded-[7px] text-secondary transition-colors hover:bg-surface-hover hover:text-foreground sm:size-8 sm:self-auto"><Trash2 className="size-4" strokeWidth={1.75} /></button>
