@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.7 — 2026-09-13
+
+### Features
+- **api:** report the api component version in /api/version and Sentry; sidebar shows web, api and lib versions
+- **api:** sync leaves merged branches, follows rewritten remotes and accepts reset=true to match the remote
+
+### Bug Fixes
+- **core:** fast-forward before a release and roll the commit and tag back when the push is refused
+
 ## v0.5.6 — 2026-09-13
 
 ### Features
