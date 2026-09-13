@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.4 — 2026-09-13
+
+### Bug Fixes
+- **api:** commits on the platform are authored by the signed-in user, with a platform default identity
+
 ## v0.5.3 — 2026-09-13
 
 ### Bug Fixes
