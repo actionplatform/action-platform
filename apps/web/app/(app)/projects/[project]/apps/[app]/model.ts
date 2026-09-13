@@ -34,7 +34,7 @@ export type AppView = {
 };
 
 const SOURCES: Record<string, string> = { github: "GitHub", gitlab: "GitLab", bitbucket: "Bitbucket", generic: "Git" };
-const CIS: Record<string, string> = { github: "GitHub Actions", gitlab: "GitLab CI", jenkins: "Jenkins" };
+const CIS: Record<string, string> = { github: "GitHub Actions", gitlab: "GitLab CI", jenkins: "Jenkins", bitbucket: "Bitbucket Pipelines" };
 
 export function sourceLabel(kind: string | null): string {
   return kind ? (SOURCES[kind] ?? kind) : "None";

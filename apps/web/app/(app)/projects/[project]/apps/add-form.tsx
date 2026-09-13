@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/select";
 import { STACKS, TYPES } from "@/lib/catalog";
 import { addApp } from "./actions";
 
-const CI = ["github", "gitlab", "jenkins"];
+const CI = ["github", "gitlab", "jenkins", "bitbucket"];
 
 export function AddForm({ projectId }: { projectId: string }) {
   const router = useRouter();
@@ -37,7 +37,7 @@ export function AddForm({ projectId }: { projectId: string }) {
     <form onSubmit={(e) => { e.preventDefault(); start(async () => { setError(null); finish(await addApp(projectId, url), false); }); }} className="space-y-2">
       <div className="text-xs text-secondary">Add an existing repository</div>
       <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-2">
-        <input value={url} onChange={(e) => { setUrl(e.target.value); if (!ciTouched) setCi(e.target.value.includes("gitlab") ? "gitlab" : "github"); }} placeholder="https://github.com/org/repo.git" className="h-12 w-full min-w-0 px-3.5 font-mono text-base sm:h-9 sm:flex-1 sm:text-sm" required />
+        <input value={url} onChange={(e) => { setUrl(e.target.value); if (!ciTouched) setCi(e.target.value.includes("gitlab") ? "gitlab" : e.target.value.includes("bitbucket") ? "bitbucket" : "github"); }} placeholder="https://github.com/org/repo.git" className="h-12 w-full min-w-0 px-3.5 font-mono text-base sm:h-9 sm:flex-1 sm:text-sm" required />
         <Button type="submit" variant="outline" disabled={pending} className="h-12 w-full sm:h-9 sm:w-auto"><Plus className="size-4" /> {pending ? "Cloning…" : "Add"}</Button>
       </div>
       {error && <div className="text-sm text-foreground border border-foreground rounded-md px-3 py-2">{error}</div>}
