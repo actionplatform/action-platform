@@ -240,7 +240,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                 <Field label="Source host" hint={hosts.length ? "Where the repository will live." : "None configured — Settings → Source hosts."}>
                   <Select value={hostId} onChange={setHostId} disabled={hosts.length === 0} placeholder="No source host" options={hosts.map((h) => ({ value: h.id, label: h.name }))} />
                 </Field>
-                <Field label="Organization" hint={host?.owners.length ? "Where the repository is created — an account or organization the GitHub App is installed on." : "Account or organization that owns the repository."}>
+                <Field label={host?.kind === "gitlab" ? "Namespace" : host?.kind === "bitbucket" ? "Workspace" : "Organization"} hint={host?.owners.length ? (host.kind === "gitlab" ? "Your user or a group where you can create projects." : host.kind === "bitbucket" ? "A workspace where you can create repositories." : "Where the repository is created — an account or organization the GitHub App is installed on.") : "Account or organization that owns the repository."}>
                   {host?.owners.length ? (
                     <div className="space-y-1.5">
                       <Select mono value={config.githubOwner || host.defaultOwner || host.owners[0]} onChange={(v) => setConfig({ ...config, githubOwner: v })} options={[...new Set([...host.owners, ...(host.defaultOwner ? [host.defaultOwner] : [])])].map((o) => ({ value: o, label: o }))} />

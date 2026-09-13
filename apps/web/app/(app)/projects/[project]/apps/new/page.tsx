@@ -6,7 +6,7 @@ import { api, type Matrix } from "@/lib/api";
 import { projectById, projectsOf } from "@/lib/projects";
 import { requireOrg } from "@/lib/session";
 import { hostsOf } from "@/lib/source-hosts";
-import { githubAccess } from "@/lib/github-access";
+import { hostAccess } from "@/lib/host-access";
 import { appFor } from "@/lib/oauth";
 import { sourceSpecsOf } from "@/lib/template-sources";
 import { Wizard } from "./wizard";
@@ -26,8 +26,8 @@ export default async function NewAppPage({ params, searchParams }: { params: Pro
   const owners = Object.fromEntries(
     await Promise.all(
       hosts.map(async (h) => {
-        if (h.kind !== "github") return [h.id, { accounts: [] as string[], installUrl: null as string | null }] as const;
-        const access = await githubAccess(org.id, h.id, slug);
+        if (h.kind === "generic") return [h.id, { accounts: [] as string[], installUrl: null as string | null }] as const;
+        const access = await hostAccess(org.id, h.id, slug);
         if (!access.ok) return [h.id, { accounts: [], installUrl: null }] as const;
         return [h.id, { accounts: [...new Set([...access.installations.filter((i) => i.canCreateRepos).map((i) => i.account)])], installUrl: access.installUrl }] as const;
       }),
