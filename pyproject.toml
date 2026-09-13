@@ -68,7 +68,8 @@ Organization = "https://github.com/actionplatform"
 github = ["PyGithub"]
 gitlab = ["python-gitlab"]
 mcp = ["mcp>=2.0"]
-api = ["fastapi>=0.115", "uvicorn>=0.30"]
+sentry = ["sentry-sdk>=2.0"]
+api = ["fastapi>=0.115", "uvicorn>=0.30", "sentry-sdk[fastapi]>=2.0"]
 
 [tool.poetry]
 name = "action-platform"
@@ -92,7 +93,8 @@ action-platform-mcp = "action_platform.mcp.server:main"
 
 [tool.poetry.extras]
 mcp = ["mcp"]
-api = ["fastapi", "uvicorn"]
+sentry = ["sentry-sdk"]
+api = ["fastapi", "uvicorn", "sentry-sdk"]
 
 
 [tool.poetry.dependencies]
@@ -107,6 +109,7 @@ cookiecutter = "^2.6.0"
 mcp = { version = ">=2.0", optional = true }
 fastapi = { version = ">=0.115", optional = true }
 uvicorn = { version = ">=0.30", optional = true }
+sentry-sdk = { version = ">=2.0", optional = true, extras = ["fastapi"] }
 
 [tool.poetry.group.dev.dependencies]
 build = "^1.2.2.post1"

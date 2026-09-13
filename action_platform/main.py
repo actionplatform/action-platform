@@ -7,9 +7,12 @@ from rich.console import Console
 
 from action_platform.cli.setup import app
 from action_platform.core.exception import ActionPlatformError
+from action_platform.observability import observe
 
 
 def main() -> None:
+    observe("cli")
+
     try:
         app()
     except ActionPlatformError as e:
