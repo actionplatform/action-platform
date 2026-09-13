@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.1 — 2026-09-13
+
+### Bug Fixes
+- **web:** override postcss to 8.5.x for next (CVE-2026-45623, CVE-2026-73646)
+
 ## v0.2.0 — 2026-09-13
 
 ### Features
