@@ -8,8 +8,21 @@ import unittest
 from typing import Any
 
 from tests.mcp.support import HAS_MCP
+from tests.support import TempCase, git, repo_with_origin
 
-LISTS = {"apps", "commits", "branches", "tags", "releases", "deploy", "diagnose"}
+LISTS = {
+    "apps",
+    "commits",
+    "branches",
+    "tags",
+    "releases",
+    "deploy",
+    "diagnose",
+    "organizations",
+    "projects",
+    "teams",
+    "members",
+}
 
 
 class FakeRemote:
@@ -17,13 +30,30 @@ class FakeRemote:
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, tuple, dict]] = []
+        self.apps_rows: list[dict] = []
+        self.projects_rows: list[dict] = []
 
     def __getattr__(self, name: str):
         def method(*args, **kwargs):
             self.calls.append((name, args, kwargs))
 
             if name == "whoami":
-                return {"user": {"email": "me@example.com", "name": "Me"}}
+                return {
+                    "user": {"email": "me@example.com", "name": "Me"},
+                    "organization": {"id": "o1", "name": "Acme"},
+                    "role": "developer",
+                    "role_label": "Developer",
+                    "scope": ["read", "write"],
+                    "permissions": {"app.release": False, "app.configure": True},
+                    "project": None,
+                    "app": None,
+                }
+
+            if name == "apps" and self.apps_rows:
+                return self.apps_rows
+
+            if name == "projects" and self.projects_rows:
+                return self.projects_rows
 
             if name in LISTS:
                 return []
@@ -136,8 +166,9 @@ CASES: list[tuple[str, dict[str, Any], str, tuple, dict]] = [
 
 
 @unittest.skipUnless(HAS_MCP, "mcp is not installed")
-class RemoteToolsTest(unittest.TestCase):
+class RemoteToolsTest(TempCase):
     def setUp(self):
+        super().setUp()
         from action_platform.mcp.server import MCPServer, REMOTE_INSTRUCTIONS
         from action_platform.mcp.tools import flow, remote as remote_tools
 
@@ -162,10 +193,88 @@ class RemoteToolsTest(unittest.TestCase):
                     self.fake.calls[-1], (method, expected_args, expected_kwargs)
                 )
 
-    def test_whoami_reports_server_and_account(self):
-        self.assertEqual(
-            self.call("whoami", {}),
-            {"server": "https://p.example", "email": "me@example.com", "name": "Me"},
+    def test_whoami_reports_account_role_scope_and_permissions(self):
+        who = self.call("whoami", {})
+
+        self.assertEqual(who["server"], "https://p.example")
+        self.assertEqual(who["user"]["email"], "me@example.com")
+        self.assertEqual(who["organization"]["name"], "Acme")
+        self.assertEqual(who["role"], "Developer")
+        self.assertEqual(who["scope"], ["read", "write"])
+        self.assertFalse(who["can"]["app.release"])
+        self.assertTrue(who["can"]["app.configure"])
+
+    def test_directory_tools_call_the_platform(self):
+        for tool, method in (
+            ("list_organizations", "organizations"),
+            ("list_projects", "projects"),
+            ("list_teams", "teams"),
+            ("list_members", "members"),
+        ):
+            with self.subTest(tool=tool):
+                self.call(tool, {})
+                self.assertEqual(self.fake.calls[-1][0], method)
+
+    def test_management_tools_send_their_arguments(self):
+        for tool, args, expected in (
+            ("create_project", {"name": "Shop"}, ("create_project", ("Shop", ""), {})),
+            (
+                "create_team",
+                {"name": "Core", "description": "d"},
+                ("create_team", ("Core", "d"), {}),
+            ),
+            (
+                "add_team_member",
+                {"team_id": "t1", "user_id": "u1"},
+                ("add_team_member", ("t1", "u1"), {}),
+            ),
+            (
+                "assign_project_team",
+                {"project_id": "p1", "team_id": "t1"},
+                ("assign_project_team", ("p1", "t1"), {}),
+            ),
+            (
+                "assign_project_team",
+                {"project_id": "p1"},
+                ("assign_project_team", ("p1", None), {}),
+            ),
+            (
+                "set_member_role",
+                {"user_id": "u1", "role": "deployer"},
+                ("set_member_role", ("u1", "deployer"), {}),
+            ),
+        ):
+            with self.subTest(tool=tool):
+                self.call(tool, args)
+                self.assertEqual(self.fake.calls[-1], expected)
+
+    def test_current_context_matches_the_checkout_to_an_app(self):
+        repo = repo_with_origin(self.tmp_path)
+        git(repo, "remote", "set-url", "origin", "git@github.com:Acme/Orders.git")
+        self.fake.apps_rows = [
+            {"id": "r1", "name": "orders", "url": "https://github.com/acme/orders"}
+        ]
+        self.fake.projects_rows = [
+            {
+                "id": "p1",
+                "name": "Shop",
+                "team": None,
+                "apps": [{"registry_id": "r1", "name": "orders"}],
+            }
+        ]
+
+        context = self.call("current_context", {"project": str(repo)})
+
+        self.assertEqual(context["app"]["id"], "r1")
+        self.assertEqual(context["project"]["name"], "Shop")
+        self.assertEqual(context["organization"]["name"], "Acme")
+        self.assertIsNone(context["hint"])
+
+        elsewhere = self.tmp_path / "plain"
+        elsewhere.mkdir()
+        self.assertIn(
+            "not an app",
+            self.call("current_context", {"project": str(elsewhere)})["hint"],
         )
 
     def test_init_app_sends_the_whole_request(self):

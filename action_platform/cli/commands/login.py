@@ -29,13 +29,8 @@ def login(
     creds = device_login(
         server, open_browser=not no_browser, echo=typer.echo, scope=scope, name=name
     )
-    who = Remote(creds.server, creds.token).whoami()
-    email = who.get("user", {}).get("email", "?")
-    org = (who.get("organization") or {}).get("name")
     typer.echo(
-        f"logged in to {creds.server} as {email}"
-        + (f" ({org})" if org else "")
-        + f" — scope: {creds.scope or 'session'}"
+        f"logged in to {creds.server} — {_describe(creds, Remote(creds.server, creds.token).whoami())}"
     )
 
 
@@ -51,7 +46,17 @@ def whoami() -> None:
     if creds is None:
         raise ActionPlatformError("not logged in: run `action-platform login <server>`")
 
-    who = Remote(creds.server, creds.token).whoami()
+    typer.echo(
+        f"{creds.server} — {_describe(creds, Remote(creds.server, creds.token).whoami())}"
+    )
+
+
+def _describe(creds: credentials.Credentials, who: dict) -> str:
     email = who.get("user", {}).get("email", "?")
+    org = (who.get("organization") or {}).get("name")
     scope = " ".join(who.get("scope") or []) or creds.scope or "session"
-    typer.echo(f"{creds.server} — {email} — scope: {scope}")
+    reach = " / ".join(
+        part for part in (org, who.get("project"), who.get("app")) if part
+    )
+
+    return f"{email} — scope: {scope}" + (f" — on {reach}" if reach else "")

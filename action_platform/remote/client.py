@@ -249,6 +249,39 @@ class Remote:
     def whoami(self) -> dict:
         return _request("GET", f"{self.server}/api/v1/me", token=self.token) or {}
 
+    def organizations(self) -> list[dict]:
+        return self._call("GET", "organizations")
+
+    def projects(self) -> list[dict]:
+        return self._call("GET", "projects")
+
+    def teams(self) -> list[dict]:
+        return self._call("GET", "teams")
+
+    def members(self) -> list[dict]:
+        return self._call("GET", "members")
+
+    def create_project(self, name: str, description: str = "") -> dict:
+        return self._call(
+            "POST", "projects", {"name": name, "description": description}
+        )
+
+    def create_team(self, name: str, description: str = "") -> dict:
+        return self._call("POST", "teams", {"name": name, "description": description})
+
+    def add_team_member(self, team_id: str, user_id: str) -> dict:
+        return self._call(
+            "POST", "teams/members", {"team_id": team_id, "user_id": user_id}
+        )
+
+    def assign_project_team(self, project_id: str, team_id: Optional[str]) -> dict:
+        return self._call(
+            "POST", "projects/team", {"project_id": project_id, "team_id": team_id}
+        )
+
+    def set_member_role(self, user_id: str, role: str) -> dict:
+        return self._call("POST", "members/role", {"user_id": user_id, "role": role})
+
 
 SCOPES = ("read", "write", "release", "admin")
 DEFAULT_SCOPE = "read,write"
