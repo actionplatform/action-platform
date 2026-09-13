@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.0 — 2026-09-13
+
+### Features
+- **web:** settings redesign — structured source hosts with permissions and selected repositories, roles matrix, api card, collapsible git-flow; responsive panels, dialogs and tables
+
 ## v0.4.4 — 2026-09-13
 
 ### Bug Fixes
