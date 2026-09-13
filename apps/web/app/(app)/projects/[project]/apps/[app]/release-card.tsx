@@ -46,21 +46,16 @@ export function ReleaseCard({ view }: { view: AppView }) {
   const loadPreview = () =>
     start(async () => {
       setError(null);
-      try { setPreview(await previewRelease(view.registryId, level, switching ? branch : null)); setShowPreview(true); } catch (e) { setError((e as Error).message); }
+      const r = await previewRelease(view.registryId, level, switching ? branch : null);
+      if (r.ok) { setPreview(r.data); setShowPreview(true); } else setError(r.error);
     });
 
   const create = () =>
     start(async () => {
       setError(null);
-      try {
-        const r = await runRelease(view.projectId, view.appId, view.registryId, level, switching ? branch : null);
-        setResult(r);
-        setConfirm(false);
-        router.refresh();
-      } catch (e) {
-        setError((e as Error).message);
-        setConfirm(false);
-      }
+      const r = await runRelease(view.projectId, view.appId, view.registryId, level, switching ? branch : null);
+      setConfirm(false);
+      if (r.ok) { setResult(r.data); router.refresh(); } else setError(r.error);
     });
 
   return (
