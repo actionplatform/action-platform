@@ -1,3 +1,4 @@
+from typing import Optional
 from pathlib import Path
 
 from fastapi import HTTPException
@@ -30,6 +31,11 @@ class FlowService:
             )
 
         return {"branch": branch.name, "base": branch.base, "pushed": branch.pushed}
+
+    def plan_branch(self, id: str, kind: str, code: str, slug: Optional[str]) -> dict:
+        branch = GitFlow(self._repo(id)).plan_branch(kind, code or "code", slug)
+
+        return {"branch": branch.name, "base": branch.base, "pushed": False}
 
     def checkout(self, id: str, branch: str) -> dict:
         repo = self._repo(id)

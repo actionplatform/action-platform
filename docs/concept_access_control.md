@@ -23,7 +23,7 @@ Assigned per organization under Settings → **Members**.
 | `app.flow` | start branches, check out, push, open pull requests |
 | `app.sync` | sync the workspace with the source host |
 
-Source: `action_platform/core/access.py`, applied by the API's gate in front of `/api/v1` (`action_platform/api/access/`), which answers 403 naming the missing permission; `apps/web/lib/permissions.ts` mirrors the same table so pages can hide or disable what the role lacks.
+Source: `action_platform/core/access.py`, applied by the API's gate in front of `/api/v1` (`action_platform/api/access/`), which answers 403 naming the missing permission. The web app holds no copy: pages read `grants` from the session and the table from `GET /api/v1/access` to hide or disable what the role lacks.
 
 ## Scopes
 

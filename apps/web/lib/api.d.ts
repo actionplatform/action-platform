@@ -223,6 +223,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/apps/{id}/next-version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["app_next_version_api_apps__id__next_version_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/apps/{id}/deploy": {
         parameters: {
             query?: never;
@@ -247,6 +263,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["app_diagnose_api_apps__id__diagnose_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/apps/{id}/branches/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["plan_branch_api_apps__id__branches_plan_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -407,6 +439,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["me_api_v1_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["access_api_v1_access_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1331,6 +1379,12 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AccessCatalog: {
+            roles: components["schemas"]["RoleInfo"][];
+            permissions: components["schemas"]["PermissionInfo"][];
+            scopes: components["schemas"]["ScopeInfo"][];
+            default_scopes: string[];
+        };
         ActiveOrganizationRequest: {
             organization_id: string;
         };
@@ -1449,6 +1503,7 @@ export interface components {
             date: string;
             kind?: string | null;
             protected: boolean;
+            stable: boolean;
             problem?: string | null;
         };
         BranchResult: {
@@ -1834,6 +1889,12 @@ export interface components {
             id: string;
             name: string;
         };
+        NextVersion: {
+            current: string;
+            next: string;
+            branch: string;
+            prerelease: boolean;
+        };
         OAuthAppRequest: {
             client_id: string;
             client_secret: string;
@@ -1897,6 +1958,10 @@ export interface components {
                 [key: string]: boolean;
             };
             grantable_scopes: string[];
+        };
+        PermissionInfo: {
+            id: string;
+            description: string;
         };
         ProjectRow: {
             id: string;
@@ -1992,6 +2057,19 @@ export interface components {
         };
         Removed: {
             removed: string[];
+        };
+        RoleInfo: {
+            id: string;
+            label: string;
+            description: string;
+            permissions: string[];
+            grantable_scopes: string[];
+        };
+        ScopeInfo: {
+            id: string;
+            label: string;
+            description: string;
+            permissions: string[];
         };
         ServiceRequest: {
             name: string;
@@ -2661,6 +2739,39 @@ export interface operations {
             };
         };
     };
+    app_next_version_api_apps__id__next_version_get: {
+        parameters: {
+            query?: {
+                level?: string;
+                branch?: string | null;
+                component?: string | null;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NextVersion"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     app_deploy_api_apps__id__deploy_post: {
         parameters: {
             query?: never;
@@ -2713,6 +2824,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Diagnosis"][];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    plan_branch_api_apps__id__branches_plan_get: {
+        parameters: {
+            query: {
+                kind: string;
+                code?: string;
+                slug?: string | null;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BranchResult"];
                 };
             };
             422: {
@@ -3096,6 +3240,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Me"];
+                };
+            };
+        };
+    };
+    access_api_v1_access_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessCatalog"];
                 };
             };
         };

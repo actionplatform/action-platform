@@ -1,8 +1,8 @@
+import { type Grants } from "@/lib/permissions";
 import { PageHeader } from "@/components/layout/page";
 import { api, type Matrix } from "@/lib/api";
 import { appsOf, projectsOf } from "@/lib/projects";
 
-import { grantsOf } from "@/lib/permissions";
 import { requireOrg } from "@/lib/session";
 import { templateSourcesOf } from "@/lib/template-sources";
 import { type SourceRow, TemplateSources } from "./template-sources";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TemplatesPage() {
   const { session, org } = await requireOrg();
-  const grants = grantsOf(session.role);
+  const grants = session.grants as Grants;
 
   const rows = await templateSourcesOf(org.id);
   let matrix: Matrix | null = null;

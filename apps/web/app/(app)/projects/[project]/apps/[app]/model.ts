@@ -25,6 +25,9 @@ export type AppView = {
   commits: Commit[];
   branches: Branch[];
   isStableBranch: boolean;
+  stableBranches: string[];
+  onProtectedBranch: boolean;
+  branchKinds: string[];
   lastSyncedAt: string | null;
   manifest: string;
   changes: string[];
@@ -44,7 +47,7 @@ export function ciLabel(ci: string | null): string | null {
   return ci ? (CIS[ci] ?? ci) : null;
 }
 
-export function toView(input: { projectId: string; projectName: string; appId: string; appName: string; detail: AppDetail; health: GitflowReport; commits: Commit[]; branches: Branch[]; tags: string[]; lastSyncedAt: Date | null; manifest: string; changes: string[]; grants: Grants }): AppView {
+export function toView(input: { projectId: string; projectName: string; appId: string; appName: string; detail: AppDetail; health: GitflowReport; commits: Commit[]; branches: Branch[]; tags: string[]; lastSyncedAt: Date | null; manifest: string; changes: string[]; grants: Grants; rules: { kinds: string[]; protected: string[] } }): AppView {
   const { detail } = input;
   const meta = detail.project;
   const repo = detail.source_host.repo || null;
@@ -73,7 +76,10 @@ export function toView(input: { projectId: string; projectName: string; appId: s
     health: input.health,
     commits: input.commits,
     branches: input.branches,
-    isStableBranch: ["main", "master"].includes(detail.branch),
+    isStableBranch: input.branches.some((b) => b.name === detail.branch && b.stable),
+    stableBranches: input.branches.filter((b) => b.stable).map((b) => b.name),
+    onProtectedBranch: input.rules.protected.includes(detail.branch),
+    branchKinds: input.rules.kinds,
     lastSyncedAt: input.lastSyncedAt ? input.lastSyncedAt.toISOString() : null,
     manifest: input.manifest,
     changes: input.changes,

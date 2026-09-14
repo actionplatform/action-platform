@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/layout/page";
 import { membersOf } from "@/lib/orgs";
 import { projectsOf } from "@/lib/projects";
-import { can } from "@/lib/permissions";
+
 import { requireOrg } from "@/lib/session";
 import { projectsOfTeam, teamById, teamMembersOf } from "@/lib/teams";
 import { TeamDetail } from "./team-detail";
@@ -15,8 +15,8 @@ export default async function TeamPage({ params }: { params: Promise<{ team: str
   const team = await teamById(org.id, teamId);
   if (!team) notFound();
 
-  const [members, orgMembers, projects, allProjects, role] = await Promise.all([teamMembersOf(team.id), membersOf(org.id), projectsOfTeam(org.id, team.id), projectsOf(org.id), Promise.resolve(session.role)]);
-  const canManage = can(role, "org.manage");
+  const [members, orgMembers, projects, allProjects] = await Promise.all([teamMembersOf(team.id), membersOf(org.id), projectsOfTeam(org.id, team.id), projectsOf(org.id)]);
+  const canManage = !!session.grants["org.manage"];
   const inTeam = new Set(members.map((m) => m.userId));
 
   return (

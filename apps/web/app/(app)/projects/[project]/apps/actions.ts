@@ -55,6 +55,15 @@ export async function syncApp(projectId: string, appId: string, registryId: stri
   }
 }
 
+export async function nextVersion(registryId: string, level: string, branch: string | null = null): Promise<Result<{ current: string; next: string; branch: string; prerelease: boolean }>> {
+  await requireOrg();
+  try {
+    return { ok: true, data: await api.apps.nextVersion(registryId, level, branch) };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
 export async function previewRelease(registryId: string, level: string, branch: string | null = null): Promise<Result<ReleasePreview>> {
   await requireOrg();
   try {
@@ -94,6 +103,16 @@ export async function startBranch(projectId: string, _appId: string, registryId:
     const data = await api.apps.startBranch(registryId, { ...input, slug: input.slug || null });
     refresh(projectId);
     return { ok: true, data };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
+export async function planBranch(registryId: string, kind: string, code: string, slug: string): Promise<Result<{ branch: string; base: string }>> {
+  await requireOrg();
+  try {
+    const data = await api.apps.planBranch(registryId, kind, code, slug || null);
+    return { ok: true, data: { branch: data.branch, base: data.base } };
   } catch (e) {
     return failed(e);
   }

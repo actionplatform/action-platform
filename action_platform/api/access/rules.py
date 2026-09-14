@@ -21,7 +21,7 @@ RULES = [
     Rule(
         "GET",
         re.compile(
-            r"^apps/[^/]+/(gitflow|commits|branches|tags|releases|changes|manifest|diagnose|pull-request)$"
+            r"^apps/[^/]+/(gitflow|commits|branches|branches/plan|tags|releases|changes|manifest|diagnose|pull-request|next-version)$"
         ),
         None,
     ),
@@ -65,6 +65,7 @@ RULES = [
 
 DIRECTORY = {
     "me",
+    "access",
     "tokens",
     "organizations",
     "projects",

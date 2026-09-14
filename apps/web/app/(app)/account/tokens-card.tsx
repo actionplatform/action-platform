@@ -7,11 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import type { UserToken } from "@/lib/api-tokens";
-import { SCOPE_INFO } from "@/lib/permissions";
+import type { ScopeInfo } from "@/lib/permissions";
 import { relativeTime } from "@/lib/time";
 import { revokeApiToken } from "./actions";
 
-export function TokensCard({ tokens, now }: { tokens: UserToken[]; now: number }) {
+export function TokensCard({ tokens, now, scopes }: { tokens: UserToken[]; now: number; scopes: ScopeInfo[] }) {
+  const label = (s: string) => scopes.find((x) => x.id === s)?.label ?? s;
   const router = useRouter();
   const [revoking, setRevoking] = useState<UserToken | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +37,7 @@ export function TokensCard({ tokens, now }: { tokens: UserToken[]; now: number }
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="truncate text-sm font-medium">{t.name}</span>
-                  {t.scope.map((s) => <Badge key={s} className="h-5 px-2 text-[11px]">{SCOPE_INFO[s].label}</Badge>)}
+                  {t.scope.map((s) => <Badge key={s} className="h-5 px-2 text-[11px]">{label(s)}</Badge>)}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-1 text-[12px] text-secondary">
                   <span className="inline-flex h-5 items-center rounded-[5px] border border-border bg-background px-1.5 font-mono text-[11px] text-foreground">{t.organization?.name ?? "all organizations"}</span>

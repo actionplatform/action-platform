@@ -18,6 +18,17 @@ def app_release(
     return lifecycle.release(id, body)
 
 
+@router.get("/{id}/next-version")
+def app_next_version(
+    id: str,
+    level: str = "patch",
+    branch: Optional[str] = None,
+    component: Optional[str] = None,
+    lifecycle: LifecycleService = Depends(get_lifecycle),
+) -> schemas.NextVersion:
+    return lifecycle.next_version(id, level, branch, component)
+
+
 @router.post("/{id}/deploy")
 def app_deploy(
     id: str,

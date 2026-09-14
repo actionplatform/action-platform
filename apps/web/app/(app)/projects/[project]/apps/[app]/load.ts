@@ -1,10 +1,10 @@
+import { type Grants } from "@/lib/permissions";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { api, ApiError, type Release } from "@/lib/api";
 import { releasesOf, type StoredRelease } from "@/lib/releases";
 import { appById, projectById } from "@/lib/projects";
 
-import { grantsOf } from "@/lib/permissions";
 import { requireOrg } from "@/lib/session";
 import { hostsOf } from "@/lib/source-hosts";
 import { type AppView, toView } from "./model";
@@ -23,7 +23,7 @@ export const loadApp = cache(async (projectId: string, appId: string): Promise<L
   if (!app) notFound();
 
   try {
-    const [detail, health, commits, branches, tags, hosts, releases, stored, manifest] = await Promise.all([
+    const [detail, health, commits, branches, tags, hosts, releases, stored, manifest, rules] = await Promise.all([
       api.apps.get(app.registryId),
       api.apps.gitflow(app.registryId),
       api.apps.commits(app.registryId, 50),
@@ -33,9 +33,10 @@ export const loadApp = cache(async (projectId: string, appId: string): Promise<L
       api.apps.releases(app.registryId),
       releasesOf(projectId, app.id),
       api.apps.manifest(app.registryId),
+      api.gitflowRules(),
     ]);
     const changes = detail.clean ? [] : (await api.apps.changes(app.registryId).catch(() => ({ files: [] as string[] }))).files;
-    const view = toView({ projectId, projectName: project.name, appId: app.id, appName: app.name, detail, health, commits, branches, tags, lastSyncedAt: app.lastSyncedAt, manifest: manifest.content, changes, grants: grantsOf(session.role) });
+    const view = toView({ projectId, projectName: project.name, appId: app.id, appName: app.name, detail, health, commits, branches, tags, lastSyncedAt: app.lastSyncedAt, manifest: manifest.content, changes, grants: session.grants as Grants, rules: { kinds: rules.kinds, protected: rules.protected } });
     return { ok: true, view, hosts: hosts.map((h) => ({ id: h.id, name: h.name, kind: h.kind, defaultOwner: h.defaultOwner })), currentHost: app.sourceHostId, releases, stored };
   } catch (e) {
     if (e instanceof ApiError && e.status === 410) notFound();

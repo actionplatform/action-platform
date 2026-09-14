@@ -9,7 +9,7 @@
 | `GET /api/version` (`{version, api}`), `GET /api/matrix`, `POST /api/matrix {sources}`, `GET /api/gitflow/rules` | static; `POST /matrix` merges extra template repositories |
 | `GET /api/apps`, `POST /api/apps {url, name, install}`, `POST /api/apps/init`, `DELETE /api/apps/{id}` | registry: clone a repository (installing the platform when asked), generate from a template, remove the workspace |
 | `POST /api/apps/{id}/sync {reset}`, `/push {private}` | fetch + fast-forward (stash around it, follow a rewritten remote, leave a merged branch); create the remote and push |
-| `GET /api/apps/{id}`, `/gitflow`, `/commits`, `/branches`, `/tags`, `/releases`, `/changes` | state of the workspace; a clone that lost `platform.toml` gets it back on the spot |
+| `GET /api/apps/{id}`, `/gitflow`, `/commits`, `/branches` (each with `protected` and `stable`), `/tags`, `/releases`, `/changes`, `/next-version?level=&branch=`, `/branches/plan?kind=&code=&slug=` | state of the workspace, plus the two previews the pages show before acting: the version a release would produce and the name and base a branch would get; a clone that lost `platform.toml` gets it back on the spot |
 | `GET/PUT /api/apps/{id}/manifest`, `POST /cloud`, `/services`, `/install`, `/discard`, `/commit {message, branch, push, pull_request}` | configuration: edit platform.toml, apply overlays, reinstall, drop or commit the changes (on a new git-flow branch with a pull request when the branch is protected) |
 | `POST /api/apps/{id}/branches`, `/checkout`, `GET/POST /pull-request` | git-flow: start a branch, switch, propose and open a pull request |
 | `POST /api/apps/{id}/release {level, branch, dry_run}`, `/deploy`, `GET /diagnose` | release (fast-forwarded first; a refused push undoes commit and tag), deploy, diagnose; `dry_run` defaults to true |
@@ -46,7 +46,7 @@ Routes that are not workspaces live directly under `/api/v1` and are what the we
 
 | Routes | Permission |
 |---|---|
-| `GET me`, `organizations`, `projects` (with apps; across organizations for a token that spans them, or `X-Organization` for another one the caller belongs to), `teams`, `members`, `hosts`, `template-sources`, `settings/git-author`, `oauth/apps`, `jobs`, `projects/{id}/apps/{id}/imports` | any member (`read`) |
+| `GET me`, `access` (the whole rule table: roles with labels, descriptions, permissions and grantable scopes; permissions; scopes; default scopes — what the pages display), `organizations`, `projects` (with apps; across organizations for a token that spans them, or `X-Organization` for another one the caller belongs to), `teams`, `members`, `hosts`, `template-sources`, `settings/git-author`, `oauth/apps`, `jobs`, `projects/{id}/apps/{id}/imports` | any member (`read`) |
 | `POST tokens {scope, name}` | a session (never a token) |
 | `POST projects`, `DELETE projects/{id}` (removes the workspaces too), `POST projects/{id}/apps {url, install}`, `POST projects/{id}/apps/init {…InitRequest, source_host_id, template_source}`, `DELETE projects/{id}/apps/{id}`, `POST projects/team` | `project.manage` |
 | `PUT projects/{id}/apps/{id}/host` | `app.flow` |

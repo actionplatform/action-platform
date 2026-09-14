@@ -16,6 +16,17 @@ def start_branch(
     return flow.start_branch(id, body)
 
 
+@router.get("/{id}/branches/plan")
+def plan_branch(
+    id: str,
+    kind: str,
+    code: str = "",
+    slug: Optional[str] = None,
+    flow: FlowService = Depends(get_flow),
+) -> schemas.BranchResult:
+    return flow.plan_branch(id, kind, code, slug)
+
+
 @router.post("/{id}/checkout")
 def checkout(
     id: str, body: schemas.CheckoutRequest, flow: FlowService = Depends(get_flow)

@@ -141,6 +141,14 @@ class GitFlow:
 
         return report
 
+    def plan_branch(self, kind: str, code: str, slug: str | None = None) -> Branch:
+        """Name and base a branch would get, without touching the repository."""
+        return Branch(
+            name=branch_name(kind, code, slug),
+            base=self.resolve_base(kind),
+            pushed=False,
+        )
+
     def start(
         self, kind: str, code: str, slug: str | None = None, push: bool = True
     ) -> Branch:
