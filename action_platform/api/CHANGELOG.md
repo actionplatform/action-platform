@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.14.1 — 2026-09-14
+
+### Features
+- **api:** projects answer created_at and updated_at (latest of the project and its apps)
+
 ## v0.14.0 — 2026-09-14
 
 ### Features
