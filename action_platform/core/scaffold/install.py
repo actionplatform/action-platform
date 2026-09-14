@@ -24,6 +24,7 @@ MARKERS = [
     ("composer.json", "php"),
     ("pom.xml", "java"),
     ("Cargo.toml", "rust"),
+    ("Gemfile", "ruby"),
 ]
 
 WORKFLOWS = ["code-quality.yml", "conventional-commit.yml", "gitflow.yml", "trivy.yml"]

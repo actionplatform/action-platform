@@ -91,6 +91,7 @@ CONSTANT_PATTERNS = {
     "src/main/java/**/Version.java": re.compile(
         r'^(\s*public static final String VERSION\s*=\s*")[^"]*(")', re.M
     ),
+    "**/version.rb": re.compile(r'^(\s*VERSION\s*=\s*")[^"]*(")', re.M),
 }
 
 
