@@ -2,6 +2,7 @@
 
 import { siBitbucket, siGithub, siGitlab } from "simple-icons";
 import { Check, ChevronDown, ExternalLink, GitBranch, KeyRound, MoreHorizontal, Plus, Trash2, TriangleAlert, UserCog, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { BrandIcon } from "@/components/ui/brand-icon";
@@ -21,14 +22,18 @@ const BRANDS = { github: siGithub, gitlab: siGitlab, bitbucket: siBitbucket } as
 type Props = { hosts: SourceHost[]; access?: Record<string, HostAccess>; canManage: boolean };
 
 export function SourceHosts({ hosts, access = {}, canManage }: Props) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<HostKind>("github");
   const [state, action, pending] = useActionState(createHost, null);
   const meta = HOST_KINDS.find((k) => k.id === kind)!;
 
   useEffect(() => {
-    if (state && state.error === undefined) setOpen(false);
-  }, [state]);
+    if (state && state.error === undefined) {
+      setOpen(false);
+      router.refresh();
+    }
+  }, [state, router]);
 
   return (
     <Card className="rounded-[11px]">

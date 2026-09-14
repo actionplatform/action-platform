@@ -146,7 +146,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
         })}
       </div>
 
-      {setup && <OAuthAppDialog provider={setup} origin={origin} onClose={() => setSetup(null)} onSaved={() => { setDone({ ...done, [setup]: true }); setSetup(null); }} />}
+      {setup && <OAuthAppDialog provider={setup} origin={origin} onClose={() => setSetup(null)} onSaved={() => { setDone({ ...done, [setup]: true }); setSetup(null); router.refresh(); }} />}
       {createGh && <CreateGitHubAppDialog orgId={orgId} returnTo={returnTo} onClose={() => setCreateGh(false)} />}
       <ConfirmDialog
         open={confirmRemove !== null}
@@ -156,7 +156,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
         confirmLabel="Remove"
         danger
         pending={pending}
-        onConfirm={() => { const p = confirmRemove; if (p) start(async () => { const r = await removeOAuthApp(p); if (r.ok) setRemoved((m) => ({ ...m, [p]: true })); setConfirmRemove(null); }); }}
+        onConfirm={() => { const p = confirmRemove; if (p) start(async () => { const r = await removeOAuthApp(p); if (r.ok) { setRemoved((m) => ({ ...m, [p]: true })); router.refresh(); } setConfirmRemove(null); }); }}
       />
       <ConfirmDialog
         open={confirmDisconnect !== null}
@@ -166,7 +166,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
         confirmLabel="Disconnect"
         danger
         pending={pending}
-        onConfirm={() => { const c = confirmDisconnect; if (c) start(async () => { const r = await disconnectHost(c.provider, c.login); if (r.ok) setGone((m) => ({ ...m, [`${c.provider}:${c.login}`]: true })); setConfirmDisconnect(null); }); }}
+        onConfirm={() => { const c = confirmDisconnect; if (c) start(async () => { const r = await disconnectHost(c.provider, c.login); if (r.ok) { setGone((m) => ({ ...m, [`${c.provider}:${c.login}`]: true })); router.refresh(); } setConfirmDisconnect(null); }); }}
       />
     </div>
   );
