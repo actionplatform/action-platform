@@ -89,19 +89,6 @@ export async function runRelease(projectId: string, _appId: string, registryId: 
   }
 }
 
-export async function pushApp(projectId: string, appId: string, registryId: string, priv: boolean, sourceHostId: string | null): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
-  await requireOrg();
-  try {
-    if (sourceHostId) await v1.setAppHost(projectId, appId, sourceHostId);
-    const r = await api.apps.push(registryId, priv);
-    await v1.syncImports(projectId, appId).catch(() => null);
-    refresh(projectId);
-    return { ok: true, url: r.url };
-  } catch (e) {
-    return failed(e);
-  }
-}
-
 export async function startBranch(projectId: string, _appId: string, registryId: string, input: { kind: string; code: string; slug: string; push: boolean }): Promise<Result<{ branch: string; base: string; pushed: boolean }>> {
   await requireOrg();
   try {

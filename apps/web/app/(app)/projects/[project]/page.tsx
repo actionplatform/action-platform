@@ -71,7 +71,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
                   <Td>{r?.language ?? "—"}</Td>
                   <Td><code className="font-mono text-xs">{r?.branch ?? "—"}</code></Td>
                   <Td>{r?.last_version ?? "—"}</Td>
-                  <Td className="text-muted-foreground font-mono text-xs">{r?.url || "not pushed yet"}</Td>
+                  <Td className="text-muted-foreground font-mono text-xs">{r?.url || "no remote"}</Td>
                   <Td className="text-right">{manage && <RemoveButton projectId={project.id} appId={a.id} name={a.name} repositoryUrl={r?.url || null} />}</Td>
                 </tr>
               );

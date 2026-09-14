@@ -40,7 +40,6 @@ function CommitBar({ view }: { view: AppView }) {
   const [kind, setKind] = useState("chore");
   const [code, setCode] = useState("");
   const [slug, setSlug] = useState("configuration");
-  const [push, setPush] = useState(hasRemote);
   const [pullRequest, setPullRequest] = useState(hasRemote && onProtected);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ branch: string; url: string | null } | null>(null);
@@ -61,7 +60,7 @@ function CommitBar({ view }: { view: AppView }) {
     setError(null);
     const r = await commitChanges(view.projectId, view.appId, view.registryId, {
       message: message.trim(),
-      push: push || pullRequest,
+      push: true,
       branch: newBranch ? { kind, code: code.trim(), slug: slug.trim() } : null,
       pullRequest,
     });
@@ -111,7 +110,7 @@ function CommitBar({ view }: { view: AppView }) {
       >
         {done ? (
           <div className="space-y-2 text-sm">
-            <div>Committed on <span className="font-mono">{done.branch}</span>{push || pullRequest ? " and pushed." : "."}</div>
+            <div>Committed on <span className="font-mono">{done.branch}</span> and pushed.</div>
             {done.url && <a href={done.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline underline-offset-4">Open pull request <ExternalLink className="size-3.5" strokeWidth={1.75} /></a>}
           </div>
         ) : (
@@ -130,9 +129,8 @@ function CommitBar({ view }: { view: AppView }) {
                 <div className="text-xs text-secondary">Branch <span className="font-mono text-foreground">{branchName}</span></div>
               </div>
             )}
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={push || pullRequest} onChange={(e) => setPush(e.target.checked)} disabled={!hasRemote || pullRequest} /> Push after committing</label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={pullRequest} onChange={(e) => setPullRequest(e.target.checked)} disabled={!hasRemote || (!newBranch && onProtected)} /> Open a pull request</label>
-            {!hasRemote && <p className="text-xs text-muted-foreground">No remote: push and pull request need a repository on a code host.</p>}
+            <p className="text-xs text-muted-foreground">The commit is pushed right away: the platform keeps nothing that is not on the code host.</p>
             {error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
           </div>
         )}
