@@ -30,20 +30,32 @@ def preview(ctx: ImportContext, github: GithubDirectory, login: str) -> dict[str
     known = ctx.known_repositories()
     teams = {t.slug for t in ctx.writes.teams_of(ctx.organization_id)}
     problems: list[str] = []
+    members_refused = False
+
+    try:
+        repositories = github.repositories(login)
+    except ProviderError as e:
+        repositories = []
+        problems.append(
+            f"repositories: {e}. The GitHub App must be installed on {login} with access to its repositories "
+            "(Install the app on GitHub, pick the organization, all repositories); an OAuth token needs the repo scope."
+        )
 
     try:
         remote_teams = github.teams(login)
     except ProviderError as e:
         remote_teams = []
+        members_refused = True
         problems.append(f"teams: {e}")
 
     try:
         people = github.people(login)
     except ProviderError as e:
         people = []
+        members_refused = True
         problems.append(f"people: {e}")
 
-    if problems:
+    if members_refused:
         problems.append(
             "Teams and people need the GitHub App permission Organization › Members (read) — "
             "update it under the app's settings on GitHub and accept it on the organization — "
@@ -57,7 +69,7 @@ def preview(ctx: ImportContext, github: GithubDirectory, login: str) -> dict[str
         "organization": login,
         "repositories": [
             {**r, "imported_as": known.get(r["full_name"].lower())}
-            for r in github.repositories(login)
+            for r in repositories
         ],
         "teams": [
             {**t, "exists": t["slug"] in teams or slugify(t["name"]) in teams}
