@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.11.2 — 2026-09-14
+
+### Bug Fixes
+- **import:** list organizations from memberships, /user/orgs and GitHub App installations; answer the app's install url
+
 ## v0.11.1 — 2026-09-14
 
 ### Bug Fixes
