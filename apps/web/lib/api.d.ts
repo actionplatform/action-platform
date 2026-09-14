@@ -1804,7 +1804,7 @@ export interface components {
             host_id: string;
             organization: string;
             repositories: string[];
-            projects: number[];
+            projects: components["schemas"]["ProjectPick"][];
             teams: string[];
             people: string[];
             role: string;
@@ -2101,6 +2101,10 @@ export interface components {
         PermissionInfo: {
             id: string;
             description: string;
+        };
+        ProjectPick: {
+            number: number;
+            project_id?: string | null;
         };
         ProjectRow: {
             id: string;
