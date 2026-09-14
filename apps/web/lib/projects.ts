@@ -1,10 +1,10 @@
 import { type ProjectRow, v1 } from "./v1";
 
-export type Project = { id: string; organizationId: string; name: string; slug: string; description: string | null; teamId: string | null; teamName: string | null; apps: number };
+export type Project = { id: string; organizationId: string; name: string; slug: string; description: string | null; teamId: string | null; teamName: string | null; apps: number; updatedAt: string };
 export type App = { id: string; projectId: string; registryId: string; name: string; sourceHostId: string | null; lastSyncedAt: Date | null };
 
 function project(row: ProjectRow, orgId: string): Project {
-  return { id: row.id, organizationId: row.organization?.id ?? orgId, name: row.name, slug: row.slug, description: row.description ?? null, teamId: row.team?.id ?? null, teamName: row.team?.name ?? null, apps: row.apps.length };
+  return { id: row.id, organizationId: row.organization?.id ?? orgId, name: row.name, slug: row.slug, description: row.description ?? null, teamId: row.team?.id ?? null, teamName: row.team?.name ?? null, apps: row.apps.length, updatedAt: row.updated_at ?? row.created_at ?? "" };
 }
 
 function app(row: ProjectRow["apps"][number], projectId: string): App {

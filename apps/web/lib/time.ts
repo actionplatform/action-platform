@@ -1,5 +1,9 @@
+export function utc(value: string): Date {
+  return new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(value) ? value : `${value}Z`);
+}
+
 export function relativeTime(date: Date | string, now = Date.now()): string {
-  const t = typeof date === "string" ? new Date(date).getTime() : date.getTime();
+  const t = typeof date === "string" ? utc(date).getTime() : date.getTime();
   const s = Math.max(0, Math.round((now - t) / 1000));
   if (s < 45) return "just now";
   const m = Math.round(s / 60);
