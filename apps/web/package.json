@@ -7,22 +7,17 @@
     "build": "next build",
     "start": "next start -p 3000",
     "api:types": "cd ../.. && AP_ALLOW_UNAUTHENTICATED=1 poetry run python -c \"import json; from action_platform.api.main import build; json.dump(build().openapi(), open('apps/web/openapi.json','w'))\" && cd apps/web && openapi-typescript openapi.json -o lib/api.d.ts && node scripts/strip-comments.mjs lib/api.d.ts",
-    "typecheck": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate --config drizzle.pg.config.ts && drizzle-kit generate --config drizzle.mysql.config.ts && drizzle-kit generate --config drizzle.sqlite.config.ts"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@libsql/client": "^0.18.0",
     "@sentry/nextjs": "^10.74.0",
     "@tailwindcss/postcss": "^4.3.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.45.0",
-    "mysql2": "^3.24.4",
     "next": "^15.3.0",
     "openapi-fetch": "^0.17.0",
     "postcss": "^8.5.28",
-    "postgres": "^3.4.9",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "simple-icons": "^16.30.0",
@@ -34,7 +29,6 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "dotenv-cli": "^11.0.0",
-    "drizzle-kit": "^0.31.10",
     "openapi-typescript": "^7.13.0",
     "typescript": "^5.8.0"
   },
