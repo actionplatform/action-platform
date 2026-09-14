@@ -500,13 +500,21 @@ def host_access(
     writes: DirectoryWrites = Depends(get_writes),
 ) -> dict:
     org = org_of(caller, x_organization)
-    creds = writes.credentials_for(org.id, host_id)
+
+    try:
+        creds = writes.credentials_for(org.id, host_id)
+    except ActionPlatformError as e:
+        return {"ok": False, "error": f"{e}; reconnect the host"}
 
     if creds is None:
         return {"ok": False, "error": "no credentials"}
 
     github = writes.oauth_app("github")
-    access = oauth.host_access(creds, github.slug if github else None)
+
+    try:
+        access = oauth.host_access(creds, github.slug if github else None)
+    except ActionPlatformError as e:
+        return {"ok": False, "error": str(e)}
 
     if creds.kind == "bitbucket" and access.get("ok") and access["installations"]:
         slugs = [i["account"] for i in access["installations"]]

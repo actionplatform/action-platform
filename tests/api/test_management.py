@@ -419,3 +419,34 @@ class HostsAndSettingsTest(GateCase):
             204,
         )
         self.assertEqual(self.client.get("/api/v1/hosts", headers=self.h()).json(), [])
+
+
+class DeadTokenTest(GateCase):
+    def test_expired_oauth_host_without_refresh_answers_not_ok(self):
+        from datetime import timedelta
+
+        from action_platform.api.auth.crypto import Sealer
+        from action_platform.api.db.models import SourceHost
+        from action_platform.api.services.directory import now
+
+        sealer = Sealer(self.app.state.secrets)
+
+        with self.app.state.db.session() as s:
+            s.add(
+                SourceHost(
+                    id="h1",
+                    organization_id=self.org["id"],
+                    kind="gitlab",
+                    name="GitLab · ana",
+                    token_encrypted=sealer.seal("old"),
+                    refresh_token_encrypted=sealer.seal("dead"),
+                    expires_at=now() - timedelta(hours=1),
+                    auth_kind="oauth",
+                    login="ana",
+                )
+            )
+
+        res = self.client.get("/api/v1/hosts/h1/access", headers=self.h())
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertFalse(res.json()["ok"])
+        self.assertIn("reconnect the host", res.json()["error"])
