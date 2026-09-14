@@ -130,7 +130,7 @@ class Repository(Vcs):
 
     def remote_tag_exists(self, tag: str, remote: str = "origin") -> bool:
         try:
-            return bool(self.run(["ls-remote", "--tags", remote, tag]).strip())
+            return bool(self.run(["ls-remote", "--tags", remote, f"refs/tags/{tag}"]).strip())
         except subprocess.CalledProcessError:
             return False
 
@@ -193,7 +193,7 @@ class Repository(Vcs):
     def remote_branch_exists(self, name: str, remote: str = "origin") -> bool:
         """Asked live; from the tracking refs of the last fetch when the remote cannot be reached without credentials."""
         try:
-            return bool(self.run(["ls-remote", "--heads", remote, name]).strip())
+            return bool(self.run(["ls-remote", "--heads", remote, f"refs/heads/{name}"]).strip())
         except subprocess.CalledProcessError:
             return self.tracking_branch_exists(name, remote)
 
