@@ -1,4 +1,4 @@
-"""The templates catalog as the repository publishes it: `index.json`, fetched raw and cached for a few minutes."""
+"""The templates catalog as the repository publishes it: `index.json`, fetched raw, revalidated with its ETag."""
 
 import json
 import logging
@@ -20,6 +20,7 @@ class TemplatesIndex:
         self.ttl = settings.TEMPLATES_INDEX_TTL if ttl is None else ttl
         self.lock = threading.Lock()
         self.cached: Optional[dict[str, Any]] = None
+        self.etag = ""
         self.fetched_at = 0.0
 
     @property
@@ -45,18 +46,23 @@ class TemplatesIndex:
             if fresh:
                 return self.cached
 
+            headers = {"accept": "application/json", "user-agent": "action-platform"}
+
+            if self.etag and self.cached is not None:
+                headers["if-none-match"] = self.etag
+
             try:
-                request = urllib.request.Request(
-                    self.url,
-                    headers={
-                        "accept": "application/json",
-                        "user-agent": "action-platform",
-                    },
-                )
+                request = urllib.request.Request(self.url, headers=headers)
 
                 with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
                     self.cached = json.loads(response.read())
+                    self.etag = response.headers.get("etag", "")
                     self.fetched_at = time.monotonic()
+            except urllib.error.HTTPError as e:
+                if e.code == 304:
+                    self.fetched_at = time.monotonic()
+                else:
+                    log.warning("templates index %s unavailable: %s", self.url, e)
             except (urllib.error.URLError, ValueError, OSError) as e:
                 log.warning("templates index %s unavailable: %s", self.url, e)
 
