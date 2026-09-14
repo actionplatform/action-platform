@@ -39,6 +39,7 @@ class GithubDirectory:
         return self.me()["login"].lower() == login.lower()
 
     def organizations(self) -> list[dict[str, Any]]:
+        """The account itself, then every organization the token can see: memberships, `/user/orgs`, and the accounts a GitHub App is installed on."""
         me = self.me()
         rows = [
             {
@@ -48,18 +49,53 @@ class GithubDirectory:
                 "avatar": me.get("avatar_url"),
             }
         ]
+        seen = {me["login"].lower()}
 
-        for org in get_pages(f"{self.api}/user/orgs", self.headers):
+        for org in self._organization_candidates():
+            login = org.get("login")
+
+            if not login or login.lower() in seen:
+                continue
+
+            seen.add(login.lower())
             rows.append(
                 {
-                    "login": org["login"],
-                    "name": org.get("description") or org["login"],
+                    "login": login,
+                    "name": org.get("description") or org.get("name") or login,
                     "kind": "org",
                     "avatar": org.get("avatar_url"),
                 }
             )
 
         return rows
+
+    def _organization_candidates(self) -> list[dict[str, Any]]:
+        found: list[dict[str, Any]] = []
+
+        for url, pick in (
+            (
+                f"{self.api}/user/memberships/orgs?state=active",
+                lambda m: m.get("organization") or {},
+            ),
+            (f"{self.api}/user/orgs", lambda o: o),
+        ):
+            try:
+                found.extend(pick(row) for row in get_pages(url, self.headers))
+            except ProviderError:
+                continue
+
+        try:
+            installations = get_json(f"{self.api}/user/installations", self.headers)
+        except ProviderError:
+            installations = {}
+
+        for i in (installations or {}).get("installations", []):
+            account = i.get("account") or {}
+
+            if account.get("type") == "Organization":
+                found.append(account)
+
+        return found
 
     def repositories(self, login: str) -> list[dict[str, Any]]:
         url = (
