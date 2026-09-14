@@ -23,8 +23,8 @@ const DOCS_URL = "https://github.com/actionplatform/action-platform/blob/master/
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
   const { session, org } = await requireOrg();
-  const [members, invitations, role, hosts, query, author] = await Promise.all([membersOf(org.id), invitationsOf(org.id), Promise.resolve(session.role), hostsOf(org.id), searchParams, gitAuthorOf(org.id)]);
   const canManage = !!session.grants["org.manage"];
+  const [members, invitations, role, hosts, query, author] = await Promise.all([membersOf(org.id), canManage ? invitationsOf(org.id) : Promise.resolve([]), Promise.resolve(session.role), hostsOf(org.id), searchParams, gitAuthorOf(org.id)]);
   const [apps, catalog] = await Promise.all([oauthApps(), v1.access()]);
   const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind !== "generic").map(async (h) => [h.id, await hostAccess(org.id, h.id)] as const)));
   const origin = publicOrigin(await headers());
