@@ -12,6 +12,9 @@ from action_platform.core.action_platform import ActionPlatform
 from action_platform.core.config import Config
 from action_platform.core.flow import git
 from action_platform.core.flow.repository import Repository
+from action_platform.core.release.components import resolve
+from action_platform.core.release.release import STABLE_BRANCHES
+from action_platform.core.release.versioning import VersionFiles
 from action_platform.settings import settings
 
 
@@ -75,6 +78,25 @@ class LifecycleService:
             raise HTTPException(400, f"cannot check out {branch}: {e}") from e
 
         repo.run(["pull", "--ff-only", "--end-of-options", "origin", branch])
+
+    def next_version(
+        self, id: str, level: str, branch: Optional[str], component: Optional[str]
+    ) -> dict:
+        platform = self._tool(id)
+        current = VersionFiles(
+            resolve(platform.config.components, component).dir(platform.repo_root),
+            settings.LAST_VERSION_FILE,
+        ).read()
+        chosen = branch or platform.repo.branch
+
+        return {
+            "current": current,
+            "next": platform.releaser.next_version(
+                level, component=component, branch=chosen
+            ),
+            "branch": chosen,
+            "prerelease": chosen not in STABLE_BRANCHES,
+        }
 
     def deploy(self, id: str, body: DeployRequest) -> list[dict]:
         results = self._tool(id).deploy(stage=body.stage, dry_run=body.dry_run)

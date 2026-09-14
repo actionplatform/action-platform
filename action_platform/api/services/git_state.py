@@ -7,6 +7,7 @@ from action_platform.api.services.manifest import workspace_of
 from action_platform.core.flow import gitflow
 from action_platform.core.flow.repository import Repository
 from action_platform.core.flow.workflow import GitFlow
+from action_platform.core.release.release import STABLE_BRANCHES
 
 
 class GitStateService:
@@ -87,6 +88,7 @@ class GitStateService:
                 "date": date,
                 "kind": gitflow.kind_of(name),
                 "protected": name in gitflow.PROTECTED,
+                "stable": name in STABLE_BRANCHES,
                 "problem": gitflow.check_branch(name),
             }
             for name, date in names

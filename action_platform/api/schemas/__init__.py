@@ -18,6 +18,7 @@ from action_platform.api.schemas.actions import (
     SyncRequest,
     DeployRequest,
     ReleaseRequest,
+    NextVersion,
     DeployResult,
     Diagnosis,
     InitRequest,
@@ -51,6 +52,7 @@ from action_platform.api.schemas.catalog import (
 )
 
 __all__ = [
+    "NextVersion",
     "AddAppRequest",
     "BranchResult",
     "Changes",

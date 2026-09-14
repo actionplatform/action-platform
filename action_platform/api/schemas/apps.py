@@ -68,6 +68,7 @@ class Branch(BaseModel):
     date: str
     kind: Optional[str] = None
     protected: bool
+    stable: bool = False
     problem: Optional[str] = None
 
 

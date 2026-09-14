@@ -129,3 +129,30 @@ class Issued(BaseModel):
     organizations: Optional[list[dict]] = None
     project: Optional[Named] = None
     app: Optional[AppRef] = None
+
+
+class RoleInfo(BaseModel):
+    id: str
+    label: str
+    description: str
+    permissions: list[str]
+    grantable_scopes: list[str]
+
+
+class PermissionInfo(BaseModel):
+    id: str
+    description: str
+
+
+class ScopeInfo(BaseModel):
+    id: str
+    label: str
+    description: str
+    permissions: list[str]
+
+
+class AccessCatalog(BaseModel):
+    roles: list[RoleInfo]
+    permissions: list[PermissionInfo]
+    scopes: list[ScopeInfo]
+    default_scopes: list[str]

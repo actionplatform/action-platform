@@ -92,6 +92,13 @@ class PushResult(BaseModel):
     url: str
 
 
+class NextVersion(BaseModel):
+    current: str
+    next: str
+    branch: str
+    prerelease: bool
+
+
 class ReleasePreview(BaseModel):
     current: str
     next: str
