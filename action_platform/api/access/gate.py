@@ -5,21 +5,38 @@ from typing import Any, Callable, Optional
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from action_platform.api.access.caller import Caller, resolve_caller
+from action_platform.api.access.enrich import enrich
 from action_platform.api.access.rules import DIRECTORY, rule_for
 from action_platform.api.auth.service import AuthService
 from action_platform.api.db.models import App, Organization, Project
 from action_platform.api.services.directory import DirectoryService
 from action_platform.api.services.imports import ImportService
+from action_platform.api.services.jobs import JobQueue
 from action_platform.core.exception import ActionPlatformError
 
 PREFIX = "/api/v1/"
 REPO_IN_URL = re.compile(r"[:/]([^/:]+/[^/]+?)(?:\.git)?$")
-SOURCE_BODY = re.compile(r"^apps/(init|[^/]+/(cloud|services))$")
 
 
 def repo_from_url(url: str) -> Optional[str]:
     match = REPO_IN_URL.search(url or "")
+
     return match.group(1) if match else None
+
+
+ASYNC_PATH = re.compile(r"^apps/([^/]+)/(sync|release|deploy|push)$")
+
+
+class Queued(Exception):
+    def __init__(self, job_id: str) -> None:
+        self.job_id = job_id
+
+
+def wants_async(headers: dict[str, str]) -> bool:
+    return (
+        "respond-async" in headers.get("prefer", "").lower()
+        or headers.get("x-async") == "1"
+    )
 
 
 class Refused(Exception):
@@ -41,13 +58,16 @@ class AccessGate:
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http" or not scope["path"].startswith(PREFIX):
             await self.app(scope, receive, send)
+
             return
+
         if self.state.db is None or self.state.secrets is None:
             await self._json(
                 send,
                 503,
                 {"detail": "no database or auth secret configured on the API"},
             )
+
             return
 
         body = await self._read(receive)
@@ -59,24 +79,42 @@ class AccessGate:
             with self.state.db.session() as db:
                 auth = AuthService(db, self.state.secrets, self.state.verification_uri)
                 caller = resolve_caller(headers, db, auth)
+
                 if caller is None:
                     raise Refused(401, "unauthorized")
+
                 if caller.organization is None and not caller.all_organizations:
                     raise Refused(403, "no organization")
-                if path in DIRECTORY:
+
+                if path in DIRECTORY or path.startswith("jobs/"):
                     scope.setdefault("state", {})["caller"] = caller
                     plan = None
                 else:
                     plan = self._plan(db, caller, method, path, headers, body)
         except Refused as e:
             await self._json(send, e.status, {"detail": e.detail})
+
+            return
+        except Queued as e:
+            await self._json(
+                send,
+                202,
+                {
+                    "job": e.job_id,
+                    "status": "queued",
+                    "poll": f"/api/v1/jobs/{e.job_id}",
+                },
+            )
+
             return
         except ActionPlatformError as e:
             await self._json(send, 400, {"detail": str(e)})
+
             return
 
         if plan is None:
             await self.app(scope, self._replay(body), send)
+
             return
 
         rule, organization, app, new_body, new_method = plan
@@ -95,8 +133,10 @@ class AccessGate:
 
         if method == "GET" and path == "apps":
             allowed: set[str] = set()
+
             with self.state.db.session() as db:
                 directory = DirectoryService(db)
+
                 for org in (
                     [organization]
                     if organization
@@ -105,10 +145,13 @@ class AccessGate:
                     allowed |= directory.registry_ids_of(
                         org.id, caller.project_id, caller.app_id
                     )
+
             await self._filtered(scope, new_body, send, allowed)
+
             return
 
         status = await self._pass(scope, new_body, send)
+
         if (
             rule.imports
             and app is not None
@@ -127,8 +170,10 @@ class AccessGate:
         body: bytes,
     ):
         rule = rule_for(method, path)
+
         if rule is None:
             raise Refused(404, f"{method} /api/v1/{path} is not exposed")
+
         directory = DirectoryService(db, self.state.sealer)
         segments = path.split("/")
         registry_id = (
@@ -142,9 +187,11 @@ class AccessGate:
 
         if registry_id:
             found = directory.app_by_registry_id(registry_id)
+
             if found:
                 app, project = found
                 organization = caller.member_of(project.organization_id)
+
             if (
                 app is None
                 or organization is None
@@ -155,6 +202,7 @@ class AccessGate:
             organization = self._requested(caller, headers) or (
                 None if method == "GET" and path == "apps" else caller.organization
             )
+
             if organization is None and not (method == "GET" and path == "apps"):
                 raise Refused(
                     400,
@@ -164,14 +212,17 @@ class AccessGate:
         ok, why = caller.allows(
             organization.id if organization else None, rule.permission
         )
+
         if not ok:
             raise Refused(403, why)
+
         if (
             app is not None
             and project is not None
             and not caller.within_reach(app.id, project.id)
         ):
             raise Refused(404, "app not found")
+
         if (
             app is None
             and method == "POST"
@@ -184,11 +235,13 @@ class AccessGate:
 
         new_method = method
         parsed: Optional[dict] = None
+
         if method not in ("GET", "HEAD"):
             try:
                 parsed = json.loads(body) if body else {}
             except ValueError as e:
                 raise Refused(400, "body is not valid JSON") from e
+
             if not isinstance(parsed, dict):
                 raise Refused(400, "body must be a JSON object")
 
@@ -196,52 +249,55 @@ class AccessGate:
             new_method = "POST"
             parsed = {"sources": directory.source_specs_of(organization.id)}
 
-        if (
-            parsed is not None
-            and organization is not None
-            and SOURCE_BODY.match(path)
-            and isinstance(parsed.get("source"), str)
-        ):
-            parsed["source"] = directory.source_spec_by_name(
-                organization.id, parsed["source"]
-            )
+        queued = ASYNC_PATH.match(path)
 
         if (
             parsed is not None
+            and queued
+            and app is not None
             and organization is not None
-            and rule.credentials
-            and not parsed.get("credentials")
+            and wants_async(headers)
         ):
-            host_id = (
-                app.source_host_id
-                if app
-                else directory.host_id_for_url(organization.id, parsed["url"])
-                if isinstance(parsed.get("url"), str)
-                else None
+            job = JobQueue(self.state.db).enqueue(
+                queued.group(2),
+                {
+                    "path": path,
+                    "method": method,
+                    "body": {k: v for k, v in parsed.items() if k != "credentials"},
+                    "registry_id": app.registry_id,
+                    "organization_id": organization.id,
+                    "app_id": app.id,
+                    "user_id": caller.user.id,
+                },
+                organization_id=organization.id,
+                app_id=app.id,
+                dedupe_key=queued.group(2) if queued.group(2) == "sync" else None,
             )
-            creds = directory.credentials_for(organization.id, host_id)
-            name, email = directory.git_author_of(organization.id)
-            parsed["credentials"] = {
-                **(creds.as_dict() if creds else {}),
-                "author_name": name,
-                "author_email": email,
-            }
+
+            raise Queued(job.id)
+
+        if parsed is not None:
+            parsed = enrich(directory, organization, app, path, parsed, rule)
 
         if rule.imports and app is not None:
             directory.mark_synced(app)
 
         new_body = json.dumps(parsed).encode() if parsed is not None else b""
+
         return rule, organization, app, new_body, new_method
 
     @staticmethod
     def _requested(caller: Caller, headers: dict[str, str]) -> Optional[Organization]:
         if caller.organization:
             return caller.organization
+
         wanted = (headers.get("x-organization") or "").strip()
+
         return caller.member_of(wanted) if wanted else None
 
     def _import(self, organization: Organization, app: App) -> None:
         repo = self.repo_of(app.registry_id)
+
         with self.state.db.session() as db:
             directory = DirectoryService(db, self.state.sealer)
             creds = directory.credentials_for(organization.id, app.source_host_id)
@@ -250,11 +306,14 @@ class AccessGate:
     @staticmethod
     async def _read(receive: Receive) -> bytes:
         chunks = []
+
         while True:
             message = await receive()
             chunks.append(message.get("body", b""))
+
             if not message.get("more_body"):
                 break
+
         return b"".join(chunks)
 
     @staticmethod
@@ -263,9 +322,12 @@ class AccessGate:
 
         async def receive() -> Message:
             nonlocal sent
+
             if sent:
                 return {"type": "http.disconnect"}
+
             sent = True
+
             return {"type": "http.request", "body": body, "more_body": False}
 
         return receive
@@ -275,11 +337,14 @@ class AccessGate:
 
         async def sender(message: Message) -> None:
             nonlocal status
+
             if message["type"] == "http.response.start":
                 status = message["status"]
+
             await send(message)
 
         await self.app(scope, self._replay(body), sender)
+
         return status
 
     async def _filtered(
@@ -290,6 +355,7 @@ class AccessGate:
 
         async def collector(message: Message) -> None:
             nonlocal start
+
             if message["type"] == "http.response.start":
                 start = message
             elif message["type"] == "http.response.body":
@@ -298,12 +364,15 @@ class AccessGate:
         await self.app(scope, self._replay(body), collector)
         raw = b"".join(chunks)
         status = start["status"] if start else 500
+
         try:
             rows = json.loads(raw) if raw else []
         except ValueError:
             rows = []
+
         if status == 200 and isinstance(rows, list):
             rows = [r for r in rows if isinstance(r, dict) and r.get("id") in allowed]
+
         await self._json(send, status, rows)
 
     @staticmethod

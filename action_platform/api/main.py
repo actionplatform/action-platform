@@ -13,7 +13,7 @@ from action_platform.api.auth.crypto import Sealer
 from action_platform.api.auth.errors import AuthError
 from action_platform.api.auth.router import router as auth_router
 from action_platform.api.auth.secrets import Secrets
-from action_platform.api.core.deps import get_registry
+from action_platform.api.core.deps import configure_registry, get_registry
 from action_platform.api.db import Database
 from action_platform.api.v1 import router as v1
 from action_platform.api.v1.routers.directory import router as v1_directory
@@ -41,6 +41,8 @@ def build(
     if url:
         app.state.db = Database(url, settings.DATABASE_POOL_SIZE)
         app.state.db.migrate()
+
+    configure_registry(app.state.db)
 
     secret = settings.AUTH_SECRET if auth_secret is None else auth_secret
     app.state.secrets = Secrets(secret) if secret else None

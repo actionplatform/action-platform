@@ -1,6 +1,8 @@
-from typing import Optional
+from datetime import datetime
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from pydantic import BaseModel
 from sqlalchemy.orm import Session as DbSession
 
 from action_platform.api.access.caller import Caller
@@ -10,6 +12,7 @@ from action_platform.api.core.deps import get_db
 from action_platform.api.db.models import Organization
 from action_platform.api.schemas import directory as schemas
 from action_platform.api.services.directory import DirectoryService
+from action_platform.api.services.jobs import JobQueue, job_view
 from action_platform.core.access import (
     ROLE_LABELS,
     Grant,
@@ -31,8 +34,10 @@ MANAGE = {
 
 def get_caller(request: Request) -> Caller:
     caller = getattr(request.state, "caller", None)
+
     if caller is None:
         raise HTTPException(401, "unauthorized")
+
     return caller
 
 
@@ -49,7 +54,9 @@ def requested_org(
 ) -> Optional[Organization]:
     if caller.organization:
         return caller.organization
+
     wanted = (x_organization or organization or "").strip()
+
     return caller.member_of(wanted) if wanted else None
 
 
@@ -57,19 +64,23 @@ def required_org(
     caller: Caller, x_organization: Optional[str], organization: Optional[str]
 ) -> Organization:
     org = requested_org(caller, x_organization, organization)
+
     if org is None:
         raise HTTPException(
             400,
             "this token spans every organization: send X-Organization: <id or slug>",
         )
+
     return org
 
 
 def manageable(caller: Caller, org: Organization, path: str) -> None:
     permission = MANAGE[path]
     ok, why = caller.allows(org.id, permission)
+
     if not ok:
         raise HTTPException(403, why)
+
     if caller.project_id or caller.app_id:
         raise HTTPException(
             403, "a token limited to a project or app cannot manage the organization"
@@ -91,6 +102,7 @@ def me(
     app = (
         directory.app(project.id, caller.app_id) if project and caller.app_id else None
     )
+
     return schemas.Me(
         user={
             "id": caller.user.id,
@@ -140,11 +152,14 @@ def issue(
 ) -> schemas.Issued:
     if caller.scope is not None or not caller.session_token:
         raise HTTPException(403, "a token cannot mint another token; sign in again")
+
     grant = Grant.parse(body.scope)
+
     if not grant.scope:
         raise HTTPException(
             400, "scope must include at least one of read, write, release, admin"
         )
+
     session = auth.require_session(caller.session_token)
     token, raw = auth.issue_token(
         session, grant, (body.name or "").strip()[:80] or "cli"
@@ -158,6 +173,7 @@ def issue(
         else None
     )
     app = directory.app(project.id, token.app_id) if project and token.app_id else None
+
     return schemas.Issued(
         token=raw,
         id=token.id,
@@ -183,6 +199,7 @@ def project_rows(
     directory: DirectoryService, caller: Caller, org: Organization, tag: bool
 ) -> list[schemas.ProjectRow]:
     rows = []
+
     for p in directory.projects_of(org.id, caller.project_id):
         team = directory.team(org.id, p.team_id) if p.team_id else None
         apps = directory.apps_of(p.id, caller.app_id)
@@ -206,6 +223,7 @@ def project_rows(
                 organization=schemas.Named(id=org.id, name=org.name) if tag else None,
             )
         )
+
     return rows
 
 
@@ -217,12 +235,14 @@ def projects(
     directory: DirectoryService = Depends(get_directory),
 ) -> list[schemas.ProjectRow]:
     org = requested_org(caller, x_organization, organization)
+
     if org is None:
         return [
             row
             for o, _ in caller.organizations
             for row in project_rows(directory, caller, o, True)
         ]
+
     return project_rows(directory, caller, org, False)
 
 
@@ -234,6 +254,7 @@ def teams(
     directory: DirectoryService = Depends(get_directory),
 ) -> list[schemas.TeamRow]:
     org = required_org(caller, x_organization, organization)
+
     return [
         schemas.TeamRow(
             id=t.id,
@@ -261,6 +282,7 @@ def members(
     directory: DirectoryService = Depends(get_directory),
 ) -> list[schemas.MemberRow]:
     org = required_org(caller, x_organization, organization)
+
     return [
         schemas.MemberRow(
             user_id=u.id,
@@ -283,6 +305,7 @@ def create_project(
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "projects")
     project = directory.create_project(org.id, body.name, body.description or "")
+
     return schemas.Created(id=project.id, name=project.name, slug=project.slug)
 
 
@@ -296,6 +319,7 @@ def create_team(
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "teams")
     team = directory.create_team(org.id, body.name, body.description or "")
+
     return schemas.Created(id=team.id, name=team.name, slug=team.slug)
 
 
@@ -309,6 +333,7 @@ def add_team_member(
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "teams/members")
     directory.add_team_member(org.id, body.team_id, body.user_id)
+
     return schemas.Ok()
 
 
@@ -322,6 +347,7 @@ def assign_project_team(
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "projects/team")
     directory.assign_project_team(org.id, body.project_id, body.team_id or None)
+
     return schemas.Ok()
 
 
@@ -335,4 +361,58 @@ def set_member_role(
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "members/role")
     directory.set_member_role(org.id, body.user_id, body.role)
+
     return schemas.Ok()
+
+
+class JobOut(BaseModel):
+    id: str
+    kind: str
+    status: str
+    app_id: Optional[str] = None
+    attempts: int
+    result: Optional[Any] = None
+    error: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    finished_at: Optional[datetime] = None
+
+
+def get_queue(request: Request) -> JobQueue:
+    if request.app.state.db is None:
+        raise HTTPException(503, "no database configured: set AP_DATABASE_URL")
+
+    return JobQueue(request.app.state.db)
+
+
+@router.get("/jobs/{id}")
+def job(
+    id: str, caller: Caller = Depends(get_caller), queue: JobQueue = Depends(get_queue)
+) -> JobOut:
+    found = queue.get(id)
+
+    if found is None or (
+        found.organization_id and caller.member_of(found.organization_id) is None
+    ):
+        raise HTTPException(404, "no such job")
+
+    return JobOut(**job_view(found))
+
+
+@router.get("/jobs")
+def jobs(
+    app: str,
+    caller: Caller = Depends(get_caller),
+    directory: DirectoryService = Depends(get_directory),
+    queue: JobQueue = Depends(get_queue),
+) -> list[JobOut]:
+    found = directory.app_by_registry_id(app)
+
+    if (
+        found is None
+        or caller.member_of(found[1].organization_id) is None
+        or not caller.within_reach(found[0].id, found[1].id)
+    ):
+        raise HTTPException(404, "app not found")
+
+    return [JobOut(**job_view(j)) for j in queue.for_app(found[0].id)]

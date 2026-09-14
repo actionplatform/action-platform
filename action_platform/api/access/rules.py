@@ -73,6 +73,7 @@ DIRECTORY = {
     "teams/members",
     "projects/team",
     "members/role",
+    "jobs",
 }
 
 
