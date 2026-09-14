@@ -32,6 +32,12 @@ type Config = {
   push: boolean;
 };
 
+function ownerOf(host: HostOption | null): string | null {
+  if (!host) return null;
+  if (host.owners.length === 0) return host.defaultOwner;
+  return host.owners.some((o) => o.account === host.defaultOwner) ? host.defaultOwner : host.owners[0].account;
+}
+
 function ciFor(kind: string | undefined): string {
   return kind === "gitlab" ? "gitlab" : kind === "bitbucket" ? "bitbucket" : "github";
 }
@@ -146,7 +152,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
         name: config.name.trim(),
         description: config.description,
         package_name: config.packageName || null,
-        github_owner: config.githubOwner || host?.defaultOwner || host?.owners[0]?.account || null,
+        github_owner: config.githubOwner || ownerOf(host),
         ci: config.ci && type !== "empty" ? config.ciProvider : null,
         cloud: config.cloud,
         git_init: config.gitInit,
@@ -249,7 +255,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                 <Field label={host?.kind === "gitlab" ? "Namespace" : host?.kind === "bitbucket" ? "Workspace" : "Organization"} hint={host?.owners.length ? (host.kind === "gitlab" ? "Your user or a group where you can create projects." : host.kind === "bitbucket" ? "A workspace where you can create repositories." : "Where the repository is created — an account or organization the GitHub App is installed on.") : "Account or organization that owns the repository."}>
                   {host?.owners.length ? (
                     <div className="space-y-1.5">
-                      <Select mono value={config.githubOwner || host.defaultOwner || host.owners[0].account} onChange={(v) => setConfig({ ...config, githubOwner: v })} options={[...host.owners.map((o) => ({ value: o.account, label: o.account, hint: o.why ?? undefined, disabled: !o.ok })), ...(host.defaultOwner && !host.owners.some((o) => o.account === host.defaultOwner) ? [{ value: host.defaultOwner, label: host.defaultOwner }] : [])]} />
+                      <Select mono value={config.githubOwner || ownerOf(host) || host.owners[0].account} onChange={(v) => setConfig({ ...config, githubOwner: v })} options={[...host.owners.map((o) => ({ value: o.account, label: o.account, hint: o.why ?? undefined, disabled: !o.ok })), ...(host.defaultOwner && !host.owners.some((o) => o.account === host.defaultOwner) ? [{ value: host.defaultOwner, label: host.defaultOwner }] : [])]} />
                       {host.installUrl && <a href={host.installUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-secondary hover:text-foreground">Another organization? Install the GitHub App on it <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
                     </div>
                   ) : (
@@ -303,7 +309,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                   <Row k="Description" v={config.description || "—"} />
                   <Row k="Project" v={projects.find((p) => p.id === project)?.name ?? "—"} />
                   <Row k="Source host" v={host?.name ?? "—"} />
-                  <Row k="Repository" v={host ? `${config.githubOwner || host.defaultOwner || "<token user>"}/${config.directory}` : "—"} mono />
+                  <Row k="Repository" v={host ? `${config.githubOwner || ownerOf(host) || "<token user>"}/${config.directory}` : "—"} mono />
                   <div className="sm:col-span-2">
                     <div className="text-xs text-secondary mb-1">Selected options</div>
                     <div className="flex flex-wrap gap-1">

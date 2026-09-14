@@ -1,4 +1,4 @@
-import { credentialsFor } from "./source-hosts";
+import { credentialsFor, setHostOwner } from "./source-hosts";
 
 export type Owner = { account: string; kind: "user" | "org"; repositories: "all" | "selected"; administration: string; contents: string; canCreateRepos: boolean; selected?: string[]; configureUrl?: string | null };
 export type HostAccess =
@@ -16,8 +16,17 @@ export async function hostAccess(orgId: string, hostId: string, githubAppSlug: s
   if (!creds) return { ok: false, error: "no credentials" };
   if (creds.kind === "github") return github(creds.token, creds.base_url, githubAppSlug);
   if (creds.kind === "gitlab") return gitlab(creds.token, creds.base_url);
-  if (creds.kind === "bitbucket") return bitbucket(creds.token, creds.username);
+  if (creds.kind === "bitbucket") return healedOwner(orgId, hostId, creds.owner, await bitbucket(creds.token, creds.username));
   return { ok: false, error: `no access check for ${creds.kind}` };
+}
+
+async function healedOwner(orgId: string, hostId: string, owner: string | null, access: HostAccess): Promise<HostAccess> {
+  if (!access.ok || access.installations.length === 0) return access;
+  const slugs = access.installations.map((i) => i.account);
+  if (owner && slugs.includes(owner)) return access;
+  const first = access.installations.find((i) => i.canCreateRepos) ?? access.installations[0];
+  await setHostOwner(orgId, hostId, first.account);
+  return access;
 }
 
 async function github(token: string, baseUrl: string | null, appSlug: string | null): Promise<HostAccess> {
