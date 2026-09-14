@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.11.0 — 2026-09-14
+
+### Features
+- **api:** /import/github preview endpoints and the import_github job
+- **api:** github import service: organizations, repositories, teams and people from a connected host
+
 ## v0.10.0 — 2026-09-14
 
 ### Features
