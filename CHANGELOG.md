@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.7.1 — 2026-09-14
+
+### Features
+- **core:** access catalog with labels and descriptions; Releaser.next_version and GitFlow.plan_branch previews
+
+### Docs
+- previews and the access catalog
+- registry without a file fallback
+- registry adoption
+
+### Tests
+- **api:** access catalog, next-version and branch plan previews
+- **api:** registry on the database everywhere; adoption renames apps.json
+- **api:** registry adopts apps.json
+- **api:** dead OAuth token on host access
+
+### Style
+- **test:** ruff format
+
 ## v0.7.0 — 2026-09-13
 
 ### Features
