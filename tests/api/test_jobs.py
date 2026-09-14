@@ -133,3 +133,33 @@ class AsyncRouteTest(GateCase):
         res = self.client.get(f"/api/v1/apps/{registry_id}", headers=self.h())
         self.assertEqual(res.status_code, 200, res.text)
         self.assertTrue((Path(entry.path) / "platform.toml").exists())
+
+
+class RegistryAdoptionTest(GateCase):
+    def test_entries_from_apps_json_are_adopted_into_the_database(self):
+        import json
+        from pathlib import Path
+
+        from action_platform.api.core.deps import configure_registry, get_registry
+        from action_platform.api.repositories.registry import home
+
+        file = home() / "apps.json"
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text(
+            json.dumps(
+                [
+                    {
+                        "id": "01old",
+                        "name": "legacy",
+                        "url": self.url,
+                        "path": str(home() / "workspaces" / "01old"),
+                        "default_branch": "main",
+                    }
+                ]
+            )
+        )
+        configure_registry(self.app.state.db)
+        entry = get_registry().get("01old")
+        self.assertEqual((entry.name, entry.url), ("legacy", self.url))
+        self.assertTrue(Path(entry.path).name == "01old")
+        self.assertEqual(get_registry().adopt_file(), [])

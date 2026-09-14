@@ -59,7 +59,7 @@ Routes that are not workspaces live directly under `/api/v1` and are what the we
 
 ## Workspaces
 
-The registry — id, name, url, default branch of every app — is the `registry` table when the API has a database (`apps.json` under `AP_HOME` otherwise), so every API instance and worker sees the same apps. Each instance keeps its clones under `AP_HOME/workspaces/<id>` (`~/.action-platform`, `/data/action-platform` in the image) and clones an app again when it is asked for one it does not have; a private repository needs credentials for that, which every mutating call carries, so a fresh instance rebuilds on the first `sync`. Every call that opens a workspace brings `platform.toml` back when it is missing, so an app never errors for something the platform can fix itself.
+The registry — id, name, url, default branch of every app — is the `registry` table when the API has a database (`apps.json` under `AP_HOME` otherwise), so every API instance and worker sees the same apps. An `apps.json` left from before is adopted into the table on boot, ids kept. Each instance keeps its clones under `AP_HOME/workspaces/<id>` (`~/.action-platform`, `/data/action-platform` in the image) and clones an app again when it is asked for one it does not have; a private repository needs credentials for that, which every mutating call carries, so a fresh instance rebuilds on the first `sync`. Every call that opens a workspace brings `platform.toml` back when it is missing, so an app never errors for something the platform can fix itself.
 
 ## Jobs
 
