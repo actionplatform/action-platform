@@ -399,15 +399,313 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["status_api_auth_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sign-up": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["sign_up_api_auth_sign_up_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sign-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["sign_in_api_auth_sign_in_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sign-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["sign_out_api_auth_sign_out_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["session_api_auth_session_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/session/organization": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["set_active_organization_api_auth_session_organization_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["sessions_api_auth_sessions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["revoke_session_api_auth_sessions__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_organization_api_auth_organizations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["add_member_api_auth_members_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/device/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["device_code_api_auth_device_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/device/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["device_token_api_auth_device_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/device": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["device_request_api_auth_device_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/device/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["device_approve_api_auth_device_approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/device/deny": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["device_deny_api_auth_device_deny_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["tokens_api_auth_tokens_get"];
+        put?: never;
+        post: operations["issue_token_api_auth_tokens_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/tokens/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["revoke_token_api_auth_tokens__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/tokens/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["verify_token_api_auth_tokens_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ActiveOrganizationRequest: {
+            organization_id: string;
+        };
         AddAppRequest: {
             url: string;
             name?: string | null;
             install?: components["schemas"]["InstallSpec"] | null;
             credentials?: components["schemas"]["SourceCredentials"] | null;
+        };
+        AddMemberRequest: {
+            organization_id: string;
+            name: string;
+            email: string;
+            password: string;
+            role: string;
         };
         AppDetail: {
             id: string;
@@ -457,6 +755,10 @@ export interface components {
             last_version?: string | null;
             branch?: string | null;
         };
+        AuthStatus: {
+            configured: boolean;
+            users: number;
+        };
         Branch: {
             name: string;
             date: string;
@@ -468,6 +770,15 @@ export interface components {
             branch: string;
             base: string;
             pushed: boolean;
+        };
+        BrowserSessionOut: {
+            id: string;
+            created_at: string;
+            updated_at: string;
+            expires_at: string;
+            ip_address?: string | null;
+            user_agent?: string | null;
+            current: boolean;
         };
         Changes: {
             files: string[];
@@ -508,6 +819,12 @@ export interface components {
             pushed: boolean;
             pull_request?: components["schemas"]["CommitPullRequest"] | null;
         };
+        CreateOrganizationRequest: {
+            name: string;
+            slug: string;
+            git_author_name?: string | null;
+            git_author_email?: string | null;
+        };
         DeployRequest: {
             stage?: string | null;
             dry_run: boolean;
@@ -518,6 +835,43 @@ export interface components {
             version: string;
             url?: string | null;
             error?: string | null;
+        };
+        DeviceCodeOut: {
+            device_code: string;
+            user_code: string;
+            verification_uri: string;
+            verification_uri_complete: string;
+            expires_in: number;
+            interval: number;
+        };
+        DeviceCodeRequest: {
+            client_id?: string | null;
+            scope?: string | null;
+        };
+        DeviceDecision: {
+            user_code: string;
+            grant?: components["schemas"]["GrantIn"] | null;
+        };
+        DeviceDecisionOut: {
+            status: string;
+        };
+        DeviceRequestOut: {
+            status: string;
+            requested: string[];
+            grant: components["schemas"]["GrantOut"];
+            client_id?: string | null;
+            expires_at: string;
+        };
+        DeviceTokenOut: {
+            access_token: string;
+            token_type: string;
+            scope: string;
+            expires_in: number;
+        };
+        DeviceTokenRequest: {
+            grant_type: string;
+            device_code: string;
+            client_id?: string | null;
         };
         Diagnosis: {
             ok: boolean;
@@ -540,8 +894,30 @@ export interface components {
             protected: string[];
             types: string[];
         };
+        GrantIn: {
+            scope?: string[];
+            organization_id?: string | null;
+            project_id?: string | null;
+            app_id?: string | null;
+        };
+        GrantOut: {
+            scope?: string[];
+            organization_id?: string | null;
+            project_id?: string | null;
+            app_id?: string | null;
+        };
         HTTPValidationError: {
             detail?: components["schemas"]["ValidationError"][];
+        };
+        IdentityOut: {
+            user: components["schemas"]["UserOut"];
+            session: components["schemas"]["SessionOut"];
+            organization?: components["schemas"]["OrganizationOut"] | null;
+            organizations: components["schemas"]["OrganizationOut"][];
+            role?: string | null;
+            grants: {
+                [key: string]: boolean;
+            };
         };
         InitRequest: {
             type: string;
@@ -576,6 +952,13 @@ export interface components {
         Installed: {
             installed: string[];
         };
+        IssueTokenRequest: {
+            name: string;
+            scope: string;
+            organization_id?: string | null;
+            project_id?: string | null;
+            app_id?: string | null;
+        };
         ManifestBody: {
             content: string;
         };
@@ -606,6 +989,19 @@ export interface components {
             providers: string[];
             description: string;
             source: string;
+        };
+        MemberAdded: {
+            user_id: string;
+            existed: boolean;
+        };
+        Named: {
+            id: string;
+            name: string;
+        };
+        OrganizationOut: {
+            id: string;
+            name: string;
+            slug: string;
         };
         PullRequestProposal: {
             head: string;
@@ -662,6 +1058,33 @@ export interface components {
             provider?: string | null;
             source?: components["schemas"]["SourceSpec"] | null;
         };
+        SessionOut: {
+            id: string;
+            token: string;
+            cookie: string;
+            expires_at: string;
+            created_at: string;
+            updated_at: string;
+            ip_address?: string | null;
+            user_agent?: string | null;
+            active_organization_id?: string | null;
+        };
+        SignInRequest: {
+            email: string;
+            password: string;
+            ip_address?: string | null;
+            user_agent?: string | null;
+        };
+        SignUpRequest: {
+            name: string;
+            email: string;
+            password: string;
+            invitation_id?: string | null;
+        };
+        Signed: {
+            user: components["schemas"]["UserOut"];
+            session: components["schemas"]["SessionOut"];
+        };
         SourceCredentials: {
             kind?: string | null;
             token?: string | null;
@@ -701,12 +1124,56 @@ export interface components {
             credentials?: components["schemas"]["SourceCredentials"] | null;
             reset: boolean;
         };
+        TokenClaimsOut: {
+            id: string;
+            user: components["schemas"]["UserOut"];
+            organization?: components["schemas"]["OrganizationOut"] | null;
+            organizations: components["schemas"]["OrganizationOut"][];
+            all_organizations: boolean;
+            scope: string[];
+            project_id?: string | null;
+            app_id?: string | null;
+            role?: string | null;
+        };
+        TokenClientOut: {
+            name: string;
+            first_seen_at: string;
+            last_seen_at: string;
+        };
+        TokenIssued: {
+            id: string;
+            token: string;
+            scope: string[];
+            expires_at: string;
+        };
+        TokenOut: {
+            id: string;
+            name: string;
+            scope: string[];
+            organization?: components["schemas"]["Named"] | null;
+            project?: components["schemas"]["Named"] | null;
+            app?: components["schemas"]["Named"] | null;
+            created_at: string;
+            expires_at: string;
+            last_used_at?: string | null;
+            clients: components["schemas"]["TokenClientOut"][];
+        };
+        UserOut: {
+            id: string;
+            name: string;
+            email: string;
+            image?: string | null;
+        };
         ValidationError: {
             loc: (string | number)[];
             msg: string;
             type: string;
             input?: unknown;
             ctx?: Record<string, never>;
+        };
+        VerifyTokenRequest: {
+            token: string;
+            client?: string | null;
         };
         Version: {
             version: string;
@@ -1633,6 +2100,596 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CommitResult"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_auth_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthStatus"];
+                };
+            };
+        };
+    };
+    sign_up_api_auth_sign_up_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignUpRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Signed"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sign_in_api_auth_sign_in_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignInRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Signed"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sign_out_api_auth_sign_out_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    session_api_auth_session_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityOut"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_active_organization_api_auth_session_organization_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActiveOrganizationRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityOut"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sessions_api_auth_sessions_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrowserSessionOut"][];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_session_api_auth_sessions__id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_organization_api_auth_organizations_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrganizationRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationOut"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_member_api_auth_members_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMemberRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberAdded"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    device_code_api_auth_device_code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceCodeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceCodeOut"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    device_token_api_auth_device_token_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceTokenRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceTokenOut"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    device_request_api_auth_device_get: {
+        parameters: {
+            query: {
+                user_code: string;
+            };
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceRequestOut"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    device_approve_api_auth_device_approve_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceDecision"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceDecisionOut"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    device_deny_api_auth_device_deny_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceDecision"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceDecisionOut"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tokens_api_auth_tokens_get: {
+        parameters: {
+            query?: {
+                organization_id?: string | null;
+            };
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenOut"][];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_token_api_auth_tokens_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssueTokenRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenIssued"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_token_api_auth_tokens__id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_token_api_auth_tokens_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyTokenRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenClaimsOut"];
                 };
             };
             422: {
