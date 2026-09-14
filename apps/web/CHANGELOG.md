@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.14.1 — 2026-09-14
+
+### Bug Fixes
+- **web:** project cards show a real 'Updated' time instead of NaN years
+
 ## v0.14.0 — 2026-09-14
 
 ### Features
