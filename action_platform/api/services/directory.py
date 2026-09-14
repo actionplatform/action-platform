@@ -60,6 +60,15 @@ def slugify(value: str) -> str:
     )
 
 
+REPO_IN_URL = re.compile(r"[:/]([^/:]+/[^/]+?)(?:\.git)?$")
+
+
+def repo_from_url(url: str) -> Optional[str]:
+    match = REPO_IN_URL.search(url or "")
+
+    return match.group(1) if match else None
+
+
 def kind_of_url(url: str) -> Optional[str]:
     if "github.com" in url:
         return "github"

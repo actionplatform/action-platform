@@ -6,14 +6,17 @@ from sqlalchemy.orm import Session as DbSession
 
 from action_platform.api.access.caller import Caller
 from action_platform.api.access.enrich import credentials_for
-from action_platform.api.access.gate import repo_from_url
 from action_platform.api.core.deps import get_app_service, get_db
 from action_platform.api.db.models import Organization, PullRequest, Release
 from action_platform.api.schemas import SourceCredentials
 from action_platform.api.schemas import management as schemas
 from action_platform.api.services import hosts as oauth
 from action_platform.api.services.apps import AppService
-from action_platform.api.services.directory import DirectoryWrites, kind_of_url
+from action_platform.api.services.directory import (
+    DirectoryWrites,
+    kind_of_url,
+    repo_from_url,
+)
 from action_platform.api.services.imports import ImportService
 from action_platform.api.v1.routers.directory import get_caller, required_org
 from action_platform.core.exception import ActionPlatformError
@@ -101,9 +104,32 @@ def app_of(writes: DirectoryWrites, caller: Caller, project, app_id: str):
     return app
 
 
+def delete_remote(writes: DirectoryWrites, apps: AppService, org, app) -> Optional[str]:
+    """Delete the repository behind `app` on its host; None when it was never pushed."""
+    try:
+        remote = apps.repository_of(app.registry_id)
+    except ActionPlatformError:
+        return None
+
+    if remote is None:
+        return None
+
+    creds = writes.credentials_for(org.id, app.source_host_id)
+
+    if creds is None:
+        raise HTTPException(
+            409,
+            f"{app.name} lives on {remote[0]} but no connected host is attached to it; "
+            "attach one in the app's settings or keep the repository",
+        )
+
+    return apps.delete_repository(app.registry_id, SourceCredentials(**creds.as_dict()))
+
+
 @router.delete("/projects/{project_id}")
 def delete_project(
     project_id: str,
+    repositories: bool = False,
     x_organization: Optional[str] = Header(default=None),
     caller: Caller = Depends(get_caller),
     writes: DirectoryWrites = Depends(get_writes),
@@ -112,7 +138,17 @@ def delete_project(
     org = org_of(caller, x_organization)
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
-    registry_ids = [a.registry_id for a in writes.apps_of(project.id)]
+    project_apps = writes.apps_of(project.id)
+    deleted = []
+
+    if repositories:
+        for app in project_apps:
+            repo = delete_remote(writes, apps, org, app)
+
+            if repo:
+                deleted.append(repo)
+
+    registry_ids = [a.registry_id for a in project_apps]
 
     for registry_id in registry_ids:
         try:
@@ -122,7 +158,7 @@ def delete_project(
 
     writes.delete_project(org.id, project_id)
 
-    return schemas.Removed(removed=registry_ids)
+    return schemas.Removed(removed=registry_ids, repositories=deleted)
 
 
 @router.post("/projects/{project_id}/apps", status_code=201)
@@ -218,22 +254,25 @@ def init_app(
     )
 
 
-@router.delete("/projects/{project_id}/apps/{app_id}", status_code=204)
+@router.delete("/projects/{project_id}/apps/{app_id}")
 def delete_app(
     project_id: str,
     app_id: str,
+    repository: bool = False,
     x_organization: Optional[str] = Header(default=None),
     caller: Caller = Depends(get_caller),
     writes: DirectoryWrites = Depends(get_writes),
     apps: AppService = Depends(get_app_service),
-) -> None:
+) -> schemas.Removed:
     org = org_of(caller, x_organization)
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
     app = writes.app(project.id, app_id)
 
     if app is None:
-        return
+        return schemas.Removed()
+
+    deleted = delete_remote(writes, apps, org, app) if repository else None
 
     try:
         apps.remove(app.registry_id)
@@ -241,6 +280,10 @@ def delete_app(
         pass
 
     writes.delete_app(project.id, app_id)
+
+    return schemas.Removed(
+        removed=[app.registry_id], repositories=[deleted] if deleted else []
+    )
 
 
 @router.put("/projects/{project_id}/apps/{app_id}/host")

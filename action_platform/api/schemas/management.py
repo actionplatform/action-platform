@@ -200,3 +200,4 @@ class AddTemplateSource(BaseModel):
 
 class Removed(BaseModel):
     removed: list[str] = []
+    repositories: list[str] = []

@@ -8,13 +8,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from action_platform.api import api_version
-from action_platform.api.access.gate import AccessGate, repo_from_url
+from action_platform.api.access.gate import AccessGate
 from action_platform.api.auth.crypto import Sealer
 from action_platform.api.auth.errors import AuthError
 from action_platform.api.auth.router import router as auth_router
 from action_platform.api.auth.secrets import Secrets
 from action_platform.api.core.deps import configure_registry, get_registry
 from action_platform.api.db import Database
+from action_platform.api.services.directory import repo_from_url
 from action_platform.api.v1 import router as v1
 from action_platform.api.v1.routers.directory import router as v1_directory
 from action_platform.api.v1.routers.management import router as v1_management
