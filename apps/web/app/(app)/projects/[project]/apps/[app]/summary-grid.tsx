@@ -27,10 +27,10 @@ export function SummaryGrid({ view }: { view: AppView }) {
       <SummaryCard label="Latest tag" value={view.latestTag ?? <span className="font-sans text-sm font-normal text-secondary">No tags</span>} icon={Tag} />
       <SummaryCard
         label="Pending changes"
-        value={<span className="font-sans text-sm font-normal text-secondary">{pending === 0 ? "Everything is on the code host" : `${pending} ${pending === 1 ? "file" : "files"} to commit`}</span>}
+        value={pending === 0 ? <span className="font-sans text-sm font-normal text-secondary">None</span> : `${pending} ${pending === 1 ? "file" : "files"}`}
         badge={
-          pending === 0 ? <Badge tone="ok" className="gap-1"><Check className="size-3" strokeWidth={2.5} /> Committed</Badge>
-          : <Badge tone="inverse" className="gap-1"><TriangleAlert className="size-3" /> {pending} pending</Badge>
+          pending === 0 ? <Badge tone="ok" className="gap-1"><Check className="size-3" strokeWidth={2.5} /> Up to date</Badge>
+          : <Badge tone="inverse" className="gap-1"><TriangleAlert className="size-3" /> To commit</Badge>
         }
         icon={CircleDashed}
       />
