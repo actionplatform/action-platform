@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.11.1 — 2026-09-14
+
+### Bug Fixes
+- **web:** a dropped connection during a long action shows a message instead of crashing the page
+
 ## v0.11.0 — 2026-09-14
 
 ### Features
