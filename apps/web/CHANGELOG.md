@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.11.2 — 2026-09-14
+
+### Features
+- **web:** import page explains why an organization is missing and links to the GitHub App install
+
 ## v0.11.1 — 2026-09-14
 
 ### Bug Fixes
