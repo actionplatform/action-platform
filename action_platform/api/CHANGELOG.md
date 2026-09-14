@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.6.0 — 2026-09-13
+
+### Features
+- **api:** /api/v1 management routes, OAuth start/callback/manifest/install, public invitation routes; X-Organization honored for members
+- **api:** every write the web pages did — projects, apps, teams, members, invitations, hosts, OAuth apps, settings, template sources — plus the OAuth dance and host access checks in Python
+- **api:** oauth_app table (0004) — OAuth apps used to connect code hosts live in the database
+- **api:** job queue with SKIP LOCKED claims, retries and reaping; Prefer: respond-async on sync, release, deploy and push answers 202; GET /api/v1/jobs; worker runs jobs with the same services
+- **api:** registry in the database (0003) shared by every instance; a missing workspace is cloned again on demand
+- **api:** /api/v1 gate — caller from JWT, session or cookie; role ∩ scope ∩ reach per route; credentials and template sources filled in; apps cut to reach; imports after mutations; me, organizations, projects, teams, members, tokens and management routes
+- **api:** directory, credentials and imports in Python — projects, apps, teams, members, source-host tokens decrypted (and refreshed) from the web app's ciphertext, commit identity, template sources, releases and pull requests copied from the host
+- **api:** auth owned by the API — sign-up/sign-in with better-auth-compatible scrypt hashes and signed cookies, sessions, organizations and members, RFC 8628 device flow, scoped JWT tokens, per-IP rate limits
+
+### Style
+- **api:** blank lines between the steps inside functions
+
 ## v0.5.15 — 2026-09-13
 
 ### Features
