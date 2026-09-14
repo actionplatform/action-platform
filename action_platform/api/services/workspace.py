@@ -140,14 +140,17 @@ class Workspaces:
 
 def remote_default(repo: Repository, known: str) -> str:
     """The branch the remote points HEAD at, else the first of the known default, main and master that exists there."""
+    repo.attempt(["remote", "set-head", "origin", "--auto"])
     head = repo.attempt(
         ["symbolic-ref", "-q", "refs/remotes/origin/HEAD"]
     ).stdout.strip()
+    pointed = (
+        head.removeprefix("refs/remotes/origin/")
+        if head.startswith("refs/remotes/origin/")
+        else ""
+    )
 
-    if head.startswith("refs/remotes/origin/"):
-        return head.removeprefix("refs/remotes/origin/")
-
-    for candidate in (known, "main", "master"):
+    for candidate in (pointed, known, "main", "master"):
         if candidate and repo.tracking_branch_exists(candidate):
             return candidate
 
