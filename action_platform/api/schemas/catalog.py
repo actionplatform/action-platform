@@ -20,6 +20,12 @@ class MatrixProject(BaseModel):
     description: str
     source: str = "official"
     plain: bool = False
+    framework: Optional[str] = None
+    language: Optional[str] = None
+    icon: Optional[str] = None
+    stack_icon: Optional[str] = None
+    path: Optional[str] = None
+    url: Optional[str] = None
 
 
 class MatrixCloud(BaseModel):
@@ -28,6 +34,8 @@ class MatrixCloud(BaseModel):
     languages: list[str]
     description: str
     source: str = "official"
+    icon: Optional[str] = None
+    url: Optional[str] = None
 
 
 class MatrixService(BaseModel):
@@ -35,6 +43,20 @@ class MatrixService(BaseModel):
     providers: list[str]
     description: str
     source: str = "official"
+    icon: Optional[str] = None
+    url: Optional[str] = None
+
+
+class MatrixType(BaseModel):
+    id: str
+    label: str
+    description: str = ""
+
+
+class MatrixStack(BaseModel):
+    id: str
+    label: str
+    icon: Optional[str] = None
 
 
 class SourcesRequest(BaseModel):
@@ -57,6 +79,8 @@ class Matrix(BaseModel):
     clouds: list[MatrixCloud]
     services: list[MatrixService]
     sources: list[SourceStatus] = []
+    types: list[MatrixType] = []
+    stacks: list[MatrixStack] = []
 
 
 class GitflowRules(BaseModel):

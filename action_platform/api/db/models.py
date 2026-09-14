@@ -316,7 +316,7 @@ class TemplateSource(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     url: Mapped[str] = mapped_column(Text, nullable=False)
     ref: Mapped[str] = mapped_column(
-        SHORT, nullable=False, default="v1", server_default="v1"
+        SHORT, nullable=False, default="main", server_default="main"
     )
     source_host_id: Mapped[Optional[str]] = mapped_column(KEY)
     created_at: Mapped[datetime] = mapped_column(
