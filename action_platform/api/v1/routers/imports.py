@@ -40,6 +40,11 @@ class GithubOrganization(BaseModel):
     avatar: Optional[str] = None
 
 
+class GithubOrganizations(BaseModel):
+    organizations: list[GithubOrganization]
+    install_url: Optional[str] = None
+
+
 class GithubRepository(BaseModel):
     full_name: str
     name: str
@@ -104,15 +109,25 @@ def github_organizations(
     x_organization: Optional[str] = Header(default=None),
     caller: Caller = Depends(get_caller),
     writes: DirectoryWrites = Depends(get_writes),
-) -> list[GithubOrganization]:
+) -> GithubOrganizations:
     org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     creds = github_credentials(writes, org, host)
+    github_app = writes.oauth_app("github")
 
     try:
-        return client.GithubDirectory(creds).organizations()
+        organizations = client.GithubDirectory(creds).organizations()
     except ActionPlatformError as e:
         raise HTTPException(502, str(e)) from e
+
+    return GithubOrganizations(
+        organizations=organizations,
+        install_url=(
+            f"https://github.com/apps/{github_app.slug}/installations/select_target"
+            if github_app and github_app.slug
+            else None
+        ),
+    )
 
 
 @router.get("/github/organizations/{login}")
