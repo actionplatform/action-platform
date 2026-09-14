@@ -117,6 +117,9 @@ class Repository(Vcs):
     def tags(self) -> list[str]:
         return [t for t in self.run(["tag", "--list"]).split("\n") if t]
 
+    def has_tag(self, glob: str) -> bool:
+        return bool(self.attempt(["tag", "--list", glob]).stdout.strip())
+
     def latest_tag(self, match: str | None = None) -> str | None:
         args = ["describe", "--tags", "--abbrev=0"]
 
