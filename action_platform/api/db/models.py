@@ -393,6 +393,9 @@ class RegistryEntry(Base):
     default_branch: Mapped[str] = mapped_column(
         SHORT, nullable=False, default="", server_default=""
     )
+    branch: Mapped[str] = mapped_column(
+        SHORT, nullable=False, default="", server_default=""
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=now, server_default=func.now()
     )
@@ -448,3 +451,16 @@ class Job(Base):
 
 
 TABLES = list(Base.metadata.sorted_tables)
+
+
+class Draft(Base):
+    """A file changed on an app through the API and not committed yet: the pending edit lives here, not in a clone, so any instance or worker can apply it."""
+
+    __tablename__ = "draft"
+
+    registry_id: Mapped[str] = mapped_column(KEY, primary_key=True)
+    path: Mapped[str] = mapped_column(Text, primary_key=True)
+    content: Mapped[Optional[str]] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, server_default=func.now()
+    )
