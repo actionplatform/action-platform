@@ -1,13 +1,15 @@
+import { PROVIDER_TIMEOUT_MS } from "@/lib/timeouts";
 import { redirect } from "next/navigation";
 import { exchangeCode, identity, type Provider, PROVIDERS, verifyState } from "@/lib/oauth";
 import { publicOrigin } from "@/lib/origin";
-import { activeOrg } from "@/lib/orgs";
+import { activeOrg, roleOf } from "@/lib/orgs";
+import { can } from "@/lib/permissions";
 import { getSession } from "@/lib/session";
 import { connectOAuthHost } from "@/lib/source-hosts";
 
 async function installationOwner(token: string, installationId: string): Promise<string | null> {
   try {
-    const res = await fetch("https://api.github.com/user/installations", { headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json", "user-agent": "action-platform" }, cache: "no-store" });
+    const res = await fetch("https://api.github.com/user/installations", { headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json", "user-agent": "action-platform" }, cache: "no-store", signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
     if (!res.ok) return null;
     const data = (await res.json()) as { installations: { id: number; account: { login: string } }[] };
     return data.installations.find((i) => String(i.id) === installationId)?.account.login ?? null;
@@ -18,7 +20,7 @@ async function installationOwner(token: string, installationId: string): Promise
 
 async function firstWorkspace(token: string): Promise<string | null> {
   try {
-    const res = await fetch("https://api.bitbucket.org/2.0/user/permissions/workspaces?pagelen=100", { headers: { authorization: `Bearer ${token}`, accept: "application/json", "user-agent": "action-platform" }, cache: "no-store" });
+    const res = await fetch("https://api.bitbucket.org/2.0/user/permissions/workspaces?pagelen=100", { headers: { authorization: `Bearer ${token}`, accept: "application/json", "user-agent": "action-platform" }, cache: "no-store", signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
     if (!res.ok) return null;
     const data = (await res.json()) as { values: { workspace: { slug: string }; permission: string }[] };
     const spaces = data.values ?? [];
@@ -34,18 +36,19 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
 
   const url = new URL(req.url);
   const origin = publicOrigin(req.headers);
-  const state = verifyState(url.searchParams.get("state"));
+  const session = await getSession();
+  const state = verifyState(url.searchParams.get("state"), session?.user.id ?? null);
   const installed = provider === "github" && url.searchParams.has("installation_id");
 
   let orgId = state?.orgId ?? "";
-  let returnTo = state?.returnTo ?? "/settings";
+  const returnTo = state?.returnTo ?? "/settings";
 
   if (!state) {
     if (!installed) return Response.json({ detail: "invalid or expired state" }, { status: 400 });
-    const session = await getSession();
     if (!session) redirect(`/login?next=${encodeURIComponent(url.pathname + url.search)}`);
     const org = await activeOrg(session);
     if (!org) redirect("/orgs/new");
+    if (!can(await roleOf(session.user.id, org.id), "org.manage")) return Response.json({ detail: "only owners and admins can connect code hosts" }, { status: 403 });
     orgId = org.id;
   }
 

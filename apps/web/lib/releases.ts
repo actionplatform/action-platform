@@ -1,3 +1,4 @@
+import { PROVIDER_TIMEOUT_MS } from "@/lib/timeouts";
 import { and, desc, eq } from "drizzle-orm";
 import { newId, q } from "./db/query";
 import { type Credentials, credentialsFor } from "./source-hosts";
@@ -62,7 +63,7 @@ async function fetchRemote(creds: Credentials, repo: string): Promise<Remote[]> 
 }
 
 async function getJson<T>(url: string, headers: Record<string, string>): Promise<T> {
-  const res = await fetch(url, { headers: { accept: "application/json", "user-agent": "action-platform", ...headers }, cache: "no-store" });
+  const res = await fetch(url, { headers: { accept: "application/json", "user-agent": "action-platform", ...headers }, cache: "no-store", signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
   if (!res.ok) throw new Error(`${res.status} from ${new URL(url).host}`);
   return (await res.json()) as T;
 }

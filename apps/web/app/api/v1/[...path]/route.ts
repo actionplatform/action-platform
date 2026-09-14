@@ -1,3 +1,4 @@
+import { API_TIMEOUT_MS, PROVIDER_TIMEOUT_MS } from "@/lib/timeouts";
 import { API_BASE, apiHeaders } from "@/lib/api";
 import { type Caller, authenticate } from "@/lib/api-auth";
 import { membersOf, roleOf, setMemberRole } from "@/lib/orgs";
@@ -20,7 +21,8 @@ const RULES: Rule[] = [
   { method: "GET", pattern: /^apps$/, permission: null },
   { method: "POST", pattern: /^apps$/, permission: "project.manage", credentials: true },
   { method: "POST", pattern: /^apps\/init$/, permission: "project.manage", credentials: true },
-  { method: "GET", pattern: /^apps\/[^/]+(\/.*)?$/, permission: null },
+  { method: "GET", pattern: /^apps\/[^/]+$/, permission: null },
+  { method: "GET", pattern: /^apps\/[^/]+\/(gitflow|commits|branches|tags|releases|changes|manifest|diagnose|pull-request)$/, permission: null },
   { method: "DELETE", pattern: /^apps\/[^/]+$/, permission: "project.manage" },
   { method: "POST", pattern: /^apps\/[^/]+\/sync$/, permission: "app.sync", credentials: true, imports: true },
   { method: "POST", pattern: /^apps\/[^/]+\/release$/, permission: "app.release", credentials: true, imports: true },
@@ -100,6 +102,7 @@ async function proxy(req: Request, segments: string[]): Promise<Response> {
     headers: { "content-type": req.headers.get("content-type") ?? "application/json", ...apiHeaders },
     body,
     cache: "no-store",
+    signal: AbortSignal.timeout(API_TIMEOUT_MS),
   });
 
   if (req.method === "GET" && path === "apps") {
@@ -110,7 +113,7 @@ async function proxy(req: Request, segments: string[]): Promise<Response> {
   }
 
   if (rule.imports && upstream.ok && app && org) {
-    const detail = await fetch(`${API_BASE}/api/apps/${app.registryId}`, { cache: "no-store", headers: apiHeaders }).then((r) => (r.ok ? (r.json() as Promise<{ url: string; source_host: { repo: string | null } }>) : null)).catch(() => null);
+    const detail = await fetch(`${API_BASE}/api/apps/${app.registryId}`, { cache: "no-store", signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS), headers: apiHeaders }).then((r) => (r.ok ? (r.json() as Promise<{ url: string; source_host: { repo: string | null } }>) : null)).catch(() => null);
     const repo = detail?.source_host.repo ?? detail?.url.match(/[:/]([^/:]+\/[^/]+?)(?:\.git)?$/)?.[1] ?? null;
     await Promise.allSettled([syncReleases(org.id, app.id, app.sourceHostId, repo), syncPullRequests(org.id, app.id, app.sourceHostId, repo)]);
   }

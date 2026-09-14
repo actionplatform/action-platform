@@ -51,7 +51,7 @@ Also chosen at approval.
 
 ## Tokens
 
-`action-platform login` mints a JWT (`HS256`, signed with `BETTER_AUTH_SECRET`) carrying user, organization, scope and reach; its `jti` is a row in `api_token`, so revoking the row invalidates the token on the next request. Valid 90 days. `api_token_client` records which program used it — the MCP server reports its client (`clientInfo`: Claude Code, Codex, Cursor…) on every call.
+`action-platform login` mints a JWT (`HS256`, signed with a key derived from `BETTER_AUTH_SECRET` through HKDF — the OAuth state and the source-host encryption use their own derived keys) carrying user, organization, scope, reach and the audience `action-platform/api/v1`; its `jti` is a row in `api_token`, so revoking the row invalidates the token on the next request. Valid 90 days, 30 with the `admin` scope. `api_token_client` records which program used it — the MCP server reports its client (`clientInfo`: Claude Code, Codex, Cursor…) on every call.
 
 **Connected apps** (key icon next to your name) lists your tokens across organizations with scope, reach and the programs using them, plus your browser sessions; both can be revoked there.
 

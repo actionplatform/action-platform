@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { appFor, signState } from "@/lib/oauth";
 import { publicOrigin } from "@/lib/origin";
+import { safePath } from "@/lib/safe-path";
 import { roleOf } from "@/lib/orgs";
 import { can } from "@/lib/permissions";
 import { getSession } from "@/lib/session";
@@ -15,8 +16,8 @@ export async function GET(req: Request) {
   if (appFor("github")) return Response.json({ detail: "a GitHub app is already configured" }, { status: 409 });
 
   const org = url.searchParams.get("org")?.trim() || "";
-  const returnTo = url.searchParams.get("return") || "/settings";
-  const state = signState({ orgId: url.searchParams.get("orgId") || "", returnTo });
+  const returnTo = safePath(url.searchParams.get("return"), "/settings");
+  const state = signState({ orgId: url.searchParams.get("orgId") || "", returnTo, userId: session?.user.id ?? null });
   const target = org ? `https://github.com/organizations/${encodeURIComponent(org)}/settings/apps/new` : "https://github.com/settings/apps/new";
 
   const manifest = {

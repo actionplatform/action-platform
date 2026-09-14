@@ -5,7 +5,7 @@ import { slugify } from "./utils";
 export type Project = { id: string; organizationId: string; name: string; slug: string; description: string | null; teamId: string | null; teamName: string | null; createdAt: Date; apps: number };
 export type App = { id: string; projectId: string; registryId: string; name: string; sourceHostId: string | null; lastSyncedAt: Date | null; createdAt: Date };
 
-export async function projectsOf(orgId: string): Promise<Project[]> {
+export async function projectsOf(orgId: string, id: string | null = null): Promise<Project[]> {
   const { db, t } = await q();
   const rows = await db
     .select({
@@ -22,14 +22,14 @@ export async function projectsOf(orgId: string): Promise<Project[]> {
     .from(t.project)
     .leftJoin(t.app, eq(t.app.projectId, t.project.id))
     .leftJoin(t.team, eq(t.project.teamId, t.team.id))
-    .where(eq(t.project.organizationId, orgId))
+    .where(id ? and(eq(t.project.organizationId, orgId), eq(t.project.id, id)) : eq(t.project.organizationId, orgId))
     .groupBy(t.project.id, t.project.organizationId, t.project.name, t.project.slug, t.project.description, t.project.teamId, t.team.name, t.project.createdAt)
     .orderBy(asc(t.project.name));
   return rows.map((r) => ({ ...r, apps: Number(r.apps) }));
 }
 
 export async function projectById(orgId: string, id: string): Promise<Project | null> {
-  const rows = (await projectsOf(orgId)).filter((p) => p.id === id);
+  const rows = await projectsOf(orgId, id);
   return rows[0] ?? null;
 }
 

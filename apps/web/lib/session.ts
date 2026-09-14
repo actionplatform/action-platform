@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAuth } from "./auth";
 import { activeOrg, type Org } from "./orgs";
+import { safePath } from "./safe-path";
 import { setupStatus } from "./setup";
 
 export async function getSession() {
@@ -28,6 +29,7 @@ export async function requireOrg(): Promise<{ session: Awaited<ReturnType<typeof
 
 async function loginUrl(): Promise<string> {
   const path = (await headers()).get("x-request-path");
-  const next = path && path.startsWith("/") && !path.startsWith("/login") && path !== "/projects" ? `?next=${encodeURIComponent(path)}` : "";
+  const safe = safePath(path, "/projects");
+  const next = safe !== "/projects" && !safe.startsWith("/login") ? `?next=${encodeURIComponent(safe)}` : "";
   return `/login${next}`;
 }

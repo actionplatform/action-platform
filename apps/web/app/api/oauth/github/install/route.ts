@@ -1,3 +1,4 @@
+import { safePath } from "@/lib/safe-path";
 import { redirect } from "next/navigation";
 import { appFor, signState } from "@/lib/oauth";
 import { isMember, roleOf } from "@/lib/orgs";
@@ -17,6 +18,6 @@ export async function GET(req: Request) {
   if (!orgId) return Response.json({ detail: "no organization" }, { status: 400 });
   if (!can(await roleOf(session.user.id, orgId), "org.manage")) return Response.json({ detail: "only owners and admins can connect code hosts" }, { status: 403 });
 
-  const state = signState({ orgId, returnTo: url.searchParams.get("return") || "/settings" });
+  const state = signState({ orgId, returnTo: safePath(url.searchParams.get("return"), "/settings"), userId: session.user.id });
   redirect(`https://github.com/apps/${app.slug}/installations/select_target?state=${encodeURIComponent(state)}`);
 }
