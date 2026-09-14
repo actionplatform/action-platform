@@ -66,7 +66,7 @@ class InitRequest(BaseModel):
     ci: Optional[str] = None
     cloud: Optional[str] = None
     git_init: bool = True
-    push: bool = False
+    push: bool = True
     private: bool = False
     source: Optional[SourceSpec] = None
     credentials: Optional[SourceCredentials] = None
@@ -196,7 +196,7 @@ class CommitBranch(BaseModel):
 
 class CommitRequest(BaseModel):
     message: str
-    push: bool = False
+    push: bool = True
     branch: Optional[CommitBranch] = None
     pull_request: bool = False
     credentials: Optional[SourceCredentials] = None

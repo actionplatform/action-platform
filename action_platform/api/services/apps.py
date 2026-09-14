@@ -13,9 +13,9 @@ from action_platform.api.schemas import (
     PushRequest,
     SourceCredentials,
 )
-from action_platform.api.services.manifest import read_manifest, workspace_of
+from action_platform.api.services.manifest import read_manifest
+from action_platform.api.services.workspace import Workspaces
 from action_platform.core.flow.repository import Repository
-from action_platform.core.flow.workflow import GitFlow
 from action_platform.core.scaffold.install import InstallError, install
 from action_platform.core.manifest import write_source_host
 from action_platform.core.scaffold.generate import (
@@ -35,26 +35,23 @@ class AppService:
         self.registry = registry
 
     def workspace(self, id: str) -> tuple[Entry, Path]:
-        return workspace_of(self.registry, id)
+        return Workspaces(self.registry).checkout(id)
 
     def list(self) -> list[dict]:
+        """Every app with what the manifest says about it. Listing clones nothing: an app not checked out on this instance answers with its registry row only."""
         rows = []
 
         for entry in self.registry.list():
             root = Path(entry.path)
             row = asdict(entry)
-            row["exists"] = root.is_dir()
+            row["exists"] = bool(entry.url)
+            row["branch"] = entry.checked_out
 
-            if row["exists"] and (root / settings.CONFIG_FILE).exists():
+            if root.is_dir() and (root / settings.CONFIG_FILE).exists():
                 info = read_manifest(root)
                 row["language"] = info["project"].get("language")
                 row["type"] = info["project"].get("type")
                 row["last_version"] = info["last_version"]
-
-                try:
-                    row["branch"] = Repository(root).branch
-                except Exception:
-                    row["branch"] = None
 
             rows.append(row)
 
@@ -95,6 +92,9 @@ class AppService:
 
             result["installed"] = plan.created
 
+            if self.registry.drafts is not None:
+                self.registry.drafts.capture(entry.id, root)
+
         return result
 
     def sync(
@@ -103,12 +103,18 @@ class AppService:
         credentials: Optional[SourceCredentials] = None,
         reset: bool = False,
     ) -> dict:
+        if reset:
+            self.registry.drafts.clear(id)
+
         with auth.git_auth(credentials):
-            return asdict(self.registry.sync(id, reset=reset))
+            entry, _ = Workspaces(self.registry).refresh(id)
+
+        return asdict(entry)
 
     def remove(self, id: str) -> None:
-        self.registry.get(id)
+        entry = self.registry.get(id)
         self.registry.remove(id)
+        Workspaces(self.registry).drop(id, Path(entry.path))
 
     def repository_of(self, id: str) -> Optional[tuple[str, str]]:
         """(kind, owner/name) of the remote this app was pushed to or added from; None when it has none."""
@@ -170,15 +176,9 @@ class AppService:
         info["default_branch"] = entry.default_branch
 
         repo = Repository(root)
-
-        if repo.exists():
-            info["branch"] = repo.branch
-            info["latest_tag"] = repo.latest_tag()
-            info["clean"] = repo.is_clean()
-        else:
-            info["branch"] = ""
-            info["latest_tag"] = None
-            info["clean"] = True
+        info["branch"] = repo.branch if repo.exists() else entry.checked_out
+        info["latest_tag"] = repo.latest_tag() if repo.exists() else None
+        info["clean"] = not self.registry.drafts.paths(id)
 
         return info
 
@@ -186,12 +186,19 @@ class AppService:
         repo, m = resolve_repo(body.source)
         leaf = m.resolve(body.type, body.stack, body.template)
         id = self.registry.new_id()
+        creds = body.credentials
+
+        if not (creds and creds.kind and creds.token):
+            raise HTTPException(
+                400,
+                "creating an app on the platform needs a source host to push it to: attach one, or generate it locally with the CLI",
+            )
+
         staging = self.registry.workspaces / f".init-{id}"
         staging.mkdir(parents=True, exist_ok=True)
 
         extra = {"description": body.description}
-        creds = body.credentials
-        owner = body.github_owner or (creds.owner if creds else None)
+        owner = body.github_owner or creds.owner
 
         if body.package_name:
             extra["package_name"] = body.package_name
@@ -213,33 +220,22 @@ class AppService:
         finally:
             shutil.rmtree(staging, ignore_errors=True)
 
-        if creds and creds.kind:
-            write_source_host(
-                path / settings.CONFIG_FILE,
-                creds.kind,
-                f"{owner or 'me'}/{slug}",
-                creds.base_url,
-            )
+        write_source_host(
+            path / settings.CONFIG_FILE,
+            creds.kind,
+            f"{owner or 'me'}/{slug}",
+            creds.base_url,
+        )
 
-        url = ""
-
-        if body.push:
+        try:
             with auth.git_auth(creds):
                 url = push_project(path, private=body.private, credentials=creds)
-        elif body.git_init:
-            repo = Repository.init(path, branch="main")
-            GitFlow(repo).install_hooks()
-            repo.add_all()
-            repo.commit("chore: bootstrap project from action-platform")
+        except Exception:
+            shutil.rmtree(path, ignore_errors=True)
+            raise
 
         entry = self.registry.register(
-            Entry(
-                id=id,
-                name=slug,
-                url=url,
-                path=str(path),
-                default_branch="main" if (body.push or body.git_init) else "",
-            )
+            Entry(id=id, name=slug, url=url, path=str(path), default_branch="main")
         )
 
         return {
@@ -249,34 +245,13 @@ class AppService:
             "url": url,
             "template": leaf.directory,
             "cloud": body.cloud,
-            "pushed": bool(url),
+            "pushed": True,
         }
 
     def push(self, id: str, body: PushRequest) -> dict:
-        entry, root = self.workspace(id)
+        entry = self.registry.get(id)
 
-        if entry.url:
-            raise HTTPException(409, f"already pushed to {entry.url}")
-
-        if body.credentials and body.credentials.kind:
-            self._point_source_host(root, entry, body.credentials)
-
-        with auth.git_auth(body.credentials):
-            url = push_project(root, private=body.private, credentials=body.credentials)
-
-        entry.url = url
-        entry.default_branch = entry.default_branch or "main"
-        self.registry.register(entry)
-
-        return {"id": id, "url": url}
-
-    def _point_source_host(
-        self, root: Path, entry: Entry, creds: SourceCredentials
-    ) -> None:
-        meta = read_manifest(root)
-        repo = meta["source_host"].get("repo") or entry.name
-        slug = repo.rsplit("/", 1)[-1]
-        owner = creds.owner or repo.split("/", 1)[0]
-        write_source_host(
-            root / settings.CONFIG_FILE, creds.kind, f"{owner}/{slug}", creds.base_url
+        raise HTTPException(
+            409,
+            f"{entry.name} was pushed to {entry.url} when it was created; apps on the platform always have a remote",
         )

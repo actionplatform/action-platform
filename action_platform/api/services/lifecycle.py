@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from action_platform.api.core import credentials as auth
 from action_platform.api.repositories.registry import Registry
 from action_platform.api.schemas import DeployRequest, ReleaseRequest
-from action_platform.api.services.manifest import workspace_of
+from action_platform.api.services.workspace import Workspaces
 from action_platform.core.action_platform import ActionPlatform
 from action_platform.core.config import Config
 from action_platform.core.flow import git
@@ -22,23 +22,20 @@ class LifecycleService:
     def __init__(self, registry: Registry) -> None:
         self.registry = registry
 
-    def _tool(self, id: str) -> ActionPlatform:
-        _, root = workspace_of(self.registry, id)
+    def _tool(self, id: str, fresh: bool = False) -> ActionPlatform:
+        _, root = Workspaces(self.registry).checkout(id, fresh=fresh)
 
         return ActionPlatform(
             config=Config.from_toml(root / settings.CONFIG_FILE), repo_root=root
         )
 
     def release(self, id: str, body: ReleaseRequest) -> dict:
-        platform = self._tool(id)
+        platform = self._tool(id, fresh=not body.dry_run)
         auth.apply(platform.config, body.credentials)
 
         with auth.git_auth(body.credentials):
             if body.branch:
                 self._switch(platform.repo_root, body.branch)
-
-            if not body.dry_run:
-                self.registry.sync(id)
 
             ctx = platform.release(
                 level=body.level, dry_run=body.dry_run, component=body.component

@@ -280,14 +280,13 @@ def register(mcp: Any, remote: Remote) -> None:
         ],
         code: Annotated[str, Field(description="Issue or ticket code: 42, PROJ-123")],
         slug: Optional[str] = None,
-        push: Annotated[bool, Field(description="Push the new branch upstream")] = True,
     ) -> dict:
-        """Start a git-flow branch on the platform's clone: right base, pull, create <kind>/<code>[-slug]."""
-        return remote.start_branch(id, kind, code, slug, push)
+        """Start a git-flow branch on the app: right base, create <kind>/<code>[-slug], push it; the app is then checked out on it."""
+        return remote.start_branch(id, kind, code, slug, True)
 
     @mcp.tool(annotations=REACHES_OUT)
     def checkout_branch(id: AppId, branch: str) -> dict:
-        """Switch the platform's clone to another branch. Refuses a dirty clone."""
+        """Check the app out on another branch of its remote. Refuses while there are uncommitted changes."""
         return remote.checkout(id, branch)
 
     @mcp.tool(annotations=READ_ONLY)
@@ -353,7 +352,6 @@ def register(mcp: Any, remote: Remote) -> None:
     def commit_changes(
         id: AppId,
         message: Annotated[str, Field(description="Conventional Commit message")],
-        push: bool = False,
         branch_kind: Annotated[
             Optional[str],
             Field(
@@ -379,7 +377,7 @@ def register(mcp: Any, remote: Remote) -> None:
             else None
         )
 
-        return remote.commit(id, message, push, branch, pull_request)
+        return remote.commit(id, message, True, branch, pull_request)
 
     @mcp.tool(annotations=REACHES_OUT)
     def init_app(
@@ -397,12 +395,9 @@ def register(mcp: Any, remote: Remote) -> None:
                 description="Name of a custom template repository from list_matrix; default official"
             ),
         ] = None,
-        push: Annotated[
-            bool, Field(description="Create the repository on the code host and push")
-        ] = False,
         private: bool = False,
     ) -> dict:
-        """Generate a new app on the platform from a template and register it. With push=true the repository is created on the code host — confirm with the user first."""
+        """Generate a new app on the platform from a template: the repository is created on the code host attached to the organization and pushed right away — confirm with the user first."""
         return remote.init(
             {
                 "type": type,
@@ -412,7 +407,7 @@ def register(mcp: Any, remote: Remote) -> None:
                 "ci": ci,
                 "cloud": cloud,
                 "source": source,
-                "push": push,
+                "push": True,
                 "private": private,
             }
         )
