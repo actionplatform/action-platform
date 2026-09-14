@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from action_platform.api.services.credentials import Credentials
-from action_platform.api.services.http import basic, get_json
+from action_platform.api.services.shared.credentials import Credentials
+from action_platform.api.services.shared.http import basic, get_json
 from action_platform.core.exception import ProviderError
 from action_platform.api.services.hosts.access import _get, _owner
 

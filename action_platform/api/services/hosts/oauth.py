@@ -12,8 +12,8 @@ from typing import Any, Optional
 from urllib.parse import urlencode
 
 from action_platform.api.auth.secrets import Secrets
-from action_platform.api.services.credentials import OAuthApp
-from action_platform.api.services.http import basic, get_json, post_form
+from action_platform.api.services.shared.credentials import OAuthApp
+from action_platform.api.services.shared.http import basic, get_json, post_form
 from action_platform.core.exception import ProviderError
 from action_platform.api.services.hosts.providers import (
     PROVIDER_INFO,

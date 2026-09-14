@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from action_platform.api.services.credentials import Credentials
+from action_platform.api.services.shared.credentials import Credentials
 from action_platform.api.services.hosts.access import _get, _owner
 
 

@@ -12,7 +12,7 @@ from action_platform.api.db.models import (
     Organization,
     User,
 )
-from action_platform.api.services.common import new_id, now
+from action_platform.api.services.shared.common import new_id, now
 from action_platform.api.services.directory.base import (
     EMAIL,
     INVITATION_TTL,

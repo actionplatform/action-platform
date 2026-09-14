@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 from action_platform.api.repositories.registry import Registry
-from action_platform.api.services.manifest import workspace_of
+from action_platform.api.services.workspace.manifest import workspace_of
 from action_platform.core.flow import gitflow
 from action_platform.core.flow.repository import Repository
 from action_platform.core.flow.workflow import GitFlow

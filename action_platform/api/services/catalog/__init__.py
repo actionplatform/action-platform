@@ -4,7 +4,7 @@ from action_platform import __version__
 from action_platform.api import api_version
 from action_platform.api.core import credentials as auth
 from action_platform.api.schemas import SourceSpec
-from action_platform.api.services.index import index
+from action_platform.api.services.catalog.published import index
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.flow import gitflow
 from action_platform.core.scaffold.templates import (

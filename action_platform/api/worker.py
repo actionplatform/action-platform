@@ -29,7 +29,7 @@ from action_platform.api.services.directory import (
 from action_platform.api.services.github_import import GithubImport
 from action_platform.api.services.imports import ImportService
 from action_platform.api.services.jobs import JobQueue
-from action_platform.api.services.lifecycle import LifecycleService
+from action_platform.api.services.workspace.lifecycle import LifecycleService
 from action_platform.core.exception import ActionPlatformError
 
 log = logging.getLogger("action_platform.worker")

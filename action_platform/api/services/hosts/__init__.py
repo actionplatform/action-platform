@@ -2,7 +2,7 @@
 
 from typing import Any, Optional
 
-from action_platform.api.services.credentials import Credentials
+from action_platform.api.services.shared.credentials import Credentials
 from action_platform.api.services.hosts.bitbucket import (
     _bitbucket_access,
     first_workspace,

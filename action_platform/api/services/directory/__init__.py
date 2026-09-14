@@ -3,14 +3,14 @@
 `DirectoryService` reads; `DirectoryWrites` also changes. Both are composed from one module per domain.
 """
 
-from action_platform.api.services.common import (
+from action_platform.api.services.shared.common import (
     kind_of_url,
     new_id,
     now,
     repo_from_url,
     slugify,
 )
-from action_platform.api.services.credentials import (
+from action_platform.api.services.shared.credentials import (
     Credentials,
     OAuthApp,
     oauth_app_for,

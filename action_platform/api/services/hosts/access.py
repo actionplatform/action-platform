@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from action_platform.api.services.http import get_json
+from action_platform.api.services.shared.http import get_json
 from action_platform.core.exception import ProviderError
 
 

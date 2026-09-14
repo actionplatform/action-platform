@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 
 from action_platform.api import schemas
 from action_platform.api.core.deps import get_configuration
-from action_platform.api.services.configuration import ConfigurationService
+from action_platform.api.services.workspace.configuration import ConfigurationService
 
 router = APIRouter(prefix="/apps", tags=["configuration"])
 

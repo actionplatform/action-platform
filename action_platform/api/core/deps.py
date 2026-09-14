@@ -7,10 +7,10 @@ from sqlalchemy.orm import Session
 from action_platform.api.repositories.drafts import DraftStore
 from action_platform.api.repositories.registry import DbStore, Registry
 from action_platform.api.services.apps import AppService
-from action_platform.api.services.configuration import ConfigurationService
-from action_platform.api.services.flow import FlowService
-from action_platform.api.services.git_state import GitStateService
-from action_platform.api.services.lifecycle import LifecycleService
+from action_platform.api.services.workspace.configuration import ConfigurationService
+from action_platform.api.services.workspace.flow import FlowService
+from action_platform.api.services.workspace.state import GitStateService
+from action_platform.api.services.workspace.lifecycle import LifecycleService
 from action_platform.core.exception import ConfigError
 
 

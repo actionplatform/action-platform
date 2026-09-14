@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 
 from action_platform.api import schemas
 from action_platform.api.core.deps import get_flow
-from action_platform.api.services.flow import FlowService
+from action_platform.api.services.workspace.flow import FlowService
 
 router = APIRouter(prefix="/apps", tags=["flow"])
 

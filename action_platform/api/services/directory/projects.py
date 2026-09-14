@@ -10,7 +10,7 @@ from action_platform.api.db.models import (
     App,
     Project,
 )
-from action_platform.api.services.common import new_id, now, slugify
+from action_platform.api.services.shared.common import new_id, now, slugify
 from action_platform.api.services.directory.base import (
     DirectoryBase,
     DirectoryError,

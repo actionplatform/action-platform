@@ -1,4 +1,4 @@
-"""action_platform.api.services.lifecycle — releases from the current or another branch."""
+"""action_platform.api.services.workspace.lifecycle — releases from the current or another branch."""
 
 from __future__ import annotations
 
