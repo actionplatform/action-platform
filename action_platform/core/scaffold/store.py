@@ -22,10 +22,10 @@ from action_platform.settings import settings
 
 @dataclass(frozen=True)
 class TemplateSource:
-    """A git repository laid out like actionplatform/templates: index.toml plus projects/, cloud/, service/."""
+    """A git repository laid out like actionplatform/templates: index.json plus projects/, cloud/, service/."""
 
     url: str
-    ref: str = "v1"
+    ref: str = "main"
     name: str = ""
 
     @classmethod
@@ -34,9 +34,9 @@ class TemplateSource:
         url, _, ref = spec.rpartition("@")
 
         if not url or "/" in ref or ref.startswith("git"):
-            url, ref = spec, "v1"
+            url, ref = spec, "main"
 
-        return cls(url=url, ref=ref or "v1", name=name)
+        return cls(url=url, ref=ref or "main", name=name)
 
     @property
     def label(self) -> str:
@@ -119,7 +119,15 @@ class TemplateStore(TemplateStoreABC):
         if not cache.exists():
             logger.info("cloning %s", settings.TEMPLATES_REPO)
             cache.parent.mkdir(parents=True, exist_ok=True)
-            self._git("clone", "--depth", "1", settings.TEMPLATES_REPO, str(cache))
+            self._git(
+                "clone",
+                "--depth",
+                "1",
+                "--branch",
+                settings.TEMPLATES_REF,
+                settings.TEMPLATES_REPO,
+                str(cache),
+            )
 
             return cache
 
