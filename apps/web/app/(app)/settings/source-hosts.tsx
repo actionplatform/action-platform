@@ -88,6 +88,7 @@ function accounts(a: HostAccess | undefined): { account: string; ok: boolean }[]
 }
 
 function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostAccess; canManage: boolean }) {
+  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [rotating, setRotating] = useState(false);
@@ -192,7 +193,7 @@ function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostA
         confirmLabel="Remove host"
         danger
         pending={pending}
-        onConfirm={() => start(async () => { await deleteHost(host.id); setRemoving(false); })}
+        onConfirm={() => start(async () => { await deleteHost(host.id); setRemoving(false); router.refresh(); })}
       />
       <PromptDialog
         open={rotating}
@@ -205,7 +206,7 @@ function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostA
         submitLabel="Update token"
         pending={pending}
         error={error}
-        onSubmit={(value) => start(async () => { const r = await rotateHostToken(host.id, value); if (r?.error) setError(r.error); else setRotating(false); })}
+        onSubmit={(value) => start(async () => { const r = await rotateHostToken(host.id, value); if (r?.error) setError(r.error); else { setRotating(false); router.refresh(); } })}
       />
       <Dialog
         open={owner}
@@ -214,7 +215,7 @@ function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostA
         description="Pre-selected as the organization when creating an app from this host."
         footer={<Button variant="ghost" onClick={() => setOwner(false)}>Close</Button>}
       >
-        <Select mono value={host.defaultOwner ?? ""} disabled={pending} options={chips.map((c) => ({ value: c.account, label: c.account, hint: c.ok ? undefined : "cannot create repositories" }))} onChange={(v) => start(async () => { const r = await changeHostOwner(host.id, v); if (!r.ok) setError(r.error); else setOwner(false); })} />
+        <Select mono value={host.defaultOwner ?? ""} disabled={pending} options={chips.map((c) => ({ value: c.account, label: c.account, hint: c.ok ? undefined : "cannot create repositories" }))} onChange={(v) => start(async () => { const r = await changeHostOwner(host.id, v); if (!r.ok) setError(r.error); else { setOwner(false); router.refresh(); } })} />
       </Dialog>
     </li>
   );

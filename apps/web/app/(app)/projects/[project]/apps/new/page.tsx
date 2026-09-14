@@ -23,17 +23,17 @@ export default async function NewAppPage({ params, searchParams }: { params: Pro
   if (fixed && !project) notFound();
   const [projects, hosts] = await Promise.all([projectsOf(org.id), hostsOf(org.id)]);
   const slug = appFor("github")?.slug ?? null;
-  const owners: Record<string, { accounts: { account: string; ok: boolean; why: string | null }[]; installUrl: string | null }> = Object.fromEntries(
+  const owners: Record<string, { accounts: { account: string; ok: boolean; why: string | null }[]; installUrl: string | null; problem: string | null }> = Object.fromEntries(
     await Promise.all(
       hosts.map(async (h) => {
-        if (h.kind === "generic") return [h.id, { accounts: [] as { account: string; ok: boolean; why: string | null }[], installUrl: null as string | null }] as const;
+        if (h.kind === "generic") return [h.id, { accounts: [] as { account: string; ok: boolean; why: string | null }[], installUrl: null as string | null, problem: null as string | null }] as const;
         const access = await hostAccess(org.id, h.id, slug);
-        if (!access.ok) return [h.id, { accounts: [], installUrl: null }] as const;
+        if (!access.ok) return [h.id, { accounts: [], installUrl: null, problem: access.error }] as const;
         const seen = new Set<string>();
         const accounts = access.installations
           .filter((i) => (seen.has(i.account) ? false : seen.add(i.account)))
           .map((i) => ({ account: i.account, ok: i.canCreateRepos && i.repositories === "all", why: i.canCreateRepos ? (i.repositories === "all" ? null : "installed on selected repositories only") : `app lacks admin:${i.administration} contents:${i.contents}` }));
-        return [h.id, { accounts, installUrl: access.installUrl }] as const;
+        return [h.id, { accounts, installUrl: access.installUrl, problem: access.problems[0] ?? null }] as const;
       }),
     ),
   );
@@ -55,7 +55,7 @@ export default async function NewAppPage({ params, searchParams }: { params: Pro
         {" / "}<span className="text-foreground">New app</span>
       </div>
       <PageHeader title="Create project" description="Choose a foundation and configure your new project." />
-      <Wizard matrix={matrix} preset={preset} projectId={project?.id ?? null} projects={projects.map((p) => ({ id: p.id, name: p.name }))} hosts={hosts.map((h) => ({ id: h.id, name: h.name, kind: h.kind, defaultOwner: h.defaultOwner, owners: [...owners[h.id].accounts], installUrl: owners[h.id].installUrl }))} />
+      <Wizard matrix={matrix} preset={preset} projectId={project?.id ?? null} projects={projects.map((p) => ({ id: p.id, name: p.name }))} hosts={hosts.map((h) => ({ id: h.id, name: h.name, kind: h.kind, defaultOwner: h.defaultOwner, owners: [...owners[h.id].accounts], installUrl: owners[h.id].installUrl, problem: owners[h.id].problem }))} />
     </>
   );
 }
