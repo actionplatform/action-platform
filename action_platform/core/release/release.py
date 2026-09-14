@@ -173,6 +173,24 @@ class Releaser:
 
         return self.apply(plan)
 
+    def next_version(
+        self,
+        level: str,
+        prerelease: bool | None = None,
+        component: str | None = None,
+        branch: str | None = None,
+    ) -> str:
+        """The version a release would produce, without checking the tree or the tags — for previews."""
+        comp = resolve(self.config.components, component)
+        current = Version.parse(
+            VersionFiles(comp.dir(self.repo.path), settings.LAST_VERSION_FILE).read()
+        )
+
+        if prerelease is None:
+            prerelease = (branch or self.repo.branch) not in STABLE_BRANCHES
+
+        return str(self._next(current, level, prerelease, comp))
+
     def _next(
         self, current: Version, level: str, prerelease: bool, component: Component
     ) -> Version:

@@ -41,6 +41,30 @@ ROLE_LABELS = {
     "viewer": "Viewer",
 }
 
+ROLE_DESCRIPTIONS = {
+    "owner": "Everything, including deleting the organization. At least one per organization.",
+    "admin": "Members, teams, code hosts, projects and every app action.",
+    "deployer": "Cuts releases and edits configuration, plus everything a developer can do.",
+    "developer": "Branches, pull requests, commits and sync. No releases.",
+    "viewer": "Read-only access to projects, apps, releases and activity.",
+}
+
+PERMISSION_DESCRIPTIONS = {
+    "org.manage": "Manage members, teams, code hosts and settings",
+    "project.manage": "Create and delete projects, add and remove apps",
+    "app.release": "Create releases",
+    "app.configure": "Edit configuration, deploy target, services and commit",
+    "app.flow": "Start branches, check out, push and open pull requests",
+    "app.sync": "Sync workspaces with the code host",
+}
+
+SCOPE_INFO = {
+    "read": ("Read", "List projects, apps, releases, branches and activity"),
+    "write": ("Write", "Configuration, branches, pull requests, commits and sync"),
+    "release": ("Release", "Create releases"),
+    "admin": ("Admin", "Projects, apps, members, code hosts and settings"),
+}
+
 
 def normalize_role(value: Optional[str]) -> Optional[str]:
     if not value:
@@ -120,3 +144,32 @@ class Grant:
                 ids[key] = id
 
         return cls(parse_scopes(value), ids["org"], ids["project"], ids["app"])
+
+
+def catalog() -> dict:
+    """The whole rule table, for anything that wants to display it."""
+    return {
+        "roles": [
+            {
+                "id": role,
+                "label": ROLE_LABELS[role],
+                "description": ROLE_DESCRIPTIONS[role],
+                "permissions": list(GRANTS[role]),
+                "grantable_scopes": grantable_scopes(role),
+            }
+            for role in ROLES
+        ],
+        "permissions": [
+            {"id": p, "description": PERMISSION_DESCRIPTIONS[p]} for p in PERMISSIONS
+        ],
+        "scopes": [
+            {
+                "id": scope,
+                "label": SCOPE_INFO[scope][0],
+                "description": SCOPE_INFO[scope][1],
+                "permissions": list(SCOPE_PERMISSIONS[scope]),
+            }
+            for scope in SCOPES
+        ],
+        "default_scopes": list(DEFAULT_SCOPES),
+    }
