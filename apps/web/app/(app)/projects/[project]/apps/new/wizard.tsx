@@ -12,7 +12,7 @@ import { BrandIcon } from "@/components/ui/brand-icon";
 import { CheckIndicator } from "@/components/ui/check-indicator";
 import { Field, Input } from "@/components/ui/input";
 import type { Matrix } from "@/lib/api";
-import { countFor, initCommand, type Leaf, stackMeta, stacksFor, templateBrand, templatesFor, typeMeta, typesIn } from "@/lib/catalog";
+import { countFor, initCommand, type Leaf, stackMeta, stacksFor, templateIcon, templatesFor, typeMeta, typesIn } from "@/lib/catalog";
 import { cn, slugify } from "@/lib/utils";
 import { createAppFromTemplate } from "./actions";
 import { type StepIndex, Stepper } from "./stepper";
@@ -190,10 +190,10 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
             <Section title="Choose your stack" description="Select the language or runtime for your project.">
               <div className="grid gap-3 sm:grid-cols-3">
                 {stacks.map((id) => {
-                  const m = stackMeta(id);
+                  const m = stackMeta(matrix, id);
                   return (
                     <SelectCard key={id} selected={stack === id} onClick={() => pickStack(id)} compact>
-                      {m.brand ? <BrandIcon icon={m.brand} /> : <span className="size-5 shrink-0 rounded-sm border border-border" />}
+                      {m.icon ? <BrandIcon src={m.icon} title={m.label} /> : <span className="size-5 shrink-0 rounded-sm border border-border" />}
                       <div className="min-w-0 flex-1">
                         <div className="font-medium">{m.label}</div>
                         <div className="text-xs text-muted-foreground">{plural(countFor(matrix, type!, id), "template")}</div>
@@ -210,7 +210,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
               <div className="grid gap-3 sm:grid-cols-2">
                 {templates.map((t) => (
                   <SelectCard key={`${t.source}:${t.template}`} selected={template === t.template && source === t.source} onClick={() => { setTemplate(t.template); setSource(t.source); }}>
-                    {(() => { const b = templateBrand(t.template, t.stack); return b ? <BrandIcon icon={b} className="mt-0.5" /> : null; })()}
+                    {(() => { const b = templateIcon(matrix, t); return b ? <BrandIcon src={b} title={t.template} className="mt-0.5" /> : null; })()}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-medium">{t.template}</span>
@@ -219,8 +219,8 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                       </div>
                       <div className="text-sm text-secondary mt-1">{t.description}</div>
                       <div className="flex gap-2 mt-3 text-xs text-muted-foreground">
-                        <span>{typeMeta(t.type).label}</span>
-                        {t.stack && <><span>·</span><span>{stackMeta(t.stack).label}</span></>}
+                        <span>{typeMeta(matrix, t.type).label}</span>
+                        {t.stack && <><span>·</span><span>{stackMeta(matrix, t.stack).label}</span></>}
                       </div>
                     </div>
                   </SelectCard>
@@ -303,8 +303,8 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
             <Section title="Review your project" description="Confirm the configuration before creating the project.">
               <Card>
                 <CardContent className="grid gap-x-8 gap-y-3 sm:grid-cols-2 text-sm">
-                  <Row k="Type" v={type ? typeMeta(type).label : "—"} />
-                  <Row k="Stack" v={stack ? stackMeta(stack).label : "—"} />
+                  <Row k="Type" v={type ? typeMeta(matrix, type).label : "—"} />
+                  <Row k="Stack" v={stack ? stackMeta(matrix, stack).label : "—"} />
                   <Row k="Template" v={template ?? "—"} mono />
                   <Row k="Project name" v={config.name || "—"} />
                   <Row k="Directory" v={config.directory || "—"} mono />
@@ -333,8 +333,8 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
         </div>
 
         <Summary
-          type={type ? typeMeta(type).label : null}
-          stack={stack ? stackMeta(stack).label : hasStack || !type ? null : "—"}
+          type={type ? typeMeta(matrix, type).label : null}
+          stack={stack ? stackMeta(matrix, stack).label : hasStack || !type ? null : "—"}
           template={template}
           configuration={config.name ? `${config.name} · ${config.directory}` : null}
         />

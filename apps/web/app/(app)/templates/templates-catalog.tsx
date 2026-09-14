@@ -5,10 +5,10 @@ import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react
 import { PageHeader } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import type { Matrix } from "@/lib/api";
-import { CATEGORIES } from "@/lib/catalog";
+import { categoriesFor } from "@/lib/catalog";
 import { TemplateCategoryTabs } from "./template-category-tabs";
 import { type OverlayTarget, TemplateCard, TemplateListItem } from "./template-card";
-import { itemsFrom, LIST_TITLES } from "./template-item";
+import { itemsFrom, listTitle } from "./template-item";
 import { TemplatesNoneState, TemplatesNoResults } from "./templates-empty-state";
 import { type TemplateView, TemplatesToolbar } from "./templates-toolbar";
 
@@ -54,7 +54,7 @@ export function TemplatesCatalog({ matrix, targets, canCreate, sources }: { matr
     return [...seen].map(([id, label]) => ({ id, label }));
   }, [items]);
 
-  const tabs = useMemo(() => CATEGORIES.map((c) => ({ id: c.id, label: c.label, count: c.id === "all" ? items.length : items.filter((i) => i.categoryId === c.id).length })), [items]);
+  const tabs = useMemo(() => categoriesFor(matrix).map((c) => ({ id: c.id, label: c.label, count: c.id === "all" ? items.length : items.filter((i) => i.categoryId === c.id).length })), [matrix, items]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -86,7 +86,7 @@ export function TemplatesCatalog({ matrix, targets, canCreate, sources }: { matr
           <TemplateCategoryTabs tabs={tabs} active={category} onChange={setCategory} />
 
           <div className="mt-[22px] mb-3.5 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">{LIST_TITLES[category] ?? "Templates"}</h2>
+            <h2 className="text-sm font-semibold">{listTitle(matrix, category)}</h2>
             <p role="status" aria-live="polite" className="text-[13px] text-secondary">{visible.length} {visible.length === 1 ? "result" : "results"}</p>
           </div>
 

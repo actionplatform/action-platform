@@ -77,7 +77,7 @@ function AddSourceDialog({ open, onClose }: { open: boolean; onClose: () => void
       open={open}
       onClose={close}
       title="Add a template repository"
-      description="Any git repository. It becomes a template: new apps start as a copy of it, and the platform adds platform.toml, hooks and CI when they are missing. A repository with an index.toml is read as a full catalog instead. Private repositories use the connected code host."
+      description="Any git repository. It becomes a template: new apps start as a copy of it, and the platform adds platform.toml, hooks and CI when they are missing. A repository with an index.json is read as a full catalog instead. Private repositories use the connected code host."
       footer={<><Button variant="ghost" onClick={close} disabled={pending}>Cancel</Button><Button disabled={pending || !name.trim() || !url.trim()} onClick={() => start(async () => { setError(null); const r = await addSource({ name, url, ref }); if (r.ok) close(); else setError(r.error); })}>{pending ? "Adding…" : "Add repository"}</Button></>}
     >
       <div className="space-y-3">
