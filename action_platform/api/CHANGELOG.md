@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.15.0 — 2026-09-14
+
+### Features
+- **api:** app detail and next-version report 0.0.0 for untagged repositories
+
+### Refactoring
+- **api:** services split into packages — directory (one module per domain), hosts (oauth and providers), imports (per provider), apps (inventory, generate, remote); common and credentials helpers
+
 ## v0.14.1 — 2026-09-14
 
 ### Features
