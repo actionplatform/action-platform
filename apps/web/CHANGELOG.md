@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.12.0 — 2026-09-14
+
+### Features
+- **web:** apps always live on a code host: no push button, wizard needs a host, commits and branches always push
+
 ## v0.11.3 — 2026-09-14
 
 ### Features
