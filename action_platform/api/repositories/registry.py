@@ -171,6 +171,23 @@ class Registry:
     def _load(self) -> list[Entry]:
         return [self._entry(row) for row in self.store.rows()]
 
+    def adopt_file(self) -> list[str]:
+        """Entries still only in `apps.json` (from before the registry lived in the database) are copied into the store, ids kept."""
+        if isinstance(self.store, FileStore) or not self.file.exists():
+            return []
+
+        known = {row["id"] for row in self.store.rows()}
+        adopted = []
+
+        for row in FileStore(self.file).rows():
+            if row["id"] in known:
+                continue
+
+            self.store.put({k: v for k, v in row.items() if k != "path"})
+            adopted.append(row["id"])
+
+        return adopted
+
     def _put(self, entry: Entry) -> None:
         row = asdict(entry)
 

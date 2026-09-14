@@ -20,6 +20,9 @@ def configure_registry(database) -> None:
     _database = database
     get_registry.cache_clear()
 
+    if database is not None:
+        get_registry().adopt_file()
+
 
 @lru_cache
 def get_registry() -> Registry:
