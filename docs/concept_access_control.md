@@ -27,7 +27,7 @@ Source: `action_platform/core/access.py`, applied by the API's gate in front of 
 
 ## Scopes
 
-Chosen when a device code is approved (`action-platform login … --scope`), stored on the token.
+Chosen when a device code is approved — `action-platform login` asks for every scope unless `--scope` narrows it; the page pre-selects what the role allows — and stored on the token.
 
 | Scope | Unlocks |
 |---|---|

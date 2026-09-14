@@ -315,7 +315,7 @@ class CatalogAndPreviewTest(GateCase):
             ["owner", "admin", "deployer", "developer", "viewer"],
         )
         self.assertEqual(rows["roles"][3]["grantable_scopes"], ["read", "write"])
-        self.assertEqual(rows["default_scopes"], ["read", "write"])
+        self.assertEqual(rows["default_scopes"], ["read", "write", "release", "admin"])
         self.assertIn("app.release", [p["id"] for p in rows["permissions"]])
 
     def test_next_version_preview(self):

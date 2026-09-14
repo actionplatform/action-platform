@@ -137,7 +137,11 @@ export function DeviceApprove({ initialCode }: { initialCode: string }) {
   const grantable = grantableIn(organizationId);
   const busy = pending || state === "approving" || state === "denying" || state === "loading";
   const minutesLeft = expiresAt ? Math.max(0, Math.ceil((expiresAt - now) / 60_000)) : null;
-  const shown = requested.length ? requested : (["read"] as Scope[]);
+  const shown = (scopes.length ? scopes.map((x) => x.id) : ["read", "write", "release", "admin"]) as Scope[];
+  const toggle = (s: Scope) => {
+    if (s === "read" || !grantable.includes(s) || busy) return;
+    setGranted((current) => (current.includes(s) ? current.filter((x) => x !== s) : shown.filter((x) => x === s || current.includes(x))));
+  };
 
   return (
     <div className="w-full max-w-[580px]">
@@ -194,8 +198,8 @@ export function DeviceApprove({ initialCode }: { initialCode: string }) {
             </div>
 
             <div className="mt-5">
-              <div className="text-sm font-medium">Permissions requested</div>
-              <div className="text-[13px] text-secondary">What {clientName} may do within your role{orgName ? ` in ${orgName}` : ""}.</div>
+              <div className="text-sm font-medium">Permissions</div>
+              <div className="text-[13px] text-secondary">What {clientName} may do within your role{orgName ? ` in ${orgName}` : ""}. Untick what it should not have; {requested.length ? "the device asked for " + requested.join(", ") : "read is always included"}.</div>
               <ul className="mt-2.5 divide-y divide-border-subtle rounded-[8px] border border-border bg-background">
                 {shown.map((s) => {
                   const Icon = ICONS[s];
@@ -203,13 +207,20 @@ export function DeviceApprove({ initialCode }: { initialCode: string }) {
                   const blocked = !grantable.includes(s);
                   return (
                     <li key={s} className={cn("flex items-start gap-3 px-3.5 py-3", blocked && "opacity-60")}>
+                      <input
+                        type="checkbox"
+                        id={`scope-${s}`}
+                        className="mt-1 size-4 shrink-0 accent-foreground"
+                        checked={included}
+                        disabled={blocked || s === "read" || busy}
+                        onChange={() => toggle(s)}
+                        aria-label={`${info(s).label} scope`}
+                      />
                       <Icon className="mt-0.5 size-4 shrink-0 text-secondary" strokeWidth={1.75} aria-hidden="true" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2 text-sm font-medium">{info(s).label}{s === "admin" && <span className="inline-flex h-5 items-center rounded-[5px] border border-border px-1.5 text-[11px] font-normal text-secondary">Full access</span>}</div>
+                      <label htmlFor={`scope-${s}`} className="min-w-0 flex-1 cursor-pointer">
+                        <div className="flex flex-wrap items-center gap-2 text-sm font-medium">{info(s).label}{s === "admin" && <span className="inline-flex h-5 items-center rounded-[5px] border border-border px-1.5 text-[11px] font-normal text-secondary">Full access</span>}{s === "read" && <span className="inline-flex h-5 items-center rounded-[5px] border border-border px-1.5 text-[11px] font-normal text-secondary">Always</span>}</div>
                         <div className="text-[13px] text-secondary">{blocked ? `Not available for your role in ${orgName || "this organization"}` : everywhere && organizations.some((o) => !o.grantable.includes(s)) ? `${info(s).description} — only where your role allows` : info(s).description}</div>
-                      </div>
-                      <span className={cn("hidden shrink-0 items-center gap-1 text-[12px] min-[400px]:inline-flex", included ? "text-foreground" : "text-muted-foreground")}>{included ? <><Check className="size-3.5" strokeWidth={2.5} aria-hidden="true" /> Included</> : "Not granted"}</span>
-                      <span className="sr-only">{included ? "Included" : "Not granted"}</span>
+                      </label>
                     </li>
                   );
                 })}

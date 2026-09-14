@@ -22,7 +22,8 @@ export async function inspectDevice(userCode: string): Promise<Result<DeviceView
     const [rows, access] = await Promise.all([v1.organizations(), v1.access()]);
     const organizations = rows.map((o) => ({ id: o.id, name: o.name, role: o.role_label ?? "member", grantable: o.grantable_scopes as Scope[] }));
     const grant = { ...request.grant, scope: request.grant.scope.length ? request.grant.scope : (access.default_scopes as Scope[]) };
-    if (grant.organizationId !== "*" && (!grant.organizationId || !organizations.some((o) => o.id === grant.organizationId))) grant.organizationId = org.id;
+    if (!grant.organizationId) grant.organizationId = "*";
+    if (grant.organizationId !== "*" && !organizations.some((o) => o.id === grant.organizationId)) grant.organizationId = org.id;
     const requested = grant.scope;
     const allowed = grant.organizationId === "*" ? [...new Set(organizations.flatMap((o) => o.grantable))] : organizations.find((o) => o.id === grant.organizationId)?.grantable ?? ["read"];
     grant.scope = grant.scope.filter((s) => allowed.includes(s));

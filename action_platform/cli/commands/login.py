@@ -19,7 +19,7 @@ def login(
     scope: str = typer.Option(
         DEFAULT_SCOPE,
         "--scope",
-        help="What the token may do, within your role: read, write, release, admin (comma-separated). Adjustable in the browser when approving.",
+        help="What the token may do, within your role: read, write, release, admin (comma-separated). Everything by default; narrowed to your role, and adjustable in the browser when approving.",
     ),
     name: str | None = typer.Option(
         None, "--name", help="Label for the token in Settings (default user@host)"

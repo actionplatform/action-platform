@@ -31,7 +31,7 @@ SCOPE_PERMISSIONS: dict[str, tuple[str, ...]] = {
     "admin": ("project.manage", "org.manage"),
 }
 
-DEFAULT_SCOPES = ("read", "write")
+DEFAULT_SCOPES = ("read", "write", "release", "admin")
 
 ROLE_LABELS = {
     "owner": "Owner",

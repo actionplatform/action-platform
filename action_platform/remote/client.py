@@ -311,7 +311,7 @@ class Remote:
 
 
 SCOPES = ("read", "write", "release", "admin")
-DEFAULT_SCOPE = "read,write"
+DEFAULT_SCOPE = "read,write,release,admin"
 
 
 def parse_scope(value: str) -> list[str]:
