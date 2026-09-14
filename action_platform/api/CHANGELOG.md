@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.2 — 2026-09-13
+
+### Bug Fixes
+- **api:** apps still only in apps.json are adopted into the registry table on boot
+
 ## v0.6.1 — 2026-09-13
 
 ### Bug Fixes
