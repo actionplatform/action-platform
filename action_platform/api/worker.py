@@ -188,6 +188,8 @@ class Worker:
                 payload.get("teams") or [],
                 payload.get("people") or [],
                 payload.get("role") or "developer",
+                payload.get("project_id") or None,
+                payload.get("projects") or [],
             )
 
     def _import_after(self, payload: dict[str, Any]) -> dict[str, Optional[str]]:

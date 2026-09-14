@@ -23,9 +23,11 @@ class ImportRequest(BaseModel):
     host_id: str
     organization: str
     repositories: list[str] = []
+    projects: list[int] = []
     teams: list[str] = []
     people: list[str] = []
     role: str = "developer"
+    project_id: Optional[str] = None
 
 
 class ImportQueued(BaseModel):
@@ -59,6 +61,16 @@ class GithubRepository(BaseModel):
     imported_as: Optional[str] = None
 
 
+class GithubProject(BaseModel):
+    number: int
+    title: str
+    description: Optional[str] = None
+    closed: bool
+    url: Optional[str] = None
+    repositories: list[str]
+    exists: bool
+
+
 class GithubTeam(BaseModel):
     slug: str
     name: str
@@ -79,6 +91,7 @@ class GithubPerson(BaseModel):
 class GithubPreview(BaseModel):
     organization: str
     repositories: list[GithubRepository]
+    projects: list[GithubProject] = []
     teams: list[GithubTeam]
     people: list[GithubPerson]
     problems: list[str] = []
@@ -163,7 +176,7 @@ def import_github(
     allowed(caller, org, "org.manage")
     github_credentials(writes, org, body.host_id)
 
-    if not (body.repositories or body.teams or body.people):
+    if not (body.repositories or body.projects or body.teams or body.people):
         raise HTTPException(400, "pick at least one repository, team or person")
 
     job = queue.enqueue(
