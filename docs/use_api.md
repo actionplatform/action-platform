@@ -2,7 +2,7 @@
 
 `action-platform api` — the JSON API the web app drives; a FastAPI process listening on `:7788` with OpenAPI at `/docs`. It is released as its own component (`api/vX.Y.Z`, image `actionplatformio/action-platform-api`) and reports that version in `GET /api/version`.
 
-`action-platform api` — one process. Workspaces are file-backed under `AP_HOME`; accounts, sessions, organizations and tokens live in the [database](concept_database.md) the API owns. Which project or app a caller may touch is still checked by the web app's `/api/v1` proxy; that moves here next.
+`action-platform api` — one process. Workspaces are file-backed under `AP_HOME`; accounts, sessions, organizations and tokens live in the [database](concept_database.md) the API owns. Which organization, project or app a caller may touch is decided here too: `/api/v1/*` is the same API behind a gate that knows who is calling.
 
 | Endpoint | |
 |---|---|
@@ -36,7 +36,15 @@ Every response is a Pydantic model under `api/schemas/`; `apps/web` generates it
 
 ## Trust
 
-Every route but `/api/version`, `/docs` and `/openapi.json` requires `Authorization: Bearer <AP_API_TOKEN>`, the shared secret between the web app and the API, checked in constant time. Without a token the API refuses to start — `AP_ALLOW_UNAUTHENTICATED=1` opts into an open API for local development only. Behind that secret, `/api/auth/*` identifies the person through a session or a token it issued; the rules in `action_platform/core/access.py` decide roles, scopes and grants. Which project or app a call may touch is still enforced in the web app's `/api/v1` proxy ([access control](concept_access_control.md)); the CLI and MCP go through that proxy, and its `/api/auth/device/*` forwards to the API for `action-platform login`.
+Every route but `/api/version`, `/docs` and `/openapi.json` requires `Authorization: Bearer <AP_API_TOKEN>`, the shared secret between the web app and the API, checked in constant time. Without a token the API refuses to start — `AP_ALLOW_UNAUTHENTICATED=1` opts into an open API for local development only. Two prefixes authenticate the person instead: `/api/auth/*` (sessions, tokens, the device flow) and `/api/v1/*`, the user-facing face of the same routes. The web app rewrites both paths to the API unchanged, so the CLI, MCP and browser reach them through the platform's public address.
+
+## `/api/v1`
+
+A gate (`action_platform/api/access/gate.py`) sits in front of `/api/v1/*`. It identifies the caller — a JWT from `action-platform login`, a session token, or the browser cookie — then, for each route under `apps/…`, finds the app's organization through `registry_id`, checks the caller's role there against the route's permission, the token's scope against the same permission, and the token's reach (one project, one app); a token spanning every organization names one with `X-Organization: <id or slug>` on organization-level routes. Before handing the call to `/api/apps/…` it fills in what the workspace needs from the database: the source host's credentials (decrypted with the same key the web app used, refreshed through the OAuth app when expired), the organization's commit identity, the template repositories it added (`GET /matrix` becomes `POST /matrix {sources}`, `source=<name>` becomes the repository). After `sync`, `release`, `push`, `branches`, `checkout`, `pull-request` and `commit` it copies releases and pull requests from the source host into the database. `GET /apps` is cut to the apps the caller may see.
+
+Routes that are not workspaces live directly under `/api/v1`: `me` (user, organization, role, scope, effective permissions, reach), `organizations` (with role and grantable scopes), `projects` (with apps; across organizations for a token that spans them), `teams`, `members`; `POST projects`, `teams`, `teams/members`, `projects/team`, `members/role` for management (`project.manage` / `org.manage`, never from a token limited to a project); `POST tokens {scope, name}` exchanges a session for a scoped JWT, as `action-platform login` does.
+
+`AP_<PROVIDER>_CLIENT_ID` / `_CLIENT_SECRET` (or the web app's `GITHUB_CLIENT_ID`… names) let the API refresh expired OAuth tokens; without them a host connected through OAuth keeps working until its token expires.
 
 ## Workspaces
 

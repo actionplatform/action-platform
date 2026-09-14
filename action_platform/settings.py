@@ -44,5 +44,9 @@ class Settings:
     BITBUCKET_TOKEN = os.getenv("ACTION_PLATFORM_BITBUCKET_TOKEN")
     BITBUCKET_USERNAME = os.getenv("ACTION_PLATFORM_BITBUCKET_USERNAME")
 
+    @staticmethod
+    def env(name: str) -> str:
+        return os.getenv(name, "")
+
 
 settings = Settings()

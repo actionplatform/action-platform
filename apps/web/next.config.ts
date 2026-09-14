@@ -7,6 +7,13 @@ const config: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["postgres", "mysql2", "@libsql/client"],
   env: { WEB_VERSION: version },
+  async rewrites() {
+    const api = (process.env.AP_API ?? "http://127.0.0.1:7788").replace(/\/$/, "");
+    return [
+      { source: "/api/v1/:path*", destination: `${api}/api/v1/:path*` },
+      { source: "/api/auth/:path*", destination: `${api}/api/auth/:path*` },
+    ];
+  },
   async headers() {
     return [
       {

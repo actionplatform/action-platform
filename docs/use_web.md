@@ -143,7 +143,7 @@ action-platform whoami
 action-platform mcp --remote
 ```
 
-Requests go to `/api/v1/*` on the web app with `Authorization: Bearer <token>`; the route checks the session and forwards to the Python API.
+Requests go to `/api/v1/*` with `Authorization: Bearer <token>`; the web app forwards that path unchanged to the Python API (a Next.js rewrite), whose gate identifies the caller and applies role, scope and reach ([API](use_api.md)).
 
 ## Hardening
 
