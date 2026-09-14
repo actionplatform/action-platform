@@ -104,28 +104,14 @@ services:
       dockerfile: deploy/Dockerfile.web
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
       api:
         condition: service_started
     ports:
       - "${WEB_PORT:-3000}:3000"
-    volumes:
-      - webconfig:/app/config
     environment:
       AP_API: http://api:7788
-      AP_API_TOKEN: ${AP_API_TOKEN:-}
       SENTRY_DSN: ${AP_SENTRY_DSN_WEB:-}
-      DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@postgres:5432/action_platform
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-      BETTER_AUTH_URL: ${PUBLIC_URL}
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
-      GITLAB_CLIENT_ID: ${GITLAB_CLIENT_ID:-}
-      GITLAB_CLIENT_SECRET: ${GITLAB_CLIENT_SECRET:-}
-      GITLAB_BASE_URL: ${GITLAB_BASE_URL:-}
-      BITBUCKET_CLIENT_ID: ${BITBUCKET_CLIENT_ID:-}
-      BITBUCKET_CLIENT_SECRET: ${BITBUCKET_CLIENT_SECRET:-}
+      PUBLIC_URL: ${PUBLIC_URL}
     labels:
       - traefik.enable=true
       - traefik.http.routers.web.rule=Host(`${DOMAIN:-localhost}`)
@@ -137,4 +123,3 @@ volumes:
   letsencrypt:
   pgdata:
   apdata:
-  webconfig:
