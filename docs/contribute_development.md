@@ -19,15 +19,14 @@ npm install
 npm run dev            # :3000
 npx tsc --noEmit
 npm run api:types      # regenerate lib/api.d.ts from the Python app (no server needed)
-npm run db:generate    # one migration per engine after editing lib/db/schema/*.ts
 ```
 
-State written by the wizard lives in `apps/web/config/app.json` and, for SQLite, `apps/web/data/`; both are gitignored — delete them to start over.
+The web app keeps no state: it needs `AP_API` (where the API listens) and `PUBLIC_URL`. Everything the wizard creates lands in the API's database (`AP_DATABASE_URL`); point it at a fresh SQLite file to start over.
 
 Rules that come from mistakes already made:
 
 - Never use `window.confirm` / `prompt` / `alert`; use `components/ui/dialog.tsx`.
-- Client components must not import modules that pull `node:*` (`lib/db`, `lib/orgs`, `lib/source-hosts`, `lib/crypto`, `lib/oauth`); shared types and constants live in `lib/types.ts` and `lib/source-host-kinds.ts`.
+- Client components must not import modules that call the API (`lib/api`, `lib/v1`, `lib/orgs`, `lib/source-hosts`, `lib/oauth`); shared types and constants live in `lib/types.ts`, `lib/permissions.ts` and `lib/source-host-kinds.ts`.
 - Do not run `npm run build` while `npm run dev` is running — both write `.next/`.
 
 ## Repository conventions

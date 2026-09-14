@@ -106,11 +106,11 @@ sequenceDiagram
     Note over A: nothing stored
 ```
 
-1. A member connects a source host in the web app (OAuth) or pastes a token. The token is AES-256-GCM encrypted (`lib/crypto.ts`, key derived from `BETTER_AUTH_SECRET`) and stored in `source_host`.
+1. A member connects a source host (OAuth through `/api/v1/oauth/…`) or pastes a token (`POST /api/v1/hosts`). The API seals it with AES-256-GCM (`api/auth/crypto.py`, key derived from the auth secret through HKDF) and stores it in `source_host`.
 2. An app remembers which host it uses (`app.source_host_id`).
-3. A push / release server action decrypts the token — refreshing it first for GitLab / Bitbucket — and sends it in the request body as `credentials {kind, token, username, base_url, owner}`.
+3. On a push / release through `/api/v1`, the gate opens the token — refreshing it first through the OAuth app when it expired — and adds it to the request as `credentials {kind, token, username, base_url, owner, author_name, author_email}` before the call reaches the workspace route. The web app never sees a token.
 4. The API rebuilds `config.source_host` with that token (`api/core/credentials.py: apply`) and wraps the git calls in `git_auth()`. The credentials go into a `contextvars.ContextVar` that `core/flow/git.git_env()` reads when it spawns git, so they belong to that request only — concurrent requests on other threads never see them and the process environment is never touched. Git receives them as a credential helper through `GIT_CONFIG_COUNT/KEY/VALUE`, so the token never lands in `.git/config` or on a command line, and the host's own helpers (keychain, `gh`) are cleared for that call.
-5. Nothing is stored on the API side.
+5. Nothing about the call is stored beyond the imported releases and pull requests.
 
 ## The web app's data
 
