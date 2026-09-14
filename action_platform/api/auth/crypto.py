@@ -27,10 +27,12 @@ class Sealer:
     def seal(self, plain: str) -> str:
         iv = os.urandom(12)
         sealed = AESGCM(self.key).encrypt(iv, plain.encode(), None)
+
         return ".".join(["v2", _b64(iv), _b64(sealed[-16:]), _b64(sealed[:-16])])
 
     def open(self, sealed: str) -> str:
         version, iv, tag, data = sealed.split(".")
+
         if version == "v1":
             key = hashlib.scrypt(
                 self.secret, salt=LEGACY_SALT, n=16384, r=8, p=1, dklen=32
@@ -39,6 +41,7 @@ class Sealer:
             key = self.key
         else:
             raise ValueError("unknown ciphertext version")
+
         return (
             AESGCM(key).decrypt(_unb64(iv), _unb64(data) + _unb64(tag), None).decode()
         )

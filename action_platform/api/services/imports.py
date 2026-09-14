@@ -22,7 +22,9 @@ def now() -> datetime:
 def parse_time(value: Optional[str]) -> Optional[datetime]:
     if not value:
         return None
+
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+
     return (
         parsed.astimezone(timezone.utc).replace(tzinfo=None)
         if parsed.tzinfo
@@ -36,14 +38,17 @@ def _auth(creds: Credentials) -> dict[str, str]:
             "authorization": f"Bearer {creds.token}",
             "x-github-api-version": "2022-11-28",
         }
+
     if creds.kind == "bitbucket" and creds.username:
         return {"authorization": basic(creds.username, creds.token)}
+
     return {"authorization": f"Bearer {creds.token}"}
 
 
 def remote_releases(creds: Credentials, repo: str) -> list[dict[str, Any]]:
     if creds.kind == "github":
         api = (creds.base_url or "").rstrip("/") or "https://api.github.com"
+
         return [
             {
                 "tag": r["tag_name"],
@@ -61,8 +66,10 @@ def remote_releases(creds: Credentials, repo: str) -> list[dict[str, Any]]:
             }
             for r in get_pages(f"{api}/repos/{repo}/releases", _auth(creds))
         ]
+
     if creds.kind == "gitlab":
         base = (creds.base_url or "").rstrip("/") or "https://gitlab.com"
+
         return [
             {
                 "tag": r["tag_name"],
@@ -82,6 +89,7 @@ def remote_releases(creds: Credentials, repo: str) -> list[dict[str, Any]]:
                 f"{base}/api/v4/projects/{quote(repo, safe='')}/releases", _auth(creds)
             )
         ]
+
     if creds.kind == "bitbucket":
         return [
             {
@@ -104,12 +112,14 @@ def remote_releases(creds: Credentials, repo: str) -> list[dict[str, Any]]:
                 _auth(creds),
             )
         ]
+
     return []
 
 
 def remote_pull_requests(creds: Credentials, repo: str) -> list[dict[str, Any]]:
     if creds.kind == "github":
         api = (creds.base_url or "").rstrip("/") or "https://api.github.com"
+
         return [
             {
                 "number": r["number"],
@@ -135,8 +145,10 @@ def remote_pull_requests(creds: Credentials, repo: str) -> list[dict[str, Any]]:
                 10,
             )
         ]
+
     if creds.kind == "gitlab":
         base = (creds.base_url or "").rstrip("/") or "https://gitlab.com"
+
         return [
             {
                 "number": r["iid"],
@@ -162,6 +174,7 @@ def remote_pull_requests(creds: Credentials, repo: str) -> list[dict[str, Any]]:
                 10,
             )
         ]
+
     if creds.kind == "bitbucket":
         return [
             {
@@ -190,6 +203,7 @@ def remote_pull_requests(creds: Credentials, repo: str) -> list[dict[str, Any]]:
                 _auth(creds),
             )
         ]
+
     return []
 
 
@@ -204,21 +218,28 @@ class ImportService:
     ) -> int:
         if creds is None or not repo:
             raise ProviderError("no source host")
+
         remote = remote_releases(creds, repo)
         by_tag = {
             r.tag: r
             for r in self.db.scalars(select(Release).where(Release.app_id == app_id))
         }
         moment = now()
+
         for item in remote:
             row = by_tag.get(item["tag"])
+
             if row is None:
                 row = Release(id=str(uuid.uuid4()), app_id=app_id)
                 self.db.add(row)
+
             for key, value in item.items():
                 setattr(row, key, value)
+
             row.synced_at = moment
+
         self.db.flush()
+
         return len(remote)
 
     def sync_pull_requests(
@@ -226,6 +247,7 @@ class ImportService:
     ) -> int:
         if creds is None or not repo:
             raise ProviderError("no source host")
+
         remote = remote_pull_requests(creds, repo)
         by_number = {
             r.number: r
@@ -233,20 +255,26 @@ class ImportService:
                 select(PullRequest).where(PullRequest.app_id == app_id)
             )
         }
+
         for item in remote:
             row = by_number.get(item["number"])
+
             if row is None:
                 row = PullRequest(id=str(uuid.uuid4()), app_id=app_id)
                 self.db.add(row)
+
             for key, value in item.items():
                 setattr(row, key, value)
+
         self.db.flush()
+
         return len(remote)
 
     def sync_all(
         self, app_id: str, creds: Optional[Credentials], repo: Optional[str]
     ) -> dict[str, Optional[str]]:
         errors: dict[str, Optional[str]] = {}
+
         for name, fn in (
             ("releases", self.sync_releases),
             ("pull_requests", self.sync_pull_requests),
@@ -256,4 +284,5 @@ class ImportService:
                 errors[name] = None
             except ProviderError as e:
                 errors[name] = str(e)
+
         return errors

@@ -47,17 +47,21 @@ class Caller:
         self, organization_id: Optional[str], permission: Optional[str]
     ) -> tuple[bool, str]:
         role = self.role_in(organization_id) if organization_id else None
+
         if organization_id and permission and not can(role, permission):
             return False, f"your role ({role or 'none'}) lacks {permission}"
+
         if self.scope is not None and not scope_allows(self.scope, permission):
             return (
                 False,
                 f"the token's scope ({' '.join(self.scope)}) does not allow {permission or 'read'}",
             )
+
         return True, ""
 
     def permissions_in(self, organization_id: Optional[str]) -> dict[str, bool]:
         role = self.role_in(organization_id) if organization_id else None
+
         return {
             p: (can(role, p) if organization_id else True)
             and (self.scope is None or scope_allows(self.scope, p))
@@ -67,8 +71,10 @@ class Caller:
     def within_reach(self, app_id: str, project_id: str) -> bool:
         if self.app_id:
             return app_id == self.app_id
+
         if self.project_id:
             return project_id == self.project_id
+
         return True
 
 
@@ -84,16 +90,20 @@ def resolve_caller(
 
     if bearer and looks_like_jwt(bearer):
         token = auth.verify_token(bearer, client)
+
         if token is None:
             return None
+
         organizations = directory.organizations_of(token.user_id)
         organization = (
             next((o for o, _ in organizations if o.id == token.organization_id), None)
             if token.organization_id
             else None
         )
+
         if token.organization_id and organization is None:
             return None
+
         return Caller(
             user=token.user,
             organizations=organizations,
@@ -108,18 +118,25 @@ def resolve_caller(
         )
 
     session = None
+
     if bearer:
         session = auth.session_from_token(bearer)
+
     if session is None and headers.get("x-session-token"):
         session = auth.session_from_token(headers["x-session-token"])
+
     if session is None and headers.get("x-session-cookie"):
         session = auth.session_from_cookie(headers["x-session-cookie"])
+
     if session is None and headers.get("cookie"):
         session = auth.session_from_cookie(cookie_value(headers["cookie"]))
+
     if session is None:
         return None
+
     identity = auth.identity_of(session)
     organizations = directory.organizations_of(identity.user.id)
+
     return Caller(
         user=identity.user,
         organizations=organizations,

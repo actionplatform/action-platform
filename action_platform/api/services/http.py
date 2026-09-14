@@ -24,6 +24,7 @@ def get_json(url: str, headers: Optional[dict[str, str]] = None) -> Any:
             **(headers or {}),
         },
     )
+
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
             return json.loads(response.read() or b"null")
@@ -49,6 +50,7 @@ def post_form(
             **(headers or {}),
         },
     )
+
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
             return json.loads(response.read() or b"{}")
@@ -63,21 +65,28 @@ def post_form(
 def get_pages(url: str, headers: dict[str, str], limit: int = 20) -> list[Any]:
     out: list[Any] = []
     separator = "&" if "?" in url else "?"
+
     for page in range(1, limit + 1):
         rows = get_json(f"{url}{separator}per_page=100&page={page}", headers)
+
         if not isinstance(rows, list):
             break
+
         out.extend(rows)
+
         if len(rows) < 100:
             break
+
     return out
 
 
 def get_values(url: str, headers: dict[str, str]) -> list[Any]:
     out: list[Any] = []
     next_url: Optional[str] = url
+
     while next_url:
         data = get_json(next_url, headers)
         out.extend(data.get("values", []))
         next_url = data.get("next")
+
     return out

@@ -31,8 +31,10 @@ COOKIE = "better-auth.session_token"
 def cookie_value(header: str) -> Optional[str]:
     for part in header.split(";"):
         name, _, value = part.strip().partition("=")
+
         if name in (COOKIE, f"__Secure-{COOKIE}") and value:
             return value
+
     return None
 
 
@@ -48,8 +50,10 @@ LIMITS = {
 
 def client_ip(request: Request) -> str:
     forwarded = request.headers.get("x-forwarded-for", "")
+
     if forwarded:
         return forwarded.split(",")[0].strip()
+
     return request.client.host if request.client else "unknown"
 
 
@@ -65,8 +69,10 @@ def get_auth(
     request: Request, db: DbSession = Depends(get_db)
 ) -> Iterator[AuthService]:
     secrets = request.app.state.secrets
+
     if secrets is None:
         raise HTTPException(503, "auth is not configured: set AP_AUTH_SECRET")
+
     yield AuthService(db, secrets, request.app.state.verification_uri)
 
 
@@ -81,16 +87,22 @@ def current_session(
         authorization[7:].strip() if authorization.lower().startswith("bearer ") else ""
     )
     session = None
+
     if bearer and not looks_like_jwt(bearer):
         session = auth.session_from_token(bearer)
+
     if session is None and x_session_token:
         session = auth.session_from_token(x_session_token)
+
     if session is None and x_session_cookie:
         session = auth.session_from_cookie(x_session_cookie)
+
     if session is None and request.headers.get("cookie"):
         session = auth.session_from_cookie(cookie_value(request.headers["cookie"]))
+
     if session is None:
         raise Unauthenticated()
+
     return session
 
 
@@ -142,6 +154,7 @@ def signed(auth: AuthService, user, session: Session) -> schemas.Signed:
 def grant_of(body: Optional[schemas.GrantIn]) -> Grant:
     if body is None:
         return Grant()
+
     return Grant(
         parse_scopes(" ".join(body.scope)),
         body.organization_id or None,
@@ -163,6 +176,7 @@ def grant_out(grant: Grant) -> schemas.GrantOut:
 def status(request: Request, db: DbSession = Depends(get_db)) -> schemas.AuthStatus:
     configured = request.app.state.secrets is not None
     users = AuthService(db, request.app.state.secrets).user_count() if configured else 0
+
     return schemas.AuthStatus(configured=configured, users=users)
 
 
@@ -173,6 +187,7 @@ def sign_up(
     user, session = auth.sign_up(
         body.name, body.email, body.password, body.invitation_id
     )
+
     return signed(auth, user, session)
 
 
@@ -183,6 +198,7 @@ def sign_in(
     user, session = auth.sign_in(
         body.email, body.password, body.ip_address, body.user_agent
     )
+
     return signed(auth, user, session)
 
 
@@ -191,6 +207,7 @@ def sign_out(
     session: Session = Depends(current_session), auth: AuthService = Depends(get_auth)
 ) -> Response:
     auth.sign_out(session.token)
+
     return Response(status_code=204)
 
 
@@ -208,6 +225,7 @@ def set_active_organization(
     auth: AuthService = Depends(get_auth),
 ) -> schemas.IdentityOut:
     auth.set_active_organization(session, body.organization_id)
+
     return identity_out(auth, auth.identity_of(session))
 
 
@@ -216,6 +234,7 @@ def sessions(
     session: Session = Depends(current_session), auth: AuthService = Depends(get_auth)
 ) -> list[schemas.BrowserSessionOut]:
     rows = auth.sessions_of(session.user_id)
+
     return sorted(
         (
             schemas.BrowserSessionOut(
@@ -241,6 +260,7 @@ def revoke_session(
 ) -> Response:
     if not auth.revoke_session(session.user_id, id):
         raise HTTPException(404, "no such session")
+
     return Response(status_code=204)
 
 
@@ -266,6 +286,7 @@ def add_member(
     user, existed = auth.add_member_account(
         session, body.organization_id, body.name, body.email, body.password, body.role
     )
+
     return schemas.MemberAdded(user_id=user.id, existed=existed)
 
 
@@ -274,6 +295,7 @@ def device_code(
     body: schemas.DeviceCodeRequest, auth: AuthService = Depends(get_auth)
 ) -> schemas.DeviceCodeOut:
     code = auth.device_code(body.client_id, body.scope)
+
     return schemas.DeviceCodeOut(
         device_code=code.device_code,
         user_code=code.user_code,
@@ -290,7 +312,9 @@ def device_token(
 ) -> schemas.DeviceTokenOut:
     if body.grant_type != "urn:ietf:params:oauth:grant-type:device_code":
         raise HTTPException(400, "unsupported grant_type")
+
     session, scope = auth.device_token(body.device_code, body.client_id)
+
     return schemas.DeviceTokenOut(
         access_token=session.token,
         scope=scope,
@@ -305,13 +329,16 @@ def device_request(
     auth: AuthService = Depends(get_auth),
 ) -> schemas.DeviceRequestOut:
     code = auth.device_request(user_code)
+
     if code is None:
         raise HTTPException(404, "invalid code")
+
     return device_request_out(auth, code)
 
 
 def device_request_out(auth: AuthService, code: DeviceCode) -> schemas.DeviceRequestOut:
     grant = Grant.parse(code.scope)
+
     return schemas.DeviceRequestOut(
         status=auth.device_status(code),
         requested=grant.scope,
@@ -329,6 +356,7 @@ def device_approve(
 ) -> schemas.DeviceDecisionOut:
     if body.grant is not None:
         auth.device_grant(session, body.user_code, grant_of(body.grant))
+
     return schemas.DeviceDecisionOut(
         status=auth.device_approve(session, body.user_code).status
     )
@@ -359,6 +387,7 @@ def issue_token(
         body.app_id or grant.app_id,
     )
     token, raw = auth.issue_token(session, grant, body.name)
+
     return schemas.TokenIssued(
         id=token.id,
         token=raw,
@@ -375,6 +404,7 @@ def tokens(
 ) -> list[schemas.TokenOut]:
     rows = auth.tokens_of(session.user_id, organization_id)
     clients = auth.clients_of(rows)
+
     return [token_out(auth, t, clients.get(t.id, [])) for t in rows]
 
 
@@ -384,7 +414,9 @@ def token_out(auth: AuthService, token: ApiToken, clients) -> schemas.TokenOut:
     def named(model, id: Optional[str], fallback: str) -> Optional[schemas.Named]:
         if not id:
             return None
+
         name = db.scalar(select(model.name).where(model.id == id))
+
         return schemas.Named(id=id, name=name or fallback)
 
     return schemas.TokenOut(
@@ -414,6 +446,7 @@ def revoke_token(
 ) -> Response:
     if not auth.revoke_token(session.user_id, id):
         raise HTTPException(404, "no such token")
+
     return Response(status_code=204)
 
 
@@ -422,8 +455,10 @@ def verify_token(
     body: schemas.VerifyTokenRequest, auth: AuthService = Depends(get_auth)
 ) -> schemas.TokenClaimsOut:
     token = auth.verify_token(body.token, body.client)
+
     if token is None:
         raise Unauthenticated("token is invalid, expired or revoked")
+
     user = token.user
     organizations = auth.organizations_of(user.id)
     organization = (
@@ -431,8 +466,10 @@ def verify_token(
         if token.organization_id
         else None
     )
+
     if token.organization_id and organization is None:
         raise Unauthenticated("you are no longer a member of the token's organization")
+
     return schemas.TokenClaimsOut(
         id=token.id,
         user=user_out(user),
