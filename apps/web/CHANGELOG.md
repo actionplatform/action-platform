@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.9.1 — 2026-09-14
+
+### Bug Fixes
+- **web:** forward /api/v1 and /api/auth to the API from the middleware, reading AP_API at runtime — next.config rewrites froze the build-time default and answered 500 in the image
+
 ## v0.9.0 — 2026-09-14
 
 ### Refactoring
