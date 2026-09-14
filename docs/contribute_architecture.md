@@ -47,7 +47,7 @@ action_platform/
     source/       rest (urllib helper), github, gitlab, bitbucket, generic; build_source_host(kind, …)
   abc/            SourceHost, CIRunner, DeployTarget, Vcs, TemplateStoreABC contracts
   api/            FastAPI: main (app factory, AP_API_TOKEN middleware, Sentry), v1/routers (apps, catalog, configuration, flow, actions),
-                  services (apps, catalog, configuration, flow, git_state, lifecycle, manifest), repositories/registry (apps.json + workspaces),
+                  services (apps, catalog, configuration, flow, git_state, lifecycle, manifest), repositories/registry (`registry` table + workspaces),
                   schemas (the Pydantic models behind the OpenAPI contract), core/credentials (per-request token + identity), LAST_VERSION
   remote/         client (urllib): device-flow login, scoped token exchange, every /api/v1 call; credentials file
   mcp/            server (local or --remote), tools/{matrix,project,flow,lifecycle,remote}, prompts, annotations

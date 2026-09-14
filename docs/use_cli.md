@@ -71,7 +71,7 @@ Credentials from `login` live in `~/.action-platform/credentials.json` (mode 600
 | `ACTION_PLATFORM_GITLAB_TOKEN` / `GITLAB_TOKEN` | GitLab |
 | `ACTION_PLATFORM_BITBUCKET_TOKEN`, `ACTION_PLATFORM_BITBUCKET_USERNAME` | Bitbucket |
 | `ACTION_PLATFORM_TEMPLATES`, `ACTION_PLATFORM_TEMPLATES_REPO` | local checkout / repository of the templates matrix |
-| `AP_HOME` | where the API keeps `apps.json`, workspaces and credentials (default `~/.action-platform`) |
+| `AP_HOME` | where the API keeps its workspaces and the CLI its credentials (default `~/.action-platform`) |
 | `AP_SERVER`, `AP_TOKEN` | use this platform and token instead of the credentials file |
 | `AP_GIT_AUTHOR_NAME`, `AP_GIT_AUTHOR_EMAIL` | identity for commits when the request carries none (default `Action Platform <cloud@actionplatform.io>`) |
 | `AP_SENTRY_DSN` | error reporting, see [observability](concept_observability.md) |
