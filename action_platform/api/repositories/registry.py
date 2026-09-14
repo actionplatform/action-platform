@@ -105,6 +105,20 @@ class DbStore:
                 )
             ]
 
+    def row(self, id: str) -> Optional[dict]:
+        with self.database.session() as s:
+            r = s.get(RegistryEntry, id)
+
+            if r is None:
+                return None
+
+            return {
+                "id": r.id,
+                "name": r.name,
+                "url": r.url,
+                "default_branch": r.default_branch,
+            }
+
     def put(self, row: dict) -> None:
         with self.database.session() as s:
             entry = s.get(RegistryEntry, row["id"]) or RegistryEntry(id=row["id"])
@@ -168,11 +182,12 @@ class Registry:
         return self._load()
 
     def get(self, id: str) -> Entry:
-        for row in self._load():
-            if row.id == id:
-                return row
+        row = self.store.row(id)
 
-        raise ActionPlatformError(f"app {id} is not registered")
+        if row is None:
+            raise ActionPlatformError(f"app {id} is not registered")
+
+        return self._entry(row)
 
     def add(
         self, url: str, name: Optional[str] = None, require_manifest: bool = True
