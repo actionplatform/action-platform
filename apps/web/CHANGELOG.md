@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.14.2 — 2026-09-14
+
+### Chores
+- **web:** every mention of clones and workspaces now speaks of pending changes and the code host
+- **web:** 'Working tree' becomes 'Pending changes': the platform holds edits, not a checkout
+
 ## v0.14.1 — 2026-09-14
 
 ### Bug Fixes
