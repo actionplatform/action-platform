@@ -75,7 +75,7 @@ export function AppHeader({ view }: { view: AppView }) {
               <div className="mt-1.5 inline-flex items-center gap-2 font-mono text-[13px] text-secondary">
                 {brand ? <BrandIcon icon={brand} mono className="size-4" /> : null}
                 {view.repository}
-                <Badge className="h-5 px-2 text-[11px]">not pushed</Badge>
+                <Badge className="h-5 px-2 text-[11px]">no remote</Badge>
               </div>
             )
           )}

@@ -73,7 +73,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
           <div className="text-xs text-secondary">Branch</div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Select size="lg" mono className="sm:w-64" icon={<GitBranch className="size-4" strokeWidth={1.75} />} value={branch} onChange={(v) => { setBranch(v); setPreview(null); setResult(null); }} options={options.map((b) => ({ value: b, label: b, hint: view.stableBranches.includes(b) ? "stable" : "rc" }))} />
-            <div className="text-[13px] text-secondary">{stable ? "Stable version, published as the latest release." : `Pre-release (rc). Stable versions are cut from ${view.stableBranches[0] ?? "main"}.`}{switching && <> The workspace switches to <span className="font-mono text-foreground">{branch}</span> first.</>}</div>
+            <div className="text-[13px] text-secondary">{stable ? "Stable version, published as the latest release." : `Pre-release (rc). Stable versions are cut from ${view.stableBranches[0] ?? "main"}.`}{switching && <> The release is cut from <span className="font-mono text-foreground">{branch}</span>.</>}</div>
           </div>
         </div>
 

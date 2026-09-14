@@ -79,7 +79,7 @@ function CommitBar({ view }: { view: AppView }) {
     <div className="flex flex-col gap-3 rounded-lg border border-foreground/60 bg-surface px-4 py-3 sm:flex-row sm:items-start">
       <div className="min-w-0 flex-1 text-sm">
         <div className="font-medium">Uncommitted changes on <span className="font-mono">{view.branch}</span></div>
-        <div className="text-[13px] text-secondary">{onProtected ? "Protected branch: changes go to a new branch and a pull request." : "Configuration edits live in the workspace until you commit them."}</div>
+        <div className="text-[13px] text-secondary">{onProtected ? "Protected branch: changes go to a new branch and a pull request." : "Configuration edits stay pending on the platform until you commit them; every commit is pushed."}</div>
         {view.changes.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {view.changes.slice(0, 12).map((f) => <span key={f} className="inline-flex h-5 items-center rounded border border-border bg-background px-1.5 font-mono text-[11px]">{f}</span>)}
@@ -150,7 +150,7 @@ function DeployTargetPanel({ view, clouds }: { view: AppView; clouds: CloudOptio
     <Panel>
       <PanelHeader title="Deploy target" aside={current ? <Badge className="font-mono">{current}</Badge> : <Badge>Not configured</Badge>} />
       <PanelBody className="space-y-3">
-        <p className="text-sm text-secondary">Applies the cloud overlay's files to the workspace and records <span className="font-mono">[deploy] target</span> in <span className="font-mono">platform.toml</span>. Replaces the previous target.</p>
+        <p className="text-sm text-secondary">Adds the cloud overlay's files as pending changes and records <span className="font-mono">[deploy] target</span> in <span className="font-mono">platform.toml</span>. Replaces the previous target.</p>
         {clouds.length === 0 ? (
           <p className="text-sm text-muted-foreground">No overlay supports {view.type ?? "this type"} / {view.language ?? "this language"}.</p>
         ) : (
@@ -173,7 +173,7 @@ function DeployTargetPanel({ view, clouds }: { view: AppView; clouds: CloudOptio
         open={picked !== null}
         onClose={() => setPicked(null)}
         title={`Set deploy target to ${picked?.name}?`}
-        description={current ? `Replaces ${current}. Overlay files are written into the workspace; commit them afterwards.` : "Overlay files are written into the workspace; commit them afterwards."}
+        description={current ? `Replaces ${current}. Overlay files become pending changes; commit them afterwards.` : "Overlay files become pending changes; commit them afterwards."}
         confirmLabel="Apply overlay"
         pending={pending}
         onConfirm={() => { const t = picked; if (t) start(async () => { setError(null); const r = await setCloudTarget(view.projectId, view.registryId, t.name, t.source); setPicked(null); if (r.ok) router.refresh(); else setError(r.error); }); }}
@@ -206,7 +206,7 @@ function ServicesPanel({ view, services }: { view: AppView; services: ServiceOpt
         open={open}
         onClose={() => !pending && setOpen(false)}
         title="Add service"
-        description="Writes services/<name>/ into the workspace and records it under [services]."
+        description="Adds services/<name>/ as pending changes and records it under [services]."
         footer={<><Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>Cancel</Button><Button disabled={pending || !name} onClick={() => start(async () => { setError(null); const r = await addService(view.projectId, view.registryId, name, provider || null, chosen?.source ?? null); if (r.ok) { setOpen(false); router.refresh(); } else setError(r.error); })}>{pending ? "Adding…" : "Add service"}</Button></>}
       >
         <div className="space-y-3">

@@ -31,7 +31,7 @@ export function DeleteAppDialog({ open, onClose, onDeleted, projectId, appId, na
       open={open}
       onClose={close}
       title={`Delete ${name}?`}
-      description="The platform's clone is deleted."
+      description="The app and its pending changes are removed from the platform."
       confirmLabel={repository ? "Delete app and repository" : "Delete app"}
       danger
       pending={pending}

@@ -64,7 +64,7 @@ export function ProjectActionsMenu({ project, teams }: { project: ProjectItem; t
         open={confirm}
         onClose={() => { if (!pending) { setConfirm(false); setRepositories(false); setError(null); } }}
         title={`Delete ${project.name}?`}
-        description="Every app in it is removed and the platform's clones are deleted."
+        description="Every app in it and their pending changes are removed from the platform."
         confirmLabel={repositories ? "Delete project and repositories" : "Delete project"}
         danger
         pending={pending}

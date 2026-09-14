@@ -55,7 +55,7 @@ function ApplyOverlayDialog({ item, targets, open, onClose }: { item: TemplateIt
       open={open}
       onClose={() => !pending && onClose()}
       title={`Apply ${item.name}`}
-      description="Writes the overlay files into the app's workspace and sets its deploy target. Commit the result from the app's Configuration page."
+      description="Adds the overlay files as pending changes on the app and sets its deploy target. Commit the result from the app's Configuration page."
       footer={<><Button variant="ghost" onClick={onClose} disabled={pending}>Cancel</Button><Button disabled={pending || !chosen} onClick={() => { if (!chosen) return; start(async () => { setError(null); const r = await setCloudTarget(chosen.projectId, chosen.registryId, item.name, item.source); if (r.ok) { onClose(); router.push(`/projects/${chosen.projectId}/apps/${chosen.id}/configuration`); } else setError(r.error); }); }}>{pending ? "Applying…" : "Apply overlay"}</Button></>}
     >
       {targets.length === 0 ? (

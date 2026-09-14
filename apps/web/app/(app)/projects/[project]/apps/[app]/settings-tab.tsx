@@ -30,7 +30,7 @@ export function SettingsTab({ view, hosts, currentHost }: { view: AppView; hosts
         <Panel>
           <PanelHeader title="Danger zone" />
           <PanelBody className="space-y-3 text-sm">
-            <p className="text-secondary">Deleting removes the platform's clone and this entry. The repository on the code host is untouched.</p>
+            <p className="text-secondary">Deleting removes this app and its pending changes from the platform. The repository on the code host is untouched unless you say so.</p>
             <Button variant="destructive" onClick={() => setConfirm(true)}>Delete project</Button>
           </PanelBody>
         </Panel>
