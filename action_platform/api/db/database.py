@@ -36,16 +36,16 @@ def normalize_url(url: str) -> str:
 
 
 class Database:
-    def __init__(self, url: str, pool_size: int = 5) -> None:
+    def __init__(self, url: str, pool_size: int = 10, max_overflow: int = 20) -> None:
         if not url:
             raise ConfigError("AP_DATABASE_URL is empty")
 
         self.url = normalize_url(url)
-        self.engine = self._engine(self.url, pool_size)
+        self.engine = self._engine(self.url, pool_size, max_overflow)
         self.sessions = sessionmaker(self.engine, expire_on_commit=False)
 
     @staticmethod
-    def _engine(url: str, pool_size: int) -> Engine:
+    def _engine(url: str, pool_size: int, max_overflow: int) -> Engine:
         if url.startswith("sqlite"):
             memory = url in ("sqlite://", "sqlite:///:memory:")
             engine = create_engine(
@@ -60,7 +60,12 @@ class Database:
 
             return engine
 
-        return create_engine(url, pool_size=pool_size, pool_pre_ping=True)
+        return create_engine(
+            url,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+            pool_pre_ping=True,
+        )
 
     @property
     def dialect(self) -> str:

@@ -38,7 +38,8 @@ class Settings:
     ALLOW_UNAUTHENTICATED_API = os.getenv("AP_ALLOW_UNAUTHENTICATED", "") == "1"
     FORWARDED_ALLOW_IPS = os.getenv("AP_FORWARDED_ALLOW_IPS", "*")
     DATABASE_URL = os.getenv("AP_DATABASE_URL") or os.getenv("DATABASE_URL", "")
-    DATABASE_POOL_SIZE = int(os.getenv("AP_DATABASE_POOL_SIZE", "5"))
+    DATABASE_POOL_SIZE = int(os.getenv("AP_DATABASE_POOL_SIZE", "10"))
+    DATABASE_MAX_OVERFLOW = int(os.getenv("AP_DATABASE_MAX_OVERFLOW", "20"))
     AUTH_SECRET = os.getenv("AP_AUTH_SECRET") or os.getenv("BETTER_AUTH_SECRET", "")
     PUBLIC_URL = os.getenv("AP_PUBLIC_URL") or os.getenv("PUBLIC_URL", "")
     SENTRY_DSN = os.getenv("AP_SENTRY_DSN", "")
