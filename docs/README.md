@@ -40,6 +40,7 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 | [Templates](concept_templates.md) | project types, stacks, cloud overlays, services; adding your own repositories |
 | [Releases](concept_releases.md) | versions per component, tags, what each one publishes |
 | [Observability](concept_observability.md) | Sentry per component: variables, what is sent, what is not |
+| [Database](concept_database.md) | the one database web and API share: connecting the API, migrations, adopting an existing schema, the tables |
 
 **Contribute** — how it is built
 

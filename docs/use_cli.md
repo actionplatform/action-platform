@@ -57,6 +57,7 @@ action-platform mcp [--http] [--remote]                     # MCP server (local 
 action-platform login <url> [--scope read,write] [--name label] [--no-browser]   # device flow → scoped bearer token
 action-platform whoami                                      # server — account — scope — on Org / project / app
 action-platform logout
+action-platform db status | migrate [--url …]            # the API's database: revision, migrate on demand
 ```
 
 Credentials from `login` live in `~/.action-platform/credentials.json` (mode 600); `AP_SERVER` + `AP_TOKEN` override them.
