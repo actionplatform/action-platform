@@ -230,7 +230,7 @@ class GithubImportTest(GateCase):
 
         queued = self.client.post(
             "/api/v1/import/github",
-            json={"host_id": "gh", "organization": "acme", "projects": [3]},
+            json={"host_id": "gh", "organization": "acme", "projects": [{"number": 3}]},
             headers=self.h(),
         )
         self.assertEqual(queued.status_code, 202, queued.text)
@@ -254,3 +254,32 @@ class GithubImportTest(GateCase):
                 "/api/v1/import/github/organizations/acme?host=gh", headers=self.h()
             ).json()["projects"][0]["exists"]
         )
+
+    def test_import_a_github_project_into_an_existing_project(self):
+        from action_platform.api.worker import Worker
+
+        target = self.client.post(
+            "/api/v1/projects", json={"name": "Shop"}, headers=self.h()
+        ).json()
+        queued = self.client.post(
+            "/api/v1/import/github",
+            json={
+                "host_id": "gh",
+                "organization": "acme",
+                "projects": [{"number": 3, "project_id": target["id"]}],
+            },
+            headers=self.h(),
+        )
+        self.assertEqual(queued.status_code, 202, queued.text)
+        Worker(self.app.state.db, self.app.state.secrets, "test").run(once=True)
+
+        done = self.client.get(
+            f"/api/v1/jobs/{queued.json()['job']}", headers=self.h()
+        ).json()
+        self.assertEqual(done["status"], "done", done)
+        self.assertEqual(done["result"]["projects"], [])
+        self.assertEqual(done["result"]["apps"], ["web → Shop"])
+
+        projects = self.client.get("/api/v1/projects", headers=self.h()).json()
+        self.assertEqual([p["name"] for p in projects], ["Shop"])
+        self.assertEqual([a["name"] for a in projects[0]["apps"]], ["web"])
