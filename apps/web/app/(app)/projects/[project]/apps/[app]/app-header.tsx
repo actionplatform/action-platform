@@ -7,11 +7,11 @@ import { useEffect, useState, useTransition } from "react";
 import { siBitbucket, siGithub, siGitlab } from "simple-icons";
 import { Badge } from "@/components/ui/badge";
 import { BrandIcon } from "@/components/ui/brand-icon";
-import { ConfirmDialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
 import { relativeTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
-import { removeApp, syncApp } from "../actions";
+import { syncApp } from "../actions";
+import { DeleteAppDialog } from "../delete-app-dialog";
 import type { AppView } from "./model";
 
 type SyncStatus = "idle" | "syncing" | "success" | "error";
@@ -113,16 +113,7 @@ export function AppHeader({ view }: { view: AppView }) {
         </div>
       </div>
 
-      <ConfirmDialog
-        open={confirmDelete}
-        onClose={() => setConfirmDelete(false)}
-        title={`Delete ${view.name}?`}
-        description="The platform's clone is deleted. The repository itself is untouched."
-        confirmLabel="Delete project"
-        danger
-        pending={pending}
-        onConfirm={() => start(async () => { await removeApp(view.projectId, view.appId); router.push(`/projects/${view.projectId}`); })}
-      />
+      <DeleteAppDialog open={confirmDelete} onClose={() => setConfirmDelete(false)} onDeleted={() => router.push(`/projects/${view.projectId}`)} projectId={view.projectId} appId={view.appId} name={view.name} repositoryUrl={view.repositoryUrl} />
     </header>
   );
 }

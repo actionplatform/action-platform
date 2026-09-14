@@ -37,10 +37,15 @@ export async function addApp(projectId: string, url: string, install: { type: st
   }
 }
 
-export async function removeApp(projectId: string, appId: string) {
+export async function removeApp(projectId: string, appId: string, repository = false): Promise<{ ok: true } | { ok: false; error: string }> {
   await requireOrg();
-  await v1.deleteApp(projectId, appId);
+  try {
+    await v1.deleteApp(projectId, appId, repository);
+  } catch (e) {
+    return failed(e);
+  }
   revalidatePath(`/projects/${projectId}`);
+  return { ok: true };
 }
 
 export async function syncApp(projectId: string, appId: string, registryId: string): Promise<{ ok: true } | { ok: false; error: string }> {

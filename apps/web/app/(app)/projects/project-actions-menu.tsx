@@ -8,11 +8,13 @@ import { Select } from "@/components/ui/select";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
 import { assignTeam, removeProject } from "./actions";
+import { DeleteRepositoryOption } from "./delete-repository-option";
 import type { ProjectItem, TeamOption } from "./project-card";
 
 export function ProjectActionsMenu({ project, teams }: { project: ProjectItem; teams: TeamOption[] }) {
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
+  const [repositories, setRepositories] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [teamId, setTeamId] = useState(project.teamId ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -60,14 +62,16 @@ export function ProjectActionsMenu({ project, teams }: { project: ProjectItem; t
       </Dialog>
       <ConfirmDialog
         open={confirm}
-        onClose={() => setConfirm(false)}
+        onClose={() => { if (!pending) { setConfirm(false); setRepositories(false); setError(null); } }}
         title={`Delete ${project.name}?`}
-        description="Every app in it is removed and the platform's clones are deleted. The repositories themselves are untouched."
-        confirmLabel="Delete project"
+        description="Every app in it is removed and the platform's clones are deleted."
+        confirmLabel={repositories ? "Delete project and repositories" : "Delete project"}
         danger
         pending={pending}
-        onConfirm={() => start(async () => { await removeProject(project.id); setConfirm(false); })}
-      />
+        onConfirm={() => start(async () => { setError(null); const r = await removeProject(project.id, repositories); if (r.ok) { setConfirm(false); setRepositories(false); } else setError(r.error); })}
+      >
+        <DeleteRepositoryOption id={`delete-repos-${project.id}`} checked={repositories} onChange={setRepositories} disabled={pending} label="Also delete the repositories" error={confirm ? error : null} />
+      </ConfirmDialog>
     </>
   );
 }
