@@ -93,7 +93,9 @@ class GithubImportTest(GateCase):
             "/api/v1/import/github/organizations?host=gh", headers=self.h()
         )
         self.assertEqual(orgs.status_code, 200, orgs.text)
-        self.assertEqual([o["login"] for o in orgs.json()], ["ana", "acme"])
+        self.assertEqual(
+            [o["login"] for o in orgs.json()["organizations"]], ["ana", "acme"]
+        )
 
         preview = self.client.get(
             "/api/v1/import/github/organizations/acme?host=gh", headers=self.h()
