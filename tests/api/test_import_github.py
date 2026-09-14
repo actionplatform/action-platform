@@ -43,6 +43,18 @@ class FakeGithub:
             },
         ]
 
+    def projects(self, login):
+        return [
+            {
+                "number": 3,
+                "title": "Storefront",
+                "description": "Everything the customer sees",
+                "closed": False,
+                "url": "https://github.com/orgs/acme/projects/3",
+                "repositories": ["acme/web", "acme/broken"],
+            }
+        ]
+
     def teams(self, login):
         return [
             {
@@ -105,6 +117,10 @@ class GithubImportTest(GateCase):
             [("acme/web", None), ("acme/broken", None)],
         )
         self.assertEqual(preview["teams"][0]["exists"], False)
+        self.assertEqual(
+            (preview["projects"][0]["title"], preview["projects"][0]["exists"]),
+            ("Storefront", False),
+        )
         self.assertEqual(
             {p["login"]: p["status"] for p in preview["people"]},
             {"ana": "member", "bob": "invitable", "ghost": "no_email"},
@@ -169,9 +185,72 @@ class GithubImportTest(GateCase):
         again = self.client.get(
             "/api/v1/import/github/organizations/acme?host=gh", headers=self.h()
         ).json()
+        self.assertEqual(summary["apps"], [])
         self.assertEqual(again["repositories"][0]["imported_as"], "web")
         self.assertTrue(again["teams"][0]["exists"])
         self.assertEqual(
             {p["login"]: p["status"] for p in again["people"]},
             {"ana": "member", "bob": "invited", "ghost": "no_email"},
+        )
+
+    def test_import_into_one_project(self):
+        from action_platform.api.worker import Worker
+
+        project = self.client.post(
+            "/api/v1/projects", json={"name": "Platform"}, headers=self.h()
+        ).json()
+        queued = self.client.post(
+            "/api/v1/import/github",
+            json={
+                "host_id": "gh",
+                "organization": "acme",
+                "repositories": ["acme/web"],
+                "teams": ["platform"],
+                "project_id": project["id"],
+            },
+            headers=self.h(),
+        )
+        self.assertEqual(queued.status_code, 202, queued.text)
+        Worker(self.app.state.db, self.app.state.secrets, "test").run(once=True)
+
+        done = self.client.get(
+            f"/api/v1/jobs/{queued.json()['job']}", headers=self.h()
+        ).json()
+        self.assertEqual(done["status"], "done", done)
+        self.assertEqual(done["result"]["projects"], [])
+        self.assertEqual(done["result"]["apps"], ["web → Platform"])
+
+        projects = self.client.get("/api/v1/projects", headers=self.h()).json()
+        self.assertEqual([p["name"] for p in projects], ["Platform"])
+        self.assertEqual([a["name"] for a in projects[0]["apps"]], ["web"])
+        self.assertEqual(projects[0]["team"]["name"], "Platform")
+
+    def test_import_a_github_project_with_its_repositories(self):
+        from action_platform.api.worker import Worker
+
+        queued = self.client.post(
+            "/api/v1/import/github",
+            json={"host_id": "gh", "organization": "acme", "projects": [3]},
+            headers=self.h(),
+        )
+        self.assertEqual(queued.status_code, 202, queued.text)
+        Worker(self.app.state.db, self.app.state.secrets, "test").run(once=True)
+
+        done = self.client.get(
+            f"/api/v1/jobs/{queued.json()['job']}", headers=self.h()
+        ).json()
+        self.assertEqual(done["status"], "done", done)
+        self.assertEqual(done["result"]["projects"], ["Storefront"])
+        self.assertEqual(done["result"]["apps"], ["web → Storefront"])
+        self.assertTrue(
+            any(s.startswith("acme/broken:") for s in done["result"]["skipped"])
+        )
+
+        projects = self.client.get("/api/v1/projects", headers=self.h()).json()
+        self.assertEqual([p["name"] for p in projects], ["Storefront"])
+        self.assertEqual([a["name"] for a in projects[0]["apps"]], ["web"])
+        self.assertTrue(
+            self.client.get(
+                "/api/v1/import/github/organizations/acme?host=gh", headers=self.h()
+            ).json()["projects"][0]["exists"]
         )
