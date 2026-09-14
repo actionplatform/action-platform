@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ImportPage() {
   const { session, org } = await requireOrg();
-  const [hosts, catalog] = await Promise.all([hostsOf(org.id), v1.access()]);
+  const [hosts, catalog, projects] = await Promise.all([hostsOf(org.id), v1.access(), v1.projects()]);
   const canManage = !!session.grants["org.manage"];
 
   return (
@@ -17,6 +17,7 @@ export default async function ImportPage() {
       <ImportWizard
         hosts={hosts.map((h) => ({ id: h.id, kind: h.kind, name: h.name, login: h.login }))}
         roles={catalog.roles.filter((r) => r.id !== "owner").map((r) => ({ id: r.id, label: r.label }))}
+        projects={projects.map((p) => ({ id: p.id, name: p.name }))}
         canManage={canManage}
       />
     </>

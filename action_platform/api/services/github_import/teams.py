@@ -19,6 +19,7 @@ def import_teams(
 
     existing = {t.slug: t for t in ctx.writes.teams_of(ctx.organization_id)}
     members = ctx.member_ids()
+    shared = len({p.id for p in projects_by_repo.values()}) < len(projects_by_repo)
 
     for remote in github.teams(login):
         if remote["slug"].lower() not in wanted:
@@ -48,5 +49,5 @@ def import_teams(
         for repo in remote["repositories"]:
             project = projects_by_repo.get(repo.lower())
 
-            if project is not None and project.team_id is None:
+            if project is not None and project.team_id is None and not shared:
                 ctx.writes.assign_project_team(ctx.organization_id, project.id, team.id)

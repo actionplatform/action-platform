@@ -109,7 +109,8 @@ Every confirmation is an in-app dialog; the UI is strictly monochrome.
 
 **Import** (admin role) brings a GitHub organization — or the connected account's own repositories — into the current organization through a connected GitHub host. Pick the host and the organization; the page lists everything the token sees:
 
-- **Repositories** become one project each, with the repository as its app (cloned to read it, releases and pull requests imported). Repositories already on the platform are marked and cannot be picked twice.
+- **GitHub Projects** (Projects v2) become platform projects with the same name; the repositories linked to a project become its apps. Needs the GitHub App permission *Organization › Projects (read)* or the `read:project` scope.
+- **Repositories** become one project each, with the repository as its app (cloned to read it, releases and pull requests imported) — or all go into one existing project picked on the page. Repositories already on the platform are marked and cannot be picked twice.
 - **Teams** become teams with the same name; their GitHub members who are already members of the organization join them, and the projects of their repositories are assigned to them. An existing team with the same name is updated instead.
 - **People** become members right away when an account with the same email exists on the platform, or receive an invitation (with the role picked on the page) when GitHub shows a public email; people without a public email are listed as such and must be invited by hand.
 

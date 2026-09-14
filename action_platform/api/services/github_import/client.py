@@ -3,7 +3,7 @@
 from typing import Any
 
 from action_platform.api.services.directory import Credentials
-from action_platform.api.services.http import get_json, get_pages
+from action_platform.api.services.http import get_json, get_pages, post_json
 from action_platform.core.exception import ProviderError
 
 PEOPLE_LOOKUP_LIMIT = 200
@@ -26,6 +26,11 @@ class GithubDirectory:
             raise ProviderError("only GitHub hosts can be imported for now")
 
         self.api = _api(creds)
+        self.graphql = (
+            "https://api.github.com/graphql"
+            if self.api == "https://api.github.com"
+            else self.api.removesuffix("/api/v3") + "/api/graphql"
+        )
         self.headers = _headers(creds)
         self._me: dict[str, Any] | None = None
 
@@ -146,6 +151,54 @@ class GithubDirectory:
             )
 
         return rows
+
+    def projects(self, login: str) -> list[dict[str, Any]]:
+        """GitHub Projects (v2) of the organization or user, with the repositories linked to each."""
+        owner = "user" if self.is_user(login) else "organization"
+        query = (
+            "query($login: String!, $after: String) { %s(login: $login) { "
+            "projectsV2(first: 50, after: $after) { nodes { number title shortDescription closed url "
+            "repositories(first: 100) { nodes { nameWithOwner } } } "
+            "pageInfo { hasNextPage endCursor } } } }" % owner
+        )
+        rows: list[dict[str, Any]] = []
+        after = None
+
+        while True:
+            data = post_json(
+                self.graphql,
+                {"query": query, "variables": {"login": login, "after": after}},
+                self.headers,
+            )
+
+            if data.get("errors"):
+                raise ProviderError(
+                    "; ".join(e.get("message", "") for e in data["errors"])
+                )
+
+            page = ((data.get("data") or {}).get(owner) or {}).get("projectsV2") or {}
+
+            for p in page.get("nodes") or []:
+                rows.append(
+                    {
+                        "number": p["number"],
+                        "title": p["title"],
+                        "description": p.get("shortDescription"),
+                        "closed": bool(p.get("closed")),
+                        "url": p.get("url"),
+                        "repositories": [
+                            r["nameWithOwner"]
+                            for r in (p.get("repositories") or {}).get("nodes") or []
+                        ],
+                    }
+                )
+
+            info = page.get("pageInfo") or {}
+
+            if not info.get("hasNextPage"):
+                return rows
+
+            after = info.get("endCursor")
 
     def people(self, login: str) -> list[dict[str, Any]]:
         if self.is_user(login):

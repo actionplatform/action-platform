@@ -14,6 +14,7 @@ from action_platform.core.exception import ActionPlatformError
 @dataclass
 class Summary:
     projects: list[str] = field(default_factory=list)
+    apps: list[str] = field(default_factory=list)
     teams: list[str] = field(default_factory=list)
     members: list[str] = field(default_factory=list)
     invitations: list[str] = field(default_factory=list)
@@ -25,6 +26,7 @@ class Summary:
     def as_dict(self) -> dict[str, Any]:
         return {
             "projects": self.projects,
+            "apps": self.apps,
             "teams": self.teams,
             "members": self.members,
             "invitations": self.invitations,
