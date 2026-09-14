@@ -33,6 +33,14 @@ SCOPE_PERMISSIONS: dict[str, tuple[str, ...]] = {
 
 DEFAULT_SCOPES = ("read", "write")
 
+ROLE_LABELS = {
+    "owner": "Owner",
+    "admin": "Admin",
+    "deployer": "Deployer",
+    "developer": "Developer",
+    "viewer": "Viewer",
+}
+
 
 def normalize_role(value: Optional[str]) -> Optional[str]:
     if not value:

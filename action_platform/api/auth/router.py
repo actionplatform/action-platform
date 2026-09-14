@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from action_platform.api.auth.errors import Unauthenticated
+from action_platform.api.auth.jwt import looks_like_jwt
 from action_platform.api.auth.service import (
     DEVICE_TTL,
     SESSION_TTL,
@@ -23,6 +24,17 @@ from action_platform.api.db.models import (
 )
 from action_platform.api.schemas import auth as schemas
 from action_platform.core.access import Grant, grants_of, parse_scopes
+
+COOKIE = "better-auth.session_token"
+
+
+def cookie_value(header: str) -> Optional[str]:
+    for part in header.split(";"):
+        name, _, value = part.strip().partition("=")
+        if name in (COOKIE, f"__Secure-{COOKIE}") and value:
+            return value
+    return None
+
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -59,15 +71,24 @@ def get_auth(
 
 
 def current_session(
+    request: Request,
     auth: AuthService = Depends(get_auth),
     x_session_token: Optional[str] = Header(default=None),
     x_session_cookie: Optional[str] = Header(default=None),
 ) -> Session:
-    session = (
-        auth.session_from_token(x_session_token)
-        if x_session_token
-        else auth.session_from_cookie(x_session_cookie)
+    authorization = request.headers.get("authorization", "")
+    bearer = (
+        authorization[7:].strip() if authorization.lower().startswith("bearer ") else ""
     )
+    session = None
+    if bearer and not looks_like_jwt(bearer):
+        session = auth.session_from_token(bearer)
+    if session is None and x_session_token:
+        session = auth.session_from_token(x_session_token)
+    if session is None and x_session_cookie:
+        session = auth.session_from_cookie(x_session_cookie)
+    if session is None and request.headers.get("cookie"):
+        session = auth.session_from_cookie(cookie_value(request.headers["cookie"]))
     if session is None:
         raise Unauthenticated()
     return session
