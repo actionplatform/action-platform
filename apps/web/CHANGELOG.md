@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.11.0 — 2026-09-14
+
+### Features
+- **web:** import page: pick a GitHub host and organization, choose repositories, teams and people, follow the job
+
 ## v0.10.0 — 2026-09-14
 
 ### Features
