@@ -141,6 +141,14 @@ class PlainRepositoryTest(TempCase):
             (src / name).unlink()
         self.assertEqual(detect_language(self.tmp_path), "")
 
+    def test_ruby_detected_by_gemfile_then_by_extension(self):
+        (self.tmp_path / "Gemfile").write_text('source "https://rubygems.org"\n')
+        self.assertEqual(detect_language(self.tmp_path), "ruby")
+
+        (self.tmp_path / "Gemfile").unlink()
+        (self.tmp_path / "app.rb").write_text("")
+        self.assertEqual(detect_language(self.tmp_path), "ruby")
+
     def test_plain_repository_is_one_template_that_resolves_under_any_type(self):
         (self.tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
         matrix = plain_matrix(

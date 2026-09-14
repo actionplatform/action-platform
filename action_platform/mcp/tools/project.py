@@ -124,7 +124,7 @@ def register(mcp: Any) -> None:
         language: Annotated[
             Optional[str],
             Field(
-                description="python, go, node, php, java, rust; default detected from the repo"
+                description="python, go, node, php, java, rust, ruby; default detected from the repo"
             ),
         ] = None,
         ci: Annotated[

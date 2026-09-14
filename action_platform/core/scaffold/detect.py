@@ -11,6 +11,7 @@ MARKERS = [
     ("composer.json", "php"),
     ("pom.xml", "java"),
     ("Cargo.toml", "rust"),
+    ("Gemfile", "ruby"),
     ("requirements.txt", "python"),
     ("setup.py", "python"),
     ("Pipfile", "python"),
@@ -30,6 +31,7 @@ EXTENSIONS = {
     ".java": "java",
     ".kt": "java",
     ".rs": "rust",
+    ".rb": "ruby",
 }
 
 SKIP_DIRS = {
