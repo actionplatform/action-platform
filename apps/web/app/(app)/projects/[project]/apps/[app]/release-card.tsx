@@ -48,7 +48,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
   }, [view.registryId, level, branch, switching]);
   const next = preview && !preview.dry_run ? preview.next : computed?.next ?? "…";
   const canRelease = view.can["app.release"] && view.workingTree === "clean" && (switching || view.health.ok) && !!view.repositoryUrl;
-  const blocker = !view.can["app.release"] ? "Your role cannot create releases." : !view.repositoryUrl ? "Push the repository to a remote first." : view.workingTree !== "clean" ? (switching ? "Commit or discard local changes before switching branches." : "Commit or discard local changes first.") : !switching && !view.health.ok ? "Fix the branch policy problems first." : null;
+  const blocker = !view.can["app.release"] ? "Your role cannot create releases." : !view.repositoryUrl ? "This app has no remote." : view.workingTree !== "clean" ? (switching ? "Commit or discard the pending changes before switching branches." : "Commit or discard the pending changes first.") : !switching && !view.health.ok ? "Fix the branch policy problems first." : null;
 
   const loadPreview = () =>
     start(async () => {

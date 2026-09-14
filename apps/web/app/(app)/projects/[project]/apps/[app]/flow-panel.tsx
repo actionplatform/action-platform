@@ -39,7 +39,7 @@ export function FlowPanel({ view }: { view: AppView }) {
           <Button disabled={pending || onProtected || !view.repositoryUrl || !view.can["app.flow"]} onClick={() => setPrOpen(true)}><GitPullRequest className="size-4" strokeWidth={1.75} /> Open pull request</Button>
         </div>
         {onProtected && <p className="text-[13px] text-muted-foreground">Pull requests start from a <span className="font-mono">&lt;kind&gt;/&lt;code&gt;</span> branch. Create one, or check out an existing branch below.</p>}
-        {view.workingTree !== "clean" && <p className="text-[13px] text-muted-foreground">The working tree has local changes; branching is disabled until it is clean.</p>}
+        {view.workingTree !== "clean" && <p className="text-[13px] text-muted-foreground">There are pending changes; commit or discard them before branching.</p>}
         {error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
 
         <label className="block text-sm">
