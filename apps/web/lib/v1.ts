@@ -69,6 +69,10 @@ export const v1 = {
   templateSources: async () => unwrap(await client.GET("/api/v1/template-sources")),
   addTemplateSource: async (name: string, url: string, ref: string) => unwrap(await client.POST("/api/v1/template-sources", { body: { name, url, ref } })),
   removeTemplateSource: async (id: string) => unwrap(await client.DELETE("/api/v1/template-sources/{id}", { params: { path: { id } } })),
+  githubOrganizations: async (host: string) => unwrap(await client.GET("/api/v1/import/github/organizations", { params: { query: { host } } })),
+  githubOrganization: async (host: string, login: string) =>
+    unwrap(await client.GET("/api/v1/import/github/organizations/{login}", { params: { path: { login }, query: { host } } })),
+  importGithub: async (body: Schemas["ImportRequest"]) => unwrap(await client.POST("/api/v1/import/github", { body })),
   job: async (id: string) => unwrap(await client.GET("/api/v1/jobs/{id}", { params: { path: { id } } })),
   jobs: async (app: string) => unwrap(await client.GET("/api/v1/jobs", { params: { query: { app } } })),
 };
