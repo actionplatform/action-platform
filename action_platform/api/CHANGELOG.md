@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.3 — 2026-09-14
+
+### Refactoring
+- **api:** the registry lives only in the database — apps.json imported once and renamed, no file fallback; the API refuses to start without AP_DATABASE_URL
+
 ## v0.6.2 — 2026-09-13
 
 ### Bug Fixes
