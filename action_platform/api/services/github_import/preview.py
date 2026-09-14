@@ -5,6 +5,7 @@ from typing import Any
 from action_platform.api.services.directory import slugify
 from action_platform.api.services.github_import.client import GithubDirectory
 from action_platform.api.services.github_import.context import ImportContext
+from action_platform.core.exception import ProviderError
 
 
 def person_status(
@@ -28,7 +29,26 @@ def person_status(
 def preview(ctx: ImportContext, github: GithubDirectory, login: str) -> dict[str, Any]:
     known = ctx.known_repositories()
     teams = {t.slug for t in ctx.writes.teams_of(ctx.organization_id)}
-    people = github.people(login)
+    problems: list[str] = []
+
+    try:
+        remote_teams = github.teams(login)
+    except ProviderError as e:
+        remote_teams = []
+        problems.append(f"teams: {e}")
+
+    try:
+        people = github.people(login)
+    except ProviderError as e:
+        people = []
+        problems.append(f"people: {e}")
+
+    if problems:
+        problems.append(
+            "Teams and people need the GitHub App permission Organization › Members (read) — "
+            "update it under the app's settings on GitHub and accept it on the organization — "
+            "or a token with the read:org scope."
+        )
     users = ctx.users_by_email([p["email"] for p in people if p["email"]])
     members = ctx.member_ids()
     pending = {i.email for i, _ in ctx.writes.invitations_of(ctx.organization_id)}
@@ -41,7 +61,7 @@ def preview(ctx: ImportContext, github: GithubDirectory, login: str) -> dict[str
         ],
         "teams": [
             {**t, "exists": t["slug"] in teams or slugify(t["name"]) in teams}
-            for t in github.teams(login)
+            for t in remote_teams
         ],
         "people": [
             {
@@ -52,4 +72,5 @@ def preview(ctx: ImportContext, github: GithubDirectory, login: str) -> dict[str
             }
             for p in people
         ],
+        "problems": problems,
     }
