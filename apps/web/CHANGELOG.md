@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.1 — 2026-09-13
+
+### Bug Fixes
+- **web:** CSP lets the GitHub App manifest form post to github.com and Sentry start its blob worker
+
 ## v0.7.0 — 2026-09-13
 
 ### Features
