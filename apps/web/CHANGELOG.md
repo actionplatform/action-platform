@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.11.3 — 2026-09-14
+
+### Features
+- **web:** import page shows what GitHub refused and how to fix it
+
 ## v0.11.2 — 2026-09-14
 
 ### Features
