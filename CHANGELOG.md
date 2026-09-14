@@ -1,5 +1,40 @@
 # Changelog
 
+## v0.7.0 — 2026-09-13
+
+### Features
+- **cli:** action-platform worker
+- **api:** directory, credentials and imports in Python — projects, apps, teams, members, source-host tokens decrypted (and refreshed) from the web app's ciphertext, commit identity, template sources, releases and pull requests copied from the host
+- **api:** auth owned by the API — sign-up/sign-in with better-auth-compatible scrypt hashes and signed cookies, sessions, organizations and members, RFC 8628 device flow, scoped JWT tokens, per-IP rate limits
+- **core:** access rules in Python — roles, permissions, scopes, grantable scopes and Grant
+
+### Docs
+- the web app is a client; management routes; what the database holds; setup wizard
+- registry in the database, jobs and the worker, async calls
+- the /api/v1 gate, what the API fills in, what still lives in the web app
+- auth endpoints, access rules in Python, setup wizard and self-hosting variables
+
+### Tests
+- **api:** management routes — projects and apps, teams, members and invitations, hosts, OAuth apps and flows, settings, template sources
+- **api:** queue claim/finish/retry/reap, async route to worker, job visibility, workspace rebuilt
+- **api:** the gate — identity, directory, management, reach, credentials, ciphertext, template sources
+- **api:** accounts, cookies, device flow, tokens, members, rate limits
+
+### Build
+- **api:** cryptography for the source-host ciphertext
+- sentry-sdk in the dev group too
+- fastapi, sqlalchemy and alembic in the dev group so CI runs the API tests
+
+### Style
+- **api:** blank lines between the steps inside functions
+- **core:** ruff format
+
+### Chores
+- **deploy:** web container without database, secret or config volume; image without drizzle
+- **deploy:** worker service on the API image, sharing apdata
+- **deploy:** API receives the OAuth app credentials to refresh host tokens
+- **deploy:** API receives AP_AUTH_SECRET and AP_PUBLIC_URL
+
 ## v0.6.13 — 2026-09-13
 
 ### Features
