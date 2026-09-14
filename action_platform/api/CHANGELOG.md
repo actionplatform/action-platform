@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.13.2 — 2026-09-14
+
+### Bug Fixes
+- **workspace:** refresh origin/HEAD and check the branch exists before falling back to it
+
 ## v0.13.1 — 2026-09-14
 
 ## v0.13.0 — 2026-09-14
