@@ -18,6 +18,7 @@ from action_platform.api.db import Database
 from action_platform.api.services.directory import repo_from_url
 from action_platform.api.v1 import router as v1
 from action_platform.api.v1.routers.directory import router as v1_directory
+from action_platform.api.v1.routers.imports import router as v1_imports
 from action_platform.api.v1.routers.management import router as v1_management
 from action_platform.core.exception import ActionPlatformError, ConfigError
 from action_platform.observability import observe
@@ -119,6 +120,7 @@ def build(
     app.include_router(v1)
     app.include_router(v1_directory)
     app.include_router(v1_management)
+    app.include_router(v1_imports)
     app.include_router(auth_router)
 
     def repo_of(registry_id: str) -> Optional[str]:

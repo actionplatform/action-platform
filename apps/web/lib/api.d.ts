@@ -1055,6 +1055,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/import/github/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["github_organizations_api_v1_import_github_organizations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/import/github/organizations/{login}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["github_organization_api_v1_import_github_organizations__login__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/import/github": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["import_github_api_v1_import_github_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/status": {
         parameters: {
             query?: never;
@@ -1651,6 +1699,46 @@ export interface components {
             protected: string[];
             types: string[];
         };
+        GithubOrganization: {
+            login: string;
+            name: string;
+            kind: string;
+            avatar?: string | null;
+        };
+        GithubPerson: {
+            login: string;
+            name: string;
+            email?: string | null;
+            avatar?: string | null;
+            status: string;
+        };
+        GithubPreview: {
+            organization: string;
+            repositories: components["schemas"]["GithubRepository"][];
+            teams: components["schemas"]["GithubTeam"][];
+            people: components["schemas"]["GithubPerson"][];
+        };
+        GithubRepository: {
+            full_name: string;
+            name: string;
+            description?: string | null;
+            private: boolean;
+            archived: boolean;
+            fork: boolean;
+            language?: string | null;
+            default_branch: string;
+            url: string;
+            pushed_at?: string | null;
+            imported_as?: string | null;
+        };
+        GithubTeam: {
+            slug: string;
+            name: string;
+            description?: string | null;
+            members: string[];
+            repositories: string[];
+            exists: boolean;
+        };
         GrantIn: {
             scope?: string[];
             organization_id?: string | null;
@@ -1692,6 +1780,18 @@ export interface components {
             grants: {
                 [key: string]: boolean;
             };
+        };
+        ImportQueued: {
+            job: string;
+            poll: string;
+        };
+        ImportRequest: {
+            host_id: string;
+            organization: string;
+            repositories: string[];
+            teams: string[];
+            people: string[];
+            role: string;
         };
         Imports: {
             releases: components["schemas"]["ReleaseRow"][];
@@ -4713,6 +4813,103 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    github_organizations_api_v1_import_github_organizations_get: {
+        parameters: {
+            query: {
+                host: string;
+            };
+            header?: {
+                "x-organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GithubOrganization"][];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    github_organization_api_v1_import_github_organizations__login__get: {
+        parameters: {
+            query: {
+                host: string;
+            };
+            header?: {
+                "x-organization"?: string | null;
+            };
+            path: {
+                login: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GithubPreview"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_github_api_v1_import_github_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportQueued"];
+                };
             };
             422: {
                 headers: {

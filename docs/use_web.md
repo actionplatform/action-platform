@@ -105,6 +105,16 @@ Deploying is done by the CI of the repository (see [templates](concept_templates
 
 Every confirmation is an in-app dialog; the UI is strictly monochrome.
 
+## Import
+
+**Import** (admin role) brings a GitHub organization — or the connected account's own repositories — into the current organization through a connected GitHub host. Pick the host and the organization; the page lists everything the token sees:
+
+- **Repositories** become one project each, with the repository as its app (cloned into a workspace, releases and pull requests imported). Repositories already on the platform are marked and cannot be picked twice.
+- **Teams** become teams with the same name; their GitHub members who are already members of the organization join them, and the projects of their repositories are assigned to them. An existing team with the same name is updated instead.
+- **People** become members right away when an account with the same email exists on the platform, or receive an invitation (with the role picked on the page) when GitHub shows a public email; people without a public email are listed as such and must be invited by hand.
+
+The import runs as a job (`POST /api/v1/import/github` answers `202` with `poll`); the page follows it and ends with a summary of what was created and what was skipped, with the reason. `GET /api/v1/import/github/organizations?host=<id>` and `GET /api/v1/import/github/organizations/{login}?host=<id>` are the preview calls behind the page.
+
 ## Settings
 
 Organization members, source hosts (add, update token, remove), the API URL and the git-flow rules.
