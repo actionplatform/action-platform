@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.14.3 — 2026-09-14
+
+### Chores
+- **web:** pending changes card says None / N files, Up to date / To commit
+
 ## v0.14.2 — 2026-09-14
 
 ### Chores
