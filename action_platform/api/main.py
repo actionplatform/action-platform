@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 
 from action_platform.api import api_version
 from action_platform.api.core.deps import get_registry
+from action_platform.api.db import Database
 from action_platform.api.v1 import router as v1
 from action_platform.core.exception import ActionPlatformError, ConfigError
 from action_platform.observability import observe
@@ -18,11 +19,19 @@ OPEN_PATHS = {"/api/version", "/docs", "/openapi.json", "/redoc"}
 
 
 def build(
-    cors_origins: Optional[list[str]] = None, token: Optional[str] = None
+    cors_origins: Optional[list[str]] = None,
+    token: Optional[str] = None,
+    database_url: Optional[str] = None,
 ) -> FastAPI:
     observe("api", version=api_version())
     app = FastAPI(title="action-platform", version=api_version())
     get_registry.cache_clear()
+    app.state.db = None
+    url = settings.DATABASE_URL if database_url is None else database_url
+
+    if url:
+        app.state.db = Database(url, settings.DATABASE_POOL_SIZE)
+        app.state.db.migrate()
     expected = settings.API_TOKEN if token is None else token
 
     if not expected and not settings.ALLOW_UNAUTHENTICATED_API:
