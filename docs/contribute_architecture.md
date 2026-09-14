@@ -8,7 +8,7 @@ flowchart TB
 
     subgraph web["apps/web — Next.js"]
         ui[Pages + server actions]
-        auth[better-auth · drizzle]
+        auth[sessions · cookies via /api/auth]
         v1["/api/v1/* (bearer proxy)"]
     end
 
@@ -159,8 +159,8 @@ erDiagram
     }
 ```
 
-`user`, `session`, `account`, `verification`, `device_code`, `organization`, `member`, `invitation` come from better-auth (and its `organization` / `deviceAuthorization` plugins); `team`, `team_member`, `project`, `app`, `source_host`, `release`, `pull_request`, `template_source`, `organization_setting`, `api_token`, `api_token_client` are the platform's. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/` (0001–0014), applied on boot. The Python API mirrors the same tables in `action_platform/api/db/models.py` and, given `AP_DATABASE_URL`, connects to the same database, adopts it and adds its own tables (`job`) through Alembic — see [database](concept_database.md).
+`user`, `session`, `account`, `verification`, `device_code`, `organization`, `member`, `invitation` were created by better-auth and are now written by the API's `AuthService` (`action_platform/api/auth/`), with the same password hashes and cookie signatures so nothing had to be re-issued; `team`, `team_member`, `project`, `app`, `source_host`, `release`, `pull_request`, `template_source`, `organization_setting`, `api_token`, `api_token_client` are the platform's. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/` (0001–0014), applied on boot. The Python API mirrors the same tables in `action_platform/api/db/models.py` and, given `AP_DATABASE_URL`, connects to the same database, adopts it and adds its own tables (`job`) through Alembic — see [database](concept_database.md).
 
 ## Trust between web and API
 
-The browser never talks to the Python API. The web app authenticates users (sessions, roles) and calls the API server-side over the private network; the CLI and MCP go through the web app's `/api/v1` proxy with a bearer token from `action-platform login`: a JWT carrying user, organization, scope (`read`, `write`, `release`, `admin`) and reach (optionally one project or one app), checked against the `api_token` row it names (revocation, expiry) and then against the caller's role — a request must pass all three. Between web and API a shared secret, `AP_API_TOKEN`, is sent as `Authorization: Bearer` and checked in constant time on every route but `/api/version`, so only the web app can drive clones, git and the workspaces.
+The browser never talks to the Python API. The web app holds the session cookie the API signed, asks `GET /api/auth/session` who the caller is, and calls the API server-side over the private network; the CLI and MCP go through the web app's `/api/v1` proxy with a bearer token from `action-platform login`: a JWT carrying user, organization, scope (`read`, `write`, `release`, `admin`) and reach (optionally one project or one app), checked against the `api_token` row it names (revocation, expiry) and then against the caller's role — a request must pass all three. Between web and API a shared secret, `AP_API_TOKEN`, is sent as `Authorization: Bearer` and checked in constant time on every route but `/api/version`, so only the web app can drive clones, git and the workspaces.

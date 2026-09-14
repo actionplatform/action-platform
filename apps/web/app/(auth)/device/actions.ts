@@ -1,9 +1,10 @@
 "use server";
 
-import { deviceRequest, type Grant, setDeviceGrant } from "@/lib/api-tokens";
+import { approveDevice, denyDevice, deviceRequest, type Grant } from "@/lib/api-tokens";
 import { orgsOf, roleOf } from "@/lib/orgs";
-import { DEFAULT_SCOPES, grantableScopes, parseScopes, ROLE_INFO, type Scope } from "@/lib/permissions";
+import { DEFAULT_SCOPES, grantableScopes, ROLE_INFO, type Scope } from "@/lib/permissions";
 import { appsOf, projectsOf } from "@/lib/projects";
+import { isAuthError } from "@/lib/auth-api";
 import { failed, type Result } from "@/lib/result";
 import { requireOrg, requireSession } from "@/lib/session";
 
@@ -54,21 +55,24 @@ export async function appChoices(projectId: string): Promise<Result<Choice[]>> {
   }
 }
 
-export async function chooseDeviceGrant(userCode: string, input: { scope: string[]; organizationId: string; projectId: string | null; appId: string | null }): Promise<Result<Grant>> {
+export async function approveDeviceRequest(userCode: string, input: { scope: string[]; organizationId: string; projectId: string | null; appId: string | null }): Promise<Result<null>> {
   try {
-    const session = await requireSession();
-    const orgs = await orgsOf(session.user.id);
+    await requireSession();
     const everywhere = input.organizationId === "*";
-    if (!everywhere && !orgs.some((o) => o.id === input.organizationId)) return { ok: false, error: "not a member of that organization" };
-    const allowed = new Set<Scope>();
-    for (const o of everywhere ? orgs : orgs.filter((o) => o.id === input.organizationId)) for (const s of grantableScopes(await roleOf(session.user.id, o.id))) allowed.add(s);
-    const chosen = parseScopes(input.scope.join(" ")).filter((s) => allowed.has(s));
-    const grant: Grant = { scope: chosen.includes("read") ? chosen : ["read", ...chosen], organizationId: input.organizationId, projectId: everywhere ? null : input.projectId || null, appId: !everywhere && input.projectId ? input.appId || null : null };
-    const current = await deviceRequest(userCode.trim().toUpperCase());
-    if (!current) return { ok: false, error: "invalid code" };
-    if (current.status === "expired") return { ok: false, error: "expired" };
-    if (!(await setDeviceGrant(userCode.trim().toUpperCase(), grant))) return { ok: false, error: "this code was already used" };
-    return { ok: true, data: grant };
+    const grant: Grant = { scope: input.scope as Scope[], organizationId: everywhere ? null : input.organizationId, projectId: everywhere ? null : input.projectId || null, appId: !everywhere && input.projectId ? input.appId || null : null };
+    await approveDevice(userCode.trim().toUpperCase(), grant);
+    return { ok: true, data: null };
+  } catch (e) {
+    if (isAuthError(e) && e.code === "expired") return { ok: false, error: "expired" };
+    return failed(e);
+  }
+}
+
+export async function denyDeviceRequest(userCode: string): Promise<Result<null>> {
+  try {
+    await requireSession();
+    await denyDevice(userCode.trim().toUpperCase());
+    return { ok: true, data: null };
   } catch (e) {
     return failed(e);
   }

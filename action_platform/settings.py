@@ -31,6 +31,8 @@ class Settings:
     FORWARDED_ALLOW_IPS = os.getenv("AP_FORWARDED_ALLOW_IPS", "*")
     DATABASE_URL = os.getenv("AP_DATABASE_URL") or os.getenv("DATABASE_URL", "")
     DATABASE_POOL_SIZE = int(os.getenv("AP_DATABASE_POOL_SIZE", "5"))
+    AUTH_SECRET = os.getenv("AP_AUTH_SECRET") or os.getenv("BETTER_AUTH_SECRET", "")
+    PUBLIC_URL = os.getenv("AP_PUBLIC_URL") or os.getenv("PUBLIC_URL", "")
     SENTRY_DSN = os.getenv("AP_SENTRY_DSN", "")
     SENTRY_ENVIRONMENT = os.getenv("AP_SENTRY_ENVIRONMENT", "production")
     SENTRY_TRACES_SAMPLE_RATE = float(os.getenv("AP_SENTRY_TRACES_SAMPLE_RATE", "0.1"))

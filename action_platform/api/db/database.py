@@ -1,4 +1,7 @@
 import logging
+
+logging.getLogger("alembic").setLevel(logging.WARNING)
+
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
@@ -34,7 +37,6 @@ class Database:
         if not url:
             raise ConfigError("AP_DATABASE_URL is empty")
         self.url = normalize_url(url)
-        logging.getLogger("alembic").setLevel(logging.WARNING)
         self.engine = self._engine(self.url, pool_size)
         self.sessions = sessionmaker(self.engine, expire_on_commit=False)
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { failed } from "@/lib/result";
-import { getSetupAuth } from "@/lib/auth";
+import { signUp } from "@/lib/auth-actions";
 import { acceptInvitation, invitationById } from "@/lib/orgs";
 import { getSession } from "@/lib/session";
 
@@ -23,11 +23,8 @@ export async function joinWithNewAccount(id: string, name: string, password: str
   if (!invitation || invitation.status !== "pending" || invitation.expired) return { ok: false, error: "invitation is no longer valid" };
   if (!name.trim()) return { ok: false, error: "name is required" };
   if (password.length < 8) return { ok: false, error: "password needs at least 8 characters" };
-  try {
-    await (await getSetupAuth()).api.signUpEmail({ body: { name: name.trim(), email: invitation.email, password } });
-  } catch (e) {
-    return failed(e);
-  }
+  const created = await signUp(name.trim(), invitation.email, password, id);
+  if (!created.ok) return created;
   const session = await getSession();
   if (!session) return { ok: false, error: "account created; sign in to join" };
   return acceptInvite(id);

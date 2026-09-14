@@ -6,7 +6,7 @@ import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
-import { authClient } from "@/lib/auth-client";
+import { signIn, signOut } from "@/lib/auth-actions";
 import { acceptInvite, joinWithNewAccount } from "./actions";
 
 type Invitation = { id: string; email: string; role: string; org: string; inviter: string };
@@ -39,7 +39,7 @@ export function InviteForm({ invitation, mode, currentEmail }: { invitation: Inv
         {mode === "mismatch" && (
           <div className="space-y-3">
             <p className="text-sm text-secondary">You are signed in as {currentEmail}. Sign out and use the invited address.</p>
-            <Button variant="outline" className="w-full" disabled={pending} onClick={() => start(async () => { await authClient.signOut(); router.refresh(); })}>Sign out</Button>
+            <Button variant="outline" className="w-full" disabled={pending} onClick={() => start(async () => { await signOut(); router.refresh(); })}>Sign out</Button>
           </div>
         )}
 
@@ -58,8 +58,8 @@ export function InviteForm({ invitation, mode, currentEmail }: { invitation: Inv
               onClick={() => start(async () => {
                 setError(null);
                 if (tab === "signup") return finish(await joinWithNewAccount(invitation.id, name, password));
-                const res = await authClient.signIn.email({ email: invitation.email, password });
-                if (res.error) return setError(res.error.message ?? "sign in failed");
+                const res = await signIn(invitation.email, password);
+                if (!res.ok) return setError(res.error);
                 finish(await acceptInvite(invitation.id));
               })}
             >

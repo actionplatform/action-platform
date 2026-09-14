@@ -51,9 +51,9 @@ Also chosen at approval.
 
 ## Tokens
 
-`action-platform login` mints a JWT (`HS256`, signed with a key derived from `BETTER_AUTH_SECRET` through HKDF — the OAuth state and the source-host encryption use their own derived keys) carrying user, organization, scope, reach and the audience `action-platform/api/v1`; its `jti` is a row in `api_token`, so revoking the row invalidates the token on the next request. Valid 90 days, 30 with the `admin` scope. `api_token_client` records which program used it — the MCP server reports its client (`clientInfo`: Claude Code, Codex, Cursor…) on every call.
+`action-platform login` mints a JWT in the Python API (`HS256`, signed with a key derived from the auth secret — `AP_AUTH_SECRET`, the same value as the web app's `BETTER_AUTH_SECRET` — through HKDF; the OAuth state and the source-host encryption use their own derived keys) carrying user, organization, scope, reach and the audience `action-platform/api/v1`; its `jti` is a row in `api_token`, so revoking the row invalidates the token on the next request. Valid 90 days, 30 with the `admin` scope. `api_token_client` records which program used it — the MCP server reports its client (`clientInfo`: Claude Code, Codex, Cursor…) on every call.
 
-**Connected apps** (key icon next to your name) lists your tokens across organizations with scope, reach and the programs using them, plus your browser sessions; both can be revoked there.
+**Connected apps** (key icon next to your name) lists your tokens across organizations with scope, reach and the programs using them, plus your browser sessions; both can be revoked there. The rules on this page are code in `action_platform/core/access.py`, applied by the API when it approves a device, issues a token or verifies one — the web app only displays them.
 
 ## Commit identity
 

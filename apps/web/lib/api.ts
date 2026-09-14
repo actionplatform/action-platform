@@ -33,11 +33,12 @@ export class ApiError extends Error {
   }
 }
 
-function unwrap<T>(res: { data?: T; error?: unknown; response: Response }): T {
+export function unwrap<T>(res: { data?: T; error?: unknown; response: Response }): T {
   if (res.error !== undefined || !res.response.ok) {
-    const detail = (res.error as { detail?: string | { code?: string; detail?: string } } | undefined)?.detail;
+    const body = res.error as { detail?: string | { code?: string; detail?: string }; error?: string } | undefined;
+    const detail = body?.detail;
     if (detail && typeof detail === "object") throw new ApiError(res.response.status, detail.detail ?? res.response.statusText, detail.code ?? null);
-    throw new ApiError(res.response.status, detail ?? res.response.statusText);
+    throw new ApiError(res.response.status, detail ?? res.response.statusText, body?.error ?? null);
   }
   return res.data as T;
 }

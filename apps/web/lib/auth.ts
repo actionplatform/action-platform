@@ -1,59 +1,62 @@
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { nextCookies } from "better-auth/next-js";
-import { bearer, deviceAuthorization, organization } from "better-auth/plugins";
-import { readConfig } from "./config";
-import { type Connection, getConnection } from "./db";
+import { cookies, headers } from "next/headers";
+import { authApi, type Identity, isAuthError } from "./auth-api";
 
-function trustedOrigins(): string[] {
-  const raw = process.env.BETTER_AUTH_URL;
-  if (!raw) return [];
-  const { host } = new URL(raw);
-  return [`http://${host}`, `https://${host}`];
+const COOKIE = "better-auth.session_token";
+const SECURE_COOKIE = `__Secure-${COOKIE}`;
+
+function secure(): boolean {
+  const base = process.env.PUBLIC_URL ?? process.env.BETTER_AUTH_URL ?? "";
+  return base.startsWith("https://");
 }
 
-function create(conn: Connection, authSecret: string | undefined, allowSignUp = false) {
-  return betterAuth({
-    secret: authSecret,
-    baseURL: process.env.BETTER_AUTH_URL,
-    trustedOrigins: trustedOrigins(),
-    rateLimit: {
-      enabled: true,
-      window: 60,
-      max: 100,
-      customRules: {
-        "/sign-in/email": { window: 60, max: 10 },
-        "/sign-up/email": { window: 60, max: 10 },
-        "/device/token": { window: 60, max: 40 },
-        "/device/code": { window: 60, max: 20 },
-      },
-    },
-    database: drizzleAdapter(conn.db, { provider: conn.engine, schema: conn.schema }),
-    emailAndPassword: { enabled: true, disableSignUp: !allowSignUp },
-    plugins: [
-      organization(),
-      deviceAuthorization({ verificationUri: "/device", expiresIn: "10m", interval: "3s" }),
-      bearer(),
-      nextCookies(),
-    ],
-  });
+export async function sessionCookie(): Promise<string | null> {
+  const jar = await cookies();
+  return jar.get(SECURE_COOKIE)?.value ?? jar.get(COOKIE)?.value ?? null;
 }
 
-export type Auth = ReturnType<typeof create>;
-
-export async function getSetupAuth(): Promise<Auth> {
-  return create(await getConnection(), readConfig().authSecret, true);
+export async function setSessionCookie(cookie: string, expiresAt: string): Promise<void> {
+  const jar = await cookies();
+  jar.set(secure() ? SECURE_COOKIE : COOKIE, cookie, { httpOnly: true, sameSite: "lax", secure: secure(), path: "/", expires: new Date(expiresAt) });
 }
 
-let cached: { key: string; auth: Auth } | null = null;
+export async function clearSessionCookie(): Promise<void> {
+  const jar = await cookies();
+  jar.delete(SECURE_COOKIE);
+  jar.delete(COOKIE);
+}
 
-export async function getAuth(): Promise<Auth> {
-  const { databaseUrl, authSecret } = readConfig();
-  const key = `${databaseUrl}|${authSecret}`;
+export async function requestClient(): Promise<{ ip: string | null; userAgent: string | null }> {
+  const h = await headers();
+  const forwarded = h.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+  return { ip: forwarded ?? h.get("x-real-ip"), userAgent: h.get("user-agent") };
+}
 
-  if (cached?.key !== key) {
-    cached = { key, auth: create(await getConnection(), authSecret) };
+export type Session = {
+  user: Identity["user"];
+  session: { id: string; token: string; activeOrganizationId: string | null; expiresAt: string };
+  organization: Identity["organization"];
+  organizations: Identity["organizations"];
+  role: string | null;
+  grants: Record<string, boolean>;
+};
+
+export function fromIdentity(identity: Identity): Session {
+  return {
+    user: identity.user,
+    session: { id: identity.session.id, token: identity.session.token, activeOrganizationId: identity.session.active_organization_id ?? null, expiresAt: identity.session.expires_at },
+    organization: identity.organization ?? null,
+    organizations: identity.organizations,
+    role: identity.role ?? null,
+    grants: identity.grants,
+  };
+}
+
+export async function sessionFromCookie(cookie: string | null): Promise<Session | null> {
+  if (!cookie) return null;
+  try {
+    return fromIdentity(await authApi.session({ cookie }));
+  } catch (e) {
+    if (isAuthError(e, 401)) return null;
+    throw e;
   }
-
-  return cached.auth;
 }

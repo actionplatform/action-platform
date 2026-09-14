@@ -1,15 +1,17 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getAuth } from "./auth";
-import { activeOrg, type Org } from "./orgs";
+import { type Session, sessionCookie, sessionFromCookie } from "./auth";
+import type { Org } from "./orgs";
 import { safePath } from "./safe-path";
 import { setupStatus } from "./setup";
 
-export async function getSession() {
-  return (await getAuth()).api.getSession({ headers: await headers() });
+export type { Session };
+
+export async function getSession(): Promise<Session | null> {
+  return sessionFromCookie(await sessionCookie());
 }
 
-export async function requireSession() {
+export async function requireSession(): Promise<Session> {
   const status = await setupStatus();
   if (!status.complete) redirect("/setup");
 
@@ -19,12 +21,12 @@ export async function requireSession() {
   return session;
 }
 
-export async function requireOrg(): Promise<{ session: Awaited<ReturnType<typeof requireSession>>; org: Org }> {
+export async function requireOrg(): Promise<{ session: Session; org: Org }> {
   const session = await requireSession();
-  const org = await activeOrg(session);
+  const org = session.organization;
   if (!org) redirect("/orgs/new");
 
-  return { session, org };
+  return { session, org: { id: org.id, name: org.name, slug: org.slug } };
 }
 
 async function loginUrl(): Promise<string> {

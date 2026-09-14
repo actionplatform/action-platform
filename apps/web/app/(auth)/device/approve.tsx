@@ -6,10 +6,9 @@ import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
-import { authClient } from "@/lib/auth-client";
 import { SCOPE_INFO, type Scope } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { appChoices, type Choice, chooseDeviceGrant, inspectDevice, type OrgChoice, projectChoices } from "./actions";
+import { appChoices, approveDeviceRequest, type Choice, denyDeviceRequest, inspectDevice, type OrgChoice, projectChoices } from "./actions";
 
 type State = "idle" | "loading" | "ready" | "approving" | "denying" | "approved" | "denied" | "expired" | "invalid" | "failed";
 
@@ -71,8 +70,6 @@ export function DeviceApprove({ initialCode }: { initialCode: string }) {
   const verify = () => start(async () => {
     setError(null);
     setState("loading");
-    const r = await authClient.device({ query: { user_code: code } });
-    if (r.error) { setState("invalid"); return; }
     const request = await inspectDevice(code);
     if (!request.ok) {
       setState(request.error === "expired" ? "expired" : request.error === "invalid code" ? "invalid" : "failed");
@@ -109,18 +106,16 @@ export function DeviceApprove({ initialCode }: { initialCode: string }) {
     setConfirming(false);
     if (expired) { setState("expired"); return; }
     setState("approving");
-    const chosen = await chooseDeviceGrant(code, { scope: granted, organizationId, projectId: projectId || null, appId: appId || null });
-    if (!chosen.ok) { setState(chosen.error === "expired" ? "expired" : "ready"); setError(chosen.error === "expired" ? null : chosen.error); return; }
-    const r = await authClient.device.approve({ userCode: code });
-    if (r.error) { setState("ready"); setError(r.error.error_description ?? "the platform refused the approval"); return; }
+    const r = await approveDeviceRequest(code, { scope: granted, organizationId, projectId: projectId || null, appId: appId || null });
+    if (!r.ok) { setState(r.error === "expired" ? "expired" : "ready"); setError(r.error === "expired" ? null : r.error); return; }
     setState("approved");
   });
 
   const deny = () => start(async () => {
     setError(null);
     setState("denying");
-    const r = await authClient.device.deny({ userCode: code });
-    if (r.error) { setState("ready"); setError(r.error.error_description ?? "the platform refused the denial"); return; }
+    const r = await denyDeviceRequest(code);
+    if (!r.ok) { setState("ready"); setError(r.error); return; }
     setState("denied");
   });
 

@@ -1,6 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
-import { headers } from "next/headers";
-import { getAuth } from "./auth";
+import { type Session, sessionCookie } from "./auth";
+import { authApi } from "./auth-api";
 import { newId, q } from "./db/query";
 import { can, type Permission, type Role, ROLES } from "./permissions";
 import { slugify } from "./utils";
@@ -25,27 +25,21 @@ export async function isMember(userId: string, orgId: string): Promise<boolean> 
   return rows.length > 0;
 }
 
-export async function activeOrg(session: { user: { id: string }; session: { activeOrganizationId?: string | null } }): Promise<Org | null> {
-  const orgs = await orgsOf(session.user.id);
-  if (orgs.length === 0) return null;
-
-  const active = orgs.find((o) => o.id === session.session.activeOrganizationId);
-  if (active) return active;
-
-  await setActiveOrg(orgs[0].id);
-  return orgs[0];
+export async function activeOrg(session: Session): Promise<Org | null> {
+  const org = session.organization;
+  return org ? { id: org.id, name: org.name, slug: org.slug } : null;
 }
 
 export async function setActiveOrg(organizationId: string): Promise<void> {
-  const auth = await getAuth();
-  await auth.api.setActiveOrganization({ headers: await headers(), body: { organizationId } });
+  const cookie = await sessionCookie();
+  if (!cookie) throw new Error("sign in first");
+  await authApi.setActiveOrganization({ cookie }, organizationId);
 }
 
 export async function createOrg(name: string, slug?: string): Promise<Org> {
-  const auth = await getAuth();
-  const org = await auth.api.createOrganization({ headers: await headers(), body: { name, slug: slug || slugify(name) } });
-  if (!org) throw new Error("could not create the organization");
-  await setActiveOrg(org.id);
+  const cookie = await sessionCookie();
+  if (!cookie) throw new Error("sign in first");
+  const org = await authApi.createOrganization({ cookie }, { name, slug: slug || slugify(name) });
   return { id: org.id, name: org.name, slug: org.slug };
 }
 
@@ -179,24 +173,8 @@ export async function acceptInvitation(id: string, userId: string, userEmail: st
 }
 
 export async function addMemberAccount(orgId: string, input: { name: string; email: string; password: string; role: Role }): Promise<{ userId: string; existed: boolean }> {
-  const { hashPassword } = await import("better-auth/crypto");
-  const { db, t } = await q();
-  const email = input.email.trim().toLowerCase();
-  const name = input.name.trim();
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error("enter a valid email");
-  const [existing] = await db.select({ id: t.user.id }).from(t.user).where(eq(t.user.email, email));
-  let userId = existing?.id ?? null;
-  const now = new Date();
-
-  if (!userId) {
-    if (!name) throw new Error("name is required");
-    if (input.password.length < 8) throw new Error("password needs at least 8 characters");
-    userId = newId();
-    await db.insert(t.user).values({ id: userId, name, email, emailVerified: false, createdAt: now, updatedAt: now });
-    await db.insert(t.account).values({ id: newId(), accountId: userId, providerId: "credential", userId, password: await hashPassword(input.password), createdAt: now, updatedAt: now });
-  }
-
-  if (await isMember(userId, orgId)) throw new Error("already a member");
-  await db.insert(t.member).values({ id: newId(), organizationId: orgId, userId, role: input.role, createdAt: now });
-  return { userId, existed: !!existing };
+  const cookie = await sessionCookie();
+  if (!cookie) throw new Error("sign in first");
+  const added = await authApi.addMember({ cookie }, { organization_id: orgId, name: input.name, email: input.email, password: input.password, role: input.role });
+  return { userId: added.user_id, existed: added.existed };
 }

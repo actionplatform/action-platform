@@ -123,6 +123,10 @@ pytest-cov = "^6.0.0"
 pytest-mock = "^3.14.0"
 flake8 = "^7.1.1"
 httpx = "^0.28.1"
+fastapi = ">=0.115"
+sqlalchemy = ">=2.0"
+alembic = ">=1.13"
+sentry-sdk = {version = ">=2.0", extras = ["fastapi"]}
 
 [tool.poetry.group.code-quality.dependencies]
 ruff = "^0.9.0"
@@ -134,3 +138,6 @@ testpaths = ["tests"]
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff.lint.per-file-ignores]
+"action_platform/api/db/database.py" = ["E402"]

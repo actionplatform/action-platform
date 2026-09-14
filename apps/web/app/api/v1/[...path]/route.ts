@@ -2,7 +2,7 @@ import { API_TIMEOUT_MS, PROVIDER_TIMEOUT_MS } from "@/lib/timeouts";
 import { API_BASE, apiHeaders } from "@/lib/api";
 import { type Caller, authenticate } from "@/lib/api-auth";
 import { membersOf, roleOf, setMemberRole } from "@/lib/orgs";
-import { can, grantableScopes, isRole, PERMISSIONS, type Permission, type Role, ROLE_INFO, ROLES, type Scope, scopeAllows } from "@/lib/permissions";
+import { can, isRole, PERMISSIONS, type Permission, type Role, ROLE_INFO, ROLES, type Scope, scopeAllows } from "@/lib/permissions";
 import type { Org } from "@/lib/types";
 import { membersDirectory, organizationsOf, projectsDirectory, teamsDirectory } from "@/lib/directory";
 import { appById, appByRegistryId, createProject, projectById, registryIdsOf } from "@/lib/projects";
@@ -12,7 +12,8 @@ import { syncReleases } from "@/lib/releases";
 import { credentialsFor, hostsOf } from "@/lib/source-hosts";
 import { sourceSpecByName, sourceSpecsOf } from "@/lib/template-sources";
 import { gitAuthorOf } from "@/lib/org-settings";
-import { formatGrant, issueToken, parseGrant } from "@/lib/api-tokens";
+import { formatGrant, parseGrant } from "@/lib/api-tokens";
+import { authApi, isAuthError } from "@/lib/auth-api";
 
 type Rule = { method: string; pattern: RegExp; permission: Permission | null; credentials?: boolean; imports?: boolean };
 
@@ -217,24 +218,23 @@ function withinReach(caller: Caller, app: { id: string; projectId: string }): bo
 
 async function issue(req: Request, caller: Caller): Promise<Response> {
   if (req.method !== "POST") return Response.json({ detail: "POST /api/v1/tokens" }, { status: 405 });
-  if (caller.scope) return Response.json({ detail: "a token cannot mint another token; sign in again" }, { status: 403 });
+  if (caller.scope || !caller.sessionToken) return Response.json({ detail: "a token cannot mint another token; sign in again" }, { status: 403 });
   const body = (await req.json().catch(() => ({}))) as { scope?: string; name?: string };
   const grant = parseGrant(body.scope);
   if (grant.scope.length === 0) return Response.json({ detail: "scope must include at least one of read, write, release, admin" }, { status: 400 });
-  const everywhere = grant.organizationId === "*";
-  const organization = everywhere ? null : grant.organizationId ? caller.orgs.find((o) => o.id === grant.organizationId) ?? null : caller.org;
-  if (!organization && !everywhere) return Response.json({ detail: "not a member of that organization" }, { status: 403 });
-  const allowed = new Set<Scope>();
-  for (const o of organization ? [organization] : caller.orgs) for (const s of grantableScopes(await roleOf(caller.user.id, o.id))) allowed.add(s);
-  const granted = grant.scope.filter((s) => allowed.has(s));
-  const scope = granted.includes("read") ? granted : ["read" as const, ...granted];
-  const project = organization && grant.projectId ? await projectById(organization.id, grant.projectId) : null;
-  if (grant.projectId && !project) return Response.json({ detail: "project not found in that organization" }, { status: 400 });
-  const app = grant.appId && project ? await appById(project.id, grant.appId) : null;
-  if (grant.appId && !app) return Response.json({ detail: "app not found in that project" }, { status: 400 });
   const name = (body.name ?? "").trim().slice(0, 80) || "cli";
-  const { token, id, expiresAt } = await issueToken({ userId: caller.user.id, organizationId: organization?.id ?? null, scope, name, projectId: project?.id ?? null, appId: app?.id ?? null });
-  return Response.json({ token, token_type: "Bearer", id, scope: formatGrant({ scope, organizationId: organization?.id ?? "*", projectId: project?.id ?? null, appId: app?.id ?? null }), expires_at: expiresAt.toISOString(), organization, organizations: organization ? undefined : caller.orgs, project: project ? { id: project.id, name: project.name } : null, app: app ? { id: app.id, name: app.name } : null });
+  let issued;
+  try {
+    issued = await authApi.issueToken({ token: caller.sessionToken }, { name, scope: body.scope ?? "", organization_id: grant.organizationId ?? undefined, project_id: grant.projectId, app_id: grant.appId });
+  } catch (e) {
+    if (isAuthError(e)) return Response.json({ detail: e.message }, { status: e.status });
+    throw e;
+  }
+  const claims = await authApi.verifyToken(issued.token, null);
+  const organization = claims.organization ? { id: claims.organization.id, name: claims.organization.name, slug: claims.organization.slug } : null;
+  const project = claims.project_id ? await projectById(organization?.id ?? "", claims.project_id) : null;
+  const app = claims.app_id && project ? await appById(project.id, claims.app_id) : null;
+  return Response.json({ token: issued.token, token_type: "Bearer", id: issued.id, scope: formatGrant({ scope: issued.scope as Scope[], organizationId: organization?.id ?? "*", projectId: claims.project_id ?? null, appId: claims.app_id ?? null }), expires_at: issued.expires_at, organization, organizations: organization ? undefined : caller.orgs, project: project ? { id: project.id, name: project.name } : null, app: app ? { id: app.id, name: app.name } : null });
 }
 
 type Ctx = { params: Promise<{ path: string[] }> };

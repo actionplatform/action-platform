@@ -31,7 +31,7 @@ flowchart LR
 `/setup` opens until an organization exists.
 
 1. **Database** — SQLite (file), PostgreSQL or MySQL. Created when missing, schema migrated, URL saved to `config/app.json`. Skipped when `DATABASE_URL` is set.
-2. **Admin** — the first account. Public sign-up stays closed afterwards.
+2. **Admin** — the first account, created by the API. Public sign-up stays closed afterwards. The API must reach the same database with the same secret (`AP_DATABASE_URL`, `AP_AUTH_SECRET`); the compose files wire that, and when running by hand the wizard prints the exact values to start the API with.
 3. **Organization** — name and slug.
 4. **Source hosts** — connect GitHub / GitLab / Bitbucket, or skip.
 
