@@ -11,9 +11,12 @@ from tests.support import git
 class RegistryTest(ApiCase):
     def setUp(self):
         super().setUp()
-        from action_platform.api.repositories.registry import Registry
+        from action_platform.api.db import Database
+        from action_platform.api.repositories.registry import DbStore, Registry
 
-        self.registry = Registry(self.tmp_path / "home")
+        database = Database(f"sqlite:///{self.tmp_path / 'registry.db'}")
+        database.migrate()
+        self.registry = Registry(DbStore(database), self.tmp_path / "home")
 
     def test_clones_into_workspace_and_removes(self):
         entry = self.registry.add(self.url)

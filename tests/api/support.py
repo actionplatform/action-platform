@@ -26,7 +26,9 @@ class ApiCase(TempCase):
         self.patch(settings, "ALLOW_FILE_URLS", True)
         self.repo = platform_repo(self.tmp_path)
         self.url = self.repo.as_uri()
-        self.client = TestClient(build())
+        self.client = TestClient(
+            build(database_url=f"sqlite:///{self.tmp_path / 'api.db'}")
+        )
 
     def add_app(self, on_main: bool = True) -> str:
         if on_main:

@@ -25,12 +25,12 @@ class ApiTokenTest(ApiCase):
         self.patch(settings, "ALLOW_UNAUTHENTICATED_API", False)
 
         with self.assertRaisesRegex(ConfigError, "AP_API_TOKEN"):
-            build(token="")
+            build(token="", database_url="sqlite://")
 
     def test_guards_every_route_but_version(self):
         from action_platform.api.main import build
 
-        guarded = TestClient(build(token="s3cret"))
+        guarded = TestClient(build(token="s3cret", database_url="sqlite://"))
 
         self.assertEqual(guarded.get("/api/version").status_code, 200)
         self.assertEqual(guarded.get("/api/apps").status_code, 401)

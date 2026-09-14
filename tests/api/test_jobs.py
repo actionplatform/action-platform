@@ -162,4 +162,6 @@ class RegistryAdoptionTest(GateCase):
         entry = get_registry().get("01old")
         self.assertEqual((entry.name, entry.url), ("legacy", self.url))
         self.assertTrue(Path(entry.path).name == "01old")
+        self.assertFalse(file.exists())
+        self.assertTrue(file.with_suffix(".json.imported").exists())
         self.assertEqual(get_registry().adopt_file(), [])
