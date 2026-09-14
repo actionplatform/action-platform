@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.10.1 — 2026-09-14
+
+### Features
+- **providers:** delete_repository on github, gitlab and bitbucket
+
+### Docs
+- **web:** deleting apps and repositories
+
+### Tests
+- **api:** repository deletion needs an attached host and reports what it removed
+
+### Style
+- **cli:** format install help
+
 ## v0.10.0 — 2026-09-14
 
 ### Features
