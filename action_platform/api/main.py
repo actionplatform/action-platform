@@ -8,17 +8,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from action_platform.api import api_version
+from action_platform.api.access.gate import AccessGate, repo_from_url
+from action_platform.api.auth.crypto import Sealer
 from action_platform.api.auth.errors import AuthError
 from action_platform.api.auth.router import router as auth_router
 from action_platform.api.auth.secrets import Secrets
 from action_platform.api.core.deps import get_registry
 from action_platform.api.db import Database
 from action_platform.api.v1 import router as v1
+from action_platform.api.v1.routers.directory import router as v1_directory
 from action_platform.core.exception import ActionPlatformError, ConfigError
 from action_platform.observability import observe
 from action_platform.settings import settings
 
 OPEN_PATHS = {"/api/version", "/docs", "/openapi.json", "/redoc"}
+SELF_AUTHENTICATED = ("/api/v1/", "/api/auth/")
 
 
 def build(
@@ -40,6 +44,7 @@ def build(
 
     secret = settings.AUTH_SECRET if auth_secret is None else auth_secret
     app.state.secrets = Secrets(secret) if secret else None
+    app.state.sealer = Sealer(app.state.secrets) if app.state.secrets else None
     base = (settings.PUBLIC_URL if public_url is None else public_url).rstrip("/")
     app.state.verification_uri = f"{base}/device"
     expected = settings.API_TOKEN if token is None else token
@@ -55,7 +60,12 @@ def build(
 
         @app.middleware("http")
         async def _require_token(request: Request, call_next):
-            if request.url.path in OPEN_PATHS or request.method == "OPTIONS":
+            if (
+                request.url.path in OPEN_PATHS
+                or request.url.path.startswith(SELF_AUTHENTICATED)
+                or request.method == "OPTIONS"
+                or getattr(request.state, "caller", None) is not None
+            ):
                 return await call_next(request)
 
             header = request.headers.get("authorization", "")
@@ -74,7 +84,14 @@ def build(
             CORSMiddleware,
             allow_origins=cors_origins,
             allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            allow_headers=["authorization", "content-type"],
+            allow_headers=[
+                "authorization",
+                "content-type",
+                "x-organization",
+                "x-session-token",
+                "x-session-cookie",
+                "x-action-platform-client",
+            ],
         )
 
     @app.exception_handler(AuthError)
@@ -93,7 +110,16 @@ def build(
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
     app.include_router(v1)
+    app.include_router(v1_directory)
     app.include_router(auth_router)
+
+    def repo_of(registry_id: str) -> Optional[str]:
+        try:
+            return repo_from_url(get_registry().get(registry_id).url)
+        except ActionPlatformError:
+            return None
+
+    app.add_middleware(AccessGate, state=app.state, repo_of=repo_of)
 
     return app
 
