@@ -1,7 +1,9 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Iterator
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
+from sqlalchemy.orm import Session
 
 from action_platform.api.repositories.registry import Entry, Registry
 from action_platform.api.services.apps import AppService
@@ -26,6 +28,16 @@ def get_git_state(registry: Registry = Depends(get_registry)) -> GitStateService
 
 def get_lifecycle(registry: Registry = Depends(get_registry)) -> LifecycleService:
     return LifecycleService(registry)
+
+
+def get_db(request: Request) -> Iterator[Session]:
+    database = request.app.state.db
+
+    if database is None:
+        raise HTTPException(503, "no database configured: set AP_DATABASE_URL")
+
+    with database.session() as session:
+        yield session
 
 
 def workspace_of(registry: Registry, id: str) -> tuple[Entry, Path]:

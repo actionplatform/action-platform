@@ -159,7 +159,7 @@ erDiagram
     }
 ```
 
-`user`, `session`, `account`, `verification`, `device_code`, `organization`, `member`, `invitation` come from better-auth (and its `organization` / `deviceAuthorization` plugins); `team`, `team_member`, `project`, `app`, `source_host`, `release`, `pull_request`, `template_source`, `organization_setting`, `api_token`, `api_token_client` are the platform's. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/` (0001–0014), applied on boot.
+`user`, `session`, `account`, `verification`, `device_code`, `organization`, `member`, `invitation` come from better-auth (and its `organization` / `deviceAuthorization` plugins); `team`, `team_member`, `project`, `app`, `source_host`, `release`, `pull_request`, `template_source`, `organization_setting`, `api_token`, `api_token_client` are the platform's. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/` (0001–0014), applied on boot. The Python API mirrors the same tables in `action_platform/api/db/models.py` and, given `AP_DATABASE_URL`, connects to the same database, adopts it and adds its own tables (`job`) through Alembic — see [database](concept_database.md).
 
 ## Trust between web and API
 
