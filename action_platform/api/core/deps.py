@@ -10,23 +10,39 @@ from action_platform.api.services.configuration import ConfigurationService
 from action_platform.api.services.flow import FlowService
 from action_platform.api.services.git_state import GitStateService
 from action_platform.api.services.lifecycle import LifecycleService
+from action_platform.core.exception import ConfigError
 
 
-_database = None
+class RegistrySource:
+    """The database the registry lives in for this process, set by `build()`."""
+
+    database = None
+
+    def configure(self, database) -> Registry:
+        self.database = database
+        get_registry.cache_clear()
+        registry = get_registry()
+        registry.adopt_file()
+
+        return registry
+
+    def open(self) -> Registry:
+        if self.database is None:
+            raise ConfigError("the registry needs a database: set AP_DATABASE_URL")
+
+        return Registry(DbStore(self.database))
 
 
-def configure_registry(database) -> None:
-    global _database
-    _database = database
-    get_registry.cache_clear()
+source = RegistrySource()
 
-    if database is not None:
-        get_registry().adopt_file()
+
+def configure_registry(database) -> Registry:
+    return source.configure(database)
 
 
 @lru_cache
 def get_registry() -> Registry:
-    return Registry(store=DbStore(_database) if _database is not None else None)
+    return source.open()
 
 
 def get_app_service(registry: Registry = Depends(get_registry)) -> AppService:

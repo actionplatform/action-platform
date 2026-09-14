@@ -162,7 +162,9 @@ class BootTest(TempCase):
         app = build(database_url=f"sqlite:///{self.tmp_path / 'boot.db'}")
         self.assertEqual(app.state.db.current_revision(), app.state.db.head_revision())
 
-    def test_build_without_url_has_no_database(self):
+    def test_build_without_url_refuses(self):
         from action_platform.api.main import build
+        from action_platform.core.exception import ConfigError
 
-        self.assertIsNone(build(database_url="").state.db)
+        with self.assertRaisesRegex(ConfigError, "AP_DATABASE_URL"):
+            build(database_url="")

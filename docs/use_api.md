@@ -2,7 +2,7 @@
 
 `action-platform api` — the JSON API the web app drives; a FastAPI process listening on `:7788` with OpenAPI at `/docs`. It is released as its own component (`api/vX.Y.Z`, image `actionplatformio/action-platform-api`) and reports that version in `GET /api/version`.
 
-`action-platform api` — one process. Workspaces are file-backed under `AP_HOME`; accounts, sessions, organizations and tokens live in the [database](concept_database.md) the API owns. Which organization, project or app a caller may touch is decided here too: `/api/v1/*` is the same API behind a gate that knows who is calling.
+`action-platform api` — one process that refuses to start without `AP_DATABASE_URL`. Workspaces are file-backed under `AP_HOME`; accounts, sessions, organizations, apps and tokens live in the [database](concept_database.md) the API owns. Which organization, project or app a caller may touch is decided here too: `/api/v1/*` is the same API behind a gate that knows who is calling.
 
 | Endpoint | |
 |---|---|
@@ -59,7 +59,7 @@ Routes that are not workspaces live directly under `/api/v1` and are what the we
 
 ## Workspaces
 
-The registry — id, name, url, default branch of every app — is the `registry` table when the API has a database (`apps.json` under `AP_HOME` otherwise), so every API instance and worker sees the same apps. An `apps.json` left from before is adopted into the table on boot, ids kept. Each instance keeps its clones under `AP_HOME/workspaces/<id>` (`~/.action-platform`, `/data/action-platform` in the image) and clones an app again when it is asked for one it does not have; a private repository needs credentials for that, which every mutating call carries, so a fresh instance rebuilds on the first `sync`. Every call that opens a workspace brings `platform.toml` back when it is missing, so an app never errors for something the platform can fix itself.
+The registry — id, name, url, default branch of every app — is the `registry` table, so every API instance and worker sees the same apps. An `apps.json` under `AP_HOME` from versions before 0.6 is imported once on boot, ids kept, and renamed `apps.json.imported`. Each instance keeps its clones under `AP_HOME/workspaces/<id>` (`~/.action-platform`, `/data/action-platform` in the image) and clones an app again when it is asked for one it does not have; a private repository needs credentials for that, which every mutating call carries, so a fresh instance rebuilds on the first `sync`. Every call that opens a workspace brings `platform.toml` back when it is missing, so an app never errors for something the platform can fix itself.
 
 ## Jobs
 

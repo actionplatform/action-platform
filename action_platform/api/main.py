@@ -39,10 +39,13 @@ def build(
     app.state.db = None
     url = settings.DATABASE_URL if database_url is None else database_url
 
-    if url:
-        app.state.db = Database(url, settings.DATABASE_POOL_SIZE)
-        app.state.db.migrate()
+    if not url:
+        raise ConfigError(
+            "AP_DATABASE_URL is empty: the API keeps accounts, apps and jobs in a database."
+        )
 
+    app.state.db = Database(url, settings.DATABASE_POOL_SIZE)
+    app.state.db.migrate()
     configure_registry(app.state.db)
 
     secret = settings.AUTH_SECRET if auth_secret is None else auth_secret
