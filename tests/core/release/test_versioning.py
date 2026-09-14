@@ -64,6 +64,7 @@ class SyncFilesTest(TempCase):
             "src/index.ts": 'export const VERSION = "0.1.0";\n',
             "src/Version.php": "<?php\nfinal class Version\n{\n    public const VERSION = '0.1.0';\n}\n",
             "src/main/java/com/acme/Version.java": 'public final class Version {\n    public static final String VERSION = "0.1.0";\n}\n',
+            "app/version.rb": 'module Acme\n  VERSION = "0.1.0"\nend\n',
         }
         for rel, text in files.items():
             path = self.tmp_path / rel
