@@ -54,6 +54,8 @@ class ProjectRow(BaseModel):
     team: Optional[Named] = None
     apps: list[AppInProject]
     organization: Optional[Named] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 
 class TeamMemberRow(BaseModel):

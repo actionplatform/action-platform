@@ -16,7 +16,7 @@ export default async function ProjectsPage() {
     <>
       <PageHeader title="Projects" description="Manage your projects and the apps that ship together." actions={manage ? <NewProjectForm /> : undefined} />
       <ProjectsView
-        projects={projects.map((p) => ({ id: p.id, name: p.name, slug: p.slug, description: p.description, apps: p.apps, teamId: p.teamId, teamName: p.teamName, updatedAt: p.name }))}
+        projects={projects.map((p) => ({ id: p.id, name: p.name, slug: p.slug, description: p.description, apps: p.apps, teamId: p.teamId, teamName: p.teamName, updatedAt: p.updatedAt }))}
         teams={teams.map((t) => ({ id: t.id, name: t.name }))}
         canManage={manage}
       />

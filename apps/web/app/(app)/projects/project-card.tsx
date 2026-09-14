@@ -60,7 +60,7 @@ export function ProjectCard({ project, teams, canManage }: { project: ProjectIte
           </>
         )}
         <span aria-hidden className="h-3 w-px bg-border" />
-        <span className="truncate" suppressHydrationWarning>Updated {relativeTime(project.updatedAt)}</span>
+        <span className="truncate" suppressHydrationWarning>{project.updatedAt ? `Updated ${relativeTime(project.updatedAt)}` : "No activity yet"}</span>
       </div>
     </article>
   );

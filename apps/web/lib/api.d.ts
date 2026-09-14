@@ -2114,6 +2114,8 @@ export interface components {
             team?: components["schemas"]["Named"] | null;
             apps: components["schemas"]["AppInProject"][];
             organization?: components["schemas"]["Named"] | null;
+            created_at?: string | null;
+            updated_at?: string | null;
         };
         ProjectTeamRequest: {
             project_id: string;

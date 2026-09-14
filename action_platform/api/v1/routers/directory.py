@@ -212,6 +212,9 @@ def project_rows(
     for p in directory.projects_of(org.id, caller.project_id):
         team = directory.team(org.id, p.team_id) if p.team_id else None
         apps = directory.apps_of(p.id, caller.app_id)
+        moments = [p.created_at] + [
+            m for a in apps for m in (a.created_at, a.last_synced_at) if m
+        ]
         rows.append(
             schemas.ProjectRow(
                 id=p.id,
@@ -230,6 +233,8 @@ def project_rows(
                     for a in apps
                 ],
                 organization=schemas.Named(id=org.id, name=org.name) if tag else None,
+                created_at=p.created_at,
+                updated_at=max(moments),
             )
         )
 
