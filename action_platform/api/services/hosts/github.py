@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import Any, Optional
 from urllib.parse import quote
 
-from action_platform.api.services.credentials import Credentials
-from action_platform.api.services.http import get_json, post_form
+from action_platform.api.services.shared.credentials import Credentials
+from action_platform.api.services.shared.http import get_json, post_form
 from action_platform.core.exception import ProviderError
 from action_platform.api.services.hosts.access import _get, _owner
 from action_platform.api.services.hosts.providers import GITHUB_MANIFEST_PERMISSIONS

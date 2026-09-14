@@ -4,8 +4,8 @@ import re
 from datetime import datetime, timezone
 from typing import Optional
 
-from action_platform.api.services.credentials import Credentials
-from action_platform.api.services.http import basic
+from action_platform.api.services.shared.credentials import Credentials
+from action_platform.api.services.shared.http import basic
 
 RC = re.compile(r"-rc\.")
 

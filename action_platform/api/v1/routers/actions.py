@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 
 from action_platform.api import schemas
 from action_platform.api.core.deps import get_lifecycle
-from action_platform.api.services.lifecycle import LifecycleService
+from action_platform.api.services.workspace.lifecycle import LifecycleService
 
 router = APIRouter(prefix="/apps", tags=["actions"])
 

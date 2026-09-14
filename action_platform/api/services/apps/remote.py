@@ -7,8 +7,8 @@ from typing import Optional
 from fastapi import HTTPException
 
 from action_platform.api.schemas import SourceCredentials
-from action_platform.api.services.common import kind_of_url, repo_from_url
-from action_platform.api.services.manifest import read_manifest
+from action_platform.api.services.shared.common import kind_of_url, repo_from_url
+from action_platform.api.services.workspace.manifest import read_manifest
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import build_source_host
 

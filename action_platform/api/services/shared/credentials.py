@@ -5,10 +5,14 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Optional
 
-from action_platform.api.services.common import now
-from action_platform.api.services.directory.base import DirectoryError
-from action_platform.api.services.http import basic, post_form
+from action_platform.api.services.shared.common import now
+from action_platform.core.exception import ActionPlatformError
+from action_platform.api.services.shared.http import basic, post_form
 from action_platform.settings import settings
+
+
+class CredentialsError(ActionPlatformError):
+    pass
 
 
 @dataclass(frozen=True)
@@ -60,7 +64,7 @@ def refresh_oauth(
     app: Optional[OAuthApp], kind: str, refresh_token: str
 ) -> tuple[str, Optional[str], Optional[datetime]]:
     if app is None:
-        raise DirectoryError(
+        raise CredentialsError(
             f"the {kind} token expired and no OAuth app is configured on the API to refresh it"
         )
 
@@ -98,7 +102,7 @@ def refresh_oauth(
     access = data.get("access_token")
 
     if not isinstance(access, str) or not access:
-        raise DirectoryError("no access token in the provider's response")
+        raise CredentialsError("no access token in the provider's response")
 
     expires_in = data.get("expires_in")
     expires_at = (

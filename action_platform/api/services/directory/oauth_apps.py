@@ -6,8 +6,8 @@ from typing import Optional
 
 
 from action_platform.api.db.models import OAuthApp as OAuthAppRow
-from action_platform.api.services.common import now
-from action_platform.api.services.credentials import (
+from action_platform.api.services.shared.common import now
+from action_platform.api.services.shared.credentials import (
     OAuthApp,
     oauth_app_for,
 )

@@ -10,8 +10,8 @@ from sqlalchemy import select
 from action_platform.api.db.models import (
     SourceHost,
 )
-from action_platform.api.services.common import kind_of_url, new_id, now
-from action_platform.api.services.credentials import (
+from action_platform.api.services.shared.common import kind_of_url, new_id, now
+from action_platform.api.services.shared.credentials import (
     Credentials,
     refresh_oauth,
 )

@@ -7,24 +7,29 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from action_platform.api.db.models import PullRequest, Release
-from action_platform.api.services.credentials import Credentials
-from action_platform.api.services.imports import bitbucket, github, gitlab
+from action_platform.api.services.shared.credentials import Credentials
+from action_platform.abc import ImportSource
+from action_platform.api.services.imports.bitbucket import BitbucketImports
+from action_platform.api.services.imports.github import GithubImports
+from action_platform.api.services.imports.gitlab import GitlabImports
 from action_platform.api.services.imports.common import now, parse_time
 from action_platform.core.exception import ProviderError
 
-PROVIDERS = {"github": github, "gitlab": gitlab, "bitbucket": bitbucket}
+SOURCES: dict[str, ImportSource] = {
+    s.kind: s for s in (GithubImports(), GitlabImports(), BitbucketImports())
+}
 
 
 def remote_releases(creds: Credentials, repo: str) -> list[dict[str, Any]]:
-    provider = PROVIDERS.get(creds.kind)
+    source = SOURCES.get(creds.kind)
 
-    return provider.releases(creds, repo) if provider else []
+    return source.releases(creds, repo) if source else []
 
 
 def remote_pull_requests(creds: Credentials, repo: str) -> list[dict[str, Any]]:
-    provider = PROVIDERS.get(creds.kind)
+    source = SOURCES.get(creds.kind)
 
-    return provider.pull_requests(creds, repo) if provider else []
+    return source.pull_requests(creds, repo) if source else []
 
 
 class ImportService:

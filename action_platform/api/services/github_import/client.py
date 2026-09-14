@@ -2,8 +2,9 @@
 
 from typing import Any
 
-from action_platform.api.services.directory import Credentials
-from action_platform.api.services.http import get_json, get_pages, post_json
+from action_platform.abc import HostDirectory
+from action_platform.api.services.shared.credentials import Credentials
+from action_platform.api.services.shared.http import get_json, get_pages, post_json
 from action_platform.core.exception import ProviderError
 
 PEOPLE_LOOKUP_LIMIT = 200
@@ -20,7 +21,9 @@ def _api(creds: Credentials) -> str:
     return (creds.base_url or "").rstrip("/") or "https://api.github.com"
 
 
-class GithubDirectory:
+class GithubDirectory(HostDirectory):
+    kind = "github"
+
     def __init__(self, creds: Credentials) -> None:
         if creds.kind != "github":
             raise ProviderError("only GitHub hosts can be imported for now")

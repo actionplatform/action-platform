@@ -11,7 +11,7 @@ from fastapi import HTTPException
 from action_platform.api.core import credentials as auth
 from action_platform.api.repositories.registry import Entry, MissingManifest
 from action_platform.api.schemas import InstallSpec, SourceCredentials
-from action_platform.api.services.manifest import read_manifest
+from action_platform.api.services.workspace.manifest import read_manifest
 from action_platform.api.services.workspace import Workspaces
 from action_platform.core.flow.repository import Repository
 from action_platform.core.scaffold.install import InstallError, install

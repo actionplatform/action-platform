@@ -6,7 +6,7 @@ import re
 from datetime import datetime, timezone
 from typing import Optional
 
-from action_platform.api.services.credentials import OAuthApp
+from action_platform.api.services.shared.credentials import OAuthApp
 
 PROVIDER_INFO = {
     "github": {

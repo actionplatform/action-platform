@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from action_platform.api import schemas
 from action_platform.api.core.deps import get_app_service, get_git_state
 from action_platform.api.services.apps import AppService
-from action_platform.api.services.git_state import GitStateService
+from action_platform.api.services.workspace.state import GitStateService
 
 router = APIRouter(prefix="/apps", tags=["apps"])
 
