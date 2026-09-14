@@ -2637,14 +2637,14 @@ files = [
 name = "sentry-sdk"
 version = "2.69.1"
 description = "Python client for Sentry (https://sentry.io)"
-optional = true
+optional = false
 python-versions = ">=3.6"
-groups = ["main"]
-markers = "extra == \"sentry\" or extra == \"api\""
+groups = ["main", "dev"]
 files = [
     {file = "sentry_sdk-2.69.1-py3-none-any.whl", hash = "sha256:2d2556d9a14db548982b914cbed2a2dc07b6e55d941a620752f89a2afccfd78d"},
     {file = "sentry_sdk-2.69.1.tar.gz", hash = "sha256:f9284b417540b0784b994fa021eb6f1e30ae1cce593d83541274d03c93966eff"},
 ]
+markers = {main = "extra == \"sentry\" or extra == \"api\""}
 
 [package.dependencies]
 certifi = "*"
@@ -3005,7 +3005,7 @@ version = "2.7.0"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
 python-versions = ">=3.10"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897"},
     {file = "urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c"},
@@ -3069,4 +3069,4 @@ sentry = ["sentry-sdk"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10.0"
-content-hash = "21d1afddd9498f19f2f3c31f567b20eb5f7933d834846bcd4b048ec0f8d8b505"
+content-hash = "30262c8caf07b0848d89980bd1162fa3025b2482f18f1fc9d59e88fd0669677c"
