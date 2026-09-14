@@ -133,6 +133,21 @@ class SourceGithub(SourceHost):
 
         return f"https://github.com/{repo}.git"
 
+    def delete_repository(self, repo: str) -> None:
+        try:
+            self._rest("DELETE", f"/repos/{repo}")
+        except ProviderError as e:
+            if "→ 404" in str(e):
+                return
+
+            if "→ 403" in str(e):
+                raise ProviderError(
+                    f"the {self.name} token may not delete {repo}: reconnect the host so it asks for "
+                    "the delete_repo scope, or delete the repository on GitHub"
+                ) from e
+
+            raise
+
     def create_tag(self, ctx: Context, tag: str) -> None:
         return None
 
