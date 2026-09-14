@@ -22,7 +22,7 @@ class Settings:
         + os.getenv("ACTION_PLATFORM_TEMPLATES_REF", "main")
         + "/index.json",
     )
-    TEMPLATES_INDEX_TTL = int(os.getenv("ACTION_PLATFORM_TEMPLATES_INDEX_TTL", "600"))
+    TEMPLATES_INDEX_TTL = int(os.getenv("ACTION_PLATFORM_TEMPLATES_INDEX_TTL", "60"))
     TEMPLATES_CACHE = Path.home() / ".cache" / "action-platform" / "templates"
 
     ALLOW_FILE_URLS = os.getenv("AP_ALLOW_FILE_URLS") == "1"
