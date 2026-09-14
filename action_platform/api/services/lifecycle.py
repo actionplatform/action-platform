@@ -14,7 +14,6 @@ from action_platform.core.flow import git
 from action_platform.core.flow.repository import Repository
 from action_platform.core.release.components import resolve
 from action_platform.core.release.release import STABLE_BRANCHES
-from action_platform.core.release.versioning import VersionFiles
 from action_platform.settings import settings
 
 
@@ -80,10 +79,9 @@ class LifecycleService:
         self, id: str, level: str, branch: Optional[str], component: Optional[str]
     ) -> dict:
         platform = self._tool(id)
-        current = VersionFiles(
-            resolve(platform.config.components, component).dir(platform.repo_root),
-            settings.LAST_VERSION_FILE,
-        ).read()
+        current = platform.releaser.current_version(
+            resolve(platform.config.components, component)
+        )
         chosen = branch or platform.repo.branch
 
         return {
