@@ -1,1 +1,0 @@
-ALTER TABLE `app` ADD `last_synced_at` timestamp;

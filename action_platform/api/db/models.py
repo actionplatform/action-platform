@@ -398,6 +398,19 @@ class RegistryEntry(Base):
     )
 
 
+class OAuthApp(Base):
+    __tablename__ = "oauth_app"
+
+    provider: Mapped[str] = mapped_column(SHORT, primary_key=True)
+    client_id: Mapped[str] = mapped_column(Text, nullable=False)
+    client_secret_encrypted: Mapped[str] = mapped_column(Text, nullable=False)
+    base_url: Mapped[Optional[str]] = mapped_column(Text)
+    slug: Mapped[Optional[str]] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, server_default=func.now()
+    )
+
+
 class Job(Base):
     __tablename__ = "job"
     __table_args__ = (
