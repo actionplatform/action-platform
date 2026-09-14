@@ -47,8 +47,12 @@ services:
     expose: ["7788"]
     volumes:
       - apdata:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       AP_API_TOKEN: ${AP_API_TOKEN:-}
+      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@postgres:5432/action_platform
       ACTION_PLATFORM_TEMPLATES_REPO: ${ACTION_PLATFORM_TEMPLATES_REPO:-https://github.com/actionplatform/templates.git}
       ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
       AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
