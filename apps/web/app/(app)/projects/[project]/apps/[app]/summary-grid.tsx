@@ -19,19 +19,18 @@ function SummaryCard({ label, value, badge, icon: Icon }: { label: string; value
 }
 
 export function SummaryGrid({ view }: { view: AppView }) {
-  const tree = view.workingTree;
+  const pending = view.changes.length;
   return (
     <div className="mt-5 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
       <SummaryCard label="Branch" value={view.branch || "—"} icon={GitBranch} />
       <SummaryCard label="Version" value={view.version ?? "0.0.0"} badge={view.version ? <Badge>Current</Badge> : <Badge>Unversioned</Badge>} icon={Tag} />
       <SummaryCard label="Latest tag" value={view.latestTag ?? <span className="font-sans text-sm font-normal text-secondary">No tags</span>} icon={Tag} />
       <SummaryCard
-        label="Working tree"
-        value={<span className="font-sans text-sm font-normal text-secondary">{tree === "clean" ? "No local changes" : tree === "dirty" ? "Uncommitted changes" : "Not a git checkout"}</span>}
+        label="Pending changes"
+        value={<span className="font-sans text-sm font-normal text-secondary">{pending === 0 ? "Everything is on the code host" : `${pending} ${pending === 1 ? "file" : "files"} to commit`}</span>}
         badge={
-          tree === "clean" ? <Badge tone="ok" className="gap-1"><Check className="size-3" strokeWidth={2.5} /> Clean</Badge>
-          : tree === "dirty" ? <Badge tone="inverse" className="gap-1"><TriangleAlert className="size-3" /> Dirty</Badge>
-          : <Badge className="gap-1"><CircleDashed className="size-3" /> Unknown</Badge>
+          pending === 0 ? <Badge tone="ok" className="gap-1"><Check className="size-3" strokeWidth={2.5} /> Committed</Badge>
+          : <Badge tone="inverse" className="gap-1"><TriangleAlert className="size-3" /> {pending} pending</Badge>
         }
         icon={CircleDashed}
       />

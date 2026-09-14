@@ -34,7 +34,7 @@ export function HealthCard({ view }: { view: AppView }) {
     <Panel>
       <PanelHeader title="Repository health" aside={<Badge tone={tone} className="gap-1"><Icon className="size-3" strokeWidth={2.5} />{LABEL[status]}</Badge>} />
       <div className="grid grid-cols-1 divide-y divide-border-subtle sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-        <Check_ icon={CircleDashed} label="Working tree" value={view.workingTree === "clean" ? "Clean" : view.workingTree === "dirty" ? "Uncommitted changes" : "Unknown"} />
+        <Check_ icon={CircleDashed} label="Pending changes" value={view.changes.length === 0 ? "None" : `${view.changes.length} ${view.changes.length === 1 ? "file" : "files"}`} />
         <Check_ icon={GitCommitHorizontal} label="Commits checked" value={String(view.health.checked_commits)} />
         <Check_ icon={ShieldCheck} label="Branch policy" value={view.health.ok ? "Valid" : `${view.health.problems.length} ${view.health.problems.length === 1 ? "problem" : "problems"}`} />
       </div>
