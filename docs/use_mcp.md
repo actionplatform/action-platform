@@ -31,7 +31,7 @@ flowchart LR
     subgraph remote["action-platform mcp --remote"]
         L2[MCP tools] -->|Bearer| V["/api/v1/* (gate: role ∩ scope ∩ reach)"] --> API[action-platform api] --> WS[(workspaces)]
     end
-    login["action-platform login <url> --scope read,write"] -.->|device flow · scoped JWT| L2
+    login["action-platform login <url>"] -.->|device flow · scoped JWT| L2
 ```
 
 | | `action-platform mcp` | `action-platform mcp --remote` |
@@ -40,7 +40,7 @@ flowchart LR
 | Tools | `list_matrix`, `init_project`, `install_platform`, `push_project`, `cloud_set`, `service_add`, `project_info`, `start_branch`, `gitflow_audit`, `install_hooks`, `propose_pull_request`, `open_pull_request`, `release`, `deploy`, `rollback`, `diagnose`, `gitflow_rules` | `whoami`, `current_context`, `list_organizations`, `list_projects`, `list_teams`, `list_members`, `create_project`, `create_team`, `add_team_member`, `assign_project_team`, `set_member_role`, `list_apps`, `add_app`, `init_app`, `remove_app`, `sync_app`, `app_info`, `gitflow_audit`, `app_commits`, `app_branches`, `app_tags`, `app_releases`, `start_branch`, `checkout_branch`, `propose_pull_request`, `open_pull_request`, `read_manifest`, `write_manifest`, `set_cloud`, `add_service`, `commit_changes`, `release`, `deploy`, `diagnose`, `list_matrix`, `gitflow_rules` |
 | Templates | official repository, or another one with `source=url[@ref]` | official plus every repository the organization added under Templates; custom entries are addressed by `source=<name>` |
 | Permissions | whatever your user can do | your role in the organization (`viewer`, `developer`, `deployer`, `admin`, `owner`) narrowed by the token's scope (`read`, `write`, `release`, `admin`) and reach (one organization or all, optionally one project or app); a refused call names the missing permission or scope |
-| Credentials | your environment | the JWT from `action-platform login` (`--scope read` for a read-only assistant, `--scope read,write,release` for one that ships), sent as `Authorization: Bearer` to `/api/v1/*` (the web app forwards the path to the API, whose gate applies the rules); the server also sends the MCP client's name (`clientInfo`) so *Connected apps* can show Claude Code, Codex or Cursor next to the token |
+| Credentials | your environment | the JWT from `action-platform login` (everything your role allows by default; `--scope read` for a read-only assistant, `--scope read,write,release` for one that ships but cannot manage the organization), sent as `Authorization: Bearer` to `/api/v1/*` (the web app forwards the path to the API, whose gate applies the rules); the server also sends the MCP client's name (`clientInfo`) so *Connected apps* can show Claude Code, Codex or Cursor next to the token |
 
 Both default `release` and `deploy` to dry runs; the tool descriptions tell the agent to show the result and ask before calling again with `dry_run=false`. `release` accepts `branch`: stable versions come only from `main`/`master`, any other branch yields `X.Y.Z-rc.N`.
 

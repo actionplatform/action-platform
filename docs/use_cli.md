@@ -54,7 +54,7 @@ action-platform destroy [--target name]
 ```bash
 action-platform api [--reload] [--host] [--port] [--cors]   # JSON API for the web app (:7788, OpenAPI at /docs)
 action-platform mcp [--http] [--remote]                     # MCP server (local tools, or the hosted platform's)
-action-platform login <url> [--scope read,write] [--name label] [--no-browser]   # device flow → scoped bearer token
+action-platform login <url> [--scope read,write] [--name label] [--no-browser]   # device flow → bearer token; asks for everything your role allows unless --scope narrows it
 action-platform whoami                                      # server — account — scope — on Org / project / app
 action-platform logout
 action-platform db status | migrate [--url …]            # the API's database: revision, migrate on demand
@@ -78,7 +78,7 @@ Credentials from `login` live in `~/.action-platform/credentials.json` (mode 600
 
 ## Tokens and scopes
 
-`action-platform login <server> [--scope read,write] [--name label]` runs the device flow: the browser shows the code, you pick what the token may do — `read` (always), `write` (configuration, branches, pull requests, commits, sync), `release`, `admin` (projects, members, hosts, settings) — and where it may act — one organization or all of them, optionally one project, optionally one app inside it — and the CLI swaps the approved session for a bearer JWT with that scope and reach, valid 90 days, kept in `~/.action-platform/credentials.json`. Scope narrows your role; it never widens it, and the browser only offers what your role can grant. `action-platform whoami` prints server, account, scope and reach; tokens are listed and revoked under **Connected apps** (key icon next to your name in the web app), together with the programs that used them. `AP_SERVER` / `AP_TOKEN` (and `AP_SCOPE` for display) override the file.
+`action-platform login <server> [--scope …] [--name label]` runs the device flow. Without `--scope` it asks for every scope and every organization; the browser page shows that selection already made, cut to what your role allows, and you can narrow it before approving. `--scope read,write` narrows from the command line instead. In the browser you pick what the token may do — `read` (always), `write` (configuration, branches, pull requests, commits, sync), `release`, `admin` (projects, members, hosts, settings) — and where it may act — one organization or all of them, optionally one project, optionally one app inside it — and the CLI swaps the approved session for a bearer JWT with that scope and reach, valid 90 days, kept in `~/.action-platform/credentials.json`. Scope narrows your role; it never widens it, and the browser only offers what your role can grant. `action-platform whoami` prints server, account, scope and reach; tokens are listed and revoked under **Connected apps** (key icon next to your name in the web app), together with the programs that used them. `AP_SERVER` / `AP_TOKEN` (and `AP_SCOPE` for display) override the file.
 
 ## Error reporting
 
