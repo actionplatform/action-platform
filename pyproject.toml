@@ -1,6 +1,6 @@
 [project]
 name = "action-platform"
-version = "0.10.1"
+version = "0.10.2"
 authors = [
   { name="Fernando Celmer", email="email@fernandocelmer.com" },
 ]
@@ -73,7 +73,7 @@ api = ["fastapi>=0.115", "uvicorn>=0.30", "sentry-sdk[fastapi]>=2.0", "sqlalchem
 
 [tool.poetry]
 name = "action-platform"
-version = "0.10.1"
+version = "0.10.2"
 description = "Your platform team, as a CLI."
 authors = ["Fernando Celmer <email@fernandocelmer.com>"]
 readme = "README.md"

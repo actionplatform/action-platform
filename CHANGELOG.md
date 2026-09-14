@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.10.2 — 2026-09-14
+
+### Docs
+- **web:** import
+
+### Tests
+- **api:** github import preview, permissions and job
+
 ## v0.10.1 — 2026-09-14
 
 ### Features
