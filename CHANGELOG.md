@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.8.0 — 2026-09-14
+
+### Features
+- **core:** the catalog is index.json — Matrix.from_json/from_dict with types, stacks, frameworks and icons; templates ref defaults to main
+
+### Docs
+- index.json, raw catalog and the templates ref
+
+### Tests
+- index.json fixtures; catalog from the published index and its fallback
+
 ## v0.7.1 — 2026-09-14
 
 ### Features
