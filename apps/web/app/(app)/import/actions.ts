@@ -9,7 +9,7 @@ import { v1 } from "@/lib/v1";
 export type GithubOrganization = Schemas["GithubOrganization"];
 export type GithubOrganizations = Schemas["GithubOrganizations"];
 export type GithubPreview = Schemas["GithubPreview"];
-export type ImportSummary = { projects: string[]; teams: string[]; members: string[]; invitations: string[]; skipped: string[] };
+export type ImportSummary = { projects: string[]; apps: string[]; teams: string[]; members: string[]; invitations: string[]; skipped: string[] };
 
 export async function loadGithubOrganizations(host: string): Promise<Result<GithubOrganizations>> {
   await requireOrg();

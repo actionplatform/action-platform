@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Check, FolderGit2, Lock, RefreshCw, Users, UserRound } from "lucide-react";
+import { Archive, Check, FolderGit2, KanbanSquare, Lock, RefreshCw, Users, UserRound } from "lucide-react";
 import Link from "next/link";
 import { call } from "@/lib/call";
 import { useEffect, useMemo, useState, useTransition } from "react";
@@ -13,6 +13,7 @@ import { type GithubOrganizations, type GithubPreview, type ImportSummary, impor
 
 type Host = { id: string; kind: string; name: string; login: string | null };
 type RoleOption = { id: string; label: string };
+type ProjectOption = { id: string; name: string };
 
 const PEOPLE_STATUS: Record<string, { label: string; hint: string; selectable: boolean }> = {
   member: { label: "Member", hint: "already in this organization", selectable: false },
@@ -39,12 +40,13 @@ function useSelection(all: string[]) {
   return { picked, toggle, toggleAll, allPicked, reset: () => setPicked(new Set()) };
 }
 
-export function ImportWizard({ hosts, roles, canManage }: { hosts: Host[]; roles: RoleOption[]; canManage: boolean }) {
+export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Host[]; roles: RoleOption[]; projects: ProjectOption[]; canManage: boolean }) {
   const github = hosts.filter((h) => h.kind === "github");
   const [hostId, setHostId] = useState(github[0]?.id ?? "");
   const [orgs, setOrgs] = useState<GithubOrganizations | null>(null);
   const [login, setLogin] = useState("");
   const [preview, setPreview] = useState<GithubPreview | null>(null);
+  const [projectId, setProjectId] = useState("");
   const [role, setRole] = useState(roles.find((r) => r.id === "developer")?.id ?? roles[0]?.id ?? "developer");
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<{ id: string; status: string; result: ImportSummary | null; error: string | null } | null>(null);
@@ -53,9 +55,11 @@ export function ImportWizard({ hosts, roles, canManage }: { hosts: Host[]; roles
   const [submitting, startSubmit] = useTransition();
 
   const repoKeys = useMemo(() => (preview?.repositories ?? []).filter((r) => !r.imported_as).map((r) => r.full_name), [preview]);
+  const projectKeys = useMemo(() => (preview?.projects ?? []).map((p) => String(p.number)), [preview]);
   const teamKeys = useMemo(() => (preview?.teams ?? []).map((t) => t.slug), [preview]);
   const peopleKeys = useMemo(() => (preview?.people ?? []).filter((p) => PEOPLE_STATUS[p.status]?.selectable).map((p) => p.login), [preview]);
   const repos = useSelection(repoKeys);
+  const ghProjects = useSelection(projectKeys);
   const teams = useSelection(teamKeys);
   const people = useSelection(peopleKeys);
 
@@ -70,7 +74,7 @@ export function ImportWizard({ hosts, roles, canManage }: { hosts: Host[]; roles
 
   useEffect(() => {
     if (!login) { setPreview(null); return; }
-    setPreview(null); setError(null); repos.reset(); teams.reset(); people.reset();
+    setPreview(null); setError(null); repos.reset(); ghProjects.reset(); teams.reset(); people.reset();
     startPreview(async () => {
       const r = await loadGithubOrganization(hostId, login);
       if (r.ok) setPreview(r.data); else setError(r.error);
@@ -102,11 +106,12 @@ export function ImportWizard({ hosts, roles, canManage }: { hosts: Host[]; roles
     );
   }
 
-  const total = repos.picked.size + teams.picked.size + people.picked.size;
+  const linked = useMemo(() => new Set((preview?.projects ?? []).filter((p) => ghProjects.picked.has(String(p.number))).flatMap((p) => p.repositories)), [preview, ghProjects.picked]);
+  const total = repos.picked.size + ghProjects.picked.size + teams.picked.size + people.picked.size;
 
   const submit = () => startSubmit(async () => {
     setError(null);
-    const r = await call(() => startGithubImport({ host_id: hostId, organization: login, repositories: [...repos.picked], teams: [...teams.picked], people: [...people.picked], role }), (error) => ({ ok: false as const, error }), "The import may have started anyway: check Projects before trying again.");
+    const r = await call(() => startGithubImport({ host_id: hostId, organization: login, repositories: [...repos.picked].filter((r) => !linked.has(r)), projects: [...ghProjects.picked].map(Number), teams: [...teams.picked], people: [...people.picked], role, project_id: projectId || null }), (error) => ({ ok: false as const, error }), "The import may have started anyway: check Projects before trying again.");
     if (r.ok) setJob({ id: r.data.job, status: "queued", result: null, error: null }); else setError(r.error);
   });
 
@@ -120,7 +125,7 @@ export function ImportWizard({ hosts, roles, canManage }: { hosts: Host[]; roles
           {job.error && <div className="rounded-md border border-foreground px-3 py-2">{job.error}</div>}
           {job.result && (
             <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              {([["Projects", job.result.projects], ["Teams", job.result.teams], ["Members", job.result.members], ["Invitations", job.result.invitations]] as const).map(([label, rows]) => (
+              {([["Projects", job.result.projects], ["Apps", job.result.apps], ["Teams", job.result.teams], ["Members", job.result.members], ["Invitations", job.result.invitations]] as const).filter(([label, rows]) => rows.length > 0 || label !== "Apps").map(([label, rows]) => (
                 <div key={label} className="rounded-md border border-border px-3 py-2">
                   <dt className="text-xs text-secondary">{label}</dt>
                   <dd className="text-lg font-semibold">{rows.length}</dd>
@@ -178,15 +183,41 @@ export function ImportWizard({ hosts, roles, canManage }: { hosts: Host[]; roles
               {preview.problems.map((p) => <p key={p}>{p}</p>)}
             </div>
           )}
+          {preview.projects.length > 0 && (
+            <Panel>
+              <PanelHeader
+                title={`GitHub Projects · ${preview.projects.length}`}
+                aside={<button type="button" className="text-xs text-secondary hover:text-foreground" onClick={ghProjects.toggleAll}>{ghProjects.allPicked ? "Clear" : "Select all"}</button>}
+              />
+              <ul className="divide-y divide-border">
+                {preview.projects.map((p) => (
+                  <Row key={p.number} id={`gh-project-${p.number}`} checked={ghProjects.picked.has(String(p.number))} onToggle={() => ghProjects.toggle(String(p.number))}>
+                    <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                      <KanbanSquare className="size-4 text-secondary" strokeWidth={1.75} aria-hidden="true" />{p.title}
+                      {p.closed && <Badge>closed</Badge>}
+                      {p.exists && <Badge tone="ok">exists · apps are added to it</Badge>}
+                    </div>
+                    <div className="text-[13px] text-secondary">{p.repositories.length === 0 ? "No repositories linked" : `${p.repositories.length} linked ${p.repositories.length === 1 ? "repository becomes its app" : "repositories become its apps"}: ${p.repositories.map((r) => r.split("/")[1]).join(", ")}`}{p.description ? ` · ${p.description}` : ""}</div>
+                  </Row>
+                ))}
+              </ul>
+            </Panel>
+          )}
+
           <Panel>
             <PanelHeader
               title={`Repositories · ${preview.repositories.length}`}
-              aside={repoKeys.length > 0 && <button type="button" className="text-xs text-secondary hover:text-foreground" onClick={repos.toggleAll}>{repos.allPicked ? "Clear" : "Select all"}</button>}
+              aside={
+                <div className="flex items-center gap-3">
+                  <Select size="sm" value={projectId} onChange={setProjectId} aria-label="Project the apps go into" options={[{ value: "", label: "One project per repository" }, ...projects.map((p) => ({ value: p.id, label: `Into ${p.name}` }))]} />
+                  {repoKeys.length > 0 && <button type="button" className="text-xs text-secondary hover:text-foreground" onClick={repos.toggleAll}>{repos.allPicked ? "Clear" : "Select all"}</button>}
+                </div>
+              }
             />
             <ul className="divide-y divide-border">
               {preview.repositories.length === 0 && <li className="px-4 py-6 text-center text-sm text-secondary">No repositories.</li>}
               {preview.repositories.map((r) => (
-                <Row key={r.full_name} id={`repo-${r.full_name}`} checked={repos.picked.has(r.full_name)} disabled={!!r.imported_as} onToggle={() => repos.toggle(r.full_name)}>
+                <Row key={r.full_name} id={`repo-${r.full_name}`} checked={repos.picked.has(r.full_name) || (linked.has(r.full_name) && !r.imported_as)} disabled={!!r.imported_as || linked.has(r.full_name)} onToggle={() => repos.toggle(r.full_name)}>
                   <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
                     <FolderGit2 className="size-4 text-secondary" strokeWidth={1.75} aria-hidden="true" />{r.name}
                     {r.private && <Lock className="size-3.5 text-secondary" strokeWidth={1.75} aria-label="private" />}
@@ -194,6 +225,7 @@ export function ImportWizard({ hosts, roles, canManage }: { hosts: Host[]; roles
                     {r.fork && <Badge>fork</Badge>}
                     {r.language && <Badge>{r.language}</Badge>}
                     {r.imported_as && <Badge tone="ok"><Check className="mr-1 size-3" strokeWidth={1.75} aria-hidden="true" />imported as {r.imported_as}</Badge>}
+                    {!r.imported_as && linked.has(r.full_name) && <Badge tone="ok">via GitHub Project</Badge>}
                   </div>
                   {r.description && <div className="text-[13px] text-secondary">{r.description}</div>}
                 </Row>
@@ -248,7 +280,7 @@ export function ImportWizard({ hosts, roles, canManage }: { hosts: Host[]; roles
           </Panel>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-secondary">{total === 0 ? "Pick repositories, teams or people." : `${repos.picked.size} repositories, ${teams.picked.size} teams, ${people.picked.size} people.`} Members of a team join it only once they are members of the organization.</p>
+            <p className="text-sm text-secondary">{total === 0 ? "Pick projects, repositories, teams or people." : `${ghProjects.picked.size} projects, ${repos.picked.size + [...linked].filter((r) => !repos.picked.has(r)).length} repositories, ${teams.picked.size} teams, ${people.picked.size} people.`} Members of a team join it only once they are members of the organization.</p>
             <Button disabled={total === 0 || submitting} onClick={submit}>{submitting ? "Starting…" : "Import"}</Button>
           </div>
         </>

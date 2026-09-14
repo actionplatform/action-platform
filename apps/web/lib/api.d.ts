@@ -1719,9 +1719,19 @@ export interface components {
         GithubPreview: {
             organization: string;
             repositories: components["schemas"]["GithubRepository"][];
+            projects: components["schemas"]["GithubProject"][];
             teams: components["schemas"]["GithubTeam"][];
             people: components["schemas"]["GithubPerson"][];
             problems: string[];
+        };
+        GithubProject: {
+            number: number;
+            title: string;
+            description?: string | null;
+            closed: boolean;
+            url?: string | null;
+            repositories: string[];
+            exists: boolean;
         };
         GithubRepository: {
             full_name: string;
@@ -1794,9 +1804,11 @@ export interface components {
             host_id: string;
             organization: string;
             repositories: string[];
+            projects: number[];
             teams: string[];
             people: string[];
             role: string;
+            project_id?: string | null;
         };
         Imports: {
             releases: components["schemas"]["ReleaseRow"][];
