@@ -99,7 +99,7 @@ async function bitbucket(token: string, username: string | null): Promise<HostAc
   if (!me.body) return { ok: false, error: `token rejected by Bitbucket (${me.status}); reconnect the host` };
 
   const spaces = await get<{ values: { workspace: { slug: string }; permission: string }[] }>("https://api.bitbucket.org/2.0/user/permissions/workspaces?pagelen=100", { authorization: auth });
-  const installations: Owner[] = (spaces.body?.values ?? []).map((w) => ({
+  let installations: Owner[] = (spaces.body?.values ?? []).map((w) => ({
     account: w.workspace.slug,
     kind: "org" as const,
     repositories: "all" as const,
@@ -108,5 +108,13 @@ async function bitbucket(token: string, username: string | null): Promise<HostAc
     canCreateRepos: w.permission === "owner" || w.permission === "collaborator",
   }));
 
-  return { ok: true, kind: "bitbucket", login: me.body.username, installations, installUrl: null, problems: installations.length ? [] : ["No workspace grants this account permission to create repositories."] };
+  if (installations.length === 0) {
+    const member = await get<{ values: { slug: string }[] }>("https://api.bitbucket.org/2.0/workspaces?role=member&pagelen=100", { authorization: auth });
+    installations = (member.body?.values ?? []).map((w) => ({ account: w.slug, kind: "org" as const, repositories: "all" as const, administration: "write", contents: "write", canCreateRepos: true }));
+  }
+
+  const problems: string[] = [];
+  if (installations.length === 0) problems.push(`Bitbucket lists no workspace for this account (permissions endpoint answered ${spaces.status}). The OAuth consumer needs Workspace membership: Read and Account: Read; repositories are created inside a workspace, never under the account name.`);
+
+  return { ok: true, kind: "bitbucket", login: me.body.username, installations, installUrl: null, problems };
 }

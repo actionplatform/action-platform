@@ -146,8 +146,8 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
         })}
       </div>
 
-      {setup && <OAuthAppDialog provider={setup} origin={origin} onClose={() => setSetup(null)} onSaved={() => { setDone({ ...done, [setup]: true }); setSetup(null); router.refresh(); }} />}
-      {createGh && <CreateGitHubAppDialog orgId={orgId} returnTo={returnTo} onClose={() => setCreateGh(false)} />}
+      {setup && <OAuthAppDialog provider={setup} origin={origin} onClose={() => { setSetup(null); router.refresh(); }} onSaved={() => { setDone({ ...done, [setup]: true }); setSetup(null); router.refresh(); }} />}
+      {createGh && <CreateGitHubAppDialog orgId={orgId} returnTo={returnTo} onClose={() => { setCreateGh(false); router.refresh(); }} />}
       <ConfirmDialog
         open={confirmRemove !== null}
         onClose={() => setConfirmRemove(null)}

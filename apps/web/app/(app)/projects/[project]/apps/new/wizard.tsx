@@ -34,7 +34,7 @@ type Config = {
 
 function ownerOf(host: HostOption | null): string | null {
   if (!host) return null;
-  if (host.owners.length === 0) return host.defaultOwner;
+  if (host.owners.length === 0) return host.kind === "bitbucket" ? null : host.defaultOwner;
   return host.owners.some((o) => o.account === host.defaultOwner) ? host.defaultOwner : host.owners[0].account;
 }
 
@@ -47,7 +47,7 @@ const CONTINUE = ["Continue to stack", "Continue to template", "Continue to conf
 
 type ProjectOption = { id: string; name: string };
 type OwnerOption = { account: string; ok: boolean; why: string | null };
-type HostOption = { id: string; name: string; kind: string; defaultOwner: string | null; owners: readonly OwnerOption[]; installUrl: string | null };
+type HostOption = { id: string; name: string; kind: string; defaultOwner: string | null; owners: readonly OwnerOption[]; installUrl: string | null; problem: string | null };
 
 export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix: Matrix; preset: Preset; projectId: string | null; projects: ProjectOption[]; hosts: HostOption[] }) {
   const router = useRouter();
@@ -117,7 +117,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
     step === 0 ? !!type
     : step === 1 ? (!hasStack || !!stack)
     : step === 2 ? !!template
-    : step === 3 ? config.name.trim().length > 0 && config.directory.length > 0 && !!project
+    : step === 3 ? config.name.trim().length > 0 && config.directory.length > 0 && !!project && (!config.push || !host || host.kind !== "bitbucket" || !!(config.githubOwner || ownerOf(host)))
     : true;
 
   const next = () => {
@@ -259,7 +259,10 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                       {host.installUrl && <a href={host.installUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-secondary hover:text-foreground">Another organization? Install the GitHub App on it <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
                     </div>
                   ) : (
-                    <Input className="font-mono" value={config.githubOwner} onChange={(e) => setConfig({ ...config, githubOwner: e.target.value })} placeholder={host?.defaultOwner ?? "my-org"} />
+                    <div className="space-y-1.5">
+                      <Input className="font-mono" value={config.githubOwner} onChange={(e) => setConfig({ ...config, githubOwner: e.target.value })} placeholder={host?.kind === "bitbucket" ? "workspace-slug" : (host?.defaultOwner ?? "my-org")} />
+                      {host?.problem && <p className="text-xs text-secondary">{host.problem}</p>}
+                    </div>
                   )}
                 </Field>
               </div>
