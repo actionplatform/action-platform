@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.2 — 2026-09-13
+
+### Bug Fixes
+- **web:** settings never crash on a host access error
+
 ## v0.7.1 — 2026-09-13
 
 ### Bug Fixes
