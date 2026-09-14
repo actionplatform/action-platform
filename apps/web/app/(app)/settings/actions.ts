@@ -2,31 +2,28 @@
 
 import { failed, type Result } from "@/lib/result";
 import { revalidatePath } from "next/cache";
-import { addMemberAccount, cancelInvitation, createInvitation, removeMember, requireManager, type Role, ROLES, setMemberRole } from "@/lib/orgs";
+import { sessionCookie } from "@/lib/auth";
+import { authApi } from "@/lib/auth-api";
+import { type Role, ROLES } from "@/lib/orgs";
 import { requireOrg } from "@/lib/session";
-import { setGitAuthor } from "@/lib/org-settings";
-import { addHost, HOST_KINDS, type HostKind, removeHost, setHostOwner, updateHostToken } from "@/lib/source-hosts";
+import { HOST_KINDS, type HostKind } from "@/lib/source-hosts";
+import { v1 } from "@/lib/v1";
 
 export async function createHost(_prev: { error?: string } | null, formData: FormData): Promise<{ error?: string } | null> {
-  const { session, org } = await requireOrg();
-  try {
-    await requireManager(session.user.id, org.id);
-  } catch (e) {
-    return { error: (e as Error).message };
-  }
+  await requireOrg();
   const kind = String(formData.get("kind") ?? "") as HostKind;
   if (!HOST_KINDS.some((k) => k.id === kind)) return { error: "unknown host kind" };
   const token = String(formData.get("token") ?? "").trim();
   if (!token) return { error: "token is required" };
 
   try {
-    await addHost(org.id, {
+    await v1.addHost({
       kind,
-      name: String(formData.get("name") ?? "").trim() || HOST_KINDS.find((k) => k.id === kind)!.label,
-      baseUrl: String(formData.get("baseUrl") ?? "").trim(),
+      name: String(formData.get("name") ?? "").trim(),
+      base_url: String(formData.get("baseUrl") ?? "").trim(),
       username: String(formData.get("username") ?? "").trim(),
       token,
-      defaultOwner: String(formData.get("defaultOwner") ?? "").trim(),
+      default_owner: String(formData.get("defaultOwner") ?? "").trim(),
     });
   } catch (e) {
     return { error: (e as Error).message };
@@ -37,33 +34,28 @@ export async function createHost(_prev: { error?: string } | null, formData: For
 }
 
 export async function deleteHost(id: string) {
-  const { session, org } = await requireOrg();
-  await requireManager(session.user.id, org.id);
-  await removeHost(org.id, id);
+  await requireOrg();
+  await v1.removeHost(id);
   revalidatePath("/settings");
 }
 
 export async function rotateHostToken(id: string, token: string): Promise<{ error?: string } | null> {
-  const { session, org } = await requireOrg();
+  await requireOrg();
+  if (!token.trim()) return { error: "token is required" };
   try {
-    await requireManager(session.user.id, org.id);
+    await v1.rotateHostToken(id, token.trim());
   } catch (e) {
     return { error: (e as Error).message };
   }
-  if (!token.trim()) return { error: "token is required" };
-  await updateHostToken(org.id, id, token.trim());
   revalidatePath("/settings");
   return null;
 }
 
-
 export async function inviteMember(email: string, role: Role): Promise<Result<{ id: string }>> {
-  const { session, org } = await requireOrg();
+  await requireOrg();
   try {
-    await requireManager(session.user.id, org.id);
     if (!ROLES.includes(role)) throw new Error("unknown role");
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) throw new Error("enter a valid email");
-    const invitation = await createInvitation(org.id, session.user.id, email, role);
+    const invitation = await v1.invite(email, role);
     revalidatePath("/settings");
     return { ok: true, data: { id: invitation.id } };
   } catch (e) {
@@ -72,10 +64,9 @@ export async function inviteMember(email: string, role: Role): Promise<Result<{ 
 }
 
 export async function revokeInvitation(id: string): Promise<Result> {
-  const { session, org } = await requireOrg();
+  await requireOrg();
   try {
-    await requireManager(session.user.id, org.id);
-    await cancelInvitation(org.id, id);
+    await v1.cancelInvitation(id);
     revalidatePath("/settings");
     return { ok: true, data: null };
   } catch (e) {
@@ -83,12 +74,11 @@ export async function revokeInvitation(id: string): Promise<Result> {
   }
 }
 
-export async function changeRole(memberId: string, role: Role): Promise<Result> {
-  const { session, org } = await requireOrg();
+export async function changeRole(userId: string, role: Role): Promise<Result> {
+  await requireOrg();
   try {
-    await requireManager(session.user.id, org.id);
     if (!ROLES.includes(role)) throw new Error("unknown role");
-    await setMemberRole(org.id, memberId, role);
+    await v1.setMemberRole(userId, role);
     revalidatePath("/settings");
     return { ok: true, data: null };
   } catch (e) {
@@ -96,11 +86,10 @@ export async function changeRole(memberId: string, role: Role): Promise<Result> 
   }
 }
 
-export async function kickMember(memberId: string): Promise<Result> {
-  const { session, org } = await requireOrg();
+export async function kickMember(userId: string): Promise<Result> {
+  await requireOrg();
   try {
-    await requireManager(session.user.id, org.id);
-    await removeMember(org.id, memberId);
+    await v1.removeMember(userId);
     revalidatePath("/settings");
     revalidatePath("/teams");
     return { ok: true, data: null };
@@ -110,24 +99,24 @@ export async function kickMember(memberId: string): Promise<Result> {
 }
 
 export async function addMember(input: { name: string; email: string; password: string; role: Role }): Promise<Result<{ existed: boolean }>> {
-  const { session, org } = await requireOrg();
+  const { org } = await requireOrg();
   try {
-    await requireManager(session.user.id, org.id);
     if (!ROLES.includes(input.role)) throw new Error("unknown role");
-    const r = await addMemberAccount(org.id, input);
+    const cookie = await sessionCookie();
+    if (!cookie) throw new Error("sign in first");
+    const added = await authApi.addMember({ cookie }, { organization_id: org.id, name: input.name, email: input.email, password: input.password, role: input.role });
     revalidatePath("/settings");
     revalidatePath("/teams");
-    return { ok: true, data: { existed: r.existed } };
+    return { ok: true, data: { existed: added.existed } };
   } catch (e) {
     return failed(e);
   }
 }
 
 export async function changeHostOwner(id: string, owner: string): Promise<Result> {
-  const { session, org } = await requireOrg();
+  await requireOrg();
   try {
-    await requireManager(session.user.id, org.id);
-    await setHostOwner(org.id, id, owner);
+    await v1.setHostOwner(id, owner);
     revalidatePath("/settings");
     return { ok: true, data: null };
   } catch (e) {
@@ -136,10 +125,9 @@ export async function changeHostOwner(id: string, owner: string): Promise<Result
 }
 
 export async function saveGitAuthor(author: { name: string; email: string }): Promise<Result<{ name: string; email: string }>> {
-  const { session, org } = await requireOrg();
+  await requireOrg();
   try {
-    await requireManager(session.user.id, org.id);
-    const data = await setGitAuthor(org.id, author);
+    const data = await v1.setGitAuthor(author.name, author.email);
     revalidatePath("/settings");
     return { ok: true, data };
   } catch (e) {

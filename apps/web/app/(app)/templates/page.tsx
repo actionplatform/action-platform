@@ -1,10 +1,10 @@
 import { PageHeader } from "@/components/layout/page";
 import { api, type Matrix } from "@/lib/api";
 import { appsOf, projectsOf } from "@/lib/projects";
-import { roleOf } from "@/lib/orgs";
+
 import { grantsOf } from "@/lib/permissions";
 import { requireOrg } from "@/lib/session";
-import { sourceSpecsOf, templateSourcesOf } from "@/lib/template-sources";
+import { templateSourcesOf } from "@/lib/template-sources";
 import { type SourceRow, TemplateSources } from "./template-sources";
 import { TemplatesCatalog } from "./templates-catalog";
 import { TemplatesErrorState } from "./templates-empty-state";
@@ -13,12 +13,12 @@ export const dynamic = "force-dynamic";
 
 export default async function TemplatesPage() {
   const { session, org } = await requireOrg();
-  const grants = grantsOf(await roleOf(session.user.id, org.id));
+  const grants = grantsOf(session.role);
 
-  const [rows, specs] = await Promise.all([templateSourcesOf(org.id), sourceSpecsOf(org.id)]);
+  const rows = await templateSourcesOf(org.id);
   let matrix: Matrix | null = null;
   try {
-    matrix = await api.matrix(specs);
+    matrix = await api.matrix();
   } catch {}
 
   if (!matrix) {

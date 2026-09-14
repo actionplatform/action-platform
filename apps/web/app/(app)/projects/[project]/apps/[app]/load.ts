@@ -3,7 +3,7 @@ import { cache } from "react";
 import { api, ApiError, type Release } from "@/lib/api";
 import { releasesOf, type StoredRelease } from "@/lib/releases";
 import { appById, projectById } from "@/lib/projects";
-import { roleOf } from "@/lib/orgs";
+
 import { grantsOf } from "@/lib/permissions";
 import { requireOrg } from "@/lib/session";
 import { hostsOf } from "@/lib/source-hosts";
@@ -31,11 +31,11 @@ export const loadApp = cache(async (projectId: string, appId: string): Promise<L
       api.apps.tags(app.registryId),
       hostsOf(org.id),
       api.apps.releases(app.registryId),
-      releasesOf(app.id),
+      releasesOf(projectId, app.id),
       api.apps.manifest(app.registryId),
     ]);
     const changes = detail.clean ? [] : (await api.apps.changes(app.registryId).catch(() => ({ files: [] as string[] }))).files;
-    const view = toView({ projectId, projectName: project.name, appId: app.id, appName: app.name, detail, health, commits, branches, tags, lastSyncedAt: app.lastSyncedAt, manifest: manifest.content, changes, grants: grantsOf(await roleOf(session.user.id, org.id)) });
+    const view = toView({ projectId, projectName: project.name, appId: app.id, appName: app.name, detail, health, commits, branches, tags, lastSyncedAt: app.lastSyncedAt, manifest: manifest.content, changes, grants: grantsOf(session.role) });
     return { ok: true, view, hosts: hosts.map((h) => ({ id: h.id, name: h.name, kind: h.kind, defaultOwner: h.defaultOwner })), currentHost: app.sourceHostId, releases, stored };
   } catch (e) {
     if (e instanceof ApiError && e.status === 410) notFound();

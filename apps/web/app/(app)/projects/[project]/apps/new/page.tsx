@@ -7,8 +7,6 @@ import { projectById, projectsOf } from "@/lib/projects";
 import { requireOrg } from "@/lib/session";
 import { hostsOf } from "@/lib/source-hosts";
 import { hostAccess } from "@/lib/host-access";
-import { appFor } from "@/lib/oauth";
-import { sourceSpecsOf } from "@/lib/template-sources";
 import { Wizard } from "./wizard";
 
 type Search = { type?: string; stack?: string; template?: string; source?: string };
@@ -22,12 +20,11 @@ export default async function NewAppPage({ params, searchParams }: { params: Pro
   const project = fixed ? await projectById(org.id, projectId) : null;
   if (fixed && !project) notFound();
   const [projects, hosts] = await Promise.all([projectsOf(org.id), hostsOf(org.id)]);
-  const slug = appFor("github")?.slug ?? null;
   const owners: Record<string, { accounts: { account: string; ok: boolean; why: string | null }[]; installUrl: string | null; problem: string | null }> = Object.fromEntries(
     await Promise.all(
       hosts.map(async (h) => {
         if (h.kind === "generic") return [h.id, { accounts: [] as { account: string; ok: boolean; why: string | null }[], installUrl: null as string | null, problem: null as string | null }] as const;
-        const access = await hostAccess(org.id, h.id, slug);
+        const access = await hostAccess(org.id, h.id);
         if (!access.ok) return [h.id, { accounts: [], installUrl: null, problem: access.error }] as const;
         const seen = new Set<string>();
         const accounts = access.installations
@@ -40,7 +37,7 @@ export default async function NewAppPage({ params, searchParams }: { params: Pro
 
   let matrix: Matrix;
   try {
-    matrix = await api.matrix(await sourceSpecsOf(org.id));
+    matrix = await api.matrix();
   } catch (e) {
     return <ApiOffline error={e} />;
   }

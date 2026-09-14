@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/layout/page";
-import { roleOf } from "@/lib/orgs";
+
 import { can } from "@/lib/permissions";
 import { requireOrg } from "@/lib/session";
 import { teamsOf } from "@/lib/teams";
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TeamsPage() {
   const { session, org } = await requireOrg();
-  const [teams, role] = await Promise.all([teamsOf(org.id), roleOf(session.user.id, org.id)]);
+  const [teams, role] = await Promise.all([teamsOf(org.id), Promise.resolve(session.role)]);
   const canManage = can(role, "org.manage");
 
   return (

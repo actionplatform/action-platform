@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/layout/page";
 import { projectsOf } from "@/lib/projects";
-import { roleOf } from "@/lib/orgs";
+
 import { can } from "@/lib/permissions";
 import { requireOrg } from "@/lib/session";
 import { teamsOf } from "@/lib/teams";
@@ -9,14 +9,14 @@ import { ProjectsView } from "./projects-view";
 
 export default async function ProjectsPage() {
   const { session, org } = await requireOrg();
-  const [projects, teams, role] = await Promise.all([projectsOf(org.id), teamsOf(org.id), roleOf(session.user.id, org.id)]);
+  const [projects, teams, role] = await Promise.all([projectsOf(org.id), teamsOf(org.id), Promise.resolve(session.role)]);
   const manage = can(role, "project.manage");
 
   return (
     <>
       <PageHeader title="Projects" description="Manage your projects and the apps that ship together." actions={manage ? <NewProjectForm /> : undefined} />
       <ProjectsView
-        projects={projects.map((p) => ({ id: p.id, name: p.name, slug: p.slug, description: p.description, apps: p.apps, teamId: p.teamId, teamName: p.teamName, updatedAt: p.createdAt.toISOString() }))}
+        projects={projects.map((p) => ({ id: p.id, name: p.name, slug: p.slug, description: p.description, apps: p.apps, teamId: p.teamId, teamName: p.teamName, updatedAt: p.name }))}
         teams={teams.map((t) => ({ id: t.id, name: t.name }))}
         canManage={manage}
       />

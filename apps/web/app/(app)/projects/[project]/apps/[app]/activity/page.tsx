@@ -10,7 +10,7 @@ export default async function ActivityPage({ params, searchParams }: { params: P
   const loaded = await loadApp(project, app);
   if (!loaded.ok) return null;
   const { view, currentHost } = loaded;
-  const pulls = await pullRequestsOf(view.appId);
+  const pulls = await pullRequestsOf(view.projectId, view.appId);
   const highlighted = opened ? pulls.find((p) => String(p.number) === opened) : null;
   return (
     <div className="space-y-4">

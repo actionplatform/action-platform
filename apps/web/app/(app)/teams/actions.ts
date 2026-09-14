@@ -2,16 +2,8 @@
 
 import { failed, type Result } from "@/lib/result";
 import { revalidatePath } from "next/cache";
-import { requireManager } from "@/lib/orgs";
 import { requireOrg } from "@/lib/session";
-import { addTeamMember, assignProjectTeam, createTeam, deleteTeam, removeTeamMember, updateTeam } from "@/lib/teams";
-
-
-async function manager() {
-  const { session, org } = await requireOrg();
-  await requireManager(session.user.id, org.id);
-  return org;
-}
+import { v1 } from "@/lib/v1";
 
 function refresh(teamId?: string) {
   revalidatePath("/teams");
@@ -21,8 +13,8 @@ function refresh(teamId?: string) {
 
 export async function newTeam(name: string, description: string): Promise<Result<{ id: string }>> {
   try {
-    const org = await manager();
-    const team = await createTeam(org.id, name, description);
+    await requireOrg();
+    const team = await v1.createTeam(name, description);
     refresh();
     return { ok: true, data: { id: team.id } };
   } catch (e) {
@@ -32,8 +24,8 @@ export async function newTeam(name: string, description: string): Promise<Result
 
 export async function editTeam(teamId: string, name: string, description: string): Promise<Result> {
   try {
-    const org = await manager();
-    await updateTeam(org.id, teamId, name, description);
+    await requireOrg();
+    await v1.updateTeam(teamId, name, description);
     refresh(teamId);
     return { ok: true, data: null };
   } catch (e) {
@@ -43,8 +35,8 @@ export async function editTeam(teamId: string, name: string, description: string
 
 export async function removeTeam(teamId: string): Promise<Result> {
   try {
-    const org = await manager();
-    await deleteTeam(org.id, teamId);
+    await requireOrg();
+    await v1.deleteTeam(teamId);
     refresh(teamId);
     return { ok: true, data: null };
   } catch (e) {
@@ -54,8 +46,8 @@ export async function removeTeam(teamId: string): Promise<Result> {
 
 export async function addMemberToTeam(teamId: string, userId: string): Promise<Result> {
   try {
-    const org = await manager();
-    await addTeamMember(org.id, teamId, userId);
+    await requireOrg();
+    await v1.addTeamMember(teamId, userId);
     refresh(teamId);
     return { ok: true, data: null };
   } catch (e) {
@@ -63,10 +55,10 @@ export async function addMemberToTeam(teamId: string, userId: string): Promise<R
   }
 }
 
-export async function removeMemberFromTeam(teamId: string, id: string): Promise<Result> {
+export async function removeMemberFromTeam(teamId: string, userId: string): Promise<Result> {
   try {
-    const org = await manager();
-    await removeTeamMember(org.id, teamId, id);
+    await requireOrg();
+    await v1.removeTeamMember(teamId, userId);
     refresh(teamId);
     return { ok: true, data: null };
   } catch (e) {
@@ -76,8 +68,8 @@ export async function removeMemberFromTeam(teamId: string, id: string): Promise<
 
 export async function setProjectTeam(teamId: string, projectId: string, assign: boolean): Promise<Result> {
   try {
-    const org = await manager();
-    await assignProjectTeam(org.id, projectId, assign ? teamId : null);
+    await requireOrg();
+    await v1.assignProjectTeam(projectId, assign ? teamId : null);
     refresh(teamId);
     return { ok: true, data: null };
   } catch (e) {

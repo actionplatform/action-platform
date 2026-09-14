@@ -1,78 +1,32 @@
-import { PROVIDER_TIMEOUT_MS } from "@/lib/timeouts";
 import { redirect } from "next/navigation";
-import { exchangeCode, identity, type Provider, PROVIDERS, verifyState } from "@/lib/oauth";
+import { type Provider, PROVIDERS } from "@/lib/oauth";
 import { publicOrigin } from "@/lib/origin";
-import { activeOrg, roleOf } from "@/lib/orgs";
-import { can } from "@/lib/permissions";
 import { getSession } from "@/lib/session";
-import { connectOAuthHost } from "@/lib/source-hosts";
-
-async function installationOwner(token: string, installationId: string): Promise<string | null> {
-  try {
-    const res = await fetch("https://api.github.com/user/installations", { headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json", "user-agent": "action-platform" }, cache: "no-store", signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { installations: { id: number; account: { login: string } }[] };
-    return data.installations.find((i) => String(i.id) === installationId)?.account.login ?? null;
-  } catch {
-    return null;
-  }
-}
-
-async function firstWorkspace(token: string): Promise<string | null> {
-  try {
-    const res = await fetch("https://api.bitbucket.org/2.0/user/permissions/workspaces?pagelen=100", { headers: { authorization: `Bearer ${token}`, accept: "application/json", "user-agent": "action-platform" }, cache: "no-store", signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { values: { workspace: { slug: string }; permission: string }[] };
-    const spaces = data.values ?? [];
-    return (spaces.find((w) => w.permission === "owner") ?? spaces.find((w) => w.permission === "collaborator") ?? spaces[0])?.workspace.slug ?? null;
-  } catch {
-    return null;
-  }
-}
+import { v1 } from "@/lib/v1";
 
 export async function GET(req: Request, ctx: { params: Promise<{ provider: string }> }) {
   const { provider } = await ctx.params;
   if (!(provider in PROVIDERS)) return Response.json({ detail: "unknown provider" }, { status: 404 });
 
   const url = new URL(req.url);
-  const origin = publicOrigin(req.headers);
   const session = await getSession();
-  const state = verifyState(url.searchParams.get("state"), session?.user.id ?? null);
-  const installed = provider === "github" && url.searchParams.has("installation_id");
+  if (!session) redirect(`/login?next=${encodeURIComponent(url.pathname + url.search)}`);
 
-  let orgId = state?.orgId ?? "";
-  const returnTo = state?.returnTo ?? "/settings";
-
-  if (!state) {
-    if (!installed) return Response.json({ detail: "invalid or expired state" }, { status: 400 });
-    if (!session) redirect(`/login?next=${encodeURIComponent(url.pathname + url.search)}`);
-    const org = await activeOrg(session);
-    if (!org) redirect("/orgs/new");
-    if (!can(await roleOf(session.user.id, org.id), "org.manage")) return Response.json({ detail: "only owners and admins can connect code hosts" }, { status: 403 });
-    orgId = org.id;
-  }
-
-  const back = (query: Record<string, string>) => {
-    const target = new URL(returnTo, origin);
-    for (const [k, v] of Object.entries(query)) target.searchParams.set(k, v);
-    redirect(target.pathname + target.search);
-  };
-
-  const denied = url.searchParams.get("error");
-  if (denied) return back({ oauth_error: url.searchParams.get("error_description") || denied });
-
-  const code = url.searchParams.get("code");
-  if (!code) return back({ oauth_error: "no code from the provider" });
-
+  let finished: { return_to: string; query: Record<string, string> };
   try {
-    const tokens = await exchangeCode(provider as Provider, origin, code);
-    const who = await identity(provider as Provider, tokens.accessToken);
-    const installationId = url.searchParams.get("installation_id");
-    const owner = installationId ? await installationOwner(tokens.accessToken, installationId) : provider === "bitbucket" ? await firstWorkspace(tokens.accessToken) : null;
-    await connectOAuthHost(orgId, provider as Provider, who.login, tokens, owner);
+    finished = await v1.oauthCallback(provider as Provider, {
+      origin: publicOrigin(req.headers),
+      code: url.searchParams.get("code"),
+      state: url.searchParams.get("state"),
+      installation_id: url.searchParams.get("installation_id"),
+      error: url.searchParams.get("error"),
+      error_description: url.searchParams.get("error_description"),
+    });
   } catch (e) {
-    return back({ oauth_error: (e as Error).message });
+    return Response.json({ detail: (e as Error).message }, { status: 400 });
   }
 
-  return back({ connected: provider });
+  const target = new URL(finished.return_to, publicOrigin(req.headers));
+  for (const [k, v] of Object.entries(finished.query)) target.searchParams.set(k, v);
+  redirect(target.pathname + target.search);
 }

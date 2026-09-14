@@ -4,8 +4,8 @@ import { PageHeader } from "@/components/layout/page";
 import { Card } from "@/components/ui/card";
 import { API_BASE, api } from "@/lib/api";
 import { hostAccess } from "@/lib/host-access";
-import { appFor, isConfigured } from "@/lib/oauth";
-import { invitationsOf, membersOf, roleOf } from "@/lib/orgs";
+import { oauthApps } from "@/lib/oauth";
+import { invitationsOf, membersOf } from "@/lib/orgs";
 import { publicOrigin } from "@/lib/origin";
 import { can } from "@/lib/permissions";
 import { requireOrg } from "@/lib/session";
@@ -22,10 +22,10 @@ const DOCS_URL = "https://github.com/actionplatform/action-platform/blob/master/
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
   const { session, org } = await requireOrg();
-  const [members, invitations, role, hosts, query, author] = await Promise.all([membersOf(org.id), invitationsOf(org.id), roleOf(session.user.id, org.id), hostsOf(org.id), searchParams, gitAuthorOf(org.id)]);
+  const [members, invitations, role, hosts, query, author] = await Promise.all([membersOf(org.id), invitationsOf(org.id), Promise.resolve(session.role), hostsOf(org.id), searchParams, gitAuthorOf(org.id)]);
   const canManage = can(role, "org.manage");
-  const githubSlug = appFor("github")?.slug ?? null;
-  const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind !== "generic").map(async (h) => [h.id, await hostAccess(org.id, h.id, githubSlug)] as const)));
+  const apps = await oauthApps();
+  const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind !== "generic").map(async (h) => [h.id, await hostAccess(org.id, h.id)] as const)));
   const origin = publicOrigin(await headers());
   const connected = { github: [] as string[], gitlab: [] as string[], bitbucket: [] as string[] };
   for (const host of hosts) if (host.authKind === "oauth" && host.login && host.kind in connected) connected[host.kind as keyof typeof connected].push(host.login);
@@ -55,12 +55,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             {query.connected && <div className="text-sm text-secondary">Connected {query.connected}.</div>}
             {query.github_app && <div className="text-sm text-secondary">GitHub App <code className="font-mono">{query.github_app}</code> created. Install it, then connect.</div>}
             <ConnectHosts
-              configured={{ github: isConfigured("github"), gitlab: isConfigured("gitlab"), bitbucket: isConfigured("bitbucket") }}
+              configured={{ github: apps.github.configured, gitlab: apps.gitlab.configured, bitbucket: apps.bitbucket.configured }}
               connected={connected}
               origin={origin}
               orgId={org.id}
               returnTo="/settings"
-              githubApp={githubSlug}
+              githubApp={apps.github.slug ?? null}
               error={query.oauth_error ?? null}
             />
           </div>

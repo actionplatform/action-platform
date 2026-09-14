@@ -1,12 +1,37 @@
 import createClient from "openapi-fetch";
+import { cookies } from "next/headers";
 import { API_TIMEOUT_MS } from "./timeouts";
 import type { components, paths } from "./api.d";
 
-export const API_BASE = process.env.AP_API ?? "http://127.0.0.1:7788";
+export const API_BASE = (process.env.AP_API ?? "http://127.0.0.1:7788").replace(/\/$/, "");
 
-export const API_TOKEN = process.env.AP_API_TOKEN ?? "";
-export const apiHeaders: Record<string, string> = API_TOKEN ? { authorization: `Bearer ${API_TOKEN}` } : {};
-export const client = createClient<paths>({ baseUrl: API_BASE, cache: "no-store", headers: apiHeaders, fetch: (input) => fetch(input, { signal: AbortSignal.timeout(API_TIMEOUT_MS) }) });
+const OPEN = new Set([`${API_BASE}/api/version`]);
+const COOKIE = "better-auth.session_token";
+
+async function sessionCookieValue(): Promise<string | null> {
+  try {
+    const jar = await cookies();
+    return jar.get(`__Secure-${COOKIE}`)?.value ?? jar.get(COOKIE)?.value ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function throughGate(url: string): string {
+  if (OPEN.has(url.split("?")[0]) || url.startsWith(`${API_BASE}/api/v1/`) || url.startsWith(`${API_BASE}/api/auth/`)) return url;
+  return url.replace(`${API_BASE}/api/`, `${API_BASE}/api/v1/`);
+}
+
+export const client = createClient<paths>({
+  baseUrl: API_BASE,
+  cache: "no-store",
+  fetch: async (input) => {
+    const request = new Request(throughGate(input.url), input);
+    const cookie = await sessionCookieValue();
+    if (cookie && !request.headers.has("X-Session-Cookie") && !request.headers.has("X-Session-Token")) request.headers.set("X-Session-Cookie", cookie);
+    return fetch(request, { signal: AbortSignal.timeout(API_TIMEOUT_MS) });
+  },
+});
 
 export type Schemas = components["schemas"];
 export type AppRow = Schemas["AppRow"];
@@ -45,16 +70,14 @@ export function unwrap<T>(res: { data?: T; error?: unknown; response: Response }
 
 export const api = {
   version: async () => unwrap(await client.GET("/api/version")),
-  matrix: async (sources: SourceSpec[] = []) => (sources.length ? unwrap(await client.POST("/api/matrix", { body: { sources } })) : unwrap(await client.GET("/api/matrix"))),
+  matrix: async () => unwrap(await client.GET("/api/matrix")),
   gitflowRules: async () => unwrap(await client.GET("/api/gitflow/rules")),
   apps: {
     list: async () => unwrap(await client.GET("/api/apps")),
-    add: async (url: string, name?: string, credentials: SourceCredentials | null = null, install: { type: string; language?: string | null; ci?: string | null } | null = null) => unwrap(await client.POST("/api/apps", { body: { url, name, credentials, install } })),
-    init: async (body: InitRequest) => unwrap(await client.POST("/api/apps/init", { body })),
-    push: async (id: string, priv = false, credentials: SourceCredentials | null = null) =>
-      unwrap(await client.POST("/api/apps/{id}/push", { params: { path: { id } }, body: { private: priv, credentials } })),
-    sync: async (id: string, credentials: SourceCredentials | null = null, reset = false) =>
-      unwrap(await client.POST("/api/apps/{id}/sync", { params: { path: { id } }, body: { credentials, reset } })),
+    push: async (id: string, priv = false) =>
+      unwrap(await client.POST("/api/apps/{id}/push", { params: { path: { id } }, body: { private: priv } })),
+    sync: async (id: string, reset = false) =>
+      unwrap(await client.POST("/api/apps/{id}/sync", { params: { path: { id } }, body: { reset } })),
     remove: async (id: string) =>
       unwrap(await client.DELETE("/api/apps/{id}", { params: { path: { id } } })),
     get: async (id: string) =>
@@ -65,33 +88,33 @@ export const api = {
       unwrap(await client.GET("/api/apps/{id}/commits", { params: { path: { id }, query: { limit } } })),
     tags: async (id: string) =>
       unwrap(await client.GET("/api/apps/{id}/tags", { params: { path: { id } } })),
-    startBranch: async (id: string, body: { kind: string; code: string; slug: string | null; push: boolean; credentials: SourceCredentials | null }) =>
+    startBranch: async (id: string, body: { kind: string; code: string; slug: string | null; push: boolean }) =>
       unwrap(await client.POST("/api/apps/{id}/branches", { params: { path: { id } }, body })),
     checkout: async (id: string, branch: string) =>
       unwrap(await client.POST("/api/apps/{id}/checkout", { params: { path: { id } }, body: { branch } })),
     proposePullRequest: async (id: string, base?: string, title?: string) =>
       unwrap(await client.GET("/api/apps/{id}/pull-request", { params: { path: { id }, query: { base, title } } })),
-    openPullRequest: async (id: string, body: { base: string | null; title: string | null; body: string | null; draft: boolean; credentials: SourceCredentials | null }) =>
+    openPullRequest: async (id: string, body: { base: string | null; title: string | null; body: string | null; draft: boolean }) =>
       unwrap(await client.POST("/api/apps/{id}/pull-request", { params: { path: { id } }, body })),
     manifest: async (id: string) =>
       unwrap(await client.GET("/api/apps/{id}/manifest", { params: { path: { id } } })),
     writeManifest: async (id: string, content: string) =>
       unwrap(await client.PUT("/api/apps/{id}/manifest", { params: { path: { id } }, body: { content } })),
-    setCloud: async (id: string, target: string, source: SourceSpec | null = null) =>
-      unwrap(await client.POST("/api/apps/{id}/cloud", { params: { path: { id } }, body: { target, source } })),
-    addService: async (id: string, name: string, provider: string | null, source: SourceSpec | null = null) =>
-      unwrap(await client.POST("/api/apps/{id}/services", { params: { path: { id } }, body: { name, provider, source } })),
+    setCloud: async (id: string, target: string, source: string | null = null) =>
+      unwrap(await client.POST("/api/apps/{id}/cloud", { params: { path: { id } }, body: { target, source: source as never } })),
+    addService: async (id: string, name: string, provider: string | null, source: string | null = null) =>
+      unwrap(await client.POST("/api/apps/{id}/services", { params: { path: { id } }, body: { name, provider, source: source as never } })),
     changes: async (id: string) => unwrap(await client.GET("/api/apps/{id}/changes", { params: { path: { id } } })),
     install: async (id: string, spec: { type: string; language?: string | null; ci?: string | null } = { type: "web" }) => unwrap(await client.POST("/api/apps/{id}/install", { params: { path: { id } }, body: spec })),
     discard: async (id: string) => unwrap(await client.POST("/api/apps/{id}/discard", { params: { path: { id } } })),
-    commit: async (id: string, body: { message: string; push: boolean; branch: { kind: string; code: string; slug: string | null } | null; pull_request: boolean; credentials: SourceCredentials | null }) =>
+    commit: async (id: string, body: { message: string; push: boolean; branch: { kind: string; code: string; slug: string | null } | null; pull_request: boolean }) =>
       unwrap(await client.POST("/api/apps/{id}/commit", { params: { path: { id } }, body })),
     releases: async (id: string) =>
       unwrap(await client.GET("/api/apps/{id}/releases", { params: { path: { id } } })),
     branches: async (id: string) =>
       unwrap(await client.GET("/api/apps/{id}/branches", { params: { path: { id } } })),
-    release: async (id: string, level: string, dry_run: boolean, credentials: SourceCredentials | null = null, branch: string | null = null) =>
-      unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run, credentials, branch } })),
+    release: async (id: string, level: string, dry_run: boolean, branch: string | null = null) =>
+      unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run, branch } })),
     deploy: async (id: string, stage: string | null, dry_run: boolean) =>
       unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run } })),
     diagnose: async (id: string, stage?: string) =>
