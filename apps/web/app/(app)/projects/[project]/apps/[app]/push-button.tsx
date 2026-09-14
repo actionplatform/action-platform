@@ -7,6 +7,7 @@ import { Select } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { CheckIndicator } from "@/components/ui/check-indicator";
 import { cn } from "@/lib/utils";
+import { call } from "@/lib/call";
 import { pushApp } from "../actions";
 
 type Host = { id: string; name: string; kind: string; defaultOwner: string | null };
@@ -35,7 +36,7 @@ export function PushButton({ projectId, appId, registryId, repo, hosts, current 
               disabled={pending || !hostId}
               onClick={() => start(async () => {
                 setError(null);
-                const r = await pushApp(projectId, appId, registryId, priv, hostId);
+                const r = await call(() => pushApp(projectId, appId, registryId, priv, hostId), (error) => ({ ok: false as const, error }), "The push may have completed anyway: reload the page before trying again.");
                 if (r.ok) setOpen(false); else setError(r.error);
               })}
             >
