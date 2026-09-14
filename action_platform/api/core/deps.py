@@ -1,11 +1,10 @@
 from functools import lru_cache
-from pathlib import Path
 from typing import Iterator
 
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
-from action_platform.api.repositories.registry import Entry, Registry
+from action_platform.api.repositories.registry import DbStore, Registry
 from action_platform.api.services.apps import AppService
 from action_platform.api.services.configuration import ConfigurationService
 from action_platform.api.services.flow import FlowService
@@ -13,9 +12,18 @@ from action_platform.api.services.git_state import GitStateService
 from action_platform.api.services.lifecycle import LifecycleService
 
 
+_database = None
+
+
+def configure_registry(database) -> None:
+    global _database
+    _database = database
+    get_registry.cache_clear()
+
+
 @lru_cache
 def get_registry() -> Registry:
-    return Registry()
+    return Registry(store=DbStore(_database) if _database is not None else None)
 
 
 def get_app_service(registry: Registry = Depends(get_registry)) -> AppService:
@@ -38,16 +46,6 @@ def get_db(request: Request) -> Iterator[Session]:
 
     with database.session() as session:
         yield session
-
-
-def workspace_of(registry: Registry, id: str) -> tuple[Entry, Path]:
-    entry = registry.get(id)
-    root = Path(entry.path)
-
-    if not root.is_dir():
-        raise HTTPException(410, f"{root} no longer exists")
-
-    return entry, root
 
 
 def get_flow(registry: Registry = Depends(get_registry)) -> FlowService:

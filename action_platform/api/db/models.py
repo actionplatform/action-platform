@@ -382,6 +382,22 @@ class ApiTokenClient(Base):
     token: Mapped[ApiToken] = relationship(foreign_keys=[token_id])
 
 
+class RegistryEntry(Base):
+    __tablename__ = "registry"
+
+    id: Mapped[str] = mapped_column(KEY, primary_key=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    url: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=""
+    )
+    default_branch: Mapped[str] = mapped_column(
+        SHORT, nullable=False, default="", server_default=""
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, server_default=func.now()
+    )
+
+
 class Job(Base):
     __tablename__ = "job"
     __table_args__ = (
