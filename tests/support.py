@@ -136,20 +136,22 @@ def git_repo(
     return root
 
 
-INDEX = """
-[projects.web.python.fastapi]
-default = true
-description = "FastAPI"
-
-[cloud.docker]
-description = "Dockerfile"
-languages = ["python"]
-types = ["web"]
-
-[service.postgres]
-description = "db"
-providers = ["docker"]
-"""
+INDEX = json.dumps(
+    {
+        "projects": [
+            {"id": "web/python/fastapi", "default": True, "description": "FastAPI"}
+        ],
+        "clouds": [
+            {
+                "id": "docker",
+                "description": "Dockerfile",
+                "languages": ["python"],
+                "types": ["web"],
+            }
+        ],
+        "services": [{"id": "postgres", "description": "db", "providers": ["docker"]}],
+    }
+)
 
 COOKIECUTTER = {
     "project_name": "My Project",
@@ -181,8 +183,18 @@ def template_repo(
         'ci = "{{ cookiecutter.ci }}"\n\n'
         '[source_host]\nkind = "github"\nrepo = "{{ cookiecutter.github_owner }}/{{ cookiecutter.project_slug }}"\n'
     )
-    (root / "index.toml").write_text(
-        f'[projects.{type_}.{stack}.{template}]\ndefault = true\ndescription = "{template}"\n'
+    (root / "index.json").write_text(
+        json.dumps(
+            {
+                "projects": [
+                    {
+                        "id": f"{type_}/{stack}/{template}",
+                        "default": True,
+                        "description": template,
+                    }
+                ]
+            }
+        )
     )
 
     (slug / ".code_quality").mkdir()
@@ -220,8 +232,14 @@ def install_templates(root: Path) -> Path:
         (proj / ".github/workflows" / w).write_text("name: x\n")
 
     (proj / ".gitlab-ci.yml").write_text("image: x\n")
-    (root / "index.toml").write_text(
-        '[projects.web.python.fastapi]\ndefault = true\ndescription = "x"\n'
+    (root / "index.json").write_text(
+        json.dumps(
+            {
+                "projects": [
+                    {"id": "web/python/fastapi", "default": True, "description": "x"}
+                ]
+            }
+        )
     )
 
     return root
