@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.10.0 — 2026-09-14
+
+### Features
+- **web:** 'also delete the repository' option in the delete dialogs, one dialog for every app removal
+
 ## v0.9.2 — 2026-09-14
 
 ### Features
