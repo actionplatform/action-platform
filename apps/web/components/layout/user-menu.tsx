@@ -3,7 +3,7 @@
 import { KeyRound, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
+import { signOut } from "@/lib/auth-actions";
 
 export function UserMenu({ name, email }: { name: string; email: string }) {
   const router = useRouter();
@@ -21,7 +21,7 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
         title="Sign out"
         aria-label="Sign out"
         className="flex size-10 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground"
-        onClick={async () => { await authClient.signOut(); router.push("/login"); router.refresh(); }}
+        onClick={async () => { await signOut(); router.push("/login"); router.refresh(); }}
       >
         <LogOut className="size-[18px]" strokeWidth={1.75} />
       </button>

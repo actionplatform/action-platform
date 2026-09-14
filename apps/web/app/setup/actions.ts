@@ -2,15 +2,16 @@
 
 import { failed } from "@/lib/result";
 import { resolve } from "node:path";
-import { getSetupAuth } from "@/lib/auth";
-import { writeConfig } from "@/lib/config";
+import { sessionCookie } from "@/lib/auth";
+import { signUp } from "@/lib/auth-actions";
+import { readConfig, writeConfig } from "@/lib/config";
+import { authApi } from "@/lib/auth-api";
 import { type Engine, engineOf, ensureDb, isMissingDatabase, migrateDb, pingDb } from "@/lib/db";
-import { newId, q } from "@/lib/db/query";
 import { setupStatus } from "@/lib/setup";
 import { type HostKind } from "@/lib/source-host-kinds";
 import { addHost } from "@/lib/source-hosts";
 import { slugify } from "@/lib/utils";
-import { DEFAULT_GIT_AUTHOR, setGitAuthor } from "@/lib/org-settings";
+import { DEFAULT_GIT_AUTHOR } from "@/lib/org-settings";
 
 export type DbForm = {
   engine: Engine;
@@ -84,12 +85,20 @@ export async function createAdmin(input: { name: string; email: string; password
   if (!status.dbOk) return { ok: false, error: "database is not ready" };
   if (status.hasUser) return { ok: false, error: "an account already exists — sign in instead" };
 
+  const api = await apiReady();
+  if (!api.ok) return api;
+  const created = await signUp(input.name, input.email, input.password);
+  return created.ok ? { ok: true } : created;
+}
+
+async function apiReady(): Promise<Result> {
   try {
-    await (await getSetupAuth()).api.signUpEmail({ body: input });
-    return { ok: true };
+    if ((await authApi.status()).configured) return { ok: true };
   } catch (e) {
-    return failed(e);
+    return failed(e, "the API is unreachable");
   }
+  const { databaseUrl, authSecret } = readConfig();
+  return { ok: false, error: `the API owns accounts and needs the same database and secret: start it with AP_DATABASE_URL=${databaseUrl} AP_AUTH_SECRET=${authSecret}` };
 }
 
 export async function createFirstOrganization(input: { name: string; slug: string; gitAuthorName?: string; gitAuthorEmail?: string }): Promise<{ ok: true; orgId: string } | { ok: false; error: string }> {
@@ -102,14 +111,10 @@ export async function createFirstOrganization(input: { name: string; slug: strin
   if (!name || !slug) return { ok: false, error: "name and slug are required" };
 
   try {
-    const { db, t } = await q();
-    const [admin] = await db.select({ id: t.user.id }).from(t.user).limit(1);
-    const orgId = newId();
-    const now = new Date();
-    await db.insert(t.organization).values({ id: orgId, name, slug, createdAt: now });
-    await db.insert(t.member).values({ id: newId(), organizationId: orgId, userId: admin.id, role: "owner", createdAt: now });
-    await setGitAuthor(orgId, { name: input.gitAuthorName || DEFAULT_GIT_AUTHOR.name, email: input.gitAuthorEmail || DEFAULT_GIT_AUTHOR.email });
-    return { ok: true, orgId };
+    const cookie = await sessionCookie();
+    if (!cookie) return { ok: false, error: "sign in as the admin first" };
+    const org = await authApi.createOrganization({ cookie }, { name, slug, git_author_name: input.gitAuthorName || DEFAULT_GIT_AUTHOR.name, git_author_email: input.gitAuthorEmail || DEFAULT_GIT_AUTHOR.email });
+    return { ok: true, orgId: org.id };
   } catch (e) {
     return failed(e);
   }

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { authClient } from "@/lib/auth-client";
+import { signIn } from "@/lib/auth-actions";
 
 export function LoginForm({ next = "/projects" }: { next?: string }) {
   const router = useRouter();
@@ -20,9 +20,9 @@ export function LoginForm({ next = "/projects" }: { next?: string }) {
     const f = new FormData(e.currentTarget);
     const email = String(f.get("email"));
     const password = String(f.get("password"));
-    const res = await authClient.signIn.email({ email, password });
+    const res = await signIn(email, password);
     setBusy(false);
-    if (res.error) return setError(res.error.message ?? "failed");
+    if (!res.ok) return setError(res.error);
     router.push(next);
     router.refresh();
   }
