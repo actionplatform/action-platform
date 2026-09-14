@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.14.0 — 2026-09-14
+
+### Features
+- **web:** pick the platform project for each selected GitHub Project
+
 ## v0.13.1 — 2026-09-14
 
 ### Bug Fixes
