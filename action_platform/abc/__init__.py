@@ -6,7 +6,7 @@ from .host_directory import HostDirectory
 from .import_source import ImportSource
 from .source_host import SourceHost
 from .template_store import TemplateStoreABC
-from .vcs import Vcs
+from .working_copy import WorkingCopy
 
 __all__ = [
     "CIRunner",
@@ -15,5 +15,5 @@ __all__ = [
     "ImportSource",
     "SourceHost",
     "TemplateStoreABC",
-    "Vcs",
+    "WorkingCopy",
 ]
