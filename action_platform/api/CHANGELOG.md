@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.13.0 — 2026-09-14
+
+### Features
+- **api:** import request takes projects and a target project
+- **import:** GitHub Projects become projects with their linked repositories as apps; repositories can go into one chosen project
+
 ## v0.12.1 — 2026-09-14
 
 ### Bug Fixes
