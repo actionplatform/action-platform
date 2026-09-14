@@ -8,6 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from action_platform.api import api_version
+from action_platform.api.auth.errors import AuthError
+from action_platform.api.auth.router import router as auth_router
+from action_platform.api.auth.secrets import Secrets
 from action_platform.api.core.deps import get_registry
 from action_platform.api.db import Database
 from action_platform.api.v1 import router as v1
@@ -22,6 +25,8 @@ def build(
     cors_origins: Optional[list[str]] = None,
     token: Optional[str] = None,
     database_url: Optional[str] = None,
+    auth_secret: Optional[str] = None,
+    public_url: Optional[str] = None,
 ) -> FastAPI:
     observe("api", version=api_version())
     app = FastAPI(title="action-platform", version=api_version())
@@ -32,6 +37,11 @@ def build(
     if url:
         app.state.db = Database(url, settings.DATABASE_POOL_SIZE)
         app.state.db.migrate()
+
+    secret = settings.AUTH_SECRET if auth_secret is None else auth_secret
+    app.state.secrets = Secrets(secret) if secret else None
+    base = (settings.PUBLIC_URL if public_url is None else public_url).rstrip("/")
+    app.state.verification_uri = f"{base}/device"
     expected = settings.API_TOKEN if token is None else token
 
     if not expected and not settings.ALLOW_UNAUTHENTICATED_API:
@@ -67,11 +77,23 @@ def build(
             allow_headers=["authorization", "content-type"],
         )
 
+    @app.exception_handler(AuthError)
+    def _auth_error(_, exc: AuthError):
+        return JSONResponse(
+            status_code=exc.status,
+            content={
+                "detail": exc.detail,
+                "error": exc.code,
+                "error_description": exc.detail,
+            },
+        )
+
     @app.exception_handler(ActionPlatformError)
     def _platform_error(_, exc: ActionPlatformError):
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
     app.include_router(v1)
+    app.include_router(auth_router)
 
     return app
 

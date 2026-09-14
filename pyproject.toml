@@ -134,3 +134,6 @@ testpaths = ["tests"]
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff.lint.per-file-ignores]
+"action_platform/api/db/database.py" = ["E402"]
