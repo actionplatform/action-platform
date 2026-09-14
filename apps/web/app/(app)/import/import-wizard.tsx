@@ -47,6 +47,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
   const [login, setLogin] = useState("");
   const [preview, setPreview] = useState<GithubPreview | null>(null);
   const [projectId, setProjectId] = useState("");
+  const [projectTargets, setProjectTargets] = useState<Record<string, string>>({});
   const [role, setRole] = useState(roles.find((r) => r.id === "developer")?.id ?? roles[0]?.id ?? "developer");
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<{ id: string; status: string; result: ImportSummary | null; error: string | null } | null>(null);
@@ -111,7 +112,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
 
   const submit = () => startSubmit(async () => {
     setError(null);
-    const r = await call(() => startGithubImport({ host_id: hostId, organization: login, repositories: [...repos.picked].filter((r) => !linked.has(r)), projects: [...ghProjects.picked].map(Number), teams: [...teams.picked], people: [...people.picked], role, project_id: projectId || null }), (error) => ({ ok: false as const, error }), "The import may have started anyway: check Projects before trying again.");
+    const r = await call(() => startGithubImport({ host_id: hostId, organization: login, repositories: [...repos.picked].filter((r) => !linked.has(r)), projects: [...ghProjects.picked].map((n) => ({ number: Number(n), project_id: projectTargets[n] || null })), teams: [...teams.picked], people: [...people.picked], role, project_id: projectId || null }), (error) => ({ ok: false as const, error }), "The import may have started anyway: check Projects before trying again.");
     if (r.ok) setJob({ id: r.data.job, status: "queued", result: null, error: null }); else setError(r.error);
   });
 
@@ -195,7 +196,12 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
                     <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
                       <KanbanSquare className="size-4 text-secondary" strokeWidth={1.75} aria-hidden="true" />{p.title}
                       {p.closed && <Badge>closed</Badge>}
-                      {p.exists && <Badge tone="ok">exists · apps are added to it</Badge>}
+                      {p.exists && !projectTargets[String(p.number)] && <Badge tone="ok">exists · apps are added to it</Badge>}
+                      {ghProjects.picked.has(String(p.number)) && (
+                        <span className="ml-auto" onClick={(e) => e.preventDefault()}>
+                          <Select size="sm" value={projectTargets[String(p.number)] ?? ""} onChange={(v) => setProjectTargets((t) => ({ ...t, [String(p.number)]: v }))} aria-label={`Platform project for ${p.title}`} options={[{ value: "", label: p.exists ? `Into ${p.title}` : `New project ${p.title}` }, ...projects.map((pr) => ({ value: pr.id, label: `Into ${pr.name}` }))]} />
+                        </span>
+                      )}
                     </div>
                     <div className="text-[13px] text-secondary">{p.repositories.length === 0 ? "No repositories linked" : `${p.repositories.length} linked ${p.repositories.length === 1 ? "repository becomes its app" : "repositories become its apps"}: ${p.repositories.map((r) => r.split("/")[1]).join(", ")}`}{p.description ? ` · ${p.description}` : ""}</div>
                   </Row>

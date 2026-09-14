@@ -19,11 +19,16 @@ router = APIRouter(prefix="/api/v1/import", tags=["import"])
 JOB_KIND = "import_github"
 
 
+class ProjectPick(BaseModel):
+    number: int
+    project_id: Optional[str] = None
+
+
 class ImportRequest(BaseModel):
     host_id: str
     organization: str
     repositories: list[str] = []
-    projects: list[int] = []
+    projects: list[ProjectPick] = []
     teams: list[str] = []
     people: list[str] = []
     role: str = "developer"
