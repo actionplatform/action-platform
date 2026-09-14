@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.11 — 2026-09-13
+
+### Bug Fixes
+- **web:** settings refresh after saving an OAuth app, adding, removing or disconnecting a host
+- **web:** a Bitbucket owner that is not a workspace is replaced by one — on Settings and in the wizard
+
 ## v0.6.10 — 2026-09-13
 
 ### Features
