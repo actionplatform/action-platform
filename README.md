@@ -62,7 +62,7 @@ Thirty seconds later you have a FastAPI service with tests, lint, CI wired, a SA
 
 | Type | Stacks |
 |------|--------|
-| `web` | python (FastAPI, FastMCP), go (Gin), node (React) |
+| `web` | python (FastAPI, FastMCP), go (Gin), node (Fastify, React), java (Spring), kotlin (Spring), ruby (Sinatra) |
 | `library` | python, go, php, node, java, rust |
 | `docs` | mkdocs |
 | `plugin` | chrome |

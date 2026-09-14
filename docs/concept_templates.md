@@ -6,7 +6,7 @@ action-platform init --list
 
 | Type | Stacks | Ready with |
 |------|--------|-----------|
-| `web` | python (FastAPI, FastMCP), go (Gin), node (React) | `/ping`, versioned API, tests, lint, CI |
+| `web` | python (FastAPI, FastMCP), go (Gin), node (Fastify, React), java (Spring), kotlin (Spring), ruby (Sinatra) | `/ping`, versioned API, tests, lint, CI |
 | `library` | python, go, php, node, java, rust | packaging, version test, publish workflow |
 | `docs` | mkdocs | Material theme, strict build in CI |
 | `plugin` | chrome | Manifest V3, popup, background, tests, store zip |
