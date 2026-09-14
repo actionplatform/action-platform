@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.13.0 — 2026-09-14
+
+### Features
+- **web:** import page lists GitHub Projects and lets repositories go into one project
+
 ## v0.12.0 — 2026-09-14
 
 ### Features
