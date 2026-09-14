@@ -1827,6 +1827,8 @@ export interface components {
             clouds: components["schemas"]["MatrixCloud"][];
             services: components["schemas"]["MatrixService"][];
             sources: components["schemas"]["SourceStatus"][];
+            types: components["schemas"]["MatrixType"][];
+            stacks: components["schemas"]["MatrixStack"][];
         };
         MatrixCloud: {
             name: string;
@@ -1834,6 +1836,8 @@ export interface components {
             languages: string[];
             description: string;
             source: string;
+            icon?: string | null;
+            url?: string | null;
         };
         MatrixProject: {
             type: string;
@@ -1843,12 +1847,30 @@ export interface components {
             description: string;
             source: string;
             plain: boolean;
+            framework?: string | null;
+            language?: string | null;
+            icon?: string | null;
+            stack_icon?: string | null;
+            path?: string | null;
+            url?: string | null;
         };
         MatrixService: {
             name: string;
             providers: string[];
             description: string;
             source: string;
+            icon?: string | null;
+            url?: string | null;
+        };
+        MatrixStack: {
+            id: string;
+            label: string;
+            icon?: string | null;
+        };
+        MatrixType: {
+            id: string;
+            label: string;
+            description: string;
         };
         Me: {
             user: {
