@@ -1705,6 +1705,10 @@ export interface components {
             kind: string;
             avatar?: string | null;
         };
+        GithubOrganizations: {
+            organizations: components["schemas"]["GithubOrganization"][];
+            install_url?: string | null;
+        };
         GithubPerson: {
             login: string;
             name: string;
@@ -4842,7 +4846,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GithubOrganization"][];
+                    "application/json": components["schemas"]["GithubOrganizations"];
                 };
             };
             422: {

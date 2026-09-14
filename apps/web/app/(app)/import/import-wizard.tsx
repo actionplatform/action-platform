@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { type GithubOrganization, type GithubPreview, type ImportSummary, importJob, loadGithubOrganization, loadGithubOrganizations, startGithubImport } from "./actions";
+import { type GithubOrganizations, type GithubPreview, type ImportSummary, importJob, loadGithubOrganization, loadGithubOrganizations, startGithubImport } from "./actions";
 
 type Host = { id: string; kind: string; name: string; login: string | null };
 type RoleOption = { id: string; label: string };
@@ -42,7 +42,7 @@ function useSelection(all: string[]) {
 export function ImportWizard({ hosts, roles, canManage }: { hosts: Host[]; roles: RoleOption[]; canManage: boolean }) {
   const github = hosts.filter((h) => h.kind === "github");
   const [hostId, setHostId] = useState(github[0]?.id ?? "");
-  const [orgs, setOrgs] = useState<GithubOrganization[] | null>(null);
+  const [orgs, setOrgs] = useState<GithubOrganizations | null>(null);
   const [login, setLogin] = useState("");
   const [preview, setPreview] = useState<GithubPreview | null>(null);
   const [role, setRole] = useState(roles.find((r) => r.id === "developer")?.id ?? roles[0]?.id ?? "developer");
@@ -157,8 +157,14 @@ export function ImportWizard({ hosts, roles, canManage }: { hosts: Host[]; roles
           </label>
           <label className="block text-sm">
             <span className="mb-1 block text-xs text-secondary">Organization</span>
-            <Select value={login} onChange={setLogin} disabled={loadingOrgs || !orgs} placeholder={loadingOrgs ? "Loading…" : "Pick an organization"} options={(orgs ?? []).map((o) => ({ value: o.login, label: o.login, hint: o.kind === "user" ? "personal account" : o.name !== o.login ? o.name : undefined }))} />
+            <Select value={login} onChange={setLogin} disabled={loadingOrgs || !orgs} placeholder={loadingOrgs ? "Loading…" : "Pick an organization"} options={(orgs?.organizations ?? []).map((o) => ({ value: o.login, label: o.login, hint: o.kind === "user" ? "personal account" : o.name !== o.login ? o.name : undefined }))} />
           </label>
+          {orgs && (
+            <p className="text-[13px] text-secondary md:col-span-2">
+              Only organizations the connected host can see are listed.
+              {orgs.install_url ? <> Missing one? <a href={orgs.install_url} target="_blank" rel="noreferrer" className="underline underline-offset-4 hover:text-foreground">Install the GitHub App on it</a>, then reload.</> : <> Missing one? Reconnect the host with the <code className="font-mono">read:org</code> scope in Settings.</>}
+            </p>
+          )}
         </PanelBody>
       </Panel>
 
