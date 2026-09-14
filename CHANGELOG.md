@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.11.0 — 2026-09-14
+
+### Features
+- **api:** nothing local survives: init pushes at once, commits and branches push, checkout is a registry field, edits are drafts
+- **db:** checked-out branch per app and pending edits (draft table); workspaces under the temp dir
+
+### Bug Fixes
+- **db:** pool of 10 with 20 overflow by default, both configurable
+
+### Docs
+- **api:** sync semantics
+- stateless api and worker; no apdata volume
+- **import:** members permission
+- **db:** pool settings
+
+### Tests
+- **api:** stateless workspaces, drafts and pushes into the fixture
+- **import:** organizations answer shape
+
 ## v0.10.2 — 2026-09-14
 
 ### Docs
