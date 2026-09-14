@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.11.3 — 2026-09-14
+
+### Bug Fixes
+- **import:** ask GitHub Apps for the members permission; preview reports what GitHub refused instead of failing
+
 ## v0.11.2 — 2026-09-14
 
 ### Bug Fixes
