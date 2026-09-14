@@ -24,6 +24,9 @@ from action_platform.core.scaffold.generate import (
     push_project,
 )
 from action_platform.api.services.catalog import resolve_repo
+from action_platform.api.services.directory import kind_of_url, repo_from_url
+from action_platform.core.exception import ProviderError
+from action_platform.providers.source import build_source_host
 from action_platform.settings import settings
 
 
@@ -106,6 +109,58 @@ class AppService:
     def remove(self, id: str) -> None:
         self.registry.get(id)
         self.registry.remove(id)
+
+    def repository_of(self, id: str) -> Optional[tuple[str, str]]:
+        """(kind, owner/name) of the remote this app was pushed to or added from; None when it has none."""
+        entry, root = self.workspace(id)
+
+        if not entry.url:
+            return None
+
+        try:
+            host = read_manifest(root)["source_host"]
+        except HTTPException:
+            host = {}
+
+        repo = host.get("repo") or repo_from_url(entry.url)
+        kind = host.get("kind") or kind_of_url(entry.url)
+
+        if not repo or not kind:
+            return None
+
+        return kind, repo
+
+    def delete_repository(self, id: str, credentials: SourceCredentials) -> str:
+        """Delete the remote repository behind the app with `credentials`; returns owner/name."""
+        remote = self.repository_of(id)
+
+        if remote is None:
+            raise HTTPException(409, "this app has no remote repository")
+
+        kind, repo = remote
+
+        if credentials.kind and credentials.kind != kind:
+            raise HTTPException(
+                409,
+                f"the app lives on {kind}; the connected host is {credentials.kind}",
+            )
+
+        host = build_source_host(
+            kind,
+            repo,
+            base_url=credentials.base_url,
+            token=credentials.token,
+            username=credentials.username,
+        )
+
+        try:
+            host.delete_repository(repo)
+        except NotImplementedError as e:
+            raise HTTPException(409, str(e)) from e
+        except ProviderError as e:
+            raise HTTPException(502, str(e)) from e
+
+        return repo
 
     def detail(self, id: str) -> dict:
         entry, root = self.workspace(id)

@@ -80,6 +80,13 @@ class SourceBitbucket(SourceHost):
 
         return f"{self.web}/{repo}.git"
 
+    def delete_repository(self, repo: str) -> None:
+        try:
+            self._rest("DELETE", f"/repositories/{repo}")
+        except ProviderError as e:
+            if "→ 404" not in str(e):
+                raise
+
     def create_tag(self, ctx: Context, tag: str) -> None:
         return None
 

@@ -89,14 +89,103 @@ class ProjectsAndAppsTest(GateCase):
             ).status_code,
             404,
         )
-        self.assertEqual(
-            self.client.delete(
-                f"/api/v1/projects/{project['id']}/apps/{app['id']}", headers=self.h()
-            ).status_code,
-            204,
+        removed = self.client.delete(
+            f"/api/v1/projects/{project['id']}/apps/{app['id']}", headers=self.h()
         )
+        self.assertEqual(removed.status_code, 200, removed.text)
+        self.assertEqual(removed.json()["repositories"], [])
         self.assertEqual(
             self.client.get("/api/v1/projects", headers=self.h()).json()[0]["apps"], []
+        )
+
+    def _app_on_github(self):
+        from action_platform.api.auth.crypto import Sealer
+        from action_platform.api.db.models import SourceHost
+        from action_platform.api.services.apps import AppService
+        from action_platform.providers.source.github import SourceGithub
+
+        project = self.client.post(
+            "/api/v1/projects", json={"name": "Web"}, headers=self.h()
+        ).json()
+        app = self.client.post(
+            f"/api/v1/projects/{project['id']}/apps",
+            json={"url": self.url},
+            headers=self.h(),
+        ).json()
+
+        with self.app.state.db.session() as s:
+            s.add(
+                SourceHost(
+                    id="h1",
+                    organization_id=self.org["id"],
+                    kind="github",
+                    name="GitHub",
+                    token_encrypted=Sealer(self.app.state.secrets).seal("t"),
+                )
+            )
+
+        deleted = []
+        self.patch(AppService, "repository_of", lambda self, id: ("github", "acme/x"))
+        self.patch(
+            SourceGithub,
+            "delete_repository",
+            lambda self, repo: deleted.append((self.token, repo)),
+        )
+
+        return project, app, deleted
+
+    def test_deleting_the_repository_needs_an_attached_host(self):
+        project, app, deleted = self._app_on_github()
+
+        refused = self.client.delete(
+            f"/api/v1/projects/{project['id']}/apps/{app['id']}?repository=true",
+            headers=self.h(),
+        )
+
+        self.assertEqual(refused.status_code, 409, refused.text)
+        self.assertIn("no connected host", refused.json()["detail"])
+        self.assertEqual(deleted, [])
+        self.assertEqual(
+            len(
+                self.client.get("/api/v1/projects", headers=self.h()).json()[0]["apps"]
+            ),
+            1,
+        )
+
+    def test_deleting_the_repository_with_the_app_and_with_the_project(self):
+        project, app, deleted = self._app_on_github()
+        self.client.put(
+            f"/api/v1/projects/{project['id']}/apps/{app['id']}/host",
+            json={"source_host_id": "h1"},
+            headers=self.h(),
+        )
+
+        kept = self.client.delete(
+            f"/api/v1/projects/{project['id']}/apps/{app['id']}", headers=self.h()
+        )
+        self.assertEqual(kept.json()["repositories"], [])
+        self.assertEqual(deleted, [])
+
+        app = self.client.post(
+            f"/api/v1/projects/{project['id']}/apps",
+            json={"url": self.url},
+            headers=self.h(),
+        ).json()
+        self.client.put(
+            f"/api/v1/projects/{project['id']}/apps/{app['id']}/host",
+            json={"source_host_id": "h1"},
+            headers=self.h(),
+        )
+
+        removed = self.client.delete(
+            f"/api/v1/projects/{project['id']}?repositories=true", headers=self.h()
+        )
+
+        self.assertEqual(removed.status_code, 200, removed.text)
+        self.assertEqual(removed.json()["repositories"], ["acme/x"])
+        self.assertEqual(deleted, [("t", "acme/x")])
+        self.assertEqual(
+            self.client.get("/api/v1/projects", headers=self.h()).json(), []
         )
 
     def test_viewer_cannot_manage(self):

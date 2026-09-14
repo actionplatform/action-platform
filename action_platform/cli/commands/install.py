@@ -15,7 +15,9 @@ console = Console()
 def run(
     type_: str = typer.Option("web", "--type", help="web, library, docs, plugin"),
     language: str | None = typer.Option(
-        None, "--language", help="python, go, node, php, java, rust, ruby (default: detected)"
+        None,
+        "--language",
+        help="python, go, node, php, java, rust, ruby (default: detected)",
     ),
     ci: str | None = typer.Option(
         None,

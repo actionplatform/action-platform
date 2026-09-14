@@ -8,7 +8,6 @@ import uuid
 from typing import Any, Callable, Optional
 
 from action_platform.api.access.enrich import enrich
-from action_platform.api.access.gate import repo_from_url
 from action_platform.api.access.rules import rule_for
 from action_platform.api.auth.crypto import Sealer
 from action_platform.api.auth.secrets import Secrets
@@ -22,7 +21,7 @@ from action_platform.api.schemas import (
     SyncRequest,
 )
 from action_platform.api.services.apps import AppService
-from action_platform.api.services.directory import DirectoryService
+from action_platform.api.services.directory import DirectoryService, repo_from_url
 from action_platform.api.services.imports import ImportService
 from action_platform.api.services.jobs import JobQueue
 from action_platform.api.services.lifecycle import LifecycleService

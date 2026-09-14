@@ -82,6 +82,13 @@ class SourceGitlab(SourceHost):
 
         return data.get("http_url_to_repo") or f"{self.web}/{repo}.git"
 
+    def delete_repository(self, repo: str) -> None:
+        try:
+            self._rest("DELETE", f"/projects/{urllib.parse.quote(repo, safe='')}")
+        except ProviderError as e:
+            if "→ 404" not in str(e):
+                raise
+
     def create_tag(self, ctx: Context, tag: str) -> None:
         return None
 

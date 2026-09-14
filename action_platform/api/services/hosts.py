@@ -18,7 +18,7 @@ from action_platform.core.exception import ProviderError
 PROVIDER_INFO = {
     "github": {
         "label": "GitHub",
-        "scopes": "repo workflow read:org",
+        "scopes": "repo workflow read:org delete_repo",
         "callback_hint": "GitHub → Settings → Developer settings → OAuth Apps",
     },
     "gitlab": {
@@ -29,7 +29,7 @@ PROVIDER_INFO = {
     "bitbucket": {
         "label": "Bitbucket",
         "scopes": "",
-        "callback_hint": "Bitbucket → Workspace settings → OAuth consumers (permissions: account, repositories write/admin, pull requests write)",
+        "callback_hint": "Bitbucket → Workspace settings → OAuth consumers (permissions: account, repositories write/admin/delete, pull requests write)",
     },
 }
 STATE_TTL = 10 * 60

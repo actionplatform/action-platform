@@ -1,11 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/ui/dialog";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
-import { removeApp } from "../actions";
+import { DeleteAppDialog } from "../delete-app-dialog";
 import type { AppView } from "./model";
 import { PushButton } from "./push-button";
 
@@ -14,7 +13,6 @@ type Host = { id: string; name: string; kind: string; defaultOwner: string | nul
 export function SettingsTab({ view, hosts, currentHost }: { view: AppView; hosts: Host[]; currentHost: string | null }) {
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
-  const [pending, start] = useTransition();
 
   return (
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
@@ -42,16 +40,7 @@ export function SettingsTab({ view, hosts, currentHost }: { view: AppView; hosts
         </Panel>
       )}
 
-      <ConfirmDialog
-        open={confirm}
-        onClose={() => setConfirm(false)}
-        title={`Delete ${view.name}?`}
-        description="The platform's clone is deleted. The repository itself is untouched."
-        confirmLabel="Delete project"
-        danger
-        pending={pending}
-        onConfirm={() => start(async () => { await removeApp(view.projectId, view.appId); router.push(`/projects/${view.projectId}`); })}
-      />
+      <DeleteAppDialog open={confirm} onClose={() => setConfirm(false)} onDeleted={() => router.push(`/projects/${view.projectId}`)} projectId={view.projectId} appId={view.appId} name={view.name} repositoryUrl={view.repositoryUrl} />
     </div>
   );
 }

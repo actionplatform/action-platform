@@ -23,6 +23,10 @@ class SourceHost(ABC):
         """Create the remote repository; return its clone URL."""
         raise NotImplementedError(f"{self.name} cannot create repositories")
 
+    def delete_repository(self, repo: str) -> None:
+        """Delete the remote repository; a repository that is already gone is not an error."""
+        raise NotImplementedError(f"{self.name} cannot delete repositories")
+
     @abstractmethod
     def create_tag(self, ctx: "Context", tag: str) -> None:
         """Create annotated tag on remote."""

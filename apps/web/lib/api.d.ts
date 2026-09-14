@@ -2079,6 +2079,7 @@ export interface components {
         };
         Removed: {
             removed: string[];
+            repositories: string[];
         };
         RoleInfo: {
             id: string;
@@ -3653,7 +3654,9 @@ export interface operations {
     };
     delete_project_api_v1_projects__project_id__delete: {
         parameters: {
-            query?: never;
+            query?: {
+                repositories?: boolean;
+            };
             header?: {
                 "x-organization"?: string | null;
             };
@@ -3754,7 +3757,9 @@ export interface operations {
     };
     delete_app_api_v1_projects__project_id__apps__app_id__delete: {
         parameters: {
-            query?: never;
+            query?: {
+                repository?: boolean;
+            };
             header?: {
                 "x-organization"?: string | null;
             };
@@ -3766,11 +3771,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Removed"];
+                };
             };
             422: {
                 headers: {

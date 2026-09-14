@@ -15,14 +15,6 @@ from action_platform.api.services.jobs import JobQueue
 from action_platform.core.exception import ActionPlatformError
 
 PREFIX = "/api/v1/"
-REPO_IN_URL = re.compile(r"[:/]([^/:]+/[^/]+?)(?:\.git)?$")
-
-
-def repo_from_url(url: str) -> Optional[str]:
-    match = REPO_IN_URL.search(url or "")
-
-    return match.group(1) if match else None
-
 
 ASYNC_PATH = re.compile(r"^apps/([^/]+)/(sync|release|deploy|push)$")
 

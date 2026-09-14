@@ -21,10 +21,15 @@ export async function newProject(_prev: { error?: string } | null, formData: For
   return { error: undefined };
 }
 
-export async function removeProject(id: string) {
+export async function removeProject(id: string, repositories = false): Promise<{ ok: true } | { ok: false; error: string }> {
   await requireOrg();
-  await v1.deleteProject(id);
+  try {
+    await v1.deleteProject(id, repositories);
+  } catch (e) {
+    return failed(e);
+  }
   revalidatePath("/projects");
+  return { ok: true };
 }
 
 export async function assignTeam(projectId: string, teamId: string | null): Promise<{ ok: true } | { ok: false; error: string }> {
