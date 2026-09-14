@@ -21,7 +21,12 @@ from action_platform.api.schemas import (
     SyncRequest,
 )
 from action_platform.api.services.apps import AppService
-from action_platform.api.services.directory import DirectoryService, repo_from_url
+from action_platform.api.services.directory import (
+    DirectoryService,
+    DirectoryWrites,
+    repo_from_url,
+)
+from action_platform.api.services.github_import import GithubImport
 from action_platform.api.services.imports import ImportService
 from action_platform.api.services.jobs import JobQueue
 from action_platform.api.services.lifecycle import LifecycleService
@@ -56,6 +61,7 @@ class Worker:
             "deploy": self._deploy,
             "push": self._push,
             "import": self._import,
+            "import_github": self._import_github,
         }
         configure_registry(database)
 
@@ -162,6 +168,27 @@ class Worker:
 
     def _import(self, payload: dict[str, Any]) -> Any:
         return self._import_after(payload)
+
+    def _import_github(self, payload: dict[str, Any]) -> Any:
+        with self.database.session() as db:
+            writes = DirectoryWrites(db, self.sealer)
+            creds = writes.credentials_for(
+                payload["organization_id"], payload["host_id"]
+            )
+
+            if creds is None:
+                raise ActionPlatformError("the host has no credentials any more")
+
+            return GithubImport(writes, payload["organization_id"], get_registry()).run(
+                creds,
+                payload["host_id"],
+                payload["inviter_id"],
+                payload["organization"],
+                payload.get("repositories") or [],
+                payload.get("teams") or [],
+                payload.get("people") or [],
+                payload.get("role") or "developer",
+            )
 
     def _import_after(self, payload: dict[str, Any]) -> dict[str, Optional[str]]:
         if not payload.get("app_id") or not payload.get("organization_id"):
