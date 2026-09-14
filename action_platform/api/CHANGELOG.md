@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.8.0 — 2026-09-14
+
+### Features
+- **api:** GET /api/matrix answers the catalog from the templates repository's raw index.json (cached, clone as fallback), icons as absolute URLs, types and stacks included
+
 ## v0.7.0 — 2026-09-14
 
 ### Features
