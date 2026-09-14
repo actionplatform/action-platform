@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.14 — 2026-09-13
+
+### Bug Fixes
+- **api:** refuse to start without AP_API_TOKEN unless AP_ALLOW_UNAUTHENTICATED=1; tighter CORS; proxy headers; credentials file created 0600; bearer tokens redacted from remote errors
+
 ## v0.5.13 — 2026-09-13
 
 ### Features
