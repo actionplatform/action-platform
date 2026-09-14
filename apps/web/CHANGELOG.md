@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.13 — 2026-09-13
+
+### Bug Fixes
+- **web:** open redirect closed, security headers, HKDF subkeys and audience on tokens, OAuth state bound to the user, timeouts on every outbound call, rate limits, explicit read rules, filtered queries, pool size via env
+- **api:** refuse to start without AP_API_TOKEN unless AP_ALLOW_UNAUTHENTICATED=1; tighter CORS; proxy headers; credentials file created 0600; bearer tokens redacted from remote errors
+
 ## v0.6.12 — 2026-09-13
 
 ### Bug Fixes
