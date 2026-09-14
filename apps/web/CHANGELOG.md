@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.8.0 — 2026-09-14
+
+### Features
+- **core:** access catalog with labels and descriptions; Releaser.next_version and GitFlow.plan_branch previews
+
+### Refactoring
+- **web:** no rule tables left — grants from the session, labels from /api/v1/access, version and branch previews from the API, stable/protected from the branches
+
+### Chores
+- **web:** regenerate types; api:types runs the app with a database
+
 ## v0.7.2 — 2026-09-13
 
 ### Bug Fixes
