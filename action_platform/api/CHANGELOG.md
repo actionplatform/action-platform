@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.15.1 — 2026-09-14
+
+### Refactoring
+- **api:** every service in a package — workspace, catalog, jobs, shared; ImportSource and HostDirectory ABCs behind imports and github_import
+
 ## v0.15.0 — 2026-09-14
 
 ### Features
