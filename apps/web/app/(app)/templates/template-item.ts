@@ -1,5 +1,5 @@
 import type { Matrix } from "@/lib/api";
-import { CATEGORIES, CLOUD_ICONS, stackMeta, templateBrand, typeMeta } from "@/lib/catalog";
+import { categoriesFor, stackMeta, templateIcon, typeMeta } from "@/lib/catalog";
 
 export type TemplateItem = {
   id: string;
@@ -12,30 +12,30 @@ export type TemplateItem = {
   language: string | null;
   isDefault: boolean;
   href: string | null;
-  brand: ReturnType<typeof templateBrand>;
-  cloud: (typeof CLOUD_ICONS)[string] | null;
+  icon: string | null;
+  stackIcon: string | null;
   source: string;
   plain: boolean;
+  url: string | null;
 };
-
-const categoryOf = (type: string) => CATEGORIES.find((c) => c.types?.includes(type))?.id ?? "all";
 
 export function itemsFrom(m: Matrix): TemplateItem[] {
   const projects = m.projects.map<TemplateItem>((p) => ({
     id: `${p.source}:${p.type}/${p.stack}/${p.template}`,
     name: p.template,
     description: p.description,
-    categoryId: p.plain ? "repos" : categoryOf(p.type),
-    categoryLabel: p.plain ? "Repository" : typeMeta(p.type).label,
+    categoryId: p.plain ? "repos" : p.type,
+    categoryLabel: p.plain ? "Repository" : typeMeta(m, p.type).label,
     type: p.type,
     stack: p.stack || null,
-    language: p.stack ? stackMeta(p.stack).label : null,
+    language: p.stack ? stackMeta(m, p.stack).label : null,
     isDefault: p.default,
     href: `/projects/_/apps/new?type=${p.type}${p.stack ? `&stack=${p.stack}` : ""}&template=${p.template}${p.source !== "official" ? `&source=${p.source}` : ""}`,
-    brand: templateBrand(p.template, p.stack),
-    cloud: null,
+    icon: templateIcon(m, p),
+    stackIcon: p.stack_icon ?? (p.stack ? stackMeta(m, p.stack).icon : null),
     source: p.source,
     plain: p.plain,
+    url: p.url ?? null,
   }));
   const clouds = m.clouds.map<TemplateItem>((c) => ({
     id: `${c.source}:cloud/${c.name}`,
@@ -45,24 +45,21 @@ export function itemsFrom(m: Matrix): TemplateItem[] {
     categoryLabel: "Cloud overlay",
     type: "cloud",
     stack: null,
-    language: c.languages.length ? c.languages.map((l) => stackMeta(l).label).join(", ") : null,
+    language: c.languages.length ? c.languages.map((l) => stackMeta(m, l).label).join(", ") : null,
     isDefault: false,
     href: null,
-    brand: CLOUD_ICONS[c.name]?.brand ?? null,
-    cloud: CLOUD_ICONS[c.name] ?? null,
+    icon: c.icon ?? null,
+    stackIcon: null,
     source: c.source,
     plain: false,
+    url: c.url ?? null,
   }));
   return [...projects, ...clouds];
 }
 
-export const LIST_TITLES: Record<string, string> = {
-  all: "All templates",
-  web: "Web templates",
-  libraries: "Library templates",
-  docs: "Documentation templates",
-  plugins: "Plugin templates",
-  cloud: "Cloud templates",
-  empty: "Empty templates",
-  repos: "Repositories added by your organization",
-};
+export function listTitle(m: Matrix, category: string): string {
+  if (category === "all") return "All templates";
+  if (category === "cloud") return "Cloud templates";
+  if (category === "repos") return "Repositories added by your organization";
+  return `${categoriesFor(m).find((c) => c.id === category)?.label ?? "Templates"} templates`;
+}

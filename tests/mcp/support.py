@@ -23,7 +23,7 @@ class McpCase(TempCase):
         super().setUp()
         from action_platform.mcp import build
 
-        (self.tmp_path / "index.toml").write_text(INDEX)
+        (self.tmp_path / "index.json").write_text(INDEX)
         self.patch(settings, "TEMPLATES_DIR", str(self.tmp_path))
         self.server = build()
 

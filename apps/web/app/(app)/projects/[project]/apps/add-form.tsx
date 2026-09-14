@@ -6,12 +6,12 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
-import { STACKS, TYPES } from "@/lib/catalog";
+
 import { addApp } from "./actions";
 
 const CI = ["github", "gitlab", "jenkins", "bitbucket"];
 
-export function AddForm({ projectId }: { projectId: string }) {
+export function AddForm({ projectId, types, stacks }: { projectId: string; types: { id: string; label: string; description: string }[]; stacks: { id: string; label: string }[] }) {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -51,10 +51,10 @@ export function AddForm({ projectId }: { projectId: string }) {
       >
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="block text-sm"><span className="mb-1 block text-xs text-secondary">Project type</span>
-            <Select value={type} onChange={setType} options={TYPES.map((t) => ({ value: t.id, label: t.label, hint: t.description }))} />
+            <Select value={type} onChange={setType} options={types.map((t) => ({ value: t.id, label: t.label, hint: t.description }))} />
           </label>
           <label className="block text-sm"><span className="mb-1 block text-xs text-secondary">Language</span>
-            <Select value={language} onChange={setLanguage} options={[{ value: "", label: "Detect automatically" }, ...Object.entries(STACKS).map(([id, m]) => ({ value: id, label: m.label })), { value: "none", label: "None (config only)" }]} />
+            <Select value={language} onChange={setLanguage} options={[{ value: "", label: "Detect automatically" }, ...stacks.map((m) => ({ value: m.id, label: m.label })), { value: "none", label: "None (config only)" }]} />
           </label>
           <label className="block text-sm"><span className="mb-1 block text-xs text-secondary">CI</span>
             <Select value={ci} onChange={(v) => { setCiTouched(true); setCi(v); }} options={CI.map((c) => ({ value: c, label: c }))} />

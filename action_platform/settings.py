@@ -14,7 +14,15 @@ class Settings:
         "ACTION_PLATFORM_TEMPLATES_REPO",
         "https://github.com/actionplatform/templates.git",
     )
+    TEMPLATES_REF = os.getenv("ACTION_PLATFORM_TEMPLATES_REF", "main")
     TEMPLATES_DIR = os.getenv("ACTION_PLATFORM_TEMPLATES")
+    TEMPLATES_INDEX_URL = os.getenv(
+        "ACTION_PLATFORM_TEMPLATES_INDEX",
+        "https://raw.githubusercontent.com/actionplatform/templates/"
+        + os.getenv("ACTION_PLATFORM_TEMPLATES_REF", "main")
+        + "/index.json",
+    )
+    TEMPLATES_INDEX_TTL = int(os.getenv("ACTION_PLATFORM_TEMPLATES_INDEX_TTL", "600"))
     TEMPLATES_CACHE = Path.home() / ".cache" / "action-platform" / "templates"
 
     ALLOW_FILE_URLS = os.getenv("AP_ALLOW_FILE_URLS") == "1"

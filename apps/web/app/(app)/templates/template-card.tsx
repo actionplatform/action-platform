@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ArrowUpRight, BookOpen, Cloud, FileBox, GitFork, Globe, type LucideIcon, Package, Puzzle } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -10,23 +10,21 @@ import { Dialog } from "@/components/ui/dialog";
 import { setCloudTarget } from "@/app/(app)/projects/[project]/apps/actions";
 import { Badge } from "@/components/ui/badge";
 import { BrandIcon } from "@/components/ui/brand-icon";
+import { typeIcon } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
 import type { TemplateItem } from "./template-item";
 
-const TYPE_ICONS: Record<string, LucideIcon> = { web: Globe, library: Package, docs: BookOpen, plugin: Puzzle, cloud: Cloud, empty: FileBox };
-const REPO_ICON = GitFork;
-
 export function TemplateLogo({ item, className }: { item: TemplateItem; className?: string }) {
-  const Fallback = item.plain ? REPO_ICON : (item.cloud?.lucide ?? TYPE_ICONS[item.type] ?? FileBox);
+  const Fallback = typeIcon(item.plain ? "repos" : item.type);
   return (
     <div className={cn("flex size-[42px] shrink-0 items-center justify-center rounded-lg border border-[#292929] bg-[#0e0e0e]", className)}>
-      {item.brand ? <BrandIcon icon={item.brand} className="size-6" /> : <Fallback className="size-[22px] text-secondary" strokeWidth={1.5} />}
+      {item.icon ? <BrandIcon src={item.icon} title={item.name} className="size-6" /> : <Fallback className="size-[22px] text-secondary" strokeWidth={1.5} />}
     </div>
   );
 }
 
 export function TemplateMeta({ item, className }: { item: TemplateItem; className?: string }) {
-  const TypeIcon = item.plain ? REPO_ICON : (TYPE_ICONS[item.type] ?? FileBox);
+  const TypeIcon = typeIcon(item.plain ? "repos" : item.type);
   return (
     <div className={cn("flex min-w-0 items-center gap-2.5 text-[13px] text-secondary", className)}>
       <span className="flex items-center gap-1.5"><TypeIcon className="size-4" strokeWidth={1.75} />{item.categoryLabel}</span>
@@ -34,7 +32,7 @@ export function TemplateMeta({ item, className }: { item: TemplateItem; classNam
         <>
           <span aria-hidden className="text-muted-foreground">·</span>
           <span className="flex items-center gap-1.5">
-            {item.stack && item.brand && <BrandIcon icon={item.brand} className="size-3.5" />}
+            {item.stackIcon && <BrandIcon src={item.stackIcon} className="size-3.5" />}
             {item.language}
           </span>
         </>
@@ -129,7 +127,7 @@ export function TemplateListItem({ item, targets }: { item: TemplateItem; target
       </div>
       <div className="hidden w-40 shrink-0 text-[13px] text-secondary md:block">{item.categoryLabel}</div>
       <div className="hidden w-32 shrink-0 items-center gap-1.5 text-[13px] text-secondary md:flex">
-        {item.stack && item.brand && <BrandIcon icon={item.brand} className="size-3.5" />}
+        {item.stackIcon && <BrandIcon src={item.stackIcon} className="size-3.5" />}
         {item.language ?? "—"}
       </div>
       <div className="hidden w-20 shrink-0 md:block">{item.isDefault && <Badge tone="inverse" className="h-5 px-2">Default</Badge>}</div>

@@ -1,6 +1,8 @@
-"""action_platform.core.scaffold.templates — the matrix read from index.toml, and repositories as sources."""
+"""action_platform.core.scaffold.templates — the matrix read from index.json, and repositories as sources."""
 
 from __future__ import annotations
+
+import json
 
 from action_platform.core.exception import TemplateError
 from action_platform.core.scaffold.templates import (
@@ -11,36 +13,46 @@ from action_platform.core.scaffold.templates import (
 )
 from tests.support import TempCase
 
-INDEX = """
-[projects.web.python.fastapi]
-default = true
-description = "FastAPI"
-
-[projects.web.python.django]
-description = "Django"
-
-[projects.web.go.gin]
-default = true
-
-[projects.empty]
-description = "Only platform.toml"
-
-[cloud.aws.lambda]
-description = "SAM"
-languages = ["python"]
-types = ["web"]
-
-[cloud.docker]
-description = "Dockerfile"
-"""
+INDEX = json.dumps(
+    {
+        "types": [{"id": "web", "label": "Web application", "description": "APIs"}],
+        "stacks": [
+            {"id": "python", "label": "Python", "icon": "assets/icons/python.svg"}
+        ],
+        "projects": [
+            {
+                "id": "web/python/fastapi",
+                "default": True,
+                "description": "FastAPI",
+                "framework": "FastAPI",
+                "icons": {
+                    "language": "assets/icons/python.svg",
+                    "framework": "assets/icons/fastapi.svg",
+                },
+            },
+            {"id": "web/python/django", "description": "Django"},
+            {"id": "web/go/gin", "default": True},
+            {"id": "empty", "type": "empty", "description": "Only platform.toml"},
+        ],
+        "clouds": [
+            {
+                "id": "aws/lambda",
+                "description": "SAM",
+                "languages": ["python"],
+                "types": ["web"],
+            },
+            {"id": "docker", "description": "Dockerfile"},
+        ],
+    }
+)
 
 
 class MatrixTest(TempCase):
     def setUp(self):
         super().setUp()
-        path = self.tmp_path / "index.toml"
+        path = self.tmp_path / "index.json"
         path.write_text(INDEX)
-        self.matrix = Matrix.from_toml(path)
+        self.matrix = Matrix.from_json(path)
 
     def test_types_and_stacks(self):
         self.assertEqual(self.matrix.types(), ["empty", "web"])
@@ -83,19 +95,20 @@ class MatrixTest(TempCase):
             self.matrix.cloud("gcp/run")
 
     def test_empty_sections(self):
-        path = self.tmp_path / "empty.toml"
-        path.write_text("[projects]\n[cloud]\n")
-        matrix = Matrix.from_toml(path)
+        path = self.tmp_path / "empty.json"
+        path.write_text('{"projects": [], "clouds": []}')
+        matrix = Matrix.from_json(path)
         self.assertEqual(matrix.leaves, [])
         self.assertEqual(matrix.clouds, [])
 
     def test_services(self):
-        path = self.tmp_path / "svc.toml"
-        path.write_text(
-            INDEX
-            + '\n[service.postgres]\ndescription = "db"\nproviders = ["docker", "aws-rds"]\n'
-        )
-        matrix = Matrix.from_toml(path)
+        data = json.loads(INDEX)
+        data["services"] = [
+            {"id": "postgres", "description": "db", "providers": ["docker", "aws-rds"]}
+        ]
+        path = self.tmp_path / "svc.json"
+        path.write_text(json.dumps(data))
+        matrix = Matrix.from_json(path)
         svc = matrix.service("postgres")
         self.assertEqual(svc.directory, "service/postgres")
         self.assertEqual(svc.providers, ["docker", "aws-rds"])
@@ -106,7 +119,7 @@ class MatrixTest(TempCase):
 class PlainRepositoryTest(TempCase):
     def test_source_parsing(self):
         self.assertEqual(TemplateSource.parse("https://x/y.git@main").ref, "main")
-        self.assertEqual(TemplateSource.parse("https://x/y.git").ref, "v1")
+        self.assertEqual(TemplateSource.parse("https://x/y.git").ref, "main")
         self.assertEqual(
             TemplateSource.parse("https://x/y.git", name="acme").label, "acme"
         )

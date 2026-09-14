@@ -1,7 +1,8 @@
-"""The template matrix: project leaves, cloud overlays and services, resolved from index.toml or from a plain repository."""
+"""The template matrix: project leaves, cloud overlays and services, read from index.json or from a plain repository."""
 
 from __future__ import annotations
 
+import json
 import tomllib
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -23,6 +24,9 @@ class Leaf:
     description: str = ""
     default: bool = False
     plain: bool = False
+    framework: str = ""
+    icon: str = ""
+    language: str = ""
 
     @property
     def directory(self) -> str:
@@ -43,6 +47,7 @@ class Cloud:
     description: str = ""
     languages: list[str] = field(default_factory=list)
     types: list[str] = field(default_factory=list)
+    icon: str = ""
 
     @property
     def directory(self) -> str:
@@ -62,28 +67,29 @@ class Service:
     name: str
     description: str = ""
     providers: list[str] = field(default_factory=list)
+    icon: str = ""
 
     @property
     def directory(self) -> str:
         return f"service/{self.name}"
 
 
-def _is_leaf_table(table: dict) -> bool:
-    return not any(isinstance(v, dict) for v in table.values())
+@dataclass
+class TypeInfo:
+    """What a project type is called and means, from `[types.<id>]`."""
+
+    id: str
+    label: str = ""
+    description: str = ""
 
 
-def _walk(table: dict, path: tuple[str, ...] = ()):
-    """Yield (path, meta) for every leaf table, however deep."""
-    if not table:
-        return
+@dataclass
+class StackInfo:
+    """What a stack is called and its icon, from `[stacks.<id>]`."""
 
-    if _is_leaf_table(table):
-        yield path, table
-        return
-
-    for key, value in table.items():
-        if isinstance(value, dict):
-            yield from _walk(value, (*path, key))
+    id: str
+    label: str = ""
+    icon: str = ""
 
 
 @dataclass
@@ -91,47 +97,76 @@ class Matrix:
     leaves: list[Leaf] = field(default_factory=list)
     clouds: list[Cloud] = field(default_factory=list)
     services: list[Service] = field(default_factory=list)
+    type_infos: list[TypeInfo] = field(default_factory=list)
+    stack_infos: list[StackInfo] = field(default_factory=list)
 
     @classmethod
-    def from_toml(cls, path: Path) -> "Matrix":
+    def from_json(cls, path: Path) -> "Matrix":
         if not path.exists():
-            raise TemplateError(f"index.toml not found at {path}")
+            raise TemplateError(f"index.json not found at {path}")
 
-        data = tomllib.loads(path.read_text())
+        try:
+            data = json.loads(path.read_text())
+        except ValueError as e:
+            raise TemplateError(f"{path} is not valid JSON: {e}") from e
 
+        return cls.from_dict(data)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Matrix":
+        """The shape of `index.json`: `types`, `stacks`, `projects`, `clouds`, `services`, each a list of objects with an `id`."""
         leaves = []
-        for keys, meta in _walk(data.get("projects", {})):
-            type_, stack, template = (*keys, "", "")[:3]
+
+        for row in data.get("projects", []):
+            parts = (row.get("id") or "").split("/")
+            type_ = row.get("type") or (parts[0] if parts else "")
+            stack = row.get("stack") or (parts[1] if len(parts) > 1 else "")
+            template = row.get("template") or (parts[2] if len(parts) > 2 else "")
+            icons = row.get("icons") or {}
             leaves.append(
                 Leaf(
                     type_,
-                    stack,
-                    template,
-                    meta.get("description", ""),
-                    bool(meta.get("default", False)),
+                    stack or "",
+                    template or "",
+                    row.get("description", ""),
+                    bool(row.get("default", False)),
+                    framework=row.get("framework") or "",
+                    icon=icons.get("framework") or row.get("icon") or "",
+                    language=row.get("language") or "",
                 )
             )
 
         clouds = [
             Cloud(
-                "/".join(keys),
-                meta.get("description", ""),
-                list(meta.get("languages", [])),
-                list(meta.get("types", [])),
+                row["id"],
+                row.get("description", ""),
+                list(row.get("languages", [])),
+                list(row.get("types", [])),
+                row.get("icon") or "",
             )
-            for keys, meta in _walk(data.get("cloud", {}))
+            for row in data.get("clouds", [])
         ]
 
         services = [
             Service(
-                "/".join(keys),
-                meta.get("description", ""),
-                list(meta.get("providers", [])),
+                row["id"],
+                row.get("description", ""),
+                list(row.get("providers", [])),
+                row.get("icon") or "",
             )
-            for keys, meta in _walk(data.get("service", {}))
+            for row in data.get("services", [])
         ]
 
-        return cls(leaves, clouds, services)
+        type_infos = [
+            TypeInfo(row["id"], row.get("label", row["id"]), row.get("description", ""))
+            for row in data.get("types", [])
+        ]
+        stack_infos = [
+            StackInfo(row["id"], row.get("label", row["id"]), row.get("icon") or "")
+            for row in data.get("stacks", [])
+        ]
+
+        return cls(leaves, clouds, services, type_infos, stack_infos)
 
     def types(self) -> list[str]:
         return sorted({leaf.type for leaf in self.leaves})
@@ -227,7 +262,7 @@ OFFICIAL = "official"
 
 
 def plain_matrix(source: TemplateSource, repo: Path) -> Matrix:
-    """A repository without index.toml is one template: its own tree, copied as-is."""
+    """A repository without index.json is one template: its own tree, copied as-is."""
     meta: dict = {}
     manifest = repo / settings.CONFIG_FILE
 
@@ -261,12 +296,12 @@ def plain_matrix(source: TemplateSource, repo: Path) -> Matrix:
 
 def load_source(source: TemplateSource, update: bool = False) -> tuple[Path, Matrix]:
     repo = TemplateStore().checkout(source, update=update)
-    index = repo / "index.toml"
+    index = repo / "index.json"
 
     if not index.exists():
         return repo, plain_matrix(source, repo)
 
-    return repo, Matrix.from_toml(index)
+    return repo, Matrix.from_json(index)
 
 
 def ensure_repo(update: bool = False) -> Path:
@@ -282,16 +317,16 @@ def load_matrix(update: bool = False, source: str | None = None) -> tuple[Path, 
         return load_source(TemplateSource.parse(source), update=update)
 
     repo = ensure_repo(update=update)
-    matrix = Matrix.from_toml(repo / "index.toml")
+    matrix = Matrix.from_json(repo / "index.json")
 
     if not matrix.leaves and not update and settings.TEMPLATES_DIR is None:
         logger.info("templates cache has no projects, refreshing")
         repo = ensure_repo(update=True)
-        matrix = Matrix.from_toml(repo / "index.toml")
+        matrix = Matrix.from_json(repo / "index.json")
 
     if not matrix.leaves:
         raise TemplateError(
-            f"no projects in {repo / 'index.toml'} — run with --update "
+            f"no projects in {repo / 'index.json'} — run with --update "
             "or check ACTION_PLATFORM_TEMPLATES"
         )
 

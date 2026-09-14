@@ -1,7 +1,12 @@
 import type { SimpleIcon } from "simple-icons";
 import { cn } from "@/lib/utils";
 
-export function BrandIcon({ icon, className, title, mono }: { icon: SimpleIcon; className?: string; title?: string; mono?: boolean }) {
+type Props = { icon?: SimpleIcon; src?: string; className?: string; title?: string; mono?: boolean };
+
+export function BrandIcon({ icon, src, className, title, mono }: Props) {
+  if (src) return <img src={src} alt={title ?? ""} className={cn("size-5 shrink-0 object-contain", className)} loading="lazy" />;
+  if (!icon) return null;
+
   const fill = mono || !readable(icon.hex) ? "currentColor" : `#${icon.hex}`;
 
   return (

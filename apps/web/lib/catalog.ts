@@ -1,84 +1,46 @@
-import { BookOpen, Cloud, FileBox, Globe, type LucideIcon, Package, Puzzle, Zap } from "lucide-react";
-import {
-  siApachemaven,
-  siComposer,
-  siDocker,
-  siFastapi,
-  siGin,
-  siGo,
-  siGooglechrome,
-  siMaterialformkdocs,
-  siNodedotjs,
-  siNpm,
-  siOpenjdk,
-  siPhp,
-  siPoetry,
-  siPython,
-  siReact,
-  siRust,
-  type SimpleIcon,
-} from "simple-icons";
+import { BookOpen, Bot, Cloud, Cog, FileBox, GitFork, Globe, type LucideIcon, Package, Puzzle } from "lucide-react";
 import type { Matrix } from "./api";
 
-export type TypeMeta = { id: string; label: string; description: string; icon: LucideIcon };
-
-export const TYPES: TypeMeta[] = [
-  { id: "web", label: "Web application", description: "API, backend service, or frontend application.", icon: Globe },
-  { id: "library", label: "Library", description: "Reusable package or language module.", icon: Package },
-  { id: "docs", label: "Documentation", description: "Documentation site powered by MkDocs.", icon: BookOpen },
-  { id: "plugin", label: "Browser plugin", description: "Chrome extension using Manifest V3.", icon: Puzzle },
-  { id: "empty", label: "Empty project", description: "Minimal platform.toml foundation.", icon: FileBox },
-];
-
-export const STACKS: Record<string, { label: string; brand: SimpleIcon }> = {
-  python: { label: "Python", brand: siPython },
-  go: { label: "Go", brand: siGo },
-  node: { label: "Node.js", brand: siNodedotjs },
-  php: { label: "PHP", brand: siPhp },
-  java: { label: "Java", brand: siOpenjdk },
-  rust: { label: "Rust", brand: siRust },
-  mkdocs: { label: "MkDocs", brand: siMaterialformkdocs },
-  chrome: { label: "Chrome", brand: siGooglechrome },
-};
-
-export const TEMPLATE_BRANDS: Record<string, SimpleIcon> = {
-  fastapi: siFastapi,
-  fastmcp: siPython,
-  gin: siGin,
-  react: siReact,
-  poetry: siPoetry,
-  module: siGo,
-  composer: siComposer,
-  npm: siNpm,
-  maven: siApachemaven,
-  cargo: siRust,
-  material: siMaterialformkdocs,
-  vanilla: siGooglechrome,
-};
-
-export const CLOUD_ICONS: Record<string, { lucide?: LucideIcon; brand?: SimpleIcon }> = {
-  "aws/lambda": { lucide: Zap },
-  "aws/amplify": { lucide: Cloud },
-  docker: { brand: siDocker },
-};
-
-export function typeMeta(id: string): TypeMeta {
-  return TYPES.find((t) => t.id === id) ?? { id, label: id, description: "", icon: FileBox };
-}
-
-export function stackMeta(id: string): { label: string; brand: SimpleIcon | null } {
-  return STACKS[id] ?? { label: id, brand: null };
-}
-
-export function templateBrand(template: string, stack: string): SimpleIcon | null {
-  return TEMPLATE_BRANDS[template] ?? STACKS[stack]?.brand ?? null;
-}
-
 export type Leaf = Matrix["projects"][number];
+export type TypeMeta = { id: string; label: string; description: string; icon: LucideIcon };
+export type StackMeta = { id: string; label: string; icon: string | null };
+
+export const TYPE_ICONS: Record<string, LucideIcon> = {
+  web: Globe,
+  library: Package,
+  automation: Cog,
+  worker: Cog,
+  bot: Bot,
+  docs: BookOpen,
+  plugin: Puzzle,
+  cloud: Cloud,
+  empty: FileBox,
+  repos: GitFork,
+};
+
+export function typeIcon(id: string): LucideIcon {
+  return TYPE_ICONS[id] ?? FileBox;
+}
+
+export function typeMeta(m: Matrix, id: string): TypeMeta {
+  const found = m.types.find((t) => t.id === id);
+  return { id, label: found?.label ?? id, description: found?.description ?? "", icon: typeIcon(id) };
+}
+
+export function stackMeta(m: Matrix, id: string): StackMeta {
+  const found = m.stacks.find((s) => s.id === id);
+  return { id, label: found?.label ?? id, icon: found?.icon ?? null };
+}
+
+export function templateIcon(m: Matrix, leaf: Leaf): string | null {
+  return leaf.icon ?? leaf.stack_icon ?? (leaf.stack ? stackMeta(m, leaf.stack).icon : null);
+}
 
 export function typesIn(m: Matrix): TypeMeta[] {
-  const present = new Set(m.projects.map((p) => p.type));
-  return TYPES.filter((t) => present.has(t.id));
+  const present = [...new Set(m.projects.filter((p) => !p.plain).map((p) => p.type))];
+  const ordered = m.types.map((t) => t.id).filter((id) => present.includes(id));
+  const rest = present.filter((id) => !ordered.includes(id));
+  return [...ordered, ...rest].map((id) => typeMeta(m, id));
 }
 
 export function stacksFor(m: Matrix, type: string): string[] {
@@ -93,16 +55,12 @@ export function countFor(m: Matrix, type: string, stack?: string): number {
   return m.projects.filter((p) => p.type === type && (stack === undefined || p.stack === stack)).length;
 }
 
-export const CATEGORIES: { id: string; label: string; types?: string[]; cloud?: boolean; plain?: boolean }[] = [
-  { id: "all", label: "All" },
-  { id: "web", label: "Web", types: ["web"] },
-  { id: "libraries", label: "Libraries", types: ["library"] },
-  { id: "docs", label: "Docs", types: ["docs"] },
-  { id: "plugins", label: "Plugins", types: ["plugin"] },
-  { id: "cloud", label: "Cloud", cloud: true },
-  { id: "empty", label: "Empty", types: ["empty"] },
-  { id: "repos", label: "Repositories", plain: true },
-];
+export type Category = { id: string; label: string; types?: string[]; cloud?: boolean; plain?: boolean };
+
+export function categoriesFor(m: Matrix): Category[] {
+  const types = typesIn(m).map<Category>((t) => ({ id: t.id, label: t.label, types: [t.id] }));
+  return [{ id: "all", label: "All" }, ...types, { id: "cloud", label: "Cloud", cloud: true }, { id: "repos", label: "Repositories", plain: true }];
+}
 
 export function initCommand(input: {
   type: string;

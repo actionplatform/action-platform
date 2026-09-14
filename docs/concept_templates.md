@@ -24,7 +24,7 @@ action-platform init --list
 
 ## Where they come from
 
-[actionplatform/templates](https://github.com/actionplatform/templates): plain cookiecutters indexed by `index.toml`.
+[actionplatform/templates](https://github.com/actionplatform/templates): plain cookiecutters indexed by `index.json`.
 
 ```toml
 [projects.web.python.fastapi]
@@ -47,10 +47,10 @@ Every template ships `platform.toml`, `.code_quality/`, `AGENTS.md`, tests and a
 
 ## Other repositories
 
-The official catalog always comes from [actionplatform/templates](https://github.com/actionplatform/templates) at `v1`. Next to it an organization can add **any git repository**:
+The official catalog always comes from [actionplatform/templates](https://github.com/actionplatform/templates) at `main`. The API does not wait for its clone to refresh: it fetches `index.json` raw from the repository (`ACTION_PLATFORM_TEMPLATES_INDEX`, cached ten minutes, `ACTION_PLATFORM_TEMPLATES_REF` picks the branch) and answers the catalog from it — labels, frameworks and icons included — so a merged template shows in the web app without a redeploy; the clone is still what `init` copies from. When the fetch fails the clone's `index.json` answers. Next to it an organization can add **any git repository**:
 
 - a plain repository (a starter, a reference service) becomes **one template**: a new app starts as a copy of that tree at the chosen branch or tag; the platform detects the language (`pyproject.toml`, `go.mod`, `package.json`…), keeps an existing `platform.toml` (renaming the project) or adds `platform.toml`, `.code_quality/`, CI files and hooks the same way `action-platform install` does;
-- a repository with an `index.toml` at the root is read as a **catalog** with the official layout (`projects/`, `cloud/`, `service/`).
+- a repository with an `index.json` at the root is read as a **catalog** with the official layout (`projects/`, `cloud/`, `service/`).
 
 | Where | How |
 |---|---|
@@ -64,7 +64,7 @@ Names are unique per organization and `official` is reserved. A repository that 
 ## Adding one
 
 1. In the templates repository, add `projects/<type>/<stack>/<name>/` with a `cookiecutter.json` (`project_name`, `project_slug`, `description`, `package_name`, `github_owner`, `ci`) and a `{{cookiecutter.project_slug}}/` tree.
-2. Register it in `index.toml`.
+2. Register it in `index.json`.
 3. `ACTION_PLATFORM_TEMPLATES=/path/to/checkout action-platform init <type> <stack> <name> --no-push` to try it.
 
-Nothing to redeploy: the CLI and the API read the repository at `v1`.
+Nothing to redeploy: the CLI and the API read the repository at `main`.

@@ -20,7 +20,7 @@ class SourceCredentials(BaseModel):
 class SourceSpec(BaseModel):
     name: str
     url: str
-    ref: str = "v1"
+    ref: str = "main"
     credentials: Optional[SourceCredentials] = None
 
 

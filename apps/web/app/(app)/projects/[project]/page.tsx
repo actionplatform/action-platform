@@ -26,8 +26,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
   const apps = await appsOf(project.id);
 
   let rows: Map<string, AppRow>;
+  let catalog: { types: { id: string; label: string; description: string }[]; stacks: { id: string; label: string }[] };
   try {
-    rows = new Map((await api.apps.list()).map((r) => [r.id, r]));
+    const [list, matrix] = await Promise.all([api.apps.list(), api.matrix()]);
+    rows = new Map(list.map((r) => [r.id, r]));
+    catalog = { types: matrix.types.filter((t) => t.id !== "empty"), stacks: matrix.stacks };
   } catch (e) {
     return <ApiOffline error={e} />;
   }
@@ -40,7 +43,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
         actions={manage ? <Link href={`/projects/${project.id}/apps/new`}><Button><Plus className="size-4" /> New app</Button></Link> : undefined}
       />
 
-      {manage && <div className="mb-6"><AddForm projectId={project.id} /></div>}
+      {manage && <div className="mb-6"><AddForm projectId={project.id} types={catalog.types} stacks={catalog.stacks} /></div>}
 
       <div className="md:hidden">
         <AppCards projectId={project.id} apps={apps.map((a) => ({ id: a.id, name: a.name, registryId: a.registryId }))} rows={rows} manage={manage} />
