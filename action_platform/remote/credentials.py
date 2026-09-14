@@ -43,9 +43,14 @@ def load() -> Optional[Credentials]:
 
 
 def save(creds: Credentials) -> None:
+    """Created with mode 600 from the first byte, so no umask window ever exposes the token."""
     file = path()
     file.parent.mkdir(parents=True, exist_ok=True)
-    file.write_text(json.dumps(asdict(creds), indent=2) + "\n")
+    fd = os.open(file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+
+    with os.fdopen(fd, "w") as handle:
+        handle.write(json.dumps(asdict(creds), indent=2) + "\n")
+
     file.chmod(0o600)
 
 

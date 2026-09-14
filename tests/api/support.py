@@ -22,6 +22,7 @@ class ApiCase(TempCase):
         from action_platform.api.main import build
 
         self.setenv("AP_HOME", str(self.tmp_path / "home"))
+        self.patch(settings, "ALLOW_UNAUTHENTICATED_API", True)
         self.patch(settings, "ALLOW_FILE_URLS", True)
         self.repo = platform_repo(self.tmp_path)
         self.url = self.repo.as_uri()

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import getpass
 import json
+import re
 import socket
 import time
 import urllib.error
@@ -24,6 +25,14 @@ from action_platform.remote.credentials import Credentials, load, save
 CLIENT_ID = "action-platform-cli"
 DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
 MAX_POLL_FAILURES = 5
+
+
+TOKEN_RE = re.compile(r"[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}")
+
+
+def redact(text: str) -> str:
+    """Never echo a bearer token that a proxy or an upstream error happened to reflect."""
+    return TOKEN_RE.sub("[redacted]", text)
 
 
 class RemoteError(ActionPlatformError):
@@ -73,11 +82,13 @@ def _request(
             payload = {"detail": raw.decode(errors="replace") or e.reason}
         if not isinstance(payload, dict):
             payload = {"detail": str(payload)}
-        detail = (
-            payload.get("detail")
-            or payload.get("error_description")
-            or payload.get("error")
-            or str(payload)
+        detail = redact(
+            str(
+                payload.get("detail")
+                or payload.get("error_description")
+                or payload.get("error")
+                or payload
+            )
         )
         code = payload.get("error") if isinstance(payload.get("error"), str) else None
         raise RemoteError(e.code, str(detail), code) from e

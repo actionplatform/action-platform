@@ -6,7 +6,7 @@
 poetry install --extras api --extras mcp
 poetry run pytest -q                      # or: python -m unittest discover -s tests -t .
 poetry run ruff check action_platform tests && poetry run ruff format --check action_platform tests
-poetry run action-platform api --reload      # :7788, OpenAPI at /docs
+AP_ALLOW_UNAUTHENTICATED=1 poetry run action-platform api --reload   # :7788, OpenAPI at /docs; without a token the API refuses to start unless told so
 ```
 
 Tests use throwaway git repositories and a tiny templates index under `tmp_path`; nothing touches the network or the user's home.

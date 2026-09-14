@@ -6,7 +6,7 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "api:types": "cd ../.. && poetry run python -c \"import json; from action_platform.api.main import build; json.dump(build().openapi(), open('apps/web/openapi.json','w'))\" && cd apps/web && openapi-typescript openapi.json -o lib/api.d.ts && node scripts/strip-comments.mjs lib/api.d.ts",
+    "api:types": "cd ../.. && AP_ALLOW_UNAUTHENTICATED=1 poetry run python -c \"import json; from action_platform.api.main import build; json.dump(build().openapi(), open('apps/web/openapi.json','w'))\" && cd apps/web && openapi-typescript openapi.json -o lib/api.d.ts && node scripts/strip-comments.mjs lib/api.d.ts",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate --config drizzle.pg.config.ts && drizzle-kit generate --config drizzle.mysql.config.ts && drizzle-kit generate --config drizzle.sqlite.config.ts"
   },
