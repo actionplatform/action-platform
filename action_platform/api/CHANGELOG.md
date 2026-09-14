@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.9.0 — 2026-09-14
+
+### Features
+- **catalog:** revalidate the templates index with its ETag every minute instead of caching it ten
+
 ## v0.8.1 — 2026-09-14
 
 ## v0.8.0 — 2026-09-14
