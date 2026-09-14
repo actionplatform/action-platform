@@ -58,6 +58,7 @@ action-platform login <url> [--scope read,write] [--name label] [--no-browser]  
 action-platform whoami                                      # server — account — scope — on Org / project / app
 action-platform logout
 action-platform db status | migrate [--url …]            # the API's database: revision, migrate on demand
+action-platform worker [--once] [--interval 2] [--name]  # run queued jobs against AP_DATABASE_URL
 ```
 
 Credentials from `login` live in `~/.action-platform/credentials.json` (mode 600); `AP_SERVER` + `AP_TOKEN` override them.

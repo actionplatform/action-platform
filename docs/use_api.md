@@ -48,7 +48,11 @@ Routes that are not workspaces live directly under `/api/v1`: `me` (user, organi
 
 ## Workspaces
 
-`AP_HOME` (default `~/.action-platform`, `/data/action-platform` in the image) holds `apps.json` — the registry: id, name, url, path, default branch — and `workspaces/<id>`, one clone per app. Every call that opens a workspace brings `platform.toml` back when it is missing, so an app never errors for something the platform can fix itself.
+The registry — id, name, url, default branch of every app — is the `registry` table when the API has a database (`apps.json` under `AP_HOME` otherwise), so every API instance and worker sees the same apps. Each instance keeps its clones under `AP_HOME/workspaces/<id>` (`~/.action-platform`, `/data/action-platform` in the image) and clones an app again when it is asked for one it does not have; a private repository needs credentials for that, which every mutating call carries, so a fresh instance rebuilds on the first `sync`. Every call that opens a workspace brings `platform.toml` back when it is missing, so an app never errors for something the platform can fix itself.
+
+## Jobs
+
+`POST /api/v1/apps/{id}/sync|release|deploy|push` with `Prefer: respond-async` (or `X-Async: 1`) does not run the action: it answers `202 {job, status, poll}` and a worker (`action-platform worker`) runs it with the same services, filling in credentials and identity the same way and copying releases and pull requests afterwards. `GET /api/v1/jobs/{id}` answers `status` (`queued` → `running` → `done` | `failed`), `attempts`, `result` (what the inline call would have answered) and `error`; `GET /api/v1/jobs?app=<registry id>` lists an app's last twenty. A second async `sync` for the same app while one is live returns the live job. Failures retry three times with backoff; a job whose worker vanished goes back to the queue after thirty minutes. Without the header everything runs inline as before.
 
 ## Errors
 
