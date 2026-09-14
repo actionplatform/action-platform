@@ -6,5 +6,9 @@ export type HostAccess =
   | { ok: false; error: string };
 
 export async function hostAccess(_orgId: string, hostId: string): Promise<HostAccess> {
-  return (await v1.hostAccess(hostId)) as HostAccess;
+  try {
+    return (await v1.hostAccess(hostId)) as HostAccess;
+  } catch (e) {
+    return { ok: false, error: `${(e as Error).message}; reconnect the host` };
+  }
 }
