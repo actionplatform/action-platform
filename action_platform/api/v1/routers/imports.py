@@ -81,6 +81,7 @@ class GithubPreview(BaseModel):
     repositories: list[GithubRepository]
     teams: list[GithubTeam]
     people: list[GithubPerson]
+    problems: list[str] = []
 
 
 def github_credentials(writes: DirectoryWrites, org, host_id: str):

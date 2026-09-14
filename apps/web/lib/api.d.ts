@@ -1721,6 +1721,7 @@ export interface components {
             repositories: components["schemas"]["GithubRepository"][];
             teams: components["schemas"]["GithubTeam"][];
             people: components["schemas"]["GithubPerson"][];
+            problems: string[];
         };
         GithubRepository: {
             full_name: string;

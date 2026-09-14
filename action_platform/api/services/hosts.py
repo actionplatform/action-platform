@@ -39,6 +39,7 @@ GITHUB_MANIFEST_PERMISSIONS = {
     "workflows": "write",
     "pull_requests": "write",
     "metadata": "read",
+    "members": "read",
 }
 
 

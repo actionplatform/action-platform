@@ -173,6 +173,11 @@ export function ImportWizard({ hosts, roles, canManage }: { hosts: Host[]; roles
 
       {preview && (
         <>
+          {preview.problems.length > 0 && (
+            <div className="space-y-1 rounded-md border border-foreground px-3 py-2 text-sm">
+              {preview.problems.map((p) => <p key={p}>{p}</p>)}
+            </div>
+          )}
           <Panel>
             <PanelHeader
               title={`Repositories · ${preview.repositories.length}`}
