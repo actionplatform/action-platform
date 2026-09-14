@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.7.0 — 2026-09-13
+
+### Features
+- **api:** oauth_app table (0004) — OAuth apps used to connect code hosts live in the database
+- **core:** access rules in Python — roles, permissions, scopes, grantable scopes and Grant
+
+### Refactoring
+- **web:** stateless — no database, secret, config file or rules; every read and write goes through /api/v1 with the caller's cookie, the API decides
+- **web:** /api/v1 and /api/auth rewritten to the API; the proxy route, its helpers and the device forwarders removed
+- **web:** sessions, sign-in, device approval, tokens, organizations and member accounts go through /api/auth; the web app keeps only the cookie
+
+### Build
+- **web:** drop drizzle, postgres, mysql2 and libsql
+- **api:** cryptography for the source-host ciphertext
+- **web:** drop better-auth
+
+### Chores
+- **web:** regenerate the API client types with the management routes
+- **web:** regenerate the API client types with jobs
+- **web:** regenerate the API client types with /api/v1
+- **web:** regenerate the API client types with /api/auth
+
 ## v0.6.13 — 2026-09-13
 
 ### Bug Fixes
