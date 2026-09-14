@@ -87,6 +87,7 @@ class ReleasePushTest(ApiCase):
         id = self.add_app()
         root = self.workspaces / id
         before = git(root, "rev-parse", "HEAD")
+        git(self.repo, "config", "receive.denyCurrentBranch", "refuse")
 
         res = self.client.post(
             f"/api/apps/{id}/release", json={"level": "patch", "dry_run": False}

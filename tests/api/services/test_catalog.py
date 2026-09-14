@@ -66,6 +66,7 @@ class MergedMatrixTest(CatalogCase):
             ("python", "starter", True),
         )
 
+        self.fake_push()
         res = self.client.post(
             "/api/apps/init",
             json={
@@ -74,7 +75,7 @@ class MergedMatrixTest(CatalogCase):
                 "template": "starter",
                 "name": "My Service",
                 "source": spec,
-                "push": False,
+                "credentials": {"kind": "github", "token": "t", "owner": "acme"},
             },
         )
         self.assertEqual(res.status_code, 201, res.text)

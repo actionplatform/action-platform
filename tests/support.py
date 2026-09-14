@@ -105,6 +105,7 @@ def platform_repo(root: Path) -> Path:
     (repo / "platform.toml").write_text(PLATFORM)
     (repo / "LAST_VERSION").write_text("1.2.3\n")
     git(repo, "init", "-q", "-b", "main")
+    git(repo, "config", "receive.denyCurrentBranch", "updateInstead")
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", "chore: bootstrap project")
     git(repo, "tag", "v1.2.3")

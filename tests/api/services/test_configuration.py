@@ -121,7 +121,7 @@ class ChangesTest(ApiCase):
 
 
 class DiscardTest(ApiCase):
-    def test_discard_on_an_installed_import_leaves_the_repository_as_cloned(self):
+    def test_discard_drops_edits_but_the_platform_files_come_back(self):
         from action_platform.settings import settings
         from tests.support import template_repo
 
@@ -139,21 +139,29 @@ class DiscardTest(ApiCase):
             json={"url": bare.as_uri(), "install": {"type": "web", "ci": "github"}},
         ).json()["id"]
 
+        manifest = self.client.get(f"/api/apps/{id}/manifest").json()["content"]
+        self.client.put(
+            f"/api/apps/{id}/manifest",
+            json={"content": manifest.replace('name = "legacy"', 'name = "edited"')},
+        )
+
         res = self.client.post(f"/api/apps/{id}/discard")
 
         self.assertEqual(res.status_code, 200, res.text)
         self.assertTrue(res.json()["clean"])
-        self.assertFalse((self.workspaces / id / "platform.toml").exists())
 
         detail = self.client.get(f"/api/apps/{id}")
 
         self.assertEqual(detail.status_code, 200, detail.text)
         self.assertEqual(detail.json()["project"]["name"], "legacy")
         self.assertFalse(detail.json()["clean"])
+        self.assertIn(
+            "platform.toml", self.client.get(f"/api/apps/{id}/changes").json()["files"]
+        )
 
 
 class InstallPlatformTest(ApiCase):
-    def test_install_endpoint_writes_the_platform_files_again(self):
+    def test_install_endpoint_adds_what_is_missing(self):
         from action_platform.settings import settings
         from tests.support import template_repo
 
@@ -170,13 +178,15 @@ class InstallPlatformTest(ApiCase):
             "/api/apps",
             json={"url": bare.as_uri(), "install": {"type": "web", "ci": "github"}},
         ).json()["id"]
-        (self.workspaces / id / "platform.toml").unlink()
-
-        res = self.client.post(f"/api/apps/{id}/install", json={"type": "web"})
+        res = self.client.post(
+            f"/api/apps/{id}/install", json={"type": "web", "ci": "gitlab"}
+        )
 
         self.assertEqual(res.status_code, 201, res.text)
-        self.assertIn("platform.toml", res.json()["installed"])
-        self.assertEqual(self.client.get(f"/api/apps/{id}").status_code, 200)
+        self.assertIn(".gitlab-ci.yml", res.json()["installed"])
+        self.assertIn(
+            ".gitlab-ci.yml", self.client.get(f"/api/apps/{id}/changes").json()["files"]
+        )
 
     def test_a_clone_that_lost_its_manifest_gets_it_back_on_the_next_request(self):
         from action_platform.settings import settings
@@ -208,16 +218,16 @@ class IdentityWithoutTokenTest(ApiCase):
     def test_a_local_commit_carries_the_organization_identity(self):
         id = self.add_app(on_main=False)
         root = self.workspaces / id
-        (root / "platform.toml").write_text(
-            (root / "platform.toml").read_text()
-            + '\n[services.cache]\nkind = "redis"\n'
+        manifest = self.client.get(f"/api/apps/{id}/manifest").json()["content"]
+        self.client.put(
+            f"/api/apps/{id}/manifest",
+            json={"content": manifest + '\n[services.cache]\nkind = "redis"\n'},
         )
 
         res = self.client.post(
             f"/api/apps/{id}/commit",
             json={
                 "message": "chore(platform): add cache",
-                "push": False,
                 "credentials": {
                     "author_name": "Ada",
                     "author_email": "ada@example.com",

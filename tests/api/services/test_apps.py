@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 from action_platform.settings import settings
@@ -64,15 +65,22 @@ class AppsCrudTest(ApiCase):
         self.assertFalse(rows[0]["prerelease"])
         self.assertEqual(len(rows[0]["sha"]), 7)
 
-    def test_sync_without_upstream_is_a_noop(self):
+    def test_a_branch_made_by_hand_in_the_clone_does_not_survive(self):
         id = self.add_app()
         workspace = next(self.workspaces.glob("*"))
         git(workspace, "checkout", "-q", "-b", "chore/7-local-only")
 
         self.assertEqual(self.client.post(f"/api/apps/{id}/sync").status_code, 200)
-        self.assertEqual(
-            self.client.get(f"/api/apps/{id}").json()["branch"], "chore/7-local-only"
-        )
+        self.assertEqual(self.client.get(f"/api/apps/{id}").json()["branch"], "main")
+
+    def test_the_clone_is_rebuilt_when_it_is_gone(self):
+        id = self.add_app()
+        shutil.rmtree(self.workspaces / id)
+
+        detail = self.client.get(f"/api/apps/{id}").json()
+
+        self.assertEqual(detail["branch"], "main")
+        self.assertTrue((self.workspaces / id / "platform.toml").exists())
 
 
 class UrlPolicyTest(ApiCase):
@@ -104,8 +112,9 @@ class InitTest(ApiCase):
             self.tmp_path / "templates", template="mini", rendered=True
         )
         self.patch(settings, "TEMPLATES_DIR", str(self.templates))
+        self.fake_push()
 
-    def test_generates_a_workspace(self):
+    def test_generates_pushes_and_registers(self):
         res = self.client.post(
             "/api/apps/init",
             json={
@@ -116,41 +125,42 @@ class InitTest(ApiCase):
                 "description": "orders",
                 "package_name": "orders",
                 "ci": "gitlab",
-                "git_init": True,
+                "credentials": {"kind": "github", "token": "t", "owner": "acme"},
             },
         )
 
         self.assertEqual(res.status_code, 201, res.text)
         body = res.json()
         self.assertEqual(body["name"], "orders-api")
-        self.assertFalse(body["pushed"])
-        self.assertEqual(body["url"], "")
+        self.assertTrue(body["pushed"])
+        self.assertTrue(body["url"].endswith(".git"))
 
         path = Path(body["path"])
         self.assertTrue(path.is_relative_to(self.workspaces))
         self.assertTrue((path / "orders" / "__init__.py").exists())
         self.assertIn("orders", (path / "README.md").read_text())
         self.assertIn('ci = "gitlab"', (path / "platform.toml").read_text())
-        self.assertTrue((path / ".git").is_dir())
+        self.assertIn('repo = "acme/orders-api"', (path / "platform.toml").read_text())
         self.assertFalse(
             any(p.name.startswith(".init-") for p in path.parent.iterdir())
         )
 
+        shutil.rmtree(path)
         detail = self.client.get(f"/api/apps/{body['id']}").json()
         self.assertEqual(detail["branch"], "main")
         self.assertTrue(detail["clean"])
+        self.assertTrue((path / "orders" / "__init__.py").exists())
         self.assertEqual(self.client.get("/api/apps").json()[0]["name"], "orders-api")
 
-    def test_without_git(self):
-        body = self.client.post(
+    def test_needs_a_host_to_push_to(self):
+        res = self.client.post(
             "/api/apps/init",
-            json={"type": "web", "stack": "python", "name": "plain", "git_init": False},
-        ).json()
-
-        self.assertFalse((Path(body["path"]) / ".git").exists())
-        self.assertEqual(
-            self.client.get(f"/api/apps/{body['id']}").json()["branch"], ""
+            json={"type": "web", "stack": "python", "name": "plain"},
         )
+
+        self.assertEqual(res.status_code, 400)
+        self.assertIn("source host", res.json()["detail"])
+        self.assertEqual(self.client.get("/api/apps").json(), [])
 
     def test_unknown_type_is_400(self):
         res = self.client.post("/api/apps/init", json={"type": "nope", "name": "x"})
@@ -195,9 +205,13 @@ class ImportWithInstallTest(LegacyImportCase):
         self.assertEqual(detail["project"]["language"], "python")
         self.assertEqual(detail["project"]["name"], "legacy")
         self.assertFalse(detail["clean"])
+        self.assertIn(
+            "platform.toml",
+            self.client.get(f"/api/apps/{body['id']}/changes").json()["files"],
+        )
 
 
-class SyncOverLocalChangesTest(LegacyImportCase):
+class DraftsSurviveSyncTest(LegacyImportCase):
     def _import(self) -> str:
         return self.client.post(
             "/api/apps",
@@ -207,7 +221,7 @@ class SyncOverLocalChangesTest(LegacyImportCase):
             },
         ).json()["id"]
 
-    def test_untracked_files_that_the_remote_now_has_do_not_block_sync(self):
+    def test_files_the_remote_now_has_leave_the_draft(self):
         id = self._import()
         root = self.workspaces / id
         for rel in ("platform.toml", ".last_version"):
@@ -223,13 +237,19 @@ class SyncOverLocalChangesTest(LegacyImportCase):
             git(root, "log", "-1", "--format=%s"), "chore: install platform"
         )
         self.assertNotIn(
-            "platform.toml", git(root, "status", "--porcelain", "--untracked-files=all")
+            "platform.toml", self.client.get(f"/api/apps/{id}/changes").json()["files"]
         )
 
-    def test_local_edits_survive_a_sync(self):
+    def test_a_draft_survives_a_sync_and_a_lost_clone(self):
         id = self._import()
         root = self.workspaces / id
-        (root / "pyproject.toml").write_text('[project]\nname = "legacy-local"\n')
+        manifest = self.client.get(f"/api/apps/{id}/manifest").json()["content"]
+        self.client.put(
+            f"/api/apps/{id}/manifest",
+            json={
+                "content": manifest.replace('name = "legacy"', 'name = "legacy-local"')
+            },
+        )
         (self.bare / "README.md").write_text("# legacy\n")
         git(self.bare, "add", "-A")
         git(self.bare, "commit", "-q", "-m", "docs: readme")
@@ -238,8 +258,14 @@ class SyncOverLocalChangesTest(LegacyImportCase):
 
         self.assertEqual(res.status_code, 200, res.text)
         self.assertTrue((root / "README.md").exists())
-        self.assertIn("legacy-local", (root / "pyproject.toml").read_text())
-        self.assertTrue((root / "platform.toml").exists())
+        self.assertIn("legacy-local", (root / "platform.toml").read_text())
+
+        shutil.rmtree(root)
+
+        self.assertIn(
+            "legacy-local",
+            self.client.get(f"/api/apps/{id}/manifest").json()["content"],
+        )
 
 
 class SyncDivergedTest(ApiCase):
@@ -253,14 +279,11 @@ class SyncDivergedTest(ApiCase):
         git(self.repo, "add", "remote.txt")
         git(self.repo, "commit", "-qm", "feat: remote only")
 
-        (root / "draft.txt").write_text("keep me\n")
-
         res = self.client.post(f"/api/apps/{id}/sync")
 
         self.assertEqual(res.status_code, 200, res.text)
         self.assertTrue((root / "remote.txt").exists())
         self.assertFalse((root / "local.txt").exists())
-        self.assertEqual((root / "draft.txt").read_text(), "keep me\n")
         self.assertEqual(git(root, "log", "-1", "--format=%s"), "feat: remote only")
 
     def test_a_merged_branch_deleted_on_the_remote_returns_to_main(self):
@@ -284,6 +307,7 @@ class SyncDivergedTest(ApiCase):
         self.assertEqual(res.status_code, 200, res.text)
         self.assertEqual(git(root, "rev-parse", "--abbrev-ref", "HEAD"), "main")
         self.assertEqual(git(root, "log", "-1", "--format=%s"), "Merge pull request #1")
+        self.assertEqual(self.client.get(f"/api/apps/{id}").json()["branch"], "main")
 
 
 class SyncWithoutAccessTest(ApiCase):
