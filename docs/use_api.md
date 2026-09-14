@@ -2,7 +2,7 @@
 
 `action-platform api` — the JSON API the web app drives; a FastAPI process listening on `:7788` with OpenAPI at `/docs`. It is released as its own component (`api/vX.Y.Z`, image `actionplatformio/action-platform-api`) and reports that version in `GET /api/version`.
 
-`action-platform api` — one process that refuses to start without `AP_DATABASE_URL`. Workspaces are file-backed under `AP_HOME`; accounts, sessions, organizations, apps and tokens live in the [database](concept_database.md) the API owns. Which organization, project or app a caller may touch is decided here too: `/api/v1/*` is the same API behind a gate that knows who is calling.
+`action-platform api` — one process that refuses to start without `AP_DATABASE_URL`. The API keeps no state on disk: every request that needs an app's files clones it fresh (a disposable clone under `AP_WORKSPACES`, brought level with the remote at most every `AP_WORKSPACE_TTL` seconds), applies the app's pending edits from the database and works there. Accounts, sessions, organizations, apps, pending edits and tokens live in the [database](concept_database.md) the API owns. Which organization, project or app a caller may touch is decided here too: `/api/v1/*` is the same API behind a gate that knows who is calling.
 
 | Endpoint | |
 |---|---|

@@ -24,7 +24,7 @@ flowchart LR
 | **Organization** | the tenant (better-auth `organization` plugin); the sidebar switches between the ones you belong to | members, teams, source hosts, projects |
 | **Team** | a group of organization members (`platform`, `payments`) | projects, at most one team per project |
 | **Project** | the apps that ship together (`orders-platform`) | apps |
-| **App** | one git repository, cloned by the API into `~/.action-platform/workspaces/<id>` (`/data` in Docker) | git-flow audit, commits, branches, tags, releases, configuration |
+| **App** | one git repository on a code host; the API clones it into a disposable directory whenever a request needs its files and keeps nothing of its own | git-flow audit, commits, branches, tags, releases, configuration |
 
 ## First run: the setup wizard
 
@@ -66,7 +66,7 @@ The catalog merges the official repository with the ones the organization added.
 ```mermaid
 flowchart LR
     C[Catalog card] -->|type · stack · template| S4
-    N[New app] --> S1[Type] --> S2[Stack] --> S3[Template] --> S4[Configure] --> S5[Review] --> G["generate → workspace"]
+    N[New app] --> S1[Type] --> S2[Stack] --> S3[Template] --> S4[Configure] --> S5[Review] --> G["generate → push"]
     G -->|push on| R[remote repo]
     G --> Page[app page]
 ```
@@ -79,15 +79,15 @@ flowchart LR
 4. **Configure** — project name (directory and package name follow it), description, project, source host and repository owner; options: git init, CI provider, Docker overlay (when the template supports it), push to the remote
 5. **Review** — summary plus the equivalent `action-platform init …` command
 
-*Create project* generates the app into a workspace on the API, registers it, and — when *push* was on — creates the repository on the host and pushes `main`. Without push, the app page offers **Push to remote** later.
+*Create project* generates the app, creates the repository on the selected code host, pushes `main` and registers it: an app on the platform always lives on a code host, so the wizard needs a connected host.
 
-**Add an existing repository** on the project page takes a git URL; the API clones it (it must already contain a `platform.toml` — run `action-platform install` there first).
+**Add an existing repository** on the project page takes a git URL; the API clones it to read it (it must already contain a `platform.toml` — run `action-platform install` there first).
 
 ### Importing a repository without the platform
 
-Project → **Add an existing repository** with any git URL. When the repository has no `platform.toml` the platform offers to install it: pick the type and CI, and the workspace receives `platform.toml`, `.code_quality/`, the CI files and the git hooks (the language is detected). Nothing is pushed — the app opens on Configuration with the changes uncommitted, and **Commit changes** puts them on a `chore/<code>` branch with a pull request. Opening a pull request lands on **Activity** with a banner naming it: the changes are not on the default branch until someone reviews and merges it on the source host, and the next sync brings the result back.
+Project → **Add an existing repository** with any git URL. When the repository has no `platform.toml` the platform offers to install it: pick the type and CI, and the app receives `platform.toml`, `.code_quality/`, the CI files and the git hooks (the language is detected) as pending edits. Nothing is pushed — the app opens on Configuration with the changes pending, and **Commit changes** puts them on a `chore/<code>` branch with a pull request. Opening a pull request lands on **Activity** with a banner naming it: the changes are not on the default branch until someone reviews and merges it on the source host, and the next sync brings the result back.
 
-**Discard changes** resets the clone to `HEAD` and deletes untracked files. On an imported app whose platform files were never committed that removes `platform.toml` too — and the next request puts it back: every API call that opens a clone installs the platform files again when they are missing (type `web`, language detected, CI matching the host), uncommitted, so the app never shows an error for something the platform can fix itself. `POST /api/apps/{id}/install` does the same with an explicit type, language and CI.
+Pending edits are not files in a clone: they are rows in the `draft` table (path and content), written on top of a fresh clone by every request that needs the app's files, so they survive restarts and are the same on every instance and worker. **Discard changes** deletes them. On an imported app whose platform files were never committed the next request puts the platform files back as pending edits again: every API call that opens a clone installs them when they are missing (type `web`, language detected, CI matching the host), so the app never shows an error for something the platform can fix itself. `POST /api/apps/{id}/install` does the same with an explicit type, language and CI.
 
 ## The app page
 
@@ -96,8 +96,8 @@ Project → **Add an existing repository** with any git URL. When the repository
 - commits, remote branches with their git-flow kind, tags
 - **Release**: level → *Preview* (dry run: next version and changelog) → *Release* dialog → tag, push, release on the host. Off `main`/`master` it is an `-rc.N` pre-release.
 - **Activity**: git-flow (start a `<kind>/<code>` branch, check out a branch, propose and open a pull request) and the pull requests stored for the app (state, merged date, head → base).
-- **Configuration**: pick a deploy target (applies the cloud overlay from the templates repository), add a service, edit `platform.toml`. Edits stay in the workspace until **Commit changes** (Conventional Commit, optional push, optional pull request). On `main`/`master`/`develop` the dialog requires a new `<kind>/<code>` branch: the changes are stashed, the branch starts from the right base, the commit lands there, and a pull request is opened when asked.
-- **Sync** does `git fetch --prune --tags` + fast-forward in the workspace (skipped when the branch has no upstream). Uncommitted changes are stashed around the pull and put back; a branch whose remote counterpart was deleted (its pull request merged) is left for the default branch; local commits that the remote already has under another hash are dropped in favour of the remote. A branch with local commits the remote does not have is moved to the remote as well, keeping uncommitted work: the remote is the source of truth and such a commit is only ever a leftover from a failed push. `POST /api/apps/{id}/sync {reset: true}` forces the same from a client. It then imports releases and pull requests from the source host into the `release` and `pull_request` tables (upsert by tag / number). Adding an app, releasing and opening a pull request run the same import. **Last synced** is stored per app and shown in the header.
+- **Configuration**: pick a deploy target (applies the cloud overlay from the templates repository), add a service, edit `platform.toml`. Edits stay pending until **Commit changes** (Conventional Commit, always pushed, optional pull request). On `main`/`master`/`develop` the dialog requires a new `<kind>/<code>` branch: the branch starts from the right base, the commit lands there, is pushed, and a pull request is opened when asked; the app is then checked out on that branch.
+- **Sync** fetches the remote and rebuilds the clone on the branch the app is checked out on — the remote is the only source of truth, so nothing local can diverge from it; a branch deleted on the remote (its pull request merged) sends the app back to the default branch. Every request does the same on its own when the clone is older than `AP_WORKSPACE_TTL` seconds; **Sync** forces it now. `POST /api/apps/{id}/sync {reset: true}` also drops the pending edits. It then imports releases and pull requests from the source host into the `release` and `pull_request` tables (upsert by tag / number). Adding an app, releasing and opening a pull request run the same import. **Last synced** is stored per app and shown in the header.
 
 Deploying is done by the CI of the repository (see [templates](concept_templates.md)), not by the web app.
 
@@ -109,7 +109,7 @@ Every confirmation is an in-app dialog; the UI is strictly monochrome.
 
 **Import** (admin role) brings a GitHub organization — or the connected account's own repositories — into the current organization through a connected GitHub host. Pick the host and the organization; the page lists everything the token sees:
 
-- **Repositories** become one project each, with the repository as its app (cloned into a workspace, releases and pull requests imported). Repositories already on the platform are marked and cannot be picked twice.
+- **Repositories** become one project each, with the repository as its app (cloned to read it, releases and pull requests imported). Repositories already on the platform are marked and cannot be picked twice.
 - **Teams** become teams with the same name; their GitHub members who are already members of the organization join them, and the projects of their repositories are assigned to them. An existing team with the same name is updated instead.
 - **People** become members right away when an account with the same email exists on the platform, or receive an invitation (with the role picked on the page) when GitHub shows a public email; people without a public email are listed as such and must be invited by hand.
 
@@ -121,7 +121,7 @@ Organization members, source hosts (add, update token, remove), the API URL and 
 
 ### Commit identity
 
-Releases and configuration commits are made by the platform on its clone, signed with the organization's commit identity — name and email chosen in Setup (default `Action Platform <cloud@actionplatform.io>`) and editable under Settings → **Commit identity**. Stored per organization in `organization_setting`. The web app sends it on every request that may commit — with the code-host token when the app has one, alone otherwise (`credentials.author_name/author_email`) — so a local commit without a push carries it too; the API's `AP_GIT_AUTHOR_*` only apply when nothing arrives.
+Releases and configuration commits are made by the platform on its clone, signed with the organization's commit identity — name and email chosen in Setup (default `Action Platform <cloud@actionplatform.io>`) and editable under Settings → **Commit identity**. Stored per organization in `organization_setting`. The web app sends it on every request that may commit — with the code-host token when the app has one, alone otherwise (`credentials.author_name/author_email`) — so every commit carries it; the API's `AP_GIT_AUTHOR_*` only apply when nothing arrives.
 
 ### Roles
 

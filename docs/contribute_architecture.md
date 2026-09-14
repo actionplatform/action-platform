@@ -14,7 +14,7 @@ flowchart TB
 
     subgraph api["action-platform api — FastAPI"]
         reg[apps registry]
-        ws[(workspaces: one clone per app)]
+        ws[(disposable clones under the temp dir)]
     end
 
     core[[action_platform.core]]
@@ -47,7 +47,7 @@ action_platform/
     source/       rest (urllib helper), github, gitlab, bitbucket, generic; build_source_host(kind, …)
   abc/            SourceHost, CIRunner, DeployTarget, Vcs, TemplateStoreABC contracts
   api/            FastAPI: main (app factory, AP_API_TOKEN middleware, Sentry), v1/routers (apps, catalog, configuration, flow, actions),
-                  services (apps, catalog, configuration, flow, git_state, lifecycle, manifest), repositories/registry (`registry` table + workspaces),
+                  services (apps, catalog, configuration, flow, git_state, lifecycle, manifest), repositories/registry (`registry` table) and repositories/drafts (`draft` table: pending edits), services/workspace (disposable clones),
                   schemas (the Pydantic models behind the OpenAPI contract), core/credentials (per-request token + identity), LAST_VERSION
   remote/         client (urllib): device-flow login, scoped token exchange, every /api/v1 call; credentials file
   mcp/            server (local or --remote), tools/{matrix,project,flow,lifecycle,remote}, prompts, annotations

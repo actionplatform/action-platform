@@ -45,8 +45,6 @@ services:
       dockerfile: deploy/Dockerfile.api
     restart: unless-stopped
     expose: ["7788"]
-    volumes:
-      - apdata:/data
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,8 +70,6 @@ services:
     pull_policy: always
     restart: unless-stopped
     command: ["action-platform", "worker"]
-    volumes:
-      - apdata:/data
     depends_on:
       postgres:
         condition: service_healthy
@@ -122,4 +118,3 @@ services:
 volumes:
   letsencrypt:
   pgdata:
-  apdata:
