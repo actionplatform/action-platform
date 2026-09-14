@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.15 — 2026-09-13
+
+### Features
+- **api:** own the database — SQLAlchemy models for every web table plus job, Alembic migrations run on boot, an existing web schema is adopted, AP_DATABASE_URL and get_db
+
 ## v0.5.14 — 2026-09-13
 
 ### Bug Fixes
