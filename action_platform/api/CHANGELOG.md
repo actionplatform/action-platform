@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.0 — 2026-09-14
+
+### Features
+- **api:** GET /api/v1/access, /apps/{id}/next-version, /apps/{id}/branches/plan; branches carry stable
+
 ## v0.6.3 — 2026-09-14
 
 ### Refactoring
