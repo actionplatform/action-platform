@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.9.2 — 2026-09-14
+
+### Features
+- **login:** asks for every scope and every organization by default; the device page lists all scopes as checkboxes, pre-selected and locked by the role; --scope narrows
+
 ## v0.9.1 — 2026-09-14
 
 ### Bug Fixes
