@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.12.1 — 2026-09-14
+
+### Bug Fixes
+- **import:** a refused repository listing is reported with the fix instead of failing the preview
+
 ## v0.12.0 — 2026-09-14
 
 ### Features
