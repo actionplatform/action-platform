@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.13.1 — 2026-09-14
+
+### Bug Fixes
+- **web:** not-found renders inside the app shell, so a missing project no longer breaks hydration
+
 ## v0.13.0 — 2026-09-14
 
 ### Features
