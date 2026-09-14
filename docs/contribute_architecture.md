@@ -9,7 +9,7 @@ flowchart TB
     subgraph web["apps/web — Next.js"]
         ui[Pages + server actions]
         auth[sessions · cookies via /api/auth]
-        v1["/api/v1/* (bearer proxy)"]
+        v1["/api/v1/* → rewrite to the API"]
     end
 
     subgraph api["action-platform api — FastAPI"]
@@ -163,4 +163,4 @@ erDiagram
 
 ## Trust between web and API
 
-The browser never talks to the Python API. The web app holds the session cookie the API signed, asks `GET /api/auth/session` who the caller is, and calls the API server-side over the private network; the CLI and MCP go through the web app's `/api/v1` proxy with a bearer token from `action-platform login`: a JWT carrying user, organization, scope (`read`, `write`, `release`, `admin`) and reach (optionally one project or one app), checked against the `api_token` row it names (revocation, expiry) and then against the caller's role — a request must pass all three. Between web and API a shared secret, `AP_API_TOKEN`, is sent as `Authorization: Bearer` and checked in constant time on every route but `/api/version`, so only the web app can drive clones, git and the workspaces.
+The web app holds the session cookie the API signed, asks `GET /api/auth/session` who the caller is, and calls the API's internal routes (`/api/apps/…`) server-side over the private network with the shared secret `AP_API_TOKEN` (`Authorization: Bearer`, constant-time check on every route but `/api/version`). The CLI, MCP and the browser reach the user-facing prefixes — `/api/v1/*` and `/api/auth/*` — through the platform's public address: the web app rewrites those paths to the API unchanged, and the API's gate identifies the caller (a JWT from `action-platform login` carrying user, organization, scope and reach, checked against its `api_token` row; or a session), then applies role ∩ scope ∩ reach before the call reaches a workspace ([API](use_api.md)).

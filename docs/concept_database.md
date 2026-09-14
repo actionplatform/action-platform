@@ -40,4 +40,4 @@ Models live in `action_platform/api/db/models.py` (SQLAlchemy 2, one class per t
 
 ## What still lives in the web app
 
-Accounts, sessions, the device flow and tokens are the API's (`/api/auth/*`). Organizations' directory data — teams, projects, apps, source hosts, invitations — the OAuth flows with GitHub, GitLab and Bitbucket, and the permission checks in `/api/v1` still run in the web app on the same tables; each moves to the API next. The web app keeps its drizzle migrations until then and both sides share the schema at revision `0001`.
+Accounts, sessions, the device flow, tokens, the `/api/v1` gate with its permission checks, and the reads of projects, apps, teams, members, source-host credentials, commit identity and template sources are the API's. The web app's pages still write teams, projects, apps, source hosts and invitations, and run the OAuth connection flows, on the same tables — they move to the API with the job queue. The web app keeps its drizzle migrations until then and both sides share the schema at revision `0001`.
