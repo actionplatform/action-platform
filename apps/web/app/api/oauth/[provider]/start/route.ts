@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { authorizeUrl, isConfigured, type Provider, PROVIDERS, signState } from "@/lib/oauth";
 import { publicOrigin } from "@/lib/origin";
+import { safePath } from "@/lib/safe-path";
 import { isMember, roleOf } from "@/lib/orgs";
 import { can } from "@/lib/permissions";
 import { getSession } from "@/lib/session";
@@ -12,7 +13,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
   if (!isConfigured(provider as Provider)) return Response.json({ detail: `${PROVIDERS[provider as Provider].label} OAuth app is not configured` }, { status: 400 });
 
   const url = new URL(req.url);
-  const returnTo = url.searchParams.get("return") || "/settings";
+  const returnTo = safePath(url.searchParams.get("return"), "/settings");
   let orgId: string | null = null;
 
   const session = await getSession();
@@ -28,6 +29,6 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
 
   if (!orgId) return Response.json({ detail: "no organization" }, { status: 400 });
 
-  const state = signState({ orgId, returnTo });
+  const state = signState({ orgId, returnTo, userId: session?.user.id ?? null });
   redirect(authorizeUrl(provider as Provider, publicOrigin(req.headers), state));
 }

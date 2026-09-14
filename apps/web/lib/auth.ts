@@ -17,6 +17,17 @@ function create(conn: Connection, authSecret: string | undefined, allowSignUp = 
     secret: authSecret,
     baseURL: process.env.BETTER_AUTH_URL,
     trustedOrigins: trustedOrigins(),
+    rateLimit: {
+      enabled: true,
+      window: 60,
+      max: 100,
+      customRules: {
+        "/sign-in/email": { window: 60, max: 10 },
+        "/sign-up/email": { window: 60, max: 10 },
+        "/device/token": { window: 60, max: 40 },
+        "/device/code": { window: 60, max: 20 },
+      },
+    },
     database: drizzleAdapter(conn.db, { provider: conn.engine, schema: conn.schema }),
     emailAndPassword: { enabled: true, disableSignUp: !allowSignUp },
     plugins: [

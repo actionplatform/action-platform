@@ -1,29 +1,32 @@
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 import { jwtVerify, SignJWT } from "jose";
-import { readConfig } from "./config";
+import { subkey } from "./keys";
 import { q } from "./db/query";
 import { type Scope, parseScopes } from "./permissions";
 
 export const TOKEN_TTL_DAYS = 90;
+export const ADMIN_TOKEN_TTL_DAYS = 30;
 const ISSUER = "action-platform";
+const AUDIENCE = "action-platform/api/v1";
 
 export type Reach = { projectId: string | null; appId: string | null };
 export type ApiToken = Reach & { id: string; name: string; scope: Scope[]; createdAt: Date; expiresAt: Date; lastUsedAt: Date | null; revokedAt: Date | null };
 export type TokenClaims = Reach & { id: string; userId: string; organizationId: string | null; scope: Scope[] };
 
 function key(): Uint8Array {
-  return new TextEncoder().encode(readConfig().authSecret);
+  return new Uint8Array(subkey("api-token"));
 }
 
 export async function issueToken(input: { userId: string; organizationId: string | null; scope: Scope[]; name: string; projectId?: string | null; appId?: string | null }): Promise<{ token: string; id: string; expiresAt: Date }> {
   const { db, t } = await q();
   const id = crypto.randomUUID();
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + TOKEN_TTL_DAYS * 86400_000);
+  const expiresAt = new Date(now.getTime() + (input.scope.includes("admin") ? ADMIN_TOKEN_TTL_DAYS : TOKEN_TTL_DAYS) * 86400_000);
   await db.insert(t.apiToken).values({ id, userId: input.userId, organizationId: input.organizationId, name: input.name, scope: input.scope.join(" "), projectId: input.projectId ?? null, appId: input.appId ?? null, createdAt: now, expiresAt, lastUsedAt: null, revokedAt: null });
   const token = await new SignJWT({ org: input.organizationId ?? undefined, scope: input.scope.join(" "), project: input.projectId ?? undefined, app: input.appId ?? undefined })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setIssuer(ISSUER)
+    .setAudience(AUDIENCE)
     .setSubject(input.userId)
     .setJti(id)
     .setIssuedAt(now)
@@ -39,7 +42,7 @@ export function looksLikeJwt(token: string): boolean {
 export async function verifyToken(token: string, client: string | null = null): Promise<TokenClaims | null> {
   let payload;
   try {
-    payload = (await jwtVerify(token, key(), { issuer: ISSUER })).payload;
+    payload = (await jwtVerify(token, key(), { issuer: ISSUER, audience: AUDIENCE })).payload;
   } catch {
     return null;
   }
@@ -105,9 +108,8 @@ async function clientsOf(tokenIds: string[]): Promise<Map<string, TokenClient[]>
 
 export async function tokensOf(userId: string, organizationId: string): Promise<ApiToken[]> {
   const { db, t } = await q();
-  const rows = await db.select().from(t.apiToken).where(and(eq(t.apiToken.userId, userId), eq(t.apiToken.organizationId, organizationId), isNull(t.apiToken.revokedAt)));
+  const rows = await db.select().from(t.apiToken).where(and(eq(t.apiToken.userId, userId), eq(t.apiToken.organizationId, organizationId), isNull(t.apiToken.revokedAt), gt(t.apiToken.expiresAt, new Date())));
   return rows
-    .filter((r) => r.expiresAt.getTime() > Date.now())
     .map((r) => ({ id: r.id, name: r.name, scope: parseScopes(r.scope), projectId: r.projectId, appId: r.appId, createdAt: r.createdAt, expiresAt: r.expiresAt, lastUsedAt: r.lastUsedAt, revokedAt: r.revokedAt }))
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
@@ -169,8 +171,8 @@ export async function tokensOfUser(userId: string): Promise<UserToken[]> {
     .leftJoin(t.organization, eq(t.apiToken.organizationId, t.organization.id))
     .leftJoin(t.project, eq(t.apiToken.projectId, t.project.id))
     .leftJoin(t.app, eq(t.apiToken.appId, t.app.id))
-    .where(and(eq(t.apiToken.userId, userId), isNull(t.apiToken.revokedAt)));
-  const live = rows.filter((r) => r.token.expiresAt.getTime() > Date.now());
+    .where(and(eq(t.apiToken.userId, userId), isNull(t.apiToken.revokedAt), gt(t.apiToken.expiresAt, new Date())));
+  const live = rows;
   const clients = await clientsOf(live.map((r) => r.token.id));
   return live
     .map((r) => ({

@@ -7,6 +7,11 @@ import * as sqliteSchema from "./schema/sqlite";
 
 export type Engine = "pg" | "mysql" | "sqlite";
 
+function poolSize(): number {
+  const n = Number(process.env.DATABASE_POOL_SIZE ?? "10");
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 10;
+}
+
 type PgDb = import("drizzle-orm/postgres-js").PostgresJsDatabase<typeof pgSchema>;
 type MysqlDb = import("drizzle-orm/mysql2").MySql2Database<typeof mysqlSchema>;
 type SqliteDb = import("drizzle-orm/libsql").LibSQLDatabase<typeof sqliteSchema>;
@@ -32,13 +37,13 @@ async function open(url: string): Promise<Connection> {
     case "pg": {
       const postgres = (await import("postgres")).default;
       const { drizzle } = await import("drizzle-orm/postgres-js");
-      const sql = postgres(url, { max: 10 });
+      const sql = postgres(url, { max: poolSize() });
       return { engine: "pg", db: drizzle(sql, { schema: pgSchema }), schema: pgSchema, close: () => sql.end() };
     }
     case "mysql": {
       const mysql = await import("mysql2/promise");
       const { drizzle } = await import("drizzle-orm/mysql2");
-      const pool = mysql.createPool({ uri: url, connectionLimit: 10 });
+      const pool = mysql.createPool({ uri: url, connectionLimit: poolSize() });
       return { engine: "mysql", db: drizzle(pool, { schema: mysqlSchema, mode: "default" }), schema: mysqlSchema, close: () => pool.end() };
     }
     case "sqlite": {

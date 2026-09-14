@@ -18,7 +18,7 @@ Every response is a Pydantic model under `api/schemas/`; `apps/web` generates it
 
 ## Trust
 
-Every route but `/api/version`, `/docs` and `/openapi.json` requires `Authorization: Bearer <AP_API_TOKEN>`, the shared secret between the web app and the API, checked in constant time. The API trusts its caller for everything else — organizations, projects, roles, scopes and reach are the web app's job, enforced in its `/api/v1` proxy ([access control](concept_access_control.md)). The CLI and MCP never talk to this API directly; they go through the proxy.
+Every route but `/api/version`, `/docs` and `/openapi.json` requires `Authorization: Bearer <AP_API_TOKEN>`, the shared secret between the web app and the API, checked in constant time. Without a token the API refuses to start — `AP_ALLOW_UNAUTHENTICATED=1` opts into an open API for local development only. The API trusts its caller for everything else — organizations, projects, roles, scopes and reach are the web app's job, enforced in its `/api/v1` proxy ([access control](concept_access_control.md)). The CLI and MCP never talk to this API directly; they go through the proxy.
 
 ## Workspaces
 

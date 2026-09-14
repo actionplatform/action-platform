@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from action_platform.api import api_version
 from action_platform.api.core.deps import get_registry
 from action_platform.api.v1 import router as v1
-from action_platform.core.exception import ActionPlatformError
+from action_platform.core.exception import ActionPlatformError, ConfigError
 from action_platform.observability import observe
 from action_platform.settings import settings
 
@@ -24,6 +24,13 @@ def build(
     app = FastAPI(title="action-platform", version=api_version())
     get_registry.cache_clear()
     expected = settings.API_TOKEN if token is None else token
+
+    if not expected and not settings.ALLOW_UNAUTHENTICATED_API:
+        raise ConfigError(
+            "AP_API_TOKEN is empty: every route would be open. Set the shared secret "
+            "(the web app sends it as Authorization: Bearer) or, for local development "
+            "only, AP_ALLOW_UNAUTHENTICATED=1."
+        )
 
     if expected:
 
@@ -47,8 +54,8 @@ def build(
         app.add_middleware(
             CORSMiddleware,
             allow_origins=cors_origins,
-            allow_methods=["*"],
-            allow_headers=["*"],
+            allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            allow_headers=["authorization", "content-type"],
         )
 
     @app.exception_handler(ActionPlatformError)
@@ -87,4 +94,11 @@ def serve(
         )
         return
 
-    uvicorn.run(build(cors_origins), host=host, port=port, log_level="warning")
+    uvicorn.run(
+        build(cors_origins),
+        host=host,
+        port=port,
+        log_level="warning",
+        proxy_headers=True,
+        forwarded_allow_ips=settings.FORWARDED_ALLOW_IPS,
+    )

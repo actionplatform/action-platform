@@ -1,3 +1,4 @@
+import { PROVIDER_TIMEOUT_MS } from "@/lib/timeouts";
 import { credentialsFor, setHostOwner } from "./source-hosts";
 
 export type Owner = { account: string; kind: "user" | "org"; repositories: "all" | "selected"; administration: string; contents: string; canCreateRepos: boolean; selected?: string[]; configureUrl?: string | null };
@@ -6,7 +7,7 @@ export type HostAccess =
   | { ok: false; error: string };
 
 async function get<T>(url: string, headers: Record<string, string>): Promise<{ status: number; body: T | null }> {
-  const res = await fetch(url, { headers: { accept: "application/json", "user-agent": "action-platform", ...headers }, cache: "no-store" });
+  const res = await fetch(url, { headers: { accept: "application/json", "user-agent": "action-platform", ...headers }, cache: "no-store", signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
   const body = res.ok ? ((await res.json()) as T) : null;
   return { status: res.status, body };
 }

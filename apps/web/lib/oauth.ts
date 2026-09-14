@@ -1,5 +1,7 @@
+import { PROVIDER_TIMEOUT_MS } from "@/lib/timeouts";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { type OAuthApp, readConfig } from "./config";
+import { subkey } from "./keys";
 
 export type Provider = "github" | "gitlab" | "bitbucket";
 
@@ -80,7 +82,7 @@ export async function refreshToken(provider: Provider, refresh: string): Promise
 export async function identity(provider: Provider, accessToken: string): Promise<Identity> {
   const app = appFor(provider)!;
   const api = apiBase(provider, app);
-  const res = await fetch(`${api}/user`, { headers: { authorization: `Bearer ${accessToken}`, accept: "application/json", "user-agent": "action-platform" }, cache: "no-store" });
+  const res = await fetch(`${api}/user`, { headers: { authorization: `Bearer ${accessToken}`, accept: "application/json", "user-agent": "action-platform" }, cache: "no-store", signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
   if (!res.ok) throw new Error(`${PROVIDERS[provider].label}: could not read the signed-in user (${res.status})`);
   const u = (await res.json()) as Record<string, string>;
   const login = provider === "github" ? u.login : u.username;
@@ -95,21 +97,19 @@ export function apiBaseUrl(provider: Provider): string | null {
   return null;
 }
 
-export type State = { orgId: string; returnTo: string; nonce: string; ts: number };
+export type State = { orgId: string; returnTo: string; userId: string | null; nonce: string; ts: number };
 
-function key(): string {
-  const secret = readConfig().authSecret;
-  if (!secret) throw new Error("auth secret is not configured");
-  return secret;
+function key(): Buffer {
+  return subkey("oauth-state");
 }
 
-export function signState(state: Omit<State, "nonce" | "ts">): string {
-  const payload = Buffer.from(JSON.stringify({ ...state, nonce: randomBytes(8).toString("hex"), ts: Date.now() })).toString("base64url");
+export function signState(state: Omit<State, "nonce" | "ts" | "userId"> & { userId?: string | null }): string {
+  const payload = Buffer.from(JSON.stringify({ ...state, userId: state.userId ?? null, nonce: randomBytes(8).toString("hex"), ts: Date.now() })).toString("base64url");
   const mac = createHmac("sha256", key()).update(payload).digest("base64url");
   return `${payload}.${mac}`;
 }
 
-export function verifyState(raw: string | null): State | null {
+export function verifyState(raw: string | null, userId: string | null = null): State | null {
   if (!raw) return null;
   const [payload, mac] = raw.split(".");
   if (!payload || !mac) return null;
@@ -117,6 +117,7 @@ export function verifyState(raw: string | null): State | null {
   if (expected.length !== mac.length || !timingSafeEqual(Buffer.from(expected), Buffer.from(mac))) return null;
   const state = JSON.parse(Buffer.from(payload, "base64url").toString()) as State;
   if (Date.now() - state.ts > 10 * 60_000) return null;
+  if (state.userId && state.userId !== userId) return null;
   return state;
 }
 
@@ -129,7 +130,7 @@ async function postForm(url: string, form: Record<string, string>, headers: Reco
     method: "POST",
     headers: { accept: "application/json", "content-type": "application/x-www-form-urlencoded", "user-agent": "action-platform", ...headers },
     body: new URLSearchParams(form),
-    cache: "no-store",
+    cache: "no-store", signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
   });
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (!res.ok || data.error) throw new Error(String(data.error_description ?? data.error ?? `${res.status} from ${url}`));

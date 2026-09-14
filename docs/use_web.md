@@ -144,3 +144,7 @@ action-platform mcp --remote
 ```
 
 Requests go to `/api/v1/*` on the web app with `Authorization: Bearer <token>`; the route checks the session and forwards to the Python API.
+
+## Hardening
+
+The web app sends security headers on every response (CSP, HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`), refuses cross-origin cookie-authenticated writes to `/api/v1`, rate-limits sign-in and device polling, binds every OAuth `state` to the signed-in user, only follows same-origin `next`/`return` paths, and times out every call to a code host (15 s) and to the API (120 s).

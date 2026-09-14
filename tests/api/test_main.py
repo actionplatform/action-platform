@@ -17,6 +17,16 @@ class StaticEndpointsTest(ApiCase):
 
 
 class ApiTokenTest(ApiCase):
+    def test_refuses_to_start_open_unless_asked(self):
+        from action_platform.api.main import build
+        from action_platform.core.exception import ConfigError
+        from action_platform.settings import settings
+
+        self.patch(settings, "ALLOW_UNAUTHENTICATED_API", False)
+
+        with self.assertRaisesRegex(ConfigError, "AP_API_TOKEN"):
+            build(token="")
+
     def test_guards_every_route_but_version(self):
         from action_platform.api.main import build
 

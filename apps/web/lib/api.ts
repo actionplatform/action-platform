@@ -1,11 +1,12 @@
 import createClient from "openapi-fetch";
+import { API_TIMEOUT_MS } from "./timeouts";
 import type { components, paths } from "./api.d";
 
 export const API_BASE = process.env.AP_API ?? "http://127.0.0.1:7788";
 
 export const API_TOKEN = process.env.AP_API_TOKEN ?? "";
 export const apiHeaders: Record<string, string> = API_TOKEN ? { authorization: `Bearer ${API_TOKEN}` } : {};
-export const client = createClient<paths>({ baseUrl: API_BASE, cache: "no-store", headers: apiHeaders });
+export const client = createClient<paths>({ baseUrl: API_BASE, cache: "no-store", headers: apiHeaders, fetch: (input) => fetch(input, { signal: AbortSignal.timeout(API_TIMEOUT_MS) }) });
 
 export type Schemas = components["schemas"];
 export type AppRow = Schemas["AppRow"];
