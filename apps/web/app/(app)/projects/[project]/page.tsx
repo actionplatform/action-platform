@@ -10,7 +10,7 @@ import { Table, Td, Th } from "@/components/ui/table";
 import { api, type AppRow } from "@/lib/api";
 import { appsOf, projectById } from "@/lib/projects";
 
-import { can } from "@/lib/permissions";
+
 import { requireOrg } from "@/lib/session";
 import { AddForm } from "./apps/add-form";
 import { AppCards } from "./apps/app-cards";
@@ -20,7 +20,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
   const { project: projectId } = await params;
   const { session, org } = await requireOrg();
   const project = await projectById(org.id, projectId);
-  const manage = can(session.role, "project.manage");
+  const manage = !!session.grants["project.manage"];
   if (!project) notFound();
 
   const apps = await appsOf(project.id);

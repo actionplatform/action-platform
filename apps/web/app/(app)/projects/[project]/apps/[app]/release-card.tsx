@@ -2,16 +2,17 @@
 
 import { GitBranch, Rocket } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import type { ReleasePreview } from "@/lib/api";
-import { bump, type Increment } from "@/lib/semver";
 import { cn } from "@/lib/utils";
-import { previewRelease, runRelease } from "../actions";
+import { nextVersion, previewRelease, runRelease } from "../actions";
+
+type Increment = "patch" | "minor" | "major";
 import type { AppView } from "./model";
 
 const LEVELS: { id: Increment; label: string }[] = [
@@ -33,13 +34,18 @@ export function ReleaseCard({ view }: { view: AppView }) {
   const [branch, setBranch] = useState(view.branch);
   const branches = view.branches.map((b) => b.name);
   const options = branches.includes(view.branch) ? branches : [view.branch, ...branches];
-  const stable = branch === "main" || branch === "master";
   const switching = branch !== view.branch;
-  const stableBranch = options.find((b) => b === "main" || b === "master") ?? null;
 
   const current = view.version ?? "0.0.0";
-  const localNext = bump(current, level);
-  const next = preview && !preview.dry_run ? preview.next : stable ? localNext : `${localNext}-rc.N`;
+  const [computed, setComputed] = useState<{ next: string; prerelease: boolean } | null>(null);
+  const stable = computed ? !computed.prerelease : true;
+  useEffect(() => {
+    let live = true;
+    setComputed(null);
+    nextVersion(view.registryId, level, switching ? branch : null).then((r) => { if (live && r.ok) setComputed({ next: r.data.next, prerelease: r.data.prerelease }); });
+    return () => { live = false; };
+  }, [view.registryId, level, branch, switching]);
+  const next = preview && !preview.dry_run ? preview.next : computed?.next ?? "…";
   const canRelease = view.can["app.release"] && view.workingTree === "clean" && (switching || view.health.ok) && !!view.repositoryUrl;
   const blocker = !view.can["app.release"] ? "Your role cannot create releases." : !view.repositoryUrl ? "Push the repository to a remote first." : view.workingTree !== "clean" ? (switching ? "Commit or discard local changes before switching branches." : "Commit or discard local changes first.") : !switching && !view.health.ok ? "Fix the branch policy problems first." : null;
 
@@ -65,8 +71,8 @@ export function ReleaseCard({ view }: { view: AppView }) {
         <div className="space-y-2">
           <div className="text-xs text-secondary">Branch</div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Select size="lg" mono className="sm:w-64" icon={<GitBranch className="size-4" strokeWidth={1.75} />} value={branch} onChange={(v) => { setBranch(v); setPreview(null); setResult(null); }} options={options.map((b) => ({ value: b, label: b, hint: b === "main" || b === "master" ? "stable" : "rc" }))} />
-            <div className="text-[13px] text-secondary">{stable ? "Stable version, published as the latest release." : `Pre-release (rc). Stable versions are cut from ${stableBranch ?? "main"}.`}{switching && <> The workspace switches to <span className="font-mono text-foreground">{branch}</span> first.</>}</div>
+            <Select size="lg" mono className="sm:w-64" icon={<GitBranch className="size-4" strokeWidth={1.75} />} value={branch} onChange={(v) => { setBranch(v); setPreview(null); setResult(null); }} options={options.map((b) => ({ value: b, label: b, hint: view.stableBranches.includes(b) ? "stable" : "rc" }))} />
+            <div className="text-[13px] text-secondary">{stable ? "Stable version, published as the latest release." : `Pre-release (rc). Stable versions are cut from ${view.stableBranches[0] ?? "main"}.`}{switching && <> The workspace switches to <span className="font-mono text-foreground">{branch}</span> first.</>}</div>
           </div>
         </div>
 

@@ -7,7 +7,7 @@ import { hostAccess } from "@/lib/host-access";
 import { oauthApps } from "@/lib/oauth";
 import { invitationsOf, membersOf } from "@/lib/orgs";
 import { publicOrigin } from "@/lib/origin";
-import { can } from "@/lib/permissions";
+
 import { requireOrg } from "@/lib/session";
 import { hostsOf } from "@/lib/source-hosts";
 import { gitAuthorOf } from "@/lib/org-settings";
@@ -15,6 +15,7 @@ import { ApiCard } from "./api-card";
 import { GitflowCard } from "./gitflow-card";
 import { IdentityCard } from "./identity-card";
 import { MembersPanel } from "./members-panel";
+import { v1 } from "@/lib/v1";
 import { RolesCard } from "./roles-card";
 import { SourceHosts } from "./source-hosts";
 
@@ -23,8 +24,8 @@ const DOCS_URL = "https://github.com/actionplatform/action-platform/blob/master/
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
   const { session, org } = await requireOrg();
   const [members, invitations, role, hosts, query, author] = await Promise.all([membersOf(org.id), invitationsOf(org.id), Promise.resolve(session.role), hostsOf(org.id), searchParams, gitAuthorOf(org.id)]);
-  const canManage = can(role, "org.manage");
-  const apps = await oauthApps();
+  const canManage = !!session.grants["org.manage"];
+  const [apps, catalog] = await Promise.all([oauthApps(), v1.access()]);
   const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind !== "generic").map(async (h) => [h.id, await hostAccess(org.id, h.id)] as const)));
   const origin = publicOrigin(await headers());
   const connected = { github: [] as string[], gitlab: [] as string[], bitbucket: [] as string[] };
@@ -41,6 +42,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       <PageHeader title="Settings" description="Manage workspace connections, roles and platform configuration." />
       <div className="space-y-5">
         <MembersPanel
+          roles={catalog.roles}
           org={{ name: org.name, slug: org.slug }}
           members={members.map((m) => ({ id: m.id, userId: m.userId, name: m.name, email: m.email, role: m.role }))}
           invitations={invitations.map((i) => ({ id: i.id, email: i.email, role: i.role, inviter: i.inviter, expiresAt: i.expiresAt.toISOString() }))}
@@ -69,7 +71,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <SourceHosts hosts={hosts} access={access} canManage={canManage} />
 
         <IdentityCard author={author} canManage={canManage} />
-        <RolesCard />
+        <RolesCard access={catalog} />
         <ApiCard baseUrl={API_BASE} version={version} docsUrl={DOCS_URL} />
         <GitflowCard rules={rules} />
       </div>

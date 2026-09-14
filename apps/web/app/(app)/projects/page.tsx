@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/layout/page";
 import { projectsOf } from "@/lib/projects";
 
-import { can } from "@/lib/permissions";
+
 import { requireOrg } from "@/lib/session";
 import { teamsOf } from "@/lib/teams";
 import { NewProjectForm } from "./new-project-form";
@@ -9,8 +9,8 @@ import { ProjectsView } from "./projects-view";
 
 export default async function ProjectsPage() {
   const { session, org } = await requireOrg();
-  const [projects, teams, role] = await Promise.all([projectsOf(org.id), teamsOf(org.id), Promise.resolve(session.role)]);
-  const manage = can(role, "project.manage");
+  const [projects, teams] = await Promise.all([projectsOf(org.id), teamsOf(org.id)]);
+  const manage = !!session.grants["project.manage"];
 
   return (
     <>

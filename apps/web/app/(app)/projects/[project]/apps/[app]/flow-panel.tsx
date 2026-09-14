@@ -10,11 +10,9 @@ import { Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
-import { checkoutBranch, openPullRequest, proposePullRequest, startBranch } from "../actions";
+import { checkoutBranch, openPullRequest, planBranch, proposePullRequest, startBranch } from "../actions";
 import type { AppView } from "./model";
 
-const KINDS = ["feature", "bugfix", "hotfix", "release", "chore", "docs", "refactor", "test", "ci", "perf"];
-const PROTECTED = ["main", "master", "develop"];
 
 export function FlowPanel({ view }: { view: AppView }) {
   const router = useRouter();
@@ -22,7 +20,7 @@ export function FlowPanel({ view }: { view: AppView }) {
   const [prOpen, setPrOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const onProtected = PROTECTED.includes(view.branch);
+  const onProtected = view.onProtectedBranch;
 
   const checkout = (branch: string) =>
     start(async () => {
@@ -58,7 +56,7 @@ export function FlowPanel({ view }: { view: AppView }) {
 
 export function OpenPullRequestButton({ view }: { view: AppView }) {
   const [open, setOpen] = useState(false);
-  const onProtected = PROTECTED.includes(view.branch);
+  const onProtected = view.onProtectedBranch;
   const reason = !view.can["app.flow"] ? "Your role cannot open pull requests." : !view.repositoryUrl ? "Push the repository first." : onProtected ? `Check out a <kind>/<code> branch first; ${view.branch} is protected.` : null;
   return (
     <>
@@ -76,8 +74,14 @@ function NewBranchDialog({ view, open, onClose }: { view: AppView; open: boolean
   const [push, setPush] = useState(!!view.repositoryUrl);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const name = `${kind}/${code.trim() || "<code>"}${slug.trim() ? `-${slug.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}` : ""}`;
-  const base = ["hotfix", "support"].includes(kind) ? "main" : view.branches.some((b) => b.name === "develop") ? "develop" : "main";
+  const [plan, setPlan] = useState<{ branch: string; base: string } | null>(null);
+  useEffect(() => {
+    let live = true;
+    const timer = setTimeout(() => { planBranch(view.registryId, kind, code, slug).then((r) => { if (live && r.ok) setPlan(r.data); }); }, 150);
+    return () => { live = false; clearTimeout(timer); };
+  }, [view.registryId, kind, code, slug]);
+  const name = plan?.branch ?? `${kind}/…`;
+  const base = plan?.base ?? "…";
 
   const submit = () =>
     start(async () => {
@@ -98,7 +102,7 @@ function NewBranchDialog({ view, open, onClose }: { view: AppView; open: boolean
         <div>
           <div className="mb-1 text-xs text-secondary">Kind</div>
           <div className="flex flex-wrap gap-1.5">
-            {KINDS.map((k) => (
+            {view.branchKinds.map((k) => (
               <button key={k} type="button" onClick={() => setKind(k)} aria-pressed={kind === k} className={cn("h-8 rounded-md border px-2.5 font-mono text-xs transition-colors", kind === k ? "border-foreground bg-foreground text-primary-foreground" : "border-border text-secondary hover:border-border-hover hover:text-foreground")}>{k}</button>
             ))}
           </div>

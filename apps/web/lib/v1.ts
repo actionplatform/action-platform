@@ -14,6 +14,7 @@ export type JobRow = Schemas["JobOut"];
 
 export const v1 = {
   me: async () => unwrap(await client.GET("/api/v1/me")),
+  access: async () => unwrap(await client.GET("/api/v1/access")),
   organizations: async () => unwrap(await client.GET("/api/v1/organizations")),
   projects: async (organizationId: string | null = null) => unwrap(await client.GET("/api/v1/projects", { headers: organizationId ? { "X-Organization": organizationId } : {} })),
   createProject: async (name: string, description = "") => unwrap(await client.POST("/api/v1/projects", { body: { name, description } })),

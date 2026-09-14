@@ -2,7 +2,7 @@
 
 import { Check, Cloud, ExternalLink, GitCommitHorizontal, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -11,7 +11,7 @@ import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
-import { addService, commitChanges, discardChanges, saveManifest, setCloudTarget } from "../actions";
+import { addService, commitChanges, discardChanges, planBranch, saveManifest, setCloudTarget } from "../actions";
 import type { AppView } from "./model";
 
 type CloudOption = { name: string; description: string; source: string };
@@ -29,16 +29,10 @@ export function ConfigurationPanels({ view, clouds, services }: { view: AppView;
   );
 }
 
-const KINDS = ["chore", "feature", "bugfix", "docs", "ci", "refactor"];
-const PROTECTED = ["main", "master", "develop"];
-
-function slugify(text: string) {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-}
 
 function CommitBar({ view }: { view: AppView }) {
   const router = useRouter();
-  const onProtected = PROTECTED.includes(view.branch);
+  const onProtected = view.onProtectedBranch;
   const hasRemote = !!view.repositoryUrl;
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("chore(platform): update configuration");
@@ -53,7 +47,14 @@ function CommitBar({ view }: { view: AppView }) {
   const [discarding, setDiscarding] = useState(false);
   const [pending, start] = useTransition();
 
-  const branchName = `${kind}/${code.trim() || "<code>"}${slugify(slug) ? `-${slugify(slug)}` : ""}`;
+  const [plan, setPlan] = useState<{ branch: string; base: string } | null>(null);
+  useEffect(() => {
+    if (!newBranch) return;
+    let live = true;
+    const timer = setTimeout(() => { planBranch(view.registryId, kind, code, slug).then((r) => { if (live && r.ok) setPlan(r.data); }); }, 150);
+    return () => { live = false; clearTimeout(timer); };
+  }, [view.registryId, kind, code, slug, newBranch]);
+  const branchName = plan?.branch ?? `${kind}/…`;
   const canSubmit = message.trim() && (!newBranch || code.trim());
 
   const submit = () => start(async () => {
@@ -61,7 +62,7 @@ function CommitBar({ view }: { view: AppView }) {
     const r = await commitChanges(view.projectId, view.appId, view.registryId, {
       message: message.trim(),
       push: push || pullRequest,
-      branch: newBranch ? { kind, code: code.trim(), slug: slugify(slug) } : null,
+      branch: newBranch ? { kind, code: code.trim(), slug: slug.trim() } : null,
       pullRequest,
     });
     if (r.ok) {
@@ -120,7 +121,7 @@ function CommitBar({ view }: { view: AppView }) {
             {newBranch && (
               <div className="space-y-2 rounded-md border border-border p-3">
                 <div className="flex flex-wrap gap-1">
-                  {KINDS.map((k) => <button key={k} type="button" onClick={() => setKind(k)} aria-pressed={kind === k} className={cn("h-8 rounded-md border px-2.5 font-mono text-xs", kind === k ? "border-foreground" : "border-border text-secondary hover:border-border-hover")}>{k}</button>)}
+                  {view.branchKinds.map((k) => <button key={k} type="button" onClick={() => setKind(k)} aria-pressed={kind === k} className={cn("h-8 rounded-md border px-2.5 font-mono text-xs", kind === k ? "border-foreground" : "border-border text-secondary hover:border-border-hover")}>{k}</button>)}
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <Field label="Code"><Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="42" className="font-mono" /></Field>

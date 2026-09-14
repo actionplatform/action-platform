@@ -9,15 +9,20 @@ import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Table, Td, Th } from "@/components/ui/table";
-import { type Role, ROLE_INFO, ROLES } from "@/lib/permissions";
+import { type Role, type RoleInfo } from "@/lib/permissions";
 import { addMember, changeRole, inviteMember, kickMember, revokeInvitation } from "./actions";
 
 type Member = { id: string; userId: string; name: string; email: string; role: string };
 type Pending = { id: string; email: string; role: string | null; inviter: string; expiresAt: string };
 
-const ROLE_OPTIONS = ROLES.map((r) => ({ value: r, label: ROLE_INFO[r].label, hint: ROLE_INFO[r].description }));
+type RoleOption = { value: string; label: string; hint: string };
 
-export function MembersPanel({ org, members, invitations, me, canManage, origin }: { org: { name: string; slug: string }; members: Member[]; invitations: Pending[]; me: string; canManage: boolean; origin: string }) {
+function roleOptions(roles: RoleInfo[]): RoleOption[] {
+  return roles.map((r) => ({ value: r.id, label: r.label, hint: r.description }));
+}
+
+export function MembersPanel({ org, members, invitations, me, canManage, origin, roles }: { org: { name: string; slug: string }; members: Member[]; invitations: Pending[]; me: string; canManage: boolean; origin: string; roles: RoleInfo[] }) {
+  const ROLE_OPTIONS = roleOptions(roles);
   const [inviting, setInviting] = useState(false);
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<Member | null>(null);
@@ -53,8 +58,8 @@ export function MembersPanel({ org, members, invitations, me, canManage, origin 
         </PanelBody>
       )}
       {error && <PanelBody><div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div></PanelBody>}
-      <InviteDialog open={inviting} onClose={() => setInviting(false)} origin={origin} org={org} />
-      <AddMemberDialog open={adding} onClose={() => setAdding(false)} org={org} />
+      <InviteDialog open={inviting} onClose={() => setInviting(false)} origin={origin} org={org} roles={roles} />
+      <AddMemberDialog open={adding} onClose={() => setAdding(false)} org={org} roles={roles} />
       <ConfirmDialog
         open={removing !== null}
         onClose={() => setRemoving(null)}
@@ -94,7 +99,8 @@ function InvitationRow({ invitation, origin, canManage, onError }: { invitation:
   );
 }
 
-function InviteDialog({ open, onClose, origin, org }: { open: boolean; onClose: () => void; origin: string; org: { name: string } }) {
+function InviteDialog({ open, onClose, origin, org, roles }: { open: boolean; onClose: () => void; origin: string; org: { name: string }; roles: RoleInfo[] }) {
+  const ROLE_OPTIONS = roleOptions(roles);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("developer");
   const [link, setLink] = useState<string | null>(null);
@@ -123,7 +129,7 @@ function InviteDialog({ open, onClose, origin, org }: { open: boolean; onClose: 
           <label className="block text-sm"><span className="mb-1 block text-xs text-secondary">Role</span>
             <Select value={role} onChange={(v) => setRole(v as Role)} options={ROLE_OPTIONS} />
           </label>
-          <p className="text-xs text-muted-foreground">{ROLE_INFO[role].description}</p>
+          <p className="text-xs text-muted-foreground">{ROLE_OPTIONS.find((o) => o.value === role)?.hint}</p>
           {error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
         </div>
       )}
@@ -131,7 +137,8 @@ function InviteDialog({ open, onClose, origin, org }: { open: boolean; onClose: 
   );
 }
 
-function AddMemberDialog({ open, onClose, org }: { open: boolean; onClose: () => void; org: { name: string } }) {
+function AddMemberDialog({ open, onClose, org, roles }: { open: boolean; onClose: () => void; org: { name: string }; roles: RoleInfo[] }) {
+  const ROLE_OPTIONS = roleOptions(roles);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

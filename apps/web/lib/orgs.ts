@@ -1,6 +1,6 @@
 import { type Session, sessionCookie } from "./auth";
 import { authApi } from "./auth-api";
-import { can, type Permission, PERMISSION_INFO, type Role, ROLES } from "./permissions";
+import { type Role, ROLES } from "./permissions";
 import { getSession } from "./session";
 import type { Org } from "./types";
 import { v1 } from "./v1";
@@ -42,16 +42,6 @@ export async function setActiveOrg(organizationId: string): Promise<void> {
 export async function createOrg(name: string, slug?: string): Promise<Org> {
   const org = await authApi.createOrganization(await current(), { name, slug: slug || slugify(name) });
   return { id: org.id, name: org.name, slug: org.slug };
-}
-
-export async function requirePermission(userId: string, orgId: string, permission: Permission): Promise<Role> {
-  const role = await roleOf(userId, orgId);
-  if (!can(role, permission)) throw new Error(`your role (${role ?? "none"}) cannot ${PERMISSION_INFO[permission].toLowerCase()}`);
-  return role as Role;
-}
-
-export async function requireManager(userId: string, orgId: string): Promise<Role> {
-  return requirePermission(userId, orgId, "org.manage");
 }
 
 export type Member = { id: string; userId: string; role: string; name: string; email: string };

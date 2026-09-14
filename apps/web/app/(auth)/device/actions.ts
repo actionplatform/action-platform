@@ -2,7 +2,7 @@
 
 import { approveDevice, denyDevice, deviceRequest, type Grant } from "@/lib/api-tokens";
 import { v1 } from "@/lib/v1";
-import { DEFAULT_SCOPES, grantableScopes, ROLE_INFO, type Scope } from "@/lib/permissions";
+import type { Scope, ScopeInfo } from "@/lib/permissions";
 import { appsOf, projectsOf } from "@/lib/projects";
 import { isAuthError } from "@/lib/auth-api";
 import { failed, type Result } from "@/lib/result";
@@ -10,7 +10,7 @@ import { requireOrg, requireSession } from "@/lib/session";
 
 export type Choice = { id: string; name: string };
 export type OrgChoice = Choice & { role: string; grantable: Scope[] };
-export type DeviceView = { grant: Grant; requested: Scope[]; clientId: string | null; expiresAt: number; organizations: OrgChoice[] };
+export type DeviceView = { grant: Grant; requested: Scope[]; clientId: string | null; expiresAt: number; organizations: OrgChoice[]; scopes: ScopeInfo[] };
 
 export async function inspectDevice(userCode: string): Promise<Result<DeviceView>> {
   try {
@@ -19,13 +19,14 @@ export async function inspectDevice(userCode: string): Promise<Result<DeviceView
     if (!request) return { ok: false, error: "invalid code" };
     if (request.status === "expired") return { ok: false, error: "expired" };
     if (request.status !== "pending") return { ok: false, error: `this code was already ${request.status}` };
-    const organizations = (await v1.organizations()).map((o) => ({ id: o.id, name: o.name, role: o.role_label ?? "member", grantable: o.grantable_scopes as Scope[] }));
-    const grant = { ...request.grant, scope: request.grant.scope.length ? request.grant.scope : DEFAULT_SCOPES };
+    const [rows, access] = await Promise.all([v1.organizations(), v1.access()]);
+    const organizations = rows.map((o) => ({ id: o.id, name: o.name, role: o.role_label ?? "member", grantable: o.grantable_scopes as Scope[] }));
+    const grant = { ...request.grant, scope: request.grant.scope.length ? request.grant.scope : (access.default_scopes as Scope[]) };
     if (grant.organizationId !== "*" && (!grant.organizationId || !organizations.some((o) => o.id === grant.organizationId))) grant.organizationId = org.id;
     const requested = grant.scope;
     const allowed = grant.organizationId === "*" ? [...new Set(organizations.flatMap((o) => o.grantable))] : organizations.find((o) => o.id === grant.organizationId)?.grantable ?? ["read"];
     grant.scope = grant.scope.filter((s) => allowed.includes(s));
-    return { ok: true, data: { grant, requested, clientId: request.clientId, expiresAt: request.expiresAt.getTime(), organizations } };
+    return { ok: true, data: { grant, requested, clientId: request.clientId, expiresAt: request.expiresAt.getTime(), organizations, scopes: access.scopes as ScopeInfo[] } };
   } catch (e) {
     return failed(e);
   }

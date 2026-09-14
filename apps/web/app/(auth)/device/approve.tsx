@@ -6,7 +6,7 @@ import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
-import { SCOPE_INFO, type Scope } from "@/lib/permissions";
+import type { Scope, ScopeInfo } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { appChoices, approveDeviceRequest, type Choice, denyDeviceRequest, inspectDevice, type OrgChoice, projectChoices } from "./actions";
 
@@ -20,6 +20,8 @@ export function DeviceApprove({ initialCode }: { initialCode: string }) {
   const [code, setCode] = useState(initialCode);
   const [state, setState] = useState<State>(initialCode.length >= 8 ? "loading" : "idle");
   const [requested, setRequested] = useState<Scope[]>([]);
+  const [scopes, setScopes] = useState<ScopeInfo[]>([]);
+  const info = (s: string) => scopes.find((x) => x.id === s) ?? { label: s, description: "" };
   const [granted, setGranted] = useState<Scope[]>([]);
   const [client, setClient] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
@@ -77,6 +79,7 @@ export function DeviceApprove({ initialCode }: { initialCode: string }) {
       return;
     }
     setRequested(request.data.requested);
+    setScopes(request.data.scopes);
     setGranted(request.data.grant.scope);
     setClient(request.data.clientId);
     setExpiresAt(request.data.expiresAt);
@@ -202,8 +205,8 @@ export function DeviceApprove({ initialCode }: { initialCode: string }) {
                     <li key={s} className={cn("flex items-start gap-3 px-3.5 py-3", blocked && "opacity-60")}>
                       <Icon className="mt-0.5 size-4 shrink-0 text-secondary" strokeWidth={1.75} aria-hidden="true" />
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2 text-sm font-medium">{SCOPE_INFO[s].label}{s === "admin" && <span className="inline-flex h-5 items-center rounded-[5px] border border-border px-1.5 text-[11px] font-normal text-secondary">Full access</span>}</div>
-                        <div className="text-[13px] text-secondary">{blocked ? `Not available for your role in ${orgName || "this organization"}` : everywhere && organizations.some((o) => !o.grantable.includes(s)) ? `${SCOPE_INFO[s].description} — only where your role allows` : SCOPE_INFO[s].description}</div>
+                        <div className="flex flex-wrap items-center gap-2 text-sm font-medium">{info(s).label}{s === "admin" && <span className="inline-flex h-5 items-center rounded-[5px] border border-border px-1.5 text-[11px] font-normal text-secondary">Full access</span>}</div>
+                        <div className="text-[13px] text-secondary">{blocked ? `Not available for your role in ${orgName || "this organization"}` : everywhere && organizations.some((o) => !o.grantable.includes(s)) ? `${info(s).description} — only where your role allows` : info(s).description}</div>
                       </div>
                       <span className={cn("hidden shrink-0 items-center gap-1 text-[12px] min-[400px]:inline-flex", included ? "text-foreground" : "text-muted-foreground")}>{included ? <><Check className="size-3.5" strokeWidth={2.5} aria-hidden="true" /> Included</> : "Not granted"}</span>
                       <span className="sr-only">{included ? "Included" : "Not granted"}</span>

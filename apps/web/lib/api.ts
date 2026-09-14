@@ -90,6 +90,8 @@ export const api = {
       unwrap(await client.GET("/api/apps/{id}/tags", { params: { path: { id } } })),
     startBranch: async (id: string, body: { kind: string; code: string; slug: string | null; push: boolean }) =>
       unwrap(await client.POST("/api/apps/{id}/branches", { params: { path: { id } }, body })),
+    planBranch: async (id: string, kind: string, code: string, slug: string | null) =>
+      unwrap(await client.GET("/api/apps/{id}/branches/plan", { params: { path: { id }, query: { kind, code, slug: slug ?? undefined } } })),
     checkout: async (id: string, branch: string) =>
       unwrap(await client.POST("/api/apps/{id}/checkout", { params: { path: { id } }, body: { branch } })),
     proposePullRequest: async (id: string, base?: string, title?: string) =>
@@ -113,6 +115,8 @@ export const api = {
       unwrap(await client.GET("/api/apps/{id}/releases", { params: { path: { id } } })),
     branches: async (id: string) =>
       unwrap(await client.GET("/api/apps/{id}/branches", { params: { path: { id } } })),
+    nextVersion: async (id: string, level: string, branch: string | null = null) =>
+      unwrap(await client.GET("/api/apps/{id}/next-version", { params: { path: { id }, query: { level, branch: branch ?? undefined } } })),
     release: async (id: string, level: string, dry_run: boolean, branch: string | null = null) =>
       unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run, branch } })),
     deploy: async (id: string, stage: string | null, dry_run: boolean) =>
