@@ -305,3 +305,29 @@ class MatrixTest(GateCase):
         with self.assertRaises(Exception):
             with self.app.state.db.session() as s:
                 DirectoryService(s).source_spec_by_name(self.org["id"], "other")
+
+
+class CatalogAndPreviewTest(GateCase):
+    def test_access_catalog(self):
+        rows = self.client.get("/api/v1/access", headers=self.h()).json()
+        self.assertEqual([r["id"] for r in rows["roles"]], ["owner", "admin", "deployer", "developer", "viewer"])
+        self.assertEqual(rows["roles"][3]["grantable_scopes"], ["read", "write"])
+        self.assertEqual(rows["default_scopes"], ["read", "write"])
+        self.assertIn("app.release", [p["id"] for p in rows["permissions"]])
+
+    def test_next_version_preview(self):
+        registry_id = self.register()
+        res = self.client.get(f"/api/v1/apps/{registry_id}/next-version", params={"level": "minor"}, headers=self.h())
+        self.assertEqual(res.status_code, 200, res.text)
+        body = res.json()
+        self.assertEqual((body["current"], body["next"], body["prerelease"]), ("1.2.3", "1.3.0", False))
+        rc = self.client.get(f"/api/v1/apps/{registry_id}/next-version", params={"level": "patch", "branch": "feature/1"}, headers=self.h()).json()
+        self.assertEqual((rc["next"], rc["prerelease"]), ("1.2.4-rc.1", True))
+
+    def test_branch_plan(self):
+        registry_id = self.register()
+        res = self.client.get(f"/api/v1/apps/{registry_id}/branches/plan", params={"kind": "feature", "code": "42", "slug": "Login Page"}, headers=self.h())
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual((res.json()["branch"], res.json()["base"]), ("feature/42-login-page", "main"))
+        hotfix = self.client.get(f"/api/v1/apps/{registry_id}/branches/plan", params={"kind": "hotfix", "code": "7"}, headers=self.h()).json()
+        self.assertEqual(hotfix["base"], "main")
