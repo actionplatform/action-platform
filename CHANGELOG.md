@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.10.0 — 2026-09-14
+
+### Features
+- **catalog:** revalidate the templates index with its ETag every minute instead of caching it ten
+- **scaffold:** detect ruby by Gemfile or .rb and sync VERSION in version.rb on release
+
+### Docs
+- **templates:** index revalidation
+- list every web stack, ruby included
+
+### Tests
+- **catalog:** etag revalidation keeps the cache on 304
+- **scaffold:** ruby detection and version.rb sync
+
 ## v0.9.0 — 2026-09-14
 
 ### Features
