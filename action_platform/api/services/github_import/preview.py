@@ -42,6 +42,15 @@ def preview(ctx: ImportContext, github: GithubDirectory, login: str) -> dict[str
         )
 
     try:
+        remote_projects = github.projects(login)
+    except ProviderError as e:
+        remote_projects = []
+        problems.append(
+            f"projects: {e}. GitHub Projects need the GitHub App permission Organization › Projects (read) "
+            "or a token with the read:project scope."
+        )
+
+    try:
         remote_teams = github.teams(login)
     except ProviderError as e:
         remote_teams = []
@@ -70,6 +79,10 @@ def preview(ctx: ImportContext, github: GithubDirectory, login: str) -> dict[str
         "repositories": [
             {**r, "imported_as": known.get(r["full_name"].lower())}
             for r in repositories
+        ],
+        "projects": [
+            {**p, "exists": ctx.project_named(p["title"]) is not None}
+            for p in remote_projects
         ],
         "teams": [
             {**t, "exists": t["slug"] in teams or slugify(t["name"]) in teams}

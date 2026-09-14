@@ -36,6 +36,30 @@ def get_json(url: str, headers: Optional[dict[str, str]] = None) -> Any:
         ) from e
 
 
+def post_json(url: str, body: Any, headers: Optional[dict[str, str]] = None) -> Any:
+    request = urllib.request.Request(
+        url,
+        data=json.dumps(body).encode(),
+        method="POST",
+        headers={
+            "accept": "application/json",
+            "content-type": "application/json",
+            "user-agent": USER_AGENT,
+            **(headers or {}),
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+            return json.loads(response.read() or b"null")
+    except urllib.error.HTTPError as e:
+        raise ProviderError(f"{e.code} from {urllib.parse.urlparse(url).netloc}") from e
+    except urllib.error.URLError as e:
+        raise ProviderError(
+            f"cannot reach {urllib.parse.urlparse(url).netloc}: {e.reason}"
+        ) from e
+
+
 def post_form(
     url: str, form: dict[str, str], headers: Optional[dict[str, str]] = None
 ) -> dict[str, Any]:
