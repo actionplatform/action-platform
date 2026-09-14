@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session as DbSession
 from action_platform.api.auth.crypto import Sealer
 from action_platform.api.db.models import (
     App,
+    Invitation,
     Member,
     Organization,
     OrganizationSetting,
@@ -20,6 +21,7 @@ from action_platform.api.db.models import (
     TemplateSource,
     User,
 )
+from action_platform.api.db.models import OAuthApp as OAuthAppRow
 from action_platform.api.services.http import basic, post_form
 from action_platform.core.access import ROLES, normalize_role
 from action_platform.core.exception import ActionPlatformError
@@ -27,6 +29,17 @@ from action_platform.settings import settings
 
 DEFAULT_GIT_AUTHOR = ("Action Platform", "cloud@actionplatform.io")
 REFRESH_MARGIN = timedelta(seconds=60)
+INVITATION_TTL = timedelta(days=7)
+EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+GIT_URL = re.compile(r"^(https?://|git@|ssh://|file://)")
+PROVIDERS = ("github", "gitlab", "bitbucket")
+HOST_KINDS = ("github", "gitlab", "bitbucket", "generic")
+HOST_LABELS = {
+    "github": "GitHub",
+    "gitlab": "GitLab",
+    "bitbucket": "Bitbucket",
+    "generic": "Git",
+}
 
 
 class DirectoryError(ActionPlatformError):
@@ -83,6 +96,7 @@ class OAuthApp:
     client_id: str
     client_secret: str
     base_url: Optional[str]
+    slug: Optional[str] = None
 
 
 def oauth_app_for(kind: str) -> Optional[OAuthApp]:
@@ -105,10 +119,8 @@ def oauth_app_for(kind: str) -> Optional[OAuthApp]:
 
 
 def refresh_oauth(
-    kind: str, refresh_token: str
+    app: Optional[OAuthApp], kind: str, refresh_token: str
 ) -> tuple[str, Optional[str], Optional[datetime]]:
-    app = oauth_app_for(kind)
-
     if app is None:
         raise DirectoryError(
             f"the {kind} token expired and no OAuth app is configured on the API to refresh it"
@@ -474,7 +486,9 @@ class DirectoryService:
             and host.expires_at - now() < REFRESH_MARGIN
         ):
             token, refreshed, expires_at = refresh_oauth(
-                host.kind, self.sealer.open(host.refresh_token_encrypted)
+                self.oauth_app(host.kind),
+                host.kind,
+                self.sealer.open(host.refresh_token_encrypted),
             )
             host.token_encrypted = self.sealer.seal(token)
 
@@ -487,6 +501,22 @@ class DirectoryService:
         return Credentials(
             host.kind, token, host.username, host.base_url, host.default_owner
         )
+
+    def oauth_app(self, provider: str) -> Optional[OAuthApp]:
+        row = self.db.get(OAuthAppRow, provider)
+
+        if row is not None and self.sealer is not None:
+            return OAuthApp(
+                row.client_id,
+                self.sealer.open(row.client_secret_encrypted),
+                row.base_url,
+                row.slug,
+            )
+
+        return oauth_app_for(provider)
+
+    def oauth_apps(self) -> dict[str, Optional[OAuthApp]]:
+        return {provider: self.oauth_app(provider) for provider in PROVIDERS}
 
     def template_sources_of(self, organization_id: str) -> list[TemplateSource]:
         return list(
@@ -528,3 +558,497 @@ class DirectoryService:
             raise DirectoryError(f"template source {name} not found")
 
         return spec
+
+
+class DirectoryWrites(DirectoryService):
+    """The writes the web app's pages used to do themselves: projects, apps, teams, members, invitations, hosts, template sources, settings."""
+
+    def delete_project(self, organization_id: str, project_id: str) -> list[str]:
+        project = self.project(organization_id, project_id)
+
+        if project is None:
+            raise DirectoryError("project not found")
+
+        registry_ids = [a.registry_id for a in self.apps_of(project.id)]
+        self.db.delete(project)
+        self.db.flush()
+
+        return registry_ids
+
+    def create_app(
+        self,
+        project_id: str,
+        registry_id: str,
+        name: str,
+        source_host_id: Optional[str],
+    ) -> App:
+        app = App(
+            id=new_id(),
+            project_id=project_id,
+            registry_id=registry_id,
+            name=name,
+            source_host_id=source_host_id,
+            created_at=now(),
+        )
+        self.db.add(app)
+        self.db.flush()
+
+        return app
+
+    def delete_app(self, project_id: str, app_id: str) -> Optional[App]:
+        app = self.app(project_id, app_id)
+
+        if app is None:
+            return None
+
+        self.db.delete(app)
+        self.db.flush()
+
+        return app
+
+    def set_app_host(self, app: App, source_host_id: Optional[str]) -> None:
+        app.source_host_id = source_host_id
+        self.db.flush()
+
+    def update_team(
+        self, organization_id: str, team_id: str, name: str, description: str
+    ) -> Team:
+        team = self.team(organization_id, team_id)
+
+        if team is None:
+            raise DirectoryError("team not found")
+
+        name = name.strip()
+
+        if not name:
+            raise DirectoryError("name is required")
+
+        team.name = name
+        team.slug = slugify(name)
+        team.description = description.strip() or None
+        self.db.flush()
+
+        return team
+
+    def delete_team(self, organization_id: str, team_id: str) -> None:
+        team = self.team(organization_id, team_id)
+
+        if team is None:
+            raise DirectoryError("team not found")
+
+        for project in self.team_projects_of(team.id):
+            project.team_id = None
+
+        self.db.delete(team)
+        self.db.flush()
+
+    def remove_team_member(
+        self, organization_id: str, team_id: str, user_id: str
+    ) -> None:
+        if self.team(organization_id, team_id) is None:
+            raise DirectoryError("team not found")
+
+        row = self.db.scalar(
+            select(TeamMember).where(
+                TeamMember.team_id == team_id, TeamMember.user_id == user_id
+            )
+        )
+
+        if row is not None:
+            self.db.delete(row)
+            self.db.flush()
+
+    def remove_member(self, organization_id: str, user_id: str) -> None:
+        member = self.db.scalar(
+            select(Member).where(
+                Member.organization_id == organization_id, Member.user_id == user_id
+            )
+        )
+
+        if member is None:
+            raise DirectoryError("member not found")
+
+        owners = (
+            self.db.scalar(
+                select(func.count())
+                .select_from(Member)
+                .where(
+                    Member.organization_id == organization_id, Member.role == "owner"
+                )
+            )
+            or 0
+        )
+
+        if member.role == "owner" and owners <= 1:
+            raise DirectoryError("the organization needs at least one owner")
+
+        for team in self.teams_of(organization_id):
+            self.remove_team_member(organization_id, team.id, user_id)
+
+        self.db.delete(member)
+        self.db.flush()
+
+    def invitations_of(self, organization_id: str) -> list[tuple[Invitation, User]]:
+        rows = self.db.execute(
+            select(Invitation, User)
+            .join(User, User.id == Invitation.inviter_id)
+            .where(
+                Invitation.organization_id == organization_id,
+                Invitation.status == "pending",
+                Invitation.expires_at > now(),
+            )
+            .order_by(Invitation.created_at)
+        ).all()
+
+        return [(invitation, user) for invitation, user in rows]
+
+    def create_invitation(
+        self, organization_id: str, inviter_id: str, email: str, role: str
+    ) -> Invitation:
+        email = email.strip().lower()
+
+        if role not in ROLES:
+            raise DirectoryError(f"role must be one of {', '.join(ROLES)}")
+
+        if not EMAIL.match(email):
+            raise DirectoryError("enter a valid email")
+
+        already = self.db.scalar(
+            select(Member.id)
+            .join(User, User.id == Member.user_id)
+            .where(Member.organization_id == organization_id, User.email == email)
+        )
+
+        if already:
+            raise DirectoryError("already a member")
+
+        for invitation, _ in self.invitations_of(organization_id):
+            if invitation.email == email:
+                return invitation
+
+        moment = now()
+        invitation = Invitation(
+            id=new_id(),
+            organization_id=organization_id,
+            email=email,
+            role=role,
+            status="pending",
+            expires_at=moment + INVITATION_TTL,
+            created_at=moment,
+            inviter_id=inviter_id,
+        )
+        self.db.add(invitation)
+        self.db.flush()
+
+        return invitation
+
+    def cancel_invitation(self, organization_id: str, id: str) -> None:
+        invitation = self.db.scalar(
+            select(Invitation).where(
+                Invitation.id == id, Invitation.organization_id == organization_id
+            )
+        )
+
+        if invitation is not None:
+            invitation.status = "canceled"
+            self.db.flush()
+
+    def invitation(self, id: str) -> Optional[tuple[Invitation, User, Organization]]:
+        row = self.db.execute(
+            select(Invitation, User, Organization)
+            .join(User, User.id == Invitation.inviter_id)
+            .join(Organization, Organization.id == Invitation.organization_id)
+            .where(Invitation.id == id)
+        ).first()
+
+        return (row[0], row[1], row[2]) if row else None
+
+    def accept_invitation(self, id: str, user: User) -> Organization:
+        found = self.invitation(id)
+
+        if found is None:
+            raise DirectoryError("invitation not found")
+
+        invitation, _, organization = found
+
+        if invitation.status != "pending":
+            raise DirectoryError(f"invitation {invitation.status}")
+
+        if invitation.expires_at < now():
+            raise DirectoryError("invitation expired")
+
+        if invitation.email != user.email.lower():
+            raise DirectoryError(f"this invitation is for {invitation.email}")
+
+        if self.role_in(user.id, organization.id) is None:
+            self.db.add(
+                Member(
+                    id=new_id(),
+                    organization_id=organization.id,
+                    user_id=user.id,
+                    role=invitation.role or "developer",
+                    created_at=now(),
+                )
+            )
+
+        invitation.status = "accepted"
+        self.db.flush()
+
+        return organization
+
+    def host(self, organization_id: str, host_id: str) -> Optional[SourceHost]:
+        return self.db.scalar(
+            select(SourceHost).where(
+                SourceHost.id == host_id, SourceHost.organization_id == organization_id
+            )
+        )
+
+    def add_host(
+        self,
+        organization_id: str,
+        kind: str,
+        name: str,
+        token: str,
+        base_url: Optional[str] = None,
+        username: Optional[str] = None,
+        default_owner: Optional[str] = None,
+    ) -> SourceHost:
+        if self.sealer is None:
+            raise DirectoryError("auth secret is not configured")
+
+        if kind not in HOST_KINDS:
+            raise DirectoryError("unknown host kind")
+
+        if not token.strip():
+            raise DirectoryError("token is required")
+
+        host = SourceHost(
+            id=new_id(),
+            organization_id=organization_id,
+            kind=kind,
+            name=name.strip() or HOST_LABELS[kind],
+            base_url=(base_url or "").strip() or None,
+            username=(username or "").strip() or None,
+            token_encrypted=self.sealer.seal(token.strip()),
+            default_owner=(default_owner or "").strip() or None,
+            auth_kind="token",
+            created_at=now(),
+        )
+        self.db.add(host)
+        self.db.flush()
+
+        return host
+
+    def connect_oauth_host(
+        self,
+        organization_id: str,
+        provider: str,
+        login: str,
+        access_token: str,
+        refresh_token: Optional[str],
+        expires_at: Optional[datetime],
+        base_url: Optional[str],
+        owner: Optional[str] = None,
+    ) -> SourceHost:
+        if self.sealer is None:
+            raise DirectoryError("auth secret is not configured")
+
+        host = self.db.scalar(
+            select(SourceHost).where(
+                SourceHost.organization_id == organization_id,
+                SourceHost.kind == provider,
+                SourceHost.auth_kind == "oauth",
+                SourceHost.login == login,
+            )
+        )
+
+        if host is None:
+            host = SourceHost(
+                id=new_id(),
+                organization_id=organization_id,
+                kind=provider,
+                name=f"{HOST_LABELS[provider]} · {login}",
+                username="x-token-auth" if provider == "bitbucket" else None,
+                default_owner=owner or login,
+                auth_kind="oauth",
+                login=login,
+                token_encrypted="",
+                created_at=now(),
+            )
+            self.db.add(host)
+        elif owner:
+            host.default_owner = owner
+
+        host.token_encrypted = self.sealer.seal(access_token)
+        host.refresh_token_encrypted = (
+            self.sealer.seal(refresh_token) if refresh_token else None
+        )
+        host.expires_at = expires_at
+        host.base_url = base_url
+        self.db.flush()
+
+        return host
+
+    def remove_host(self, organization_id: str, host_id: str) -> None:
+        host = self.host(organization_id, host_id)
+
+        if host is not None:
+            self.db.delete(host)
+            self.db.flush()
+
+    def remove_oauth_host(
+        self, organization_id: str, provider: str, login: str
+    ) -> None:
+        for host in self.db.scalars(
+            select(SourceHost).where(
+                SourceHost.organization_id == organization_id,
+                SourceHost.kind == provider,
+                SourceHost.auth_kind == "oauth",
+                SourceHost.login == login,
+            )
+        ):
+            self.db.delete(host)
+
+        self.db.flush()
+
+    def update_host_token(self, organization_id: str, host_id: str, token: str) -> None:
+        host = self.host(organization_id, host_id)
+
+        if host is None:
+            raise DirectoryError("host not found")
+
+        if not token.strip():
+            raise DirectoryError("token is required")
+
+        if self.sealer is None:
+            raise DirectoryError("auth secret is not configured")
+
+        host.token_encrypted = self.sealer.seal(token.strip())
+        self.db.flush()
+
+    def set_host_owner(self, organization_id: str, host_id: str, owner: str) -> None:
+        host = self.host(organization_id, host_id)
+
+        if host is None:
+            raise DirectoryError("host not found")
+
+        host.default_owner = owner.strip() or None
+        self.db.flush()
+
+    def set_git_author(
+        self, organization_id: str, name: str, email: str
+    ) -> tuple[str, str]:
+        name = name.strip()
+        email = email.strip().lower()
+
+        if not name:
+            raise DirectoryError("name is required")
+
+        if not EMAIL.match(email):
+            raise DirectoryError("enter a valid email")
+
+        row = self.db.get(OrganizationSetting, organization_id)
+
+        if row is None:
+            row = OrganizationSetting(
+                organization_id=organization_id,
+                git_author_name=name,
+                git_author_email=email,
+            )
+            self.db.add(row)
+        else:
+            row.git_author_name = name
+            row.git_author_email = email
+
+        row.updated_at = now()
+        self.db.flush()
+
+        return name, email
+
+    def add_template_source(
+        self, organization_id: str, name: str, url: str, ref: str
+    ) -> TemplateSource:
+        name = slugify(name)
+        url = url.strip()
+        ref = ref.strip() or "main"
+
+        if not name:
+            raise DirectoryError("name is required")
+
+        if name == "official":
+            raise DirectoryError("official is reserved")
+
+        if not GIT_URL.match(url):
+            raise DirectoryError("enter a git url")
+
+        if self.db.scalar(
+            select(TemplateSource.id).where(
+                TemplateSource.organization_id == organization_id,
+                TemplateSource.name == name,
+            )
+        ):
+            raise DirectoryError(f"a source named {name} already exists")
+
+        row = TemplateSource(
+            id=new_id(),
+            organization_id=organization_id,
+            name=name,
+            url=url,
+            ref=ref,
+            source_host_id=self.host_id_for_url(organization_id, url),
+            created_at=now(),
+        )
+        self.db.add(row)
+        self.db.flush()
+
+        return row
+
+    def remove_template_source(self, organization_id: str, id: str) -> None:
+        row = self.db.scalar(
+            select(TemplateSource).where(
+                TemplateSource.id == id,
+                TemplateSource.organization_id == organization_id,
+            )
+        )
+
+        if row is not None:
+            self.db.delete(row)
+            self.db.flush()
+
+    def save_oauth_app(
+        self,
+        provider: str,
+        client_id: str,
+        client_secret: str,
+        base_url: Optional[str],
+        slug: Optional[str] = None,
+    ) -> OAuthApp:
+        if provider not in PROVIDERS:
+            raise DirectoryError("unknown provider")
+
+        if self.sealer is None:
+            raise DirectoryError("auth secret is not configured")
+
+        client_id = client_id.strip()
+        client_secret = client_secret.strip()
+
+        if not client_id or not client_secret:
+            raise DirectoryError("client id and secret are required")
+
+        row = self.db.get(OAuthAppRow, provider) or OAuthAppRow(provider=provider)
+        row.client_id = client_id
+        row.client_secret_encrypted = self.sealer.seal(client_secret)
+        row.base_url = (base_url or "").strip() or None
+        row.slug = slug or row.slug
+        row.updated_at = now()
+        self.db.add(row)
+        self.db.flush()
+
+        return OAuthApp(client_id, client_secret, row.base_url, row.slug)
+
+    def clear_oauth_app(self, provider: str) -> None:
+        row = self.db.get(OAuthAppRow, provider)
+
+        if row is not None:
+            self.db.delete(row)
+            self.db.flush()
