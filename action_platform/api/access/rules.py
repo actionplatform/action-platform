@@ -81,3 +81,6 @@ def rule_for(method: str, path: str) -> Optional[Rule]:
     return next(
         (r for r in RULES if r.method == method and r.pattern.match(path)), None
     )
+
+
+WORKSPACE_ROOTS = {"apps", "matrix", "version", "gitflow"}

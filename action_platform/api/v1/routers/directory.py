@@ -52,12 +52,15 @@ def org_dict(organization: Organization) -> dict:
 def requested_org(
     caller: Caller, x_organization: Optional[str], organization: Optional[str]
 ) -> Optional[Organization]:
-    if caller.organization:
-        return caller.organization
-
     wanted = (x_organization or organization or "").strip()
 
-    return caller.member_of(wanted) if wanted else None
+    if wanted and (caller.all_organizations or caller.scope is None):
+        found = caller.member_of(wanted)
+
+        if found is not None:
+            return found
+
+    return caller.organization
 
 
 def required_org(
