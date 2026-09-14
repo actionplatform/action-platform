@@ -40,7 +40,7 @@ class GithubImport:
         people: list[str],
         role: str,
         project_id: Optional[str] = None,
-        projects: Optional[list[int]] = None,
+        projects: Optional[dict[int, Optional[str]]] = None,
     ) -> dict[str, Any]:
         if role not in access.ROLES:
             raise DirectoryError(f"role must be one of {', '.join(access.ROLES)}")
@@ -54,7 +54,7 @@ class GithubImport:
                 raise DirectoryError("project not found")
 
         github = client.GithubDirectory(creds)
-        targets = import_projects(self.ctx, github, login, set(projects or []))
+        targets = import_projects(self.ctx, github, login, projects or {})
         wanted_repos = {r.lower() for r in repositories} | set(targets)
         by_repo = import_repositories(
             self.ctx, github, creds, host_id, login, wanted_repos, into, targets
