@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.10.0 — 2026-09-14
+
+### Features
+- **api:** deleting an app or a project can also delete its repositories on the host
+
 ## v0.9.0 — 2026-09-14
 
 ### Features
