@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.11.1 — 2026-09-14
+
+### Bug Fixes
+- **db:** pool of 10 with 20 overflow by default, both configurable
+
+### Performance
+- **registry:** look one app up by id instead of loading every row
+
 ## v0.11.0 — 2026-09-14
 
 ### Features
