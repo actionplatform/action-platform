@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.14.0 — 2026-09-14
+
+### Features
+- **import:** a GitHub Project can land in an existing platform project
+
 ## v0.13.2 — 2026-09-14
 
 ### Bug Fixes
