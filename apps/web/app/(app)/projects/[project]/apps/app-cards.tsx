@@ -21,7 +21,7 @@ export function AppCards({ projectId, apps, rows, manage }: { projectId: string;
               <div className="min-w-0 flex-1">
                 <Link href={`/projects/${projectId}/apps/${a.id}`} className="block truncate text-[16px] font-semibold hover:underline underline-offset-4">{a.name}</Link>
                 <div className="mt-1 flex min-w-0 items-center gap-2">
-                  <span className="truncate font-mono text-xs text-muted-foreground">{r?.url ? r.url.replace(/^https?:\/\//, "") : "not pushed yet"}</span>
+                  <span className="truncate font-mono text-xs text-muted-foreground">{r?.url ? r.url.replace(/^https?:\/\//, "") : "no remote"}</span>
                   {r && !r.exists && <Badge tone="bad">missing</Badge>}
                   {!r && <Badge>not on API</Badge>}
                 </div>

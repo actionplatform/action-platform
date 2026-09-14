@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import shutil
+
 from tests.api.support import ApiCase
 from tests.support import git
 
@@ -12,12 +14,18 @@ class FlowTest(ApiCase):
 
         res = self.client.post(
             f"/api/apps/{id}/branches",
-            json={"kind": "feature", "code": "7", "slug": "login", "push": False},
+            json={"kind": "feature", "code": "7", "slug": "login"},
         )
         self.assertEqual(res.status_code, 201, res.text)
         self.assertEqual(
-            res.json(), {"branch": "feature/7-login", "base": "main", "pushed": False}
+            res.json(), {"branch": "feature/7-login", "base": "main", "pushed": True}
         )
+        self.assertEqual(
+            self.client.get(f"/api/apps/{id}").json()["branch"], "feature/7-login"
+        )
+        self.assertIn("feature/7-login", git(self.repo, "branch", "--list"))
+
+        shutil.rmtree(self.workspaces / id)
         self.assertEqual(
             self.client.get(f"/api/apps/{id}").json()["branch"], "feature/7-login"
         )
@@ -107,17 +115,12 @@ class FlowTest(ApiCase):
 
 
 class ProposeWithoutRemoteAccessTest(ApiCase):
-    def test_uses_the_tracking_refs_when_the_remote_needs_credentials(self):
+    def test_a_remote_that_cannot_be_reached_is_a_400_with_a_reason(self):
         id = self.add_app(on_main=False)
         root = self.workspaces / id
         git(root, "remote", "set-url", "origin", "https://github.com/acme/private.git")
-        git(root, "remote", "set-head", "origin", "main")
-        (root / "b.txt").write_text("b")
-        git(root, "add", "b.txt")
-        git(root, "commit", "-qm", "feat: add b")
 
         res = self.client.get(f"/api/apps/{id}/pull-request")
 
-        self.assertEqual(res.status_code, 200, res.text)
-        self.assertEqual(res.json()["head"], "feature/1")
-        self.assertEqual(res.json()["base"], "main")
+        self.assertEqual(res.status_code, 400, res.text)
+        self.assertIn("code host", res.json()["detail"])

@@ -1,6 +1,7 @@
 """Action Platform settings module."""
 
 import os
+import tempfile
 from pathlib import Path
 
 
@@ -24,6 +25,11 @@ class Settings:
     )
     TEMPLATES_INDEX_TTL = int(os.getenv("ACTION_PLATFORM_TEMPLATES_INDEX_TTL", "60"))
     TEMPLATES_CACHE = Path.home() / ".cache" / "action-platform" / "templates"
+    WORKSPACES = Path(
+        os.getenv("AP_WORKSPACES")
+        or Path(tempfile.gettempdir()) / "action-platform" / "workspaces"
+    )
+    WORKSPACE_TTL = int(os.getenv("AP_WORKSPACE_TTL", "15"))
 
     ALLOW_FILE_URLS = os.getenv("AP_ALLOW_FILE_URLS") == "1"
     ALLOW_INSECURE_HTTP = os.getenv("AP_ALLOW_INSECURE_HTTP") == "1"

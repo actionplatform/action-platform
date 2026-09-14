@@ -1,13 +1,15 @@
 """Which apps (git repositories) the API manages.
 
-Each entry is a git URL cloned into its own workspace under the API's home
-(`~/.action-platform/workspaces/<id>`). The web app adds and removes
-entries; ids are stable so links survive a rename. Nothing here points at
-a directory the user did not ask the platform to own.
+Each entry is a git URL plus the branch the app is checked out on. The clone
+itself is disposable: it lives under a temporary directory
+(`AP_WORKSPACES`, default the system temp dir) and is rebuilt from the URL
+and brought level with the remote whenever a request needs it — no instance
+or worker keeps state on disk. Edits not committed yet live in the `draft`
+table, not in the clone.
 
 Entries live in the database (`registry` table), so every instance and
-worker sees the same apps and rebuilds a missing workspace from the URL.
-An `apps.json` under the home from older versions is imported once.
+worker sees the same apps. An `apps.json` under the home from older
+versions is imported once.
 """
 
 from __future__ import annotations
@@ -85,6 +87,11 @@ class Entry:
     url: str
     path: str
     default_branch: str = ""
+    branch: str = ""
+
+    @property
+    def checked_out(self) -> str:
+        return self.branch or self.default_branch or "main"
 
 
 class DbStore:
@@ -99,6 +106,7 @@ class DbStore:
                     "name": r.name,
                     "url": r.url,
                     "default_branch": r.default_branch,
+                    "branch": r.branch,
                 }
                 for r in s.scalars(
                     select(RegistryEntry).order_by(RegistryEntry.created_at)
@@ -117,6 +125,7 @@ class DbStore:
                 "name": r.name,
                 "url": r.url,
                 "default_branch": r.default_branch,
+                "branch": r.branch,
             }
 
     def put(self, row: dict) -> None:
@@ -125,6 +134,7 @@ class DbStore:
             entry.name = row["name"]
             entry.url = row["url"]
             entry.default_branch = row.get("default_branch", "")
+            entry.branch = row.get("branch", "")
             s.add(entry)
 
     def delete(self, id: str) -> None:
@@ -136,11 +146,14 @@ class DbStore:
 
 
 class Registry:
-    def __init__(self, store: DbStore, root: Optional[Path] = None) -> None:
+    def __init__(
+        self, store: DbStore, drafts=None, root: Optional[Path] = None
+    ) -> None:
         self.root = root or home()
         self.file = self.root / "apps.json"
-        self.workspaces = self.root / "workspaces"
+        self.workspaces = settings.WORKSPACES
         self.store = store
+        self.drafts = drafts
 
     def _entry(self, row: dict) -> Entry:
         return Entry(
@@ -149,6 +162,7 @@ class Registry:
             url=row.get("url", ""),
             path=str(self.workspaces / row["id"]),
             default_branch=row.get("default_branch", ""),
+            branch=row.get("branch", ""),
         )
 
     def _load(self) -> list[Entry]:
@@ -244,50 +258,17 @@ class Registry:
         return str(ULID()).lower()
 
     def register(self, entry: Entry) -> Entry:
-        """Record a workspace the platform generated itself (url is empty until pushed)."""
+        """Record an app the platform generated and pushed itself."""
         self._put(entry)
 
         return entry
 
-    def sync(self, id: str, reset: bool = False) -> Entry:
-        """fetch + fast-forward the workspace to its remote. No-op without a remote. `reset` drops local commits and changes so the branch matches the remote."""
+    def set_branch(self, id: str, branch: str) -> Entry:
         entry = self.get(id)
-
-        if not entry.url:
-            return entry
-
-        root = Path(entry.path)
-        self.restore(entry)
-        Repository(root).follow_remote(entry.default_branch, reset=reset)
-        check_workspace(root)
+        entry.branch = "" if branch == entry.default_branch else branch
+        self._put(entry)
 
         return entry
-
-    def restore(self, entry: Entry) -> bool:
-        """Clone the workspace again when this instance does not have it; True when a clone happened."""
-        root = Path(entry.path)
-
-        if root.is_dir() or not entry.url:
-            return False
-
-        root.parent.mkdir(parents=True, exist_ok=True)
-
-        try:
-            Repository.clone(entry.url, root)
-        except subprocess.CalledProcessError as e:
-            shutil.rmtree(root, ignore_errors=True)
-
-            raise ActionPlatformError(
-                f"clone failed: {(e.stderr or '').strip() or entry.url}"
-            ) from e
-
-        try:
-            check_workspace(root)
-        except UnsafeWorkspace:
-            shutil.rmtree(root, ignore_errors=True)
-            raise
-
-        return True
 
     def remove(self, id: str) -> None:
         entry = self.get(id)

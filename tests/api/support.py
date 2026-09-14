@@ -22,6 +22,12 @@ class ApiCase(TempCase):
         from action_platform.api.main import build
 
         self.setenv("AP_HOME", str(self.tmp_path / "home"))
+        self.patch(
+            settings,
+            "WORKSPACES",
+            self.tmp_path / "home" / "action-platform" / "workspaces",
+        )
+        self.patch(settings, "WORKSPACE_TTL", 0)
         self.patch(settings, "ALLOW_UNAUTHENTICATED_API", True)
         self.patch(settings, "ALLOW_FILE_URLS", True)
         self.repo = platform_repo(self.tmp_path)
@@ -38,6 +44,27 @@ class ApiCase(TempCase):
         assert res.status_code == 201, res.text
 
         return res.json()["id"]
+
+    def fake_push(self):
+        """Make `init` push into a bare repository under the temp dir instead of a code host."""
+        from action_platform.api.services import apps
+        from action_platform.core.flow.repository import Repository
+
+        remotes = self.tmp_path / "remotes"
+        remotes.mkdir(exist_ok=True)
+
+        def push(path, private=False, credentials=None):
+            remote = remotes / f"{path.name}.git"
+            git(remotes, "init", "-q", "--bare", str(remote))
+            repo = Repository.init(path, branch="main")
+            repo.add_all()
+            repo.commit("chore: bootstrap project from action-platform")
+            repo.add_remote(remote.as_uri())
+            repo.push_upstream("main")
+
+            return remote.as_uri()
+
+        self.patch(apps, "push_project", push)
 
     @property
     def workspaces(self):

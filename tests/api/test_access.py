@@ -21,6 +21,12 @@ class GateCase(TempCase):
         from action_platform.api.main import build
 
         self.setenv("AP_HOME", str(self.tmp_path / "home"))
+        self.patch(
+            settings,
+            "WORKSPACES",
+            self.tmp_path / "home" / "action-platform" / "workspaces",
+        )
+        self.patch(settings, "WORKSPACE_TTL", 0)
         self.patch(settings, "ALLOW_UNAUTHENTICATED_API", False)
         self.patch(settings, "ALLOW_FILE_URLS", True)
         for limiter in LIMITS.values():

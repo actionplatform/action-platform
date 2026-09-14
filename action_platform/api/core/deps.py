@@ -4,6 +4,7 @@ from typing import Iterator
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from action_platform.api.repositories.drafts import DraftStore
 from action_platform.api.repositories.registry import DbStore, Registry
 from action_platform.api.services.apps import AppService
 from action_platform.api.services.configuration import ConfigurationService
@@ -30,7 +31,7 @@ class RegistrySource:
         if self.database is None:
             raise ConfigError("the registry needs a database: set AP_DATABASE_URL")
 
-        return Registry(DbStore(self.database))
+        return Registry(DbStore(self.database), DraftStore(self.database))
 
 
 source = RegistrySource()

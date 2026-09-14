@@ -26,11 +26,9 @@ type Config = {
   packageName: string;
   description: string;
   githubOwner: string;
-  gitInit: boolean;
   ci: boolean;
   ciProvider: string;
   cloud: string | null;
-  push: boolean;
 };
 
 function ownerOf(host: HostOption | null): string | null {
@@ -67,11 +65,9 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
     packageName: "",
     description: "",
     githubOwner: "",
-    gitInit: true,
     ci: true,
     ciProvider: ciFor(hosts[0]?.kind),
     cloud: null,
-    push: false,
   });
   const [touched, setTouched] = useState({ directory: false, packageName: false });
   const [error, setError] = useState<string | null>(null);
@@ -118,7 +114,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
     step === 0 ? !!type
     : step === 1 ? (!hasStack || !!stack)
     : step === 2 ? !!template
-    : step === 3 ? config.name.trim().length > 0 && config.directory.length > 0 && !!project && (!config.push || !host || host.kind !== "bitbucket" || !!(config.githubOwner || ownerOf(host)))
+    : step === 3 ? config.name.trim().length > 0 && config.directory.length > 0 && !!project && !!host && (host.kind !== "bitbucket" || !!(config.githubOwner || ownerOf(host)))
     : true;
 
   const next = () => {
@@ -140,7 +136,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
     name: config.name,
     ci: config.ci && type !== "empty" ? config.ciProvider : null,
     cloud: config.cloud,
-    push: config.push,
+    push: true,
   });
 
   const submit = () =>
@@ -156,8 +152,8 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
         github_owner: config.githubOwner || ownerOf(host),
         ci: config.ci && type !== "empty" ? config.ciProvider : null,
         cloud: config.cloud,
-        git_init: config.gitInit,
-        push: config.push,
+        git_init: true,
+        push: true,
         private: false,
       }, source), (error) => ({ ok: false as const, error }), "The app may have been created anyway: check the project before trying again.");
       if (r.ok) router.push(r.href);
@@ -271,7 +267,6 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
               <div className="mt-6">
                 <div className="text-sm font-medium mb-2">Options</div>
                 <div className="space-y-2">
-                  <Option checked={config.gitInit} onChange={(v) => setConfig({ ...config, gitInit: v })} label="Initialize Git repository" hint="First commit on main, git-flow hooks installed." />
                   {type !== "empty" && (
                     <Option checked={config.ci} onChange={(v) => setConfig({ ...config, ci: v })} label="Include CI workflow" hint="Lint, tests, Conventional Commits and git-flow on every pull request.">
                       {config.ci && (
@@ -294,7 +289,10 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                       )}
                     </Option>
                   )}
-                  <Option checked={config.push} disabled={!host} onChange={(v) => setConfig({ ...config, push: v, gitInit: v || config.gitInit })} label="Create remote repository and push" hint={host ? `On ${host.name}, as ${config.githubOwner || host.defaultOwner || "the token's user"}/${config.directory || "<directory>"}.` : "Needs a source host."} />
+                  <div className="rounded-md border border-border px-3 py-2 text-sm">
+                    <div className="font-medium">Repository</div>
+                    <div className="text-[13px] text-secondary">{host ? `Created on ${host.name} as ${config.githubOwner || host.defaultOwner || "the token's user"}/${config.directory || "<directory>"} and pushed right away: apps on the platform always live on a code host.` : "Connect a code host in Settings first: the app is created on it and pushed right away."}</div>
+                  </div>
                 </div>
               </div>
             </Section>
@@ -318,10 +316,9 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
                     <div className="text-xs text-secondary mb-1">Selected options</div>
                     <div className="flex flex-wrap gap-1">
                       {[
-                        config.gitInit && "Git repository",
                         config.ci && type !== "empty" && `CI: ${config.ciProvider}`,
                         config.cloud && `Deploy: ${config.cloud}`,
-                        config.push && "Push to remote",
+                        "Pushed to remote",
                       ].filter(Boolean).map((o) => <Badge key={String(o)} tone="ok">{o}</Badge>)}
                     </div>
                   </div>

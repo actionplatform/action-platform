@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from action_platform.api.core import credentials as auth
 from action_platform.api.repositories.registry import Registry
-from action_platform.api.services.manifest import workspace_of
+from action_platform.api.services.workspace import Workspaces
 from action_platform.api.schemas import PullRequestRequest, StartBranchRequest
 from action_platform.core.config import Config
 from action_platform.core.flow import git
@@ -19,7 +19,7 @@ class FlowService:
         self.registry = registry
 
     def _root(self, id: str) -> Path:
-        return workspace_of(self.registry, id)[1]
+        return Workspaces(self.registry).checkout(id)[1]
 
     def _repo(self, id: str) -> Repository:
         return Repository(self._root(id))
@@ -27,10 +27,12 @@ class FlowService:
     def start_branch(self, id: str, body: StartBranchRequest) -> dict:
         with auth.git_auth(body.credentials):
             branch = GitFlow(self._repo(id)).start(
-                body.kind, body.code, body.slug, push=body.push
+                body.kind, body.code, body.slug, push=True
             )
 
-        return {"branch": branch.name, "base": branch.base, "pushed": branch.pushed}
+        self.registry.set_branch(id, branch.name)
+
+        return {"branch": branch.name, "base": branch.base, "pushed": True}
 
     def plan_branch(self, id: str, kind: str, code: str, slug: Optional[str]) -> dict:
         branch = GitFlow(self._repo(id)).plan_branch(kind, code or "code", slug)
@@ -38,20 +40,24 @@ class FlowService:
         return {"branch": branch.name, "base": branch.base, "pushed": False}
 
     def checkout(self, id: str, branch: str) -> dict:
-        repo = self._repo(id)
-
         try:
             git.check_ref(branch)
         except git.BadRef as e:
             raise HTTPException(400, str(e)) from e
 
-        if not repo.is_clean():
-            raise HTTPException(409, "working tree is dirty")
+        if self.registry.drafts.paths(id):
+            raise HTTPException(409, "commit or discard the pending changes first")
 
+        repo = self._repo(id)
         repo.fetch(tags=False)
-        repo.checkout(branch)
 
-        return {"branch": repo.branch}
+        if not repo.tracking_branch_exists(branch):
+            raise HTTPException(404, f"branch {branch} does not exist on the remote")
+
+        self.registry.set_branch(id, branch)
+        _, root = Workspaces(self.registry).refresh(id)
+
+        return {"branch": Repository(root).branch}
 
     def propose_pr(self, id: str, base: str | None, title: str | None) -> dict:
         proposal = GitFlow(self._repo(id)).propose(base=base, title=title)

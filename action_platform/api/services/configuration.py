@@ -7,7 +7,7 @@ from action_platform.api.core import credentials as auth
 from action_platform.api.repositories.registry import Registry
 from action_platform.api.schemas import CommitRequest, SourceSpec
 from action_platform.api.services.catalog import resolve_repo
-from action_platform.api.services.manifest import workspace_of
+from action_platform.api.services.workspace import Workspaces
 from action_platform.core.config import Config
 from action_platform.core.flow import gitflow
 from action_platform.core.flow.repository import Repository
@@ -23,7 +23,10 @@ class ConfigurationService:
         self.registry = registry
 
     def _root(self, id: str) -> Path:
-        return workspace_of(self.registry, id)[1]
+        return Workspaces(self.registry).checkout(id)[1]
+
+    def _drafted(self, id: str, root: Path) -> list[str]:
+        return self.registry.drafts.capture(id, root)
 
     def manifest(self, id: str) -> dict:
         manifest = self._root(id) / settings.CONFIG_FILE
@@ -41,18 +44,24 @@ class ConfigurationService:
         except tomllib.TOMLDecodeError as e:
             raise HTTPException(400, f"invalid TOML: {e}") from e
 
-        path = self._root(id) / settings.CONFIG_FILE
+        root = self._root(id)
+        path = root / settings.CONFIG_FILE
         path.write_text(content if content.endswith("\n") else content + "\n")
+        self._drafted(id, root)
 
         return {"content": path.read_text()}
 
     def set_cloud(self, id: str, target: str, source: SourceSpec | None = None) -> dict:
         repo, matrix = resolve_repo(source)
 
+        root = self._root(id)
+
         try:
-            apply_cloud(repo, matrix.cloud(target), self._root(id))
+            apply_cloud(repo, matrix.cloud(target), root)
         except TemplateError as e:
             raise HTTPException(400, str(e)) from e
+
+        self._drafted(id, root)
 
         return {"target": target}
 
@@ -65,7 +74,9 @@ class ConfigurationService:
         if service is None:
             raise HTTPException(400, f"unknown service: {name}")
 
-        apply_service(repo, service, self._root(id), provider=provider)
+        root = self._root(id)
+        apply_service(repo, service, root, provider=provider)
+        self._drafted(id, root)
 
         return {
             "name": name,
@@ -73,32 +84,27 @@ class ConfigurationService:
         }
 
     def changes(self, id: str) -> dict:
-        files = Repository(self._root(id)).changed_files()
+        files = self.registry.drafts.paths(id)
 
         return {"files": files, "clean": not files}
 
     def discard(self, id: str) -> dict:
-        repo = Repository(self._root(id))
-        repo.reset_hard()
-        repo.clean()
+        self.registry.drafts.clear(id)
+        Workspaces(self.registry).refresh(id)
 
         return {"clean": True, "files": []}
 
     def install_platform(
         self, id: str, type_: str, language: str | None, ci: str | None
     ) -> dict:
-        entry = self.registry.get(id)
-        root = Path(entry.path)
-
-        if not root.is_dir():
-            raise HTTPException(410, f"{root} no longer exists")
-
+        entry, root = Workspaces(self.registry).checkout(id)
         plan = install(root, type_=type_, language=language, ci=ci, name=entry.name)
+        self._drafted(id, root)
 
         return {"installed": plan.created}
 
     def commit(self, id: str, body: CommitRequest) -> dict:
-        root = self._root(id)
+        entry, root = Workspaces(self.registry).refresh(id)
         repo = Repository(root)
 
         if repo.is_clean():
@@ -122,10 +128,10 @@ class ConfigurationService:
             repo.add_all()
             repo.commit(body.message)
             sha = repo.short_head()
-            push = body.push or body.pull_request
-
-            if push:
-                repo.push_upstream(branch)
+            push = True
+            repo.push_upstream(branch)
+            self.registry.drafts.clear(id)
+            self.registry.set_branch(id, branch)
 
             result = {
                 "sha": sha,

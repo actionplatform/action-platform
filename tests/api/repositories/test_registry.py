@@ -23,9 +23,7 @@ class RegistryTest(ApiCase):
 
         self.assertEqual(entry.name, "demo")
         self.assertEqual(entry.default_branch, "feature/1")
-        self.assertTrue(
-            Path(entry.path).is_relative_to(self.tmp_path / "home" / "workspaces")
-        )
+        self.assertTrue(Path(entry.path).is_relative_to(self.workspaces))
         self.assertTrue((Path(entry.path) / "platform.toml").exists())
         self.assertEqual(self.registry.add(self.url).id, entry.id)
 
@@ -44,7 +42,7 @@ class RegistryTest(ApiCase):
 
         with self.assertRaisesRegex(Exception, "platform.toml"):
             self.registry.add(bare.as_uri())
-        self.assertFalse(any((self.tmp_path / "home" / "workspaces").glob("*")))
+        self.assertFalse(any(self.workspaces.glob("*")))
 
     def test_refuses_non_https_url(self):
         with self.assertRaisesRegex(Exception, "https:// only"):

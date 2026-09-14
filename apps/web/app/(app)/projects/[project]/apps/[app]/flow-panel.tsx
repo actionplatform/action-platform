@@ -71,7 +71,6 @@ function NewBranchDialog({ view, open, onClose }: { view: AppView; open: boolean
   const [kind, setKind] = useState("feature");
   const [code, setCode] = useState("");
   const [slug, setSlug] = useState("");
-  const [push, setPush] = useState(!!view.repositoryUrl);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [plan, setPlan] = useState<{ branch: string; base: string } | null>(null);
@@ -86,7 +85,7 @@ function NewBranchDialog({ view, open, onClose }: { view: AppView; open: boolean
   const submit = () =>
     start(async () => {
       setError(null);
-      const r = await startBranch(view.projectId, view.appId, view.registryId, { kind, code: code.trim(), slug: slug.trim(), push });
+      const r = await startBranch(view.projectId, view.appId, view.registryId, { kind, code: code.trim(), slug: slug.trim(), push: true });
       if (r.ok) { onClose(); router.refresh(); } else setError(r.error);
     });
 
@@ -111,7 +110,7 @@ function NewBranchDialog({ view, open, onClose }: { view: AppView; open: boolean
           <Field label="Code" hint="Issue or ticket: 42, PROJ-7"><Input value={code} onChange={(e) => setCode(e.target.value)} className="font-mono" placeholder="42" autoFocus /></Field>
           <Field label="Slug" hint="Optional words"><Input value={slug} onChange={(e) => setSlug(e.target.value)} className="font-mono" placeholder="login" /></Field>
         </div>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={push} onChange={(e) => setPush(e.target.checked)} disabled={!view.repositoryUrl} /> Push to remote</label>
+        <p className="text-xs text-muted-foreground">The branch is created from its git-flow base and pushed; the app is then checked out on it.</p>
         {error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
       </div>
     </Dialog>

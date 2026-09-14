@@ -54,7 +54,6 @@ flowchart LR
     T --> W[web · Next.js]
     W --> A[api · Python]
     W --> P[(postgres)]
-    A --> D[(apdata: clones)]
     K[worker · Python] --> D
     K --> P
     A -->|"push · release"| G{{source hosts}}
@@ -63,8 +62,8 @@ flowchart LR
 | Service | Image | Notes |
 |---|---|---|
 | `postgres` | `postgres:16-alpine` | volume `pgdata` |
-| `api` | `actionplatformio/action-platform-api` | Python; `AP_HOME=/data` (volume `apdata`: the app clones — the registry itself is in Postgres). Reachable from `web`, which also forwards `/api/v1` and `/api/auth` to it. |
-| `worker` | `actionplatformio/action-platform-api` | same image, `action-platform worker`: runs queued syncs, releases, deploys, pushes and imports. Shares `apdata` with the API on one host; on another host it clones what it needs. Scale with `docker compose up --scale worker=3`. |
+| `api` | `actionplatformio/action-platform-api` | Python; keeps nothing on disk — clones are made under the container's temp dir when a request needs them and rebuilt from the code host any time. Reachable from `web`, which also forwards `/api/v1` and `/api/auth` to it. |
+| `worker` | `actionplatformio/action-platform-api` | same image, `action-platform worker`: runs queued syncs, releases, deploys and imports. Stateless like the API: any host, any number — `docker compose up --scale worker=3`. |
 | `web` | `actionplatformio/action-platform-web` | Next.js standalone, stateless: pages and server actions over the API. Port 3000. |
 | `traefik` | `traefik:v3.3` | only with `--profile tls`; certificates in volume `letsencrypt` |
 
@@ -92,7 +91,7 @@ The setup wizard's first step only checks that the API has its database and secr
 
 ## Backups
 
-Two volumes hold state: `pgdata` (accounts, organizations, projects, apps, encrypted tokens, OAuth apps, the registry, jobs) and `apdata` (app clones — rebuilt from the repositories when missing). Back up `pgdata`; keep `BETTER_AUTH_SECRET` with it or the tokens cannot be decrypted.
+One volume holds state: `pgdata` (accounts, organizations, projects, apps, encrypted tokens, OAuth apps, the registry, pending edits, jobs). Back up `pgdata`; keep `BETTER_AUTH_SECRET` with it or the tokens cannot be decrypted. Clones live under the API's and worker's temp dir (`AP_WORKSPACES` to move them, `AP_WORKSPACE_TTL` seconds between fetches, default 15) and can be deleted at any moment.
 
 ```bash
 docker compose exec postgres pg_dump -U action_platform action_platform > backup.sql

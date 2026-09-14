@@ -74,8 +74,6 @@ export const api = {
   gitflowRules: async () => unwrap(await client.GET("/api/gitflow/rules")),
   apps: {
     list: async () => unwrap(await client.GET("/api/apps")),
-    push: async (id: string, priv = false) =>
-      unwrap(await client.POST("/api/apps/{id}/push", { params: { path: { id } }, body: { private: priv } })),
     sync: async (id: string, reset = false) =>
       unwrap(await client.POST("/api/apps/{id}/sync", { params: { path: { id } }, body: { reset } })),
     remove: async (id: string) =>
