@@ -46,7 +46,9 @@ def build(
             "AP_DATABASE_URL is empty: the API keeps accounts, apps and jobs in a database."
         )
 
-    app.state.db = Database(url, settings.DATABASE_POOL_SIZE)
+    app.state.db = Database(
+        url, settings.DATABASE_POOL_SIZE, settings.DATABASE_MAX_OVERFLOW
+    )
     app.state.db.migrate()
     configure_registry(app.state.db)
 

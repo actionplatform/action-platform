@@ -7,7 +7,8 @@ One Postgres (or MySQL, or SQLite) holds every organization, project, app, token
 | Variable | Meaning |
 |---|---|
 | `AP_DATABASE_URL` (or `DATABASE_URL`) | `postgres://user:pass@host/db`, `mysql://…` or `sqlite:///path.db`. Required: the API refuses to start without it. |
-| `AP_DATABASE_POOL_SIZE` | connections per API process (default 5; SQLite ignores it) |
+| `AP_DATABASE_POOL_SIZE` | connections kept open per API process (default 10; SQLite ignores it) |
+| `AP_DATABASE_MAX_OVERFLOW` | extra connections opened under load and closed afterwards (default 20) |
 
 `postgres://` and `postgresql://` are rewritten to the `psycopg` driver, `mysql://` to `pymysql`; both ship with `pip install 'action-platform[api]'`.
 
