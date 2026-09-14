@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.12.0 — 2026-09-14
+
+### Features
+- **api:** nothing local survives: init pushes at once, commits and branches push, checkout is a registry field, edits are drafts
+- **api:** disposable clones: rebuilt from the remote when missing, leveled with it before use, drafts written on top
+- **db:** checked-out branch per app and pending edits (draft table); workspaces under the temp dir
+
 ## v0.11.3 — 2026-09-14
 
 ### Bug Fixes
