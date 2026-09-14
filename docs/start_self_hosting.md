@@ -55,6 +55,8 @@ flowchart LR
     W --> A[api · Python]
     W --> P[(postgres)]
     A --> D[(apdata: clones)]
+    K[worker · Python] --> D
+    K --> P
     W --> C[(webconfig: app.json)]
     A -->|"push · release"| G{{source hosts}}
 ```
@@ -62,7 +64,8 @@ flowchart LR
 | Service | Image | Notes |
 |---|---|---|
 | `postgres` | `postgres:16-alpine` | volume `pgdata` |
-| `api` | `actionplatformio/action-platform-api` | Python; `AP_HOME=/data` (volume `apdata`: registry + workspaces with the app clones). Only reachable from `web`. |
+| `api` | `actionplatformio/action-platform-api` | Python; `AP_HOME=/data` (volume `apdata`: the app clones — the registry itself is in Postgres). Reachable from `web`, which also forwards `/api/v1` and `/api/auth` to it. |
+| `worker` | `actionplatformio/action-platform-api` | same image, `action-platform worker`: runs queued syncs, releases, deploys, pushes and imports. Shares `apdata` with the API on one host; on another host it clones what it needs. Scale with `docker compose up --scale worker=3`. |
 | `web` | `actionplatformio/action-platform-web` | Next.js standalone; volume `webconfig` for `config/app.json` (OAuth apps, secret). Port 3000. |
 | `traefik` | `traefik:v3.3` | only with `--profile tls`; certificates in volume `letsencrypt` |
 
@@ -110,6 +113,7 @@ AP_IMAGE_API=action-platform-api:local AP_IMAGE_WEB=action-platform-web:local do
 
 - The API image ships Python and git only: releases work anywhere; a `deploy` to Lambda / Amplify needs `sam`, `aws` or `node` inside the container, which it does not have yet.
 - Domains are set in `.env` (or in Dokploy), not from the app's Settings.
+- Calls run inline unless the client asks for `Prefer: respond-async`; the web app still waits for each action. Queued work is in [database](concept_database.md#jobs).
 
 ## Upgrading
 

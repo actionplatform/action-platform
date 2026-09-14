@@ -4,6 +4,10 @@ Each entry is a git URL cloned into its own workspace under the API's home
 (`~/.action-platform/workspaces/<id>`). The web app adds and removes
 entries; ids are stable so links survive a rename. Nothing here points at
 a directory the user did not ask the platform to own.
+
+Entries live in the database (`registry` table) when the API has one, so
+every instance and worker sees the same apps and rebuilds a missing
+workspace from the URL; `apps.json` under the home is the file fallback.
 """
 
 from __future__ import annotations
@@ -14,9 +18,12 @@ import shutil
 import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Protocol
 
+from sqlalchemy import select
 from ulid import ULID
+
+from action_platform.api.db.models import RegistryEntry
 
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.flow.repository import Repository
@@ -80,21 +87,97 @@ class Entry:
     default_branch: str = ""
 
 
-class Registry:
-    def __init__(self, root: Optional[Path] = None) -> None:
-        self.root = root or home()
-        self.file = self.root / "apps.json"
-        self.workspaces = self.root / "workspaces"
+class Store(Protocol):
+    def rows(self) -> list[dict]: ...
 
-    def _load(self) -> list[Entry]:
+    def put(self, row: dict) -> None: ...
+
+    def delete(self, id: str) -> None: ...
+
+
+class FileStore:
+    def __init__(self, file: Path) -> None:
+        self.file = file
+
+    def rows(self) -> list[dict]:
         if not self.file.exists():
             return []
 
-        return [Entry(**row) for row in json.loads(self.file.read_text() or "[]")]
+        return json.loads(self.file.read_text() or "[]")
 
-    def _save(self, rows: list[Entry]) -> None:
+    def _write(self, rows: list[dict]) -> None:
         self.file.parent.mkdir(parents=True, exist_ok=True)
-        self.file.write_text(json.dumps([asdict(r) for r in rows], indent=2) + "\n")
+        self.file.write_text(json.dumps(rows, indent=2) + "\n")
+
+    def put(self, row: dict) -> None:
+        self._write([r for r in self.rows() if r["id"] != row["id"]] + [row])
+
+    def delete(self, id: str) -> None:
+        self._write([r for r in self.rows() if r["id"] != id])
+
+
+class DbStore:
+    def __init__(self, database) -> None:
+        self.database = database
+
+    def rows(self) -> list[dict]:
+        with self.database.session() as s:
+            return [
+                {
+                    "id": r.id,
+                    "name": r.name,
+                    "url": r.url,
+                    "default_branch": r.default_branch,
+                }
+                for r in s.scalars(
+                    select(RegistryEntry).order_by(RegistryEntry.created_at)
+                )
+            ]
+
+    def put(self, row: dict) -> None:
+        with self.database.session() as s:
+            entry = s.get(RegistryEntry, row["id"]) or RegistryEntry(id=row["id"])
+            entry.name = row["name"]
+            entry.url = row["url"]
+            entry.default_branch = row.get("default_branch", "")
+            s.add(entry)
+
+    def delete(self, id: str) -> None:
+        with self.database.session() as s:
+            entry = s.get(RegistryEntry, id)
+
+            if entry is not None:
+                s.delete(entry)
+
+
+class Registry:
+    def __init__(
+        self, root: Optional[Path] = None, store: Optional[Store] = None
+    ) -> None:
+        self.root = root or home()
+        self.file = self.root / "apps.json"
+        self.workspaces = self.root / "workspaces"
+        self.store: Store = store or FileStore(self.file)
+
+    def _entry(self, row: dict) -> Entry:
+        return Entry(
+            id=row["id"],
+            name=row["name"],
+            url=row.get("url", ""),
+            path=row.get("path") or str(self.workspaces / row["id"]),
+            default_branch=row.get("default_branch", ""),
+        )
+
+    def _load(self) -> list[Entry]:
+        return [self._entry(row) for row in self.store.rows()]
+
+    def _put(self, entry: Entry) -> None:
+        row = asdict(entry)
+
+        if isinstance(self.store, DbStore):
+            row.pop("path")
+
+        self.store.put(row)
 
     def list(self) -> list[Entry]:
         return self._load()
@@ -145,6 +228,7 @@ class Registry:
 
         if require_manifest and not (path / settings.CONFIG_FILE).exists():
             shutil.rmtree(path, ignore_errors=True)
+
             raise MissingManifest(
                 f"{settings.CONFIG_FILE} not found in {url} — install the platform on it first"
             )
@@ -152,8 +236,7 @@ class Registry:
         entry = Entry(
             id=id, name=name, url=url, path=str(path), default_branch=repo.branch
         )
-        rows.append(entry)
-        self._save(rows)
+        self._put(entry)
 
         return entry
 
@@ -162,9 +245,7 @@ class Registry:
 
     def register(self, entry: Entry) -> Entry:
         """Record a workspace the platform generated itself (url is empty until pushed)."""
-        rows = [r for r in self._load() if r.id != entry.id]
-        rows.append(entry)
-        self._save(rows)
+        self._put(entry)
 
         return entry
 
@@ -176,15 +257,41 @@ class Registry:
             return entry
 
         root = Path(entry.path)
+        self.restore(entry)
         Repository(root).follow_remote(entry.default_branch, reset=reset)
         check_workspace(root)
 
         return entry
 
+    def restore(self, entry: Entry) -> bool:
+        """Clone the workspace again when this instance does not have it; True when a clone happened."""
+        root = Path(entry.path)
+
+        if root.is_dir() or not entry.url:
+            return False
+
+        root.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            Repository.clone(entry.url, root)
+        except subprocess.CalledProcessError as e:
+            shutil.rmtree(root, ignore_errors=True)
+
+            raise ActionPlatformError(
+                f"clone failed: {(e.stderr or '').strip() or entry.url}"
+            ) from e
+
+        try:
+            check_workspace(root)
+        except UnsafeWorkspace:
+            shutil.rmtree(root, ignore_errors=True)
+            raise
+
+        return True
+
     def remove(self, id: str) -> None:
         entry = self.get(id)
-        rows = [r for r in self._load() if r.id != id]
-        self._save(rows)
+        self.store.delete(id)
 
         path = Path(entry.path)
 

@@ -25,10 +25,13 @@ log = logging.getLogger("action_platform.db")
 def normalize_url(url: str) -> str:
     if url.startswith("postgres://"):
         return "postgresql+psycopg://" + url[len("postgres://") :]
+
     if url.startswith("postgresql://"):
         return "postgresql+psycopg://" + url[len("postgresql://") :]
+
     if url.startswith("mysql://"):
         return "mysql+pymysql://" + url[len("mysql://") :]
+
     return url
 
 
@@ -36,6 +39,7 @@ class Database:
     def __init__(self, url: str, pool_size: int = 5) -> None:
         if not url:
             raise ConfigError("AP_DATABASE_URL is empty")
+
         self.url = normalize_url(url)
         self.engine = self._engine(self.url, pool_size)
         self.sessions = sessionmaker(self.engine, expire_on_commit=False)
@@ -55,6 +59,7 @@ class Database:
                 connection.execute("PRAGMA foreign_keys=ON")
 
             return engine
+
         return create_engine(url, pool_size=pool_size, pool_pre_ping=True)
 
     @property
@@ -66,6 +71,7 @@ class Database:
         config.set_main_option("script_location", str(MIGRATIONS))
         config.set_main_option("sqlalchemy.url", self.url)
         config.attributes["engine"] = self.engine
+
         return config
 
     def current_revision(self) -> str | None:
@@ -82,11 +88,14 @@ class Database:
 
     def migrate(self) -> str | None:
         config = self.config()
+
         if self.adopted_from_web():
             command.stamp(config, FIRST_REVISION)
+
         command.upgrade(config, "head")
         revision = self.current_revision()
         log.info("database %s at revision %s", self.dialect, revision)
+
         return revision
 
     @contextmanager

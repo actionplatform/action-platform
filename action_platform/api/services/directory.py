@@ -50,10 +50,13 @@ def slugify(value: str) -> str:
 def kind_of_url(url: str) -> Optional[str]:
     if "github.com" in url:
         return "github"
+
     if "gitlab" in url:
         return "gitlab"
+
     if "bitbucket.org" in url:
         return "bitbucket"
+
     return None
 
 
@@ -90,8 +93,10 @@ def oauth_app_for(kind: str) -> Optional[OAuthApp]:
     client_secret = settings.env(f"AP_{prefix}_CLIENT_SECRET") or settings.env(
         f"{prefix}_CLIENT_SECRET"
     )
+
     if not client_id or not client_secret:
         return None
+
     return OAuthApp(
         client_id,
         client_secret,
@@ -103,10 +108,12 @@ def refresh_oauth(
     kind: str, refresh_token: str
 ) -> tuple[str, Optional[str], Optional[datetime]]:
     app = oauth_app_for(kind)
+
     if app is None:
         raise DirectoryError(
             f"the {kind} token expired and no OAuth app is configured on the API to refresh it"
         )
+
     if kind == "gitlab":
         base = (app.base_url or "https://gitlab.com").rstrip("/")
         data = post_form(
@@ -137,9 +144,12 @@ def refresh_oauth(
                 "grant_type": "refresh_token",
             },
         )
+
     access = data.get("access_token")
+
     if not isinstance(access, str) or not access:
         raise DirectoryError("no access token in the provider's response")
+
     expires_in = data.get("expires_in")
     expires_at = (
         now() + timedelta(seconds=int(expires_in))
@@ -147,6 +157,7 @@ def refresh_oauth(
         else None
     )
     refreshed = data.get("refresh_token")
+
     return access, refreshed if isinstance(refreshed, str) else None, expires_at
 
 
@@ -166,6 +177,7 @@ class DirectoryService:
             .where(Member.user_id == user_id)
             .order_by(Organization.name)
         ).all()
+
         return [(organization, normalize_role(role)) for organization, role in rows]
 
     def organization(self, id_or_slug: str) -> Optional[Organization]:
@@ -192,8 +204,10 @@ class DirectoryService:
             .where(Project.organization_id == organization_id)
             .order_by(Project.name)
         )
+
         if project_id:
             query = query.where(Project.id == project_id)
+
         return list(self.db.scalars(query))
 
     def project(self, organization_id: str, project_id: str) -> Optional[Project]:
@@ -209,8 +223,10 @@ class DirectoryService:
             .where(App.project_id == project_id)
             .order_by(App.created_at.desc())
         )
+
         if app_id:
             query = query.where(App.id == app_id)
+
         return list(self.db.scalars(query))
 
     def app(self, project_id: str, app_id: str) -> Optional[App]:
@@ -224,6 +240,7 @@ class DirectoryService:
             .join(Project, Project.id == App.project_id)
             .where(App.registry_id == registry_id)
         ).first()
+
         return (row[0], row[1]) if row else None
 
     def registry_ids_of(
@@ -237,10 +254,13 @@ class DirectoryService:
             .join(Project, Project.id == App.project_id)
             .where(Project.organization_id == organization_id)
         )
+
         if project_id:
             query = query.where(App.project_id == project_id)
+
         if app_id:
             query = query.where(App.id == app_id)
+
         return set(self.db.scalars(query))
 
     def mark_synced(self, app: App) -> None:
@@ -287,14 +307,17 @@ class DirectoryService:
             .where(Member.organization_id == organization_id)
             .order_by(Member.created_at)
         ).all()
+
         return [(member, user) for member, user in rows]
 
     def create_project(
         self, organization_id: str, name: str, description: str = ""
     ) -> Project:
         name = name.strip()
+
         if not name:
             raise DirectoryError("name is required")
+
         project = Project(
             id=new_id(),
             organization_id=organization_id,
@@ -305,21 +328,26 @@ class DirectoryService:
         )
         self.db.add(project)
         self.db.flush()
+
         return project
 
     def create_team(
         self, organization_id: str, name: str, description: str = ""
     ) -> Team:
         name = name.strip()
+
         if not name:
             raise DirectoryError("name is required")
+
         slug = slugify(name)
+
         if self.db.scalar(
             select(Team.id).where(
                 Team.organization_id == organization_id, Team.slug == slug
             )
         ):
             raise DirectoryError(f"a team named {name} already exists")
+
         team = Team(
             id=new_id(),
             organization_id=organization_id,
@@ -330,19 +358,23 @@ class DirectoryService:
         )
         self.db.add(team)
         self.db.flush()
+
         return team
 
     def add_team_member(self, organization_id: str, team_id: str, user_id: str) -> None:
         if self.team(organization_id, team_id) is None:
             raise DirectoryError("team not found")
+
         if self.role_in(user_id, organization_id) is None:
             raise DirectoryError("not a member of the organization")
+
         if self.db.scalar(
             select(TeamMember.id).where(
                 TeamMember.team_id == team_id, TeamMember.user_id == user_id
             )
         ):
             return
+
         self.db.add(
             TeamMember(id=new_id(), team_id=team_id, user_id=user_id, created_at=now())
         )
@@ -352,23 +384,29 @@ class DirectoryService:
         self, organization_id: str, project_id: str, team_id: Optional[str]
     ) -> None:
         project = self.project(organization_id, project_id)
+
         if project is None:
             raise DirectoryError("project not found")
+
         if team_id and self.team(organization_id, team_id) is None:
             raise DirectoryError("team not found")
+
         project.team_id = team_id or None
         self.db.flush()
 
     def set_member_role(self, organization_id: str, user_id: str, role: str) -> None:
         if role not in ROLES:
             raise DirectoryError(f"role must be one of {', '.join(ROLES)}")
+
         member = self.db.scalar(
             select(Member).where(
                 Member.organization_id == organization_id, Member.user_id == user_id
             )
         )
+
         if member is None:
             raise DirectoryError("member not found")
+
         owners = (
             self.db.scalar(
                 select(func.count())
@@ -379,13 +417,16 @@ class DirectoryService:
             )
             or 0
         )
+
         if member.role == "owner" and role != "owner" and owners <= 1:
             raise DirectoryError("the organization needs at least one owner")
+
         member.role = role
         self.db.flush()
 
     def git_author_of(self, organization_id: str) -> tuple[str, str]:
         row = self.db.get(OrganizationSetting, organization_id)
+
         return (
             (row.git_author_name, row.git_author_email) if row else DEFAULT_GIT_AUTHOR
         )
@@ -401,8 +442,10 @@ class DirectoryService:
 
     def host_id_for_url(self, organization_id: str, url: str) -> Optional[str]:
         kind = kind_of_url(url)
+
         if kind is None:
             return None
+
         return next(
             (h.id for h in self.hosts_of(organization_id) if h.kind == kind), None
         )
@@ -412,14 +455,18 @@ class DirectoryService:
     ) -> Optional[Credentials]:
         if not host_id or self.sealer is None:
             return None
+
         host = self.db.scalar(
             select(SourceHost).where(
                 SourceHost.id == host_id, SourceHost.organization_id == organization_id
             )
         )
+
         if host is None:
             return None
+
         token = self.sealer.open(host.token_encrypted)
+
         if (
             host.auth_kind == "oauth"
             and host.refresh_token_encrypted
@@ -430,10 +477,13 @@ class DirectoryService:
                 host.kind, self.sealer.open(host.refresh_token_encrypted)
             )
             host.token_encrypted = self.sealer.seal(token)
+
             if refreshed:
                 host.refresh_token_encrypted = self.sealer.seal(refreshed)
+
             host.expires_at = expires_at
             self.db.flush()
+
         return Credentials(
             host.kind, token, host.username, host.base_url, host.default_owner
         )
@@ -449,6 +499,7 @@ class DirectoryService:
 
     def source_specs_of(self, organization_id: str) -> list[dict]:
         specs = []
+
         for row in self.template_sources_of(organization_id):
             credentials = self.credentials_for(organization_id, row.source_host_id)
             specs.append(
@@ -459,6 +510,7 @@ class DirectoryService:
                     "credentials": credentials.as_dict() if credentials else None,
                 }
             )
+
         return specs
 
     def source_spec_by_name(
@@ -466,10 +518,13 @@ class DirectoryService:
     ) -> Optional[dict]:
         if not name or name == "official":
             return None
+
         spec = next(
             (s for s in self.source_specs_of(organization_id) if s["name"] == name),
             None,
         )
+
         if spec is None:
             raise DirectoryError(f"template source {name} not found")
+
         return spec

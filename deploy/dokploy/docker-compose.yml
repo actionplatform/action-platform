@@ -43,6 +43,35 @@ services:
       ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
       AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
 
+  worker:
+    image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
+    pull_policy: always
+    restart: unless-stopped
+    command: ["action-platform", "worker"]
+    volumes:
+      - apdata:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+    environment:
+      AP_API_TOKEN: ${AP_API_TOKEN:-}
+      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@postgres:5432/action_platform
+      AP_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      AP_PUBLIC_URL: ${PUBLIC_URL}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITHUB_BASE_URL: ${GITHUB_BASE_URL:-}
+      GITLAB_CLIENT_ID: ${GITLAB_CLIENT_ID:-}
+      GITLAB_CLIENT_SECRET: ${GITLAB_CLIENT_SECRET:-}
+      GITLAB_BASE_URL: ${GITLAB_BASE_URL:-}
+      BITBUCKET_CLIENT_ID: ${BITBUCKET_CLIENT_ID:-}
+      BITBUCKET_CLIENT_SECRET: ${BITBUCKET_CLIENT_SECRET:-}
+      ACTION_PLATFORM_TEMPLATES_REPO: ${ACTION_PLATFORM_TEMPLATES_REPO:-https://github.com/actionplatform/templates.git}
+      ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
+      AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
+
   web:
     image: ${AP_IMAGE_WEB:-actionplatformio/action-platform-web:latest}
     pull_policy: always
