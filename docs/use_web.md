@@ -101,6 +101,8 @@ Project → **Add an existing repository** with any git URL. When the repository
 
 Deploying is done by the CI of the repository (see [templates](concept_templates.md)), not by the web app.
 
+**Deleting** an app or a project removes it from the platform and deletes the platform's clones; the repositories on the code host stay. The confirmation dialog offers **Also delete the repository** (`?repository=true` on `DELETE /api/v1/projects/{id}/apps/{app}`, `?repositories=true` on `DELETE /api/v1/projects/{id}`): the repository is then deleted on the host through the code host attached to the app, before anything is removed on the platform — when the host cannot delete it, nothing is removed and the dialog says why. A GitHub App created by the setup wizard can delete (its *Administration* permission); a GitHub OAuth host connected before this option existed has no `delete_repo` scope and must be reconnected; a Bitbucket consumer needs the *repositories: delete* permission. Deleting a repository also deletes its branches, tags, releases and pull requests on the host, and cannot be undone.
+
 Every confirmation is an in-app dialog; the UI is strictly monochrome.
 
 ## Settings
