@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import unittest
+import urllib.error
+from unittest import mock
+
 from tests.api.support import ApiCase, TestClient
 
 
@@ -156,3 +160,45 @@ class CatalogIndexTest(ApiCase):
         self.assertTrue(
             any(p["template"] == "fastapi" for p in response.json()["projects"])
         )
+
+
+class TemplatesIndexTest(unittest.TestCase):
+    def test_revalidates_with_etag_and_keeps_cache_on_304(self):
+        from action_platform.api.services import index as published
+
+        calls = []
+
+        class Response:
+            def __init__(self, body, etag):
+                self.body = body
+                self.headers = {"etag": etag}
+
+            def read(self):
+                return self.body
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+        def urlopen(request, timeout):
+            calls.append(request.get_header("If-none-match"))
+
+            if len(calls) == 1:
+                return Response(b'{"projects": [1]}', '"v1"')
+
+            if len(calls) == 2:
+                raise urllib.error.HTTPError(request.full_url, 304, "", {}, None)
+
+            return Response(b'{"projects": [1, 2]}', '"v2"')
+
+        fake = published.TemplatesIndex("https://example.com/index.json", ttl=0)
+
+        with mock.patch.object(published.urllib.request, "urlopen", urlopen):
+            self.assertEqual(fake.get(), {"projects": [1]})
+            self.assertEqual(fake.get(), {"projects": [1]})
+            self.assertEqual(fake.get(), {"projects": [1, 2]})
+
+        self.assertEqual(calls, [None, '"v1"', '"v1"'])
+        self.assertEqual(fake.etag, '"v2"')
