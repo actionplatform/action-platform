@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.6.13 — 2026-09-13
+
+### Features
+- **cli:** db status and db migrate
+- **api:** own the database — SQLAlchemy models for every web table plus job, Alembic migrations run on boot, an existing web schema is adopted, AP_DATABASE_URL and get_db
+
+### Bug Fixes
+- **core:** match remote tags and branches by full ref, so web/v0.6.13 no longer shadows v0.6.13
+- **web:** open redirect closed, security headers, HKDF subkeys and audience on tokens, OAuth state bound to the user, timeouts on every outbound call, rate limits, explicit read rules, filtered queries, pool size via env
+- **api:** refuse to start without AP_API_TOKEN unless AP_ALLOW_UNAUTHENTICATED=1; tighter CORS; proxy headers; credentials file created 0600; bearer tokens redacted from remote errors
+
+### Docs
+- database concept guide, db commands, self-hosting variables; stray conflict markers removed
+
+### Tests
+- **api:** migrations from empty and from a web-created schema, sessions, job dedupe, boot wiring
+
+### Build
+- **api:** sqlalchemy, alembic, psycopg and pymysql in the api extra
+
+### Chores
+- **deploy:** API gets AP_DATABASE_URL and waits for Postgres in every compose file
+
 ## v0.6.12 — 2026-09-13
 
 ### Features
