@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.9.0 — 2026-09-14
+
+### Refactoring
+- **web:** catalog rendered from the API — no hard-coded types, stacks or brands; icons from the templates repository
+
+### Chores
+- **web:** regenerate the API client types
+
 ## v0.8.0 — 2026-09-14
 
 ### Features
