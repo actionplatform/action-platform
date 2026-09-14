@@ -41,13 +41,12 @@ class Releaser:
         component: Component | None = None,
     ) -> Context:
         branch = self.repo.branch
-        where = (component or Component()).dir(self.repo.path)
 
         return Context(
             repo_root=self.repo.path,
             remote_url=self.repo.remote_url(),
             branch=branch,
-            current_version=VersionFiles(where, settings.LAST_VERSION_FILE).read(),
+            current_version=self.current_version(component or Component()),
             dry_run=dry_run,
             stage=stage or ("prod" if branch in STABLE_BRANCHES else "dev"),
         )
@@ -173,6 +172,15 @@ class Releaser:
 
         return self.apply(plan)
 
+    def current_version(self, component: Component) -> str:
+        """What LAST_VERSION says — unless the repository has never been tagged for this component, in which case it is 0.0.0 whatever the file says."""
+        if not self.repo.has_tag(component.tag_glob):
+            return "0.0.0"
+
+        return VersionFiles(
+            component.dir(self.repo.path), settings.LAST_VERSION_FILE
+        ).read()
+
     def next_version(
         self,
         level: str,
@@ -182,9 +190,7 @@ class Releaser:
     ) -> str:
         """The version a release would produce, without checking the tree or the tags — for previews."""
         comp = resolve(self.config.components, component)
-        current = Version.parse(
-            VersionFiles(comp.dir(self.repo.path), settings.LAST_VERSION_FILE).read()
-        )
+        current = Version.parse(self.current_version(comp))
 
         if prerelease is None:
             prerelease = (branch or self.repo.branch) not in STABLE_BRANCHES

@@ -55,9 +55,16 @@ class SingleProjectTest(ReleaseCase):
 
     def test_same_version_refused(self):
         run(self.repo, "tag", "-d", "v0.3.1")
+        run(self.repo, "tag", "v0.1.0")
 
         with self.assertRaisesRegex(ReleaseError, "already the current version"):
             self.release("0.3.1")
+
+    def test_a_repository_without_tags_starts_at_zero(self):
+        run(self.repo, "tag", "-d", "v0.3.1")
+
+        self.assertEqual(self.release("patch").next_version, "0.0.1")
+        self.assertEqual((self.repo / "LAST_VERSION").read_text(), "0.0.1\n")
 
 
 class ComponentTest(ReleaseCase):
