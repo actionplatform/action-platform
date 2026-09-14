@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.12 — 2026-09-13
+
+### Bug Fixes
+- **web:** Bitbucket falls back to member workspaces, the wizard needs a workspace to publish; settings refresh on every modal close and host change
+
 ## v0.6.11 — 2026-09-13
 
 ### Bug Fixes
