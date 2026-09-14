@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Check, Database, GitBranch, UserRound } from "lucide-react";
+import { Building2, Check, GitBranch, Server, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,10 @@ import { cn } from "@/lib/utils";
 import { ConnectHosts } from "@/components/connect-hosts";
 import { HOST_KINDS, type HostKind } from "@/lib/source-host-kinds";
 import { slugify } from "@/lib/utils";
-import { addSetupHost, createAdmin, createFirstOrganization, type DbForm, type HostInput, saveDatabase, testDatabase } from "./actions";
+import { addSetupHost, checkApi, createAdmin, createFirstOrganization, type HostInput } from "./actions";
 
 const steps = [
-  { n: 1, label: "Database", icon: Database },
+  { n: 1, label: "API", icon: Server },
   { n: 2, label: "Admin", icon: UserRound },
   { n: 3, label: "Organization", icon: Building2 },
   { n: 4, label: "Source hosts", icon: GitBranch },
@@ -43,7 +43,7 @@ export function SetupWizard({ initialStep, dbError, initialOrgId, oauth }: { ini
           ))}
         </ol>
 
-        {step === 1 && <DatabaseStep onDone={() => setStep(2)} error={dbError} />}
+        {step === 1 && <ApiStep onDone={() => setStep(2)} error={dbError} />}
         {step === 2 && <AdminStep onDone={() => setStep(3)} />}
         {step === 3 && <OrganizationStep onDone={(id) => { setOrgId(id); setStep(4); }} />}
         {step === 4 && <HostsStep orgId={orgId} oauth={oauth} />}
@@ -52,78 +52,27 @@ export function SetupWizard({ initialStep, dbError, initialOrgId, oauth }: { ini
   );
 }
 
-const ENGINES: { id: DbForm["engine"]; label: string; port: string; user: string }[] = [
-  { id: "sqlite", label: "SQLite", port: "", user: "" },
-  { id: "pg", label: "PostgreSQL", port: "5432", user: "postgres" },
-  { id: "mysql", label: "MySQL", port: "3306", user: "root" },
-];
-
-function DatabaseStep({ onDone, error: initialError }: { onDone: () => void; error?: string }) {
-  const [form, setForm] = useState<DbForm>({ engine: "sqlite", host: "localhost", port: "", user: "", password: "", database: "action_platform", ssl: false, file: "data/app.db" });
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(initialError ? { ok: false, text: initialError } : null);
+function ApiStep({ onDone, error: initialError }: { onDone: () => void; error?: string }) {
+  const [msg, setMsg] = useState<string | null>(initialError ?? null);
   const [pending, start] = useTransition();
-  const set = (k: keyof DbForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm({ ...form, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
-  const pickEngine = (id: DbForm["engine"]) => {
-    const eng = ENGINES.find((e) => e.id === id)!;
-    setForm({ ...form, engine: id, port: eng.port, user: eng.user });
-    setMsg(null);
-  };
 
   return (
-    <form
-      className="space-y-3"
-      onSubmit={(e) => {
-        e.preventDefault();
-        start(async () => {
-          const r = await saveDatabase(form);
-          if (r.ok) onDone(); else setMsg({ ok: false, text: r.error });
-        });
-      }}
-    >
-      <p className="text-sm text-muted-foreground">Holds accounts and sessions. The database is created if missing, the schema migrated, and the URL saved to <code className="font-mono">config/app.json</code>.</p>
-      <div className="flex gap-1 rounded-md bg-surface-hover p-1 text-sm">
-        {ENGINES.map((e) => (
-          <button
-            key={e.id}
-            type="button"
-            onClick={() => pickEngine(e.id)}
-            className={cn("flex-1 rounded px-3 py-1.5", form.engine === e.id ? "bg-foreground text-primary-foreground font-medium" : "text-muted-foreground hover:text-foreground")}
-          >
-            {e.label}
-          </button>
-        ))}
-      </div>
-      {form.engine === "sqlite" ? (
-        <Field label="File"><input value={form.file} onChange={set("file")} className={cn(input, "font-mono")} required /></Field>
-      ) : (
-        <>
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Host" className="col-span-2"><input value={form.host} onChange={set("host")} className={input} required /></Field>
-            <Field label="Port"><input value={form.port} onChange={set("port")} className={input} required /></Field>
-            <Field label="User"><input value={form.user} onChange={set("user")} className={input} required /></Field>
-            <Field label="Password"><input type="password" value={form.password} onChange={set("password")} className={input} /></Field>
-            <Field label="Database"><input value={form.database} onChange={set("database")} className={input} required /></Field>
-          </div>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.ssl} onChange={set("ssl")} /> require SSL</label>
-        </>
-      )}
-      {msg && <div className={cn("text-sm", msg.ok ? "text-secondary" : "text-foreground border border-foreground rounded-md px-3 py-2")}>{msg.text}</div>}
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">The Python API owns the database: accounts, organizations, apps and tokens live there. Start it with <code className="font-mono">AP_DATABASE_URL</code> and <code className="font-mono">AP_AUTH_SECRET</code>; the compose files do this for you.</p>
+      {msg && <div className="text-sm text-foreground border border-foreground rounded-md px-3 py-2">{msg}</div>}
       <div className="flex gap-2 justify-end">
         <Button
           type="button"
-          variant="outline"
           disabled={pending}
           onClick={() => start(async () => {
-            const r = await testDatabase(form);
-            setMsg(r.ok ? { ok: true, text: r.note ?? "connection ok" } : { ok: false, text: r.error });
+            const r = await checkApi();
+            if (r.ok) onDone(); else setMsg(r.error);
           })}
         >
-          Test connection
+          Check the API
         </Button>
-        <Button type="submit" disabled={pending}>Save & migrate</Button>
       </div>
-    </form>
+    </div>
   );
 }
 

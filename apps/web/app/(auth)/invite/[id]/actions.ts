@@ -11,7 +11,7 @@ export async function acceptInvite(id: string): Promise<Result> {
   const session = await getSession();
   if (!session) return { ok: false, error: "sign in first" };
   try {
-    await acceptInvitation(id, session.user.id, session.user.email);
+    await acceptInvitation(id);
     return { ok: true };
   } catch (e) {
     return failed(e);

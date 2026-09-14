@@ -5,7 +5,6 @@ import { version } from "./package.json";
 const config: NextConfig = {
   reactStrictMode: true,
   output: "standalone",
-  serverExternalPackages: ["postgres", "mysql2", "@libsql/client"],
   env: { WEB_VERSION: version },
   async rewrites() {
     const api = (process.env.AP_API ?? "http://127.0.0.1:7788").replace(/\/$/, "");

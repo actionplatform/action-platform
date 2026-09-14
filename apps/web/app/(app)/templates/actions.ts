@@ -2,16 +2,13 @@
 
 import { failed, type Result } from "@/lib/result";
 import { revalidatePath } from "next/cache";
-import { requireManager } from "@/lib/orgs";
 import { requireOrg } from "@/lib/session";
-import { addTemplateSource, removeTemplateSource } from "@/lib/template-sources";
-
+import { v1 } from "@/lib/v1";
 
 export async function addSource(input: { name: string; url: string; ref: string }): Promise<Result<{ id: string }>> {
-  const { session, org } = await requireOrg();
+  await requireOrg();
   try {
-    await requireManager(session.user.id, org.id);
-    const row = await addTemplateSource(org.id, input);
+    const row = await v1.addTemplateSource(input.name, input.url, input.ref);
     revalidatePath("/templates");
     return { ok: true, data: { id: row.id } };
   } catch (e) {
@@ -20,10 +17,9 @@ export async function addSource(input: { name: string; url: string; ref: string 
 }
 
 export async function removeSource(id: string): Promise<Result> {
-  const { session, org } = await requireOrg();
+  await requireOrg();
   try {
-    await requireManager(session.user.id, org.id);
-    await removeTemplateSource(org.id, id);
+    await v1.removeTemplateSource(id);
     revalidatePath("/templates");
     return { ok: true, data: null };
   } catch (e) {

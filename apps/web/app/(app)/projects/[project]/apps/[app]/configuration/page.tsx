@@ -1,6 +1,5 @@
 import { api } from "@/lib/api";
 import { requireOrg } from "@/lib/session";
-import { sourceSpecsOf } from "@/lib/template-sources";
 import { ConfigurationPanels } from "../configuration-panels";
 import { loadApp } from "../load";
 import { SourceCard } from "../source-card";
@@ -11,8 +10,8 @@ export default async function ConfigurationPage({ params }: { params: Promise<{ 
   if (!loaded.ok) return null;
   const { view } = loaded;
   const base = `/projects/${view.projectId}/apps/${view.appId}`;
-  const { org } = await requireOrg();
-  const matrix = await api.matrix(await sourceSpecsOf(org.id));
+  await requireOrg();
+  const matrix = await api.matrix();
   const clouds = matrix.clouds.filter((c) => (c.types.length === 0 || c.types.includes(view.type ?? "")) && (c.languages.length === 0 || c.languages.includes(view.language ?? "")));
 
   return (

@@ -1,7 +1,7 @@
 from typing import Iterator, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
 from action_platform.api.auth.errors import Unauthenticated
@@ -11,8 +11,10 @@ from action_platform.api.auth.service import (
     SESSION_TTL,
     AuthService,
     Identity,
+    now,
 )
 from action_platform.api.core.deps import get_db
+from action_platform.api.services.directory import DirectoryWrites
 from action_platform.api.core.ratelimit import RateLimiter
 from action_platform.api.db.models import (
     ApiToken,
@@ -176,8 +178,45 @@ def grant_out(grant: Grant) -> schemas.GrantOut:
 def status(request: Request, db: DbSession = Depends(get_db)) -> schemas.AuthStatus:
     configured = request.app.state.secrets is not None
     users = AuthService(db, request.app.state.secrets).user_count() if configured else 0
+    organizations = db.scalar(select(func.count()).select_from(Organization)) or 0
 
-    return schemas.AuthStatus(configured=configured, users=users)
+    return schemas.AuthStatus(
+        configured=configured, users=users, organizations=organizations
+    )
+
+
+@router.get("/invitations/{id}")
+def open_invitation(id: str, db: DbSession = Depends(get_db)) -> schemas.OpenInvitation:
+    found = DirectoryWrites(db).invitation(id)
+
+    if found is None:
+        raise HTTPException(404, "invitation not found")
+
+    invitation, inviter, organization = found
+
+    return schemas.OpenInvitation(
+        id=invitation.id,
+        email=invitation.email,
+        role=invitation.role or "developer",
+        status=invitation.status,
+        expired=invitation.expires_at < now(),
+        inviter=inviter.name,
+        organization=organization_out(organization),
+    )
+
+
+@router.post("/invitations/{id}/accept")
+def accept_invitation(
+    id: str,
+    session: Session = Depends(current_session),
+    auth: AuthService = Depends(get_auth),
+) -> schemas.OrganizationOut:
+    identity = auth.identity_of(session)
+    organization = DirectoryWrites(auth.db).accept_invitation(id, identity.user)
+    session.active_organization_id = organization.id
+    auth.db.flush()
+
+    return organization_out(organization)
 
 
 @router.post("/sign-up", status_code=201, dependencies=[Depends(limited("sign-up"))])

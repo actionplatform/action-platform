@@ -57,7 +57,6 @@ flowchart LR
     A --> D[(apdata: clones)]
     K[worker · Python] --> D
     K --> P
-    W --> C[(webconfig: app.json)]
     A -->|"push · release"| G{{source hosts}}
 ```
 
@@ -66,7 +65,7 @@ flowchart LR
 | `postgres` | `postgres:16-alpine` | volume `pgdata` |
 | `api` | `actionplatformio/action-platform-api` | Python; `AP_HOME=/data` (volume `apdata`: the app clones — the registry itself is in Postgres). Reachable from `web`, which also forwards `/api/v1` and `/api/auth` to it. |
 | `worker` | `actionplatformio/action-platform-api` | same image, `action-platform worker`: runs queued syncs, releases, deploys, pushes and imports. Shares `apdata` with the API on one host; on another host it clones what it needs. Scale with `docker compose up --scale worker=3`. |
-| `web` | `actionplatformio/action-platform-web` | Next.js standalone; volume `webconfig` for `config/app.json` (OAuth apps, secret). Port 3000. |
+| `web` | `actionplatformio/action-platform-web` | Next.js standalone, stateless: pages and server actions over the API. Port 3000. |
 | `traefik` | `traefik:v3.3` | only with `--profile tls`; certificates in volume `letsencrypt` |
 
 Images are published for every `api/vX.Y.Z` and `web/vX.Y.Z` tag to Docker Hub and mirrored to GHCR (`ghcr.io/actionplatform/…`). Pin a version with `AP_IMAGE_WEB=actionplatformio/action-platform-web:0.1.2` in `.env`.
@@ -80,25 +79,23 @@ Images are published for every `api/vX.Y.Z` and `web/vX.Y.Z` tag to Docker Hub a
 | `ACTION_PLATFORM_GIT_HOSTS` | no | comma-separated hosts the API may clone from (`github.com,gitlab.example.com`; subdomains included). Empty allows any `https://` host. `ssh://`, `git@` and `file://` are always refused for user-supplied URLs; `AP_ALLOW_INSECURE_HTTP=1` admits `http://` for an internal GitLab. |
 | `AP_GIT_AUTHOR_NAME`, `AP_GIT_AUTHOR_EMAIL` | no | fallback identity for commits when a request carries none (defaults `Action Platform <cloud@actionplatform.io>`). Each organization sets its own commit identity in Setup and Settings → Commit identity; the web app sends it with every call. |
 | `AP_API_TOKEN` | yes | shared secret between web and API: the API refuses every request without `Authorization: Bearer <token>` (except `/api/version`), so a neighbour on the Docker network cannot drive it. Set the same value on both services; unset, the API trusts the network (local development). |
-| `DATABASE_POOL_SIZE` | no | connections per web instance (default 10) |
 | `AP_DATABASE_URL` | no | the API's connection to the same Postgres (`postgres://…`, `mysql://…` or `sqlite:///…`). Set, the API runs its migrations on boot and adopts the tables the web app created — see [database](concept_database.md). The compose file derives it from `POSTGRES_PASSWORD`; `AP_DATABASE_POOL_SIZE` (default 5) sizes its pool. |
 | `AP_ALLOW_UNAUTHENTICATED` | no | `1` lets the API start without `AP_API_TOKEN` — local development only |
 | `AP_SENTRY_DSN_API`, `AP_SENTRY_DSN_WEB` | no | Sentry DSNs, one project per component; empty keeps reporting off. Reaches the containers as `AP_SENTRY_DSN` (API) and `SENTRY_DSN` (web); `AP_SENTRY_ENVIRONMENT` / `SENTRY_ENVIRONMENT` and `*_TRACES_SAMPLE_RATE` (default 0.1) tune them. See [observability](concept_observability.md). |
 | `BETTER_AUTH_SECRET` | yes | signs sessions, API tokens and encrypts stored tokens — rotating it invalidates all three. The compose files hand it to the API as `AP_AUTH_SECRET`, with `PUBLIC_URL` as `AP_PUBLIC_URL` (the device-flow verification address). |
 | `DOMAIN`, `ACME_EMAIL` | with TLS | Traefik host rule and Let's Encrypt account |
 | `WEB_PORT` | no | published port (default 3000) |
-| `GITHUB_CLIENT_ID/SECRET`, `GITLAB_*`, `BITBUCKET_*` | no | OAuth apps; can also be entered in the UI |
+| `GITHUB_CLIENT_ID/SECRET`, `GITLAB_*`, `BITBUCKET_*` | no | OAuth apps, read by the API; the ones entered in the UI (or created through the GitHub manifest) are stored in the database and win |
 | `ACTION_PLATFORM_TEMPLATES_REPO` | no | templates matrix, default `actionplatform/templates` |
 
-Because `DATABASE_URL` and `BETTER_AUTH_SECRET` come from the environment, the setup wizard skips its database step and starts at the first account.
+The setup wizard's first step only checks that the API has its database and secret; with the compose files it passes at once.
 
 ## Backups
 
-Three volumes hold state: `pgdata` (accounts, organizations, projects, apps, encrypted tokens), `apdata` (app clones — rebuildable from the repositories), `webconfig` (`config/app.json`). Back up `pgdata` and `webconfig`; keep `BETTER_AUTH_SECRET` with them or the tokens cannot be decrypted.
+Two volumes hold state: `pgdata` (accounts, organizations, projects, apps, encrypted tokens, OAuth apps, the registry, jobs) and `apdata` (app clones — rebuilt from the repositories when missing). Back up `pgdata`; keep `BETTER_AUTH_SECRET` with it or the tokens cannot be decrypted.
 
 ```bash
 docker compose exec postgres pg_dump -U action_platform action_platform > backup.sql
-docker run --rm -v action-platform_webconfig:/c -v "$PWD":/out alpine tar czf /out/webconfig.tgz -C /c .
 ```
 
 ## Building the images yourself
@@ -120,7 +117,7 @@ AP_IMAGE_API=action-platform-api:local AP_IMAGE_WEB=action-platform-web:local do
 Each component ships on its own tag and image: `api/vX.Y.Z` → `actionplatformio/action-platform-api`, `web/vX.Y.Z` → `actionplatformio/action-platform-web`, `vX.Y.Z` → `action-platform` on PyPI ([releases](concept_releases.md)). To upgrade:
 
 1. Pull the new images (`install.sh` again, or *Redeploy* on Dokploy). Start the **api** before or together with the **web**: the web client is generated from the API's schema, so an older API may miss fields a newer web sends.
-2. The web app applies its database migrations on boot (`apps/web/drizzle/<engine>/`); nothing to run by hand. Back up the database first for a major jump.
+2. The API applies its migrations on boot (`action_platform/api/db/migrations/`); nothing to run by hand. Back up the database first for a major jump.
 3. Update the CLI where people use it: `pip install -U action-platform`. Tokens minted by `action-platform login` keep working across upgrades until they expire (90 days) or are revoked.
 
 `GET /api/version` on the API and the sidebar footer in the web app (`web · api · lib`) show what is running.

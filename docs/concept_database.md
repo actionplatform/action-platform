@@ -22,6 +22,7 @@ Alembic, under `action_platform/api/db/migrations/versions/`:
 | `0001` | the 19 tables the web app already has — same names, same columns, same foreign keys and cascades |
 | `0002` | `job`: the queue for sync, release, deploy, push and import work |
 | `0003` | `registry`: the apps the API manages (id, name, url, default branch), shared by every instance and worker |
+| `0004` | `oauth_app`: the OAuth apps used to connect code hosts (client id, sealed secret, base URL, GitHub App slug) |
 
 A database the web app created has no `alembic_version` table but does have `user`; the API recognises that, stamps it at `0001` and applies only what follows. Nothing is recreated, nothing is copied: pointing the API at the web app's database is the whole data migration.
 
@@ -45,4 +46,4 @@ Models live in `action_platform/api/db/models.py` (SQLAlchemy 2, one class per t
 
 ## What still lives in the web app
 
-Accounts, sessions, the device flow, tokens, the `/api/v1` gate with its permission checks, and the reads of projects, apps, teams, members, source-host credentials, commit identity and template sources are the API's. The web app's pages still write teams, projects, apps, source hosts and invitations, and run the OAuth connection flows, on the same tables — they move to the API with the job queue. The web app keeps its drizzle migrations until then and both sides share the schema at revision `0001`.
+Nothing. The web app has no database connection, no secret and no migrations: it reads and writes through `/api/v1` and `/api/auth` with the caller's cookie. Every rule — who may do what, which token opens which repository, what a device may be granted — is Python.

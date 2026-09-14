@@ -6,7 +6,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from action_platform.api.access.caller import Caller, resolve_caller
 from action_platform.api.access.enrich import enrich
-from action_platform.api.access.rules import DIRECTORY, rule_for
+from action_platform.api.access.rules import DIRECTORY, WORKSPACE_ROOTS, rule_for
 from action_platform.api.auth.service import AuthService
 from action_platform.api.db.models import App, Organization, Project
 from action_platform.api.services.directory import DirectoryService
@@ -86,7 +86,7 @@ class AccessGate:
                 if caller.organization is None and not caller.all_organizations:
                     raise Refused(403, "no organization")
 
-                if path in DIRECTORY or path.startswith("jobs/"):
+                if path in DIRECTORY or path.split("/")[0] not in WORKSPACE_ROOTS:
                     scope.setdefault("state", {})["caller"] = caller
                     plan = None
                 else:
@@ -287,13 +287,17 @@ class AccessGate:
         return rule, organization, app, new_body, new_method
 
     @staticmethod
+    @staticmethod
     def _requested(caller: Caller, headers: dict[str, str]) -> Optional[Organization]:
-        if caller.organization:
-            return caller.organization
-
         wanted = (headers.get("x-organization") or "").strip()
 
-        return caller.member_of(wanted) if wanted else None
+        if wanted and (caller.all_organizations or caller.scope is None):
+            found = caller.member_of(wanted)
+
+            if found is not None:
+                return found
+
+        return caller.organization
 
     def _import(self, organization: Organization, app: App) -> None:
         repo = self.repo_of(app.registry_id)

@@ -1,40 +1,26 @@
 import { redirect } from "next/navigation";
-import { appFor, signState } from "@/lib/oauth";
 import { publicOrigin } from "@/lib/origin";
 import { safePath } from "@/lib/safe-path";
-import { roleOf } from "@/lib/orgs";
-import { can } from "@/lib/permissions";
 import { getSession } from "@/lib/session";
-import { setupStatus } from "@/lib/setup";
+import { v1 } from "@/lib/v1";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const origin = publicOrigin(req.headers);
   const session = await getSession();
-  if (!session && (await setupStatus()).complete) redirect("/login");
-  if (session?.session.activeOrganizationId && !can(await roleOf(session.user.id, session.session.activeOrganizationId), "org.manage")) return Response.json({ detail: "only owners and admins can create the GitHub app" }, { status: 403 });
-  if (appFor("github")) return Response.json({ detail: "a GitHub app is already configured" }, { status: 409 });
+  if (!session) redirect(`/login?next=${encodeURIComponent(url.pathname + url.search)}`);
 
-  const org = url.searchParams.get("org")?.trim() || "";
-  const returnTo = safePath(url.searchParams.get("return"), "/settings");
-  const state = signState({ orgId: url.searchParams.get("orgId") || "", returnTo, userId: session?.user.id ?? null });
-  const target = org ? `https://github.com/organizations/${encodeURIComponent(org)}/settings/apps/new` : "https://github.com/settings/apps/new";
-
-  const manifest = {
-    name: `Action Platform (${url.host})`.slice(0, 34),
-    url: origin,
-    redirect_url: `${origin}/api/oauth/github/manifest/callback`,
-    callback_urls: [`${origin}/api/oauth/github/callback`],
-    setup_url: `${origin}${returnTo}`,
-    public: true,
-    request_oauth_on_install: true,
-    default_permissions: { administration: "write", contents: "write", workflows: "write", pull_requests: "write", metadata: "read" },
-  };
+  let page: { target: string; manifest: Record<string, unknown> };
+  try {
+    page = await v1.githubManifest({ origin: publicOrigin(req.headers), host: url.host, return_to: safePath(url.searchParams.get("return"), "/settings"), github_org: url.searchParams.get("org")?.trim() || "" });
+  } catch (e) {
+    const status = e instanceof Error && "status" in e ? (e as { status: number }).status : 400;
+    return Response.json({ detail: (e as Error).message }, { status });
+  }
 
   const html = `<!doctype html><meta charset="utf-8"><title>Creating the GitHub App…</title>
 <body style="font:14px system-ui;background:#080808;color:#f5f5f5;display:grid;place-items:center;height:100vh;margin:0">
-<form id="f" method="post" action="${target}?state=${encodeURIComponent(state)}">
-<input type="hidden" name="manifest" value='${JSON.stringify(manifest).replace(/'/g, "&#39;")}'>
+<form id="f" method="post" action="${page.target}">
+<input type="hidden" name="manifest" value='${JSON.stringify(page.manifest).replace(/'/g, "&#39;")}'>
 <noscript><button>Continue to GitHub</button></noscript>
 </form>
 <p>Taking you to GitHub…</p>

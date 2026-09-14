@@ -205,3 +205,14 @@ class TokenClaimsOut(BaseModel):
 class AuthStatus(BaseModel):
     configured: bool
     users: int
+    organizations: int = 0
+
+
+class OpenInvitation(BaseModel):
+    id: str
+    email: str
+    role: str
+    status: str
+    expired: bool
+    inviter: str
+    organization: OrganizationOut

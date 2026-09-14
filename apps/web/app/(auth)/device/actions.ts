@@ -1,7 +1,7 @@
 "use server";
 
 import { approveDevice, denyDevice, deviceRequest, type Grant } from "@/lib/api-tokens";
-import { orgsOf, roleOf } from "@/lib/orgs";
+import { v1 } from "@/lib/v1";
 import { DEFAULT_SCOPES, grantableScopes, ROLE_INFO, type Scope } from "@/lib/permissions";
 import { appsOf, projectsOf } from "@/lib/projects";
 import { isAuthError } from "@/lib/auth-api";
@@ -19,12 +19,7 @@ export async function inspectDevice(userCode: string): Promise<Result<DeviceView
     if (!request) return { ok: false, error: "invalid code" };
     if (request.status === "expired") return { ok: false, error: "expired" };
     if (request.status !== "pending") return { ok: false, error: `this code was already ${request.status}` };
-    const organizations = await Promise.all(
-      (await orgsOf(session.user.id)).map(async (o) => {
-        const role = await roleOf(session.user.id, o.id);
-        return { id: o.id, name: o.name, role: role ? ROLE_INFO[role]?.label ?? role : "member", grantable: grantableScopes(role) };
-      }),
-    );
+    const organizations = (await v1.organizations()).map((o) => ({ id: o.id, name: o.name, role: o.role_label ?? "member", grantable: o.grantable_scopes as Scope[] }));
     const grant = { ...request.grant, scope: request.grant.scope.length ? request.grant.scope : DEFAULT_SCOPES };
     if (grant.organizationId !== "*" && (!grant.organizationId || !organizations.some((o) => o.id === grant.organizationId))) grant.organizationId = org.id;
     const requested = grant.scope;
@@ -39,7 +34,7 @@ export async function inspectDevice(userCode: string): Promise<Result<DeviceView
 export async function projectChoices(organizationId: string): Promise<Result<Choice[]>> {
   try {
     const session = await requireSession();
-    if (!(await orgsOf(session.user.id)).some((o) => o.id === organizationId)) return { ok: false, error: "not a member of that organization" };
+    if (!session.organizations.some((o) => o.id === organizationId)) return { ok: false, error: "not a member of that organization" };
     return { ok: true, data: (await projectsOf(organizationId)).map((p) => ({ id: p.id, name: p.name })) };
   } catch (e) {
     return failed(e);

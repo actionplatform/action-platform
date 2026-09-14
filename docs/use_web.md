@@ -1,6 +1,6 @@
 # The web app
 
-`apps/web` — Next.js (App Router), better-auth, drizzle — on top of the Python API. Everything the CLI does, from a browser, for a team.
+`apps/web` — Next.js (App Router) — a stateless client of the Python API: every page reads through `/api/v1`, every server action writes through it, and the API decides what the caller may do. Everything the CLI does, from a browser, for a team.
 
 ## Organization › Project › App
 
@@ -30,7 +30,7 @@ flowchart LR
 
 `/setup` opens until an organization exists.
 
-1. **Database** — SQLite (file), PostgreSQL or MySQL. Created when missing, schema migrated, URL saved to `config/app.json`. Skipped when `DATABASE_URL` is set.
+1. **API** — checks that the Python API has a database and an auth secret (`AP_DATABASE_URL`, `AP_AUTH_SECRET`); nothing to type when the compose files run it.
 2. **Admin** — the first account, created by the API. Public sign-up stays closed afterwards. The API must reach the same database with the same secret (`AP_DATABASE_URL`, `AP_AUTH_SECRET`); the compose files wire that, and when running by hand the wizard prints the exact values to start the API with.
 3. **Organization** — name and slug.
 4. **Source hosts** — connect GitHub / GitLab / Bitbucket, or skip.
@@ -51,11 +51,11 @@ Otherwise each provider needs an OAuth app registered once (GitHub: *I already h
 | GitLab | Preferences → Applications (scopes `api write_repository read_user`) | `${PUBLIC_URL}/api/oauth/gitlab/callback` |
 | Bitbucket | Workspace settings → OAuth consumers (account; repositories write/admin; pull requests write) | `${PUBLIC_URL}/api/oauth/bitbucket/callback` |
 
-The *Set up OAuth app* dialog shows the callback URL to paste and stores the client id/secret in `config/app.json` (or read them from `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` etc.). Then **Connect with …** sends the member to the provider and comes back with a host named after the account (`GitHub · fernando`), owner defaulting to that login. GitLab and Bitbucket tokens expire and are refreshed before use.
+The *Set up OAuth app* dialog shows the callback URL to paste and stores the client id/secret in the database (`oauth_app`, secret sealed), or the API reads them from `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` etc. Then **Connect with …** sends the member to the provider and comes back with a host named after the account (`GitHub · fernando`), owner defaulting to that login. GitLab and Bitbucket tokens expire and are refreshed before use.
 
 *Add with a token* is the manual path: kind, base URL for self-hosted instances, username where the provider needs one, token, default owner. *Other* is any git server over HTTPS (push and tag only — no releases, no pull requests).
 
-Tokens are AES-256-GCM encrypted with a key derived from `BETTER_AUTH_SECRET` and decrypted only to accompany a push / release call to the API.
+Tokens are sealed by the API (AES-256-GCM, key derived from the auth secret) and opened only inside it, when a call through `/api/v1` needs them; the web app never holds one.
 
 ## Templates
 
