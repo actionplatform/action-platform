@@ -2,6 +2,7 @@
 
 import { Archive, Check, FolderGit2, Lock, RefreshCw, Users, UserRound } from "lucide-react";
 import Link from "next/link";
+import { call } from "@/lib/call";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -80,7 +81,7 @@ export function ImportWizard({ hosts, roles, canManage }: { hosts: Host[]; roles
   useEffect(() => {
     if (!job || job.status === "done" || job.status === "failed") return;
     const timer = setInterval(async () => {
-      const r = await importJob(job.id);
+      const r = await call(() => importJob(job.id), (error) => ({ ok: false as const, error }));
       if (r.ok) setJob({ id: job.id, ...r.data });
     }, 2000);
     return () => clearInterval(timer);
@@ -105,7 +106,7 @@ export function ImportWizard({ hosts, roles, canManage }: { hosts: Host[]; roles
 
   const submit = () => startSubmit(async () => {
     setError(null);
-    const r = await startGithubImport({ host_id: hostId, organization: login, repositories: [...repos.picked], teams: [...teams.picked], people: [...people.picked], role });
+    const r = await call(() => startGithubImport({ host_id: hostId, organization: login, repositories: [...repos.picked], teams: [...teams.picked], people: [...people.picked], role }), (error) => ({ ok: false as const, error }), "The import may have started anyway: check Projects before trying again.");
     if (r.ok) setJob({ id: r.data.job, status: "queued", result: null, error: null }); else setError(r.error);
   });
 

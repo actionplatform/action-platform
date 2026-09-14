@@ -14,6 +14,7 @@ import { Field, Input } from "@/components/ui/input";
 import type { Matrix } from "@/lib/api";
 import { countFor, initCommand, type Leaf, stackMeta, stacksFor, templateIcon, templatesFor, typeMeta, typesIn } from "@/lib/catalog";
 import { cn, slugify } from "@/lib/utils";
+import { call } from "@/lib/call";
 import { createAppFromTemplate } from "./actions";
 import { type StepIndex, Stepper } from "./stepper";
 
@@ -145,7 +146,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
   const submit = () =>
     start(async () => {
       setError(null);
-      const r = await createAppFromTemplate(project, hostId || null, {
+      const r = await call(() => createAppFromTemplate(project, hostId || null, {
         type: type!,
         stack: leaf?.plain ? leaf.stack || null : hasStack ? stack : null,
         template,
@@ -158,7 +159,7 @@ export function Wizard({ matrix, preset, projectId, projects, hosts }: { matrix:
         git_init: config.gitInit,
         push: config.push,
         private: false,
-      }, source);
+      }, source), (error) => ({ ok: false as const, error }), "The app may have been created anyway: check the project before trying again.");
       if (r.ok) router.push(r.href);
       else setError(r.error);
     });

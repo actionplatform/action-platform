@@ -1,6 +1,7 @@
 "use client";
 
 import { GitBranch, Rocket } from "lucide-react";
+import { call } from "@/lib/call";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +60,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
   const create = () =>
     start(async () => {
       setError(null);
-      const r = await runRelease(view.projectId, view.appId, view.registryId, level, switching ? branch : null);
+      const r = await call(() => runRelease(view.projectId, view.appId, view.registryId, level, switching ? branch : null), (error) => ({ ok: false as const, error }), "The release may have been cut anyway: check the tags before trying again.");
       setConfirm(false);
       if (r.ok) { setResult(r.data); router.refresh(); } else setError(r.error);
     });

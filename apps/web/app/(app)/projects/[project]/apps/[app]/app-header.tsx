@@ -10,6 +10,7 @@ import { BrandIcon } from "@/components/ui/brand-icon";
 import { Menu } from "@/components/ui/menu";
 import { relativeTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
+import { call } from "@/lib/call";
 import { syncApp } from "../actions";
 import { DeleteAppDialog } from "../delete-app-dialog";
 import type { AppView } from "./model";
@@ -43,7 +44,7 @@ export function AppHeader({ view }: { view: AppView }) {
   const sync = () =>
     start(async () => {
       setStatus("syncing");
-      const r = await syncApp(view.projectId, view.appId, view.registryId);
+      const r = await call(() => syncApp(view.projectId, view.appId, view.registryId), (error) => ({ ok: false as const, error }), "Reload the page to see the current state.");
       if (r.ok) { setSyncedAt(Date.now()); setStatus("success"); setSyncError(null); router.refresh(); } else { setStatus("error"); setSyncError(r.error); }
     });
 
