@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.14.4 — 2026-09-14
+
+### Bug Fixes
+- **web:** settings opens for developers: invitations are only fetched by those who may manage the organization
+
 ## v0.14.3 — 2026-09-14
 
 ### Chores
