@@ -5,9 +5,9 @@ Each entry is a git URL cloned into its own workspace under the API's home
 entries; ids are stable so links survive a rename. Nothing here points at
 a directory the user did not ask the platform to own.
 
-Entries live in the database (`registry` table) when the API has one, so
-every instance and worker sees the same apps and rebuilds a missing
-workspace from the URL; `apps.json` under the home is the file fallback.
+Entries live in the database (`registry` table), so every instance and
+worker sees the same apps and rebuilds a missing workspace from the URL.
+An `apps.json` under the home from older versions is imported once.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ import shutil
 import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Optional, Protocol
+from typing import Optional
 
 from sqlalchemy import select
 from ulid import ULID
@@ -87,35 +87,6 @@ class Entry:
     default_branch: str = ""
 
 
-class Store(Protocol):
-    def rows(self) -> list[dict]: ...
-
-    def put(self, row: dict) -> None: ...
-
-    def delete(self, id: str) -> None: ...
-
-
-class FileStore:
-    def __init__(self, file: Path) -> None:
-        self.file = file
-
-    def rows(self) -> list[dict]:
-        if not self.file.exists():
-            return []
-
-        return json.loads(self.file.read_text() or "[]")
-
-    def _write(self, rows: list[dict]) -> None:
-        self.file.parent.mkdir(parents=True, exist_ok=True)
-        self.file.write_text(json.dumps(rows, indent=2) + "\n")
-
-    def put(self, row: dict) -> None:
-        self._write([r for r in self.rows() if r["id"] != row["id"]] + [row])
-
-    def delete(self, id: str) -> None:
-        self._write([r for r in self.rows() if r["id"] != id])
-
-
 class DbStore:
     def __init__(self, database) -> None:
         self.database = database
@@ -151,50 +122,47 @@ class DbStore:
 
 
 class Registry:
-    def __init__(
-        self, root: Optional[Path] = None, store: Optional[Store] = None
-    ) -> None:
+    def __init__(self, store: DbStore, root: Optional[Path] = None) -> None:
         self.root = root or home()
         self.file = self.root / "apps.json"
         self.workspaces = self.root / "workspaces"
-        self.store: Store = store or FileStore(self.file)
+        self.store = store
 
     def _entry(self, row: dict) -> Entry:
         return Entry(
             id=row["id"],
             name=row["name"],
             url=row.get("url", ""),
-            path=row.get("path") or str(self.workspaces / row["id"]),
+            path=str(self.workspaces / row["id"]),
             default_branch=row.get("default_branch", ""),
         )
 
     def _load(self) -> list[Entry]:
         return [self._entry(row) for row in self.store.rows()]
 
+    def _put(self, entry: Entry) -> None:
+        row = asdict(entry)
+        row.pop("path")
+        self.store.put(row)
+
     def adopt_file(self) -> list[str]:
-        """Entries still only in `apps.json` (from before the registry lived in the database) are copied into the store, ids kept."""
-        if isinstance(self.store, FileStore) or not self.file.exists():
+        """An `apps.json` from before the registry lived in the database is imported once, ids kept, then renamed so it is never read again."""
+        if not self.file.exists():
             return []
 
         known = {row["id"] for row in self.store.rows()}
         adopted = []
 
-        for row in FileStore(self.file).rows():
+        for row in json.loads(self.file.read_text() or "[]"):
             if row["id"] in known:
                 continue
 
             self.store.put({k: v for k, v in row.items() if k != "path"})
             adopted.append(row["id"])
 
+        self.file.rename(self.file.with_suffix(".json.imported"))
+
         return adopted
-
-    def _put(self, entry: Entry) -> None:
-        row = asdict(entry)
-
-        if isinstance(self.store, DbStore):
-            row.pop("path")
-
-        self.store.put(row)
 
     def list(self) -> list[Entry]:
         return self._load()
