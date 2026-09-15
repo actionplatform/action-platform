@@ -44,7 +44,7 @@ jobs:
           ref="${GITHUB_REF_NAME}"
           comp="${COMPONENT:-${ref%%/*}}"
           version="${ref#*/v}"
-          [ "$version" = "$ref" ] && version="$(cat "$([ "$comp" = web ] && echo apps/web || echo action_platform/api)/LAST_VERSION")"
+          [ "$version" = "$ref" ] && version="$(cat "$([ "$comp" = web ] && echo apps/web || echo apps/api/app)/LAST_VERSION")"
           case "$version" in
             *-rc.*) latest=false; prerelease=true ;;
             *) latest=true; prerelease=false ;;
