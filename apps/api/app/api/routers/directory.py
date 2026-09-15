@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session as DbSession
 
-from app.core.access.caller import Caller
+from app.services.access.caller import Caller
 from app.api.routers.auth import get_auth
 from app.core.auth.service import AuthService
 from app.api.deps import get_db

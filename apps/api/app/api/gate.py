@@ -4,8 +4,8 @@ from typing import Any, Callable, Optional
 
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app.core.access.caller import Caller, resolve_caller
-from app.core.access.enrich import enrich
+from app.services.access.caller import Caller, resolve_caller
+from app.services.access.enrich import enrich
 from app.core.access.rules import (
     DIRECTORY,
     WORKSPACE_ROOTS,

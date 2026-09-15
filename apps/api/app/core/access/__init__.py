@@ -1,20 +1,5 @@
-"""Who is calling and what they may do: the caller, the permission rules per route, and the request enrichment."""
+"""The permission rules per route: which permission each /api/v1 path needs and what the gate does around it."""
 
-from app.core.access.caller import Caller, resolve_caller
-from app.core.access.rules import (
-    DIRECTORY,
-    RULES,
-    WORKSPACE_ROOTS,
-    Rule,
-    rule_for,
-)
+from app.core.access.rules import DIRECTORY, RULES, WORKSPACE_ROOTS, Rule, rule_for
 
-__all__ = [
-    "DIRECTORY",
-    "RULES",
-    "WORKSPACE_ROOTS",
-    "Caller",
-    "Rule",
-    "resolve_caller",
-    "rule_for",
-]
+__all__ = ["DIRECTORY", "RULES", "WORKSPACE_ROOTS", "Rule", "rule_for"]

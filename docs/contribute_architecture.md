@@ -55,9 +55,9 @@ apps/web/         the web app
 deploy/           Dockerfiles, compose, install.sh
 apps/api/app/  (package `app`, depends on the library, never the other way round)
   api/            FastAPI: app (factory, AP_API_TOKEN middleware, Sentry), gate (the /api/v1 gate: role ∩ scope ∩ reach), deps, ratelimit, routers (workspace, directory, management, imports, auth)
-  core/           abc (HostProvider, HostDirectory, ImportSource: one implementation per code host), access (Caller, rules, enrich), auth (AuthService, crypto, jwt, passwords, secrets, cookies), db (models, database, migrations), cli (serve, worker, db), shared (clock, ids, urls, http, credentials, git_auth)
+  core/           abc (HostProvider, HostDirectory, ImportSource: one implementation per code host), access (the permission rules per route), auth (AuthService, crypto, jwt, passwords, secrets, cookies), db (models, database, migrations), cli (serve, worker, db), shared (clock, ids, urls, http, credentials, git_auth)
   repositories/   registry (`registry` table), drafts (`draft` table: pending edits), source (the registry this process opens)
-  services/       directory (organizations, projects, teams, invitations, hosts, oauth_apps, template_sources), apps (inventory, scaffolding, remote), workspace (disposable clones, manifest, configuration, flow, state, lifecycle), hosts (one HostProvider per code host, OAuth state, access report), activity (releases and pull requests, one ImportSource per host), organization_import (preview and the import steps), catalog (matrix view, published index), jobs (queue)
+  services/       access (Caller resolved against the directory, request enrichment), directory (organizations, projects, teams, invitations, hosts, oauth_apps, template_sources), apps (inventory, scaffolding, remote), workspace (disposable clones, manifest, configuration, flow, state, lifecycle), hosts (one HostProvider per code host, OAuth state, access report), activity (releases and pull requests, one ImportSource per host), organization_import (preview and the import steps), catalog (matrix view, published index), jobs (queue)
   schemas/        the Pydantic models behind the OpenAPI contract
   worker.py       `action-platform-api worker`: runs queued jobs with the same services
 
