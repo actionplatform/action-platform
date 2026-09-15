@@ -41,6 +41,10 @@ Pending migrations run on boot, so upgrading the image is enough.
 
 The hosted platform ships with the plugins it runs — `apx-aws-lambda` is a dependency of the API image, so the `aws/lambda` deploy target, its overlay and tools are always there. The web has no plugin marketplace; `GET /api/plugins` and `/api/v1/plugins` still answer for the CLI and for automation (see [plugins](use_plugins.md)).
 
+## AWS
+
+Settings → Integrations → **AWS** keeps the url of the deploy proxy installed in the organization's AWS account (`plugin_option` of `aws-lambda`, key `proxy_url`; `org.manage`). **Check** calls the proxy's `/health` and shows its version, organization and account. Every deploy job carries it as `AP_AWS_LAMBDA_PROXY_URL` with `AP_APP` = `org/project/app`, so an app whose `platform.toml` says only `target = "aws/lambda"` deploys through the proxy; `proxy_url` in a repository overrides it. The worker passes every plugin option the same way (`AP_<SLUG>_<KEY>`), so other targets can be configured here too. See the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README for installing the proxy and registering apps.
+
 ## Code hosts
 
 Settings → **Connect a code host**.

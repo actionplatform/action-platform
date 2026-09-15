@@ -114,6 +114,28 @@ class AsyncRouteTest(GateCase):
         ).json()
         self.assertEqual([j["id"] for j in listed], [job_id])
 
+    def test_a_deploy_job_carries_the_app_and_the_plugin_options(self):
+        from app.services.plugins.options import DbOptions
+        from app.worker import Worker
+
+        registry_id = self.register()
+        DbOptions(self.app.state.db, "aws-lambda").set("proxy_url", "https://p.test")
+        worker = Worker(self.app.state.db, self.app.state.secrets, "test")
+        organization, app, _ = worker._context(
+            {
+                "registry_id": registry_id,
+                "organization_id": self.org["id"],
+                "app_id": "a1",
+                "path": f"apps/{registry_id}/deploy",
+                "body": {},
+            }
+        )
+
+        env = worker._deploy_env(organization, app)
+
+        self.assertEqual(env["AP_AWS_LAMBDA_PROXY_URL"], "https://p.test")
+        self.assertEqual(env["AP_APP"], f"{organization.slug}/web/demo")
+
     def test_a_queued_deploy_lists_with_its_stage_and_who_asked(self):
         registry_id = self.register()
         res = self.client.post(
