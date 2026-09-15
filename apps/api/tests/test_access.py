@@ -266,7 +266,9 @@ class AppsTest(GateCase):
                 )
             )
         with self.app.state.db.session() as s:
-            creds = IntegrationsDirectory(s, sealer).credentials_for(self.org["id"], "h1")
+            creds = IntegrationsDirectory(s, sealer).credentials_for(
+                self.org["id"], "h1"
+            )
         self.assertEqual(
             (creds.kind, creds.token, creds.owner), ("github", "ghp_x", "acme")
         )
