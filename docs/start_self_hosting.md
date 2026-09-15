@@ -36,7 +36,7 @@ Dokploy already runs Traefik, so the compose file has no proxy and publishes no 
 3. **Domains**: edit the host to your domain, HTTPS on. Update `PUBLIC_URL` under *Environment* to match.
 4. **Deploy**.
 
-Regenerate `template.b64` after editing the compose or the toml: `sh deploy/dokploy/build.sh`.
+Regenerate `template.b64` after editing the compose or the toml: `sh deploy/dokploy/build.sh` — it also copies the compose to `deploy/docker-compose.dokploy.yml`, the file a Git-provider service reads; the two are one file.
 
 ### By hand
 

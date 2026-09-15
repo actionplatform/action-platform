@@ -40,6 +40,9 @@ services:
       ACTION_PLATFORM_TEMPLATES_REPO: ${ACTION_PLATFORM_TEMPLATES_REPO:-https://github.com/actionplatform/templates.git}
       ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
       AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
+      AP_PLUGINS_DIR: /data/plugins
+    volumes:
+      - plugins:/data/plugins
 
   worker:
     image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
@@ -67,6 +70,9 @@ services:
       ACTION_PLATFORM_TEMPLATES_REPO: ${ACTION_PLATFORM_TEMPLATES_REPO:-https://github.com/actionplatform/templates.git}
       ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
       AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
+      AP_PLUGINS_DIR: /data/plugins
+    volumes:
+      - plugins:/data/plugins
 
   web:
     image: ${AP_IMAGE_WEB:-actionplatformio/action-platform-web:latest}
@@ -83,3 +89,4 @@ services:
 
 volumes:
   pgdata:
+  plugins:
