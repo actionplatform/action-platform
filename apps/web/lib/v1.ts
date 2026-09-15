@@ -74,5 +74,14 @@ export const v1 = {
     unwrap(await client.GET("/api/v1/import/github/organizations/{login}", { params: { path: { login }, query: { host } } })),
   importGithub: async (body: Schemas["ImportRequest"]) => unwrap(await client.POST("/api/v1/import/github", { body })),
   job: async (id: string) => unwrap(await client.GET("/api/v1/jobs/{id}", { params: { path: { id } } })),
+  plugins: async () => unwrap(await client.GET("/api/v1/plugins")),
+  installPlugin: async (slug: string) => unwrap(await client.POST("/api/v1/plugins/{slug}/install", { params: { path: { slug } } })),
+  removePlugin: async (slug: string) => unwrap(await client.POST("/api/v1/plugins/{slug}/remove", { params: { path: { slug } } })),
+  enablePlugin: async (slug: string) => unwrap(await client.POST("/api/v1/plugins/{slug}/enable", { params: { path: { slug } } })),
+  disablePlugin: async (slug: string) => unwrap(await client.POST("/api/v1/plugins/{slug}/disable", { params: { path: { slug } } })),
+  restartPlatform: async () => unwrap(await client.POST("/api/v1/plugins/restart")),
+  pluginOptions: async (slug: string) => unwrap(await client.GET("/api/v1/plugins/{slug}/options", { params: { path: { slug } } })),
+  setPluginOptions: async (slug: string, options: Record<string, unknown>) =>
+    unwrap(await client.PUT("/api/v1/plugins/{slug}/options", { params: { path: { slug } }, body: { options } })),
   jobs: async (app: string) => unwrap(await client.GET("/api/v1/jobs", { params: { query: { app } } })),
 };
