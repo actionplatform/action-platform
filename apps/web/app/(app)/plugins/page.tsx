@@ -19,7 +19,7 @@ export default async function PluginsPage() {
   if (!data) {
     return (
       <>
-        <PageHeader title="Plugins" description="Extensions for the CLI and the MCP server: deploy targets, overlays, tools, release strategies." />
+        <PageHeader title="Plugins" description="Deploy targets, overlays, tools and release strategies." />
         <PluginsErrorState />
       </>
     );
