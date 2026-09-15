@@ -223,12 +223,14 @@ class Plugins:
         return [
             {
                 "slug": row.slug,
+                "name": row.plugin.title,
                 "package": row.package,
                 "version": row.version,
                 "enabled": self.is_enabled(row.slug),
                 "description": row.plugin.description,
                 "min_core": row.plugin.min_core,
                 "needs": list(row.plugin.needs),
+                "options": [o.as_dict() for o in row.plugin.options],
                 "overlays": row.plugin.overlays is not None,
                 "replaces": sorted(
                     slot for slot, by in wired.origins().items() if by == row.slug
