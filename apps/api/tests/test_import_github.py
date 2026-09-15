@@ -149,7 +149,7 @@ class GithubImportTest(GateCase):
         self.assertEqual(forbidden.status_code, 403)
 
     def test_import_runs_as_a_job(self):
-        from app.worker import Worker
+        from app.services.jobs.worker import Worker
 
         queued = self.client.post(
             "/api/v1/import/github",
@@ -200,7 +200,7 @@ class GithubImportTest(GateCase):
         )
 
     def test_import_into_one_project(self):
-        from app.worker import Worker
+        from app.services.jobs.worker import Worker
 
         project = self.client.post(
             "/api/v1/projects", json={"name": "Platform"}, headers=self.h()
@@ -232,7 +232,7 @@ class GithubImportTest(GateCase):
         self.assertEqual(projects[0]["team"]["name"], "Platform")
 
     def test_import_a_github_project_with_its_repositories(self):
-        from app.worker import Worker
+        from app.services.jobs.worker import Worker
 
         queued = self.client.post(
             "/api/v1/import/github",
@@ -262,7 +262,7 @@ class GithubImportTest(GateCase):
         )
 
     def test_import_a_github_project_into_an_existing_project(self):
-        from app.worker import Worker
+        from app.services.jobs.worker import Worker
 
         target = self.client.post(
             "/api/v1/projects", json={"name": "Shop"}, headers=self.h()
