@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from app import schemas
 from app.api.dependencies import (
@@ -13,9 +13,11 @@ router = APIRouter(prefix="/api/apps", tags=["apps"])
 
 @router.get("")
 def list_apps(
+    request: Request,
     apps: AppsDep,
 ) -> list[schemas.AppRow]:
-    return apps.list()
+    """Every app, or only those within the caller's reach when the gate said which."""
+    return apps.list(only=getattr(request.state, "allowed_registry_ids", None))
 
 
 @router.post("", status_code=201)

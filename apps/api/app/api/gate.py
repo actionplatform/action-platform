@@ -19,6 +19,7 @@ from app.services.directory import DirectoryService
 from app.services.jobs import JobQueue
 
 PREFIX = "/api/v1/"
+MAX_BODY = 2 * 1024 * 1024
 
 ASYNC_PATH = re.compile(r"^apps/([^/]+)/(sync|release|deploy|push)$")
 
@@ -66,7 +67,13 @@ class AccessGate:
 
             return
 
-        body = await self._read(receive)
+        try:
+            body = await self._read(receive)
+        except Refused as e:
+            await self._json(send, e.status, {"detail": e.detail})
+
+            return
+
         headers = {k.decode().lower(): v.decode() for k, v in scope["headers"]}
         path = scope["path"][len(PREFIX) :].strip("/")
         method = scope["method"]
@@ -117,10 +124,9 @@ class AccessGate:
         scope.setdefault("state", {})["caller"] = caller
 
         if method == "GET" and path == "apps":
-            allowed = await run_in_threadpool(self._reach, caller, organization)
-            await self._filtered(scope, new_body, send, allowed)
-
-            return
+            scope["state"]["allowed_registry_ids"] = await run_in_threadpool(
+                self._reach, caller, organization
+            )
 
         status = await self._pass(scope, new_body, send)
 
@@ -334,11 +340,21 @@ class AccessGate:
 
     @staticmethod
     async def _read(receive: Receive) -> bytes:
+        """The body, up to `MAX_BODY` — every call the gate accepts is a small JSON document."""
         chunks = []
+        size = 0
 
         while True:
             message = await receive()
-            chunks.append(message.get("body", b""))
+            chunk = message.get("body", b"")
+            size += len(chunk)
+
+            if size > MAX_BODY:
+                raise Refused(
+                    413, f"request body larger than {MAX_BODY // (1024 * 1024)} MB"
+                )
+
+            chunks.append(chunk)
 
             if not message.get("more_body"):
                 break
@@ -375,34 +391,6 @@ class AccessGate:
         await self.app(scope, self._replay(body), sender)
 
         return status
-
-    async def _filtered(
-        self, scope: Scope, body: bytes, send: Send, allowed: set[str]
-    ) -> None:
-        start: Optional[Message] = None
-        chunks: list[bytes] = []
-
-        async def collector(message: Message) -> None:
-            nonlocal start
-
-            if message["type"] == "http.response.start":
-                start = message
-            elif message["type"] == "http.response.body":
-                chunks.append(message.get("body", b""))
-
-        await self.app(scope, self._replay(body), collector)
-        raw = b"".join(chunks)
-        status = start["status"] if start else 500
-
-        try:
-            rows = json.loads(raw) if raw else []
-        except ValueError:
-            rows = []
-
-        if status == 200 and isinstance(rows, list):
-            rows = [r for r in rows if isinstance(r, dict) and r.get("id") in allowed]
-
-        await self._json(send, status, rows)
 
     @staticmethod
     async def _json(send: Send, status: int, payload: Any) -> None:
