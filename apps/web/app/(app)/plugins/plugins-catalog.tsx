@@ -27,6 +27,7 @@ export type PluginItem = {
   installed_version?: string | null;
   enabled: boolean;
   restart_pending?: boolean;
+  error?: string | null;
 };
 
 const field = "h-11 rounded-[9px] border border-border bg-surface text-sm text-foreground";
@@ -168,7 +169,7 @@ function HostedActions({ item }: { item: PluginItem }) {
       {!item.installed && <Button size="sm" disabled={busy} onClick={() => setConfirm("install")}>{job ? "Installing…" : "Install on platform"}</Button>}
       {item.installed && (
         <>
-          <Button size="sm" variant="outline" disabled={busy} onClick={toggle}>{item.enabled ? "Disable" : "Enable"}</Button>
+          {!item.error && <Button size="sm" variant="outline" disabled={busy} onClick={toggle}>{item.enabled ? "Disable" : "Enable"}</Button>}
           {item.latest && item.installed_version && item.latest !== item.installed_version && <Button size="sm" variant="outline" disabled={busy} onClick={() => setConfirm("install")}>Update to {item.latest}</Button>}
           <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirm("remove")}>{job ? "Working…" : "Remove"}</Button>
         </>
@@ -208,10 +209,12 @@ function PluginCard({ item, hosted, canManage }: { item: PluginItem; hosted: boo
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-mono text-[15px] font-semibold">{item.slug}</h3>
             {item.verified && <Badge tone="ok" className="gap-1"><BadgeCheck className="size-3" strokeWidth={2} /> Verified</Badge>}
-            {item.installed && <Badge tone={item.enabled ? "inverse" : "neutral"}>{item.enabled ? "On this platform" : "Installed, disabled"}</Badge>}
+            {item.installed && !item.error && <Badge tone={item.enabled ? "inverse" : "neutral"}>{item.enabled ? "On this platform" : "Installed, disabled"}</Badge>}
+            {item.error && <Badge tone="bad">Failed to load</Badge>}
             {item.restart_pending && <Badge className="gap-1"><RotateCw className="size-3" strokeWidth={1.75} /> Restart required</Badge>}
           </div>
           <p className="mt-1 text-[13px] text-secondary">{item.description}</p>
+          {item.error && <p className="mt-1 break-words font-mono text-[12px] text-secondary">{item.error}</p>}
         </div>
       </div>
 
