@@ -226,9 +226,10 @@ class CatalogService:
                     "needs": list(row.get("needs") or []),
                     "tags": list(row.get("tags") or []),
                     "installed": (here is not None or kept is not None) and not removed,
-                    "installed_version": here["version"]
-                    if here
-                    else (kept.version if kept else None),
+                    "installed_version": (
+                        kept.version if kept and kept.version else None
+                    )
+                    or (here["version"] if here else None),
                     "enabled": bool(here and here["enabled"]) and not removed,
                     "removed": removed,
                     "restart_pending": slug in pending,
