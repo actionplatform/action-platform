@@ -65,7 +65,12 @@ class JobHandlers:
 
         return DeploymentsService(
             self.registry,
-            identity=identity.minter(ctx.organization, ctx.app, ctx.body.get("stage")),
+            identity=identity.minter(
+                ctx.organization,
+                ctx.app,
+                ctx.body.get("stage"),
+                manages=bool(payload.get("manages")),
+            ),
             env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
         ).deploy(ctx.registry_id, DeployRequest(**ctx.body))
 

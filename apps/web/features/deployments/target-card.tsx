@@ -1,4 +1,4 @@
-import { Cloud, ExternalLink, Globe, KeyRound, Link2, Package, type LucideIcon } from "lucide-react";
+import { Cloud, ExternalLink, Globe, Package, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { Hint } from "@/components/ui/hint";
 import { Panel, PanelHeader } from "@/components/ui/panel";
@@ -16,13 +16,11 @@ function Row({ icon: Icon, label, value, mono, muted }: { icon: LucideIcon; labe
 
 const text = (v: unknown): string | null => (typeof v === "string" && v ? v : null);
 
-export function TargetCard({ view, base, proxyUrl }: { view: AppView; base: string; proxyUrl: string | null }) {
+export function TargetCard({ view, base }: { view: AppView; base: string }) {
   const target = text(view.deploy.target);
   const region = text(view.deploy.region);
-  const proxy = text(view.deploy.proxy_url) ?? proxyUrl;
   const app = text(view.deploy.app) ?? `${view.orgSlug}/${view.projectSlug}/${view.name}`;
   const role = text(view.deploy.role_arn);
-  const credentials = proxy ? "Cloud deploy proxy" : role ? "Role assumed with the platform's token" : "The worker's own cloud credentials";
   return (
     <Panel className="flex h-full flex-col">
       <PanelHeader
@@ -32,9 +30,7 @@ export function TargetCard({ view, base, proxyUrl }: { view: AppView; base: stri
       <div className="divide-y divide-border-subtle py-1">
         <Row icon={Cloud} label="Target" value={target ?? "Not configured"} mono={!!target} muted={!target} />
         <Row icon={Globe} label="Region" value={region ?? "From the target's config"} mono={!!region} muted={!region} />
-        <Row icon={KeyRound} label="Credentials" value={credentials} muted={!proxy && !role} />
-        {proxy && <Row icon={Link2} label="Proxy" value={proxy} mono />}
-        {(proxy || role) && <Row icon={Package} label="App" value={app} mono />}
+        {target && <Row icon={Package} label="App" value={app} mono />}
         {role && <Row icon={Package} label="Role" value={role} mono />}
       </div>
       <div className="mt-auto flex items-center gap-1.5 px-4 pb-4 pt-2 text-[13px] text-secondary">

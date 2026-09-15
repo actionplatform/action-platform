@@ -139,6 +139,39 @@ class AsyncRouteTest(GateCase):
         self.assertEqual(env["AP_AWS_LAMBDA_PROXY_URL"], "https://p.test")
         self.assertEqual(env["AP_APP"], f"{ctx.organization.slug}/web/demo")
 
+    def test_a_deploy_queued_by_an_org_manager_signs_tokens_that_may_register_the_app(
+        self,
+    ):
+        import json
+        from base64 import urlsafe_b64decode
+        from app.core.db.models import Job
+        from app.services.deployments.identity import AppIdentity
+        from app.services.jobs.context import JobContext
+
+        registry_id = self.register()
+        res = self.client.post(
+            f"/api/v1/apps/{registry_id}/deploy",
+            json={"stage": "dev", "dry_run": True},
+            headers={**self.h(), "Prefer": "respond-async"},
+        )
+
+        self.assertEqual(res.status_code, 202, res.text)
+        with self.app.state.db.session() as db:
+            payload = json.loads(db.get(Job, res.json()["job"]).payload)
+
+        self.assertTrue(payload["manages"])
+
+        ctx = JobContext.of(payload, self.app.state.db, self.app.state.sealer)
+        mint = AppIdentity(
+            self.app.state.db, self.app.state.sealer, "https://ap.test"
+        ).minter(ctx.organization, ctx.app, "dev", manages=payload["manages"])
+        claims = json.loads(
+            urlsafe_b64decode(mint("https://proxy.test").split(".")[1] + "==")
+        )
+
+        self.assertEqual(claims["scopes"], ["org.manage"])
+        self.assertEqual(claims["stage"], "dev")
+
     def test_a_body_beyond_the_limit_is_refused_before_anything_runs(self):
         from app.api.gate import MAX_BODY
 
