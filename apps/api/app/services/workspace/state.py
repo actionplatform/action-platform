@@ -1,9 +1,9 @@
 from dataclasses import asdict
 from pathlib import Path
 
+from action_platform.core.wiring import wired
 from action_platform.core.flow import gitflow
 from action_platform.core.flow.repository import Repository
-from action_platform.core.flow.workflow import GitFlow
 from action_platform.core.release.release import STABLE_BRANCHES
 from app.repositories.registry import Registry
 from app.services.workspace.checkout import Workspaces
@@ -17,7 +17,7 @@ class GitStateService:
         return Workspaces(self.registry).checkout(id)[1]
 
     def gitflow(self, id: str) -> dict:
-        report = GitFlow(self._root(id)).audit()
+        report = wired.gitflow(self._root(id)).audit()
         data = asdict(report)
         data["ok"] = report.ok
 
@@ -86,7 +86,7 @@ class GitStateService:
                 "name": name,
                 "date": date,
                 "kind": gitflow.kind_of(name),
-                "protected": name in gitflow.PROTECTED,
+                "protected": name in gitflow.current().protected,
                 "stable": name in STABLE_BRANCHES,
                 "problem": gitflow.check_branch(name),
             }

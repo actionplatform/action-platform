@@ -6,12 +6,8 @@ import shutil
 
 from fastapi import HTTPException
 
+from action_platform.core.wiring import wired
 from action_platform.core.manifest import write_source_host
-from action_platform.core.scaffold.generate import (
-    apply_cloud,
-    generate_project,
-    push_project,
-)
 from action_platform.settings import settings
 from app.core.shared import git_auth as auth
 from app.repositories.registry import Entry
@@ -46,12 +42,12 @@ class AppScaffolding(AppsBase):
             extra["github_owner"] = owner
 
         try:
-            generated = generate_project(
+            generated = wired.scaffolder().generate(
                 repo, leaf, name=body.name, ci=body.ci, output=staging, extra=extra
             )
 
             if body.cloud:
-                apply_cloud(repo, m.cloud(body.cloud), generated)
+                wired.scaffolder().apply_cloud(repo, m.cloud(body.cloud), generated)
 
             slug = generated.name
             path = self.registry.workspaces / id
@@ -68,7 +64,9 @@ class AppScaffolding(AppsBase):
 
         try:
             with auth.git_auth(creds):
-                url = push_project(path, private=body.private, credentials=creds)
+                url = wired.scaffolder().push(
+                    path, private=body.private, credentials=creds
+                )
         except Exception:
             shutil.rmtree(path, ignore_errors=True)
             raise

@@ -8,12 +8,8 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from action_platform.core.wiring import wired
 from action_platform.core.exception import TemplateError
-from action_platform.core.scaffold.generate import (
-    apply_cloud,
-    generate_project,
-    push_project,
-)
 from action_platform.core.scaffold.templates import Matrix, load_matrix
 from action_platform.logging import logger
 
@@ -79,17 +75,17 @@ def run(
     if ci is not None and ci not in CI_PROVIDERS:
         raise TemplateError(f"unknown ci: {ci} (available: {', '.join(CI_PROVIDERS)})")
 
-    project = generate_project(
+    project = wired.scaffolder().generate(
         repo, leaf, name=name, ci=ci, output=output or Path.cwd()
     )
     logger.info("created %s", project)
 
     if cloud is not None:
-        apply_cloud(repo, matrix.cloud(cloud), project)
+        wired.scaffolder().apply_cloud(repo, matrix.cloud(cloud), project)
         logger.info("applied cloud %s", cloud)
 
     if push:
-        url = push_project(project, private=private)
+        url = wired.scaffolder().push(project, private=private)
         logger.info("pushed to %s", url)
 
 

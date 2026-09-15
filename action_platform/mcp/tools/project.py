@@ -7,14 +7,9 @@ from typing import Annotated, Any, Optional
 
 from pydantic import Field
 
+from action_platform.core.wiring import wired
 from action_platform.core.scaffold import install as installing
 from action_platform.core.manifest import Manifest
-from action_platform.core.scaffold.generate import (
-    apply_cloud,
-    apply_service,
-    generate_project,
-    push_project,
-)
 from action_platform.core.scaffold.templates import load_matrix
 from action_platform.mcp import schemas
 from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL, tool
@@ -63,11 +58,13 @@ def register(mcp: Any) -> None:
         """
         repo, matrix = load_matrix(source=source)
         leaf = matrix.resolve(type, stack, template)
-        project = generate_project(repo, leaf, name=name, ci=ci, output=_root(output))
+        project = wired.scaffolder().generate(
+            repo, leaf, name=name, ci=ci, output=_root(output)
+        )
         result = {"path": str(project), "template": leaf.directory}
 
         if cloud:
-            apply_cloud(repo, matrix.cloud(cloud), project)
+            wired.scaffolder().apply_cloud(repo, matrix.cloud(cloud), project)
             result["cloud"] = cloud
 
         return result
@@ -82,7 +79,7 @@ def register(mcp: Any) -> None:
         Creates a public repository on the host unless `private` is true.
         Confirm with the user before calling: it is visible to others once done.
         """
-        return {"remote": push_project(_root(project), private=private)}
+        return {"remote": wired.scaffolder().push(_root(project), private=private)}
 
     @tool(mcp, annotations=WRITES_LOCAL)
     def cloud_set(
@@ -97,7 +94,7 @@ def register(mcp: Any) -> None:
         """
         repo, matrix = load_matrix(source=source)
         root = _root(project)
-        apply_cloud(repo, matrix.cloud(cloud), root)
+        wired.scaffolder().apply_cloud(repo, matrix.cloud(cloud), root)
 
         return {"path": str(root), "deploy_target": cloud}
 
@@ -114,7 +111,9 @@ def register(mcp: Any) -> None:
         """Add a dependency as services/<name>/ with `up` (provision) and `link` (env vars) scripts."""
         repo, matrix = load_matrix(source=source)
         root = _root(project)
-        apply_service(repo, matrix.service(service), root, provider=provider)
+        wired.scaffolder().apply_service(
+            repo, matrix.service(service), root, provider=provider
+        )
 
         return {"path": str(root / "services" / service), "provider": provider}
 

@@ -11,12 +11,11 @@ from typing import Protocol
 from cookiecutter.exceptions import CookiecutterException
 from cookiecutter.main import cookiecutter
 
+from action_platform.core.wiring import slot, wired
 from action_platform.core.config import Config
 from action_platform.core.exception import TemplateError
 from action_platform.core.flow.repository import Repository
-from action_platform.core.flow.workflow import GitFlow
 from action_platform.core.manifest import Manifest, check_owner, toml_str
-from action_platform.core.scaffold.install import Installer
 from action_platform.core.scaffold.templates import Cloud, Leaf, Service
 from action_platform.providers.source import build_source_host
 from action_platform.settings import settings
@@ -74,7 +73,7 @@ def _copy_repository(
     Repository.init(target, branch="main")
 
     if leaf.stack:
-        Installer(target, type_=leaf.type, language=leaf.stack, ci=ci).apply()
+        wired.installer(target, type_=leaf.type, language=leaf.stack, ci=ci).apply()
     else:
         (target / settings.CONFIG_FILE).write_text(
             f'[project]\nname = "{slug}"\ntype = "{leaf.type}"\nci = "{ci or "github"}"\n'
@@ -133,7 +132,7 @@ def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
         )
 
     _cookiecutter(
-        repo,
+        cloud.root or repo,
         cloud.directory,
         project.parent,
         {
@@ -220,7 +219,7 @@ def push_project(
         else Repository.init(project, branch=branch)
     )
 
-    GitFlow(repo).install_hooks()
+    wired.gitflow(repo).install_hooks()
     repo.add_all()
 
     if not repo.is_clean():
@@ -268,3 +267,36 @@ def _cookiecutter(
         raise TemplateError(str(e)) from e
 
     return Path(result)
+
+
+@slot("scaffolder")
+class Scaffolder:
+    """Generating a project, overlaying a cloud, adding a service, pushing the result — the module's functions as one replaceable class."""
+
+    def generate(
+        self,
+        repo: Path,
+        leaf: Leaf,
+        name: str,
+        ci: str | None,
+        output: Path,
+        extra: dict | None = None,
+    ) -> Path:
+        return generate_project(repo, leaf, name, ci, output, extra)
+
+    def apply_cloud(self, repo: Path, cloud: Cloud, project: Path) -> Path:
+        return apply_cloud(repo, cloud, project)
+
+    def apply_service(
+        self, repo: Path, service: Service, project: Path, provider: str | None = None
+    ) -> Path:
+        return apply_service(repo, service, project, provider)
+
+    def push(
+        self,
+        project: Path,
+        private: bool = False,
+        branch: str = "main",
+        credentials: "SourceCredentialsLike | None" = None,
+    ) -> str:
+        return push_project(project, private, branch, credentials)

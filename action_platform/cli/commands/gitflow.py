@@ -7,7 +7,8 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from action_platform.core.flow.workflow import GitFlow
+from action_platform.core.flow import gitflow
+from action_platform.core.wiring import wired
 from action_platform.core.exception import ActionPlatformError
 
 console = Console()
@@ -29,7 +30,7 @@ def run(
     cwd = Path.cwd()
 
     if install:
-        report = GitFlow(cwd).install_hooks()
+        report = wired.gitflow(cwd).install_hooks()
 
         if report:
             console.print(f"[green]hooks installed[/green] ({report.directory})")
@@ -43,7 +44,7 @@ def run(
             return
         raise ActionPlatformError("not a git repository")
 
-    report = GitFlow(cwd).audit(since=since)
+    report = wired.gitflow(cwd).audit(since=since)
     console.print(
         f"branch [bold]{report.branch}[/bold], {report.checked_commits} commit(s) checked"
     )
@@ -56,3 +57,39 @@ def run(
         console.print(f"[red]✗[/red] {problem}")
 
     raise typer.Exit(code=1)
+
+
+def check(
+    what: str = typer.Argument(..., help="branch, commit-msg or protect"),
+    values: list[str] = typer.Argument(
+        None,
+        help="The branch name, the message or its file, the branch and the message",
+    ),
+) -> None:
+    """One git-flow rule, the way the git hooks ask it — through the core, so a plugin that changed the rules is obeyed."""
+    values = list(values or [])
+    rules = gitflow.current()
+
+    if what == "branch":
+        problem = rules.check_branch(values[0] if values else "")
+    elif what == "commit-msg":
+        message = values[0] if values else ""
+        source = Path(message)
+
+        if source.is_file():
+            message = source.read_text().splitlines()[0] if source.read_text() else ""
+
+        problem = rules.check_commit(message)
+    elif what == "protect":
+        problem = rules.check_protected(
+            values[0] if values else "", values[1] if len(values) > 1 else ""
+        )
+    else:
+        raise ActionPlatformError(
+            f"unknown check {what!r}: branch, commit-msg or protect"
+        )
+
+    if problem:
+        typer.echo(f"::error::{problem}", err=True)
+
+        raise typer.Exit(code=1)

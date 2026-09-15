@@ -1,0 +1,88 @@
+"""Every process of the core is a class looked up here by name, so a plugin can replace one — with a subclass, so the rest of the core keeps calling what it expects.
+
+Slots: `gitflow_rules` (branch kinds, protected branches, commit format),
+`gitflow` (audit, branches, pull requests, hooks), `releaser` (plan and apply
+a release), `deployer` (deploy, rollback, diagnose, destroy), `installer`
+(bring a repository onto the platform), `scaffolder` (generate a project,
+apply clouds and services, push). Deploy targets, CI runners, source hosts,
+release strategies and changelog renderers are not slots: they are named
+providers picked by platform.toml.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Callable
+
+from action_platform.core.exception import ActionPlatformError
+
+
+class WiringError(ActionPlatformError):
+    """A slot nobody provides, or a replacement that is not a subclass of what it replaces."""
+
+
+class Wiring:
+    def __init__(self) -> None:
+        self._defaults: dict[str, type] = {}
+        self._overrides: dict[str, type] = {}
+        self._by: dict[str, str] = {}
+
+    def provide(self, slot: str, default: type) -> None:
+        """The core registers its own implementation of `slot` once, at import."""
+        self._defaults.setdefault(slot, default)
+
+    def replace(self, slot: str, impl: type, by: str = "") -> None:
+        """A plugin puts `impl` — a subclass of the default — in `slot`; `by` names the plugin for `origins()`."""
+        default = self._defaults.get(slot)
+
+        if default is None:
+            raise WiringError(
+                f"no slot {slot!r} (slots: {', '.join(sorted(self._defaults)) or 'none'})"
+            )
+
+        if not (isinstance(impl, type) and issubclass(impl, default)):
+            raise WiringError(
+                f"{slot}: {impl!r} must subclass {default.__module__}.{default.__name__}"
+            )
+
+        self._overrides[slot] = impl
+        self._by[slot] = by
+
+    def restore(self, slot: str) -> None:
+        self._overrides.pop(slot, None)
+        self._by.pop(slot, None)
+
+    def resolve(self, slot: str) -> type:
+        if slot in self._overrides:
+            return self._overrides[slot]
+
+        if slot in self._defaults:
+            return self._defaults[slot]
+
+        raise WiringError(f"no slot {slot!r}")
+
+    def origins(self) -> dict[str, str]:
+        """slot → plugin that replaced it, for every replaced slot."""
+        return dict(self._by)
+
+    def slots(self) -> list[str]:
+        return sorted(self._defaults)
+
+    def __getattr__(self, slot: str) -> Callable[..., Any]:
+        if slot.startswith("_"):
+            raise AttributeError(slot)
+
+        return self.resolve(slot)
+
+
+wired = Wiring()
+
+
+def slot(name: str) -> Callable[[type], type]:
+    """`@slot("releaser")` on the core's class registers it as the default."""
+
+    def decorate(cls: type) -> type:
+        wired.provide(name, cls)
+
+        return cls
+
+    return decorate

@@ -7,8 +7,8 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
+from action_platform.core.wiring import wired
 from action_platform.core.manifest import Manifest
-from action_platform.core.scaffold.generate import apply_cloud
 from action_platform.core.scaffold.templates import load_matrix
 from action_platform.logging import logger
 
@@ -35,7 +35,7 @@ def set_(
     repo, matrix = load_matrix(update=update, source=source)
     target = (project or Path.cwd()).resolve()
 
-    apply_cloud(repo, matrix.cloud(name), target)
+    wired.scaffolder().apply_cloud(repo, matrix.cloud(name), target)
 
     logger.info("applied cloud %s to %s", name, target)
 
