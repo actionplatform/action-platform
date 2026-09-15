@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { savePluginOptions } from "./actions";
 import { Button } from "@/components/ui/button";
+import { Hint } from "@/components/ui/hint";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -61,7 +62,7 @@ export function PluginCards({
             <section
               key={p.slug}
               aria-labelledby={`plugin-${p.slug}`}
-              className="flex min-h-[280px] flex-col rounded-[8px] border border-border bg-[#111111] p-4 transition-colors hover:border-border-hover"
+              className="flex flex-col rounded-[8px] border border-border bg-[#111111] p-4 transition-colors hover:border-border-hover"
             >
               <div className="flex items-center gap-2.5">
                 <h3
@@ -70,6 +71,7 @@ export function PluginCards({
                 >
                   {p.name}
                 </h3>
+                {p.description && <Hint text={p.description} />}
                 <span
                   className={cn(
                     "ml-auto inline-flex h-6 shrink-0 items-center gap-1 rounded-full border px-2 text-[12px] font-medium",
@@ -97,27 +99,11 @@ export function PluginCards({
                   {state}
                 </span>
               </div>
-              <p className="mt-2 text-sm leading-5 text-secondary">
-                {p.description || p.slug}
+              <p className="mt-2 font-mono text-[13px] text-secondary">
+                {p.slug}
               </p>
               {p.error !== null && (
                 <p className="mt-2 text-[13px] text-[#e07070]">{p.error}</p>
-              )}
-
-              {p.options.length > 0 && p.error === null && (
-                <ul className="mt-3 space-y-1.5">
-                  {p.options.map((o) => (
-                    <li
-                      key={o.key}
-                      className="flex h-9 items-center gap-2 rounded-[6px] border border-border bg-background px-2.5 text-sm"
-                    >
-                      <span className="shrink-0 text-secondary">{o.label}</span>
-                      <span className="min-w-0 flex-1 truncate text-right font-mono text-[13px]">
-                        {display(o, p.values[o.key])}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
               )}
 
               <div className="mt-auto flex flex-col gap-2 pt-4">
@@ -156,13 +142,6 @@ export function PluginCards({
       )}
     </>
   );
-}
-
-function display(option: PluginOption, value: unknown): string {
-  if (value === undefined || value === "" || value === null) return "—";
-  if (option.kind === "secret") return "••••••••";
-  if (option.kind === "bool") return value ? "on" : "off";
-  return String(value);
 }
 
 function PluginOptionsDialog({
