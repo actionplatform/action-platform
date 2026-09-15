@@ -4,7 +4,7 @@
 
 ```bash
 poetry install --extras mcp
-poetry run pip install -e "apps/api[dev]"  # the API package, editable, on top of the library
+poetry run pip install -e apps/api httpx httpx2  # the API package, editable, on top of the library
 poetry run pytest -q                      # the library; or: python -m unittest discover -s tests -t .
 (cd apps/api && ../../.venv/bin/python -m pytest -q)   # the API
 poetry run ruff check . && poetry run ruff format --check .
