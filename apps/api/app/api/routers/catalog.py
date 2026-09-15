@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request
 
 from app import schemas
+from app.services.plugins.catalog import PluginsCatalog
 from app.services.catalog import CatalogService
 
 router = APIRouter(prefix="/api", tags=["catalog"])
@@ -34,7 +35,7 @@ def matrix_with_sources(
 
 @router.get("/plugins")
 def plugins() -> schemas.Plugins:
-    return service.plugins()
+    return PluginsCatalog().rows()
 
 
 @router.get("/gitflow/rules")
