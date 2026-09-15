@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.3 — 2026-09-14
+
+### Refactoring
+- **api:** TokenMinter, ImportGateway and HostConnector.create_github_app take the last orchestration out of the routers; import schemas in schemas/imports
+
 ## v0.18.2 — 2026-09-14
 
 ### Refactoring
