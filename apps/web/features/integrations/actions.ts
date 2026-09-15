@@ -66,38 +66,23 @@ export async function changeHostOwner(id: string, owner: string): Promise<Result
 }
 
 
-export type ProxyHealth = { version: string; issuer: string; organization: string; account: string };
-
-
-export async function saveAwsProxy(url: string): Promise<Result<{ proxy_url: string | null }>> {
+export async function savePluginOptions(slug: string, values: Record<string, unknown>): Promise<Result<null>> {
   const { session } = await requireOrg();
   if (!session.grants["org.manage"]) return { ok: false, error: "Only org.manage can change integrations." };
-  const trimmed = url.trim().replace(/\/$/, "");
-  if (trimmed && !/^https:\/\/[^\s/]+/.test(trimmed)) return { ok: false, error: "The proxy url must start with https://." };
+  const options: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(values)) {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) options[key] = trimmed;
+    } else if (value !== undefined && value !== null) {
+      options[key] = value;
+    }
+  }
   try {
-    const current = await v1.pluginOptions("aws-lambda");
-    const options = { ...current.options } as Record<string, unknown>;
-    if (trimmed) options.proxy_url = trimmed; else delete options.proxy_url;
-    await v1.setPluginOptions("aws-lambda", options);
+    await v1.setPluginOptions(slug, options);
     revalidatePath("/", "layout");
-    return { ok: true, data: { proxy_url: trimmed || null } };
+    return { ok: true, data: null };
   } catch (e) {
     return failed(e);
-  }
-}
-
-
-export async function checkAwsProxy(url: string): Promise<Result<ProxyHealth>> {
-  await requireOrg();
-  const trimmed = url.trim().replace(/\/$/, "");
-  if (!/^https:\/\/[^\s/]+/.test(trimmed)) return { ok: false, error: "The proxy url must start with https://." };
-  try {
-    const res = await fetch(`${trimmed}/health`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
-    if (!res.ok) return { ok: false, error: `The proxy answered ${res.status}.` };
-    const data = (await res.json()) as Partial<ProxyHealth>;
-    if (!data.version || !data.organization) return { ok: false, error: "That url does not answer like a deploy proxy." };
-    return { ok: true, data: { version: data.version, issuer: data.issuer ?? "", organization: data.organization, account: data.account ?? "" } };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "The proxy is unreachable." };
   }
 }

@@ -2218,6 +2218,13 @@ export interface components {
             id: string;
             description: string;
         };
+        PluginOption: {
+            key: string;
+            label: string;
+            kind: string;
+            help: string;
+            required: boolean;
+        };
         PluginOptions: {
             options: {
                 [key: string]: unknown;
@@ -2225,11 +2232,13 @@ export interface components {
         };
         PluginRow: {
             slug: string;
+            name: string;
             package: string;
             version: string;
             description: string;
             min_core: string;
             needs: string[];
+            options: components["schemas"]["PluginOption"][];
             error?: string | null;
         };
         Plugins: {
