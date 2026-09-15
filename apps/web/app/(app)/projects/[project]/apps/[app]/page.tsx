@@ -1,9 +1,6 @@
 import { CommitsCard } from "./commits-card";
-import { DeployCard } from "./deploy-card";
 import { HealthCard } from "./health-card";
 import { loadApp } from "./load";
-import { RefsCard } from "./refs-card";
-import { ReleaseCard } from "./release-card";
 import { SourceCard } from "./source-card";
 import { PendingChangesBanner, SummaryGrid } from "./summary-grid";
 
@@ -21,14 +18,9 @@ export default async function OverviewPage({ params }: { params: Promise<{ proje
       <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
         <div className="space-y-4">
           <HealthCard view={view} />
-          <ReleaseCard view={view} />
-          <DeployCard view={view} />
           <CommitsCard commits={view.commits} repositoryUrl={view.repositoryUrl} base={base} />
         </div>
-        <div className="space-y-4">
-          <SourceCard view={view} base={base} />
-          <RefsCard branches={view.branches} tags={view.tags} repositoryUrl={view.repositoryUrl} base={base} />
-        </div>
+        <SourceCard view={view} base={base} />
       </div>
     </>
   );
