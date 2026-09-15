@@ -11,7 +11,7 @@ export async function GET(req: Request) {
 
   let page: { target: string; manifest: Record<string, unknown> };
   try {
-    page = await v1.githubManifest({ origin: publicOrigin(req.headers), host: url.host, return_to: safePath(url.searchParams.get("return"), "/integrations"), github_org: url.searchParams.get("org")?.trim() || "" });
+    page = await v1.githubManifest({ origin: publicOrigin(req.headers), host: url.host, return_to: safePath(url.searchParams.get("return"), "/settings"), github_org: url.searchParams.get("org")?.trim() || "" });
   } catch (e) {
     const status = e instanceof Error && "status" in e ? (e as { status: number }).status : 400;
     return Response.json({ detail: (e as Error).message }, { status });

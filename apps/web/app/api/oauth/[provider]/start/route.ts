@@ -10,7 +10,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
   if (!(provider in PROVIDERS)) return Response.json({ detail: "unknown provider" }, { status: 404 });
 
   const url = new URL(req.url);
-  const returnTo = safePath(url.searchParams.get("return"), "/integrations");
+  const returnTo = safePath(url.searchParams.get("return"), "/settings");
   const session = await getSession();
   if (!session) redirect(`/login?next=${encodeURIComponent(url.pathname + url.search)}`);
 
