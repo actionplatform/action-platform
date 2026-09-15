@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.17.0 — 2026-09-15
+
+### Features
+- **web:** Plugins marketplace — the index with search, tags, needs, install command, and what the platform runs
+- **web:** overview shows the deploy target instead of an always-empty pending-changes card; pending changes become a banner when there are any
+
 ## v0.16.1 — 2026-09-15
 
 ### Features
