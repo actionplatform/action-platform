@@ -45,7 +45,6 @@ class Worker:
         self.secrets = secrets
         self.sealer = Sealer(secrets) if secrets else None
         self.queue = JobQueue(database)
-        self.plugins = plugins.PluginManager(self.queue, database)
         self.name = name or worker_name()
 
         if registry is None:
@@ -53,9 +52,7 @@ class Worker:
             registry = get_registry()
 
         self.registry = registry
-        self.handlers = handlers(
-            JobServices(database, self.sealer, registry, self.plugins)
-        )
+        self.handlers = handlers(JobServices(database, self.sealer, registry))
         plugin_registry.use_options(lambda slug: plugins.DbOptions(database, slug))
 
     def run(self, interval: float = 2.0, once: bool = False) -> int:

@@ -1,19 +1,12 @@
 """Action Platform settings module."""
 
 import os
-import site
 import tempfile
 from pathlib import Path
 
 from action_platform.env import load
 
 load()
-
-PLUGINS_DIR = os.getenv("AP_PLUGINS_DIR")
-
-if PLUGINS_DIR:
-    Path(PLUGINS_DIR).mkdir(parents=True, exist_ok=True)
-    site.addsitedir(PLUGINS_DIR)
 
 
 class Settings:
@@ -45,7 +38,6 @@ class Settings:
         or Path(tempfile.gettempdir()) / "action-platform" / "workspaces"
     )
     WORKSPACE_TTL = int(os.getenv("AP_WORKSPACE_TTL", "15"))
-    PLUGINS_DIR = Path(PLUGINS_DIR) if PLUGINS_DIR else None
 
     ALLOW_FILE_URLS = os.getenv("AP_ALLOW_FILE_URLS") == "1"
     ALLOW_INSECURE_HTTP = os.getenv("AP_ALLOW_INSECURE_HTTP") == "1"
@@ -69,11 +61,6 @@ class Settings:
     DATABASE_MAX_OVERFLOW = int(os.getenv("AP_DATABASE_MAX_OVERFLOW", "20"))
     AUTH_SECRET = os.getenv("AP_AUTH_SECRET") or os.getenv("BETTER_AUTH_SECRET", "")
     PUBLIC_URL = os.getenv("AP_PUBLIC_URL") or os.getenv("PUBLIC_URL", "")
-    PLATFORM_ADMINS = tuple(
-        e.strip().lower()
-        for e in os.getenv("AP_PLATFORM_ADMINS", "").split(",")
-        if e.strip()
-    )
     SENTRY_DSN = os.getenv("AP_SENTRY_DSN", "")
     SENTRY_ENVIRONMENT = os.getenv("AP_SENTRY_ENVIRONMENT", "production")
     SENTRY_TRACES_SAMPLE_RATE = float(os.getenv("AP_SENTRY_TRACES_SAMPLE_RATE", "0.1"))

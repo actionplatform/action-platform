@@ -1,4 +1,4 @@
-"""Putting a plugin's package on disk and taking it off — pip, into the interpreter's environment or into `AP_PLUGINS_DIR`. The CLI and the hosted platform's worker both go through here."""
+"""Putting a plugin's package on disk and taking it off — pip into the interpreter's environment, or into a target directory."""
 
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ from typing import Optional
 
 from action_platform.plugins.registry import PluginError
 from action_platform.plugins.state import PluginState
-from action_platform.settings import settings
 
 TIMEOUT = 15
 
@@ -70,14 +69,10 @@ def lookup(state: PluginState, slug: str) -> tuple[str, IndexEntry]:
 
 
 class PipInstaller:
-    """pip on the running interpreter; `target` set (the hosted platform) installs into that directory instead of site-packages. Dependencies land there too — a copy of the core included, which the image's own copy shadows since the directory sits last on sys.path."""
+    """pip on the running interpreter; `target` set installs into that directory instead of site-packages."""
 
     def __init__(self, target: Optional[str] = None) -> None:
-        self.target = (
-            target
-            if target is not None
-            else (str(settings.PLUGINS_DIR) if settings.PLUGINS_DIR else None)
-        )
+        self.target = target
 
     def run(self, *args: str) -> str:
         result = subprocess.run(

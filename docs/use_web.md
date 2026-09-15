@@ -39,7 +39,7 @@ The compose files run migrations in a one-shot `migrate` service the API and the
 
 ## Plugins
 
-The hosted platform ships with the plugins it runs — `apx-aws-lambda` is a dependency of the API image, so the `aws/lambda` deploy target, its overlay and tools are always there. The web has no plugin marketplace; `GET /api/plugins` and `/api/v1/plugins` still answer for the CLI and for automation (see [plugins](use_plugins.md)).
+The hosted platform ships with the plugins it runs — `apx-aws-lambda` is a dependency of the API image, so the `aws/lambda` deploy target, its overlay and tools are always there. The web has no plugin marketplace and nothing installs at runtime — a plugin joins the platform as a dependency of the image (see [plugins](use_plugins.md)). `GET /api/v1/plugins` lists what the image carries.
 
 ## AWS
 

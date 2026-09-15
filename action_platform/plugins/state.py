@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from action_platform.settings import settings
 
 OFFICIAL_INDEX = (
     "https://raw.githubusercontent.com/actionplatform/plugins-index/main/plugins"
@@ -16,10 +15,7 @@ OFFICIAL_INDEX = (
 
 
 def path() -> Path:
-    """`plugins.json`: next to the installed plugins when `AP_PLUGINS_DIR` names a directory (the hosted platform's volume), under the user's config otherwise."""
-    if settings.PLUGINS_DIR is not None:
-        return settings.PLUGINS_DIR / "plugins.json"
-
+    """`plugins.json` under the user's config directory."""
     base = os.environ.get("AP_HOME") or os.environ.get("XDG_CONFIG_HOME")
     root = Path(base) / "action-platform" if base else Path.home() / ".action-platform"
 

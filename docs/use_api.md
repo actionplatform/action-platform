@@ -6,7 +6,7 @@
 
 | Endpoint | |
 |---|---|
-| `GET /api/version` (`{version, api}`), `GET /api/matrix`, `GET /api/plugins` (the plugins index plus which ones this platform runs), `POST /api/matrix {sources}`, `GET /api/gitflow/rules` | static; `POST /matrix` merges extra template repositories |
+| `GET /api/version` (`{version, api}`), `GET /api/matrix`, `POST /api/matrix {sources}`, `GET /api/gitflow/rules` | static; `POST /matrix` merges extra template repositories |
 | `GET /api/apps`, `POST /api/apps {url, name, install}`, `POST /api/apps/init`, `DELETE /api/apps/{id}` | registry: clone a repository (installing the platform when asked), generate from a template, remove the workspace |
 | `POST /api/apps/{id}/sync {reset}` | rebuild the clone level with the remote on the app's branch (a merged branch falls back to the default one); `reset` drops the pending edits too |
 | `GET /api/apps/{id}`, `/gitflow`, `/commits`, `/branches` (each with `protected` and `stable`), `/tags`, `/releases`, `/changes`, `/next-version?level=&branch=`, `/branches/plan?kind=&code=&slug=` | state of the workspace, plus the two previews the pages show before acting: the version a release would produce and the name and base a branch would get; a clone that lost `platform.toml` gets it back on the spot |

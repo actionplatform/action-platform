@@ -8,8 +8,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Optional
 
-from action_platform.settings import settings
-
 
 class Options(ABC):
     """Options"""
@@ -34,9 +32,6 @@ class Options(ABC):
 
 
 def options_dir() -> Path:
-    if settings.PLUGINS_DIR is not None:
-        return settings.PLUGINS_DIR / "options"
-
     base = os.environ.get("AP_HOME") or os.environ.get("XDG_CONFIG_HOME")
     root = Path(base) / "action-platform" if base else Path.home() / ".action-platform"
 
