@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 from action_platform.core.exception import ActionPlatformError
 from action_platform.settings import settings
@@ -19,10 +19,9 @@ from app.services.deploy import DeployEnv
 from app.services.directory import DirectoryService, DirectoryWrites
 from app.services.identity.signer import AppIdentity
 from app.services.jobs.context import JobContext
+from app.services.jobs.registry import JobServices, register
 from app.services.organization_import import OrganizationImport
 from app.services.workspace.lifecycle import LifecycleService
-
-Handler = Callable[[dict[str, Any]], Any]
 
 
 class JobHandlers:
@@ -38,18 +37,11 @@ class JobHandlers:
         self.registry = registry
         self.plugins = plugin_manager
 
-    def all(self) -> dict[str, Handler]:
-        return {
-            "sync": self.sync,
-            "release": self.release,
-            "deploy": self.deploy,
-            "push": self.push,
-            "import": self.import_activity,
-            "import_github": self.import_github,
-            plugins.INSTALL: self.plugins.install,
-            plugins.REMOVE: self.plugins.remove,
-            plugins.RESTART: self.plugins.restart,
-        }
+    @classmethod
+    def of(cls, services: JobServices) -> "JobHandlers":
+        return cls(
+            services.database, services.sealer, services.registry, services.plugins
+        )
 
     def context(self, payload: dict[str, Any]) -> JobContext:
         return JobContext.of(payload, self.database, self.sealer)
@@ -140,3 +132,14 @@ class JobHandlers:
                     for p in payload.get("projects") or []
                 },
             )
+
+
+register("sync", lambda s: JobHandlers.of(s).sync)
+register("release", lambda s: JobHandlers.of(s).release)
+register("deploy", lambda s: JobHandlers.of(s).deploy)
+register("push", lambda s: JobHandlers.of(s).push)
+register("import", lambda s: JobHandlers.of(s).import_activity)
+register("import_github", lambda s: JobHandlers.of(s).import_github)
+register(plugins.INSTALL, lambda s: s.plugins.install)
+register(plugins.REMOVE, lambda s: s.plugins.remove)
+register(plugins.RESTART, lambda s: s.plugins.restart)
