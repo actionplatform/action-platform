@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.18.15 — 2026-09-15
+
+### Features
+- **web:** the plugin's settings form sits on its card — no dialog
+- **web:** Git (GitHub, GitLab, Bitbucket) lives on Settings; Integrations gone, Plugins in the sidebar; old paths redirect
+- **web:** Plugins page — one card per plugin, Configure drawn from the plugin's declared options
+- **web:** Integrations is one page — GitHub, GitLab, Bitbucket built in, then the plugins; /integrations/hosts and /integrations/cloud redirect
+- **web:** one card per plugin on Integrations, its form drawn from the plugin's declared options; the AWS card is gone
+
+### Tests
+- **web:** plugin cards — configured state, no button without options, save through the action, load failure
+
 ## v0.18.14 — 2026-09-15
 
 ### Features
