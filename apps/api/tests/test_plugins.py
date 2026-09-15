@@ -146,6 +146,22 @@ class PluginsApiTest(GateCase):
 
         self.assertEqual(PluginState.load().plugins, {})
 
+    def test_an_update_on_disk_shows_as_installed_before_the_restart(self):
+        loaded = registry.Loaded(Lambda(), "apx-aws-lambda", "0.1.0")
+
+        with mock.patch.object(
+            registry.Plugins, "find", staticmethod(lambda known=None: [loaded])
+        ):
+            state = PluginState.load()
+            state.record("aws-lambda", "0.2.0", "apx-aws-lambda")
+            state.mark_restart("aws-lambda")
+            rows = self.client.get("/api/v1/plugins", headers=self.h()).json()
+
+        row = next(p for p in rows["plugins"] if p["slug"] == "aws-lambda")
+
+        self.assertEqual(row["installed_version"], "0.2.0")
+        self.assertTrue(row["restart_pending"])
+
     def test_switching_needs_org_manage(self):
         res = self.client.post("/api/v1/plugins/aws-lambda/enable", headers=self.h())
 
