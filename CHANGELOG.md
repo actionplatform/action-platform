@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.11.1 — 2026-09-14
+
+### Features
+- **release:** a repository without a version tag is at 0.0.0 whatever LAST_VERSION says
+
+### Refactoring
+- **api:** services as structured classes — HostProvider per code host (OAuth, refresh, access), import steps as classes, MatrixView, TemplateRepos, AppManifest, GitUrl, HttpClient, Clones; every __init__ only re-exports
+- **abc:** Vcs becomes WorkingCopy
+- **api:** every service in a package — workspace, catalog, jobs, shared; ImportSource and HostDirectory ABCs behind imports and github_import
+- **api:** services split into packages — directory (one module per domain), hosts (oauth and providers), imports (per provider), apps (inventory, generate, remote); common and credentials helpers
+
+### Docs
+- **import:** projects
+
+### Tests
+- **release:** untagged repository starts at zero
+- **import:** github project into an existing project
+- **import:** projects and a target project
+
 ## v0.11.0 — 2026-09-14
 
 ### Features
