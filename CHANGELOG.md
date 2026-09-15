@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.14.0 — 2026-09-15
+
+### Features
+- **mcp:** prompts on the remote server — orient, new_app, ship_change, cut_release, deploy_app, adopt_repository
+- **remote:** project-scoped app endpoints and X-Organization on directory calls
+- **mcp:** output schemas on every tool; remote add_app/init_app take a project, remove_app and delete_project can drop repositories
+- **mcp:** tools register through one decorator that turns platform errors into readable tool errors; both servers state the rules
+
+### Bug Fixes
+- **deploy:** web image installs with npm install; the lock written on macOS misses linux-only optional packages
+
+### Docs
+- remote prompts
+- remote apps live in projects; the rules both MCP servers state
+- settings pages and sidebar after the navigation change
+
+### Tests
+- **mcp:** both servers offer prompts
+- **mcp:** remote tools against project rows, readable errors, every tool has schemas and rules
+
+### Style
+- format tests/core/test_env.py
+
+### Chores
+- skills and plugin manifests move to actionplatform/action-platform-mcp
+
 ## v0.13.0 — 2026-09-14
 
 ### Features
