@@ -10,12 +10,18 @@ const config: NextConfig = {
   env: { WEB_VERSION: version },
   async redirects() {
     return [
-      { source: "/teams", destination: "/settings/people/teams", permanent: true },
-      { source: "/teams/:team", destination: "/settings/people/teams/:team", permanent: true },
-      { source: "/settings/members", destination: "/settings/people", permanent: true },
-      { source: "/settings/hosts", destination: "/settings/integrations", permanent: true },
+      { source: "/teams", destination: "/organization/teams", permanent: true },
+      { source: "/teams/:team", destination: "/organization/teams/:team", permanent: true },
+      { source: "/settings/members", destination: "/organization/members", permanent: true },
+      { source: "/settings/people", destination: "/organization/members", permanent: true },
+      { source: "/settings/people/teams", destination: "/organization/teams", permanent: true },
+      { source: "/settings/people/teams/:team", destination: "/organization/teams/:team", permanent: true },
+      { source: "/settings/hosts", destination: "/integrations/hosts", permanent: true },
+      { source: "/settings/integrations", destination: "/integrations/hosts", permanent: true },
       { source: "/settings/gitflow", destination: "/settings", permanent: true },
-      { source: "/settings/api", destination: "/settings/developers", permanent: true },
+      { source: "/settings/api", destination: "/organization/sessions", permanent: true },
+      { source: "/settings/developers", destination: "/organization/sessions", permanent: true },
+      { source: "/account", destination: "/organization/sessions", permanent: false },
     ];
   },
   async headers() {

@@ -43,11 +43,11 @@ The hosted platform ships with the plugins it runs — `apx-aws-lambda` is a dep
 
 ## AWS
 
-Settings → Integrations → **AWS** keeps the url of the deploy proxy installed in the organization's AWS account (`plugin_option` of `aws-lambda`, key `proxy_url`; `org.manage`). **Check** calls the proxy's `/health` and shows its version, organization and account. Every deploy job carries it as `AP_AWS_LAMBDA_PROXY_URL` with `AP_APP` = `org/project/app`, so an app whose `platform.toml` says only `target = "aws/lambda"` deploys through the proxy; `proxy_url` in a repository overrides it. The worker passes every plugin option the same way (`AP_<SLUG>_<KEY>`), so other targets can be configured here too. See the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README for installing the proxy and registering apps.
+Integrations → **Cloud** keeps the url of the deploy proxy installed in the organization's AWS account (`plugin_option` of `aws-lambda`, key `proxy_url`; `org.manage`). **Check** calls the proxy's `/health` and shows its version, organization and account. Every deploy job carries it as `AP_AWS_LAMBDA_PROXY_URL` with `AP_APP` = `org/project/app`, so an app whose `platform.toml` says only `target = "aws/lambda"` deploys through the proxy; `proxy_url` in a repository overrides it. The worker passes every plugin option the same way (`AP_<SLUG>_<KEY>`), so other targets can be configured here too. See the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README for installing the proxy and registering apps.
 
 ## Code hosts
 
-Settings → **Connect a code host**.
+Integrations → Code hosts → **Connect a code host**.
 
 **GitHub, in two clicks**: *Create GitHub App* opens GitHub with a pre-filled manifest (permissions: contents, workflows, administration, pull requests, organization members; callback already set); confirm the name and the app's credentials land in the platform. Then *Install the app on GitHub* on the account or organization whose repositories it should manage, and *Connect with GitHub*. Tokens from a GitHub App expire and are refreshed automatically.
 
@@ -129,11 +129,21 @@ The **Deployments** tab of an app. **Deploy**: a release (every deploy ships a t
 
 Listing teams and people needs the GitHub App permission *Organization › Members (read)* — apps created before it was in the manifest must add it under the app's settings on GitHub, and the organization must accept the new permission — or an OAuth token with `read:org`; the page says so when GitHub refuses. The import runs as a job (`POST /api/v1/import/github` answers `202` with `poll`); the page follows it and ends with a summary of what was created and what was skipped, with the reason. `GET /api/v1/import/github/organizations?host=<id>` and `GET /api/v1/import/github/organizations/{login}?host=<id>` are the preview calls behind the page.
 
+## Navigation
+
+The sidebar: **Projects**, **Templates**, **Organization** (Teams, Members, Sessions), **Integrations** (Code hosts, Cloud), **Settings**; on a phone each section shows its pages as tabs. Old paths redirect: `/settings/people` → `/organization/members`, `/settings/people/teams` → `/organization/teams`, `/settings/integrations` → `/integrations/hosts`, `/settings/developers` and `/account` → `/organization/sessions`.
+
+## Organization
+
+**Members**: the people, their roles, invitations and the roles table. **Teams**: groups of members and the projects they look after. **Sessions**: everything signed in as you — API tokens (CLI, MCP servers), browser sessions — and the API base URL, version and docs.
+
+## Integrations
+
+**Code hosts**: connect with OAuth or a token, what each connected account may create with; the GitHub import starts from here too (the OAuth flows come back to `/integrations/hosts`). **Cloud**: the AWS deploy proxy url (see [AWS](#aws)).
+
 ## Settings
 
-One page per concern, listed under **Settings** in the sidebar (tabs on a phone): **General** (name, slug, your role, commit identity, the git-flow rules), **People** (members, invitations and the roles table; teams under their own tab), **Integrations** (code hosts: connect with OAuth or a token, what each connected account may create with; the GitHub import starts from here too) and **Developers** (API base URL, version, docs, a pointer to your personal tokens). The OAuth flows come back to `/settings/integrations`. The sidebar itself has three entries: Projects, Templates, Settings — importing is a button on Projects and on Integrations, teams live under People, and the old paths (`/teams`, `/settings/hosts`, `/settings/members`, `/settings/gitflow`, `/settings/api`) redirect.
-
-Organization members, source hosts (add, update token, remove), the API URL and the git-flow rules.
+The organization itself: name, slug, your role, the commit identity and the git-flow rules.
 
 ### Commit identity
 
@@ -151,15 +161,15 @@ GitLab and Bitbucket work the same way with one OAuth application registered onc
 
 ### Members and invitations
 
-Owners and admins add people from Settings → **Members**: **Add member** creates the account (name, email, password) or attaches an existing one; **Invite** produces a link instead. No email is sent: the dialog produces a link (`/invite/<id>`, valid 7 days, bound to that address) to share. Opening it lets the person sign in or create an account and join with the invited role. 
+Owners and admins add people from Organization → **Members**: **Add member** creates the account (name, email, password) or attaches an existing one; **Invite** produces a link instead. No email is sent: the dialog produces a link (`/invite/<id>`, valid 7 days, bound to that address) to share. Opening it lets the person sign in or create an account and join with the invited role. 
 
 ### Teams
 
-**Teams** in the sidebar. A team has members (organization members only) and projects; a project belongs to at most one team, assigned from the team page or from the project card's menu. Deleting a team leaves its projects without one.
+Organization → **Teams**. A team has members (organization members only) and projects; a project belongs to at most one team, assigned from the team page or from the project card's menu. Deleting a team leaves its projects without one.
 
 ### Connected apps
 
-The key icon next to your name opens **Connected apps** (`/account`): your API tokens across organizations — name (`user@host`), scope, reach, the programs that used them (Claude Code, Codex, Cursor, the CLI…), created, last used, expiry — and the browser sessions signed in as you, each with a revoke action. Revoking a session logs that browser out at once. How tokens work: [access control](concept_access_control.md).
+The key icon next to your name opens Organization → **Sessions** (`/organization/sessions`): your API tokens across organizations — name (`user@host`), scope, reach, the programs that used them (Claude Code, Codex, Cursor, the CLI…), created, last used, expiry — and the browser sessions signed in as you, each with a revoke action. Revoking a session logs that browser out at once. How tokens work: [access control](concept_access_control.md).
 
 ## CLI and MCP against a hosted instance
 

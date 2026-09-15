@@ -40,6 +40,6 @@ export async function assignTeam(projectId: string, teamId: string | null): Prom
     return failed(e);
   }
   revalidatePath("/projects");
-  revalidatePath("/settings", "layout");
+  revalidatePath("/", "layout");
   return { ok: true };
 }

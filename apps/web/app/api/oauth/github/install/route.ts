@@ -11,7 +11,7 @@ export async function GET(req: Request) {
 
   let target: string;
   try {
-    target = (await v1.githubInstall(publicOrigin(req.headers), safePath(url.searchParams.get("return"), "/settings/integrations"))).url;
+    target = (await v1.githubInstall(publicOrigin(req.headers), safePath(url.searchParams.get("return"), "/integrations/hosts"))).url;
   } catch (e) {
     return Response.json({ detail: (e as Error).message }, { status: 400 });
   }

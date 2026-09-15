@@ -2,8 +2,8 @@ import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { gitAuthorOf } from "@/lib/org-settings";
 import { requireOrg } from "@/lib/session";
-import { GitflowCard } from "./gitflow-card";
-import { IdentityCard } from "./identity-card";
+import { GitflowCard } from "@/features/organization";
+import { IdentityCard } from "@/features/organization";
 
 export const dynamic = "force-dynamic";
 

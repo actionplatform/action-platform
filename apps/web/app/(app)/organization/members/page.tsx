@@ -3,8 +3,8 @@ import { invitationsOf, membersOf } from "@/lib/orgs";
 import { publicOrigin } from "@/lib/origin";
 import { requireOrg } from "@/lib/session";
 import { v1 } from "@/lib/v1";
-import { MembersPanel } from "../members-panel";
-import { RolesCard } from "../roles-card";
+import { MembersPanel } from "@/features/organization";
+import { RolesCard } from "@/features/organization";
 
 export const dynamic = "force-dynamic";
 

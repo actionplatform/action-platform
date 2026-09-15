@@ -3,7 +3,7 @@
 import { AlertCircle, Check, ExternalLink, KeyRound, Settings2, Sparkles, UserRound, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { disconnectHost, removeOAuthApp, saveOAuthApp } from "@/app/oauth-actions";
+import { disconnectHost, removeOAuthApp, saveOAuthApp } from "./oauth-actions";
 import { siBitbucket, siGithub, siGitlab } from "simple-icons";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { Button } from "@/components/ui/button";

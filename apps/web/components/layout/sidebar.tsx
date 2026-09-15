@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, ArrowLeft, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Rocket, Settings, SlidersHorizontal, X } from "lucide-react";
+import { Activity, ArrowLeft, Building2, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Plug, Rocket, Settings, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -8,13 +8,15 @@ import { Logo } from "@/components/logo";
 import type { Org } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { OrgSwitcher } from "./org-switcher";
-import { SETTINGS_PAGES, settingsPageActive } from "@/app/(app)/settings/nav";
+import { INTEGRATIONS_PAGES, ORGANIZATION_PAGES, pageActive, type SubPage } from "./nav";
 import { useScope } from "./scope";
 import { UserMenu } from "./user-menu";
 
-const items = [
+const items: { href: string; label: string; icon: typeof FolderGit2; children?: SubPage[] }[] = [
   { href: "/projects", label: "Projects", icon: FolderGit2 },
   { href: "/templates", label: "Templates", icon: LayoutTemplate },
+  { href: "/organization", label: "Organization", icon: Building2, children: ORGANIZATION_PAGES },
+  { href: "/integrations", label: "Integrations", icon: Plug, children: INTEGRATIONS_PAGES },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -84,7 +86,7 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
         </nav>
       ) : (
         <nav aria-label="Main" className="flex-1 py-2">
-          {items.map(({ href, label, icon: Icon }) => (
+          {items.map(({ href, label, icon: Icon, children }) => (
             <div key={href}>
               <Link
                 href={href}
@@ -94,10 +96,10 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
                 <Icon className="size-[18px]" strokeWidth={1.75} />
                 {label}
               </Link>
-              {href === "/settings" && isActive(href) && (
+              {children && isActive(href) && (
                 <div className="mb-1 ml-[38px] border-l border-border-subtle">
-                  {SETTINGS_PAGES.map((page) => {
-                    const active = settingsPageActive(pathname, page.href, page.exact);
+                  {children.map((page) => {
+                    const active = pageActive(pathname, page.href, page.exact);
                     return (
                       <Link
                         key={page.href}

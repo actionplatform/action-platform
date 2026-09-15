@@ -13,7 +13,7 @@ export function UserMenu({ name, email }: { name: string; email: string }) {
         <div className="truncate text-sm font-medium">{name}</div>
         <div className="truncate text-[13px] text-secondary">{email}</div>
       </div>
-      <Link href="/account" title="Connected apps" aria-label="Connected apps" className="flex size-10 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">
+      <Link href="/organization/sessions" title="Connected apps" aria-label="Connected apps" className="flex size-10 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">
         <KeyRound className="size-[18px]" strokeWidth={1.75} />
       </Link>
       <button

@@ -44,8 +44,8 @@ export async function importJob(id: string): Promise<Result<{ status: string; re
     const job = await v1.job(id);
     if (job.status === "done") {
       revalidatePath("/projects");
-      revalidatePath("/settings", "layout");
-      revalidatePath("/settings", "layout");
+      revalidatePath("/", "layout");
+      revalidatePath("/", "layout");
     }
     return { ok: true, data: { status: job.status, result: (job.result as ImportSummary | null) ?? null, error: job.error ?? null } };
   } catch (e) {
