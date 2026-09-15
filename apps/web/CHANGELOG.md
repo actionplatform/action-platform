@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.18.17 — 2026-09-15
+
+### Features
+- **web:** the plugin card shows no values — the form lives in the dialog only; no fixed height
+- **web:** a plugin's description is a tooltip by its name; the card shows the slug
+
 ## v0.18.16 — 2026-09-15
 
 ### Features
