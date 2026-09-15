@@ -66,6 +66,7 @@ class Commit(BaseModel):
 class Branch(BaseModel):
     name: str
     date: str
+    sha: Optional[str] = None
     kind: Optional[str] = None
     protected: bool
     stable: bool = False
