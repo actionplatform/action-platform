@@ -171,7 +171,7 @@ function HostedActions({ item }: { item: PluginItem }) {
       {item.installed && (
         <>
           {!item.error && <Button size="sm" variant="outline" disabled={busy} onClick={toggle}>{item.enabled ? "Disable" : "Enable"}</Button>}
-          {item.latest && item.installed_version && item.latest !== item.installed_version && <Button size="sm" variant="outline" disabled={busy} onClick={() => setConfirm("install")}>Update to {item.latest}</Button>}
+          {item.latest && item.latest !== item.installed_version && <Button size="sm" variant="outline" disabled={busy} onClick={() => setConfirm("install")}>Update to {item.latest}</Button>}
           <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirm("remove")}>{job ? "Working…" : "Remove"}</Button>
         </>
       )}
@@ -222,7 +222,7 @@ function PluginCard({ item, hosted, canManage }: { item: PluginItem; hosted: boo
 
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-[12px]">
         <div><dt className="text-muted-foreground">Package</dt><dd className="mt-0.5 truncate font-mono">{item.pypi}</dd></div>
-        <div><dt className="text-muted-foreground">Latest</dt><dd className="mt-0.5 font-mono">{item.latest || "—"}{item.min_core && <span className="text-secondary"> · core ≥ {item.min_core}</span>}</dd></div>
+        <div><dt className="text-muted-foreground">{item.installed ? "Installed · latest" : "Latest"}</dt><dd className="mt-0.5 font-mono">{item.installed && <>{item.installed_version || "?"}<span className="text-secondary"> · </span></>}{item.latest || "—"}{item.min_core && <span className="text-secondary"> · core ≥ {item.min_core}</span>}</dd></div>
       </dl>
 
       <Requirements needs={item.needs} />
