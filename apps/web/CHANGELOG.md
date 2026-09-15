@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.18 — 2026-09-15
+
+### Features
+- **web:** the Target card drops Credentials and Proxy — how a plugin gets credentials is its own business
+
 ## v0.18.17 — 2026-09-15
 
 ### Features
