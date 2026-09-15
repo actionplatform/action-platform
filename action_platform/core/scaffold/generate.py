@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Protocol
 
@@ -134,19 +135,17 @@ def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
     root = cloud.root or repo
 
     if (root / cloud.directory / "cookiecutter.json").exists():
-        _cookiecutter(
+        _render_over(
             root,
             cloud.directory,
-            project.parent,
+            project,
             {
                 "project_name": meta.get("name", project.name),
-                "project_slug": project.name,
                 "github_owner": meta.get("github_owner", "actionplatform"),
                 "language": language,
                 "type": type_,
                 "ci": meta.get("ci", "github"),
             },
-            overwrite=True,
         )
     else:
         _copy_overlay(root / cloud.directory, project)
@@ -154,6 +153,17 @@ def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
     Manifest.of(project).set_deploy_target(cloud.name)
 
     return project
+
+
+def _render_over(repo: Path, directory: str, project: Path, extra: dict) -> None:
+    """Render a cookiecutter overlay with the project's own name as `project_slug` — not the directory it happens to live in, which on the platform is a registry id — and lay the files over the project."""
+    slug = extra["project_name"]
+
+    with tempfile.TemporaryDirectory(prefix="ap-overlay-") as tmp:
+        rendered = _cookiecutter(
+            repo, directory, Path(tmp), {**extra, "project_slug": slug}
+        )
+        _copy_overlay(rendered, project)
 
 
 def _copy_overlay(source: Path, project: Path) -> None:
@@ -184,17 +194,15 @@ def apply_service(
     if existing.exists():
         shutil.rmtree(existing)
 
-    _cookiecutter(
+    _render_over(
         repo,
         service.directory,
-        project.parent,
+        project,
         {
             "project_name": meta.get("name", project.name),
-            "project_slug": project.name,
             "github_owner": meta.get("github_owner", "actionplatform"),
             "provider": provider,
         },
-        overwrite=True,
     )
 
     Manifest.of(project).set_service(service.name, provider)
