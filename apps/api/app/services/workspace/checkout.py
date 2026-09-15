@@ -12,14 +12,18 @@ from pathlib import Path
 
 from fastapi import HTTPException
 
+from action_platform.core.exception import ActionPlatformError
+from action_platform.core.flow.git import UnsafeUrl, check_remote_url
 from action_platform.core.flow.repository import Repository, SyncError, _fetch_problem
 from action_platform.core.scaffold.install import InstallError, install
 from action_platform.settings import settings
 from app.repositories.registry import (
     Entry,
+    MissingManifest,
     Registry,
     UnsafeWorkspace,
     check_workspace,
+    name_from_url,
 )
 
 
@@ -55,6 +59,59 @@ class Workspaces:
         self.registry = registry
         self.ttl = settings.WORKSPACE_TTL if ttl is None else ttl
         self.clones = CLONES
+
+    def adopt(
+        self, url: str, name: str | None = None, require_manifest: bool = True
+    ) -> Entry:
+        """Bring a repository in: validate the url, clone it into a workspace, check the clone, register the entry. An already registered url answers its entry."""
+        url = url.strip()
+
+        if not url or any(c.isspace() for c in url):
+            raise ActionPlatformError(f"not a git url: {url}")
+
+        try:
+            check_remote_url(url)
+        except UnsafeUrl as e:
+            raise ActionPlatformError(str(e)) from e
+
+        known = self.registry.by_url(url)
+
+        if known is not None:
+            return known
+
+        id = self.registry.new_id()
+        path = self.registry.workspaces / id
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            repo = Repository.clone(url, path)
+        except subprocess.CalledProcessError as e:
+            raise ActionPlatformError(
+                f"clone failed: {(e.stderr or '').strip() or url}"
+            ) from e
+
+        try:
+            check_workspace(path)
+        except UnsafeWorkspace:
+            shutil.rmtree(path, ignore_errors=True)
+            raise
+
+        if require_manifest and not (path / settings.CONFIG_FILE).exists():
+            shutil.rmtree(path, ignore_errors=True)
+
+            raise MissingManifest(
+                f"{settings.CONFIG_FILE} not found in {url} — install the platform on it first"
+            )
+
+        return self.registry.register(
+            Entry(
+                id=id,
+                name=name or name_from_url(url),
+                url=url,
+                path=str(path),
+                default_branch=repo.branch,
+            )
+        )
 
     def checkout(self, id: str, fresh: bool = False) -> tuple[Entry, Path]:
         """The app's clone on the branch it is checked out on, level with the remote, drafts applied."""

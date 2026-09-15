@@ -10,6 +10,7 @@ from app.schemas import SourceCredentials
 from app.services.activity import ActivityService
 from app.services.directory import Credentials, DirectoryError
 from app.services.organization_import.step import ImportStep
+from app.services.workspace.checkout import Workspaces
 
 log = logging.getLogger("action_platform.import")
 
@@ -106,7 +107,7 @@ class RepositoryImporter(ImportStep):
         into: Optional[Project],
     ) -> Project:
         with auth.git_auth(credentials):
-            entry = self.ctx.registry.add(
+            entry = Workspaces(self.ctx.registry).adopt(
                 repo["url"], repo["name"], require_manifest=False
             )
 
