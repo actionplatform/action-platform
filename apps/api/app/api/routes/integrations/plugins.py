@@ -2,9 +2,9 @@
 
 from fastapi import APIRouter
 
-from app.schemas.catalog import Plugins
+from app.schemas.integrations import Plugins
 from app.schemas.common import Ok
-from app.schemas.plugins import PluginOptions, PluginQueued
+from app.schemas.integrations import PluginOptions, PluginQueued
 from app.api.dependencies import CallerDep, OrgDep, PluginsDep, allowed, platform_admin
 
 router = APIRouter(prefix="/api/v1/plugins", tags=["plugins"])

@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Request
 
-from app.schemas.actions import (
+from app.schemas.projects import (
     AddAppRequest,
     InitRequest,
     InitResult,

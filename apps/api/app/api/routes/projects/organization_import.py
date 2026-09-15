@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 
 from app.api.dependencies import CallerDep, ImportsDep, OrgDep, allowed
-from app.schemas import imports as schemas
+from app.schemas import organization_import as schemas
 
 router = APIRouter(prefix="/api/v1/import", tags=["import"])
 

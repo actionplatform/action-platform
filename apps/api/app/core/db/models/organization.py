@@ -112,3 +112,46 @@ class OrganizationSetting(Base):
         DateTime, nullable=False, default=now, server_default=func.now()
     )
     organization: Mapped[Organization] = relationship(foreign_keys=[organization_id])
+
+
+class ApiToken(Base):
+    __tablename__ = "api_token"
+
+    id: Mapped[str] = mapped_column(KEY, primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        KEY, ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+    organization_id: Mapped[Optional[str]] = mapped_column(
+        KEY, ForeignKey("organization.id", ondelete="CASCADE")
+    )
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    scope: Mapped[str] = mapped_column(SHORT, nullable=False)
+    project_id: Mapped[Optional[str]] = mapped_column(KEY)
+    app_id: Mapped[Optional[str]] = mapped_column(KEY)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    last_used_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    user: Mapped[User] = relationship(foreign_keys=[user_id])
+    organization: Mapped[Optional[Organization]] = relationship(
+        foreign_keys=[organization_id]
+    )
+
+
+class ApiTokenClient(Base):
+    __tablename__ = "api_token_client"
+
+    id: Mapped[str] = mapped_column(KEY, primary_key=True)
+    token_id: Mapped[str] = mapped_column(
+        KEY, ForeignKey("api_token.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(SHORT, nullable=False)
+    first_seen_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, server_default=func.now()
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, server_default=func.now()
+    )
+    token: Mapped[ApiToken] = relationship(foreign_keys=[token_id])

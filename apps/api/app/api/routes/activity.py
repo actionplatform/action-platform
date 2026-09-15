@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter
 
-from app.schemas import actions as schemas
+from app.schemas import activity as schemas
 from app.api.dependencies import (
     FlowDep,
 )

@@ -1,6 +1,7 @@
 """Shapes many routes share."""
 
 from pydantic import BaseModel
+from typing import Optional
 
 
 class Named(BaseModel):
@@ -27,3 +28,22 @@ class AppRef(BaseModel):
     id: str
     name: str
     registry_id: str
+
+
+class SourceCredentials(BaseModel):
+    """A code-host token for this request and the identity commits are made with. Either half may be absent: identity alone still names the author."""
+
+    kind: Optional[str] = None
+    token: Optional[str] = None
+    username: Optional[str] = None
+    base_url: Optional[str] = None
+    author_name: Optional[str] = None
+    author_email: Optional[str] = None
+    owner: Optional[str] = None
+
+
+class SourceSpec(BaseModel):
+    name: str
+    url: str
+    ref: str = "main"
+    credentials: Optional[SourceCredentials] = None

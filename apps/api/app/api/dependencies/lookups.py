@@ -7,7 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from app.core.db.models import Organization, PullRequest, Release
-from app.schemas import hosts, projects
+from app.schemas import integrations as hosts
+from app.schemas import projects
 from app.services.access.caller import Caller
 from app.services.directory import DirectoryWrites
 

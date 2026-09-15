@@ -1,18 +1,13 @@
-"""Code hosts connected to an organization, the OAuth apps that connect them, custom template sources."""
+"""Integrations: code hosts, OAuth apps, template sources, plugin options, signing keys."""
 
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import (
-    DateTime,
-    ForeignKey,
-    Text,
-    func,
-)
+from sqlalchemy import DateTime, ForeignKey, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db.models.base import KEY, SHORT, Base, now
-from app.core.db.models.organizations import Organization
+from app.core.db.models.organization import Organization
 
 
 class SourceHost(Base):
@@ -70,3 +65,26 @@ class TemplateSource(Base):
         DateTime, nullable=False, default=now, server_default=func.now()
     )
     organization: Mapped[Organization] = relationship(foreign_keys=[organization_id])
+
+
+class PluginOption(Base):
+    __tablename__ = "plugin_option"
+
+    organization_id: Mapped[str] = mapped_column(
+        KEY, primary_key=True, default="", server_default=""
+    )
+    plugin: Mapped[str] = mapped_column(SHORT, primary_key=True)
+    key: Mapped[str] = mapped_column(SHORT, primary_key=True)
+    value: Mapped[str] = mapped_column(Text, nullable=False, default="null")
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, onupdate=now
+    )
+
+
+class SigningKey(Base):
+    __tablename__ = "signing_key"
+
+    kid: Mapped[str] = mapped_column(SHORT, primary_key=True)
+    private_sealed: Mapped[str] = mapped_column(Text, nullable=False)
+    public_pem: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now)

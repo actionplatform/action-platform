@@ -5,8 +5,67 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from app.schemas.actions import InitRequest, InstallSpec
 from app.schemas.common import Named
+from app.schemas.common import SourceCredentials, SourceSpec
+
+
+class InstallSpec(BaseModel):
+    type: str = "web"
+    language: Optional[str] = None
+    ci: Optional[str] = None
+
+
+class AddAppRequest(BaseModel):
+    url: str
+    name: Optional[str] = None
+    install: Optional[InstallSpec] = None
+    credentials: Optional[SourceCredentials] = None
+
+
+class SyncRequest(BaseModel):
+    credentials: Optional[SourceCredentials] = None
+    reset: bool = False
+
+
+class InitRequest(BaseModel):
+    type: str
+    stack: Optional[str] = None
+    template: Optional[str] = None
+    name: str
+    description: str = ""
+    package_name: Optional[str] = None
+    github_owner: Optional[str] = None
+    ci: Optional[str] = None
+    cloud: Optional[str] = None
+    git_init: bool = True
+    push: bool = True
+    private: bool = False
+    source: Optional[SourceSpec] = None
+    credentials: Optional[SourceCredentials] = None
+
+
+class InitResult(BaseModel):
+    id: str
+    name: str
+    path: str
+    url: str
+    template: str
+    cloud: Optional[str] = None
+    pushed: bool
+
+
+class PushRequest(BaseModel):
+    private: bool = False
+    credentials: Optional[SourceCredentials] = None
+
+
+class PushResult(BaseModel):
+    id: str
+    url: str
+
+
+class Installed(BaseModel):
+    installed: list[str]
 
 
 class AppInProject(BaseModel):
