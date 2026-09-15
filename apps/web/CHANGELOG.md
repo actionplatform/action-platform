@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.18.10 — 2026-09-15
+
+### Features
+- **web:** Organization (teams, members, sessions) and Integrations (code hosts, cloud) as their own sections; features/organization, integrations, account; old paths redirect
+
+### Refactoring
+- **web:** lib/api/<context>.ts — v1 assembled from organization, projects, integrations and jobs
+- **web:** features/projects gets the list and the apps of a project; features/templates
+- **web:** server-only load stays out of the feature index; pages import it directly
+- **web:** features/{projects,activity,releases,deployments,configuration} — pages stay in app/, code moves out; ESLint boundaries
+
 ## v0.18.9 — 2026-09-15
 
 ### Bug Fixes
