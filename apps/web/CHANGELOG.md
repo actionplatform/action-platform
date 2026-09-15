@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.12 — 2026-09-15
+
+### Bug Fixes
+- **web:** key menu items by position — labels may repeat
+
 ## v0.18.11 — 2026-09-15
 
 ### Refactoring
