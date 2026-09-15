@@ -17,6 +17,10 @@ export const INTEGRATIONS_PAGES: SubPage[] = [
 
 export const SETTINGS_PAGES: SubPage[] = [{ href: "/settings", label: "General", icon: Building2, exact: true }];
 
+export function subNavPages(pages: SubPage[]): { href: string; label: string; exact?: boolean }[] {
+  return pages.map(({ href, label, exact }) => ({ href, label, exact }));
+}
+
 export function pageActive(pathname: string, href: string, exact?: boolean): boolean {
   return exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 }
