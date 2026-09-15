@@ -2,7 +2,6 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Callable, Optional
 
-from fastapi import HTTPException
 
 from action_platform.core.action_platform import ActionPlatform
 from action_platform.core.flow import git
@@ -13,6 +12,7 @@ from app.core.shared import git_auth as auth
 from app.repositories.registry import Registry
 from app.schemas import DeployRequest, ReleaseRequest
 from app.services.workspace import Workspaces
+from app.core.errors import Conflict, Invalid
 
 
 class LifecycleService:
@@ -66,7 +66,7 @@ class LifecycleService:
         try:
             git.check_ref(branch)
         except git.BadRef as e:
-            raise HTTPException(400, str(e)) from e
+            raise Invalid(str(e)) from e
 
         repo = Repository(root)
 
@@ -74,8 +74,7 @@ class LifecycleService:
             return
 
         if not repo.is_clean():
-            raise HTTPException(
-                409,
+            raise Conflict(
                 "working tree is dirty — commit or discard changes before releasing from another branch",
             )
 
@@ -84,7 +83,7 @@ class LifecycleService:
         try:
             repo.checkout(branch)
         except Exception as e:
-            raise HTTPException(400, f"cannot check out {branch}: {e}") from e
+            raise Invalid(f"cannot check out {branch}: {e}") from e
 
         repo.run(["pull", "--ff-only", "--end-of-options", "origin", branch])
 

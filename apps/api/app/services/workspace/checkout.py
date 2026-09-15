@@ -10,11 +10,11 @@ import threading
 import time
 from pathlib import Path
 
-from fastapi import HTTPException
 
 from action_platform.core.flow.repository import Repository, SyncError, _fetch_problem
 from action_platform.core.scaffold.install import InstallError, install
 from action_platform.settings import settings
+from app.core.errors import Gone, Upstream
 from app.repositories.registry import (
     Entry,
     Registry,
@@ -96,7 +96,7 @@ class Workspaces:
 
     def _clone(self, entry: Entry, root: Path) -> None:
         if not entry.url:
-            raise HTTPException(410, f"{entry.name} has no remote to clone from")
+            raise Gone(f"{entry.name} has no remote to clone from")
 
         root.parent.mkdir(parents=True, exist_ok=True)
 
@@ -105,8 +105,7 @@ class Workspaces:
         except subprocess.CalledProcessError as e:
             shutil.rmtree(root, ignore_errors=True)
 
-            raise HTTPException(
-                502,
+            raise Upstream(
                 f"clone of {entry.name} failed: {(e.stderr or '').strip() or entry.url}",
             ) from e
 

@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import tomllib
-from fastapi import HTTPException
 
 from action_platform.core.wiring import wired
 from action_platform.core.flow import gitflow
@@ -15,6 +14,7 @@ from app.repositories.registry import Registry
 from app.schemas import CommitRequest, SourceSpec
 from app.services.catalog import TemplateRepos
 from app.services.workspace import Workspaces
+from app.core.errors import Conflict, Invalid
 
 
 def _same(a: str, b: str) -> bool:
@@ -48,7 +48,7 @@ class ConfigurationService:
         try:
             data = tomllib.loads(content)
         except tomllib.TOMLDecodeError as e:
-            raise HTTPException(400, f"invalid TOML: {e}") from e
+            raise Invalid(f"invalid TOML: {e}") from e
 
         self.registry.configs.set(id, data)
 
@@ -70,7 +70,7 @@ class ConfigurationService:
         try:
             wired.scaffolder().apply_cloud(repo, matrix.cloud(target), root)
         except TemplateError as e:
-            raise HTTPException(400, str(e)) from e
+            raise Invalid(str(e)) from e
 
         self._remember(id, root)
         self._drafted(id, root)
@@ -96,7 +96,7 @@ class ConfigurationService:
         service = next((s for s in matrix.services if s.name == name), None)
 
         if service is None:
-            raise HTTPException(400, f"unknown service: {name}")
+            raise Invalid(f"unknown service: {name}")
 
         root = self._root(id)
         wired.scaffolder().apply_service(repo, service, root, provider=provider)
@@ -133,12 +133,12 @@ class ConfigurationService:
         repo = Repository(root)
 
         if repo.is_clean():
-            raise HTTPException(409, "nothing to commit")
+            raise Conflict("nothing to commit")
 
         problem = gitflow.check_commit(body.message)
 
         if problem:
-            raise HTTPException(400, problem)
+            raise Invalid(problem)
 
         with auth.git_auth(body.credentials):
             if body.branch:
@@ -148,7 +148,7 @@ class ConfigurationService:
                 problem = gitflow.check_protected(branch, body.message)
 
                 if problem:
-                    raise HTTPException(400, problem)
+                    raise Invalid(problem)
 
             repo.add_all()
             repo.commit(body.message)
@@ -182,6 +182,6 @@ class ConfigurationService:
                     spec.kind, spec.code, spec.slug, push=False
                 )
             except BranchError as e:
-                raise HTTPException(400, str(e)) from e
+                raise Invalid(str(e)) from e
 
         return branch.name

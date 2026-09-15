@@ -63,6 +63,8 @@ apps/api/app/  (package `app`, depends on the library, never the other way round
 
 ```
 
+Rule of the layers: `routers → services → repositories/integrations`. A service never imports FastAPI: it refuses with a domain error from `core/errors.py` (`Invalid`, `Forbidden`, `NotFound`, `Conflict`, `Gone`, `NeedsInstall`, `Upstream` — every one an `ActionPlatformError` with a `status`), and one exception handler in `api/app.py` (and the gate) turns it into the HTTP answer. The worker runs the same services and sees plain exceptions.
+
 ### Objects in the core
 
 Every operation starts from a `Repository` — one clone, every git command as a method, credentials and identity taken from the request context — and layers on top of it:

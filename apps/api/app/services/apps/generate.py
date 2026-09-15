@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import shutil
 
-from fastapi import HTTPException
 
 from action_platform.core.wiring import wired
 from action_platform.core.manifest import write_source_host
@@ -14,6 +13,7 @@ from app.repositories.registry import Entry
 from app.schemas import InitRequest, PushRequest
 from app.services.apps.base import AppsBase
 from app.services.catalog import TemplateRepos
+from app.core.errors import Conflict, Invalid
 
 
 class AppScaffolding(AppsBase):
@@ -24,8 +24,7 @@ class AppScaffolding(AppsBase):
         creds = body.credentials
 
         if not (creds and creds.kind and creds.token):
-            raise HTTPException(
-                400,
+            raise Invalid(
                 "creating an app on the platform needs a source host to push it to: attach one, or generate it locally with the CLI",
             )
 
@@ -88,7 +87,6 @@ class AppScaffolding(AppsBase):
     def push(self, id: str, body: PushRequest) -> dict:
         entry = self.registry.get(id)
 
-        raise HTTPException(
-            409,
+        raise Conflict(
             f"{entry.name} was pushed to {entry.url} when it was created; apps on the platform always have a remote",
         )

@@ -3,13 +3,13 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from fastapi import HTTPException
 
 from action_platform.core.access import Grant, parse_scopes
 from app.core.auth.service import AuthService
 from app.core.db.models import ApiToken, App, Organization, Project
 from app.services.access.caller import Caller
 from app.services.directory import DirectoryService
+from app.core.errors import Forbidden, Invalid
 
 
 @dataclass(frozen=True)
@@ -37,13 +37,13 @@ class TokenMinter:
 
     def mint(self, caller: Caller, scope: str, name: Optional[str]) -> MintedToken:
         if caller.scope is not None or not caller.session_token:
-            raise HTTPException(403, "a token cannot mint another token; sign in again")
+            raise Forbidden("a token cannot mint another token; sign in again")
 
         grant = Grant.parse(scope)
 
         if not grant.scope:
-            raise HTTPException(
-                400, "scope must include at least one of read, write, release, admin"
+            raise Invalid(
+                "scope must include at least one of read, write, release, admin"
             )
 
         session = self.auth.require_session(caller.session_token)
