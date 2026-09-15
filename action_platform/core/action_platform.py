@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable
 
 from action_platform.core.wiring import wired
 from action_platform.core.config import Config
@@ -27,13 +28,20 @@ class ActionPlatform:
     Args:
         config (Config): configuration with injected providers.
         repo_root (Path): repository root. Defaults to cwd.
+        identity: signs a short-lived OIDC token for an audience — the hosted
+            platform's issuer for a deploy it runs, the platform the CLI is
+            logged in to otherwise; None on a plain machine.
     """
 
     def __init__(
-        self, config: Config | None = None, repo_root: Path | None = None
+        self,
+        config: Config | None = None,
+        repo_root: Path | None = None,
+        identity: Callable[[str], str] | None = None,
     ) -> None:
         self.config = config or Config()
         self.repo = Repository(repo_root or Path.cwd())
+        self.identity = identity
 
     @property
     def repo_root(self) -> Path:
@@ -45,7 +53,7 @@ class ActionPlatform:
 
     @property
     def deployer(self) -> Deployer:
-        return wired.deployer(self.config, self.repo)
+        return wired.deployer(self.config, self.repo, identity=self.identity)
 
     @property
     def flow(self) -> GitFlow:

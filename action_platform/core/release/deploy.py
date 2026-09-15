@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable
 
 from action_platform.abc.deploy_target import DeployTarget
 from action_platform.core.config import Config
@@ -15,9 +16,15 @@ from action_platform.logging import logger
 
 @slot("deployer")
 class Deployer:
-    def __init__(self, config: Config, repo: Repository | Path) -> None:
+    def __init__(
+        self,
+        config: Config,
+        repo: Repository | Path,
+        identity: Callable[[str], str] | None = None,
+    ) -> None:
         self.config = config
         self.repo = repo if isinstance(repo, Repository) else Repository(repo)
+        self.identity = identity
 
     def targets(self, name: str | None = None) -> list[DeployTarget]:
         targets = (
@@ -39,6 +46,7 @@ class Deployer:
             dry_run=dry_run, stage=stage
         )
         ctx.next_version = ctx.current_version
+        ctx.identity = self.identity
 
         return ctx
 

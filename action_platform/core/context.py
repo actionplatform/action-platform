@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Callable, Optional
 
 
 @dataclass
@@ -63,3 +64,8 @@ class Context:
     env: dict[str, str] = field(default_factory=dict)
     dry_run: bool = False
     stage: str = "dev"
+    identity: Optional[Callable[[str], str]] = None
+
+    def identity_token(self, audience: str) -> Optional[str]:
+        """A short-lived OIDC token the platform signs for this deploy, for `audience` (`sts.amazonaws.com`…); None when nothing can issue one — a plain machine without a login."""
+        return self.identity(audience) if self.identity else None
