@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.20.8 — 2026-09-15
+
+### Features
+- **api:** services read the app's configuration from the platform; manifest edits save there and export writes the mirror
+- **api:** app_config table and ConfigStore — the platform keeps the configuration, seeded from the clone's platform.toml
+
 ## v0.20.7 — 2026-09-15
 
 ### Features
