@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
 
-from app.core.access.caller import Caller
+from app.services.access.caller import Caller
 from app.repositories.source import get_registry
 from app.repositories.registry import Registry
 from app.services.organization_import import OrganizationImport, client

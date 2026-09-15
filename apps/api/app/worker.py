@@ -7,7 +7,7 @@ import time
 import uuid
 from typing import Any, Callable, Optional
 
-from app.core.access.enrich import enrich
+from app.services.access.enrich import enrich
 from app.core.access.rules import rule_for
 from app.core.auth.crypto import Sealer
 from app.core.auth.secrets import Secrets

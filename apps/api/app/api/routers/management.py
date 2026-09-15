@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
-from app.core.access.caller import Caller
-from app.core.access.enrich import credentials_for
+from app.services.access.caller import Caller
+from app.services.access.enrich import credentials_for
 from app.api.deps import get_app_service, get_db
 from app.core.db.models import Organization, PullRequest, Release
 from app.schemas import SourceCredentials
