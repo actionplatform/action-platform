@@ -29,16 +29,11 @@ State lives in `~/.action-platform/plugins.json` (`AP_HOME` moves it): which plu
 
 The git hooks the CLI installs ask the core (`action-platform gitflow-check`) when the CLI is on `PATH`, so a plugin that changed the git-flow rules is obeyed at commit time too; without the CLI they fall back to the shell rules in `ci-scripts`. CI on the server keeps the shell rules: the repository's minimum, whatever a developer installed locally.
 
-## On the hosted platform — the Jenkins model
+## On the hosted platform
 
-With `AP_PLUGINS_DIR` pointing at a volume the API and the worker share (`deploy/dokploy/docker-compose.yml` mounts `plugins:/data/plugins`), the **Plugins** page does what the CLI does on a machine, for whoever has `org.manage`:
+The API image bundles the plugins the platform runs: `apx-aws-lambda` is a dependency of `apps/api`, discovered through its entry point like any other, enabled unless `plugins.json` says otherwise. Bundling — not a marketplace — is the deliberate choice for the hosted platform: an image is reviewed and versioned as a whole, and API and worker always run the same plugin code.
 
-- **Install** a plugin the index marks `verified` — a job runs `pip install --target` into the volume, then the new plugin joins the running API and worker without a restart: its deploy targets, overlays, strategies, hooks and replaced slots are live at once. Unverified plugins cannot be installed here.
-- **Enable / Disable** — at once, no restart.
-- **Update** (a newer `latest`) and **Remove** — the files change on disk, but the code already loaded stays until a **Restart**: the page shows *Restart required* and a button that makes the API and the worker exit; the container's restart policy brings them back with the change. Exactly what Jenkins does with plugin upgrades.
-- API and worker are separate processes; each rediscovers plugins when `plugins.json` in the volume changes.
-
-No sandbox: an installed plugin runs inside the API and the worker with their permissions — the same trust as a Jenkins plugin, which is why only verified ones install.
+The runtime still supports installing into a volume (`AP_PLUGINS_DIR`, `/api/v1/plugins/{slug}/install|remove|enable|disable`, `restart`) for automation and self-hosters who want it; the web no longer exposes it.
 
 ## Options
 

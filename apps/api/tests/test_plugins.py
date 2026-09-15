@@ -146,8 +146,8 @@ class PluginsApiTest(GateCase):
 
         self.assertEqual(PluginState.load().plugins, {})
 
-    def test_switching_needs_org_manage(self):
-        res = self.client.post("/api/v1/plugins/aws-lambda/enable", headers=self.h())
+    def test_switching_an_unknown_plugin_is_a_readable_error(self):
+        res = self.client.post("/api/v1/plugins/nope/enable", headers=self.h())
 
         self.assertEqual(res.status_code, 400)
         self.assertIn("no plugin", res.json()["detail"])
