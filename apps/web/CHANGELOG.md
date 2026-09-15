@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.15.2 — 2026-09-15
+
+### Bug Fixes
+- **web:** forms post, so a native submit never puts a password in the URL
+- **web:** allow 'unsafe-eval' in the CSP only in development so react-refresh can hydrate
+
 ## v0.15.1 — 2026-09-15
 
 ### Chores
