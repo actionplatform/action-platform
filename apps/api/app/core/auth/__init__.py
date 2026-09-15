@@ -1,16 +1,7 @@
-"""Accounts, sessions and tokens: the service, the crypto behind it, and the errors it raises."""
+"""The crypto behind accounts, sessions and tokens: sealing, secrets, cookies, passwords, JWT. The service lives in `services/auth`."""
 
 from app.core.auth.cookies import SessionCookie
 from app.core.auth.crypto import Sealer
-from app.core.auth.errors import AuthError, Unauthenticated
 from app.core.auth.secrets import Secrets
-from app.core.auth.service import AuthService
 
-__all__ = [
-    "AuthError",
-    "AuthService",
-    "Sealer",
-    "Secrets",
-    "SessionCookie",
-    "Unauthenticated",
-]
+__all__ = ["Sealer", "Secrets", "SessionCookie"]

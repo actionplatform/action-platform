@@ -1,7 +1,7 @@
 """Accounts, browser sessions, organizations, the device flow and scoped API tokens, on one database session."""
 
-from app.core.auth.accounts import Accounts
-from app.core.auth.base import (
+from app.services.auth.accounts import Accounts
+from app.services.auth.base import (
     ADMIN_TOKEN_TTL,
     AUDIENCE,
     DEVICE_INTERVAL,
@@ -15,10 +15,10 @@ from app.core.auth.base import (
     new_id,
     now,
 )
-from app.core.auth.device import Device
-from app.core.auth.organizations import Organizations
-from app.core.auth.sessions import Sessions
-from app.core.auth.tokens import Tokens
+from app.services.auth.device import Device
+from app.services.auth.organizations import Organizations
+from app.services.auth.sessions import Sessions
+from app.services.auth.tokens import Tokens
 
 
 class AuthService(Accounts, Sessions, Organizations, Device, Tokens):

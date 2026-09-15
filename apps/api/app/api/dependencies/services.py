@@ -5,16 +5,16 @@ from typing import Iterator
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session as DbSession
 
-from app.core.auth.service import AuthService
+from app.services.auth.service import AuthService
 from app.repositories.config_store import ConfigStore
 from app.repositories.registry import Registry
 from app.repositories.source import get_registry
 from app.services.projects.apps import AppService
 from app.services.directory import DirectoryService, DirectoryWrites
-from app.services.hosts import OAuthState
+from app.services.integrations.hosts import OAuthState
 from app.services.jobs import JobQueue
 from app.services.projects.organization_import import ImportGateway
-from app.services.plugins import PluginManager
+from app.services.integrations.plugins import PluginManager
 from app.services.projects.service import ProjectService
 from app.services.configuration.commit import CommitService
 from app.services.configuration.service import ConfigurationService

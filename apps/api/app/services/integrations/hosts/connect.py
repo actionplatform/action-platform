@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 
 from action_platform.core.exception import ActionPlatformError
 from app.core.db.models import Organization
-from app.services.hosts.registry import PROVIDERS
+from app.services.integrations.hosts.registry import PROVIDERS
 
 if TYPE_CHECKING:
     from app.services.directory import DirectoryWrites

@@ -10,7 +10,7 @@ from action_platform.plugins import registry
 from action_platform.plugins.state import PluginState
 from action_platform.settings import settings
 from app.services.templates import published
-from app.services.plugins import manager
+from app.services.integrations.plugins import manager
 from tests.test_access import GateCase
 
 INDEX = {
@@ -77,7 +77,7 @@ class PluginsApiTest(GateCase):
         )
 
     def test_options_belong_to_the_organization_over_platform_defaults(self):
-        from app.services.plugins.options import DbOptions
+        from app.services.integrations.plugins.options import DbOptions
 
         db = self.app.state.db
         DbOptions(db, "aws-lambda").set("proxy_url", "https://default.test")

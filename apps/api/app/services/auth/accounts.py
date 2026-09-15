@@ -4,14 +4,14 @@ from typing import Optional
 
 from sqlalchemy import func, select
 
-from app.core.auth.base import (
+from app.services.auth.base import (
     PASSWORD_MIN,
     PROVIDER,
     AuthBase,
     new_id,
     now,
 )
-from app.core.auth.errors import (
+from app.services.auth.errors import (
     AuthError,
     Forbidden,
 )

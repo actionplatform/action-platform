@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 from app.core.access.rules import DIRECTORY, WORKSPACE_ROOTS
-from app.core.auth.service import AuthService
+from app.services.auth.service import AuthService
 from app.core.errors import Refused
 from app.services.access.caller import Caller, resolve_caller
 from app.services.access.dispatch import Dispatcher

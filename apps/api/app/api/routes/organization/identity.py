@@ -17,7 +17,7 @@ from app.api.dependencies import (
 from app.schemas import common
 from app.schemas import organizations as schemas
 
-from app.services.tokens import TokenMinter
+from app.services.organization.sessions import TokenMinter
 
 router = APIRouter(prefix="/api/v1", tags=["identity"])
 

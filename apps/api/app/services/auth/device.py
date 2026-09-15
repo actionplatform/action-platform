@@ -11,7 +11,7 @@ from action_platform.core.access import (
     grantable_scopes,
     parse_scopes,
 )
-from app.core.auth.base import (
+from app.services.auth.base import (
     DEVICE_INTERVAL,
     DEVICE_TTL,
     USER_CODE_ALPHABET,
@@ -19,7 +19,7 @@ from app.core.auth.base import (
     new_id,
     now,
 )
-from app.core.auth.errors import (
+from app.services.auth.errors import (
     AuthError,
     Forbidden,
 )

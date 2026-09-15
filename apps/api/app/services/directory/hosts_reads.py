@@ -21,7 +21,7 @@ from app.services.directory.base import (
     REFRESH_MARGIN,
     DirectoryBase,
 )
-from app.services.hosts import PROVIDERS
+from app.services.integrations.hosts import PROVIDERS
 
 
 class HostsReads(DirectoryBase):

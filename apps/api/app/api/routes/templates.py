@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 
 from app.schemas import catalog as schemas
-from app.services.plugins.catalog import PluginsCatalog
+from app.services.integrations.plugins.catalog import PluginsCatalog
 from app.services.templates import CatalogService
 
 router = APIRouter(prefix="/api", tags=["catalog"])

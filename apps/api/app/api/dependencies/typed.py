@@ -24,14 +24,14 @@ from app.api.dependencies.services import (
     get_state_signer,
     get_writes,
 )
-from app.core.auth.service import AuthService
+from app.services.auth.service import AuthService
 from app.core.db.models import Organization
 from app.services.access.caller import Caller
 from app.services.projects.apps import AppService
 from app.services.directory import DirectoryService, DirectoryWrites
-from app.services.hosts import OAuthState
+from app.services.integrations.hosts import OAuthState
 from app.services.jobs import JobQueue
-from app.services.plugins import PluginManager
+from app.services.integrations.plugins import PluginManager
 from app.services.projects.organization_import import ImportGateway
 from app.services.projects.service import ProjectService
 from app.services.configuration.commit import CommitService

@@ -7,7 +7,7 @@ from action_platform.settings import settings
 from action_platform.core.access import PERMISSIONS, can, parse_scopes, scope_allows
 from app.core.auth.cookies import SessionCookie
 from app.core.auth.jwt import looks_like_jwt
-from app.core.auth.service import AuthService
+from app.services.auth.service import AuthService
 from app.core.db.models import Organization, User
 from app.services.directory import DirectoryService
 

@@ -9,7 +9,7 @@ from app.api.dependencies import (
     allowed,
 )
 from app.schemas import hosts as schemas
-from app.services.hosts import PROVIDERS
+from app.services.integrations.hosts import PROVIDERS
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 

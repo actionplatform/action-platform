@@ -12,7 +12,7 @@ from app.core.db.models import App
 from app.core.shared.urls import GitUrl
 from app.repositories.registry import Registry
 from app.schemas import DeployRequest, PushRequest, ReleaseRequest, SyncRequest
-from app.services import plugins
+from app.services.integrations import plugins
 from app.services.activity import ActivityService
 from app.services.projects.apps import AppService
 from app.services.deployments import DeployEnv

@@ -5,7 +5,7 @@ from typing import Optional
 
 
 from action_platform.core.access import Grant, parse_scopes
-from app.core.auth.service import AuthService
+from app.services.auth.service import AuthService
 from app.core.db.models import ApiToken, App, Organization, Project
 from app.services.access.caller import Caller
 from app.services.directory import DirectoryService

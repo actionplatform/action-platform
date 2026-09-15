@@ -10,7 +10,7 @@ from app.api.dependencies import (
     get_state_signer,
 )
 from app.schemas import hosts as schemas
-from app.services.hosts import PROVIDERS, HostConnector
+from app.services.integrations.hosts import PROVIDERS, HostConnector
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
