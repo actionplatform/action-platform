@@ -1,5 +1,39 @@
 # Changelog
 
+## v0.20.9 — 2026-09-15
+
+### Features
+- **api:** domain errors with a status — ServiceError family — mapped at the API boundary
+- **api:** migrations move to the deploy — AP_DATABASE_AUTO_MIGRATE, advisory lock, readiness on /api/version
+- **api:** platform admins (AP_PLATFORM_ADMINS) — the role that changes the platform itself
+
+### Bug Fixes
+- **api:** plugin options belong to an organization over platform defaults; plugin lifecycle needs a platform admin
+
+### Performance
+- **api:** request bodies capped at 2 MB; app listings filtered in the service instead of re-parsing the response
+- **api:** the gate's database work runs off the event loop and the host import becomes a worker job
+
+### Refactoring
+- **api:** routers import schemas from the module that owns them
+- **api:** hosts split into reads and writes; catalog sources apart from the service
+- **api:** GitHubAppManifestRequest and AppConfigBody — one name per meaning
+- **api:** the CLI entry points move out of core — core imports no services
+- **api:** PluginsCatalog leaves the templates catalog
+- **api:** the gate keeps ASGI; Planner, Authorizer and Dispatcher decide the call
+- **api:** Worker claims and dispatches; JobHandlers, JobContext, DeployEnv and AppIdentity own the rest; the registry is injected
+- **api:** CommitService — committing, branching and the pull request leave ConfigurationService
+- **api:** ConfigStore injected into the services that read the app's configuration
+- **api:** Registry keeps rows; Workspaces.adopt validates, clones and registers
+- **api:** services raise domain errors, never HTTPException
+
+### Chores
+- merge master
+- merge master
+- merge master
+- merge master
+- merge master
+
 ## v0.20.8 — 2026-09-15
 
 ### Features
