@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Add a plugin to the index
+    url: https://github.com/actionplatform/plugins-index
+    about: A finished plugin is a pull request there with plugins/<slug>.json.
+  - name: Plugin template
+    url: https://github.com/actionplatform/action-platform-plugin
+    about: Start a plugin from the template repository.
