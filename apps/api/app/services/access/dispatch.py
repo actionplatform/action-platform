@@ -40,6 +40,8 @@ class Dispatcher:
             "organization_id": organization.id,
             "app_id": app.id,
             "user_id": caller.user.id,
+            "manages": caller.allows(organization.id, "org.manage")[0]
+            and not (caller.project_id or caller.app_id),
         }
 
     def async_job(
