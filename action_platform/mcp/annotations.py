@@ -5,10 +5,20 @@ from __future__ import annotations
 import functools
 from typing import Any, Callable
 
-from mcp.server.mcpserver.exceptions import ToolError
-from mcp.types import ToolAnnotations
-
 from action_platform.core.exception import ActionPlatformError
+
+try:
+    from mcp.server.mcpserver.exceptions import ToolError
+    from mcp.types import ToolAnnotations
+except ImportError:
+
+    class ToolAnnotations:
+        """Stands in when the mcp extra is absent — a plugin module can still import its hints; only serving needs the SDK."""
+
+        def __init__(self, **hints: Any) -> None:
+            self.__dict__.update(hints)
+
+    ToolError = ActionPlatformError
 
 READ_ONLY = ToolAnnotations(
     read_only_hint=True,
