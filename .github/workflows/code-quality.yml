@@ -41,6 +41,7 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run test
       - run: npm run build
         env:
           AP_API: http://127.0.0.1:7788

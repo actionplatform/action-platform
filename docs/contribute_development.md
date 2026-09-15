@@ -39,3 +39,7 @@ Git-flow and Conventional Commits, enforced by the hooks `action-platform instal
 ## Tests
 
 `tests/` mirrors the package: `tests/core/flow/test_branching.py` and `test_pullrequest.py` cover `action_platform/core/flow/workflow.py` (`GitFlow`), `tests/core/flow/test_git.py` covers the policies in `git.py`, `apps/api/tests/services/test_flow.py` covers `apps/api/services/workspace/flow.py`, and so on. Every module is a set of `unittest.TestCase` classes, one per behaviour group; pytest is only the runner. Shared builders live in `action_platform/testing/fixtures.py` (re-exported by `tests/support.py`) (`TempCase` with a temporary directory and an isolated environment, `git()`, `repo_with_origin()`, `platform_repo()`, `template_repo()`), `apps/api/tests/support.py` (`ApiCase`: a `TestClient` over a fresh API with a platform project reachable as `file://`) and `tests/mcp/support.py` (`McpCase`: a local server over a tiny templates index).
+
+## Web tests
+
+`cd apps/web && npm test` runs Vitest (jsdom, Testing Library): `*.test.ts(x)` next to what they test — `lib/safe-path`, `lib/result` (`failed()` never shows an unexpected error's text), `lib/time`, the release version helpers, the run-alert summary, and the app wizard hook (`useAppWizard`: navigation, derived fields, clouds per template). `npm run check` runs lint, typecheck, tests and the build, as CI does.
