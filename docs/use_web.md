@@ -39,11 +39,11 @@ The compose files run migrations in a one-shot `migrate` service the API and the
 
 ## Plugins
 
-The hosted platform ships with the plugins it runs — `apx-aws-lambda` is a dependency of the API image, so the `aws/lambda` deploy target, its overlay and tools are always there. The web has no plugin marketplace and nothing installs at runtime — a plugin joins the platform as a dependency of the image (see [plugins](use_plugins.md)). **Plugins** in the sidebar lists them: one card per plugin, with its version, and **Configure** when the plugin declares options (`Plugin.options` — see [writing a plugin](contribute_plugins.md)); the form is drawn from that declaration and the values land in `plugin_option` per organization (`org.manage`). A plugin that failed to load shows the error on its card.
+The hosted platform ships with the plugins it runs — `apx-aws-lambda` is a dependency of the API image, so the `aws/lambda` deploy target, its overlay and tools are always there. The web has no plugin marketplace and nothing installs at runtime — a plugin joins the platform as a dependency of the image (see [plugins](use_plugins.md)). **Plugins** in the sidebar lists them: one card per plugin, with its version, and, when the plugin declares options (`Plugin.options` — see [writing a plugin](contribute_plugins.md)), the form right on the card, drawn from that declaration and the values land in `plugin_option` per organization (`org.manage`). A plugin that failed to load shows the error on its card.
 
 ## AWS
 
-Plugins → **AWS Lambda** → **Configure** keeps the url of the deploy proxy installed in the organization's AWS account (`plugin_option` of `aws-lambda`, key `proxy_url`). `action-platform aws-lambda proxy health <url>` checks it from a terminal. Every deploy job carries it as `AP_AWS_LAMBDA_PROXY_URL` with `AP_APP` = `org/project/app`, so an app whose `platform.toml` says only `target = "aws/lambda"` deploys through the proxy; `proxy_url` in a repository overrides it. The worker passes every plugin option the same way (`AP_<SLUG>_<KEY>`), so other targets can be configured here too. See the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README for installing the proxy and registering apps.
+Plugins → **AWS Lambda** keeps the url of the deploy proxy installed in the organization's AWS account (`plugin_option` of `aws-lambda`, key `proxy_url`). `action-platform aws-lambda proxy health <url>` checks it from a terminal. Every deploy job carries it as `AP_AWS_LAMBDA_PROXY_URL` with `AP_APP` = `org/project/app`, so an app whose `platform.toml` says only `target = "aws/lambda"` deploys through the proxy; `proxy_url` in a repository overrides it. The worker passes every plugin option the same way (`AP_<SLUG>_<KEY>`), so other targets can be configured here too. See the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README for installing the proxy and registering apps.
 
 ## Git (GitHub, GitLab, Bitbucket)
 
@@ -139,7 +139,7 @@ The sidebar: **Projects**, **Templates**, **Organization** (Teams, Members, Sess
 
 ## Plugins (sidebar)
 
-One card per plugin the platform runs, **Configure** on the ones that declare options (the AWS deploy proxy url, see [AWS](#aws)).
+One card per plugin the platform runs, the settings form on the ones that declare options (the AWS deploy proxy url, see [AWS](#aws)).
 
 ## Settings
 
