@@ -30,6 +30,25 @@ gitflow_rules explains the rules when in doubt.
 release and deploy default to dry runs: show the user what would happen,
 then call again with dry_run=false. rollback changes what is live; ask first."""
 
+RULES = """
+Rules, whatever the transport:
+- Git-flow always: never commit on main, master or develop; every change
+  starts on a <kind>/<code>[-slug] branch from start_branch, and a pull
+  request is opened only after gitflow_audit passes and the user approved
+  the preview from propose_pull_request. Commit messages follow Conventional
+  Commits; one commit per concern.
+- The platform is reached only through these tools. Never call its HTTP
+  API, its web app or the code host's API directly (no curl, fetch, gh api
+  or hand-written requests), never read or forge its tokens and never run
+  git push, gh pr create or a deploy command to bypass a tool: the tools
+  carry the role, the scope and the audit trail; a direct call has none.
+- Before an action that leaves the machine — push, pull request, release,
+  deploy, rollback, removing an app or a project, deleting a repository —
+  show what will happen and wait for an explicit yes. Dry runs first.
+- When a tool refuses, report its reason and stop; do not look for another
+  way around the permission.
+"""
+
 REMOTE_INSTRUCTIONS = """Operate apps on a hosted Action Platform.
 
 These tools act on the platform the CLI is logged in to (`action-platform
@@ -64,15 +83,20 @@ def build(remote: Optional[str] = None) -> MCPServer:
     if remote is not None:
         client = Remote.from_credentials(remote or None)
         mcp = MCPServer(
-            "action-platform", instructions=REMOTE_INSTRUCTIONS, version=__version__
+            "action-platform",
+            instructions=REMOTE_INSTRUCTIONS + RULES,
+            version=__version__,
         )
         remote_tools.register(mcp, client)
         flow.register_rules(mcp)
+        prompts.register_remote(mcp)
         mcp.middleware.append(_name_the_client(client))
 
         return mcp
 
-    mcp = MCPServer("action-platform", instructions=INSTRUCTIONS, version=__version__)
+    mcp = MCPServer(
+        "action-platform", instructions=INSTRUCTIONS + RULES, version=__version__
+    )
 
     matrix.register(mcp)
     project.register(mcp)

@@ -52,6 +52,7 @@ def _request(
     token: Optional[str] = None,
     timeout: float = 60,
     client: Optional[str] = None,
+    organization: Optional[str] = None,
 ) -> Any:
     data = json.dumps(body).encode() if body is not None else None
     headers = {
@@ -67,6 +68,9 @@ def _request(
 
     if token:
         headers["authorization"] = f"Bearer {token}"
+
+    if organization:
+        headers["x-organization"] = organization
 
     req = urllib.request.Request(url, data=data, method=method, headers=headers)
 
@@ -118,7 +122,12 @@ class Remote:
         return cls(creds.server, creds.token)
 
     def _call(
-        self, method: str, path: str, body: Optional[dict] = None, **query: Any
+        self,
+        method: str,
+        path: str,
+        body: Optional[dict] = None,
+        organization: Optional[str] = None,
+        **query: Any,
     ) -> Any:
         q = {k: v for k, v in query.items() if v is not None}
         url = f"{self.server}/api/v1/{path.lstrip('/')}"
@@ -126,20 +135,36 @@ class Remote:
         if q:
             url += "?" + urllib.parse.urlencode(q)
 
-        return _request(method, url, body, self.token, client=self.client)
-
-    def apps(self, organization: Optional[str] = None) -> list[dict]:
-        return self._call("GET", "apps", organization=organization)
-
-    def add_app(
-        self, url: str, name: Optional[str] = None, install: Optional[dict] = None
-    ) -> dict:
-        return self._call(
-            "POST", "apps", {"url": url, "name": name, "install": install}
+        return _request(
+            method,
+            url,
+            body,
+            self.token,
+            client=self.client,
+            organization=organization,
         )
 
-    def remove_app(self, id: str) -> None:
-        self._call("DELETE", f"apps/{id}")
+    def apps(self, organization: Optional[str] = None) -> list[dict]:
+        return self._call("GET", "apps", organization, organization=organization)
+
+    def add_app(self, project: str, url: str, install: Optional[dict] = None) -> dict:
+        return self._call(
+            "POST", f"projects/{project}/apps", {"url": url, "install": install}
+        )
+
+    def remove_app(self, project: str, app: str, repository: bool = False) -> dict:
+        return self._call(
+            "DELETE",
+            f"projects/{project}/apps/{app}",
+            repository="true" if repository else None,
+        )
+
+    def delete_project(self, project: str, repositories: bool = False) -> dict:
+        return self._call(
+            "DELETE",
+            f"projects/{project}",
+            repositories="true" if repositories else None,
+        )
 
     def sync_app(self, id: str) -> dict:
         return self._call("POST", f"apps/{id}/sync")
@@ -249,8 +274,10 @@ class Remote:
             },
         )
 
-    def init(self, body: dict) -> dict:
-        return self._call("POST", "apps/init", body)
+    def init(
+        self, project: str, body: dict, organization: Optional[str] = None
+    ) -> dict:
+        return self._call("POST", f"projects/{project}/apps/init", body, organization)
 
     def deploy(
         self, id: str, stage: Optional[str] = None, dry_run: bool = True

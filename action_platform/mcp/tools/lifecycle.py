@@ -9,7 +9,8 @@ from pydantic import Field
 
 from action_platform.core.action_platform import ActionPlatform
 from action_platform.core.config import Config
-from action_platform.mcp.annotations import DESTRUCTIVE, READ_ONLY, REACHES_OUT
+from action_platform.mcp import schemas
+from action_platform.mcp.annotations import DESTRUCTIVE, READ_ONLY, REACHES_OUT, tool
 from action_platform.settings import settings
 
 ProjectDir = Annotated[
@@ -32,7 +33,7 @@ def _tool(project: Optional[str]) -> ActionPlatform:
 
 
 def register(mcp: Any) -> None:
-    @mcp.tool(annotations=REACHES_OUT)
+    @tool(mcp, annotations=REACHES_OUT)
     def release(
         level: Annotated[
             str, Field(description="patch, minor, major or X.Y.Z")
@@ -47,7 +48,7 @@ def register(mcp: Any) -> None:
                 description="A [components.<name>] of platform.toml, e.g. web; default the repository"
             ),
         ] = None,
-    ) -> dict:
+    ) -> schemas.ReleasePlan:
         """Bump version, write CHANGELOG, tag, push and publish a release.
 
         Defaults to a dry run. Show the user the next version and changelog,
@@ -63,12 +64,12 @@ def register(mcp: Any) -> None:
             "dry_run": dry_run,
         }
 
-    @mcp.tool(annotations=REACHES_OUT)
+    @tool(mcp, annotations=REACHES_OUT)
     def deploy(
         project: ProjectDir = None,
         stage: Stage = None,
         dry_run: Annotated[bool, Field(description="true runs preflight only")] = True,
-    ) -> list[dict]:
+    ) -> list[schemas.DeployResult]:
         """Ship the current version to the [deploy] target of platform.toml.
 
         Defaults to a dry run (preflight). Needs a deploy provider installed
@@ -87,7 +88,7 @@ def register(mcp: Any) -> None:
             for r in results
         ]
 
-    @mcp.tool(annotations=DESTRUCTIVE)
+    @tool(mcp, annotations=DESTRUCTIVE)
     def rollback(
         to_version: Annotated[
             Optional[str],
@@ -95,14 +96,16 @@ def register(mcp: Any) -> None:
         ] = None,
         project: ProjectDir = None,
         stage: Stage = None,
-    ) -> dict:
+    ) -> schemas.RolledBack:
         """Return the deployed target to a previous version. Confirm with the user first."""
         _tool(project).rollback(to_version=to_version, stage=stage)
 
         return {"rolled_back_to": to_version or "previous"}
 
-    @mcp.tool(annotations=READ_ONLY)
-    def diagnose(project: ProjectDir = None, stage: Stage = None) -> list[dict]:
+    @tool(mcp, annotations=READ_ONLY)
+    def diagnose(
+        project: ProjectDir = None, stage: Stage = None
+    ) -> list[schemas.Diagnosis]:
         """Health, status and URL of the deployed target."""
         results = _tool(project).diagnose(stage=stage)
 

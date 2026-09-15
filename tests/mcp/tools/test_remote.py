@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+
+from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 import json
 import unittest
 from typing import Any
@@ -22,6 +24,37 @@ LISTS = {
     "projects",
     "teams",
     "members",
+}
+
+
+APP = {"id": "a1", "name": "orders", "url": "https://x/y.git", "default_branch": "main"}
+CREATED = {"id": "n1", "name": "New", "slug": "new"}
+FLOW = {"branch": "feature/1", "base": "develop", "pushed": True}
+PR = {"head": "feature/1", "base": "develop", "title": "t", "body": "b", "commits": []}
+SHAPES: dict[str, Any] = {
+    "add_app": {"id": "d1", "registry_id": "a1", "name": "orders"},
+    "init": {"id": "d1", "registry_id": "a1", "name": "orders", "pushed": True},
+    "remove_app": {"removed": ["d1"], "repositories": []},
+    "delete_project": {"removed": ["d1"], "repositories": []},
+    "sync_app": APP,
+    "checkout": APP,
+    "app": {**APP, "branch": "main", "clean": True},
+    "gitflow": {"branch": "main", "ok": True, "checked_commits": 0, "problems": []},
+    "release": {"current": "1.0.0", "next": "1.1.0", "changelog": "", "dry_run": True},
+    "start_branch": FLOW,
+    "propose_pr": PR,
+    "open_pr": {"number": 1, "url": "https://x/pr/1"},
+    "manifest": {"content": "[project]\n"},
+    "write_manifest": {},
+    "set_cloud": {},
+    "add_service": {},
+    "commit": {"sha": "abc", "branch": "feature/1", "pushed": True},
+    "create_project": CREATED,
+    "create_team": CREATED,
+    "add_team_member": {"ok": True},
+    "assign_project_team": {"ok": True},
+    "set_member_role": {"ok": True},
+    "matrix": {"projects": [], "clouds": [], "services": []},
 }
 
 
@@ -58,7 +91,7 @@ class FakeRemote:
             if name in LISTS:
                 return []
 
-            return {"called": name}
+            return SHAPES.get(name, {"called": name})
 
         return method
 
@@ -67,19 +100,32 @@ CASES: list[tuple[str, dict[str, Any], str, tuple, dict]] = [
     ("list_apps", {}, "apps", (), {"organization": None}),
     (
         "add_app",
-        {"url": "https://x/y.git"},
+        {"project": "p1", "url": "https://x/y.git"},
         "add_app",
-        ("https://x/y.git", None, None),
+        ("p1", "https://x/y.git", None, None),
         {},
     ),
     (
         "add_app",
-        {"url": "https://x/y.git", "install_type": "web", "install_ci": "gitlab"},
+        {
+            "project": "shop",
+            "url": "https://x/y.git",
+            "install_type": "web",
+            "install_ci": "gitlab",
+        },
         "add_app",
-        ("https://x/y.git", None, {"type": "web", "ci": "gitlab"}),
+        ("p1", "https://x/y.git", {"type": "web", "ci": "gitlab"}, None),
         {},
     ),
-    ("remove_app", {"id": "a1"}, "remove_app", ("a1",), {}),
+    ("remove_app", {"id": "a1"}, "remove_app", ("p1", "d1", False, None), {}),
+    (
+        "remove_app",
+        {"id": "a1", "repository": True},
+        "remove_app",
+        ("p1", "d1", True, None),
+        {},
+    ),
+    ("delete_project", {"project": "shop"}, "delete_project", ("p1", False, None), {}),
     ("sync_app", {"id": "a1"}, "sync_app", ("a1",), {}),
     ("app_info", {"id": "a1"}, "app", ("a1",), {}),
     ("gitflow_audit", {"id": "a1"}, "gitflow", ("a1",), {}),
@@ -145,7 +191,7 @@ CASES: list[tuple[str, dict[str, Any], str, tuple, dict]] = [
         "commit_changes",
         {"id": "a1", "message": "chore: x"},
         "commit",
-        ("a1", "chore: x", False, None, False),
+        ("a1", "chore: x", True, None, False),
         {},
     ),
     (
@@ -158,7 +204,7 @@ CASES: list[tuple[str, dict[str, Any], str, tuple, dict]] = [
             "pull_request": True,
         },
         "commit",
-        ("a1", "chore: x", False, {"kind": "chore", "code": "7", "slug": None}, True),
+        ("a1", "chore: x", True, {"kind": "chore", "code": "7", "slug": None}, True),
         {},
     ),
     ("list_matrix", {}, "matrix", (), {}),
@@ -173,6 +219,14 @@ class RemoteToolsTest(TempCase):
         from action_platform.mcp.tools import flow, remote as remote_tools
 
         self.fake = FakeRemote()
+        self.fake.projects_rows = [
+            {
+                "id": "p1",
+                "name": "Shop",
+                "slug": "shop",
+                "apps": [{"id": "d1", "registry_id": "a1", "name": "orders"}],
+            }
+        ]
         self.server = MCPServer("action-platform", instructions=REMOTE_INSTRUCTIONS)
         remote_tools.register(self.server, self.fake)
         flow.register_rules(self.server)
@@ -285,6 +339,7 @@ class RemoteToolsTest(TempCase):
         self.call(
             "init_app",
             {
+                "project": "shop",
                 "type": "web",
                 "name": "Orders",
                 "stack": "python",
@@ -297,8 +352,9 @@ class RemoteToolsTest(TempCase):
 
         name, args, _ = self.fake.calls[-1]
         self.assertEqual(name, "init")
+        self.assertEqual(args[0], "p1")
         self.assertEqual(
-            args[0],
+            args[1],
             {
                 "type": "web",
                 "stack": "python",
@@ -306,14 +362,30 @@ class RemoteToolsTest(TempCase):
                 "name": "Orders",
                 "ci": "github",
                 "cloud": "docker",
-                "source": "acme",
+                "template_source": "acme",
+                "github_owner": None,
                 "push": True,
                 "private": True,
             },
         )
 
-    def test_remove_app_returns_what_was_removed(self):
-        self.assertEqual(self.call("remove_app", {"id": "a1"}), {"removed": "a1"})
+    def test_unknown_project_or_app_is_a_readable_error(self):
+        for tool, args in (
+            ("add_app", {"project": "nope", "url": "https://x/y.git"}),
+            ("remove_app", {"id": "zz"}),
+        ):
+            with self.subTest(tool=tool):
+                with self.assertRaises(ToolError) as caught:
+                    asyncio.run(self.server.call_tool(tool, args))
+
+                self.assertIn("list_", str(caught.exception))
+                self.assertNotIsInstance(caught.exception, UnexpectedToolError)
+
+    def test_remove_app_answers_with_what_the_platform_removed(self):
+        self.assertEqual(
+            self.call("remove_app", {"id": "a1"}),
+            {"removed": ["d1"], "repositories": []},
+        )
 
     def test_remote_surface_excludes_local_only_tools(self):
         names = {t.name for t in asyncio.run(self.server.list_tools())}
