@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.20.12 — 2026-09-15
+
 ## v0.20.11 — 2026-09-15
 
 ### Breaking Changes
