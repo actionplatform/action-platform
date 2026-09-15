@@ -83,5 +83,5 @@ export const v1 = {
   pluginOptions: async (slug: string) => unwrap(await client.GET("/api/v1/plugins/{slug}/options", { params: { path: { slug } } })),
   setPluginOptions: async (slug: string, options: Record<string, unknown>) =>
     unwrap(await client.PUT("/api/v1/plugins/{slug}/options", { params: { path: { slug } }, body: { options } })),
-  jobs: async (app: string) => unwrap(await client.GET("/api/v1/jobs", { params: { query: { app } } })),
+  jobs: async (app: string, kind: string | null = null) => unwrap(await client.GET("/api/v1/jobs", { params: { query: { app, kind } } })),
 };
