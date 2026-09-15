@@ -250,6 +250,7 @@ class DraftsSurviveSyncTest(LegacyImportCase):
                 "content": manifest.replace('name = "legacy"', 'name = "legacy-local"')
             },
         )
+        self.client.post(f"/api/apps/{id}/manifest/export")
         (self.bare / "README.md").write_text("# legacy\n")
         git(self.bare, "add", "-A")
         git(self.bare, "commit", "-q", "-m", "docs: readme")

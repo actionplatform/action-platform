@@ -91,6 +91,7 @@ class FlowTest(ApiCase):
             f"/api/apps/{id}/manifest",
             json={"content": content + '\n[deploy]\ntarget = "docker"\n'},
         )
+        self.client.post(f"/api/apps/{id}/manifest/export")
 
         self.assertEqual(
             self.client.post(

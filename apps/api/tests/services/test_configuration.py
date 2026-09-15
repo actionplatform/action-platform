@@ -25,9 +25,14 @@ class ManifestTest(ApiCase):
             json={"content": content + '\n[deploy]\ntarget = "docker"\n'},
         )
         self.assertEqual(res.status_code, 200)
+        self.assertFalse(res.json()["mirrored"])
         self.assertEqual(
             self.client.get(f"/api/apps/{id}").json()["deploy"], {"target": "docker"}
         )
+        self.assertTrue(self.client.get(f"/api/apps/{id}").json()["clean"])
+
+        exported = self.client.post(f"/api/apps/{id}/manifest/export")
+        self.assertTrue(exported.json()["mirrored"])
         self.assertFalse(self.client.get(f"/api/apps/{id}").json()["clean"])
 
         self.assertEqual(
@@ -62,6 +67,7 @@ class ManifestTest(ApiCase):
             f"/api/apps/{id}/manifest",
             json={"content": content + '\n[deploy]\ntarget = "docker"\n'},
         )
+        self.client.post(f"/api/apps/{id}/manifest/export")
 
         res = self.client.post(
             f"/api/apps/{id}/commit",
@@ -106,6 +112,7 @@ class ChangesTest(ApiCase):
             f"/api/apps/{id}/manifest",
             json={"content": content + '\n[deploy]\ntarget = "docker"\n'},
         )
+        self.client.post(f"/api/apps/{id}/manifest/export")
 
         changes = self.client.get(f"/api/apps/{id}/changes").json()
         self.assertEqual(changes, {"files": ["platform.toml"], "clean": False})
@@ -115,9 +122,9 @@ class ChangesTest(ApiCase):
             {"files": [], "clean": True},
         )
         self.assertTrue(self.client.get(f"/api/apps/{id}").json()["clean"])
-        self.assertNotIn(
-            "[deploy]", self.client.get(f"/api/apps/{id}/manifest").json()["content"]
-        )
+        kept = self.client.get(f"/api/apps/{id}/manifest").json()
+        self.assertIn("[deploy]", kept["content"])
+        self.assertFalse(kept["mirrored"])
 
 
 class DiscardTest(ApiCase):
@@ -144,6 +151,7 @@ class DiscardTest(ApiCase):
             f"/api/apps/{id}/manifest",
             json={"content": manifest.replace('name = "legacy"', 'name = "edited"')},
         )
+        self.client.post(f"/api/apps/{id}/manifest/export")
 
         res = self.client.post(f"/api/apps/{id}/discard")
 
@@ -153,7 +161,7 @@ class DiscardTest(ApiCase):
         detail = self.client.get(f"/api/apps/{id}")
 
         self.assertEqual(detail.status_code, 200, detail.text)
-        self.assertEqual(detail.json()["project"]["name"], "legacy")
+        self.assertEqual(detail.json()["project"]["name"], "edited")
         self.assertFalse(detail.json()["clean"])
         self.assertIn(
             "platform.toml", self.client.get(f"/api/apps/{id}/changes").json()["files"]
@@ -223,6 +231,7 @@ class IdentityWithoutTokenTest(ApiCase):
             f"/api/apps/{id}/manifest",
             json={"content": manifest + '\n[services.cache]\nkind = "redis"\n'},
         )
+        self.client.post(f"/api/apps/{id}/manifest/export")
 
         res = self.client.post(
             f"/api/apps/{id}/commit",

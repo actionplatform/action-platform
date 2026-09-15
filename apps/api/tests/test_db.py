@@ -50,11 +50,12 @@ class DatabaseTest(TempCase):
         self.assertTrue(
             WEB_TABLES | {"job"} <= set(inspect(db.engine).get_table_names())
         )
-        self.assertEqual(db.migrate(), "0007")
+        self.assertEqual(db.migrate(), "0008")
 
     def test_web_created_schema_is_adopted_not_recreated(self):
         from app.core.db import Base, Database
         from app.core.db.models import (
+            AppConfig,
             Draft,
             Job,
             OAuthApp,
@@ -71,13 +72,14 @@ class DatabaseTest(TempCase):
             Draft.__tablename__,
             PluginOption.__tablename__,
             SigningKey.__tablename__,
+            AppConfig.__tablename__,
         }
         Base.metadata.create_all(
             db.engine,
             tables=[t for t in Base.metadata.sorted_tables if t.name not in ours],
         )
         self.assertTrue(db.adopted_from_web())
-        self.assertEqual(db.migrate(), "0007")
+        self.assertEqual(db.migrate(), "0008")
         self.assertIn("job", inspect(db.engine).get_table_names())
         self.assertFalse(db.adopted_from_web())
 
