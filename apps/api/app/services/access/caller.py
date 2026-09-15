@@ -3,6 +3,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session as DbSession
 
+from action_platform.settings import settings
 from action_platform.core.access import PERMISSIONS, can, parse_scopes, scope_allows
 from app.core.auth.cookies import SessionCookie
 from app.core.auth.jwt import looks_like_jwt
@@ -26,6 +27,11 @@ class Caller:
     session_token: Optional[str]
     client: Optional[str] = None
     extra: dict = field(default_factory=dict)
+
+    @property
+    def platform_admin(self) -> bool:
+        """Runs the platform itself — installs plugins, restarts it: named in `AP_PLATFORM_ADMINS`, never a matter of organization role."""
+        return self.user.email.lower() in settings.PLATFORM_ADMINS
 
     def role_in(self, organization_id: Optional[str]) -> Optional[str]:
         return next(

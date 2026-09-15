@@ -57,6 +57,14 @@ def org_of(caller: Caller, x_organization: Optional[str]) -> Organization:
     return required_org(caller, x_organization, None)
 
 
+def platform_admin(caller: Caller) -> None:
+    """Installing, switching and restarting plugins changes the whole platform: only a platform admin (`AP_PLATFORM_ADMINS`) may."""
+    if not caller.platform_admin:
+        raise HTTPException(
+            403, "only a platform admin may change the platform's plugins"
+        )
+
+
 def allowed(
     caller: Caller, org: Organization, permission: str, whole_org: bool = True
 ) -> None:

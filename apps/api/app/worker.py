@@ -178,13 +178,17 @@ class Worker:
 
         with self.database.session() as db:
             project = db.get(Project, app.project_id)
-            rows = db.scalars(select(PluginOption)).all()
+            rows = db.scalars(
+                select(PluginOption).where(
+                    PluginOption.organization_id.in_({"", organization.id})
+                )
+            ).all()
 
         env = {
             "AP_APP": f"{organization.slug}/{project.slug if project else ''}/{app.name}",
         }
 
-        for row in rows:
+        for row in sorted(rows, key=lambda r: r.organization_id != ""):
             value = json.loads(row.value)
 
             if isinstance(value, (str, int, float)) and not isinstance(value, bool):

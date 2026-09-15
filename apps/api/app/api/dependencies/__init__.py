@@ -2,6 +2,7 @@
 
 from app.api.dependencies.access import (
     allowed,
+    platform_admin,
     get_caller,
     manageable,
     org_of,
@@ -71,6 +72,7 @@ __all__ = [
     "SignerDep",
     "WritesDep",
     "allowed",
+    "platform_admin",
     "app_of",
     "current_org",
     "get_app_service",

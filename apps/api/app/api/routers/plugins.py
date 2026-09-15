@@ -1,9 +1,9 @@
-"""Plugins on the hosted platform: install from the index, switch on and off, restart, and each plugin's options."""
+"""Plugins on the hosted platform. Installing, switching and restarting change the whole platform — platform admins only; a plugin's options belong to the caller's organization."""
 
 from fastapi import APIRouter
 
 from app import schemas
-from app.api.dependencies import CallerDep, OrgDep, PluginsDep, allowed
+from app.api.dependencies import CallerDep, OrgDep, PluginsDep, allowed, platform_admin
 
 router = APIRouter(prefix="/api/v1/plugins", tags=["plugins"])
 
@@ -21,7 +21,7 @@ def plugins(org: OrgDep, caller: CallerDep, manager: PluginsDep) -> schemas.Plug
 def install_plugin(
     slug: str, org: OrgDep, caller: CallerDep, manager: PluginsDep
 ) -> schemas.PluginQueued:
-    allowed(caller, org, "org.manage")
+    platform_admin(caller)
 
     return queued(manager.enqueue_install(slug, caller.user.id))
 
@@ -30,7 +30,7 @@ def install_plugin(
 def remove_plugin(
     slug: str, org: OrgDep, caller: CallerDep, manager: PluginsDep
 ) -> schemas.PluginQueued:
-    allowed(caller, org, "org.manage")
+    platform_admin(caller)
 
     return queued(manager.enqueue_remove(slug, caller.user.id))
 
@@ -39,7 +39,7 @@ def remove_plugin(
 def enable_plugin(
     slug: str, org: OrgDep, caller: CallerDep, manager: PluginsDep
 ) -> schemas.Ok:
-    allowed(caller, org, "org.manage")
+    platform_admin(caller)
     manager.enable(slug)
 
     return schemas.Ok()
@@ -49,7 +49,7 @@ def enable_plugin(
 def disable_plugin(
     slug: str, org: OrgDep, caller: CallerDep, manager: PluginsDep
 ) -> schemas.Ok:
-    allowed(caller, org, "org.manage")
+    platform_admin(caller)
     manager.disable(slug)
 
     return schemas.Ok()
@@ -60,7 +60,7 @@ def restart_platform(
     org: OrgDep, caller: CallerDep, manager: PluginsDep
 ) -> schemas.PluginQueued:
     """The worker restarts through its job; the API answers and leaves right after — the container's restart policy brings both back."""
-    allowed(caller, org, "org.manage")
+    platform_admin(caller)
     job = manager.enqueue_restart(caller.user.id)
     manager.restart_api()
 
@@ -73,7 +73,7 @@ def plugin_options(
 ) -> schemas.PluginOptions:
     allowed(caller, org, "org.manage")
 
-    return schemas.PluginOptions(options=manager.options(slug).all())
+    return schemas.PluginOptions(options=manager.options(slug, org.id).all())
 
 
 @router.put("/{slug}/options")
@@ -86,7 +86,7 @@ def set_plugin_options(
 ) -> schemas.PluginOptions:
     """Replaces the plugin's options with the body's; a key left out is deleted."""
     allowed(caller, org, "org.manage")
-    store = manager.options(slug)
+    store = manager.options(slug, org.id)
 
     for key in set(store.all()) - set(body.options):
         store.delete(key)

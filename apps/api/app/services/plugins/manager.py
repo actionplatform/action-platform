@@ -27,11 +27,11 @@ class PluginManager:
         self.queue = queue
         self.database = database
 
-    def options(self, slug: str) -> DbOptions:
+    def options(self, slug: str, organization_id: str = "") -> DbOptions:
         if self.database is None:
             raise ActionPlatformError("no database")
 
-        return DbOptions(self.database, slug)
+        return DbOptions(self.database, slug, organization_id)
 
     def catalog(self) -> dict:
         return CatalogService().plugins()

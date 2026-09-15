@@ -33,11 +33,11 @@ The git hooks the CLI installs ask the core (`action-platform gitflow-check`) wh
 
 The API image bundles the plugins the platform runs: `apx-aws-lambda` is a dependency of `apps/api`, discovered through its entry point like any other, enabled unless `plugins.json` says otherwise. Bundling — not a marketplace — is the deliberate choice for the hosted platform: an image is reviewed and versioned as a whole, and API and worker always run the same plugin code.
 
-The runtime still supports installing into a volume (`AP_PLUGINS_DIR`, `/api/v1/plugins/{slug}/install|remove|enable|disable`, `restart`) for automation and self-hosters who want it; the web no longer exposes it.
+The runtime still supports installing into a volume (`AP_PLUGINS_DIR`, `/api/v1/plugins/{slug}/install|remove|enable|disable`, `restart`) for automation and self-hosters who want it; the web no longer exposes it. Those calls change the whole platform, so they need a **platform admin** — an e-mail listed in `AP_PLATFORM_ADMINS` — not an organization role.
 
 ## Options
 
-A plugin keeps what it needs to remember in its own options store, WordPress-style: `surface.options.get("channel")`, `set`, `delete`, `all` — a JSON file per plugin on a machine (`~/.action-platform/plugins/<slug>.json`, or `options/` under `AP_PLUGINS_DIR`), the `plugin_option` table on the hosted platform. `GET/PUT /api/v1/plugins/{slug}/options` reads and replaces them for `org.manage`.
+A plugin keeps what it needs to remember in its own options store, WordPress-style: `surface.options.get("channel")`, `set`, `delete`, `all` — a JSON file per plugin on a machine (`~/.action-platform/plugins/<slug>.json`, or `options/` under `AP_PLUGINS_DIR`), the `plugin_option` table on the hosted platform, one set per organization: `GET/PUT /api/v1/plugins/{slug}/options` reads and replaces the caller's organization's values (`org.manage`), and rows with an empty organization are platform-wide defaults an organization's values override. A deploy job carries only its organization's options.
 
 ## Index
 
