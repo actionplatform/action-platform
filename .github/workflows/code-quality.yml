@@ -23,7 +23,8 @@ jobs:
           python="$(poetry run python -c 'import sys; print(sys.executable)')"
           cd apps/api && "$python" -m pytest -q
       - run: |
-          cd apps/api && PYTHONPATH=.:../.. poetry run lint-imports --config ../../.importlinter
+          python="$(poetry run python -c 'import sys; print(sys.executable)')"
+          cd apps/api && PYTHONPATH=.:../.. "$python" -c "import sys; from importlinter.cli import lint_imports_command; sys.argv = ['lint-imports', '--config', '../../.importlinter']; sys.exit(lint_imports_command())"
 
   web:
     runs-on: ubuntu-latest
