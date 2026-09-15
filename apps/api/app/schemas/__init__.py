@@ -1,3 +1,5 @@
+"""The models behind the OpenAPI contract. Routers import from the module that owns a model (`app.schemas.actions`, `…organizations`); this namespace re-exports the ones services and tests share across domains."""
+
 from app.schemas.actions import (
     AddAppRequest,
     BranchResult,
