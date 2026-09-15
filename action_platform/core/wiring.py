@@ -11,9 +11,19 @@ providers picked by platform.toml.
 
 from __future__ import annotations
 
+from importlib import import_module
 from typing import Any, Callable
 
 from action_platform.core.exception import ActionPlatformError
+
+HOMES = {
+    "gitflow_rules": "action_platform.core.flow.gitflow",
+    "gitflow": "action_platform.core.flow.workflow",
+    "releaser": "action_platform.core.release.release",
+    "deployer": "action_platform.core.release.deploy",
+    "installer": "action_platform.core.scaffold.install",
+    "scaffolder": "action_platform.core.scaffold.generate",
+}
 
 
 class WiringError(ActionPlatformError):
@@ -30,14 +40,19 @@ class Wiring:
         """The core registers its own implementation of `slot` once, at import."""
         self._defaults.setdefault(slot, default)
 
+    def _default(self, slot: str) -> type | None:
+        """The core's class for `slot`, importing the module that declares it when nothing has yet."""
+        if slot not in self._defaults and slot in HOMES:
+            import_module(HOMES[slot])
+
+        return self._defaults.get(slot)
+
     def replace(self, slot: str, impl: type, by: str = "") -> None:
         """A plugin puts `impl` — a subclass of the default — in `slot`; `by` names the plugin for `origins()`."""
-        default = self._defaults.get(slot)
+        default = self._default(slot)
 
         if default is None:
-            raise WiringError(
-                f"no slot {slot!r} (slots: {', '.join(sorted(self._defaults)) or 'none'})"
-            )
+            raise WiringError(f"no slot {slot!r} (slots: {', '.join(self.slots())})")
 
         if not (isinstance(impl, type) and issubclass(impl, default)):
             raise WiringError(
@@ -55,8 +70,10 @@ class Wiring:
         if slot in self._overrides:
             return self._overrides[slot]
 
-        if slot in self._defaults:
-            return self._defaults[slot]
+        default = self._default(slot)
+
+        if default is not None:
+            return default
 
         raise WiringError(f"no slot {slot!r}")
 
@@ -65,7 +82,7 @@ class Wiring:
         return dict(self._by)
 
     def slots(self) -> list[str]:
-        return sorted(self._defaults)
+        return sorted(set(self._defaults) | set(HOMES))
 
     def __getattr__(self, slot: str) -> Callable[..., Any]:
         if slot.startswith("_"):

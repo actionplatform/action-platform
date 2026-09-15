@@ -131,24 +131,40 @@ def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
             f"(types: {cloud.types or 'any'}, languages: {cloud.languages or 'any'})"
         )
 
-    _cookiecutter(
-        cloud.root or repo,
-        cloud.directory,
-        project.parent,
-        {
-            "project_name": meta.get("name", project.name),
-            "project_slug": project.name,
-            "github_owner": meta.get("github_owner", "actionplatform"),
-            "language": language,
-            "type": type_,
-            "ci": meta.get("ci", "github"),
-        },
-        overwrite=True,
-    )
+    root = cloud.root or repo
+
+    if (root / cloud.directory / "cookiecutter.json").exists():
+        _cookiecutter(
+            root,
+            cloud.directory,
+            project.parent,
+            {
+                "project_name": meta.get("name", project.name),
+                "project_slug": project.name,
+                "github_owner": meta.get("github_owner", "actionplatform"),
+                "language": language,
+                "type": type_,
+                "ci": meta.get("ci", "github"),
+            },
+            overwrite=True,
+        )
+    else:
+        _copy_overlay(root / cloud.directory, project)
 
     Manifest.of(project).set_deploy_target(cloud.name)
 
     return project
+
+
+def _copy_overlay(source: Path, project: Path) -> None:
+    """A plain overlay — no cookiecutter.json — is copied as it is, file over file."""
+    for item in source.rglob("*"):
+        if not item.is_file():
+            continue
+
+        target = project / item.relative_to(source)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(item, target)
 
 
 def apply_service(
