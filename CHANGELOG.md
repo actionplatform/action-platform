@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.16.1 — 2026-09-15
+
+### Features
+- **api:** GET /api/plugins — the plugins index plus which plugins this platform runs
+
+### Docs
+- plugins marketplace
+
+### Tests
+- **mcp:** skip the mcp surface tests when the extra is not installed
+
 ## v0.16.0 — 2026-09-15
 
 ### Features
