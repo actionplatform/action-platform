@@ -4,14 +4,16 @@ from __future__ import annotations
 
 from unittest import mock
 
-from action_platform.abc import Plugin
+from action_platform.abc import Option, Plugin
 from action_platform.plugins import registry
 from tests.test_access import GateCase
 
 
 class Lambda(Plugin):
     slug = "aws-lambda"
+    name = "AWS Lambda"
     description = "fake"
+    options = [Option("proxy_url", "Deploy proxy URL", "url", required=True)]
 
     def register(self, surface):
         pass
@@ -82,6 +84,19 @@ class PluginsApiTest(GateCase):
             [
                 ("aws-lambda", "0.1.0", None),
                 ("broken", "", "ImportError: no module named x"),
+            ],
+        )
+        self.assertEqual(rows["plugins"][0]["name"], "AWS Lambda")
+        self.assertEqual(
+            rows["plugins"][0]["options"],
+            [
+                {
+                    "key": "proxy_url",
+                    "label": "Deploy proxy URL",
+                    "kind": "url",
+                    "help": "",
+                    "required": True,
+                }
             ],
         )
 

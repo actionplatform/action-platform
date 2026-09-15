@@ -10,7 +10,7 @@ hosted platform never loads one.
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 if TYPE_CHECKING:
     from action_platform.core.context import Context, DeployResult, PRRef
@@ -28,13 +28,39 @@ class Surface:
     cli: Any = None
 
 
+@dataclass(frozen=True)
+class Option:
+    """One setting a plugin asks its users for — the platform draws the form and stores the value in the plugin's options store under `key`."""
+
+    key: str
+    label: str
+    kind: Literal["text", "url", "secret", "bool"] = "text"
+    help: str = ""
+    required: bool = False
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "key": self.key,
+            "label": self.label,
+            "kind": self.kind,
+            "help": self.help,
+            "required": self.required,
+        }
+
+
 class Plugin(ABC):
     """Plugin"""
 
     slug: str
+    name: str = ""
     description: str = ""
     min_core: str = ""
     needs: list[str] = []
+    options: list[Option] = []
+
+    @property
+    def title(self) -> str:
+        return self.name or self.slug
 
     @property
     def overlays(self) -> Optional[Path]:
