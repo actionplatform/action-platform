@@ -143,10 +143,21 @@ export async function openPullRequest(projectId: string, _appId: string, registr
   }
 }
 
-export async function saveManifest(projectId: string, registryId: string, content: string): Promise<Result<{ content: string }>> {
+export async function saveManifest(projectId: string, registryId: string, content: string): Promise<Result<{ content: string; mirrored?: boolean | null }>> {
   await requireOrg();
   try {
     const data = await api.apps.writeManifest(registryId, content);
+    refresh(projectId);
+    return { ok: true, data };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
+export async function exportManifest(projectId: string, registryId: string): Promise<Result<{ content: string; mirrored?: boolean | null }>> {
+  await requireOrg();
+  try {
+    const data = await api.apps.exportManifest(registryId);
     refresh(projectId);
     return { ok: true, data };
   } catch (e) {
