@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { pageActive, type SubPage } from "./nav";
+import { pageActive } from "./nav";
 
-export function SubNav({ label, pages }: { label: string; pages: SubPage[] }) {
+export type SubNavPage = { href: string; label: string; exact?: boolean };
+
+export function SubNav({ label, pages }: { label: string; pages: SubNavPage[] }) {
   const pathname = usePathname();
 
   return (
