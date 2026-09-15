@@ -12,9 +12,9 @@ import { appsOf, projectById } from "@/lib/projects";
 
 
 import { requireOrg } from "@/lib/session";
-import { AddForm } from "./apps/add-form";
-import { AppCards } from "./apps/app-cards";
-import { RemoveButton } from "./apps/remove-button";
+import { AddForm } from "@/features/projects";
+import { AppCards } from "@/features/projects";
+import { RemoveButton } from "@/features/projects";
 
 export default async function ProjectPage({ params }: { params: Promise<{ project: string }> }) {
   const { project: projectId } = await params;
