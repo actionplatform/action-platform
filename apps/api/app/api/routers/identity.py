@@ -44,6 +44,7 @@ def identity_token(
         org.slug, project.slug if project else None, app.name if app else None
     )
     issuer = issuer_of(request)
+    scopes = sorted(p for p, ok in caller.permissions_in(org.id).items() if ok)
     token = issuer.mint(
         subject,
         body.audience,
@@ -51,6 +52,7 @@ def identity_token(
         project=project.slug if project else None,
         app=app.name if app else None,
         actor=caller.user.email,
+        scopes=scopes,
     )
 
     return schemas.IdentityToken(
