@@ -15,7 +15,8 @@ from app.api.dependencies.services import (
     get_directory,
     get_flow,
     get_git_state,
-    get_lifecycle,
+    get_deployments,
+    get_releases,
     get_import_gateway,
     get_projects,
     get_plugins,
@@ -33,10 +34,11 @@ from app.services.jobs import JobQueue
 from app.services.plugins import PluginManager
 from app.services.organization_import import ImportGateway
 from app.services.projects import ProjectService
-from app.services.workspace.commit import CommitService
-from app.services.workspace.configuration import ConfigurationService
-from app.services.workspace.flow import FlowService
-from app.services.workspace.lifecycle import LifecycleService
+from app.services.configuration.commit import CommitService
+from app.services.configuration.service import ConfigurationService
+from app.services.activity.flow import FlowService
+from app.services.deployments import DeploymentsService
+from app.services.releases import ReleasesService
 from app.services.workspace.state import GitStateService
 
 CallerDep = Annotated[Caller, Depends(get_caller)]
@@ -51,7 +53,8 @@ AppsDep = Annotated[AppService, Depends(get_app_service)]
 ProjectsDep = Annotated[ProjectService, Depends(get_projects)]
 ImportsDep = Annotated[ImportGateway, Depends(get_import_gateway)]
 GitStateDep = Annotated[GitStateService, Depends(get_git_state)]
-LifecycleDep = Annotated[LifecycleService, Depends(get_lifecycle)]
+ReleasesDep = Annotated[ReleasesService, Depends(get_releases)]
+DeploymentsDep = Annotated[DeploymentsService, Depends(get_deployments)]
 FlowDep = Annotated[FlowService, Depends(get_flow)]
 ConfigurationDep = Annotated[ConfigurationService, Depends(get_configuration)]
 CommitsDep = Annotated[CommitService, Depends(get_commits)]

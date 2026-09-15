@@ -6,7 +6,7 @@ from fastapi import APIRouter
 
 from app.schemas import actions as schemas
 from app.api.dependencies import (
-    LifecycleDep,
+    ReleasesDep,
 )
 
 router = APIRouter(prefix="/api/apps", tags=["releases"])
@@ -16,17 +16,17 @@ router = APIRouter(prefix="/api/apps", tags=["releases"])
 def app_release(
     id: str,
     body: schemas.ReleaseRequest,
-    lifecycle: LifecycleDep,
+    releases: ReleasesDep,
 ) -> schemas.ReleasePreview:
-    return lifecycle.release(id, body)
+    return releases.release(id, body)
 
 
 @router.get("/{id}/next-version")
 def app_next_version(
     id: str,
-    lifecycle: LifecycleDep,
+    releases: ReleasesDep,
     level: str = "patch",
     branch: Optional[str] = None,
     component: Optional[str] = None,
 ) -> schemas.NextVersion:
-    return lifecycle.next_version(id, level, branch, component)
+    return releases.next_version(id, level, branch, component)

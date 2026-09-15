@@ -1,4 +1,4 @@
-"""app.services.workspace.flow — branches, checkout and pull requests on the platform's clone."""
+"""app.services.activity.flow — branches, checkout and pull requests on the platform's clone."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""An app's disposable clone and everything done inside it: manifest, configuration, git-flow, state, releases."""
+"""An app's disposable clone: checkout, adoption, and what the clone says (manifest, state)."""
 
 from app.services.workspace.checkout import CLONES, Clones, Workspaces
 
