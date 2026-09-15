@@ -27,19 +27,28 @@ describe("PluginCards", () => {
     expect(screen.getByText("Configured")).toBeInTheDocument();
   });
 
-  it("a plugin without options is just installed, with no button", () => {
+  it("a plugin without options is just installed, with no form", () => {
     render(<PluginCards plugins={[{ ...lambda, options: [] }]} canManage />);
     expect(screen.getByText("Installed")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /configure/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
   });
 
-  it("saves the form through the action", async () => {
+  it("the form sits on the card and saves through the action once something changed", async () => {
     render(<PluginCards plugins={[lambda]} canManage />);
-    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+
     fireEvent.change(screen.getByLabelText("Deploy proxy URL"), { target: { value: "https://x.lambda-url.on.aws" } });
+    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(savePluginOptions).toHaveBeenCalledWith("aws-lambda", { proxy_url: "https://x.lambda-url.on.aws" }));
+    expect(screen.getByText("Configured")).toBeInTheDocument();
+  });
+
+  it("a viewer sees the values but cannot edit", () => {
+    render(<PluginCards plugins={[{ ...lambda, values: { proxy_url: "https://x" } }]} canManage={false} />);
+    expect(screen.getByLabelText("Deploy proxy URL")).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
   });
 
   it("a plugin that failed to load says why", () => {
