@@ -11,7 +11,7 @@ import { Panel, PanelHeader } from "@/components/ui/panel";
 import type { DeployResult } from "@/lib/api";
 import type { JobRow } from "@/lib/v1";
 import { cn } from "@/lib/utils";
-import { startDeploy } from "../actions";
+import { startDeploy } from "@/features/deployments/actions";
 import { CopyButton, LogBox, summarize } from "./run-alert";
 
 type Status = { tone: "danger" | "warning" | "success" | "neutral"; label: string };

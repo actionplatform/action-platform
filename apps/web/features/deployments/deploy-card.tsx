@@ -9,8 +9,8 @@ import { ConfirmDialog } from "@/components/ui/dialog";
 import { Hint } from "@/components/ui/hint";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import type { DeployResult } from "@/lib/api";
-import { deployJob, startDeploy } from "../actions";
-import type { AppView } from "./model";
+import { deployJob, startDeploy } from "@/features/deployments/actions";
+import type { AppView } from "@/features/projects";
 import { RunAlert, summarize } from "./run-alert";
 
 const STAGES = [

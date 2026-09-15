@@ -11,8 +11,8 @@ import { Menu } from "@/components/ui/menu";
 import { relativeTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { call } from "@/lib/call";
-import { syncApp } from "../actions";
-import { DeleteAppDialog } from "../delete-app-dialog";
+import { syncApp } from "@/features/projects/actions";
+import { DeleteAppDialog } from "./delete-app-dialog";
 import type { AppView } from "./model";
 
 type SyncStatus = "idle" | "syncing" | "success" | "error";

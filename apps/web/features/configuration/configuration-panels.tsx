@@ -12,8 +12,9 @@ import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
-import { addService, commitChanges, discardChanges, exportManifest, planBranch, saveManifest, setCloudTarget } from "../actions";
-import type { AppView } from "./model";
+import { planBranch } from "@/features/activity/actions";
+import { addService, commitChanges, discardChanges, exportManifest, saveManifest, setCloudTarget } from "@/features/configuration/actions";
+import type { AppView } from "@/features/projects";
 
 type CloudOption = { name: string; description: string; source: string };
 type ServiceOption = { name: string; providers: string[]; description: string; source: string };

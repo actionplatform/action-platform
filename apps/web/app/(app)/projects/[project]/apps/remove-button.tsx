@@ -3,7 +3,7 @@
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { DeleteAppDialog } from "./delete-app-dialog";
+import { DeleteAppDialog } from "@/features/projects";
 
 export function RemoveButton({ projectId, appId, name, repositoryUrl = null }: { projectId: string; appId: string; name: string; repositoryUrl?: string | null }) {
   const [open, setOpen] = useState(false);

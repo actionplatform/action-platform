@@ -1,7 +1,7 @@
-import { GitRefsCard } from "../git-refs-card";
-import { loadApp } from "../load";
-import { ReleaseCard } from "../release-card";
-import { ReleasesTable } from "../releases-table";
+import { GitRefsCard } from "@/features/releases";
+import { loadApp } from "@/features/projects/load";
+import { ReleaseCard } from "@/features/releases";
+import { ReleasesTable } from "@/features/releases";
 
 export default async function ReleasesPage({ params }: { params: Promise<{ project: string; app: string }> }) {
   const { project, app } = await params;

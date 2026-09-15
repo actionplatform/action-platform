@@ -7,7 +7,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
-import { setCloudTarget } from "@/app/(app)/projects/[project]/apps/actions";
+import { setCloudTarget } from "@/features/configuration/actions";
 import { Badge } from "@/components/ui/badge";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { typeIcon } from "@/lib/catalog";

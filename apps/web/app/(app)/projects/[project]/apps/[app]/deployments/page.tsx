@@ -1,8 +1,8 @@
 import { v1 } from "@/lib/v1";
-import { DeployCard } from "../deploy-card";
-import { DeploymentsTable } from "../deployments-table";
-import { loadApp } from "../load";
-import { TargetCard } from "../target-card";
+import { DeployCard } from "@/features/deployments";
+import { DeploymentsTable } from "@/features/deployments";
+import { loadApp } from "@/features/projects/load";
+import { TargetCard } from "@/features/deployments";
 
 export default async function DeploymentsPage({ params }: { params: Promise<{ project: string; app: string }> }) {
   const { project, app } = await params;

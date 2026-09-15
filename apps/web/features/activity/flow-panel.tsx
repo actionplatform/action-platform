@@ -10,8 +10,8 @@ import { Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
-import { checkoutBranch, openPullRequest, planBranch, proposePullRequest, startBranch } from "../actions";
-import type { AppView } from "./model";
+import { checkoutBranch, openPullRequest, planBranch, proposePullRequest, startBranch } from "@/features/activity/actions";
+import type { AppView } from "@/features/projects";
 
 
 export function FlowPanel({ view }: { view: AppView }) {

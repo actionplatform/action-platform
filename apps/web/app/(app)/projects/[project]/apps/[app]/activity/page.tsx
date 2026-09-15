@@ -1,8 +1,8 @@
 import { pullRequestsOf } from "@/lib/pull-requests";
-import { FlowPanel } from "../flow-panel";
-import { loadApp } from "../load";
-import { PullRequestsCard } from "../pull-requests-card";
-import { OpenedBanner } from "./opened-banner";
+import { FlowPanel } from "@/features/activity";
+import { loadApp } from "@/features/projects/load";
+import { PullRequestsCard } from "@/features/activity";
+import { OpenedBanner } from "@/features/activity";
 
 export default async function ActivityPage({ params, searchParams }: { params: Promise<{ project: string; app: string }>; searchParams: Promise<{ opened?: string }> }) {
   const { project, app } = await params;
