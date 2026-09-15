@@ -114,6 +114,33 @@ class AsyncRouteTest(GateCase):
         ).json()
         self.assertEqual([j["id"] for j in listed], [job_id])
 
+    def test_a_queued_deploy_lists_with_its_stage_and_who_asked(self):
+        registry_id = self.register()
+        res = self.client.post(
+            f"/api/v1/apps/{registry_id}/deploy",
+            json={"stage": "prod", "dry_run": True},
+            headers={**self.h(), "X-Async": "1"},
+        )
+        self.assertEqual(res.status_code, 202, res.text)
+
+        deploys = self.client.get(
+            "/api/v1/jobs",
+            params={"app": registry_id, "kind": "deploy"},
+            headers=self.h(),
+        ).json()
+        syncs = self.client.get(
+            "/api/v1/jobs",
+            params={"app": registry_id, "kind": "sync"},
+            headers=self.h(),
+        ).json()
+
+        self.assertEqual(len(deploys), 1)
+        self.assertEqual(
+            (deploys[0]["stage"], deploys[0]["dry_run"], deploys[0]["by"]),
+            ("prod", True, "ana@example.com"),
+        )
+        self.assertEqual(syncs, [])
+
     def test_jobs_of_another_organization_are_invisible(self):
         from app.services.jobs import JobQueue
 
