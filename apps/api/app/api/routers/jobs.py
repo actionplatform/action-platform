@@ -11,6 +11,7 @@ from app.api.dependencies import (
     DirectoryDep,
     QueueDep,
 )
+from app.core.db.models.auth import User
 from app.services.jobs import JobQueue
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
@@ -22,6 +23,9 @@ class JobOut(BaseModel):
     status: str
     app_id: Optional[str] = None
     attempts: int
+    stage: Optional[str] = None
+    dry_run: Optional[bool] = None
+    by: Optional[str] = None
     result: Optional[Any] = None
     error: Optional[str] = None
     created_at: datetime
@@ -33,6 +37,7 @@ class JobOut(BaseModel):
 def job(
     id: str,
     caller: CallerDep,
+    directory: DirectoryDep,
     queue: QueueDep,
 ) -> JobOut:
     found = queue.get(id)
@@ -42,7 +47,14 @@ def job(
     ):
         raise HTTPException(404, "no such job")
 
-    return JobOut(**JobQueue.view(found))
+    return _out(directory, JobQueue.view(found))
+
+
+def _out(directory: DirectoryDep, view: dict) -> JobOut:
+    user_id = view.pop("user_id", None)
+    user = directory.db.get(User, user_id) if user_id else None
+
+    return JobOut(**view, by=user.email if user else None)
 
 
 @router.get("/jobs")
@@ -51,6 +63,7 @@ def jobs(
     caller: CallerDep,
     directory: DirectoryDep,
     queue: QueueDep,
+    kind: Optional[str] = None,
 ) -> list[JobOut]:
     found = directory.app_by_registry_id(app)
 
@@ -61,4 +74,6 @@ def jobs(
     ):
         raise HTTPException(404, "app not found")
 
-    return [JobOut(**JobQueue.view(j)) for j in queue.for_app(found[0].id)]
+    return [
+        _out(directory, JobQueue.view(j)) for j in queue.for_app(found[0].id, kind=kind)
+    ]
