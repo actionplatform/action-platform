@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from action_platform.core.exception import ActionPlatformError, ConfigError
+from app.core.errors import ServiceError
 from action_platform.observability import observe
 from action_platform.plugins import registry
 from action_platform.settings import settings
@@ -131,6 +132,12 @@ def build(
                 "error_description": exc.detail,
             },
         )
+
+    @app.exception_handler(ServiceError)
+    def _service_error(_, exc: ServiceError):
+        detail = {"code": exc.code, "detail": str(exc)} if exc.code else str(exc)
+
+        return JSONResponse(status_code=exc.status, content={"detail": detail})
 
     @app.exception_handler(ActionPlatformError)
     def _platform_error(_, exc: ActionPlatformError):

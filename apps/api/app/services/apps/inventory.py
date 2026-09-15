@@ -6,7 +6,6 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
-from fastapi import HTTPException
 
 from action_platform.core.flow.repository import Repository
 from action_platform.core.scaffold.install import InstallError, install
@@ -17,6 +16,7 @@ from app.schemas import InstallSpec, SourceCredentials
 from app.services.apps.base import AppsBase
 from app.services.workspace.checkout import Workspaces
 from app.services.workspace.manifest import AppManifest
+from app.core.errors import Invalid, NeedsInstall
 
 
 class AppInventory(AppsBase):
@@ -59,9 +59,7 @@ class AppInventory(AppsBase):
                     url, name, require_manifest=install_spec is None
                 )
             except MissingManifest as e:
-                raise HTTPException(
-                    422, {"code": "needs_install", "detail": str(e)}
-                ) from e
+                raise NeedsInstall(str(e)) from e
 
         result = asdict(entry)
         root = Path(entry.path)
@@ -77,7 +75,7 @@ class AppInventory(AppsBase):
                 )
             except InstallError as e:
                 self.registry.remove(entry.id)
-                raise HTTPException(400, str(e)) from e
+                raise Invalid(str(e)) from e
 
             result["installed"] = plan.created
 

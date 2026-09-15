@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Optional
 
-from fastapi import HTTPException
 
 from action_platform.core.wiring import wired
 from action_platform.core.flow import git
@@ -11,6 +10,7 @@ from app.repositories.config_store import ConfigStore
 from app.repositories.registry import Registry
 from app.schemas import PullRequestRequest, StartBranchRequest
 from app.services.workspace import Workspaces
+from app.core.errors import Conflict, Invalid, NotFound
 
 
 class FlowService:
@@ -43,16 +43,16 @@ class FlowService:
         try:
             git.check_ref(branch)
         except git.BadRef as e:
-            raise HTTPException(400, str(e)) from e
+            raise Invalid(str(e)) from e
 
         if self.registry.drafts.paths(id):
-            raise HTTPException(409, "commit or discard the pending changes first")
+            raise Conflict("commit or discard the pending changes first")
 
         repo = self._repo(id)
         repo.fetch(tags=False)
 
         if not repo.tracking_branch_exists(branch):
-            raise HTTPException(404, f"branch {branch} does not exist on the remote")
+            raise NotFound(f"branch {branch} does not exist on the remote")
 
         self.registry.set_branch(id, branch)
         _, root = Workspaces(self.registry).refresh(id)
