@@ -18,7 +18,7 @@ action-platform init --source URL[@ref] ...       # templates from another repos
 action-platform install [--type web] [--language python|none] [--ci github|gitlab|jenkins|bitbucket|none] [--dry-run]
                                                   # existing repo: platform.toml, LAST_VERSION (newest vX.Y.Z tag or 0.0.0),
                                                   # AGENTS.md, .code_quality/, CI files (none with --ci none), hooks — never overwrites; --dry-run plans only
-action-platform plugin install aws                # deploy targets + overlays for aws/lambda, aws/amplify (see use_plugins.md)
+action-platform plugin install aws-lambda         # deploy target + overlay for aws/lambda (see use_plugins.md)
 action-platform cloud set aws/lambda              # add or switch the deploy target
 action-platform service add postgres --provider aws-rds
 ```

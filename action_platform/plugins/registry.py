@@ -36,7 +36,7 @@ class Loaded:
 
 
 class PluginTools:
-    """The `mcp` a plugin registers on: every tool comes out as `<slug>.<name>` through the server's own decorator (schemas, readable errors) and refuses to run while the plugin is disabled."""
+    """The `mcp` a plugin registers on: every tool comes out as `<slug>_<name>` (hyphens in the slug become underscores — MCP clients accept `[A-Za-z0-9_-]` only) through the server's own decorator (schemas, readable errors) and refuses to run while the plugin is disabled."""
 
     def __init__(
         self, mcp: Any, slug: str, plugins: "Plugins", decorator: Callable
@@ -45,6 +45,7 @@ class PluginTools:
         self.slug = slug
         self.plugins = plugins
         self.decorator = decorator
+        self.prefix = slug.replace("-", "_")
 
     def tool(self, **options: Any) -> Callable:
         def decorate(fn: Callable) -> Callable:
@@ -57,7 +58,7 @@ class PluginTools:
 
                 return fn(*args, **kwargs)
 
-            options.setdefault("name", f"{self.slug}.{fn.__name__}")
+            options.setdefault("name", f"{self.prefix}_{fn.__name__}")
 
             return self.decorator(self.mcp, **options)(guarded)
 

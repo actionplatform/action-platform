@@ -6,10 +6,13 @@ from tests.mcp.support import McpCase
 from tests.support import git, install_templates
 
 
+PLUGIN_PREFIXES = ("example_", "aws_lambda_")
+
+
 class ToolSurfaceTest(McpCase):
     def test_tools_exposed(self):
         self.assertEqual(
-            {name for name in self.tools() if "." not in name},
+            {name for name in self.tools() if not name.startswith(PLUGIN_PREFIXES)},
             {
                 "list_matrix",
                 "init_project",

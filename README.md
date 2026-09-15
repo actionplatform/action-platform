@@ -102,7 +102,7 @@ Versions and history: [`LAST_VERSION`](LAST_VERSION) / [`CHANGELOG.md`](CHANGELO
 
 ## Extend it
 
-Everything is a plugin. Deploy targets, CI runners, release strategies and changelog formats are named providers behind entry-point groups; git-flow rules, the releaser, the deployer, the installer and the scaffolder are slots a plugin replaces with a subclass; MCP tools, CLI commands and cloud overlays ride along. `action-platform plugin install aws` — see [plugins](docs/use_plugins.md).
+Everything is a plugin. Deploy targets, CI runners, release strategies and changelog formats are named providers behind entry-point groups; git-flow rules, the releaser, the deployer, the installer and the scaffolder are slots a plugin replaces with a subclass; MCP tools, CLI commands and cloud overlays ride along. `action-platform plugin install aws-lambda` — see [plugins](docs/use_plugins.md).
 
 ```python
 from action_platform import ActionPlatform, Config

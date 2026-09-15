@@ -52,7 +52,7 @@ class PluginsTest(TempCase):
         self.state = PluginState(file=Path(self.tmp_path) / "plugins.json")
         self.example = Example()
         self.plugins = Plugins(
-            [Loaded(self.example, "action-platform-plugin-example", "1.0.0")],
+            [Loaded(self.example, "apx-example", "1.0.0")],
             self.state,
         )
         registry._current = self.plugins
@@ -65,9 +65,7 @@ class PluginsTest(TempCase):
         self.plugins.disable("example")
 
         self.assertEqual(self.plugins.rows()[0]["enabled"], False)
-        self.assertEqual(
-            self.plugins.disabled_packages(), {"action-platform-plugin-example"}
-        )
+        self.assertEqual(self.plugins.disabled_packages(), {"apx-example"})
         self.assertEqual(
             json.loads(self.state.file.read_text())["plugins"]["example"]["enabled"],
             False,
@@ -86,16 +84,16 @@ class PluginsTest(TempCase):
         mcp = server.build()
         names = {t.name for t in asyncio.run(mcp.list_tools())}
 
-        self.assertIn("example.hello", names)
+        self.assertIn("example_hello", names)
 
-        result = asyncio.run(mcp.call_tool("example.hello", {"name": "you"}))
+        result = asyncio.run(mcp.call_tool("example_hello", {"name": "you"}))
 
         self.assertEqual(json.loads(result.content[0].text)["greeting"], "hello you")
 
         self.plugins.disable("example")
 
         with self.assertRaises(Exception) as caught:
-            asyncio.run(mcp.call_tool("example.hello", {}))
+            asyncio.run(mcp.call_tool("example_hello", {}))
 
         self.assertIn("disabled", str(caught.exception))
 

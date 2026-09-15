@@ -1,35 +1,34 @@
 # Writing a plugin
 
-Start from the template repository [actionplatform/action-platform-plugin](https://github.com/actionplatform/action-platform-plugin); [actionplatform/action-platform-plugin-aws](https://github.com/actionplatform/action-platform-plugin-aws) is a complete one (deploy targets, overlays, CLI, tools).
+Start from the template repository [actionplatform/apx-example](https://github.com/actionplatform/apx-example); [actionplatform/apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) is a complete one (deploy target, overlay, CLI, tools).
 
 ## Names
 
 | | Format | Example |
 |---|---|---|
-| repository | `actionplatform/action-platform-plugin-<slug>` or `<you>/action-platform-plugin-<slug>` | `action-platform-plugin-aws` |
-| PyPI | `action-platform-plugin-<slug>` | `action-platform-plugin-aws` |
-| module | `action_platform_plugin_<slug>` | `action_platform_plugin_aws` |
-| slug | `[a-z][a-z0-9-]*`, 2–32 chars; not `core platform official admin system test internal` | `aws` |
+| repository | `actionplatform/apx-example-<slug>` or `<you>/apx-<slug>` | `apx-aws-lambda` |
+| PyPI | `apx-<slug>` | `apx-aws-lambda` |
+| module | `apx_<slug>` | `apx_aws_lambda` |
+| slug | `[a-z][a-z0-9-]*`, 2–32 chars; not `core platform official admin system test internal` | `aws-lambda` |
 
 ## The package
 
 ```toml
 [project]
-name = "action-platform-plugin-aws"
+name = "apx-aws-lambda"
 dependencies = ["action-platform>=0.16"]
 
 [project.entry-points."action_platform.plugins"]
-aws = "action_platform_plugin_aws:AwsPlugin"
+aws-lambda = "apx_aws_lambda:AwsLambdaPlugin"
 
 [project.entry-points."action_platform.deploy_target"]
-"aws/lambda" = "action_platform_plugin_aws.lambda_:LambdaTarget"
-"aws/amplify" = "action_platform_plugin_aws.amplify:AmplifyTarget"
+"aws/lambda" = "apx_aws_lambda.lambda_:LambdaTarget"
 
 [project.entry-points."action_platform.release_strategy"]
-calver = "action_platform_plugin_calver:Calver"
+calver = "apx_calver:Calver"
 
 [project.entry-points."action_platform.changelog"]
-plain = "action_platform_plugin_calver:Plain"
+plain = "apx_calver:Plain"
 ```
 
 `action_platform.plugins` is the one group every plugin declares; the others are optional and name providers `platform.toml` picks (`[deploy] target`, `[release] strategy`, `[release] changelog`, `[source_host] kind`).
@@ -42,9 +41,9 @@ from pathlib import Path
 from action_platform.abc import Plugin, Surface
 
 
-class AwsPlugin(Plugin):
-    slug = "aws"
-    description = "Deploy to AWS Lambda and Amplify"
+class AwsLambdaPlugin(Plugin):
+    slug = "aws-lambda"
+    description = "Deploy to AWS Lambda with SAM"
     min_core = "0.16"
     needs = ["env: AWS_PROFILE or AWS_ACCESS_KEY_ID", "tool: sam, aws"]
 
@@ -59,7 +58,7 @@ class AwsPlugin(Plugin):
                 ...
 
         if surface.cli is not None:
-            surface.cli.add_typer(cli.app, name="aws")
+            surface.cli.add_typer(cli.app, name="aws-lambda")
 
         surface.core.replace("deployer", RetryingDeployer)
 
@@ -68,7 +67,7 @@ class AwsPlugin(Plugin):
 ```
 
 - `register` only declares. No I/O, no threads, no connections at import or in `register`; the tools and commands do the work when called.
-- `surface.mcp.tool()` is the core's own decorator: the tool comes out as `aws.logs`, gets input and output schemas from the annotations (return a pydantic model or a typed dict), and a raised `ActionPlatformError` reaches the model as the tool's error text. While the plugin is disabled the tool answers with an error instead of running.
+- `surface.mcp.tool()` is the core's own decorator: the tool comes out as `aws_lambda_logs` (slug with hyphens as underscores, then the name — MCP clients accept `[A-Za-z0-9_-]` only), gets input and output schemas from the annotations (return a pydantic model or a typed dict), and a raised `ActionPlatformError` reaches the model as the tool's error text. While the plugin is disabled the tool answers with an error instead of running.
 - `surface.core` is the wiring. `replace(slot, cls)` puts a **subclass** of the core's class in a slot; anything else is refused. Slots: `gitflow_rules` (`core.flow.gitflow.Rules`), `gitflow` (`core.flow.workflow.GitFlow`), `releaser` (`core.release.release.Releaser`), `deployer` (`core.release.deploy.Deployer`), `installer` (`core.scaffold.install.Installer`), `scaffolder` (`core.scaffold.generate.Scaffolder`). Disabling the plugin restores what it replaced.
 - `overlays` points at a directory shaped like the templates repository: an `index.json` with `clouds` (`id`, `description`, `types`, `languages`) and one `cloud/<name>/` directory per cloud. A directory with a `cookiecutter.json` is rendered like the official overlays; without one it is copied as it is, file over file — enough for most plugins. Together with a `DeployTarget` of the same name, that is a complete cloud.
 - `after_release(ctx)`, `after_deploy(results)`, `after_pull_request(ref)` run after the real thing; an exception is logged and never undoes the action.

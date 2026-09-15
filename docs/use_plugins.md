@@ -1,15 +1,15 @@
 # Plugins
 
-A plugin is a Python package installed next to the CLI. It can add MCP tools and CLI commands, ship cloud overlays and deploy targets, bring a release strategy or a changelog format, and replace any process of the core — git-flow rules, the releaser, the deployer, the installer, the scaffolder — with its own subclass. Everything runs in-process on the machine that installed it; the hosted platform (API, worker, web) loads nothing of the kind.
+A plugin — an *apx*, Action Platform extension; every package is named `apx-<slug>` — is a Python package installed next to the CLI. It can add MCP tools and CLI commands, ship cloud overlays and deploy targets, bring a release strategy or a changelog format, and replace any process of the core — git-flow rules, the releaser, the deployer, the installer, the scaffolder — with its own subclass. Everything runs in-process on the machine that installed it; the hosted platform (API, worker, web) loads nothing of the kind.
 
 ```bash
-action-platform plugin search aws
-action-platform plugin install aws            # reads the index, pip-installs into the CLI's environment, enables
+action-platform plugin search aws-lambda
+action-platform plugin install aws-lambda     # reads the index, pip-installs into the CLI's environment, enables
 action-platform plugin list
-action-platform plugin disable aws            # tools refuse, overlays and targets hide, replaced slots go back to the core
-action-platform plugin enable aws
-action-platform plugin remove aws             # pip uninstall; a running MCP server sees it on its next start
-action-platform plugin install my-thing --package action-platform-plugin-my-thing   # straight from PyPI, no index
+action-platform plugin disable aws-lambda     # tools refuse, overlays and targets hide, replaced slots go back to the core
+action-platform plugin enable aws-lambda
+action-platform plugin remove aws-lambda      # pip uninstall; a running MCP server sees it on its next start
+action-platform plugin install my-thing --package apx-my-thing   # straight from PyPI, no index
 action-platform plugin index add https://raw.githubusercontent.com/me/my-index/main/plugins
 ```
 
@@ -19,7 +19,7 @@ State lives in `~/.action-platform/plugins.json` (`AP_HOME` moves it): which plu
 
 | It brings | Where you see it |
 |---|---|
-| MCP tools | `action-platform mcp` lists them as `<slug>.<name>`, with input and output schemas like the core's; a disabled plugin's tool answers `plugin <slug> is disabled` |
+| MCP tools | `action-platform mcp` lists them as `<slug>_<name>`, with input and output schemas like the core's; a disabled plugin's tool answers `plugin <slug> is disabled` |
 | CLI commands | `action-platform <slug> …` |
 | Cloud overlays | `list_matrix` / `action-platform cloud set <name>`; a plugin's cloud replaces the templates repository's of the same name, since the code that deploys it lives in the plugin |
 | Deploy targets, CI runners | `[deploy] target = "<name>"` in platform.toml finds them; `action-platform deploy` says which package is missing otherwise |

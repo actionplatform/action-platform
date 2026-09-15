@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class Surface:
-    """What a plugin registers on: the MCP server (tools come out as `<slug>.<name>`), the Typer app, and the core's wiring where a slot can be replaced with a subclass. `mcp` and `cli` are None in a process that has no such surface."""
+    """What a plugin registers on: the MCP server (tools come out as `<slug>_<name>`), the Typer app, and the core's wiring where a slot can be replaced with a subclass. `mcp` and `cli` are None in a process that has no such surface."""
 
     core: "Wiring"
     mcp: Any = None

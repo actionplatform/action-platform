@@ -81,7 +81,9 @@ def list_() -> None:
 
 
 @app.command("search")
-def search(slug: str = typer.Argument(..., help="Plugin slug, e.g. aws")) -> None:
+def search(
+    slug: str = typer.Argument(..., help="Plugin slug, e.g. aws-lambda"),
+) -> None:
     """What the indexes know about a plugin."""
     state = PluginState.load()
     index, row = _lookup(state, slug)

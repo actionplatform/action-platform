@@ -21,8 +21,8 @@ body:
     id: slug
     attributes:
       label: Slug
-      description: "`[a-z][a-z0-9-]*`, 2–32 chars; package becomes `action-platform-plugin-<slug>`, module `action_platform_plugin_<slug>`. Not `core platform official admin system test internal`."
-      placeholder: aws
+      description: "`[a-z][a-z0-9-]*`, 2–32 chars; package becomes `apx-<slug>`, module `apx_<slug>`. Not `core platform official admin system test internal`."
+      placeholder: aws-lambda
     validations:
       required: true
   - type: textarea
@@ -37,7 +37,7 @@ body:
     attributes:
       label: What it brings
       options:
-        - label: MCP tools (`<slug>.<name>`)
+        - label: MCP tools (`<slug>_<name>`)
         - label: CLI commands (`action-platform <slug> …`)
         - label: Cloud overlays (`overlays/index.json` + `cloud/<name>/`)
         - label: Deploy targets (`action_platform.deploy_target`)
@@ -67,7 +67,7 @@ body:
     id: repo
     attributes:
       label: Repository
-      description: Once it exists — `<you>/action-platform-plugin-<slug>`, started from the [template](https://github.com/actionplatform/action-platform-plugin).
+      description: Once it exists — `<you>/apx-<slug>`, started from the [template](https://github.com/actionplatform/apx-example).
   - type: checkboxes
     id: rules
     attributes:
