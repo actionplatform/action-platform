@@ -96,7 +96,7 @@ The API and the web app are one deployable each, cut into the same contexts — 
 | Projects | projects, apps, scaffolding, import of an organization | `projects/`, `apps.py` | `projects/` (+ `apps/`, `organization_import/`) | `projects/` | `projects.py`, `apps.py`, `organization_import.py` | `projects.py` | `projects/` |
 | Templates | template sources, the matrix, the published index | `templates.py` | `templates/` | — | `templates.py` | — | `templates/` |
 | Organization | members, teams, invitations, settings, connected apps | `organization/` | `organization/` | `organization/` | `organization.py` | `organization.py` | `organization/` |
-| Integrations | code hosts, OAuth apps, template sources, plugins, cloud | `integrations/` | `integrations/` (+ `hosts/`, `plugins/`) | `integrations/` | `integrations.py` | `integrations.py` | `integrations/` |
+| Integrations | GitHub, GitLab, Bitbucket (OAuth apps, tokens), template sources, the plugins and their options | `integrations/` | `integrations/` (+ `hosts/`, `plugins/`) | `integrations/` | `integrations.py` | `integrations.py` | `integrations/` |
 | Auth | accounts, sessions, device flow, API tokens | `auth/` | `auth/` | — | `auth.py` | `auth.py` | `account/` |
 | Identity | the platform as OIDC issuer: JWKS and the short-lived tokens the clouds trust | `identity.py` | `identity/` | — | `identity.py` | — | — |
 | Jobs | the queue, the worker, kind → handler | `jobs.py` | `jobs/` | — | `jobs.py` | `jobs.py` | — |
