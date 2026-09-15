@@ -83,6 +83,28 @@ Rules that need no repository — branch names, commit messages, merge targets �
 
 Every process is a class in a slot of `core/wiring.py` (`gitflow_rules`, `gitflow`, `releaser`, `deployer`, `installer`, `scaffolder`); callers write `wired.releaser(config, repo)` and a plugin may put a subclass in the slot. Named providers — deploy targets, CI runners, source hosts, release strategies, changelog renderers — come from entry-point groups (`core/module.py`) and platform.toml picks one by name; the core's own (`semver`, `conventional`) live in `core/release/strategies.py`. `plugins/` discovers the `action_platform.plugins` group, keeps the on/off state, registers tools and commands and calls the lifecycle hooks — see [plugins](use_plugins.md) and [writing a plugin](contribute_plugins.md).
 
+## Contexts
+
+The API and the web app are one deployable each, cut into the same contexts — the menu of the web app is the list. Every layer of the API has a subfolder per context, so a feature is found by its name in every layer, and the layers keep their one concern:
+
+| Context | Owns | `api/routes` | `services` | `repositories` | `schemas` | `core/db/models` | `apps/web/features` |
+|---|---|---|---|---|---|---|---|
+| Activity | branches, pull requests, imported releases and PRs | `activity.py` | `activity/` (+ `imports/`) | — | `activity.py` | `activity.py` | `activity/` |
+| Releases | versions, notes, tags | `releases.py` | `releases/` | — | `releases.py` | — | `releases/` |
+| Deployments | deploy, rollback, diagnose, per-app identity and env | `deployments.py` | `deployments/` | — | `deployments.py` | — | `deployments/` |
+| Configuration | `platform.toml` in the database, the file as mirror | `configuration.py` | `configuration/` | `configuration/` | `configuration.py` | `configuration.py` | `configuration/` |
+| Projects | projects, apps, scaffolding, import of an organization | `projects/`, `apps.py` | `projects/` (+ `apps/`, `organization_import/`) | `projects/` | `projects.py`, `apps.py`, `organization_import.py` | `projects.py` | `projects/` |
+| Templates | template sources, the matrix, the published index | `templates.py` | `templates/` | — | `templates.py` | — | `templates/` |
+| Organization | members, teams, invitations, settings, connected apps | `organization/` | `organization/` | `organization/` | `organization.py` | `organization.py` | `organization/` |
+| Integrations | code hosts, OAuth apps, template sources, plugins, cloud | `integrations/` | `integrations/` (+ `hosts/`, `plugins/`) | `integrations/` | `integrations.py` | `integrations.py` | `integrations/` |
+| Auth | accounts, sessions, device flow, API tokens | `auth/` | `auth/` | — | `auth.py` | `auth.py` | `account/` |
+| Identity | the platform as OIDC issuer: JWKS and the short-lived tokens the clouds trust | `identity.py` | `identity/` | — | `identity.py` | — | — |
+| Jobs | the queue, the worker, kind → handler | `jobs.py` | `jobs/` | — | `jobs.py` | `jobs.py` | — |
+
+Two folders are not contexts but the glue between them: `services/access` (who calls, what it targets, whether the call becomes a job — the gate's decisions) and `services/workspace` (the disposable clone every app context works on). A context reaches another only through that context's package `__init__` — `AccessDirectory`, `ImportDirectory` and `IntegrationsDirectory` are the compositions that span repositories of several contexts on one session, and they live in the context that needs them.
+
+**Rule: new code goes in the context folder of each layer.** A route in `api/routes/<context>`, its service in `services/<context>`, its data access in `repositories/<context>`, its models in `schemas/<context>.py` and `core/db/models/<context>.py`, its screen in `apps/web/features/<context>`. A new context is a new folder in every layer it touches, added to `routers` in `api/routes/__init__.py` and to the navigation in `apps/web/components/layout/nav.ts`; `.importlinter` and ESLint keep the layers and the contexts apart.
+
 ## The API
 
 One process, file-backed, single-tenant; every route, the credentials contract and the OpenAPI client are in [api](use_api.md).
