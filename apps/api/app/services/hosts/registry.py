@@ -1,10 +1,10 @@
 """Every code host the platform knows, by kind."""
 
+from action_platform.core.exception import ProviderError
 from app.core.abc import HostProvider
 from app.services.hosts.bitbucket import BitbucketProvider
 from app.services.hosts.github import GithubProvider
 from app.services.hosts.gitlab import GitlabProvider
-from action_platform.core.exception import ProviderError
 
 
 class HostProviders:

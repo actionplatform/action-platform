@@ -2,6 +2,7 @@
 
 from typing import Any, Optional
 
+from action_platform.core import access
 from app.repositories.registry import Registry
 from app.services.directory import (
     Credentials,
@@ -17,7 +18,6 @@ from app.services.organization_import.repositories import (
     RepositoryImporter,
 )
 from app.services.organization_import.teams import TeamImporter
-from action_platform.core import access
 
 
 class OrganizationImport:

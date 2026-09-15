@@ -1,10 +1,11 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from app import schemas
-from app.api.dependencies import get_lifecycle
-from app.services.workspace.lifecycle import LifecycleService
+from app.api.dependencies import (
+    LifecycleDep,
+)
 
 router = APIRouter(prefix="/api/apps", tags=["actions"])
 
@@ -13,7 +14,7 @@ router = APIRouter(prefix="/api/apps", tags=["actions"])
 def app_release(
     id: str,
     body: schemas.ReleaseRequest,
-    lifecycle: LifecycleService = Depends(get_lifecycle),
+    lifecycle: LifecycleDep,
 ) -> schemas.ReleasePreview:
     return lifecycle.release(id, body)
 
@@ -21,10 +22,10 @@ def app_release(
 @router.get("/{id}/next-version")
 def app_next_version(
     id: str,
+    lifecycle: LifecycleDep,
     level: str = "patch",
     branch: Optional[str] = None,
     component: Optional[str] = None,
-    lifecycle: LifecycleService = Depends(get_lifecycle),
 ) -> schemas.NextVersion:
     return lifecycle.next_version(id, level, branch, component)
 
@@ -33,7 +34,7 @@ def app_next_version(
 def app_deploy(
     id: str,
     body: schemas.DeployRequest,
-    lifecycle: LifecycleService = Depends(get_lifecycle),
+    lifecycle: LifecycleDep,
 ) -> list[schemas.DeployResult]:
     return lifecycle.deploy(id, body)
 
@@ -41,7 +42,7 @@ def app_deploy(
 @router.get("/{id}/diagnose")
 def app_diagnose(
     id: str,
+    lifecycle: LifecycleDep,
     stage: Optional[str] = None,
-    lifecycle: LifecycleService = Depends(get_lifecycle),
 ) -> list[schemas.Diagnosis]:
     return lifecycle.diagnose(id, stage)

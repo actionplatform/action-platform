@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.routers.apps import state, lifecycle, flow, configuration
+from app.api.routers.apps import configuration, flow, lifecycle, state
 
 router = APIRouter()
 

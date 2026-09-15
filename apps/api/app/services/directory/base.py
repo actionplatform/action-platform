@@ -8,8 +8,8 @@ from typing import Optional
 
 from sqlalchemy.orm import Session as DbSession
 
-from app.core.auth.crypto import Sealer
 from action_platform.core.exception import ActionPlatformError
+from app.core.auth.crypto import Sealer
 
 DEFAULT_GIT_AUTHOR = ("Action Platform", "cloud@actionplatform.io")
 REFRESH_MARGIN = timedelta(seconds=60)

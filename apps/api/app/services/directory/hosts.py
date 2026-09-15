@@ -7,18 +7,17 @@ from typing import Optional
 
 from sqlalchemy import select
 
+from action_platform.core.exception import ProviderError
 from app.core.db.models import (
     SourceHost,
 )
-from app.services.hosts import PROVIDERS
 from app.core.shared.clock import now
-from action_platform.core.exception import ProviderError
-from app.core.shared.ids import new_id
-from app.core.shared.urls import GitUrl
 from app.core.shared.credentials import (
     Credentials,
     CredentialsError,
 )
+from app.core.shared.ids import new_id
+from app.core.shared.urls import GitUrl
 from app.services.directory.base import (
     HOST_KINDS,
     HOST_LABELS,
@@ -26,6 +25,7 @@ from app.services.directory.base import (
     DirectoryBase,
     DirectoryError,
 )
+from app.services.hosts import PROVIDERS
 
 
 class HostsReads(DirectoryBase):

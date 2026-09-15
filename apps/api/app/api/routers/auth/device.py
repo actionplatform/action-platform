@@ -2,31 +2,31 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.dependencies import (
+    AuthDep,
+)
+from app.api.routers.auth.support import (
+    current_session,
+    device_request_out,
+    grant_of,
+    limited,
+)
 from app.core.auth.service import (
     DEVICE_TTL,
     SESSION_TTL,
-    AuthService,
 )
-from app.api.dependencies import get_auth
 from app.core.db.models import (
     Session,
 )
 from app.schemas import auth as schemas
-
-
-from app.api.routers.auth.support import (
-    limited,
-    current_session,
-    grant_of,
-    device_request_out,
-)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/device/code", dependencies=[Depends(limited("device-code"))])
 def device_code(
-    body: schemas.DeviceCodeRequest, auth: AuthService = Depends(get_auth)
+    body: schemas.DeviceCodeRequest,
+    auth: AuthDep,
 ) -> schemas.DeviceCodeOut:
     code = auth.device_code(body.client_id, body.scope)
 
@@ -42,7 +42,8 @@ def device_code(
 
 @router.post("/device/token", dependencies=[Depends(limited("device-token"))])
 def device_token(
-    body: schemas.DeviceTokenRequest, auth: AuthService = Depends(get_auth)
+    body: schemas.DeviceTokenRequest,
+    auth: AuthDep,
 ) -> schemas.DeviceTokenOut:
     if body.grant_type != "urn:ietf:params:oauth:grant-type:device_code":
         raise HTTPException(400, "unsupported grant_type")
@@ -59,8 +60,8 @@ def device_token(
 @router.get("/device")
 def device_request(
     user_code: str,
+    auth: AuthDep,
     session: Session = Depends(current_session),
-    auth: AuthService = Depends(get_auth),
 ) -> schemas.DeviceRequestOut:
     code = auth.device_request(user_code)
 
@@ -73,8 +74,8 @@ def device_request(
 @router.post("/device/approve")
 def device_approve(
     body: schemas.DeviceDecision,
+    auth: AuthDep,
     session: Session = Depends(current_session),
-    auth: AuthService = Depends(get_auth),
 ) -> schemas.DeviceDecisionOut:
     if body.grant is not None:
         auth.device_grant(session, body.user_code, grant_of(body.grant))
@@ -87,8 +88,8 @@ def device_approve(
 @router.post("/device/deny")
 def device_deny(
     body: schemas.DeviceDecision,
+    auth: AuthDep,
     session: Session = Depends(current_session),
-    auth: AuthService = Depends(get_auth),
 ) -> schemas.DeviceDecisionOut:
     return schemas.DeviceDecisionOut(
         status=auth.device_deny(session, body.user_code).status

@@ -5,8 +5,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any, Optional
 
-from app.core.shared.clock import now
 from action_platform.core.exception import ProviderError
+from app.core.shared.clock import now
 
 
 class TokenResponse:

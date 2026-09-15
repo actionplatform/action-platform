@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from tests.support import ApiCase
 from action_platform.testing.fixtures import git
+from tests.support import ApiCase
 
 
 class ManifestTest(ApiCase):

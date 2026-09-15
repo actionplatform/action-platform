@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.routers.hosts import connections, oauth_apps, oauth_flow, github_app
+from app.api.routers.hosts import connections, github_app, oauth_apps, oauth_flow
 
 router = APIRouter()
 

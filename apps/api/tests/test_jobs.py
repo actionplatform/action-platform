@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from tests.test_access import GateCase
 from action_platform.testing.fixtures import TempCase
+from tests.test_access import GateCase
 
 
 class QueueTest(TempCase):
@@ -38,8 +38,8 @@ class QueueTest(TempCase):
         )
 
     def test_fail_retries_with_backoff_then_gives_up(self):
-        from app.services.jobs import MAX_ATTEMPTS
         from app.core.shared.clock import now
+        from app.services.jobs import MAX_ATTEMPTS
 
         queue = self.queue()
         job = queue.enqueue("release", {})
@@ -141,11 +141,11 @@ class RegistryAdoptionTest(GateCase):
         import json
         from pathlib import Path
 
+        from app.repositories.registry import home
         from app.repositories.source import (
             configure_registry,
             get_registry,
         )
-        from app.repositories.registry import home
 
         file = home() / "apps.json"
         file.parent.mkdir(parents=True, exist_ok=True)

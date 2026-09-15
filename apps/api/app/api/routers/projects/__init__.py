@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.routers.projects import projects, apps, organization_import
+from app.api.routers.projects import apps, organization_import, projects
 
 router = APIRouter()
 

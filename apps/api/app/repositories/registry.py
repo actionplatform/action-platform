@@ -25,12 +25,11 @@ from typing import Optional
 from sqlalchemy import select
 from ulid import ULID
 
-from app.core.db.models import RegistryEntry
-
 from action_platform.core.exception import ActionPlatformError
-from action_platform.core.flow.repository import Repository
 from action_platform.core.flow.git import UnsafeUrl, check_remote_url
+from action_platform.core.flow.repository import Repository
 from action_platform.settings import settings
+from app.core.db.models import RegistryEntry
 
 
 class MissingManifest(ActionPlatformError):

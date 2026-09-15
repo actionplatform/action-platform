@@ -6,10 +6,6 @@ import shutil
 
 from fastapi import HTTPException
 
-from app.core.shared import git_auth as auth
-from app.repositories.registry import Entry
-from app.schemas import InitRequest, PushRequest
-from app.services.catalog import TemplateRepos
 from action_platform.core.manifest import write_source_host
 from action_platform.core.scaffold.generate import (
     apply_cloud,
@@ -17,8 +13,11 @@ from action_platform.core.scaffold.generate import (
     push_project,
 )
 from action_platform.settings import settings
-
+from app.core.shared import git_auth as auth
+from app.repositories.registry import Entry
+from app.schemas import InitRequest, PushRequest
 from app.services.apps.base import AppsBase
+from app.services.catalog import TemplateRepos
 
 
 class AppScaffolding(AppsBase):

@@ -6,6 +6,7 @@ from typing import Optional
 
 from sqlalchemy import select
 
+from action_platform.core.access import ROLES
 from app.core.db.models import (
     Invitation,
     Member,
@@ -20,7 +21,6 @@ from app.services.directory.base import (
     DirectoryBase,
     DirectoryError,
 )
-from action_platform.core.access import ROLES
 
 
 class InvitationsReads(DirectoryBase):

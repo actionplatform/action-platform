@@ -2,9 +2,9 @@
 
 from typing import Any, Callable
 
+from action_platform.core.exception import ProviderError
 from app.services.directory import slugify
 from app.services.organization_import.step import ImportStep
-from action_platform.core.exception import ProviderError
 
 MEMBERS_HINT = (
     "Teams and people need the GitHub App permission Organization › Members (read) — "

@@ -1,48 +1,37 @@
 """Code hosts connected to the organization."""
 
-from typing import Optional
+from fastapi import APIRouter
 
-from fastapi import APIRouter, Depends, Header
-
-from app.services.access.caller import Caller
-from app.services.hosts import PROVIDERS
-from app.services.directory import (
-    DirectoryWrites,
-)
 from action_platform.core.exception import ActionPlatformError
-
 from app.api.dependencies import (
+    CallerDep,
+    OrgDep,
+    WritesDep,
     allowed,
-    get_caller,
-    get_writes,
     host_row,
-    org_of,
 )
-
 from app.schemas import hosts as schemas
+from app.services.hosts import PROVIDERS
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
 
 @router.get("/hosts")
 def hosts(
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> list[schemas.HostRow]:
-    org = org_of(caller, x_organization)
-
     return [host_row(h) for h in writes.hosts_of(org.id)]
 
 
 @router.post("/hosts", status_code=201)
 def add_host(
     body: schemas.AddHostRequest,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> schemas.HostRow:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
 
     return host_row(
@@ -61,11 +50,10 @@ def add_host(
 @router.delete("/hosts/{host_id}", status_code=204)
 def remove_host(
     host_id: str,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> None:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     writes.remove_host(org.id, host_id)
 
@@ -74,11 +62,10 @@ def remove_host(
 def rotate_host_token(
     host_id: str,
     body: schemas.HostTokenRequest,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> None:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     writes.update_host_token(org.id, host_id, body.token)
 
@@ -87,11 +74,10 @@ def rotate_host_token(
 def set_host_owner(
     host_id: str,
     body: schemas.HostOwnerRequest,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> None:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     writes.set_host_owner(org.id, host_id, body.owner)
 
@@ -99,12 +85,10 @@ def set_host_owner(
 @router.get("/hosts/{host_id}/access")
 def host_access(
     host_id: str,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> dict:
-    org = org_of(caller, x_organization)
-
     try:
         creds = writes.credentials_for(org.id, host_id)
     except ActionPlatformError as e:

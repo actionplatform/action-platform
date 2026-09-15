@@ -1,21 +1,13 @@
 """Custom template repositories of the organization."""
 
-from typing import Optional
-
-from fastapi import APIRouter, Depends, Header
-
-from app.services.access.caller import Caller
-from app.services.directory import (
-    DirectoryWrites,
-)
+from fastapi import APIRouter
 
 from app.api.dependencies import (
+    CallerDep,
+    OrgDep,
+    WritesDep,
     allowed,
-    get_caller,
-    get_writes,
-    org_of,
 )
-
 from app.schemas import organizations as schemas
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
@@ -23,12 +15,10 @@ router = APIRouter(prefix="/api/v1", tags=["management"])
 
 @router.get("/template-sources")
 def template_sources(
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> list[schemas.TemplateSourceRow]:
-    org = org_of(caller, x_organization)
-
     return [
         schemas.TemplateSourceRow.model_validate(r, from_attributes=True)
         for r in writes.template_sources_of(org.id)
@@ -38,11 +28,10 @@ def template_sources(
 @router.post("/template-sources", status_code=201)
 def add_template_source(
     body: schemas.AddTemplateSource,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> schemas.TemplateSourceRow:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
 
     return schemas.TemplateSourceRow.model_validate(
@@ -54,10 +43,9 @@ def add_template_source(
 @router.delete("/template-sources/{id}", status_code=204)
 def remove_template_source(
     id: str,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> None:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     writes.remove_template_source(org.id, id)

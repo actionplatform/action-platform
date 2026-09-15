@@ -5,17 +5,6 @@ from typing import Optional
 
 from sqlalchemy import select
 
-from app.core.auth.errors import (
-    AuthError,
-    Forbidden,
-)
-from app.core.db.models import (
-    App,
-    DeviceCode,
-    Project,
-    Session,
-    User,
-)
 from action_platform.core.access import (
     DEFAULT_SCOPES,
     Grant,
@@ -29,6 +18,17 @@ from app.core.auth.base import (
     AuthBase,
     new_id,
     now,
+)
+from app.core.auth.errors import (
+    AuthError,
+    Forbidden,
+)
+from app.core.db.models import (
+    App,
+    DeviceCode,
+    Project,
+    Session,
+    User,
 )
 
 

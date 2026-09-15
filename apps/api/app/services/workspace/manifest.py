@@ -1,8 +1,8 @@
 """`platform.toml` and `LAST_VERSION` of a clone, as the API answers them."""
 
-import tomllib
 from pathlib import Path
 
+import tomllib
 from fastapi import HTTPException
 
 from action_platform.core.flow.repository import Repository

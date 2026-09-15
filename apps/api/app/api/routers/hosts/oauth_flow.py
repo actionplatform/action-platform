@@ -1,26 +1,16 @@
 """Connecting a host with OAuth: start, callback, disconnect."""
 
-from typing import Optional
-
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
-
-from app.services.access.caller import Caller
-from app.services.hosts import PROVIDERS
-from app.services.directory import (
-    DirectoryWrites,
-)
-from action_platform.core.exception import ActionPlatformError
+from fastapi import APIRouter, HTTPException, Request
 
 from app.api.dependencies import (
-    get_state_signer,
+    CallerDep,
+    OrgDep,
+    WritesDep,
     allowed,
-    get_caller,
-    get_writes,
-    org_of,
+    get_state_signer,
 )
-
-
 from app.schemas import hosts as schemas
+from app.services.hosts import PROVIDERS, HostConnector
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -30,14 +20,13 @@ def oauth_start(
     provider: str,
     body: schemas.OAuthStartRequest,
     request: Request,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> schemas.OAuthStarted:
     if provider not in PROVIDERS.by_kind:
         raise HTTPException(404, "unknown provider")
 
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     app = writes.oauth_app(provider)
 
@@ -60,8 +49,8 @@ def oauth_callback(
     provider: str,
     body: schemas.OAuthCallbackRequest,
     request: Request,
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> schemas.OAuthFinished:
     if provider not in PROVIDERS.by_kind:
         raise HTTPException(404, "unknown provider")
@@ -97,41 +86,14 @@ def oauth_callback(
             return_to=return_to, query={"oauth_error": "no code from the provider"}
         )
 
-    app = writes.oauth_app(provider)
+    problem = HostConnector(writes).finish(
+        org, provider, body.origin.rstrip("/"), body.code, body.installation_id
+    )
 
-    if app is None:
+    if problem:
         return schemas.OAuthFinished(
-            return_to=return_to,
-            query={
-                "oauth_error": f"{PROVIDERS.get(provider).label} OAuth app is not configured"
-            },
+            return_to=return_to, query={"oauth_error": problem}
         )
-
-    try:
-        host = PROVIDERS.get(provider)
-        access, refresh, expires_at = host.exchange_code(
-            app, body.origin.rstrip("/"), body.code
-        )
-        login, _ = host.identity(app, access)
-        owner = (
-            PROVIDERS.github.installation_owner(access, body.installation_id)
-            if body.installation_id
-            else PROVIDERS.bitbucket.first_workspace(access)
-            if provider == "bitbucket"
-            else None
-        )
-        writes.connect_oauth_host(
-            org.id,
-            provider,
-            login,
-            access,
-            refresh,
-            expires_at,
-            host.stored_base_url(app),
-            owner,
-        )
-    except ActionPlatformError as e:
-        return schemas.OAuthFinished(return_to=return_to, query={"oauth_error": str(e)})
 
     return schemas.OAuthFinished(return_to=return_to, query={"connected": provider})
 
@@ -140,10 +102,9 @@ def oauth_callback(
 def disconnect_oauth_host(
     provider: str,
     login: str,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> None:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     writes.remove_oauth_host(org.id, provider, login)

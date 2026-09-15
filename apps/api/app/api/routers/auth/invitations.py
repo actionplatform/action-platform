@@ -1,30 +1,32 @@
 """Opening and accepting an invitation."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session as DbSession
 
-from app.core.auth.service import (
-    AuthService,
-    now,
+from app.api.dependencies import (
+    AuthDep,
+    DbDep,
 )
-from app.api.dependencies import get_auth, get_db
-from app.services.directory import DirectoryWrites
-from app.core.db.models import (
-    Session,
-)
-from app.schemas import auth as schemas
-
-
 from app.api.routers.auth.support import (
     current_session,
     organization_out,
 )
+from app.core.auth.service import (
+    now,
+)
+from app.core.db.models import (
+    Session,
+)
+from app.schemas import auth as schemas
+from app.services.directory import DirectoryWrites
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.get("/invitations/{id}")
-def open_invitation(id: str, db: DbSession = Depends(get_db)) -> schemas.OpenInvitation:
+def open_invitation(
+    id: str,
+    db: DbDep,
+) -> schemas.OpenInvitation:
     found = DirectoryWrites(db).invitation(id)
 
     if found is None:
@@ -46,8 +48,8 @@ def open_invitation(id: str, db: DbSession = Depends(get_db)) -> schemas.OpenInv
 @router.post("/invitations/{id}/accept")
 def accept_invitation(
     id: str,
+    auth: AuthDep,
     session: Session = Depends(current_session),
-    auth: AuthService = Depends(get_auth),
 ) -> schemas.OrganizationOut:
     identity = auth.identity_of(session)
     organization = DirectoryWrites(auth.db).accept_invitation(id, identity.user)

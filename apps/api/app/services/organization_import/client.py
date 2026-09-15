@@ -2,10 +2,10 @@
 
 from typing import Any
 
+from action_platform.core.exception import ProviderError
 from app.core.abc import HostDirectory
 from app.core.shared.credentials import Credentials
 from app.core.shared.http import http
-from action_platform.core.exception import ProviderError
 
 PEOPLE_LOOKUP_LIMIT = 200
 

@@ -1,10 +1,6 @@
 from typing import Optional
 
 from action_platform import __version__
-from app import api_version
-from app.core.shared import git_auth as auth
-from app.schemas import SourceSpec
-from app.services.catalog.published import index
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.flow import gitflow
 from action_platform.core.scaffold.templates import (
@@ -15,6 +11,10 @@ from action_platform.core.scaffold.templates import (
     load_source,
 )
 from action_platform.settings import settings
+from app import api_version
+from app.core.shared import git_auth as auth
+from app.schemas import SourceSpec
+from app.services.catalog.published import index
 
 OFFICIAL_REF = settings.TEMPLATES_REF
 

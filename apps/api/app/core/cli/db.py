@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import typer
 
-from app.core.db import Database
 from action_platform.core.exception import ActionPlatformError
 from action_platform.settings import settings
+from app.core.db import Database
 
 app = typer.Typer(
     help="Database the API owns: migrations and status.", no_args_is_help=True

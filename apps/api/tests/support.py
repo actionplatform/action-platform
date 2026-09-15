@@ -48,6 +48,7 @@ class ApiCase(TempCase):
     def fake_push(self):
         """Make `init` push into a bare repository under the temp dir instead of a code host."""
         from app.services.apps import generate as apps
+
         from action_platform.core.flow.repository import Repository
 
         remotes = self.tmp_path / "remotes"

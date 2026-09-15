@@ -4,6 +4,13 @@ from typing import Optional
 
 from sqlalchemy import func, select
 
+from app.core.auth.base import (
+    PASSWORD_MIN,
+    PROVIDER,
+    AuthBase,
+    new_id,
+    now,
+)
 from app.core.auth.errors import (
     AuthError,
     Forbidden,
@@ -14,13 +21,6 @@ from app.core.db.models import (
     Invitation,
     Session,
     User,
-)
-from app.core.auth.base import (
-    PASSWORD_MIN,
-    PROVIDER,
-    AuthBase,
-    new_id,
-    now,
 )
 
 

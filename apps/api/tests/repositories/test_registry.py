@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from tests.support import ApiCase
 from action_platform.testing.fixtures import git
+from tests.support import ApiCase
 
 
 class RegistryTest(ApiCase):

@@ -7,30 +7,30 @@ import time
 import uuid
 from typing import Any, Callable, Optional
 
-from app.services.access.enrich import enrich
+from action_platform.core.exception import ActionPlatformError
 from app.core.access.rules import rule_for
 from app.core.auth.crypto import Sealer
 from app.core.auth.secrets import Secrets
-from app.repositories.source import configure_registry, get_registry
 from app.core.db.database import Database
 from app.core.db.models import App, Job, Organization
+from app.core.shared.urls import GitUrl
+from app.repositories.source import configure_registry, get_registry
 from app.schemas import (
     DeployRequest,
     PushRequest,
     ReleaseRequest,
     SyncRequest,
 )
+from app.services.access.enrich import enrich
+from app.services.activity import ActivityService
 from app.services.apps import AppService
 from app.services.directory import (
     DirectoryService,
     DirectoryWrites,
 )
-from app.services.organization_import import OrganizationImport
-from app.services.activity import ActivityService
 from app.services.jobs import JobQueue
+from app.services.organization_import import OrganizationImport
 from app.services.workspace.lifecycle import LifecycleService
-from action_platform.core.exception import ActionPlatformError
-from app.core.shared.urls import GitUrl
 
 log = logging.getLogger("action_platform.worker")
 

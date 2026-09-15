@@ -2,35 +2,30 @@
 
 from typing import Optional
 
-from action_platform.core.access import ROLE_LABELS
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Header
 
+from action_platform.core.access import ROLE_LABELS
 from app.api.dependencies import (
+    CallerDep,
+    DirectoryDep,
+    OrgDep,
+    WritesDep,
     allowed,
-    get_caller,
-    get_directory,
-    get_writes,
     manageable,
-    org_of,
     required_org,
 )
-from app.services.access.caller import Caller
-from app.services.directory import DirectoryService, DirectoryWrites
-
-
-from app.schemas import organizations as schemas
-
 from app.schemas import common
+from app.schemas import organizations as schemas
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
 
 @router.get("/teams")
 def teams(
+    caller: CallerDep,
+    directory: DirectoryDep,
     x_organization: Optional[str] = Header(default=None),
     organization: Optional[str] = None,
-    caller: Caller = Depends(get_caller),
-    directory: DirectoryService = Depends(get_directory),
 ) -> list[schemas.TeamRow]:
     org = required_org(caller, x_organization, organization)
 
@@ -55,10 +50,10 @@ def teams(
 
 @router.get("/members")
 def members(
+    caller: CallerDep,
+    directory: DirectoryDep,
     x_organization: Optional[str] = Header(default=None),
     organization: Optional[str] = None,
-    caller: Caller = Depends(get_caller),
-    directory: DirectoryService = Depends(get_directory),
 ) -> list[schemas.MemberRow]:
     org = required_org(caller, x_organization, organization)
 
@@ -77,9 +72,9 @@ def members(
 @router.post("/teams", status_code=201)
 def create_team(
     body: schemas.CreateTeamRequest,
+    caller: CallerDep,
+    directory: DirectoryDep,
     x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    directory: DirectoryService = Depends(get_directory),
 ) -> common.Created:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "teams")
@@ -91,9 +86,9 @@ def create_team(
 @router.post("/teams/members")
 def add_team_member(
     body: schemas.TeamMemberRequest,
+    caller: CallerDep,
+    directory: DirectoryDep,
     x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    directory: DirectoryService = Depends(get_directory),
 ) -> common.Ok:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "teams/members")
@@ -105,9 +100,9 @@ def add_team_member(
 @router.post("/members/role")
 def set_member_role(
     body: schemas.MemberRoleRequest,
+    caller: CallerDep,
+    directory: DirectoryDep,
     x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    directory: DirectoryService = Depends(get_directory),
 ) -> common.Ok:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "members/role")
@@ -120,11 +115,10 @@ def set_member_role(
 def update_team(
     team_id: str,
     body: schemas.TeamUpdate,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> dict:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     team = writes.update_team(org.id, team_id, body.name, body.description or "")
 
@@ -134,11 +128,10 @@ def update_team(
 @router.delete("/teams/{team_id}", status_code=204)
 def delete_team(
     team_id: str,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> None:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     writes.delete_team(org.id, team_id)
 
@@ -147,11 +140,10 @@ def delete_team(
 def remove_team_member(
     team_id: str,
     user_id: str,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> None:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     writes.remove_team_member(org.id, team_id, user_id)
 
@@ -159,10 +151,9 @@ def remove_team_member(
 @router.delete("/members/{user_id}", status_code=204)
 def remove_member(
     user_id: str,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> None:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     writes.remove_member(org.id, user_id)

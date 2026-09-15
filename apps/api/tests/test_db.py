@@ -114,10 +114,9 @@ class DatabaseTest(TempCase):
             self.assertIsNone(s.get(Organization, "o1"))
 
     def test_job_dedupe_and_defaults(self):
-        from sqlalchemy.exc import IntegrityError
-
         from app.core.db import Database
         from app.core.db.models import Job
+        from sqlalchemy.exc import IntegrityError
 
         db = Database(self.url())
         db.migrate()
@@ -153,6 +152,7 @@ class DatabaseTest(TempCase):
 
     def test_empty_url_is_a_config_error(self):
         from app.core.db import Database
+
         from action_platform.core.exception import ConfigError
 
         with self.assertRaises(ConfigError):
@@ -174,6 +174,7 @@ class BootTest(TempCase):
 
     def test_build_without_url_refuses(self):
         from app.api.app import build
+
         from action_platform.core.exception import ConfigError
 
         with self.assertRaisesRegex(ConfigError, "AP_DATABASE_URL"):
