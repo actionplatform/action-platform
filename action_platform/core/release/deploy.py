@@ -21,10 +21,12 @@ class Deployer:
         config: Config,
         repo: Repository | Path,
         identity: Callable[[str], str] | None = None,
+        env: dict[str, str] | None = None,
     ) -> None:
         self.config = config
         self.repo = repo if isinstance(repo, Repository) else Repository(repo)
         self.identity = identity
+        self.env = dict(env or {})
 
     def targets(self, name: str | None = None) -> list[DeployTarget]:
         targets = (
@@ -47,6 +49,7 @@ class Deployer:
         )
         ctx.next_version = ctx.current_version
         ctx.identity = self.identity
+        ctx.env = {**ctx.env, **self.env}
 
         return ctx
 

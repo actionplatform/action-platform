@@ -19,10 +19,14 @@ from app.services.workspace import Workspaces
 
 class LifecycleService:
     def __init__(
-        self, registry: Registry, identity: Callable[[str], str] | None = None
+        self,
+        registry: Registry,
+        identity: Callable[[str], str] | None = None,
+        env: dict[str, str] | None = None,
     ) -> None:
         self.registry = registry
         self.identity = identity
+        self.env = env
 
     def _tool(self, id: str, fresh: bool = False) -> ActionPlatform:
         _, root = Workspaces(self.registry).checkout(id, fresh=fresh)
@@ -31,6 +35,7 @@ class LifecycleService:
             config=Config.from_toml(root / settings.CONFIG_FILE),
             repo_root=root,
             identity=self.identity,
+            env=self.env,
         )
 
     def release(self, id: str, body: ReleaseRequest) -> dict:

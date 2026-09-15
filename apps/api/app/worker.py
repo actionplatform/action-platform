@@ -7,6 +7,8 @@ import time
 import uuid
 from typing import Any, Callable, Optional
 
+from sqlalchemy import select
+
 from action_platform.core.exception import ActionPlatformError
 from action_platform.plugins import registry
 from action_platform.settings import settings
@@ -14,7 +16,7 @@ from app.core.access.rules import rule_for
 from app.core.auth.crypto import Sealer
 from app.core.auth.secrets import Secrets
 from app.core.db.database import Database
-from app.core.db.models import App, Job, Organization, Project
+from app.core.db.models import App, Job, Organization, PluginOption, Project
 from app.core.shared.urls import GitUrl
 from app.repositories.source import configure_registry, get_registry
 from app.schemas import (
@@ -162,8 +164,34 @@ class Worker:
         organization, app, body = self._context(payload)
 
         return LifecycleService(
-            get_registry(), identity=self._identity(organization, app, body)
+            get_registry(),
+            identity=self._identity(organization, app, body),
+            env=self._deploy_env(organization, app),
         ).deploy(payload["registry_id"], DeployRequest(**body))
+
+    def _deploy_env(
+        self, organization: Optional[Organization], app: Optional[App]
+    ) -> dict[str, str]:
+        """What the platform tells a deploy target that the repository need not: the app's `org/project/app` and every plugin option the organization set — `AP_APP`, `AP_<SLUG>_<KEY>`."""
+        if organization is None or app is None:
+            return {}
+
+        with self.database.session() as db:
+            project = db.get(Project, app.project_id)
+            rows = db.scalars(select(PluginOption)).all()
+
+        env = {
+            "AP_APP": f"{organization.slug}/{project.slug if project else ''}/{app.name}",
+        }
+
+        for row in rows:
+            value = json.loads(row.value)
+
+            if isinstance(value, (str, int, float)) and not isinstance(value, bool):
+                name = f"AP_{row.plugin}_{row.key}".upper().replace("-", "_")
+                env[name] = str(value)
+
+        return env
 
     def _identity(
         self, organization: Optional[Organization], app: Optional[App], body: dict
