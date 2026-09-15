@@ -1,5 +1,6 @@
 import hmac
 import os
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -22,6 +23,8 @@ from app.core.auth.secrets import Secrets
 from app.core.db import Database
 from app.core.shared.urls import GitUrl
 from app.repositories.source import configure_registry, get_registry
+
+log = logging.getLogger("action_platform.api")
 
 OPEN_PATHS = {
     "/api/version",
@@ -55,7 +58,13 @@ def build(
     app.state.db = Database(
         url, settings.DATABASE_POOL_SIZE, settings.DATABASE_MAX_OVERFLOW
     )
-    app.state.db.migrate()
+
+    if settings.DATABASE_AUTO_MIGRATE:
+        app.state.db.migrate()
+    elif app.state.db.behind():
+        log.warning(
+            "database behind head: run `action-platform-api db migrate` — /api/version reports ready=false until then"
+        )
     configure_registry(app.state.db)
     registry.use_options(lambda slug: DbOptions(app.state.db, slug))
 
