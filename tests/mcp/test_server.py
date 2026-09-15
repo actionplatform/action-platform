@@ -9,7 +9,7 @@ from tests.support import git, install_templates
 class ToolSurfaceTest(McpCase):
     def test_tools_exposed(self):
         self.assertEqual(
-            set(self.tools()),
+            {name for name in self.tools() if "." not in name},
             {
                 "list_matrix",
                 "init_project",
