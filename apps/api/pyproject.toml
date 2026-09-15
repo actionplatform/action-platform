@@ -4,7 +4,7 @@ version = "0.16.0"
 description = "The hosted Action Platform: accounts, organizations, apps and jobs over the action-platform library."
 readme = "README.md"
 license = "Apache-2.0"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = [
   "action-platform",
   "fastapi>=0.115",
@@ -13,7 +13,7 @@ dependencies = [
   "alembic>=1.13",
   "psycopg[binary]>=3.1",
   "pymysql>=1.1",
-  "cryptography>=42",
+  "cryptography>=50",
   "sentry-sdk[fastapi]>=2.0",
   "typer>=0.15",
   "apx-aws-lambda>=0.3.3",
@@ -30,7 +30,7 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.12"
+python = ">=3.12,<3.14"
 action-platform = { path = "../..", develop = true }
 
 [tool.poetry.group.dev.dependencies]
