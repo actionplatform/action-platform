@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.14.6 — 2026-09-14
+
+### Refactoring
+- **api:** routers and schemas by domain — auth, organizations, hosts, projects, apps, catalog, jobs
+
 ## v0.14.5 — 2026-09-14
 
 ### Refactoring
