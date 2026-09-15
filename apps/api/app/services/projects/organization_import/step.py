@@ -1,7 +1,7 @@
 """What every import step shares: the context of the platform organization and the host directory it reads from."""
 
 from app.core.abc import HostDirectory
-from app.services.organization_import.context import ImportContext
+from app.services.projects.organization_import.context import ImportContext
 
 
 class ImportStep:

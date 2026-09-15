@@ -11,8 +11,8 @@ from action_platform.settings import settings
 from app.core.shared import git_auth as auth
 from app.repositories.registry import Entry
 from app.schemas import InitRequest, PushRequest
-from app.services.apps.base import AppsBase
-from app.services.catalog import TemplateRepos
+from app.services.projects.apps.base import AppsBase
+from app.services.templates import TemplateRepos
 from app.core.errors import Conflict, Invalid
 
 

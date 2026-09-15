@@ -2,7 +2,7 @@
 
 from app.core.db.models import Project, Team, User
 from app.services.directory import slugify
-from app.services.organization_import.step import ImportStep
+from app.services.projects.organization_import.step import ImportStep
 
 
 class TeamImporter(ImportStep):

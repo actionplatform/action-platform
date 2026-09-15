@@ -14,13 +14,13 @@ from app.repositories.registry import Registry
 from app.schemas import DeployRequest, PushRequest, ReleaseRequest, SyncRequest
 from app.services import plugins
 from app.services.activity import ActivityService
-from app.services.apps import AppService
+from app.services.projects.apps import AppService
 from app.services.deployments import DeployEnv
 from app.services.directory import DirectoryService, DirectoryWrites
 from app.services.deployments.identity import AppIdentity
 from app.services.jobs.context import JobContext
 from app.services.jobs.registry import JobServices, register
-from app.services.organization_import import OrganizationImport
+from app.services.projects.organization_import import OrganizationImport
 from app.services.deployments import DeploymentsService
 from app.services.releases import ReleasesService
 

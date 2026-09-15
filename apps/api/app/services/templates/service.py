@@ -11,8 +11,8 @@ from action_platform.core.scaffold.templates import (
 from action_platform.settings import settings
 from app import api_version
 from app.schemas import SourceSpec
-from app.services.catalog.published import index
-from app.services.catalog.sources import OFFICIAL_REF, MatrixView, TemplateRepos
+from app.services.templates.published import index
+from app.services.templates.sources import OFFICIAL_REF, MatrixView, TemplateRepos
 
 
 class CatalogService:

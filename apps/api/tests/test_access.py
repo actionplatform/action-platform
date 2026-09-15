@@ -226,7 +226,7 @@ class AppsTest(GateCase):
                     git_author_email="bot@acme.io",
                 )
             )
-        from app.services.apps import AppService
+        from app.services.projects.apps import AppService
 
         seen = {}
         original = AppService.sync

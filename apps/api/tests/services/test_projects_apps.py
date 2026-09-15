@@ -1,4 +1,4 @@
-"""app.services.apps — register, inspect, sync, generate and import apps."""
+"""app.services.projects.apps — register, inspect, sync, generate and import apps."""
 
 from __future__ import annotations
 

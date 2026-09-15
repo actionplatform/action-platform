@@ -74,8 +74,8 @@ class SentryTest(ApiCase):
 
 class CatalogIndexTest(ApiCase):
     def test_matrix_prefers_the_published_index(self):
-        from app.services.catalog import published
-        from app.services.catalog import service as catalog
+        from app.services.templates import published
+        from app.services.templates import service as catalog
 
         from action_platform.settings import settings
 
@@ -148,8 +148,8 @@ class CatalogIndexTest(ApiCase):
         )
 
     def test_matrix_falls_back_to_the_checkout_when_the_index_is_down(self):
-        from app.services.catalog import published
-        from app.services.catalog import service as catalog
+        from app.services.templates import published
+        from app.services.templates import service as catalog
 
         from action_platform.settings import settings
         from action_platform.testing.fixtures import template_repo
@@ -168,7 +168,7 @@ class CatalogIndexTest(ApiCase):
 
 class TemplatesIndexTest(unittest.TestCase):
     def test_revalidates_with_etag_and_keeps_cache_on_304(self):
-        from app.services.catalog import published
+        from app.services.templates import published
 
         calls = []
 

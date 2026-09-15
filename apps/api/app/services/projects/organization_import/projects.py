@@ -4,7 +4,7 @@ from typing import Optional
 
 from app.core.db.models import Project
 from app.services.directory import DirectoryError
-from app.services.organization_import.step import ImportStep
+from app.services.projects.organization_import.step import ImportStep
 
 
 class ProjectImporter(ImportStep):
