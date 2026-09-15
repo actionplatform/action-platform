@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.2 — 2026-09-15
+
+### Bug Fixes
+- **web:** a removed plugin shows Removed with no actions until the restart
+
 ## v0.18.1 — 2026-09-15
 
 ### Bug Fixes
