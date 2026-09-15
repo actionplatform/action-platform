@@ -5,7 +5,6 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Header
 
 from app.services.access.caller import Caller
-from app.schemas import management as schemas
 from app.services.directory import (
     DirectoryWrites,
 )
@@ -16,6 +15,8 @@ from app.api.dependencies import (
     get_writes,
     org_of,
 )
+
+from app.schemas import organizations as schemas
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 

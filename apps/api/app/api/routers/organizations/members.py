@@ -14,11 +14,13 @@ from app.api.dependencies import (
     org_of,
     required_org,
 )
-from app.schemas import directory as dschemas
-from app.schemas import management as schemas
 from app.services.access.caller import Caller
 from app.services.directory import DirectoryService, DirectoryWrites
 
+
+from app.schemas import organizations as schemas
+
+from app.schemas import common
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -29,21 +31,21 @@ def teams(
     organization: Optional[str] = None,
     caller: Caller = Depends(get_caller),
     directory: DirectoryService = Depends(get_directory),
-) -> list[dschemas.TeamRow]:
+) -> list[schemas.TeamRow]:
     org = required_org(caller, x_organization, organization)
 
     return [
-        dschemas.TeamRow(
+        schemas.TeamRow(
             id=t.id,
             name=t.name,
             slug=t.slug,
             description=t.description,
             members=[
-                dschemas.TeamMemberRow(userId=u.id, name=u.name, email=u.email)
+                schemas.TeamMemberRow(userId=u.id, name=u.name, email=u.email)
                 for u in directory.team_members_of(t.id)
             ],
             projects=[
-                dschemas.Named(id=p.id, name=p.name)
+                common.Named(id=p.id, name=p.name)
                 for p in directory.team_projects_of(t.id)
             ],
         )
@@ -57,11 +59,11 @@ def members(
     organization: Optional[str] = None,
     caller: Caller = Depends(get_caller),
     directory: DirectoryService = Depends(get_directory),
-) -> list[dschemas.MemberRow]:
+) -> list[schemas.MemberRow]:
     org = required_org(caller, x_organization, organization)
 
     return [
-        dschemas.MemberRow(
+        schemas.MemberRow(
             user_id=u.id,
             name=u.name,
             email=u.email,
@@ -74,44 +76,44 @@ def members(
 
 @router.post("/teams", status_code=201)
 def create_team(
-    body: dschemas.CreateTeamRequest,
+    body: schemas.CreateTeamRequest,
     x_organization: Optional[str] = Header(default=None),
     caller: Caller = Depends(get_caller),
     directory: DirectoryService = Depends(get_directory),
-) -> dschemas.Created:
+) -> common.Created:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "teams")
     team = directory.create_team(org.id, body.name, body.description or "")
 
-    return dschemas.Created(id=team.id, name=team.name, slug=team.slug)
+    return common.Created(id=team.id, name=team.name, slug=team.slug)
 
 
 @router.post("/teams/members")
 def add_team_member(
-    body: dschemas.TeamMemberRequest,
+    body: schemas.TeamMemberRequest,
     x_organization: Optional[str] = Header(default=None),
     caller: Caller = Depends(get_caller),
     directory: DirectoryService = Depends(get_directory),
-) -> dschemas.Ok:
+) -> common.Ok:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "teams/members")
     directory.add_team_member(org.id, body.team_id, body.user_id)
 
-    return dschemas.Ok()
+    return common.Ok()
 
 
 @router.post("/members/role")
 def set_member_role(
-    body: dschemas.MemberRoleRequest,
+    body: schemas.MemberRoleRequest,
     x_organization: Optional[str] = Header(default=None),
     caller: Caller = Depends(get_caller),
     directory: DirectoryService = Depends(get_directory),
-) -> dschemas.Ok:
+) -> common.Ok:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "members/role")
     directory.set_member_role(org.id, body.user_id, body.role)
 
-    return dschemas.Ok()
+    return common.Ok()
 
 
 @router.put("/teams/{team_id}")

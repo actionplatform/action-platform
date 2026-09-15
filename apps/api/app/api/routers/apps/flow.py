@@ -6,7 +6,7 @@ from app import schemas
 from app.api.dependencies import get_flow
 from app.services.workspace.flow import FlowService
 
-router = APIRouter(prefix="/apps", tags=["flow"])
+router = APIRouter(prefix="/api/apps", tags=["flow"])
 
 
 @router.post("/{id}/branches", status_code=201)

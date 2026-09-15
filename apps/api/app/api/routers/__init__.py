@@ -1,7 +1,12 @@
-"""Every route the API serves."""
+"""Every route the API serves, one package per domain."""
 
-from app.api.routers.auth import router as auth
-from app.api.routers.management import router as management
-from app.api.routers.workspace import router as workspace
+from fastapi import APIRouter
 
-__all__ = ["auth", "management", "workspace"]
+from app.api.routers import apps, auth, catalog, hosts, jobs, organizations, projects
+
+router = APIRouter()
+
+for part in (auth, organizations, hosts, projects, apps, catalog, jobs):
+    router.include_router(part.router)
+
+__all__ = ["router"]

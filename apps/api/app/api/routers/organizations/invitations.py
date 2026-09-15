@@ -1,11 +1,10 @@
-"""Custom template repositories of the organization."""
+"""Invitations into the organization."""
 
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Header
 
 from app.services.access.caller import Caller
-from app.schemas import management as schemas
 from app.services.directory import (
     DirectoryWrites,
 )
@@ -17,41 +16,58 @@ from app.api.dependencies import (
     org_of,
 )
 
+from app.schemas import organizations as schemas
+
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
 
-@router.get("/template-sources")
-def template_sources(
+@router.get("/invitations")
+def invitations(
     x_organization: Optional[str] = Header(default=None),
     caller: Caller = Depends(get_caller),
     writes: DirectoryWrites = Depends(get_writes),
-) -> list[schemas.TemplateSourceRow]:
-    org = org_of(caller, x_organization)
-
-    return [
-        schemas.TemplateSourceRow.model_validate(r, from_attributes=True)
-        for r in writes.template_sources_of(org.id)
-    ]
-
-
-@router.post("/template-sources", status_code=201)
-def add_template_source(
-    body: schemas.AddTemplateSource,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
-) -> schemas.TemplateSourceRow:
+) -> list[schemas.InvitationRow]:
     org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
 
-    return schemas.TemplateSourceRow.model_validate(
-        writes.add_template_source(org.id, body.name, body.url, body.ref or ""),
-        from_attributes=True,
+    return [
+        schemas.InvitationRow(
+            id=i.id,
+            email=i.email,
+            role=i.role,
+            status=i.status,
+            expires_at=i.expires_at,
+            created_at=i.created_at,
+            inviter=u.name,
+        )
+        for i, u in writes.invitations_of(org.id)
+    ]
+
+
+@router.post("/invitations", status_code=201)
+def invite(
+    body: schemas.InviteRequest,
+    x_organization: Optional[str] = Header(default=None),
+    caller: Caller = Depends(get_caller),
+    writes: DirectoryWrites = Depends(get_writes),
+) -> schemas.InvitationRow:
+    org = org_of(caller, x_organization)
+    allowed(caller, org, "org.manage")
+    i = writes.create_invitation(org.id, caller.user.id, body.email, body.role)
+
+    return schemas.InvitationRow(
+        id=i.id,
+        email=i.email,
+        role=i.role,
+        status=i.status,
+        expires_at=i.expires_at,
+        created_at=i.created_at,
+        inviter=caller.user.name,
     )
 
 
-@router.delete("/template-sources/{id}", status_code=204)
-def remove_template_source(
+@router.delete("/invitations/{id}", status_code=204)
+def cancel_invitation(
     id: str,
     x_organization: Optional[str] = Header(default=None),
     caller: Caller = Depends(get_caller),
@@ -59,4 +75,4 @@ def remove_template_source(
 ) -> None:
     org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
-    writes.remove_template_source(org.id, id)
+    writes.cancel_invitation(org.id, id)

@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from app.core.db.models import Organization, PullRequest, Release
-from app.schemas import management as schemas
+from app.schemas import hosts, projects
 from app.services.access.caller import Caller
 from app.services.directory import DirectoryWrites
 
@@ -16,8 +16,8 @@ def org_dict(organization: Organization) -> dict:
     return {"id": organization.id, "name": organization.name, "slug": organization.slug}
 
 
-def host_row(host) -> schemas.HostRow:
-    return schemas.HostRow(
+def host_row(host) -> hosts.HostRow:
+    return hosts.HostRow(
         id=host.id,
         kind=host.kind,
         name=host.name,
@@ -32,7 +32,7 @@ def host_row(host) -> schemas.HostRow:
 
 def imports_of(
     db: DbSession, app_id: str, errors: Optional[dict] = None
-) -> schemas.Imports:
+) -> projects.Imports:
     releases = db.scalars(
         select(Release)
         .where(Release.app_id == app_id)
@@ -44,12 +44,13 @@ def imports_of(
         .order_by(PullRequest.updated_at.desc())
     ).all()
 
-    return schemas.Imports(
+    return projects.Imports(
         releases=[
-            schemas.ReleaseRow.model_validate(r, from_attributes=True) for r in releases
+            projects.ReleaseRow.model_validate(r, from_attributes=True)
+            for r in releases
         ],
         pull_requests=[
-            schemas.PullRequestRow.model_validate(p, from_attributes=True)
+            projects.PullRequestRow.model_validate(p, from_attributes=True)
             for p in pulls
         ],
         errors=errors or {},

@@ -3,6 +3,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from app.schemas.common import Named
+
 
 class SignUpRequest(BaseModel):
     name: str
@@ -159,11 +161,6 @@ class TokenIssued(BaseModel):
     token: str
     scope: list[str]
     expires_at: datetime
-
-
-class Named(BaseModel):
-    id: str
-    name: str
 
 
 class TokenClientOut(BaseModel):

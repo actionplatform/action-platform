@@ -6,7 +6,7 @@ from app import schemas
 from app.api.dependencies import get_configuration
 from app.services.workspace.configuration import ConfigurationService
 
-router = APIRouter(prefix="/apps", tags=["configuration"])
+router = APIRouter(prefix="/api/apps", tags=["configuration"])
 
 
 @router.get("/{id}/manifest")
