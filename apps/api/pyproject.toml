@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.scripts]
-action-platform-api = "app.core.cli:main"
+action-platform-api = "app.cli:main"
 
 [tool.poetry]
 packages = [{ include = "app" }]

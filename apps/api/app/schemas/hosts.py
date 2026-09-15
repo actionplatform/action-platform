@@ -75,7 +75,7 @@ class OAuthFinished(BaseModel):
     query: dict[str, str]
 
 
-class ManifestRequest(BaseModel):
+class GitHubAppManifestRequest(BaseModel):
     origin: str
     host: str
     return_to: Optional[str] = "/settings"

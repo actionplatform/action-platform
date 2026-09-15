@@ -40,7 +40,7 @@ def github_install(
 
 @router.post("/oauth/github/manifest")
 def github_manifest(
-    body: schemas.ManifestRequest,
+    body: schemas.GitHubAppManifestRequest,
     request: Request,
     org: OrgDep,
     caller: CallerDep,

@@ -61,7 +61,7 @@ export const v1 = {
     unwrap(await client.POST("/api/v1/oauth/{provider}/callback", { params: { path: { provider } }, body })),
   disconnectOAuthHost: async (provider: string, login: string) =>
     unwrap(await client.DELETE("/api/v1/oauth/{provider}/hosts/{login}", { params: { path: { provider, login } } })),
-  githubManifest: async (body: Schemas["ManifestRequest"]) => unwrap(await client.POST("/api/v1/oauth/github/manifest", { body })),
+  githubManifest: async (body: Schemas["GitHubAppManifestRequest"]) => unwrap(await client.POST("/api/v1/oauth/github/manifest", { body })),
   githubManifestCallback: async (body: Schemas["ManifestCallbackRequest"]) => unwrap(await client.POST("/api/v1/oauth/github/manifest/callback", { body })),
   githubInstall: async (origin: string, returnTo: string) => unwrap(await client.POST("/api/v1/oauth/github/install", { body: { origin, return_to: returnTo } })),
   gitAuthor: async () => unwrap(await client.GET("/api/v1/settings/git-author")),

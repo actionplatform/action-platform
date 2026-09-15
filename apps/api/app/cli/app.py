@@ -5,9 +5,9 @@ import sys
 import typer
 
 from action_platform.core.exception import ActionPlatformError
-from app.core.cli import db as db_cmd
-from app.core.cli import serve as serve_cmd
-from app.core.cli import worker as worker_cmd
+from app.cli import db as db_cmd
+from app.cli import serve as serve_cmd
+from app.cli import worker as worker_cmd
 
 app = typer.Typer(
     name="action-platform-api",
