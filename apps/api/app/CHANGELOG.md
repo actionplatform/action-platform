@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.20.10 — 2026-09-15
+
+### Refactoring
+- **api:** DirectoryService dissolved — OrganizationRepository, ProjectsRepository, IntegrationsDirectory, and the two compositions that span them (AccessDirectory, ImportDirectory)
+- **api:** repositories by context — the directory's query mixins become repositories/{organization,projects,integrations}; workspace and configuration folders
+- **api:** schemas and models named by context; routes import from the owning module
+- **api:** services/integrations (hosts, plugins), services/organization (sessions), services/auth out of core
+- **api:** services/projects (service, apps, organization_import) and services/templates
+- **api:** services by context — activity, releases, deployments, configuration
+- **api:** job kinds registered through services/jobs/registry; the worker lives in services/jobs
+- **api:** routers become api/routes — one file per context, deployments apart from releases
+
+### CI
+- contracts for the layout by context — routes → services → repositories → schemas → core; independent app contexts; git_auth leaves core
+
 ## v0.20.9 — 2026-09-15
 
 ### Features
