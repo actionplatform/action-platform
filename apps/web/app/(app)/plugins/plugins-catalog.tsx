@@ -26,6 +26,7 @@ export type PluginItem = {
   installed: boolean;
   installed_version?: string | null;
   enabled: boolean;
+  removed?: boolean;
   restart_pending?: boolean;
   error?: string | null;
 };
@@ -166,7 +167,7 @@ function HostedActions({ item }: { item: PluginItem }) {
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
-      {!item.installed && <Button size="sm" disabled={busy} onClick={() => setConfirm("install")}>{job ? "Installing…" : "Install on platform"}</Button>}
+      {!item.installed && !item.removed && <Button size="sm" disabled={busy} onClick={() => setConfirm("install")}>{job ? "Installing…" : "Install on platform"}</Button>}
       {item.installed && (
         <>
           {!item.error && <Button size="sm" variant="outline" disabled={busy} onClick={toggle}>{item.enabled ? "Disable" : "Enable"}</Button>}
@@ -211,6 +212,7 @@ function PluginCard({ item, hosted, canManage }: { item: PluginItem; hosted: boo
             {item.verified && <Badge tone="ok" className="gap-1"><BadgeCheck className="size-3" strokeWidth={2} /> Verified</Badge>}
             {item.installed && !item.error && <Badge tone={item.enabled ? "inverse" : "neutral"}>{item.enabled ? "On this platform" : "Installed, disabled"}</Badge>}
             {item.error && <Badge tone="bad">Failed to load</Badge>}
+            {item.removed && <Badge tone="neutral">Removed</Badge>}
             {item.restart_pending && <Badge className="gap-1"><RotateCw className="size-3" strokeWidth={1.75} /> Restart required</Badge>}
           </div>
           <p className="mt-1 text-[13px] text-secondary">{item.description}</p>
