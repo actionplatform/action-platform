@@ -25,7 +25,9 @@ class JobOut(BaseModel):
     attempts: int
     stage: Optional[str] = None
     dry_run: Optional[bool] = None
+    version: Optional[str] = None
     by: Optional[str] = None
+    started_at: Optional[datetime] = None
     result: Optional[Any] = None
     error: Optional[str] = None
     created_at: datetime

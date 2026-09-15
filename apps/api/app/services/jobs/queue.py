@@ -195,6 +195,8 @@ class JobQueue:
             "attempts": job.attempts,
             "stage": body.get("stage"),
             "dry_run": body.get("dry_run"),
+            "version": body.get("version"),
+            "started_at": job.locked_at,
             "user_id": payload.get("user_id") or payload.get("by"),
             "result": json.loads(job.result) if job.result else None,
             "error": job.error,
