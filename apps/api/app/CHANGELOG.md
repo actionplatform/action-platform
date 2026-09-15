@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.20.15 — 2026-09-15
+
+### Features
+- **api:** a deploy queued by an organization manager signs identity tokens with org.manage — the target may register the app where it deploys
+
 ## v0.20.14 — 2026-09-15
 
 ## v0.20.13 — 2026-09-15
