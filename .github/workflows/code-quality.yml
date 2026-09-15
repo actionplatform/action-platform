@@ -20,4 +20,6 @@ jobs:
       - uses: actionplatform/ci-github/setup@v1
       - run: poetry run pip install -e apps/api
       - run: poetry run ruff check apps/api && poetry run ruff format --check apps/api
-      - run: cd apps/api && "$(poetry env info -p)/bin/python" -m pytest -q
+      - run: |
+          python="$(poetry run python -c 'import sys; print(sys.executable)')"
+          cd apps/api && "$python" -m pytest -q
