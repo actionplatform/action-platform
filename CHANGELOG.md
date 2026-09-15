@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.13.0 — 2026-09-14
+
+### Features
+- **env:** a .env in the working directory fills in unset variables for the CLI, the API and the worker; api errors print one line
+- **web:** settings split into pages — General, Members, Code hosts, Git-flow, API — as a sidebar submenu and tabs on a phone
+
+### Refactoring
+- **api:** TokenMinter, ImportGateway and HostConnector.create_github_app take the last orchestration out of the routers; import schemas in schemas/imports
+- **api:** routes only translate HTTP — ProjectService (add, init, delete, sync activity) and HostConnector (OAuth finish) hold the orchestration
+- **api:** routes declare their dependencies as Annotated types (CallerDep, OrgDep, WritesDep, …)
+- **api:** routers and schemas by domain — auth, organizations, hosts, projects, apps, catalog, jobs
+- **api:** routers by context (workspace, management, auth packages) over api/dependencies; AuthService and the models split by context; delete_through_host on AppRemote
+- **api:** core never imports services (caller and enrich live in services/access), core/auth is a real package, one ruff config for the whole repository
+
+### CI
+- **web:** npm install, the lock written on macOS misses linux-only optional packages for npm ci
+
 ## v0.12.0 — 2026-09-14
 
 ### Refactoring
