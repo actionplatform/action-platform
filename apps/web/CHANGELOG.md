@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.18.9 — 2026-09-15
+
+### Bug Fixes
+- **web:** failed() shows a generic message for unexpected errors and names a timeout
+
+### Refactoring
+- **web:** the app wizard split into useAppWizard, the five steps and shared parts
+- **api:** GitHubAppManifestRequest and AppConfigBody — one name per meaning
+
+### Tests
+- **web:** safePath, failed, relativeTime, release helpers, run summaries, the app wizard hook
+
+### Build
+- **web:** vitest with Testing Library
+
 ## v0.18.8 — 2026-09-15
 
 ### Features
