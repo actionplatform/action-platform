@@ -1,5 +1,35 @@
 # Changelog
 
+## v0.17.7 — 2026-09-15
+
+### Features
+- **web:** Organization (teams, members, sessions) and Integrations (code hosts, cloud) as their own sections; features/organization, integrations, account; old paths redirect
+
+### Refactoring
+- **web:** lib/api/<context>.ts — v1 assembled from organization, projects, integrations and jobs
+- **web:** features/{projects,activity,releases,deployments,configuration} — pages stay in app/, code moves out; ESLint boundaries
+- **api:** DirectoryService dissolved — OrganizationRepository, ProjectsRepository, IntegrationsDirectory, and the two compositions that span them (AccessDirectory, ImportDirectory)
+- **api:** repositories by context — the directory's query mixins become repositories/{organization,projects,integrations}; workspace and configuration folders
+- **api:** schemas and models named by context; routes import from the owning module
+- **api:** services/integrations (hosts, plugins), services/organization (sessions), services/auth out of core
+- **api:** services/projects (service, apps, organization_import) and services/templates
+- **api:** services by context — activity, releases, deployments, configuration
+- **api:** routers become api/routes — one file per context, deployments apart from releases
+
+### Docs
+- **agents:** new code goes in the context folder of each layer
+- the contexts of the API and the web app, one folder per layer, and the rule for new code
+- **architecture:** api/routes
+
+### Tests
+- **api:** worker import path; docs
+
+### CI
+- contracts for the layout by context — routes → services → repositories → schemas → core; independent app contexts; git_auth leaves core
+
+### Style
+- **api:** format
+
 ## v0.17.6 — 2026-09-15
 
 ### Features
