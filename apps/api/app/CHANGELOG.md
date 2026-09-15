@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.20.6 — 2026-09-15
+
+### Features
+- **api:** jobs list filters by kind and says stage, dry run and who asked
+
 ## v0.20.5 — 2026-09-15
 
 ## v0.20.4 — 2026-09-15
