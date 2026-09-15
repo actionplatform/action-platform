@@ -45,9 +45,9 @@ The hosted platform ships with the plugins it runs — `apx-aws-lambda` is a dep
 
 Integrations → **Cloud** keeps the url of the deploy proxy installed in the organization's AWS account (`plugin_option` of `aws-lambda`, key `proxy_url`; `org.manage`). **Check** calls the proxy's `/health` and shows its version, organization and account. Every deploy job carries it as `AP_AWS_LAMBDA_PROXY_URL` with `AP_APP` = `org/project/app`, so an app whose `platform.toml` says only `target = "aws/lambda"` deploys through the proxy; `proxy_url` in a repository overrides it. The worker passes every plugin option the same way (`AP_<SLUG>_<KEY>`), so other targets can be configured here too. See the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README for installing the proxy and registering apps.
 
-## Code hosts
+## Git (GitHub, GitLab, Bitbucket)
 
-Integrations → Code hosts → **Connect a code host**.
+Integrations → Git → **Connect a code host**.
 
 **GitHub, in two clicks**: *Create GitHub App* opens GitHub with a pre-filled manifest (permissions: contents, workflows, administration, pull requests, organization members; callback already set); confirm the name and the app's credentials land in the platform. Then *Install the app on GitHub* on the account or organization whose repositories it should manage, and *Connect with GitHub*. Tokens from a GitHub App expire and are refreshed automatically.
 
@@ -131,7 +131,7 @@ Listing teams and people needs the GitHub App permission *Organization › Membe
 
 ## Navigation
 
-The sidebar: **Projects**, **Templates**, **Organization** (Teams, Members, Sessions), **Integrations** (Code hosts, Cloud), **Settings**; on a phone each section shows its pages as tabs. Old paths redirect: `/settings/people` → `/organization/members`, `/settings/people/teams` → `/organization/teams`, `/settings/integrations` → `/integrations/hosts`, `/settings/developers` and `/account` → `/organization/sessions`.
+The sidebar: **Projects**, **Templates**, **Organization** (Teams, Members, Sessions), **Integrations** (Git, Cloud), **Settings**; on a phone each section shows its pages as tabs. Old paths redirect: `/settings/people` → `/organization/members`, `/settings/people/teams` → `/organization/teams`, `/settings/integrations` → `/integrations/hosts`, `/settings/developers` and `/account` → `/organization/sessions`.
 
 ## Organization
 
@@ -139,7 +139,7 @@ The sidebar: **Projects**, **Templates**, **Organization** (Teams, Members, Sess
 
 ## Integrations
 
-**Code hosts**: connect with OAuth or a token, what each connected account may create with; the GitHub import starts from here too (the OAuth flows come back to `/integrations/hosts`). **Cloud**: the AWS deploy proxy url (see [AWS](#aws)).
+**Git**: GitHub, GitLab or Bitbucket — connect with OAuth or a token, what each connected account may create with; the GitHub import starts from here too (the OAuth flows come back to `/integrations/hosts`). **Cloud**: the AWS deploy proxy url (see [AWS](#aws)).
 
 ## Settings
 
@@ -153,7 +153,7 @@ Releases and configuration commits are made by the platform on its clone, signed
 
 Five roles — `owner`, `admin`, `deployer`, `developer`, `viewer` — over six permissions; the matrix is in Settings → **Roles and permissions** and explained in [access control](concept_access_control.md).
 
-### Code hosts per organization
+### Git accounts per organization
 
 Every organization connects its own accounts: **Connect with GitHub** in organization A can be a personal account, in organization B the company's GitHub organization — nothing is shared between them. The GitHub App created from Settings is public, so it can be installed on any account or organization you administer (an app created earlier as private must be made public under GitHub → Settings → Developer settings → GitHub Apps → Advanced, otherwise GitHub only offers the account that created it). There is one connection per GitHub user; **Install on another organization** installs the GitHub App on more accounts or organizations. Each one becomes selectable as the **Organization** that owns the repository when creating an app (the wizard lists every account the app is installed on with permission to create repositories, with a link to install it elsewhere). **Source hosts** shows the login, where the app is installed, and the *default owner* the wizard pre-selects. Apps remember which host they use.
 
