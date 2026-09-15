@@ -79,7 +79,6 @@ Images are published for every `api/vX.Y.Z` and `web/vX.Y.Z` tag to Docker Hub a
 | `AP_GIT_AUTHOR_NAME`, `AP_GIT_AUTHOR_EMAIL` | no | fallback identity for commits when a request carries none (defaults `Action Platform <cloud@actionplatform.io>`). Each organization sets its own commit identity in Setup and Settings → Commit identity; the web app sends it with every call. |
 | `AP_API_TOKEN` | yes | shared secret between web and API: the API refuses every request without `Authorization: Bearer <token>` (except `/api/version`), so a neighbour on the Docker network cannot drive it. Set the same value on both services; unset, the API trusts the network (local development). |
 | — | — | A `.env` in the working directory is read on start for every variable the shell did not set (the CLI, the API and the worker alike). |
-| `AP_PLUGINS_DIR` | no | A directory the API and the worker share (a volume): plugins installed from the web land there and load without a rebuild. Without it the Plugins page is a catalog only. |
 | `AP_DATABASE_URL` | yes | the API's connection to the same Postgres (`postgres://…`, `mysql://…` or `sqlite:///…`). Set, the API runs its migrations on boot and adopts the tables the web app created — see [database](concept_database.md). The compose file derives it from `POSTGRES_PASSWORD`; `AP_DATABASE_POOL_SIZE` (default 10) and `AP_DATABASE_MAX_OVERFLOW` (default 20) size its pool — every request holds one connection and some hold two, so keep the sum below the Postgres `max_connections` shared with the web app and the worker. |
 | `AP_ALLOW_UNAUTHENTICATED` | no | `1` lets the API start without `AP_API_TOKEN` — local development only |
 | `AP_SENTRY_DSN_API`, `AP_SENTRY_DSN_WEB` | no | Sentry DSNs, one project per component; empty keeps reporting off. Reaches the containers as `AP_SENTRY_DSN` (API) and `SENTRY_DSN` (web); `AP_SENTRY_ENVIRONMENT` / `SENTRY_ENVIRONMENT` and `*_TRACES_SAMPLE_RATE` (default 0.1) tune them. See [observability](concept_observability.md). |
@@ -87,7 +86,6 @@ Images are published for every `api/vX.Y.Z` and `web/vX.Y.Z` tag to Docker Hub a
 | `DOMAIN`, `ACME_EMAIL` | with TLS | Traefik host rule and Let's Encrypt account |
 | `WEB_PORT` | no | published port (default 3000) |
 | `AP_DATABASE_AUTO_MIGRATE` | no | `0` keeps the API and the worker from migrating on boot — the compose files set it and run `db migrate` once in the `migrate` service |
-| `AP_PLATFORM_ADMINS` | no | comma-separated e-mails allowed to install, enable, disable, remove plugins and restart the platform — platform-wide actions no organization role grants |
 | `GITHUB_CLIENT_ID/SECRET`, `GITLAB_*`, `BITBUCKET_*` | no | OAuth apps, read by the API; the ones entered in the UI (or created through the GitHub manifest) are stored in the database and win |
 | `ACTION_PLATFORM_TEMPLATES_REPO` | no | templates matrix, default `actionplatform/templates` |
 

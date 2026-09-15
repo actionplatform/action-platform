@@ -31,9 +31,7 @@ The git hooks the CLI installs ask the core (`action-platform gitflow-check`) wh
 
 ## On the hosted platform
 
-The API image bundles the plugins the platform runs: `apx-aws-lambda` is a dependency of `apps/api`, discovered through its entry point like any other, enabled unless `plugins.json` says otherwise. Bundling — not a marketplace — is the deliberate choice for the hosted platform: an image is reviewed and versioned as a whole, and API and worker always run the same plugin code.
-
-The runtime still supports installing into a volume (`AP_PLUGINS_DIR`, `/api/v1/plugins/{slug}/install|remove|enable|disable`, `restart`) for automation and self-hosters who want it; the web no longer exposes it. Those calls change the whole platform, so they need a **platform admin** — an e-mail listed in `AP_PLATFORM_ADMINS` — not an organization role.
+The API image bundles the plugins the platform runs: `apx-aws-lambda` is a dependency of `apps/api`, discovered through its entry point like any other. Bundling — not a marketplace — is the deliberate choice for the hosted platform: an image is reviewed and versioned as a whole, API and worker always run the same plugin code, and nothing installs or restarts at runtime. Adding a plugin to the platform is a dependency bump and a new image. `GET /api/v1/plugins` lists what the image carries (and what failed to load); a plugin's options are the only thing set at runtime, per organization.
 
 ## Options
 
