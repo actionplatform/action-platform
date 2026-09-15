@@ -5,7 +5,7 @@ import { SettingsSubNav } from "./sub-nav";
 export default function SettingsLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <PageHeader title="Settings" description="The organization: who is in it, what it connects to, how it releases." />
+      <PageHeader title="Settings" description="The organization: who is in it, what it connects to, how to talk to it." />
       <SettingsSubNav />
       {children}
     </>

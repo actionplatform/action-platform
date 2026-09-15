@@ -6,9 +6,9 @@ import { requireOrg } from "@/lib/session";
 import { v1 } from "@/lib/v1";
 
 function refresh(teamId?: string) {
-  revalidatePath("/teams");
+  revalidatePath("/settings", "layout");
   revalidatePath("/projects");
-  if (teamId) revalidatePath(`/teams/${teamId}`);
+  if (teamId) revalidatePath(`/settings/people/teams/${teamId}`);
 }
 
 export async function newTeam(name: string, description: string): Promise<Result<{ id: string }>> {

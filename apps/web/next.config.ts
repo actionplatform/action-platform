@@ -8,6 +8,16 @@ const config: NextConfig = {
   reactStrictMode: true,
   output: "standalone",
   env: { WEB_VERSION: version },
+  async redirects() {
+    return [
+      { source: "/teams", destination: "/settings/people/teams", permanent: true },
+      { source: "/teams/:team", destination: "/settings/people/teams/:team", permanent: true },
+      { source: "/settings/members", destination: "/settings/people", permanent: true },
+      { source: "/settings/hosts", destination: "/settings/integrations", permanent: true },
+      { source: "/settings/gitflow", destination: "/settings", permanent: true },
+      { source: "/settings/api", destination: "/settings/developers", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

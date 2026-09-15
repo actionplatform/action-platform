@@ -1,6 +1,8 @@
 import { Card } from "@/components/ui/card";
+import { api } from "@/lib/api";
 import { gitAuthorOf } from "@/lib/org-settings";
 import { requireOrg } from "@/lib/session";
+import { GitflowCard } from "./gitflow-card";
 import { IdentityCard } from "./identity-card";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +11,11 @@ export default async function GeneralSettingsPage() {
   const { session, org } = await requireOrg();
   const canManage = !!session.grants["org.manage"];
   const author = await gitAuthorOf();
+
+  let rules: { kinds: string[]; protected: string[]; types: string[] } | null = null;
+  try {
+    rules = await api.gitflowRules();
+  } catch {}
 
   return (
     <div className="space-y-5">
@@ -21,6 +28,7 @@ export default async function GeneralSettingsPage() {
         </dl>
       </Card>
       <IdentityCard author={author} canManage={canManage} />
+      <GitflowCard rules={rules} />
     </div>
   );
 }

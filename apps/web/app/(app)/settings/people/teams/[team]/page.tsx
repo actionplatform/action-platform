@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { PageHeader } from "@/components/layout/page";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { membersOf } from "@/lib/orgs";
 import { projectsOf } from "@/lib/projects";
 
@@ -21,7 +22,11 @@ export default async function TeamPage({ params }: { params: Promise<{ team: str
 
   return (
     <>
-      <PageHeader title={team.name} description={team.description || `${org.name} team.`} />
+      <div className="mb-5">
+        <Link href="/settings/people/teams" className="inline-flex items-center gap-1.5 text-sm text-secondary hover:text-foreground"><ArrowLeft className="size-3.5" strokeWidth={1.75} /> Teams</Link>
+        <h2 className="mt-2 text-[18px] font-semibold">{team.name}</h2>
+        <p className="text-sm text-secondary">{team.description || `${org.name} team.`}</p>
+      </div>
       <TeamDetail
         team={{ id: team.id, name: team.name, description: team.description ?? "" }}
         members={members.map((m) => ({ id: m.id, userId: m.userId, name: m.name, email: m.email }))}

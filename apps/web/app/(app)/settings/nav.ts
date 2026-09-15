@@ -1,4 +1,4 @@
-import { Building2, GitBranch, KeyRound, Plug, Users } from "lucide-react";
+import { Building2, Code2, Plug, Users } from "lucide-react";
 
 import type { LucideIcon } from "lucide-react";
 
@@ -6,10 +6,9 @@ export type SettingsPage = { href: string; label: string; icon: LucideIcon; exac
 
 export const SETTINGS_PAGES: SettingsPage[] = [
   { href: "/settings", label: "General", icon: Building2, exact: true },
-  { href: "/settings/members", label: "Members", icon: Users },
-  { href: "/settings/hosts", label: "Code hosts", icon: Plug },
-  { href: "/settings/gitflow", label: "Git-flow", icon: GitBranch },
-  { href: "/settings/api", label: "API", icon: KeyRound },
+  { href: "/settings/people", label: "People", icon: Users },
+  { href: "/settings/integrations", label: "Integrations", icon: Plug },
+  { href: "/settings/developers", label: "Developers", icon: Code2 },
 ];
 
 export function settingsPageActive(pathname: string, href: string, exact?: boolean): boolean {

@@ -91,7 +91,7 @@ export async function kickMember(userId: string): Promise<Result> {
   try {
     await v1.removeMember(userId);
     revalidatePath("/settings", "layout");
-    revalidatePath("/teams");
+    revalidatePath("/settings", "layout");
     return { ok: true, data: null };
   } catch (e) {
     return failed(e);
@@ -106,7 +106,7 @@ export async function addMember(input: { name: string; email: string; password: 
     if (!cookie) throw new Error("sign in first");
     const added = await authApi.addMember({ cookie }, { organization_id: org.id, name: input.name, email: input.email, password: input.password, role: input.role });
     revalidatePath("/settings", "layout");
-    revalidatePath("/teams");
+    revalidatePath("/settings", "layout");
     return { ok: true, data: { existed: added.existed } };
   } catch (e) {
     return failed(e);
