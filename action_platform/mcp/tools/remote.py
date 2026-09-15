@@ -223,7 +223,7 @@ def register(mcp: Any, remote: Remote) -> None:
         install_ci: Annotated[
             Optional[str],
             Field(
-                description="github, gitlab, jenkins or bitbucket; default from the remote"
+                description="github, gitlab, jenkins, bitbucket, or none for no pipeline files; default from the remote"
             ),
         ] = None,
     ) -> schemas.AppAdded:
