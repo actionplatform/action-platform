@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.16 — 2026-09-15
+
+### Features
+- **web:** a plugin's settings open in a dialog from Configure — cards keep one height
+
 ## v0.18.15 — 2026-09-15
 
 ### Features
