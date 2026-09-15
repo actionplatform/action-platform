@@ -95,19 +95,24 @@ Pending edits are not files in a clone: they are rows in the `draft` table (path
 
 ## The app page
 
+**Overview** only shows: branch, version, latest tag and deploy target; git-flow health; the last commits; source and automation. Actions live in their own tabs — Releases, Deployments, Activity, Configuration, Settings.
+
 - **Sync** (`git fetch` + fast-forward) or **Push to remote** while there is none
 - git-flow audit of the current branch and its commits
 - commits, remote branches with their git-flow kind, tags
-- **Release**: level → *Preview* (dry run: next version and changelog) → *Release* dialog → tag, push, release on the host. Off `main`/`master` it is an `-rc.N` pre-release.
+- **Releases** tab: level → *Preview* (dry run: next version and changelog) → *Release* dialog → tag, push, release on the host. Off `main`/`master` it is an `-rc.N` pre-release.
 - **Activity**: git-flow (start a `<kind>/<code>` branch, check out a branch, propose and open a pull request) and the pull requests stored for the app (state, merged date, head → base).
 - **Configuration**: pick a deploy target (applies the cloud overlay from the templates repository), add a service, edit `platform.toml`. Edits stay pending until **Commit changes** (Conventional Commit, always pushed, optional pull request). On `main`/`master`/`develop` the dialog requires a new `<kind>/<code>` branch: the branch starts from the right base, the commit lands there, is pushed, and a pull request is opened when asked; the app is then checked out on that branch.
 - **Sync** fetches the remote and rebuilds the clone on the branch the app is checked out on — the remote is the only source of truth, so nothing local can diverge from it; a branch deleted on the remote (its pull request merged) sends the app back to the default branch. Every request does the same on its own when the clone is older than `AP_WORKSPACE_TTL` seconds; **Sync** forces it now. `POST /api/apps/{id}/sync {reset: true}` also drops the pending edits. It then imports releases and pull requests from the source host into the `release` and `pull_request` tables (upsert by tag / number). Adding an app, releasing and opening a pull request run the same import. **Last synced** is stored per app and shown in the header.
 
-- **Deploy** (below Release, once a deploy target is configured): stage `dev` or `prod` → **Preflight** (dry run: the target checks credentials and the template, nothing changes) → **Deploy** dialog. Both run as a job on the worker (`POST /api/v1/apps/{id}/deploy` with `X-Async: 1`), which signs an identity token for the app so a target such as `aws/lambda` gets its credentials from the cloud — the platform stores none. The card polls the job and shows each target's result: ok or failed, version, url, error. Needs `app.release`. The repository's own CI can still deploy on its own (see [templates](concept_templates.md)); the two are independent.
 
 **Deleting** an app or a project removes it from the platform and deletes the platform's clones; the repositories on the code host stay. The confirmation dialog offers **Also delete the repository** (`?repository=true` on `DELETE /api/v1/projects/{id}/apps/{app}`, `?repositories=true` on `DELETE /api/v1/projects/{id}`): the repository is then deleted on the host through the code host attached to the app, before anything is removed on the platform — when the host cannot delete it, nothing is removed and the dialog says why. A GitHub App created by the setup wizard can delete (its *Administration* permission); a GitHub OAuth host connected before this option existed has no `delete_repo` scope and must be reconnected; a Bitbucket consumer needs the *repositories: delete* permission. Deleting a repository also deletes its branches, tags, releases and pull requests on the host, and cannot be undone.
 
 Every confirmation is an in-app dialog; the UI is strictly monochrome.
+
+## Deployments
+
+The **Deployments** tab of an app: stage `dev` or `prod` → **Preflight** (dry run: the target checks credentials and the template, nothing changes) → **Deploy** dialog. Both run as a job on the worker (`POST /api/v1/apps/{id}/deploy` with `X-Async: 1`), which signs an identity token for the app so a target such as `aws/lambda` gets its credentials from the cloud — the platform stores none. The card polls the job and shows each target's result. **Target** summarizes `[deploy]` from `platform.toml` (target, region, how credentials are obtained). **All deployments** lists the last twenty runs (`GET /api/v1/jobs?app=…&kind=deploy`): result, stage, preflight or deploy, version, url, who asked, when, and the error of a failed one. Needs `app.release`. The repository's own CI can still deploy on its own (see [templates](concept_templates.md)); the two are independent.
 
 ## Import
 

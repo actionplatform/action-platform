@@ -2101,6 +2101,9 @@ export interface components {
             status: string;
             app_id?: string | null;
             attempts: number;
+            stage?: string | null;
+            dry_run?: boolean | null;
+            by?: string | null;
             result?: unknown | null;
             error?: string | null;
             created_at: string;
@@ -2313,6 +2316,7 @@ export interface components {
             installed: boolean;
             installed_version?: string | null;
             enabled: boolean;
+            removed: boolean;
             restart_pending: boolean;
             error?: string | null;
         };
@@ -5809,6 +5813,7 @@ export interface operations {
         parameters: {
             query: {
                 app: string;
+                kind?: string | null;
             };
             header?: never;
             path?: never;

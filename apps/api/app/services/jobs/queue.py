@@ -71,16 +71,21 @@ class JobQueue:
         with self.database.session() as s:
             return s.get(Job, id)
 
-    def for_app(self, app_id: str, limit: int = 20) -> list[Job]:
+    def for_app(
+        self, app_id: str, limit: int = 20, kind: Optional[str] = None
+    ) -> list[Job]:
         with self.database.session() as s:
-            return list(
-                s.scalars(
-                    select(Job)
-                    .where(Job.app_id == app_id)
-                    .order_by(Job.created_at.desc())
-                    .limit(limit)
-                )
+            query = (
+                select(Job)
+                .where(Job.app_id == app_id)
+                .order_by(Job.created_at.desc())
+                .limit(limit)
             )
+
+            if kind:
+                query = query.where(Job.kind == kind)
+
+            return list(s.scalars(query))
 
     def claim(self, worker: str, kinds: Optional[list[str]] = None) -> Optional[Job]:
         moment = now()
@@ -179,12 +184,18 @@ class JobQueue:
 
     @staticmethod
     def view(job: Job) -> dict[str, Any]:
+        payload = json.loads(job.payload) if job.payload else {}
+        body = payload.get("body") if isinstance(payload.get("body"), dict) else {}
+
         return {
             "id": job.id,
             "kind": job.kind,
             "status": job.status,
             "app_id": job.app_id,
             "attempts": job.attempts,
+            "stage": body.get("stage"),
+            "dry_run": body.get("dry_run"),
+            "user_id": payload.get("user_id") or payload.get("by"),
             "result": json.loads(job.result) if job.result else None,
             "error": job.error,
             "created_at": job.created_at,
