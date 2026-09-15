@@ -16,6 +16,7 @@ from app.services.jobs import JobQueue
 from app.services.organization_import import ImportGateway
 from app.services.plugins import PluginManager
 from app.services.projects import ProjectService
+from app.services.workspace.commit import CommitService
 from app.services.workspace.configuration import ConfigurationService
 from app.services.workspace.flow import FlowService
 from app.services.workspace.lifecycle import LifecycleService
@@ -96,6 +97,13 @@ def get_flow(
     configs: ConfigStore = Depends(get_config_store),
 ) -> FlowService:
     return FlowService(registry, configs)
+
+
+def get_commits(
+    registry: Registry = Depends(get_registry),
+    configs: ConfigStore = Depends(get_config_store),
+) -> CommitService:
+    return CommitService(registry, configs)
 
 
 def get_configuration(
