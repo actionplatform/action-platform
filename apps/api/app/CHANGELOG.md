@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.17.1 — 2026-09-14
+
+### Refactoring
+- **api:** core never imports services (caller and enrich live in services/access), core/auth is a real package, one ruff config for the whole repository
+
 ## v0.17.0 — 2026-09-14
 
 ### Refactoring
