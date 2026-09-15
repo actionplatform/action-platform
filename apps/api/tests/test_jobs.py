@@ -136,6 +136,17 @@ class AsyncRouteTest(GateCase):
         self.assertEqual(env["AP_AWS_LAMBDA_PROXY_URL"], "https://p.test")
         self.assertEqual(env["AP_APP"], f"{organization.slug}/web/demo")
 
+    def test_a_body_beyond_the_limit_is_refused_before_anything_runs(self):
+        from app.api.gate import MAX_BODY
+
+        res = self.client.post(
+            "/api/v1/apps",
+            content=b"{" + b" " * (MAX_BODY + 1) + b"}",
+            headers={**self.h(), "content-type": "application/json"},
+        )
+
+        self.assertEqual(res.status_code, 413)
+
     def test_an_inline_sync_leaves_the_host_import_to_the_worker(self):
         registry_id = self.register()
 
