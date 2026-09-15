@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.18.2 — 2026-09-14
+
+### Refactoring
+- **api:** routes only translate HTTP — ProjectService (add, init, delete, sync activity) and HostConnector (OAuth finish) hold the orchestration
+- **api:** routes declare their dependencies as Annotated types (CallerDep, OrgDep, WritesDep, …)
+
 ## v0.18.1 — 2026-09-14
 
 ### Refactoring
