@@ -23,11 +23,14 @@ class AppInventory(AppsBase):
     def workspace(self, id: str) -> tuple[Entry, Path]:
         return Workspaces(self.registry).checkout(id)
 
-    def list(self) -> list[dict]:
-        """Every app with what the manifest says about it. Listing clones nothing: an app not checked out on this instance answers with its registry row only."""
+    def list(self, only: set[str] | None = None) -> list[dict]:
+        """Every app — or the ones in `only` — with what the manifest says about it. Listing clones nothing: an app not checked out on this instance answers with its registry row only."""
         rows = []
 
         for entry in self.registry.list():
+            if only is not None and entry.id not in only:
+                continue
+
             root = Path(entry.path)
             row = asdict(entry)
             row["exists"] = bool(entry.url)
