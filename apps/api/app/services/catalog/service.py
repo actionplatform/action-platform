@@ -199,12 +199,15 @@ class CatalogService:
         published = published_plugins.get() or {}
         plugins = registry.installed()
         installed = {row["slug"]: row for row in plugins.rows()}
+        remembered = plugins.state.plugins
         pending = set(plugins.state.restart_pending())
         rows = []
 
         for row in published.get("plugins") or []:
             slug = row.get("name") or ""
             here = installed.get(slug)
+            kept = remembered.get(slug)
+            error = registry.FAILURES.get(slug) if here is None and kept else None
             rows.append(
                 {
                     "slug": slug,
@@ -217,10 +220,13 @@ class CatalogService:
                     "min_core": row.get("min_core") or "",
                     "needs": list(row.get("needs") or []),
                     "tags": list(row.get("tags") or []),
-                    "installed": here is not None,
-                    "installed_version": here["version"] if here else None,
+                    "installed": here is not None or kept is not None,
+                    "installed_version": here["version"]
+                    if here
+                    else (kept.version if kept else None),
                     "enabled": bool(here and here["enabled"]),
                     "restart_pending": slug in pending,
+                    "error": error,
                 }
             )
 

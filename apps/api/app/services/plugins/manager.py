@@ -70,12 +70,24 @@ class PluginManager:
         )
 
     def enqueue_remove(self, slug: str, user_id: str) -> Any:
+        """Removes what is loaded, or what `plugins.json` remembers — a plugin that failed to load still has a package on disk."""
         self.ready()
-        loaded = registry.installed().get(slug)
+        plugins = registry.installed()
+        package = ""
+
+        try:
+            package = plugins.get(slug).package
+        except PluginError:
+            row = plugins.state.plugins.get(slug)
+
+            if row is None:
+                raise
+
+            package = row.package
 
         return self._enqueue(
             REMOVE,
-            {"slug": slug, "package": loaded.package, "by": user_id},
+            {"slug": slug, "package": package, "by": user_id},
             f"remove:{slug}",
         )
 
@@ -130,12 +142,19 @@ class PluginManager:
     def remove(self, payload: dict) -> dict:
         self.ready()
         slug, package = payload["slug"], payload["package"]
-        PipInstaller(str(settings.PLUGINS_DIR)).uninstall(package)
         state = PluginState.load()
-        state.set_enabled(slug, False)
-        state.mark_restart(slug)
+        loaded = any(row.slug == slug for row in registry.installed().found)
 
-        return {"slug": slug, "removed": package, "restart_required": True}
+        if package:
+            PipInstaller(str(settings.PLUGINS_DIR)).uninstall(package)
+
+        if loaded:
+            state.set_enabled(slug, False)
+            state.mark_restart(slug)
+        else:
+            state.forget(slug)
+
+        return {"slug": slug, "removed": package, "restart_required": loaded}
 
     def restart(self, payload: dict) -> dict:
         """The worker's part of a restart: answer, then leave; the orchestrator brings it back."""

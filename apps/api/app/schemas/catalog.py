@@ -104,6 +104,7 @@ class PluginRow(BaseModel):
     installed_version: Optional[str] = None
     enabled: bool = False
     restart_pending: bool = False
+    error: Optional[str] = None
 
 
 class Plugins(BaseModel):
