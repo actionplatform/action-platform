@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.17.5 — 2026-09-15
+
+### Features
+- **core:** Config.from_dict and dump_toml — the tables of platform.toml from and to any store
+
+### Docs
+- configuration kept by the platform, platform.toml as its mirror
+
+### Tests
+- configuration kept by the platform, exported on request
+
 ## v0.17.4 — 2026-09-15
 
 ### Features
