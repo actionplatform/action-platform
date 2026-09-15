@@ -4,7 +4,6 @@ import tomllib
 from fastapi import HTTPException
 
 from action_platform.core.wiring import wired
-from action_platform.core.config import Config
 from action_platform.core.flow import gitflow
 from action_platform.core.flow.repository import Repository
 from action_platform.core.flow.workflow import BranchError
@@ -18,6 +17,13 @@ from app.services.catalog import TemplateRepos
 from app.services.workspace import Workspaces
 
 
+def _same(a: str, b: str) -> bool:
+    try:
+        return tomllib.loads(a) == tomllib.loads(b)
+    except tomllib.TOMLDecodeError:
+        return False
+
+
 class ConfigurationService:
     def __init__(self, registry: Registry) -> None:
         self.registry = registry
@@ -29,27 +35,32 @@ class ConfigurationService:
         return self.registry.drafts.capture(id, root)
 
     def manifest(self, id: str) -> dict:
-        manifest = self._root(id) / settings.CONFIG_FILE
+        """The configuration the platform keeps, rendered as platform.toml; whether the clone's file matches it."""
+        root = self._root(id)
+        content = self.registry.configs.render(id, root)
+        file = root / settings.CONFIG_FILE
+        mirrored = file.exists() and _same(file.read_text(), content)
 
-        if not manifest.exists():
-            raise HTTPException(
-                400, f"{settings.CONFIG_FILE} not found in {manifest.parent}"
-            )
-
-        return {"content": manifest.read_text()}
+        return {"content": content, "mirrored": mirrored}
 
     def write_manifest(self, id: str, content: str) -> dict:
+        """Save to the platform — nothing in the repository changes until the mirror is exported."""
         try:
-            tomllib.loads(content)
+            data = tomllib.loads(content)
         except tomllib.TOMLDecodeError as e:
             raise HTTPException(400, f"invalid TOML: {e}") from e
 
+        self.registry.configs.set(id, data)
+
+        return self.manifest(id)
+
+    def export_manifest(self, id: str) -> dict:
+        """Write platform.toml in the clone from what the platform keeps — a pending change to commit like any other."""
         root = self._root(id)
-        path = root / settings.CONFIG_FILE
-        path.write_text(content if content.endswith("\n") else content + "\n")
+        self.registry.configs.export(id, root)
         self._drafted(id, root)
 
-        return {"content": path.read_text()}
+        return self.manifest(id)
 
     def set_cloud(self, id: str, target: str, source: SourceSpec | None = None) -> dict:
         repo, matrix = TemplateRepos.resolve(source)
@@ -61,9 +72,22 @@ class ConfigurationService:
         except TemplateError as e:
             raise HTTPException(400, str(e)) from e
 
+        self._remember(id, root)
         self._drafted(id, root)
 
         return {"target": target}
+
+    def _remember(self, id: str, root: Path) -> None:
+        """An overlay wrote `[deploy]` or `[services]` into the clone's file; the platform's record takes them."""
+        file = root / settings.CONFIG_FILE
+
+        if not file.exists():
+            return
+
+        data = tomllib.loads(file.read_text())
+        self.registry.configs.merge(
+            id, root, deploy=data.get("deploy", {}), services=data.get("services", {})
+        )
 
     def add_service(
         self, id: str, name: str, provider: str | None, source: SourceSpec | None = None
@@ -76,6 +100,7 @@ class ConfigurationService:
 
         root = self._root(id)
         wired.scaffolder().apply_service(repo, service, root, provider=provider)
+        self._remember(id, root)
         self._drafted(id, root)
 
         return {
@@ -141,7 +166,7 @@ class ConfigurationService:
             }
 
             if body.pull_request:
-                config = Config.from_toml(root / settings.CONFIG_FILE)
+                config = self.registry.configs.config(id, root)
                 auth.apply(config, body.credentials)
                 ref = wired.gitflow(repo).open_pr(config=config)
                 result["pull_request"] = {"number": ref.number, "url": ref.url}

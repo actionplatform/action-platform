@@ -51,7 +51,7 @@ RULES = [
     Rule("PUT", re.compile(r"^apps/[^/]+/manifest$"), "app.configure"),
     Rule(
         "POST",
-        re.compile(r"^apps/[^/]+/(cloud|services|install|discard)$"),
+        re.compile(r"^apps/[^/]+/(cloud|services|install|discard|manifest/export)$"),
         "app.configure",
     ),
     Rule(

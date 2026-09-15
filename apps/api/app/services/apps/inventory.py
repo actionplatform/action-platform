@@ -34,7 +34,9 @@ class AppInventory(AppsBase):
             row["branch"] = entry.checked_out
 
             if root.is_dir() and (root / settings.CONFIG_FILE).exists():
-                info = AppManifest(root).as_dict()
+                info = AppManifest(
+                    root, self.registry.configs.resolve(entry.id, root)
+                ).as_dict()
                 row["language"] = info["project"].get("language")
                 row["type"] = info["project"].get("type")
                 row["last_version"] = info["last_version"]
@@ -104,7 +106,9 @@ class AppInventory(AppsBase):
 
     def detail(self, id: str) -> dict:
         entry, root = self.workspace(id)
-        info = AppManifest(root).as_dict()
+        info = AppManifest(
+            root, self.registry.configs.resolve(id, root) or None
+        ).as_dict()
         info["id"] = id
         info["url"] = entry.url
         info["default_branch"] = entry.default_branch

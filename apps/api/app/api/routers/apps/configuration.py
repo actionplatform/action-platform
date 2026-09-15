@@ -27,6 +27,14 @@ def write_manifest(
     return config.write_manifest(id, body.content)
 
 
+@router.post("/{id}/manifest/export")
+def export_manifest(
+    id: str,
+    config: ConfigurationDep,
+) -> schemas.ManifestBody:
+    return config.export_manifest(id)
+
+
 @router.post("/{id}/cloud")
 def set_cloud(
     id: str,

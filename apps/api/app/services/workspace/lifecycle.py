@@ -5,12 +5,10 @@ from typing import Callable, Optional
 from fastapi import HTTPException
 
 from action_platform.core.action_platform import ActionPlatform
-from action_platform.core.config import Config
 from action_platform.core.flow import git
 from action_platform.core.flow.repository import Repository
 from action_platform.core.release.components import resolve
 from action_platform.core.release.release import STABLE_BRANCHES
-from action_platform.settings import settings
 from app.core.shared import git_auth as auth
 from app.repositories.registry import Registry
 from app.schemas import DeployRequest, ReleaseRequest
@@ -32,7 +30,7 @@ class LifecycleService:
         _, root = Workspaces(self.registry).checkout(id, fresh=fresh)
 
         return ActionPlatform(
-            config=Config.from_toml(root / settings.CONFIG_FILE),
+            config=self.registry.configs.config(id, root),
             repo_root=root,
             identity=self.identity,
             env=self.env,
