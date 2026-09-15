@@ -11,7 +11,7 @@ export const ORGANIZATION_PAGES: SubPage[] = [
 ];
 
 export const INTEGRATIONS_PAGES: SubPage[] = [
-  { href: "/integrations/hosts", label: "Code hosts", icon: GitBranch },
+  { href: "/integrations/hosts", label: "Git", icon: GitBranch },
   { href: "/integrations/cloud", label: "Cloud", icon: Cloud },
 ];
 
