@@ -79,6 +79,21 @@ class InstallTest(InstallCase):
         self.assertTrue((bare / ".github/workflows/gitflow.yml").exists())
         self.assertIn('language = ""', (bare / "platform.toml").read_text())
 
+    def test_ci_none_writes_no_pipeline(self):
+        bare = self.tmp_path / "noci"
+        bare.mkdir()
+        git(bare, "init", "-q")
+
+        plan = install.install(bare, ci="none")
+
+        self.assertEqual(plan.ci, "none")
+        self.assertFalse((bare / ".github").exists())
+        self.assertFalse((bare / ".gitlab-ci.yml").exists())
+        self.assertIn('ci = "none"', (bare / "platform.toml").read_text())
+        self.assertEqual(
+            {f for f in plan.created if "/" in f or f.endswith(".yml")}, set()
+        )
+
     def test_last_version_starts_at_zero_or_at_the_newest_tag(self):
         fresh = self.tmp_path / "fresh"
         fresh.mkdir()
