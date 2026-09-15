@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.12.0 — 2026-09-14
+
+### Refactoring
+- **api:** the package is app
+- the API is its own package under apps/api (action_platform_api): core (abc, access, auth, db, cli, shared), api (FastAPI), repositories, services, schemas; the library no longer ships api extras or api commands; action-platform-api serve|worker|db; shared test fixtures in action_platform.testing
+- **api:** contracts only the API implements live in api/abc
+
+### Build
+- **api:** standard layout apps/api/action_platform_api with poetry packaging
+- regenerate poetry.lock without the api extras
+
+### CI
+- install the API's dev extra
+- resolve the interpreter before entering apps/api
+- run the API tests with the root environment
+
 ## v0.11.1 — 2026-09-14
 
 ### Features
