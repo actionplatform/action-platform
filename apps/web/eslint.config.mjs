@@ -10,7 +10,7 @@ const config = [
     rules: {
       "no-restricted-imports": ["error", {
         patterns: [
-          { group: ["@/features/*/*", "!@/features/*/actions"], message: "A page imports a feature through its index (@/features/<name>) or its actions." },
+          { group: ["@/features/*/*", "!@/features/*/actions", "!@/features/*/load"], message: "A page imports a feature through its index (@/features/<name>) or its actions." },
         ],
       }],
     },
@@ -21,7 +21,7 @@ const config = [
       "no-restricted-imports": ["error", {
         patterns: [
           { group: ["@/app/*", "@/app/**"], message: "A feature never imports a page." },
-          { group: ["@/features/*/*", "!@/features/*/actions"], message: "Another feature is reached through its index (@/features/<name>) or its actions." },
+          { group: ["@/features/*/*", "!@/features/*/actions", "!@/features/*/load"], message: "Another feature is reached through its index (@/features/<name>) or its actions." },
         ],
       }],
     },

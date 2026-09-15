@@ -1,4 +1,4 @@
-import { loadApp } from "@/features/projects";
+import { loadApp } from "@/features/projects/load";
 import { SettingsTab } from "@/features/projects";
 
 export default async function SettingsPage({ params }: { params: Promise<{ project: string; app: string }> }) {

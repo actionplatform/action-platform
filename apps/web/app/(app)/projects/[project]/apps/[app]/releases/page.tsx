@@ -1,5 +1,5 @@
 import { GitRefsCard } from "@/features/releases";
-import { loadApp } from "@/features/projects";
+import { loadApp } from "@/features/projects/load";
 import { ReleaseCard } from "@/features/releases";
 import { ReleasesTable } from "@/features/releases";
 

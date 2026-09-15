@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { AppScopeMarker } from "@/components/layout/scope";
 import { AppHeader } from "@/features/projects";
 import { AppErrorState } from "@/features/projects";
-import { loadApp } from "@/features/projects";
+import { loadApp } from "@/features/projects/load";
 
 export const dynamic = "force-dynamic";
 

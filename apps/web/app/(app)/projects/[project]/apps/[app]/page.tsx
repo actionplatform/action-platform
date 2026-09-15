@@ -1,6 +1,6 @@
 import { CommitsCard } from "@/features/projects";
 import { HealthCard } from "@/features/projects";
-import { loadApp } from "@/features/projects";
+import { loadApp } from "@/features/projects/load";
 import { SourceCard } from "@/features/projects";
 import { PendingChangesBanner, SummaryGrid } from "@/features/projects";
 

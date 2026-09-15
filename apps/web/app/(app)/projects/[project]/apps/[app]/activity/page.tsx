@@ -1,6 +1,6 @@
 import { pullRequestsOf } from "@/lib/pull-requests";
 import { FlowPanel } from "@/features/activity";
-import { loadApp } from "@/features/projects";
+import { loadApp } from "@/features/projects/load";
 import { PullRequestsCard } from "@/features/activity";
 import { OpenedBanner } from "@/features/activity";
 

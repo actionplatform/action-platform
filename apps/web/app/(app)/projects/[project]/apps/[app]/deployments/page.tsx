@@ -1,7 +1,7 @@
 import { v1 } from "@/lib/v1";
 import { DeployCard } from "@/features/deployments";
 import { DeploymentsTable } from "@/features/deployments";
-import { loadApp } from "@/features/projects";
+import { loadApp } from "@/features/projects/load";
 import { TargetCard } from "@/features/deployments";
 
 export default async function DeploymentsPage({ params }: { params: Promise<{ project: string; app: string }> }) {
