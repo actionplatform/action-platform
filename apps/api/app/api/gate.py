@@ -6,6 +6,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from action_platform.core.exception import ActionPlatformError
+from app.core.errors import ServiceError
 from app.core.access.rules import (
     DIRECTORY,
     WORKSPACE_ROOTS,
@@ -96,6 +97,11 @@ class AccessGate:
                     "poll": f"/api/v1/jobs/{e.job_id}",
                 },
             )
+
+            return
+        except ServiceError as e:
+            detail = {"code": e.code, "detail": str(e)} if e.code else str(e)
+            await self._json(send, e.status, {"detail": detail})
 
             return
         except ActionPlatformError as e:
