@@ -100,6 +100,8 @@ class SourceGitlab(SourceHost):
         assets: list[Path] | None = None,
         draft: bool = False,
         prerelease: bool = False,
+        name: str | None = None,
+        latest: bool = True,
     ) -> ReleaseRef:
         if prerelease:
             notes = f"_Pre-release_\n\n{notes}"
@@ -107,7 +109,7 @@ class SourceGitlab(SourceHost):
         data = self._rest(
             "POST",
             f"/projects/{self._id}/releases",
-            {"tag_name": tag, "name": tag, "description": notes},
+            {"tag_name": tag, "name": name or tag, "description": notes},
         )
 
         return ReleaseRef(

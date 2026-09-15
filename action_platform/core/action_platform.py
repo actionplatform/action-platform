@@ -73,9 +73,18 @@ class ActionPlatform:
         dry_run: bool = False,
         prerelease: bool | None = None,
         component: str | None = None,
+        name: str | None = None,
+        notes: str | None = None,
+        latest: bool = True,
     ) -> Context:
         ctx = self.releaser.release(
-            level, dry_run=dry_run, prerelease=prerelease, component=component
+            level,
+            dry_run=dry_run,
+            prerelease=prerelease,
+            component=component,
+            name=name,
+            notes=notes,
+            latest=latest,
         )
 
         if not dry_run:

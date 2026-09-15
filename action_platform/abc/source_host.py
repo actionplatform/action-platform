@@ -40,8 +40,10 @@ class SourceHost(ABC):
         assets: list[Path] | None = None,
         draft: bool = False,
         prerelease: bool = False,
+        name: str | None = None,
+        latest: bool = True,
     ) -> "ReleaseRef":
-        """Publish release on remote host."""
+        """Publish release on remote host. `name` titles it (the tag otherwise); `latest` says whether the host should mark it as the latest one."""
 
     @abstractmethod
     def open_pr(

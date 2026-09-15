@@ -28,6 +28,8 @@ class ReleasePlan:
     prerelease: bool
     changelog: str
     commits: list[str] = field(default_factory=list)
+    name: str | None = None
+    latest: bool = True
 
 
 @slot("releaser")
@@ -133,7 +135,12 @@ class Releaser:
 
         if self.config.source_host:
             self.config.source_host.create_release(
-                ctx, tag=plan.tag, notes=plan.changelog, prerelease=plan.prerelease
+                ctx,
+                tag=plan.tag,
+                notes=plan.changelog,
+                prerelease=plan.prerelease,
+                name=plan.name,
+                latest=plan.latest,
             )
 
         for runner in self.config.ci:
@@ -153,8 +160,17 @@ class Releaser:
         dry_run: bool = False,
         prerelease: bool | None = None,
         component: str | None = None,
+        name: str | None = None,
+        notes: str | None = None,
+        latest: bool = True,
     ) -> Context:
+        """`name` titles the release on the host; `notes` (Markdown) go above the generated commit list, in CHANGELOG.md and on the host; `latest=False` publishes without marking it the latest."""
         plan = self.plan(level, prerelease=prerelease, component=component)
+        plan.name = name or None
+        plan.latest = latest
+
+        if notes and notes.strip():
+            plan.changelog = with_notes(plan.changelog, notes.strip())
         logger.info(
             "bump %s%s -> %s%s",
             f"{plan.component.name} " if plan.component.name else "",
@@ -221,6 +237,17 @@ class Releaser:
 
         if not had_changelog:
             (where / settings.CHANGELOG_FILE).unlink(missing_ok=True)
+
+
+def with_notes(entry: str, notes: str) -> str:
+    """The release notes under the entry's heading, the generated commit list below them."""
+    lines = entry.split("\n")
+    head = next((i for i, line in enumerate(lines) if line.startswith("#")), None)
+
+    if head is None:
+        return notes + "\n\n" + entry
+
+    return "\n".join([*lines[: head + 1], "", notes, *lines[head + 1 :]])
 
 
 def build_context(
