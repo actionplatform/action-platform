@@ -37,6 +37,10 @@ flowchart LR
 
 Pending migrations run on boot, so upgrading the image is enough.
 
+## Plugins
+
+**Plugins** in the sidebar is the marketplace: every plugin the [plugins-index](https://github.com/actionplatform/plugins-index) publishes, with its description, `verified` mark, package, latest version, what it `needs` (hosts, variables, tools), tags, repository and PyPI links, and the install command to copy — `action-platform plugin install <slug>`. Search and tag filters narrow the list. Plugins are installed with the CLI on each developer's machine; the page only marks **On this platform** the ones the operator installed in the API's own environment (their deploy targets and overlays then work from the web too). `GET /api/plugins` is the call behind it; the index is read raw from GitHub and revalidated with its ETag, `ACTION_PLATFORM_PLUGINS_INDEX` points at another one. See [plugins](use_plugins.md).
+
 ## Code hosts
 
 Settings → **Connect a code host**.

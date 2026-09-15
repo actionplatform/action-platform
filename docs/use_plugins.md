@@ -31,6 +31,8 @@ The git hooks the CLI installs ask the core (`action-platform gitflow-check`) wh
 
 ## Index
 
+The web app shows the index as a marketplace under **Plugins** (search, tags, `needs`, install command to copy, which ones the hosted platform runs).
+
 An index is a directory of `<slug>.json` files served over HTTPS — the official one is `actionplatform/plugins-index` on GitHub raw. Each file names the PyPI package, the latest version, the repository, `min_core`, a `verified` flag (someone read the code) and what the plugin `needs` (hosts it talks to, environment variables it reads — shown before you accept). Anyone can publish another index and add it with `plugin index add`.
 
 ## Trust
