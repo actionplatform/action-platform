@@ -158,3 +158,25 @@ class PluginsTest(TempCase):
         self.plugins.after_release("again")
 
         self.assertEqual(len(self.example.seen), 1)
+
+
+class PlainOverlayTest(TempCase):
+    def test_an_overlay_without_cookiecutter_is_copied_as_is(self):
+        from action_platform.core.scaffold.generate import apply_cloud
+        from action_platform.core.scaffold.templates import Cloud
+
+        root = Path(self.tmp_path) / "overlays"
+        (root / "cloud" / "plain" / "deploy").mkdir(parents=True)
+        (root / "cloud" / "plain" / "DEPLOY.md").write_text("# plain\n")
+        (root / "cloud" / "plain" / "deploy" / "run.sh").write_text("echo hi\n")
+        project = Path(self.tmp_path) / "proj"
+        project.mkdir()
+        (project / "platform.toml").write_text(
+            '[project]\nname = "proj"\ntype = "web"\nlanguage = "python"\n'
+        )
+
+        apply_cloud(root, Cloud("plain", root=root), project)
+
+        self.assertEqual((project / "DEPLOY.md").read_text(), "# plain\n")
+        self.assertTrue((project / "deploy" / "run.sh").exists())
+        self.assertIn('target = "plain"', (project / "platform.toml").read_text())
