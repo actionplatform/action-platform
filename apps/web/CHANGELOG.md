@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.11 — 2026-09-15
+
+### Refactoring
+- **web:** drop the plugin install, remove, switch and restart calls from the API client
+
 ## v0.18.10 — 2026-09-15
 
 ### Features
