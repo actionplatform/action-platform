@@ -117,7 +117,7 @@ class AsyncRouteTest(GateCase):
     def test_a_deploy_job_carries_the_app_and_the_plugin_options(self):
         from app.services.deployments import DeployEnv
         from app.services.jobs.context import JobContext
-        from app.services.plugins.options import DbOptions
+        from app.services.integrations.plugins.options import DbOptions
 
         registry_id = self.register()
         DbOptions(self.app.state.db, "aws-lambda").set("proxy_url", "https://p.test")

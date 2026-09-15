@@ -11,8 +11,8 @@ from action_platform.plugins import PluginError, PluginState, registry
 from action_platform.plugins.installer import IndexEntry, PipInstaller
 from action_platform.settings import settings
 from app.services.templates.published import plugins_index
-from app.services.plugins.catalog import PluginsCatalog
-from app.services.plugins.options import DbOptions
+from app.services.integrations.plugins.catalog import PluginsCatalog
+from app.services.integrations.plugins.options import DbOptions
 from app.services.jobs.queue import JobQueue
 
 INSTALL = "install_plugin"

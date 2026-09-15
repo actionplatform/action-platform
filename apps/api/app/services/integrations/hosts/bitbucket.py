@@ -10,8 +10,8 @@ from action_platform.core.exception import ProviderError
 from app.core.abc import HostProvider
 from app.core.shared.credentials import Credentials, OAuthApp
 from app.core.shared.http import BasicAuth, http
-from app.services.hosts.access import AccessReport, Owner, Probe
-from app.services.hosts.tokens import TokenResponse
+from app.services.integrations.hosts.access import AccessReport, Owner, Probe
+from app.services.integrations.hosts.tokens import TokenResponse
 
 API = "https://api.bitbucket.org/2.0"
 

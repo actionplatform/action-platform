@@ -2,9 +2,9 @@
 
 from action_platform.core.exception import ProviderError
 from app.core.abc import HostProvider
-from app.services.hosts.bitbucket import BitbucketProvider
-from app.services.hosts.github import GithubProvider
-from app.services.hosts.gitlab import GitlabProvider
+from app.services.integrations.hosts.bitbucket import BitbucketProvider
+from app.services.integrations.hosts.github import GithubProvider
+from app.services.integrations.hosts.gitlab import GitlabProvider
 
 
 class HostProviders:

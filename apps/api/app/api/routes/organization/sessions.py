@@ -14,7 +14,7 @@ from app.api.routes.auth.support import (
     token_out,
     user_out,
 )
-from app.core.auth.errors import Unauthenticated
+from app.services.auth.errors import Unauthenticated
 from app.core.db.models import (
     Session,
 )

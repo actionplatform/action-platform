@@ -10,7 +10,7 @@ from app.api.routes.auth.support import (
     current_session,
     organization_out,
 )
-from app.core.auth.service import (
+from app.services.auth.service import (
     now,
 )
 from app.core.db.models import (

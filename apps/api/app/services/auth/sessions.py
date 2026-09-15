@@ -4,7 +4,7 @@ from typing import Optional
 
 from sqlalchemy import select
 
-from app.core.auth.base import (
+from app.services.auth.base import (
     SESSION_REFRESH_AFTER,
     SESSION_TTL,
     AuthBase,
@@ -12,7 +12,7 @@ from app.core.auth.base import (
     new_id,
     now,
 )
-from app.core.auth.errors import (
+from app.services.auth.errors import (
     Unauthenticated,
 )
 from app.core.db.models import (

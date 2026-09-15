@@ -13,7 +13,7 @@ from app.api.routes.auth.support import (
     limited,
     signed,
 )
-from app.core.auth.service import (
+from app.services.auth.service import (
     AuthService,
 )
 from app.core.db.models import (

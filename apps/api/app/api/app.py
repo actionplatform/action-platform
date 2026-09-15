@@ -17,9 +17,9 @@ from action_platform.settings import settings
 from app import api_version
 from app.api.gate import AccessGate
 from app.api.routes import router as routes
-from app.services.plugins import DbOptions
+from app.services.integrations.plugins import DbOptions
 from app.core.auth.crypto import Sealer
-from app.core.auth.errors import AuthError
+from app.services.auth.errors import AuthError
 from app.core.auth.secrets import Secrets
 from app.core.db import Database
 from app.core.shared.urls import GitUrl

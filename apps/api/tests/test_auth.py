@@ -154,7 +154,7 @@ class AccountsTest(AuthCase):
         )
 
     def test_invitation_opens_sign_up_for_that_email_only(self):
-        from app.core.auth.service import now
+        from app.services.auth.service import now
         from app.core.db.models import Invitation
 
         owner = self.owner()

@@ -9,7 +9,7 @@ from action_platform.core.access import (
     can,
     normalize_role,
 )
-from app.core.auth.base import (
+from app.services.auth.base import (
     EMAIL,
     PASSWORD_MIN,
     PROVIDER,
@@ -18,7 +18,7 @@ from app.core.auth.base import (
     new_id,
     now,
 )
-from app.core.auth.errors import (
+from app.services.auth.errors import (
     AuthError,
     Forbidden,
     Unauthenticated,

@@ -10,7 +10,7 @@ from action_platform.core.access import (
     grantable_scopes,
 )
 from app.core.auth import jwt
-from app.core.auth.base import (
+from app.services.auth.base import (
     ADMIN_TOKEN_TTL,
     AUDIENCE,
     ISSUER,
@@ -19,7 +19,7 @@ from app.core.auth.base import (
     new_id,
     now,
 )
-from app.core.auth.errors import (
+from app.services.auth.errors import (
     Forbidden,
 )
 from app.core.db.models import (

@@ -11,7 +11,7 @@ from app.api.routes.auth.support import (
     grant_of,
     limited,
 )
-from app.core.auth.service import (
+from app.services.auth.service import (
     DEVICE_TTL,
     SESSION_TTL,
 )

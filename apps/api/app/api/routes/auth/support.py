@@ -9,9 +9,9 @@ from action_platform.core.access import Grant, grants_of, parse_scopes
 from app.api.dependencies import get_auth
 from app.api.ratelimit import RateLimiter
 from app.core.auth.cookies import SessionCookie
-from app.core.auth.errors import Unauthenticated
+from app.services.auth.errors import Unauthenticated
 from app.core.auth.jwt import looks_like_jwt
-from app.core.auth.service import (
+from app.services.auth.service import (
     AuthService,
     Identity,
 )

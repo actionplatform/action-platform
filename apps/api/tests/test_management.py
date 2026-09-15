@@ -467,7 +467,7 @@ class HostsAndSettingsTest(GateCase):
         )
 
     def test_oauth_callback_connects_a_host(self):
-        from app.services.hosts import GitlabProvider
+        from app.services.integrations.hosts import GitlabProvider
 
         self.client.put(
             "/api/v1/oauth/apps/gitlab",
