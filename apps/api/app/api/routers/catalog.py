@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 
-from app import schemas
+from app.schemas import catalog as schemas
 from app.services.plugins.catalog import PluginsCatalog
 from app.services.catalog import CatalogService
 

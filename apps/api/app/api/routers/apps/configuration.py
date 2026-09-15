@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter
 
-from app import schemas
+from app.schemas import actions as schemas
 from app.api.dependencies import (
     CommitsDep,
     ConfigurationDep,

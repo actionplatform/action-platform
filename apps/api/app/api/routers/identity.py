@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, Request
 
-from app import schemas
+from app.schemas import identity as schemas
 from app.api.dependencies import CallerDep, DirectoryDep, OrgDep, allowed
 from app.services.identity import TTL, IdentityIssuer, subject_for
 
