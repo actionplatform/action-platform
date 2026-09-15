@@ -18,10 +18,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actionplatform/ci-github/setup@v1
-      - run: poetry run pip install -e apps/api httpx httpx2
+      - run: poetry run pip install -e apps/api httpx httpx2 import-linter
       - run: |
           python="$(poetry run python -c 'import sys; print(sys.executable)')"
           cd apps/api && "$python" -m pytest -q
+      - run: |
+          cd apps/api && PYTHONPATH=.:../.. poetry run lint-imports --config ../../.importlinter
 
   web:
     runs-on: ubuntu-latest

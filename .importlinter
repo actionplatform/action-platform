@@ -1,0 +1,41 @@
+[importlinter]
+root_packages =
+    action_platform
+    app
+include_external_packages = True
+
+[importlinter:contract:api-layers]
+name = api: routers → services → repositories, never upwards
+type = layers
+layers =
+    app.api
+    app.services
+    app.repositories
+    app.core
+
+[importlinter:contract:services-no-fastapi]
+name = api: services and repositories raise domain errors, not HTTPException
+type = forbidden
+source_modules =
+    app.services
+    app.repositories
+forbidden_modules =
+    fastapi
+
+[importlinter:contract:library-independent]
+name = the library never imports the API
+type = forbidden
+source_modules =
+    action_platform
+forbidden_modules =
+    app
+
+[importlinter:contract:core-protocols]
+name = core depends on abc and plugins registry only through its ports
+type = forbidden
+source_modules =
+    action_platform.core
+forbidden_modules =
+    action_platform.mcp
+    action_platform.cli
+    action_platform.remote
