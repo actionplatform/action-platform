@@ -1,5 +1,57 @@
 # Changelog
 
+## v0.17.6 — 2026-09-15
+
+### Features
+- **api:** migrations move to the deploy — AP_DATABASE_AUTO_MIGRATE, advisory lock, readiness on /api/version
+- **api:** platform admins (AP_PLATFORM_ADMINS) — the role that changes the platform itself
+
+### Refactoring
+- **core:** the core reaches plugins through the Extensions port; the package's composition root wires the registry
+- **api:** the CLI entry points move out of core — core imports no services
+
+### Docs
+- **architecture:** the extensions port
+- **architecture:** the layer rule is enforced
+- **architecture:** directory and catalog modules
+- **architecture:** cli, plugins catalog
+- **architecture:** access collaborators
+- **architecture:** worker pieces
+- **architecture:** commit service
+- **architecture:** registry rows vs workspaces
+- **architecture:** the layer rule for errors
+- **self-hosting:** migrations on deploy
+- **web:** host imports run on the worker
+- **self-hosting:** AP_PLATFORM_ADMINS
+- platform admins and per-organization plugin options
+
+### Tests
+- **api:** deploy env and job context through their public objects
+- **api:** adopting a repository goes through Workspaces
+- **api:** readiness reflects pending migrations
+- **api:** oversized body is refused
+- **api:** an inline call with imports queues the import job
+- **api:** plugin option scoping and platform admin gate
+
+### Build
+- **deploy:** one-shot migrate service the API and the worker wait for
+
+### CI
+- web tests in the quality workflow
+- core may not import plugins
+- run import-linter through the interpreter poetry resolved
+- import-linter contracts for the layers
+- run quality, commits and scan on pull requests to develop; manual api publish reads apps/api/app/LAST_VERSION
+
+### Chores
+- **deps:** lock import-linter
+- merge master
+- merge master
+- merge master
+- merge master
+- merge master
+- merge master
+
 ## v0.17.5 — 2026-09-15
 
 ### Features
