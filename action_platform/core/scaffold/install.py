@@ -34,6 +34,7 @@ CI_FILES = {
     "gitlab": [".gitlab-ci.yml"],
     "jenkins": ["Jenkinsfile"],
     "bitbucket": ["bitbucket-pipelines.yml"],
+    "none": [],
 }
 
 AGENTS = """# AGENTS.md
