@@ -115,7 +115,7 @@ class AsyncRouteTest(GateCase):
         self.assertEqual([j["id"] for j in listed], [job_id])
 
     def test_a_deploy_job_carries_the_app_and_the_plugin_options(self):
-        from app.services.deploy import DeployEnv
+        from app.services.deployments import DeployEnv
         from app.services.jobs.context import JobContext
         from app.services.plugins.options import DbOptions
 

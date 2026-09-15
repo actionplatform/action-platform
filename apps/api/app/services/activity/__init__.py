@@ -1,14 +1,6 @@
-"""Releases and pull requests of an app, read from its code host (one ImportSource per host) into the `release` and `pull_request` tables."""
+"""App › Activity: git-flow on the app's clone (branches, checkout, pull requests) and the code-host import of releases and pull requests."""
 
-from app.services.activity.bitbucket import BitbucketActivity
-from app.services.activity.github import GithubActivity
-from app.services.activity.gitlab import GitlabActivity
-from app.services.activity.service import SOURCES, ActivityService
+from app.services.activity.flow import FlowService
+from app.services.activity.imports.service import SOURCES, ActivityService
 
-__all__ = [
-    "SOURCES",
-    "ActivityService",
-    "BitbucketActivity",
-    "GithubActivity",
-    "GitlabActivity",
-]
+__all__ = ["SOURCES", "ActivityService", "FlowService"]

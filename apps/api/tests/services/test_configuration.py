@@ -1,4 +1,4 @@
-"""app.services.workspace.configuration — platform.toml edits and the commit that lands them."""
+"""app.services.configuration.service — platform.toml edits and the commit that lands them."""
 
 from __future__ import annotations
 

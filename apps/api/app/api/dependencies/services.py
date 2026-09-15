@@ -16,10 +16,11 @@ from app.services.jobs import JobQueue
 from app.services.organization_import import ImportGateway
 from app.services.plugins import PluginManager
 from app.services.projects import ProjectService
-from app.services.workspace.commit import CommitService
-from app.services.workspace.configuration import ConfigurationService
-from app.services.workspace.flow import FlowService
-from app.services.workspace.lifecycle import LifecycleService
+from app.services.configuration.commit import CommitService
+from app.services.configuration.service import ConfigurationService
+from app.services.activity.flow import FlowService
+from app.services.deployments import DeploymentsService
+from app.services.releases import ReleasesService
 from app.services.workspace.state import GitStateService
 
 
@@ -85,11 +86,18 @@ def get_git_state(registry: Registry = Depends(get_registry)) -> GitStateService
     return GitStateService(registry)
 
 
-def get_lifecycle(
+def get_releases(
     registry: Registry = Depends(get_registry),
     configs: ConfigStore = Depends(get_config_store),
-) -> LifecycleService:
-    return LifecycleService(registry, configs=configs)
+) -> ReleasesService:
+    return ReleasesService(registry, configs=configs)
+
+
+def get_deployments(
+    registry: Registry = Depends(get_registry),
+    configs: ConfigStore = Depends(get_config_store),
+) -> DeploymentsService:
+    return DeploymentsService(registry, configs=configs)
 
 
 def get_flow(

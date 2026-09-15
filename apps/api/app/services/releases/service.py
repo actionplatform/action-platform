@@ -1,4 +1,5 @@
-from dataclasses import asdict
+"""App › Releases: cut a release from a branch and preview the next version — the core's releaser on the app's clone with the configuration the platform keeps."""
+
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -11,12 +12,12 @@ from action_platform.core.release.release import STABLE_BRANCHES
 from app.core.shared import git_auth as auth
 from app.repositories.config_store import ConfigStore
 from app.repositories.registry import Registry
-from app.schemas import DeployRequest, ReleaseRequest
+from app.schemas import ReleaseRequest
 from app.services.workspace import Workspaces
 from app.core.errors import Conflict, Invalid
 
 
-class LifecycleService:
+class ReleasesService:
     def __init__(
         self,
         registry: Registry,
@@ -107,22 +108,3 @@ class LifecycleService:
             "branch": chosen,
             "prerelease": chosen not in STABLE_BRANCHES,
         }
-
-    def deploy(self, id: str, body: DeployRequest) -> list[dict]:
-        results = self._tool(id).deploy(
-            stage=body.stage, dry_run=body.dry_run, version=body.version
-        )
-
-        return [
-            {
-                "target": r.target,
-                "ok": r.ok,
-                "version": r.version,
-                "url": r.url,
-                "error": r.error,
-            }
-            for r in results
-        ]
-
-    def diagnose(self, id: str, stage: Optional[str]) -> list[dict]:
-        return [asdict(r) for r in self._tool(id).diagnose(stage=stage)]

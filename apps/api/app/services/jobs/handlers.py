@@ -15,13 +15,14 @@ from app.schemas import DeployRequest, PushRequest, ReleaseRequest, SyncRequest
 from app.services import plugins
 from app.services.activity import ActivityService
 from app.services.apps import AppService
-from app.services.deploy import DeployEnv
+from app.services.deployments import DeployEnv
 from app.services.directory import DirectoryService, DirectoryWrites
-from app.services.identity.signer import AppIdentity
+from app.services.deployments.identity import AppIdentity
 from app.services.jobs.context import JobContext
 from app.services.jobs.registry import JobServices, register
 from app.services.organization_import import OrganizationImport
-from app.services.workspace.lifecycle import LifecycleService
+from app.services.deployments import DeploymentsService
+from app.services.releases import ReleasesService
 
 
 class JobHandlers:
@@ -58,7 +59,7 @@ class JobHandlers:
 
     def release(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
-        result = LifecycleService(self.registry).release(
+        result = ReleasesService(self.registry).release(
             ctx.registry_id, ReleaseRequest(**ctx.body)
         )
         self.import_activity(payload)
@@ -69,7 +70,7 @@ class JobHandlers:
         ctx = self.context(payload)
         identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
 
-        return LifecycleService(
+        return DeploymentsService(
             self.registry,
             identity=identity.minter(ctx.organization, ctx.app, ctx.body.get("stage")),
             env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
