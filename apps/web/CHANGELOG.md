@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.4 — 2026-09-15
+
+### Bug Fixes
+- **web:** offer the plugin update whenever latest differs from what is installed, and show both versions
+
 ## v0.18.3 — 2026-09-15
 
 ### Features
