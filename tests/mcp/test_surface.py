@@ -3,10 +3,14 @@
 import asyncio
 import unittest
 
-from action_platform.mcp import server
 from action_platform.remote.client import Remote
+from tests.mcp.support import HAS_MCP
+
+if HAS_MCP:
+    from action_platform.mcp import server
 
 
+@unittest.skipUnless(HAS_MCP, "mcp is not installed")
 class SurfaceTest(unittest.TestCase):
     def setUp(self):
         self.original = Remote.from_credentials

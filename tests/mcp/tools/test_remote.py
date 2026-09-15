@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import asyncio
-
-from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 import json
 import unittest
 from typing import Any
 
 from tests.mcp.support import HAS_MCP
+
+if HAS_MCP:
+    from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 from tests.support import TempCase, git, repo_with_origin
 
 LISTS = {
