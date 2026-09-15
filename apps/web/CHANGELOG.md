@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.14 — 2026-09-15
+
+### Features
+- **web:** Integrations → Git — the menu names GitHub, GitLab and Bitbucket instead of "code hosts"
+
 ## v0.18.13 — 2026-09-15
 
 ### Bug Fixes
