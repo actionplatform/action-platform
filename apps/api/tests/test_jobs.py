@@ -136,6 +136,22 @@ class AsyncRouteTest(GateCase):
         self.assertEqual(env["AP_AWS_LAMBDA_PROXY_URL"], "https://p.test")
         self.assertEqual(env["AP_APP"], f"{organization.slug}/web/demo")
 
+    def test_an_inline_sync_leaves_the_host_import_to_the_worker(self):
+        registry_id = self.register()
+
+        res = self.client.post(
+            f"/api/v1/apps/{registry_id}/sync", json={}, headers=self.h()
+        )
+
+        self.assertEqual(res.status_code, 200, res.text)
+        kinds = [
+            j["kind"]
+            for j in self.client.get(
+                "/api/v1/jobs", params={"app": registry_id}, headers=self.h()
+            ).json()
+        ]
+        self.assertIn("import", kinds)
+
     def test_a_queued_deploy_lists_with_its_stage_and_who_asked(self):
         registry_id = self.register()
         res = self.client.post(
