@@ -2,7 +2,7 @@
 
 import { failed, type Result } from "@/lib/result";
 import { revalidatePath } from "next/cache";
-import { api, ApiError, type ReleasePreview } from "@/lib/api";
+import { api, ApiError, type DeployResult, type ReleasePreview } from "@/lib/api";
 import { requireOrg } from "@/lib/session";
 import { v1 } from "@/lib/v1";
 
@@ -198,6 +198,28 @@ export async function discardChanges(projectId: string, registryId: string): Pro
     const data = await api.apps.discard(registryId);
     refresh(projectId);
     return { ok: true, data };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
+export async function startDeploy(registryId: string, stage: string, dryRun: boolean): Promise<Result<{ job: string }>> {
+  await requireOrg();
+  try {
+    const data = await api.apps.deployAsync(registryId, stage, dryRun);
+    return { ok: true, data: { job: data.job } };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
+export async function deployJob(projectId: string, id: string): Promise<Result<{ status: string; error: string | null; results: DeployResult[] }>> {
+  await requireOrg();
+  try {
+    const job = await v1.job(id);
+    if (job.status === "done") refresh(projectId);
+    const results = Array.isArray(job.result) ? (job.result as DeployResult[]) : [];
+    return { ok: true, data: { status: job.status, error: job.error ?? null, results } };
   } catch (e) {
     return failed(e);
   }

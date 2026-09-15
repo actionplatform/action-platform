@@ -1,4 +1,5 @@
 import { CommitsCard } from "./commits-card";
+import { DeployCard } from "./deploy-card";
 import { HealthCard } from "./health-card";
 import { loadApp } from "./load";
 import { RefsCard } from "./refs-card";
@@ -21,6 +22,7 @@ export default async function OverviewPage({ params }: { params: Promise<{ proje
         <div className="space-y-4">
           <HealthCard view={view} />
           <ReleaseCard view={view} />
+          <DeployCard view={view} />
           <CommitsCard commits={view.commits} repositoryUrl={view.repositoryUrl} base={base} />
         </div>
         <div className="space-y-4">
