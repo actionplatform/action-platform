@@ -50,6 +50,7 @@ class IdentityTest(GateCase):
         self.assertTrue(claims["sub"].startswith("org:"))
         self.assertEqual(claims["iss"], body["issuer"])
         self.assertEqual(claims["exp"] - claims["iat"], 300)
+        self.assertIn("org.manage", claims["scopes"])
 
         issuer = IdentityIssuer(
             self.app.state.db, self.app.state.sealer, body["issuer"]
