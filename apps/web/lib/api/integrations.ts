@@ -23,11 +23,6 @@ export const integrations = {
   addTemplateSource: async (name: string, url: string, ref: string) => unwrap(await client.POST("/api/v1/template-sources", { body: { name, url, ref } })),
   removeTemplateSource: async (id: string) => unwrap(await client.DELETE("/api/v1/template-sources/{id}", { params: { path: { id } } })),
   plugins: async () => unwrap(await client.GET("/api/v1/plugins")),
-  installPlugin: async (slug: string) => unwrap(await client.POST("/api/v1/plugins/{slug}/install", { params: { path: { slug } } })),
-  removePlugin: async (slug: string) => unwrap(await client.POST("/api/v1/plugins/{slug}/remove", { params: { path: { slug } } })),
-  enablePlugin: async (slug: string) => unwrap(await client.POST("/api/v1/plugins/{slug}/enable", { params: { path: { slug } } })),
-  disablePlugin: async (slug: string) => unwrap(await client.POST("/api/v1/plugins/{slug}/disable", { params: { path: { slug } } })),
-  restartPlatform: async () => unwrap(await client.POST("/api/v1/plugins/restart")),
   pluginOptions: async (slug: string) => unwrap(await client.GET("/api/v1/plugins/{slug}/options", { params: { path: { slug } } })),
   setPluginOptions: async (slug: string, options: Record<string, unknown>) =>
     unwrap(await client.PUT("/api/v1/plugins/{slug}/options", { params: { path: { slug } }, body: { options } })),
