@@ -2,55 +2,20 @@
 
 from __future__ import annotations
 
-import json
-import subprocess
 import sys
-import urllib.error
-import urllib.request
 
 import typer
 from rich.console import Console
 from rich.table import Table
 
 from action_platform.plugins import PluginError, PluginState, registry
+from action_platform.plugins.installer import IndexEntry, PipInstaller, lookup
 
 app = typer.Typer(
     help="Plugins installed next to the CLI: tools, overlays, deploy targets.",
     no_args_is_help=True,
 )
 console = Console()
-
-
-def _fetch(url: str) -> dict | None:
-    try:
-        with urllib.request.urlopen(url, timeout=15) as res:
-            return json.loads(res.read())
-    except (urllib.error.URLError, ValueError, OSError):
-        return None
-
-
-def _lookup(state: PluginState, slug: str) -> tuple[str, dict]:
-    for index in state.indexes:
-        row = _fetch(f"{index}/{slug}.json")
-
-        if row:
-            return index, row
-
-    raise PluginError(
-        f"no plugin {slug!r} in any index ({', '.join(state.indexes)}); "
-        "pass --package to install straight from PyPI"
-    )
-
-
-def _pip(*args: str) -> None:
-    result = subprocess.run(
-        [sys.executable, "-m", "pip", *args], capture_output=True, text=True
-    )
-
-    if result.returncode != 0:
-        raise PluginError(
-            result.stderr.strip() or result.stdout.strip() or "pip failed"
-        )
 
 
 @app.command("list")
@@ -86,19 +51,18 @@ def search(
 ) -> None:
     """What the indexes know about a plugin."""
     state = PluginState.load()
-    index, row = _lookup(state, slug)
+    index, row = lookup(state, slug)
 
-    console.print(
-        f"[bold]{row.get('name', slug)}[/bold] — {row.get('description', '')}"
-    )
-    console.print(f"  package   {row.get('pypi', '')}  latest {row.get('latest', '?')}")
-    console.print(f"  repo      {row.get('repo', '')}")
-    console.print(
-        f"  verified  {'yes' if row.get('verified') else 'no'}   index {index}"
-    )
+    console.print(f"[bold]{row.slug}[/bold] — {row.description}")
+    console.print(f"  package   {row.pypi}  latest {row.latest or '?'}")
+    console.print(f"  repo      {row.repo}")
+    console.print(f"  verified  {'yes' if row.verified else 'no'}   index {index}")
 
-    if row.get("min_core"):
-        console.print(f"  min core  {row['min_core']}")
+    if row.min_core:
+        console.print(f"  min core  {row.min_core}")
+
+    for need in row.needs or []:
+        console.print(f"  needs     {need}")
 
 
 @app.command("install")
@@ -113,25 +77,23 @@ def install(
 ) -> None:
     """Install a plugin into this CLI's environment and enable it."""
     state = PluginState.load()
+    row = IndexEntry(slug=slug, pypi=package) if package else lookup(state, slug)[1]
+    pip = PipInstaller()
 
-    if package:
-        spec, row = package, {"pypi": package}
-    else:
-        _, row = _lookup(state, slug)
-        spec = f"{row['pypi']}=={row['latest']}" if row.get("latest") else row["pypi"]
+    console.print(
+        f"install [bold]{row.spec}[/bold] with pip into {pip.target or sys.executable}"
+    )
 
-    console.print(f"install [bold]{spec}[/bold] with pip into {sys.executable}")
-
-    for need in row.get("needs") or []:
+    for need in row.needs or []:
         console.print(f"  needs {need}")
 
-    if not row.get("verified") and not package:
+    if not row.verified and not package:
         console.print("  not verified by the index: read the code before trusting it")
 
     if not yes and not typer.confirm("continue?", default=False):
         raise typer.Exit(1)
 
-    _pip("install", "--quiet", spec)
+    pip.install(row.spec)
     registry.reset()
     installed = registry.installed()
 
@@ -139,7 +101,7 @@ def install(
         loaded = installed.get(slug)
     except PluginError:
         console.print(
-            f"installed {spec}, but nothing registered the slug {slug!r}; "
+            f"installed {row.spec}, but nothing registered the slug {slug!r}; "
             "check the package's entry points"
         )
 
@@ -158,7 +120,7 @@ def remove(slug: str) -> None:
     if not loaded.package:
         raise PluginError(f"plugin {slug} has no package to uninstall")
 
-    _pip("uninstall", "--quiet", "--yes", loaded.package)
+    PipInstaller().uninstall(loaded.package)
     PluginState.load().forget(slug)
     registry.reset()
     console.print(f"[green]ok[/green] {slug} removed")

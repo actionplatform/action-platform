@@ -8,12 +8,18 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from action_platform.settings import settings
+
 OFFICIAL_INDEX = (
     "https://raw.githubusercontent.com/actionplatform/plugins-index/main/plugins"
 )
 
 
 def path() -> Path:
+    """`plugins.json`: next to the installed plugins when `AP_PLUGINS_DIR` names a directory (the hosted platform's volume), under the user's config otherwise."""
+    if settings.PLUGINS_DIR is not None:
+        return settings.PLUGINS_DIR / "plugins.json"
+
     base = os.environ.get("AP_HOME") or os.environ.get("XDG_CONFIG_HOME")
     root = Path(base) / "action-platform" if base else Path.home() / ".action-platform"
 
@@ -26,6 +32,7 @@ class Installed:
     version: str = ""
     source: str = "pypi"
     package: str = ""
+    pending_restart: bool = False
 
 
 @dataclass
@@ -94,6 +101,28 @@ class PluginState:
     def forget(self, slug: str) -> None:
         self.plugins.pop(slug, None)
         self.save()
+
+    def mark_restart(self, slug: str, value: bool = True) -> None:
+        self.plugins.setdefault(slug, Installed()).pending_restart = value
+        self.save()
+
+    def restart_pending(self) -> list[str]:
+        return sorted(slug for slug, row in self.plugins.items() if row.pending_restart)
+
+    def clear_restart(self) -> None:
+        for row in self.plugins.values():
+            row.pending_restart = False
+
+        self.save()
+
+    def stamp(self) -> float:
+        """When the file last changed — another process compares it to know whether to rediscover."""
+        file = self.file or path()
+
+        try:
+            return file.stat().st_mtime
+        except OSError:
+            return 0.0
 
     def add_index(self, url: str) -> None:
         url = url.rstrip("/")

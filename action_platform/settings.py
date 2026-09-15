@@ -1,12 +1,19 @@
 """Action Platform settings module."""
 
 import os
+import site
 import tempfile
 from pathlib import Path
 
 from action_platform.env import load
 
 load()
+
+PLUGINS_DIR = os.getenv("AP_PLUGINS_DIR")
+
+if PLUGINS_DIR:
+    Path(PLUGINS_DIR).mkdir(parents=True, exist_ok=True)
+    site.addsitedir(PLUGINS_DIR)
 
 
 class Settings:
@@ -38,6 +45,7 @@ class Settings:
         or Path(tempfile.gettempdir()) / "action-platform" / "workspaces"
     )
     WORKSPACE_TTL = int(os.getenv("AP_WORKSPACE_TTL", "15"))
+    PLUGINS_DIR = Path(PLUGINS_DIR) if PLUGINS_DIR else None
 
     ALLOW_FILE_URLS = os.getenv("AP_ALLOW_FILE_URLS") == "1"
     ALLOW_INSECURE_HTTP = os.getenv("AP_ALLOW_INSECURE_HTTP") == "1"

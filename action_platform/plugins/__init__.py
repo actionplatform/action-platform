@@ -8,13 +8,17 @@ from action_platform.plugins.registry import (
     Slots,
     installed,
     reset,
+    use_options,
 )
+from action_platform.plugins.options import FileOptions, Options
 from action_platform.plugins.state import OFFICIAL_INDEX, Installed, PluginState
 
 __all__ = [
+    "FileOptions",
     "Installed",
     "Loaded",
     "OFFICIAL_INDEX",
+    "Options",
     "PluginError",
     "PluginState",
     "PluginTools",
@@ -22,4 +26,5 @@ __all__ = [
     "Slots",
     "installed",
     "reset",
+    "use_options",
 ]
