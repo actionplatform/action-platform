@@ -45,7 +45,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
     setComputed(null);
     nextVersion(view.registryId, level, switching ? branch : null).then((r) => { if (live && r.ok) setComputed({ next: r.data.next, prerelease: r.data.prerelease }); });
     return () => { live = false; };
-  }, [view.registryId, level, branch, switching]);
+  }, [view.registryId, view.version, level, branch, switching]);
   const next = preview && !preview.dry_run ? preview.next : computed?.next ?? "…";
   const canRelease = view.can["app.release"] && view.workingTree === "clean" && (switching || view.health.ok) && !!view.repositoryUrl;
   const blocker = !view.can["app.release"] ? "Your role cannot create releases." : !view.repositoryUrl ? "This app has no remote." : view.workingTree !== "clean" ? (switching ? "Commit or discard the pending changes before switching branches." : "Commit or discard the pending changes first.") : !switching && !view.health.ok ? "Fix the branch policy problems first." : null;
@@ -62,7 +62,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
       setError(null);
       const r = await call(() => runRelease(view.projectId, view.appId, view.registryId, level, switching ? branch : null), (error) => ({ ok: false as const, error }), "The release may have been cut anyway: check the tags before trying again.");
       setConfirm(false);
-      if (r.ok) { setResult(r.data); router.refresh(); } else setError(r.error);
+      if (r.ok) { setResult(r.data); setPreview(null); router.refresh(); } else setError(r.error);
     });
 
   return (
