@@ -10,7 +10,7 @@ import { requireOrg } from "@/lib/session";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const { session, org } = await requireOrg();
-  const orgs = await orgsOf(session.user.id);
+  const orgs = await orgsOf();
 
   let versions = { web: WEB_VERSION, api: "—", lib: "—" };
   try {

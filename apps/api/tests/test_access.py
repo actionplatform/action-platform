@@ -17,7 +17,7 @@ except ImportError:
 class GateCase(TempCase):
     def setUp(self):
         super().setUp()
-        from app.api.routers.auth import LIMITS
+        from app.api.routers.auth.support import LIMITS
         from app.api.app import build
 
         self.setenv("AP_HOME", str(self.tmp_path / "home"))

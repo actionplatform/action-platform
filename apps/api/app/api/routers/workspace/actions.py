@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 
 from app import schemas
-from app.api.deps import get_lifecycle
+from app.api.dependencies import get_lifecycle
 from app.services.workspace.lifecycle import LifecycleService
 
 router = APIRouter(prefix="/apps", tags=["actions"])

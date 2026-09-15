@@ -150,7 +150,7 @@ function DeployTargetPanel({ view, clouds }: { view: AppView; clouds: CloudOptio
     <Panel>
       <PanelHeader title="Deploy target" aside={current ? <Badge className="font-mono">{current}</Badge> : <Badge>Not configured</Badge>} />
       <PanelBody className="space-y-3">
-        <p className="text-sm text-secondary">Adds the cloud overlay's files as pending changes and records <span className="font-mono">[deploy] target</span> in <span className="font-mono">platform.toml</span>. Replaces the previous target.</p>
+        <p className="text-sm text-secondary">Adds the cloud overlay&apos;s files as pending changes and records <span className="font-mono">[deploy] target</span> in <span className="font-mono">platform.toml</span>. Replaces the previous target.</p>
         {clouds.length === 0 ? (
           <p className="text-sm text-muted-foreground">No overlay supports {view.type ?? "this type"} / {view.language ?? "this language"}.</p>
         ) : (

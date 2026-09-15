@@ -15,7 +15,7 @@ export default async function TeamPage({ params }: { params: Promise<{ team: str
   const team = await teamById(org.id, teamId);
   if (!team) notFound();
 
-  const [members, orgMembers, projects, allProjects] = await Promise.all([teamMembersOf(team.id), membersOf(org.id), projectsOfTeam(org.id, team.id), projectsOf(org.id)]);
+  const [members, orgMembers, projects, allProjects] = await Promise.all([teamMembersOf(team.id), membersOf(), projectsOfTeam(org.id, team.id), projectsOf(org.id)]);
   const canManage = !!session.grants["org.manage"];
   const inTeam = new Set(members.map((m) => m.userId));
 

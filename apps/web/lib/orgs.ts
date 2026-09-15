@@ -9,7 +9,7 @@ import { slugify } from "./utils";
 export type { Org, Role };
 export { ROLES };
 
-export async function orgsOf(_userId?: string): Promise<Org[]> {
+export async function orgsOf(): Promise<Org[]> {
   const session = await getSession();
   return (session?.organizations ?? []).map((o) => ({ id: o.id, name: o.name, slug: o.slug }));
 }
@@ -46,13 +46,13 @@ export async function createOrg(name: string, slug?: string): Promise<Org> {
 
 export type Member = { id: string; userId: string; role: string; name: string; email: string };
 
-export async function membersOf(_orgId: string): Promise<Member[]> {
+export async function membersOf(): Promise<Member[]> {
   return (await v1.members()).map((m) => ({ id: m.user_id, userId: m.user_id, role: m.role, name: m.name, email: m.email }));
 }
 
 export type Invitation = { id: string; email: string; role: string | null; status: string; expiresAt: Date; createdAt: Date; inviter: string };
 
-export async function invitationsOf(_orgId: string): Promise<Invitation[]> {
+export async function invitationsOf(): Promise<Invitation[]> {
   return (await v1.invitations()).map((i) => ({ id: i.id, email: i.email, role: i.role ?? null, status: i.status, expiresAt: new Date(i.expires_at), createdAt: new Date(i.created_at), inviter: i.inviter }));
 }
 

@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from app.schemas import SourceCredentials
 from app.core.shared.urls import GitUrl
 from app.services.workspace.manifest import AppManifest
-from action_platform.core.exception import ProviderError
+from action_platform.core.exception import ActionPlatformError, ProviderError
 from action_platform.providers.source import build_source_host
 
 from app.services.apps.base import AppsBase
@@ -67,3 +67,26 @@ class AppRemote(AppsBase):
             raise HTTPException(502, str(e)) from e
 
         return repo
+
+    def delete_through_host(self, writes, organization_id: str, app) -> Optional[str]:
+        """Delete the repository behind `app` with the host attached to it; None when the app has no remote."""
+        try:
+            remote = self.repository_of(app.registry_id)
+        except ActionPlatformError:
+            return None
+
+        if remote is None:
+            return None
+
+        creds = writes.credentials_for(organization_id, app.source_host_id)
+
+        if creds is None:
+            raise HTTPException(
+                409,
+                f"{app.name} lives on {remote[0]} but no connected host is attached to it; "
+                "attach one in the app's settings or keep the repository",
+            )
+
+        return self.delete_repository(
+            app.registry_id, SourceCredentials(**creds.as_dict())
+        )

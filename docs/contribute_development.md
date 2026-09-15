@@ -8,6 +8,7 @@ poetry run pip install -e apps/api httpx httpx2  # the API package, editable, on
 poetry run pytest -q                      # the library; or: python -m unittest discover -s tests -t .
 (cd apps/api && ../../.venv/bin/python -m pytest -q)   # the API
 poetry run ruff check . && poetry run ruff format --check .
+(cd apps/web && npm run check)                     # lint, typecheck, build
 AP_ALLOW_UNAUTHENTICATED=1 poetry run action-platform-api serve --reload   # :7788, OpenAPI at /docs; without a token the API refuses to start unless told so
 ```
 
