@@ -1,6 +1,6 @@
 """Action Platform __init__ module."""
 
-__version__ = "0.17.2"
+__version__ = "0.17.3"
 __description__ = "Your platform team, as a CLI."
 
 from .core.config import Config

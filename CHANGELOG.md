@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.17.3 — 2026-09-15
+
+### Features
+- **api:** bundle apx-aws-lambda in the API image
+
+### Bug Fixes
+- **scaffold:** overlays render with the project's name as project_slug, not the workspace directory
+
+### Docs
+- **web:** overview and Deployments tab
+- **plugins:** the hosted platform bundles aws-lambda; no marketplace in the web
+- **web:** the Deploy card
+- **identity:** scopes claim
+
+### Tests
+- **api:** deploy jobs listing
+- **api:** switching an unknown plugin, now that aws-lambda is bundled
+- **api:** identity token scopes
+
 ## v0.17.2 — 2026-09-15
 
 ### Bug Fixes
