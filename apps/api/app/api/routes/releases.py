@@ -1,3 +1,5 @@
+"""App › Releases: cut a release, preview the next version."""
+
 from typing import Optional
 
 from fastapi import APIRouter
@@ -7,7 +9,7 @@ from app.api.dependencies import (
     LifecycleDep,
 )
 
-router = APIRouter(prefix="/api/apps", tags=["actions"])
+router = APIRouter(prefix="/api/apps", tags=["releases"])
 
 
 @router.post("/{id}/release")
@@ -28,21 +30,3 @@ def app_next_version(
     component: Optional[str] = None,
 ) -> schemas.NextVersion:
     return lifecycle.next_version(id, level, branch, component)
-
-
-@router.post("/{id}/deploy")
-def app_deploy(
-    id: str,
-    body: schemas.DeployRequest,
-    lifecycle: LifecycleDep,
-) -> list[schemas.DeployResult]:
-    return lifecycle.deploy(id, body)
-
-
-@router.get("/{id}/diagnose")
-def app_diagnose(
-    id: str,
-    lifecycle: LifecycleDep,
-    stage: Optional[str] = None,
-) -> list[schemas.Diagnosis]:
-    return lifecycle.diagnose(id, stage)
