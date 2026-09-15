@@ -31,11 +31,12 @@ forbidden_modules =
     app
 
 [importlinter:contract:core-protocols]
-name = core depends on abc and plugins registry only through its ports
+name = core reaches plugins, mcp, cli and remote only through its ports
 type = forbidden
 source_modules =
     action_platform.core
 forbidden_modules =
+    action_platform.plugins
     action_platform.mcp
     action_platform.cli
     action_platform.remote
