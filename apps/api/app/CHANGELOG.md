@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.0 — 2026-09-14
+
+### Refactoring
+- **api:** routers by context (workspace, management, auth packages) over api/dependencies; AuthService and the models split by context; delete_through_host on AppRemote
+
 ## v0.17.1 — 2026-09-14
 
 ### Refactoring
