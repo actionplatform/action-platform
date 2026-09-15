@@ -129,7 +129,10 @@ def register(mcp: Any) -> None:
             ),
         ] = None,
         ci: Annotated[
-            str, Field(description="github, gitlab, jenkins or bitbucket")
+            str,
+            Field(
+                description="github, gitlab, jenkins, bitbucket, or none for no pipeline files"
+            ),
         ] = "github",
         dry_run: Annotated[
             bool, Field(description="true only reports what would be created")

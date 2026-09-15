@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/select";
 
 import { addApp } from "./actions";
 
-const CI = ["github", "gitlab", "jenkins", "bitbucket"];
+const CI = [{ value: "github", label: "GitHub Actions" }, { value: "gitlab", label: "GitLab CI" }, { value: "jenkins", label: "Jenkins" }, { value: "bitbucket", label: "Bitbucket Pipelines" }, { value: "none", label: "No CI" }];
 
 export function AddForm({ projectId, types, stacks }: { projectId: string; types: { id: string; label: string; description: string }[]; stacks: { id: string; label: string }[] }) {
   const router = useRouter();
@@ -58,10 +58,10 @@ export function AddForm({ projectId, types, stacks }: { projectId: string; types
             <Select value={language} onChange={setLanguage} options={[{ value: "", label: "Detect automatically" }, ...stacks.map((m) => ({ value: m.id, label: m.label })), { value: "none", label: "None (config only)" }]} />
           </label>
           <label className="block text-sm"><span className="mb-1 block text-xs text-secondary">CI</span>
-            <Select value={ci} onChange={(v) => { setCiTouched(true); setCi(v); }} options={CI.map((c) => ({ value: c, label: c }))} />
+            <Select value={ci} onChange={(v) => { setCiTouched(true); setCi(v); }} options={CI} />
           </label>
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">Detection reads pyproject.toml, go.mod, package.json… or the source files. Without a language only platform.toml, CI and hooks are added.</p>
+        <p className="mt-3 text-xs text-muted-foreground">Detection reads pyproject.toml, go.mod, package.json… or the source files. Without a language only platform.toml, CI and hooks are added; with No CI, no pipeline files at all — git-flow is still enforced by the hooks.</p>
       </Dialog>
     </form>
   );
