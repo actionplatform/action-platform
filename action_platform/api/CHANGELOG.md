@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.16.0 — 2026-09-14
+
+### Refactoring
+- **api:** services as structured classes — HostProvider per code host (OAuth, refresh, access), import steps as classes, MatrixView, TemplateRepos, AppManifest, GitUrl, HttpClient, Clones; every __init__ only re-exports
+
 ## v0.15.1 — 2026-09-14
 
 ### Refactoring
