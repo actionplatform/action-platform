@@ -64,6 +64,7 @@ from app.schemas.catalog import (
     SourceStatus,
     Version,
 )
+from app.schemas.plugins import PluginOptions, PluginQueued
 from app.schemas.common import (
     AppRef,
     Created,
@@ -187,6 +188,8 @@ __all__ = [
     "MatrixCloud",
     "MatrixProject",
     "MatrixService",
+    "PluginOptions",
+    "PluginQueued",
     "PluginRow",
     "Plugins",
     "Me",

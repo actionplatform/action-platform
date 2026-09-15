@@ -181,3 +181,48 @@ class PlainOverlayTest(TempCase):
         self.assertEqual((project / "DEPLOY.md").read_text(), "# plain\n")
         self.assertTrue((project / "deploy" / "run.sh").exists())
         self.assertIn('target = "plain"', (project / "platform.toml").read_text())
+
+
+class OptionsTest(TempCase):
+    def test_file_options_round_trip(self):
+        from action_platform.plugins import FileOptions
+
+        options = FileOptions("example", Path(self.tmp_path))
+
+        self.assertIsNone(options.get("channel"))
+        self.assertEqual(options.get("channel", "#dev"), "#dev")
+
+        options.set("channel", "#ops")
+        options.set("retries", 3)
+
+        self.assertEqual(options.all(), {"channel": "#ops", "retries": 3})
+        self.assertEqual(FileOptions("example", Path(self.tmp_path)).get("retries"), 3)
+
+        options.delete("channel")
+        options.delete("nope")
+
+        self.assertEqual(options.all(), {"retries": 3})
+
+    def test_the_surface_carries_the_plugin_options(self):
+        from action_platform.plugins import FileOptions, Loaded, PluginState, Plugins
+
+        seen = {}
+
+        class Remembering(Plugin):
+            slug = "mem"
+
+            def register(self, surface) -> None:
+                surface.options.set("hello", "world")
+                seen["value"] = surface.options.get("hello")
+
+        plugins = Plugins(
+            [Loaded(Remembering(), "apx-mem", "1.0.0")],
+            PluginState(file=Path(self.tmp_path) / "p.json"),
+        )
+        plugins.options_factory = lambda slug: FileOptions(slug, Path(self.tmp_path))
+        plugins.register()
+
+        self.assertEqual(seen, {"value": "world"})
+        self.assertEqual(
+            FileOptions("mem", Path(self.tmp_path)).all(), {"hello": "world"}
+        )

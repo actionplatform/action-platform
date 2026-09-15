@@ -15,13 +15,15 @@ from typing import TYPE_CHECKING, Any, Optional
 if TYPE_CHECKING:
     from action_platform.core.context import Context, DeployResult, PRRef
     from action_platform.core.wiring import Wiring
+    from action_platform.plugins.options import Options
 
 
 @dataclass
 class Surface:
-    """What a plugin registers on: the MCP server (tools come out as `<slug>_<name>`), the Typer app, and the core's wiring where a slot can be replaced with a subclass. `mcp` and `cli` are None in a process that has no such surface."""
+    """What a plugin registers on: the MCP server (tools come out as `<slug>_<name>`), the Typer app, the core's wiring where a slot can be replaced with a subclass, and `options` — the plugin's own key/value store, a file on a machine and a table on the hosted platform. `mcp` and `cli` are None in a process that has no such surface."""
 
     core: "Wiring"
+    options: "Options"
     mcp: Any = None
     cli: Any = None
 

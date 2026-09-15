@@ -103,8 +103,11 @@ class PluginRow(BaseModel):
     installed: bool = False
     installed_version: Optional[str] = None
     enabled: bool = False
+    restart_pending: bool = False
 
 
 class Plugins(BaseModel):
     plugins: list[PluginRow]
     index: str
+    hosted: bool = False
+    restart_pending: list[str] = []

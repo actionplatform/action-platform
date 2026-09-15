@@ -13,6 +13,7 @@ from app.services.directory import DirectoryService, DirectoryWrites
 from app.services.hosts import OAuthState
 from app.services.jobs import JobQueue
 from app.services.organization_import import ImportGateway
+from app.services.plugins import PluginManager
 from app.services.projects import ProjectService
 from app.services.workspace.configuration import ConfigurationService
 from app.services.workspace.flow import FlowService
@@ -47,6 +48,13 @@ def get_auth(
         raise HTTPException(503, "auth is not configured: set AP_AUTH_SECRET")
 
     yield AuthService(db, secrets, request.app.state.verification_uri)
+
+
+def get_plugins(request: Request) -> PluginManager:
+    if request.app.state.db is None:
+        raise HTTPException(503, "no database configured: set AP_DATABASE_URL")
+
+    return PluginManager(JobQueue(request.app.state.db), request.app.state.db)
 
 
 def get_queue(request: Request) -> JobQueue:

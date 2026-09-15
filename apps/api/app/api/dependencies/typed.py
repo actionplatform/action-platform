@@ -17,6 +17,7 @@ from app.api.dependencies.services import (
     get_lifecycle,
     get_import_gateway,
     get_projects,
+    get_plugins,
     get_queue,
     get_state_signer,
     get_writes,
@@ -28,6 +29,7 @@ from app.services.apps import AppService
 from app.services.directory import DirectoryService, DirectoryWrites
 from app.services.hosts import OAuthState
 from app.services.jobs import JobQueue
+from app.services.plugins import PluginManager
 from app.services.organization_import import ImportGateway
 from app.services.projects import ProjectService
 from app.services.workspace.configuration import ConfigurationService
@@ -41,6 +43,7 @@ DirectoryDep = Annotated[DirectoryService, Depends(get_directory)]
 WritesDep = Annotated[DirectoryWrites, Depends(get_writes)]
 AuthDep = Annotated[AuthService, Depends(get_auth)]
 QueueDep = Annotated[JobQueue, Depends(get_queue)]
+PluginsDep = Annotated[PluginManager, Depends(get_plugins)]
 SignerDep = Annotated[OAuthState, Depends(get_state_signer)]
 AppsDep = Annotated[AppService, Depends(get_app_service)]
 ProjectsDep = Annotated[ProjectService, Depends(get_projects)]

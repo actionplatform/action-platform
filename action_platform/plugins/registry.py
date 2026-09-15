@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import functools
+import importlib
 from dataclasses import dataclass
 from importlib.metadata import entry_points
 from pathlib import Path
@@ -12,6 +13,7 @@ from action_platform.abc.plugin import Plugin, Surface
 from action_platform.core.wiring import wired
 from action_platform.core.exception import ActionPlatformError
 from action_platform.logging import logger
+from action_platform.plugins.options import FileOptions, Options
 from action_platform.plugins.state import PluginState
 
 if TYPE_CHECKING:
@@ -96,12 +98,23 @@ class Plugins:
     ) -> None:
         self.found = found
         self.state = state or PluginState.load()
+        self.seen_stamp = self.state.stamp()
+        self.options_factory: Callable[[str], Options] = _options_factory
 
     @classmethod
     def discover(cls, state: Optional[PluginState] = None) -> "Plugins":
+        return cls(cls.find(), state)
+
+    @staticmethod
+    def find(known: Optional[set[str]] = None) -> list[Loaded]:
+        """Every plugin the entry points name; `known` skips slugs already loaded, so a refresh brings only what was installed since."""
         found: list[Loaded] = []
+        importlib.invalidate_caches()
 
         for ep in entry_points(group=GROUP):
+            if known is not None and ep.name in known:
+                continue
+
             try:
                 loaded = ep.load()
                 plugin = loaded() if isinstance(loaded, type) else loaded
@@ -126,7 +139,23 @@ class Plugins:
                 )
             )
 
-        return cls(found, state)
+        return found
+
+    def refresh(self) -> list[Loaded]:
+        """Reread `plugins.json` and pick up packages installed since discovery — the Jenkins move: a new plugin joins the running process, registered on the same surfaces. Already-loaded code stays as it is; an upgrade or a removal takes a restart."""
+        self.state = PluginState.load(self.state.file)
+        self.seen_stamp = self.state.stamp()
+        new = self.find(known={row.slug for row in self.found})
+        self.found.extend(new)
+
+        for row in new:
+            if self.is_enabled(row.slug):
+                self._register(row)
+
+        return new
+
+    def stale(self) -> bool:
+        return self.state.stamp() != self.seen_stamp
 
     def get(self, slug: str) -> Loaded:
         for row in self.found:
@@ -144,12 +173,14 @@ class Plugins:
         """Switch on and register again, so the slots the plugin replaces come back."""
         row = self.get(slug)
         self.state.set_enabled(slug, True)
+        self.seen_stamp = self.state.stamp()
         self._register(row)
 
     def disable(self, slug: str) -> None:
         """Switch off: tools refuse, hooks skip, and every slot the plugin replaced goes back to the core's class."""
         self.get(slug)
         self.state.set_enabled(slug, False)
+        self.seen_stamp = self.state.stamp()
 
         for name, by in wired.origins().items():
             if by == slug:
@@ -198,6 +229,7 @@ class Plugins:
         decorator = getattr(self, "_decorator", None)
         surface = Surface(
             core=Slots(row.slug),
+            options=self.options_for(row.slug),
             mcp=PluginTools(mcp, row.slug, self, decorator)
             if mcp is not None and decorator is not None
             else None,
@@ -208,6 +240,10 @@ class Plugins:
             row.plugin.register(surface)
         except Exception as e:
             logger.warning(f"plugin {row.slug} failed to register: {e}")
+
+    def options_for(self, slug: str) -> Options:
+        """The plugin's option store — the file backend unless the host process installed another (the API's table)."""
+        return self.options_factory(slug)
 
     def overlay_roots(self) -> list[tuple[str, Path]]:
         """(slug, directory) for every enabled plugin that ships overlays; the directory holds an `index.json` and `cloud/<name>/`."""
@@ -246,14 +282,27 @@ class Plugins:
 
 
 _current: Optional[Plugins] = None
+_options_factory: Callable[[str], Options] = FileOptions
+
+
+def use_options(factory: Callable[[str], Options]) -> None:
+    """The host process names where plugin options live — the API hands over its table; it holds across rediscoveries."""
+    global _options_factory
+
+    _options_factory = factory
+
+    if _current is not None:
+        _current.options_factory = factory
 
 
 def installed() -> Plugins:
-    """The plugins of this process, discovered once."""
+    """The plugins of this process — discovered once, refreshed whenever `plugins.json` changed under it (another process installed or switched something)."""
     global _current
 
     if _current is None:
         _current = Plugins.discover()
+    elif _current.stale():
+        _current.refresh()
 
     return _current
 

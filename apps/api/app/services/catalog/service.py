@@ -197,7 +197,9 @@ class CatalogService:
     def plugins(self) -> dict:
         """The marketplace: what the plugins index publishes, and which of them this platform runs."""
         published = published_plugins.get() or {}
-        installed = {row["slug"]: row for row in registry.installed().rows()}
+        plugins = registry.installed()
+        installed = {row["slug"]: row for row in plugins.rows()}
+        pending = set(plugins.state.restart_pending())
         rows = []
 
         for row in published.get("plugins") or []:
@@ -218,10 +220,16 @@ class CatalogService:
                     "installed": here is not None,
                     "installed_version": here["version"] if here else None,
                     "enabled": bool(here and here["enabled"]),
+                    "restart_pending": slug in pending,
                 }
             )
 
-        return {"plugins": rows, "index": settings.PLUGINS_INDEX_URL}
+        return {
+            "plugins": rows,
+            "index": settings.PLUGINS_INDEX_URL,
+            "hosted": settings.PLUGINS_DIR is not None,
+            "restart_pending": sorted(pending),
+        }
 
     def gitflow_rules(self) -> dict:
         return {
