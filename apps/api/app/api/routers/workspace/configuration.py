@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 
 from app import schemas
-from app.api.deps import get_configuration
+from app.api.dependencies import get_configuration
 from app.services.workspace.configuration import ConfigurationService
 
 router = APIRouter(prefix="/apps", tags=["configuration"])

@@ -92,6 +92,8 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
     return () => clearInterval(timer);
   }, [job]);
 
+  const linked = useMemo(() => new Set((preview?.projects ?? []).filter((p) => ghProjects.picked.has(String(p.number))).flatMap((p) => p.repositories)), [preview, ghProjects.picked]);
+
   if (!canManage) {
     return <Panel><PanelBody className="text-sm text-secondary">Importing needs the admin role in this organization.</PanelBody></Panel>;
   }
@@ -107,7 +109,6 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
     );
   }
 
-  const linked = useMemo(() => new Set((preview?.projects ?? []).filter((p) => ghProjects.picked.has(String(p.number))).flatMap((p) => p.repositories)), [preview, ghProjects.picked]);
   const total = repos.picked.size + ghProjects.picked.size + teams.picked.size + people.picked.size;
 
   const submit = () => startSubmit(async () => {

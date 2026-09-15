@@ -7,9 +7,7 @@ import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { DeleteAppDialog } from "../delete-app-dialog";
 import type { AppView } from "./model";
 
-type Host = { id: string; name: string; kind: string; defaultOwner: string | null };
-
-export function SettingsTab({ view, hosts, currentHost }: { view: AppView; hosts: Host[]; currentHost: string | null }) {
+export function SettingsTab({ view }: { view: AppView }) {
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
 

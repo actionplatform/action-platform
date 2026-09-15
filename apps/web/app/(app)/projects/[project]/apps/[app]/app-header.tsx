@@ -26,7 +26,7 @@ export function AppHeader({ view }: { view: AppView }) {
   const [syncedAt, setSyncedAt] = useState<number | null>(view.lastSyncedAt ? new Date(view.lastSyncedAt).getTime() : null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [now, setNow] = useState<number | null>(null);
-  const [pending, start] = useTransition();
+  const [, start] = useTransition();
 
   useEffect(() => {
     setNow(Date.now());

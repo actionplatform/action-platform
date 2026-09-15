@@ -5,5 +5,5 @@ export default async function SettingsPage({ params }: { params: Promise<{ proje
   const { project, app } = await params;
   const loaded = await loadApp(project, app);
   if (!loaded.ok) return null;
-  return <SettingsTab view={loaded.view} hosts={loaded.hosts} currentHost={loaded.currentHost} />;
+  return <SettingsTab view={loaded.view} />;
 }

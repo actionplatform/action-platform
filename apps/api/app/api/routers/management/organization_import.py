@@ -11,8 +11,7 @@ from app.repositories.registry import Registry
 from app.services.organization_import import OrganizationImport, client
 from app.services.jobs import JobQueue
 from app.services.directory import DirectoryWrites
-from app.api.routers.directory import get_caller, get_queue
-from app.api.routers.management import allowed, get_writes, org_of
+from app.api.dependencies import allowed, get_caller, get_queue, get_writes, org_of
 from action_platform.core.exception import ActionPlatformError
 
 router = APIRouter(prefix="/api/v1/import", tags=["import"])

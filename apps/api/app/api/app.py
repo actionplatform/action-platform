@@ -12,16 +12,14 @@ from app import api_version
 from app.api.gate import AccessGate
 from app.core.auth.crypto import Sealer
 from app.core.auth.errors import AuthError
-from app.api.routers.auth import router as auth_router
 from app.core.auth.secrets import Secrets
 from app.repositories.source import configure_registry, get_registry
 from app.core.shared.urls import GitUrl
+from app.api.routers import auth as auth_router
+from app.api.routers import management as v1_management
+from app.api.routers import workspace as v1
 from app.core.db import Database
 
-from app.api.routers.workspace import router as v1
-from app.api.routers.directory import router as v1_directory
-from app.api.routers.imports import router as v1_imports
-from app.api.routers.management import router as v1_management
 from action_platform.core.exception import ActionPlatformError, ConfigError
 from action_platform.observability import observe
 from action_platform.settings import settings
@@ -122,9 +120,7 @@ def build(
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
     app.include_router(v1)
-    app.include_router(v1_directory)
     app.include_router(v1_management)
-    app.include_router(v1_imports)
     app.include_router(auth_router)
 
     def repo_of(registry_id: str) -> Optional[str]:

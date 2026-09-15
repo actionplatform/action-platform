@@ -14,7 +14,7 @@ export type DeviceView = { grant: Grant; requested: Scope[]; clientId: string | 
 
 export async function inspectDevice(userCode: string): Promise<Result<DeviceView>> {
   try {
-    const { session, org } = await requireOrg();
+    const { org } = await requireOrg();
     const request = await deviceRequest(userCode.trim().toUpperCase());
     if (!request) return { ok: false, error: "invalid code" };
     if (request.status === "expired") return { ok: false, error: "expired" };

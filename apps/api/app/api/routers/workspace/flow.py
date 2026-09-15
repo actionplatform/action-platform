@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 
 from app import schemas
-from app.api.deps import get_flow
+from app.api.dependencies import get_flow
 from app.services.workspace.flow import FlowService
 
 router = APIRouter(prefix="/apps", tags=["flow"])
