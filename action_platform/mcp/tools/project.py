@@ -16,7 +16,8 @@ from action_platform.core.scaffold.generate import (
     push_project,
 )
 from action_platform.core.scaffold.templates import load_matrix
-from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL
+from action_platform.mcp import schemas
+from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL, tool
 
 ProjectDir = Annotated[
     Optional[str], Field(description="Project directory; default is the cwd.")
@@ -36,7 +37,7 @@ def _root(project: Optional[str]) -> Path:
 
 
 def register(mcp: Any) -> None:
-    @mcp.tool(annotations=WRITES_LOCAL)
+    @tool(mcp, annotations=WRITES_LOCAL)
     def init_project(
         type: Annotated[str, Field(description="web, library, docs, plugin, empty")],
         name: Annotated[str, Field(description="Human name; the slug is derived.")],
@@ -53,7 +54,7 @@ def register(mcp: Any) -> None:
             Optional[str], Field(description="Parent directory; default is the cwd.")
         ] = None,
         source: TemplateSourceArg = None,
-    ) -> dict:
+    ) -> schemas.Generated:
         """Generate a project from the templates matrix, optionally with a cloud overlay.
 
         Nothing leaves the machine: use `push_project` afterwards to create
@@ -71,11 +72,11 @@ def register(mcp: Any) -> None:
 
         return result
 
-    @mcp.tool(name="push_project", annotations=REACHES_OUT)
+    @tool(mcp, name="push_project", annotations=REACHES_OUT)
     def push(
         project: ProjectDir = None,
         private: bool = False,
-    ) -> dict:
+    ) -> schemas.Pushed:
         """Create the remote repository through [source_host] and push the first commit.
 
         Creates a public repository on the host unless `private` is true.
@@ -83,12 +84,12 @@ def register(mcp: Any) -> None:
         """
         return {"remote": push_project(_root(project), private=private)}
 
-    @mcp.tool(annotations=WRITES_LOCAL)
+    @tool(mcp, annotations=WRITES_LOCAL)
     def cloud_set(
         cloud: Annotated[str, Field(description="aws/lambda, aws/amplify, docker")],
         project: ProjectDir = None,
         source: TemplateSourceArg = None,
-    ) -> dict:
+    ) -> schemas.CloudSet:
         """Apply a deploy overlay to an existing project and set [deploy] target in platform.toml.
 
         Replaces the previous target. The overlay refuses a project whose
@@ -100,7 +101,7 @@ def register(mcp: Any) -> None:
 
         return {"path": str(root), "deploy_target": cloud}
 
-    @mcp.tool(annotations=WRITES_LOCAL)
+    @tool(mcp, annotations=WRITES_LOCAL)
     def service_add(
         service: Annotated[str, Field(description="postgres, ...")],
         provider: Annotated[
@@ -109,7 +110,7 @@ def register(mcp: Any) -> None:
         ] = None,
         project: ProjectDir = None,
         source: TemplateSourceArg = None,
-    ) -> dict:
+    ) -> schemas.ServiceAdded:
         """Add a dependency as services/<name>/ with `up` (provision) and `link` (env vars) scripts."""
         repo, matrix = load_matrix(source=source)
         root = _root(project)
@@ -117,7 +118,7 @@ def register(mcp: Any) -> None:
 
         return {"path": str(root / "services" / service), "provider": provider}
 
-    @mcp.tool(annotations=WRITES_LOCAL)
+    @tool(mcp, annotations=WRITES_LOCAL)
     def install_platform(
         project: ProjectDir = None,
         type: Annotated[str, Field(description="web, library, docs, plugin")] = "web",
@@ -133,7 +134,7 @@ def register(mcp: Any) -> None:
         dry_run: Annotated[
             bool, Field(description="true only reports what would be created")
         ] = True,
-    ) -> dict:
+    ) -> schemas.InstallPlan:
         """Install the platform in an existing repository: platform.toml, .code_quality, CI checks, AGENTS.md, and git hooks into .git/hooks.
 
         Never overwrites a file that exists. Defaults to a dry run — show the
@@ -157,7 +158,7 @@ def register(mcp: Any) -> None:
             "dry_run": dry_run,
         }
 
-    @mcp.tool(annotations=READ_ONLY)
-    def project_info(project: ProjectDir = None) -> dict:
+    @tool(mcp, annotations=READ_ONLY)
+    def project_info(project: ProjectDir = None) -> schemas.ProjectInfo:
         """Read platform.toml: name, type, stack, language, deploy target, services."""
         return Manifest.of(_root(project)).project

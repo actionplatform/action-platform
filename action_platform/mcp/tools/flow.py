@@ -9,7 +9,8 @@ from pydantic import Field
 
 from action_platform.core.flow import gitflow, workflow
 from action_platform.core.flow.workflow import GitFlow
-from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL
+from action_platform.mcp import schemas
+from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL, tool
 
 ProjectDir = Annotated[
     Optional[str], Field(description="Project directory; default is the cwd.")
@@ -21,8 +22,8 @@ def _root(project: Optional[str]) -> Path:
 
 
 def register_rules(mcp: Any) -> None:
-    @mcp.tool(annotations=READ_ONLY)
-    def gitflow_rules() -> dict:
+    @tool(mcp, annotations=READ_ONLY)
+    def gitflow_rules() -> schemas.GitflowRules:
         """The git-flow rules every project follows: branch kinds, their base and merge target, protected branches, commit format."""
         return {
             "kinds": sorted(gitflow.KINDS),
@@ -52,7 +53,7 @@ def register_rules(mcp: Any) -> None:
 def register(mcp: Any) -> None:
     register_rules(mcp)
 
-    @mcp.tool(annotations=REACHES_OUT)
+    @tool(mcp, annotations=REACHES_OUT)
     def start_branch(
         kind: Annotated[
             str,
@@ -69,7 +70,7 @@ def register(mcp: Any) -> None:
         ] = None,
         project: ProjectDir = None,
         push: Annotated[bool, Field(description="Push the new branch upstream")] = True,
-    ) -> dict:
+    ) -> schemas.BranchStarted:
         """Start a git-flow branch: checkout the right base (develop or main), pull, create <kind>/<code>[-slug].
 
         Refuses a dirty working tree and an existing branch name. With push=true
@@ -79,7 +80,7 @@ def register(mcp: Any) -> None:
 
         return {"branch": branch.name, "base": branch.base, "pushed": branch.pushed}
 
-    @mcp.tool(annotations=READ_ONLY)
+    @tool(mcp, annotations=READ_ONLY)
     def gitflow_audit(
         project: ProjectDir = None,
         since: Annotated[
@@ -88,7 +89,7 @@ def register(mcp: Any) -> None:
                 description="Check commits after this ref; default is the merge base with develop/main"
             ),
         ] = None,
-    ) -> dict:
+    ) -> schemas.GitflowReport:
         """Check the current branch name and its commits against git-flow and Conventional Commits.
 
         Returns every problem found; an empty list means the branch can be
@@ -103,7 +104,7 @@ def register(mcp: Any) -> None:
             "problems": report.problems,
         }
 
-    @mcp.tool(annotations=READ_ONLY)
+    @tool(mcp, annotations=READ_ONLY)
     def propose_pull_request(
         project: ProjectDir = None,
         base: Annotated[
@@ -112,7 +113,7 @@ def register(mcp: Any) -> None:
         title: Annotated[
             Optional[str], Field(description="Default: first commit on the branch")
         ] = None,
-    ) -> dict:
+    ) -> schemas.PullRequestPlan:
         """Compute the pull request for the current branch: target, title and a body grouped by commit type.
 
         Audits git-flow first and refuses a branch that does not pass. Nothing
@@ -128,7 +129,7 @@ def register(mcp: Any) -> None:
             "commits": proposal.commits,
         }
 
-    @mcp.tool(annotations=REACHES_OUT)
+    @tool(mcp, annotations=REACHES_OUT)
     def open_pull_request(
         project: ProjectDir = None,
         base: Annotated[
@@ -137,7 +138,7 @@ def register(mcp: Any) -> None:
         title: Optional[str] = None,
         body: Optional[str] = None,
         draft: bool = False,
-    ) -> dict:
+    ) -> schemas.PullRequestOpened:
         """Open the pull request on the source host, pushing the branch first if needed. Confirm with the user before calling."""
         ref = GitFlow(_root(project)).open_pr(
             base=base, title=title, body=body, draft=draft
@@ -145,8 +146,8 @@ def register(mcp: Any) -> None:
 
         return {"number": ref.number, "url": ref.url}
 
-    @mcp.tool(annotations=WRITES_LOCAL)
-    def install_hooks(project: ProjectDir = None) -> dict:
+    @tool(mcp, annotations=WRITES_LOCAL)
+    def install_hooks(project: ProjectDir = None) -> schemas.HooksInstalled:
         """Install the platform git hooks into .git/hooks so git-flow is enforced before commit and push. Re-run after upgrading the CLI."""
         report = GitFlow(_root(project)).install_hooks()
 
