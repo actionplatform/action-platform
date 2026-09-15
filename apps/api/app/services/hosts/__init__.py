@@ -2,6 +2,7 @@
 
 from app.services.hosts.access import AccessReport, Owner, Probe
 from app.services.hosts.bitbucket import BitbucketProvider
+from app.services.hosts.connect import HostConnector
 from app.services.hosts.github import (
     MANIFEST_PERMISSIONS,
     GithubProvider,
@@ -19,6 +20,7 @@ __all__ = [
     "BitbucketProvider",
     "GithubProvider",
     "GitlabProvider",
+    "HostConnector",
     "HostProviders",
     "OAuthState",
     "Owner",

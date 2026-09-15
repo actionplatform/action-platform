@@ -2,7 +2,6 @@
 
 from fastapi import APIRouter, HTTPException, Request
 
-from action_platform.core.exception import ActionPlatformError
 from app.api.dependencies import (
     CallerDep,
     OrgDep,
@@ -11,7 +10,7 @@ from app.api.dependencies import (
     get_state_signer,
 )
 from app.schemas import hosts as schemas
-from app.services.hosts import PROVIDERS
+from app.services.hosts import PROVIDERS, HostConnector
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -87,41 +86,14 @@ def oauth_callback(
             return_to=return_to, query={"oauth_error": "no code from the provider"}
         )
 
-    app = writes.oauth_app(provider)
+    problem = HostConnector(writes).finish(
+        org, provider, body.origin.rstrip("/"), body.code, body.installation_id
+    )
 
-    if app is None:
+    if problem:
         return schemas.OAuthFinished(
-            return_to=return_to,
-            query={
-                "oauth_error": f"{PROVIDERS.get(provider).label} OAuth app is not configured"
-            },
+            return_to=return_to, query={"oauth_error": problem}
         )
-
-    try:
-        host = PROVIDERS.get(provider)
-        access, refresh, expires_at = host.exchange_code(
-            app, body.origin.rstrip("/"), body.code
-        )
-        login, _ = host.identity(app, access)
-        owner = (
-            PROVIDERS.github.installation_owner(access, body.installation_id)
-            if body.installation_id
-            else PROVIDERS.bitbucket.first_workspace(access)
-            if provider == "bitbucket"
-            else None
-        )
-        writes.connect_oauth_host(
-            org.id,
-            provider,
-            login,
-            access,
-            refresh,
-            expires_at,
-            host.stored_base_url(app),
-            owner,
-        )
-    except ActionPlatformError as e:
-        return schemas.OAuthFinished(return_to=return_to, query={"oauth_error": str(e)})
 
     return schemas.OAuthFinished(return_to=return_to, query={"connected": provider})
 

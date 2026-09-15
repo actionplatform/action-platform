@@ -2,22 +2,18 @@
 
 from fastapi import APIRouter, HTTPException
 
-from action_platform.core.exception import ActionPlatformError
 from app.api.dependencies import (
-    AppsDep,
     CallerDep,
     OrgDep,
+    ProjectsDep,
     WritesDep,
     allowed,
     app_of,
     imports_of,
     project_of,
 )
-from app.core.shared.urls import GitUrl
-from app.schemas import SourceCredentials, common
+from app.schemas import common
 from app.schemas import projects as schemas
-from app.services.access.enrich import credentials_for
-from app.services.activity import ActivityService
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -29,30 +25,11 @@ def add_app(
     org: OrgDep,
     caller: CallerDep,
     writes: WritesDep,
-    apps: AppsDep,
+    projects: ProjectsDep,
 ) -> schemas.AppAdded:
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
-    url = body.url.strip()
-
-    if not url:
-        raise HTTPException(400, "url is required")
-
-    host_id = writes.host_id_for_url(org.id, url)
-    kind = GitUrl(url).kind
-
-    if kind and host_id is None:
-        raise HTTPException(
-            400,
-            f"No {kind} host is connected to this organization. Connect one in Settings so private repositories can be cloned.",
-        )
-
-    credentials = credentials_for(writes, org, None, {"url": url})
-    entry = apps.add(url, None, SourceCredentials(**credentials), body.install)
-    app = writes.create_app(project.id, entry["id"], entry["name"], host_id)
-    ActivityService(writes.db).sync_all(
-        app.id, writes.credentials_for(org.id, host_id), GitUrl(url).repo
-    )
+    app, entry = projects.add_app(org, project, body.url, body.install)
 
     return schemas.AppAdded(
         id=app.id,
@@ -69,41 +46,13 @@ def init_app(
     org: OrgDep,
     caller: CallerDep,
     writes: WritesDep,
-    apps: AppsDep,
+    projects: ProjectsDep,
 ) -> schemas.AppInitialized:
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
-    creds = (
-        writes.credentials_for(org.id, body.source_host_id)
-        if body.source_host_id
-        else None
+    app, result = projects.init_app(
+        org, project, body, body.source_host_id, body.template_source
     )
-
-    if body.push and creds is None:
-        raise HTTPException(400, "pushing needs a source host")
-
-    name, email = writes.git_author_of(org.id)
-    request = body.model_copy(
-        update={
-            "credentials": SourceCredentials(
-                **{
-                    **(creds.as_dict() if creds else {}),
-                    "author_name": name,
-                    "author_email": email,
-                }
-            ),
-            "source": writes.source_spec_by_name(org.id, body.template_source),
-        }
-    )
-    result = apps.init(request)
-    app = writes.create_app(
-        project.id, result["id"], result["name"], body.source_host_id
-    )
-
-    if result.get("pushed") and creds is not None:
-        ActivityService(writes.db).sync_all(
-            app.id, creds, GitUrl(result.get("url", "")).repo
-        )
 
     return schemas.AppInitialized(
         id=app.id,
@@ -120,7 +69,7 @@ def delete_app(
     org: OrgDep,
     caller: CallerDep,
     writes: WritesDep,
-    apps: AppsDep,
+    projects: ProjectsDep,
     repository: bool = False,
 ) -> common.Removed:
     allowed(caller, org, "project.manage")
@@ -130,18 +79,9 @@ def delete_app(
     if app is None:
         return common.Removed()
 
-    deleted = apps.delete_through_host(writes, org.id, app) if repository else None
+    removed, repositories = projects.delete_app(org, project, app, repository)
 
-    try:
-        apps.remove(app.registry_id)
-    except ActionPlatformError:
-        pass
-
-    writes.delete_app(project.id, app_id)
-
-    return common.Removed(
-        removed=[app.registry_id], repositories=[deleted] if deleted else []
-    )
+    return common.Removed(removed=removed, repositories=repositories)
 
 
 @router.put("/projects/{project_id}/apps/{app_id}/host")
@@ -186,24 +126,11 @@ def sync_imports(
     org: OrgDep,
     caller: CallerDep,
     writes: WritesDep,
-    apps: AppsDep,
+    projects: ProjectsDep,
 ) -> schemas.Imports:
     allowed(caller, org, "app.sync", whole_org=False)
     project = project_of(writes, org, project_id)
     app = app_of(writes, caller, project, app_id)
-    detail = apps.detail(app.registry_id)
-    repo = (
-        detail.get("source_host", {}).get("repo") or GitUrl(detail.get("url", "")).repo
-    )
-
-    if app.source_host_id is None:
-        host_id = writes.host_id_for_url(org.id, detail.get("url", ""))
-
-        if host_id:
-            writes.set_app_host(app, host_id)
-
-    errors = ActivityService(writes.db).sync_all(
-        app.id, writes.credentials_for(org.id, app.source_host_id), repo
-    )
+    errors = projects.sync_activity(org, app)
 
     return imports_of(writes.db, app.id, errors)

@@ -12,6 +12,7 @@ from app.services.apps import AppService
 from app.services.directory import DirectoryService, DirectoryWrites
 from app.services.hosts import OAuthState
 from app.services.jobs import JobQueue
+from app.services.projects import ProjectService
 from app.services.workspace.configuration import ConfigurationService
 from app.services.workspace.flow import FlowService
 from app.services.workspace.lifecycle import LifecycleService
@@ -78,3 +79,10 @@ def get_configuration(
     registry: Registry = Depends(get_registry),
 ) -> ConfigurationService:
     return ConfigurationService(registry)
+
+
+def get_projects(
+    writes: DirectoryWrites = Depends(get_writes),
+    apps: AppService = Depends(get_app_service),
+) -> ProjectService:
+    return ProjectService(writes, apps)

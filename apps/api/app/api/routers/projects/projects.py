@@ -4,12 +4,11 @@ from typing import Optional
 
 from fastapi import APIRouter, Header
 
-from action_platform.core.exception import ActionPlatformError
 from app.api.dependencies import (
-    AppsDep,
     CallerDep,
     DirectoryDep,
     OrgDep,
+    ProjectsDep,
     WritesDep,
     allowed,
     manageable,
@@ -116,29 +115,11 @@ def delete_project(
     org: OrgDep,
     caller: CallerDep,
     writes: WritesDep,
-    apps: AppsDep,
+    projects: ProjectsDep,
     repositories: bool = False,
 ) -> common.Removed:
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
-    project_apps = writes.apps_of(project.id)
-    deleted = []
+    removed, deleted = projects.delete(org, project, repositories)
 
-    if repositories:
-        for app in project_apps:
-            repo = apps.delete_through_host(writes, org.id, app)
-
-            if repo:
-                deleted.append(repo)
-
-    registry_ids = [a.registry_id for a in project_apps]
-
-    for registry_id in registry_ids:
-        try:
-            apps.remove(registry_id)
-        except ActionPlatformError:
-            pass
-
-    writes.delete_project(org.id, project_id)
-
-    return common.Removed(removed=registry_ids, repositories=deleted)
+    return common.Removed(removed=removed, repositories=deleted)
