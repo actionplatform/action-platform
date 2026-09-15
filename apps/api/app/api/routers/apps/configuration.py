@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app import schemas
 from app.api.dependencies import (
+    CommitsDep,
     ConfigurationDep,
 )
 
@@ -84,6 +85,6 @@ def discard(
 def commit(
     id: str,
     body: schemas.CommitRequest,
-    config: ConfigurationDep,
+    commits: CommitsDep,
 ) -> schemas.CommitResult:
-    return config.commit(id, body)
+    return commits.commit(id, body)
