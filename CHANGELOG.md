@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.17.4 — 2026-09-15
+
+### Features
+- **core:** a release takes a name, Markdown notes above the commit list, and whether it is the latest
+- **cli:** --version on deploy; version on the MCP deploy tools
+- **core:** a deploy ships a release — names a version or takes the tag at HEAD, checks it out, refuses anything else
+- **core:** ActionPlatform and Deployer take env the platform fills into ctx.env for targets
+
+### Docs
+- Releases tab and release fields
+- **web:** Deployments tab
+- deploys ship releases
+- **web:** AWS integration
+
+### Tests
+- **core:** deploys ship releases
+- **api:** deploy env from options
+
+### Build
+- **api:** make in the image for SAM makefile builds
+
+### Chores
+- merge master
+- **api:** apx-aws-lambda 0.3.3
+
 ## v0.17.3 — 2026-09-15
 
 ### Features
