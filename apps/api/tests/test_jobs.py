@@ -115,26 +115,29 @@ class AsyncRouteTest(GateCase):
         self.assertEqual([j["id"] for j in listed], [job_id])
 
     def test_a_deploy_job_carries_the_app_and_the_plugin_options(self):
+        from app.services.deploy import DeployEnv
+        from app.services.jobs.context import JobContext
         from app.services.plugins.options import DbOptions
-        from app.worker import Worker
 
         registry_id = self.register()
         DbOptions(self.app.state.db, "aws-lambda").set("proxy_url", "https://p.test")
-        worker = Worker(self.app.state.db, self.app.state.secrets, "test")
-        organization, app, _ = worker._context(
+
+        ctx = JobContext.of(
             {
                 "registry_id": registry_id,
                 "organization_id": self.org["id"],
                 "app_id": "a1",
                 "path": f"apps/{registry_id}/deploy",
                 "body": {},
-            }
+            },
+            self.app.state.db,
+            self.app.state.sealer,
         )
 
-        env = worker._deploy_env(organization, app)
+        env = DeployEnv(self.app.state.db).for_app(ctx.organization, ctx.app)
 
         self.assertEqual(env["AP_AWS_LAMBDA_PROXY_URL"], "https://p.test")
-        self.assertEqual(env["AP_APP"], f"{organization.slug}/web/demo")
+        self.assertEqual(env["AP_APP"], f"{ctx.organization.slug}/web/demo")
 
     def test_a_body_beyond_the_limit_is_refused_before_anything_runs(self):
         from app.api.gate import MAX_BODY
