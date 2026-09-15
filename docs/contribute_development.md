@@ -3,10 +3,12 @@
 ## Python
 
 ```bash
-poetry install --extras api --extras mcp
-poetry run pytest -q                      # or: python -m unittest discover -s tests -t .
-poetry run ruff check action_platform tests && poetry run ruff format --check action_platform tests
-AP_ALLOW_UNAUTHENTICATED=1 poetry run action-platform api --reload   # :7788, OpenAPI at /docs; without a token the API refuses to start unless told so
+poetry install --extras mcp
+poetry run pip install -e apps/api httpx httpx2  # the API package, editable, on top of the library
+poetry run pytest -q                      # the library; or: python -m unittest discover -s tests -t .
+(cd apps/api && ../../.venv/bin/python -m pytest -q)   # the API
+poetry run ruff check . && poetry run ruff format --check .
+AP_ALLOW_UNAUTHENTICATED=1 poetry run action-platform-api serve --reload   # :7788, OpenAPI at /docs; without a token the API refuses to start unless told so
 ```
 
 Tests use throwaway git repositories and a tiny templates index under `tmp_path`; nothing touches the network or the user's home.
@@ -35,4 +37,4 @@ Git-flow and Conventional Commits, enforced by the hooks `action-platform instal
 
 ## Tests
 
-`tests/` mirrors the package: `tests/core/flow/test_branching.py` and `test_pullrequest.py` cover `action_platform/core/flow/workflow.py` (`GitFlow`), `tests/core/flow/test_git.py` covers the policies in `git.py`, `tests/api/services/test_flow.py` covers `action_platform/api/services/flow.py`, and so on. Every module is a set of `unittest.TestCase` classes, one per behaviour group; pytest is only the runner. Shared builders live in `tests/support.py` (`TempCase` with a temporary directory and an isolated environment, `git()`, `repo_with_origin()`, `platform_repo()`, `template_repo()`), `tests/api/support.py` (`ApiCase`: a `TestClient` over a fresh API with a platform project reachable as `file://`) and `tests/mcp/support.py` (`McpCase`: a local server over a tiny templates index).
+`tests/` mirrors the package: `tests/core/flow/test_branching.py` and `test_pullrequest.py` cover `action_platform/core/flow/workflow.py` (`GitFlow`), `tests/core/flow/test_git.py` covers the policies in `git.py`, `apps/api/tests/services/test_flow.py` covers `apps/api/services/workspace/flow.py`, and so on. Every module is a set of `unittest.TestCase` classes, one per behaviour group; pytest is only the runner. Shared builders live in `action_platform/testing/fixtures.py` (re-exported by `tests/support.py`) (`TempCase` with a temporary directory and an isolated environment, `git()`, `repo_with_origin()`, `platform_repo()`, `template_repo()`), `apps/api/tests/support.py` (`ApiCase`: a `TestClient` over a fresh API with a platform project reachable as `file://`) and `tests/mcp/support.py` (`McpCase`: a local server over a tiny templates index).

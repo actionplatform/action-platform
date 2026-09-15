@@ -53,8 +53,8 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 
 | | |
 |---|---|
-| [Changelog](../CHANGELOG.md) · [web](../apps/web/CHANGELOG.md) · [api](../action_platform/api/CHANGELOG.md) | what changed in each release of the library and CLI, the web app and the API |
-| [`LAST_VERSION`](../LAST_VERSION) · [web](../apps/web/LAST_VERSION) · [api](../action_platform/api/LAST_VERSION) | the current version of each component — the same files `action-platform release` bumps |
+| [Changelog](../CHANGELOG.md) · [web](../apps/web/CHANGELOG.md) · [api](../apps/api/app/CHANGELOG.md) | what changed in each release of the library and CLI, the web app and the API |
+| [`LAST_VERSION`](../LAST_VERSION) · [web](../apps/web/LAST_VERSION) · [api](../apps/api/app/LAST_VERSION) | the current version of each component — the same files `action-platform release` bumps |
 | [Contributing](../CONTRIBUTING.md) | branches, commits, pull requests, what a change must ship with |
 | [Code of conduct](../CODE_OF_CONDUCT.md) | how we treat each other |
 | [Security](../SECURITY.md) | reporting a vulnerability, what is in scope |

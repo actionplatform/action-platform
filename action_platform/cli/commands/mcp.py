@@ -6,6 +6,11 @@ import typer
 
 from action_platform.core.exception import ActionPlatformError
 
+try:
+    from action_platform.mcp.server import main as mcp_main
+except ModuleNotFoundError:
+    mcp_main = None
+
 
 def run(
     http: bool = typer.Option(
@@ -20,16 +25,14 @@ def run(
     ),
 ) -> None:
     """Run the embedded MCP server so AI agents can scaffold, deploy and operate projects."""
-    try:
-        from action_platform.mcp.server import main
-    except ModuleNotFoundError as e:
+    if mcp_main is None:
         raise ActionPlatformError(
             "MCP support is not installed: pip install 'action-platform[mcp]'"
-        ) from e
+        )
 
     argv = ["--http", "--host", host, "--port", str(port)] if http else []
 
     if remote:
         argv.append("--remote")
 
-    main(argv)
+    mcp_main(argv)

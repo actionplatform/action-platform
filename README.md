@@ -98,7 +98,7 @@ flowchart LR
 | Concept | [Access control](docs/concept_access_control.md) · [Git-flow](docs/concept_git_flow.md) · [Manifest](docs/concept_manifest.md) · [Templates](docs/concept_templates.md) · [Releases](docs/concept_releases.md) · [Observability](docs/concept_observability.md) |
 | Contribute | [Architecture](docs/contribute_architecture.md) · [Development](docs/contribute_development.md) |
 
-Versions and history: [`LAST_VERSION`](LAST_VERSION) / [`CHANGELOG.md`](CHANGELOG.md) for the library and CLI, [`apps/web`](apps/web/CHANGELOG.md) and [`action_platform/api`](action_platform/api/CHANGELOG.md) for the web app and the API.
+Versions and history: [`LAST_VERSION`](LAST_VERSION) / [`CHANGELOG.md`](CHANGELOG.md) for the library and CLI, [`apps/web`](apps/web/CHANGELOG.md) and [`apps/api`](apps/api/app/CHANGELOG.md) for the web app and the API.
 
 ## Extend it
 

@@ -69,7 +69,6 @@ github = ["PyGithub"]
 gitlab = ["python-gitlab"]
 mcp = ["mcp>=2.0"]
 sentry = ["sentry-sdk>=2.0"]
-api = ["fastapi>=0.115", "uvicorn>=0.30", "sentry-sdk[fastapi]>=2.0", "sqlalchemy>=2.0", "alembic>=1.13", "psycopg[binary]>=3.1", "pymysql>=1.1", "cryptography>=42"]
 
 [tool.poetry]
 name = "action-platform"
@@ -85,7 +84,6 @@ repository = "https://github.com/actionplatform/action-platform"
 packages = [{ include = "action_platform" }]
 include = [
   { path = "action_platform/hooks/*", format = ["sdist", "wheel"] },
-  { path = "action_platform/api/LAST_VERSION", format = ["sdist", "wheel"] },
 ]
 
 [tool.poetry.scripts]
@@ -95,7 +93,6 @@ action-platform-mcp = "action_platform.mcp.server:main"
 [tool.poetry.extras]
 mcp = ["mcp"]
 sentry = ["sentry-sdk"]
-api = ["fastapi", "uvicorn", "sentry-sdk", "sqlalchemy", "alembic", "psycopg", "pymysql", "cryptography"]
 
 
 [tool.poetry.dependencies]
@@ -108,14 +105,7 @@ jinja2 = "^3.1.4"
 python-ulid = "^3.0.0"
 cookiecutter = "^2.6.0"
 mcp = { version = ">=2.0", optional = true }
-fastapi = { version = ">=0.115", optional = true }
-uvicorn = { version = ">=0.30", optional = true }
-sentry-sdk = { version = ">=2.0", optional = true, extras = ["fastapi"] }
-sqlalchemy = { version = ">=2.0", optional = true }
-alembic = { version = ">=1.13", optional = true }
-psycopg = { version = ">=3.1", optional = true, extras = ["binary"] }
-pymysql = { version = ">=1.1", optional = true }
-cryptography = { version = ">=42", optional = true }
+sentry-sdk = { version = ">=2.0", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 build = "^1.2.2.post1"
@@ -123,16 +113,13 @@ pytest = "^8.3.4"
 pytest-cov = "^6.0.0"
 pytest-mock = "^3.14.0"
 flake8 = "^7.1.1"
-httpx = "^0.28.1"
-fastapi = ">=0.115"
-sqlalchemy = ">=2.0"
-alembic = ">=1.13"
-cryptography = ">=42"
-sentry-sdk = {version = ">=2.0", extras = ["fastapi"]}
 
 [tool.poetry.group.code-quality.dependencies]
 ruff = "^0.9.0"
 mypy = "^1.13.0"
+
+[tool.ruff]
+extend-exclude = ["apps"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -140,6 +127,3 @@ testpaths = ["tests"]
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.ruff.lint.per-file-ignores]
-"action_platform/api/db/database.py" = ["E402"]

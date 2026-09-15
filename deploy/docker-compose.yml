@@ -69,7 +69,7 @@ services:
     image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
     pull_policy: always
     restart: unless-stopped
-    command: ["action-platform", "worker"]
+    command: ["action-platform-api", "worker"]
     depends_on:
       postgres:
         condition: service_healthy

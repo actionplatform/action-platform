@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from typing import Optional
 
+try:
+    import sentry_sdk
+except ImportError:
+    sentry_sdk = None
+
 from action_platform import __version__
 from action_platform.settings import settings
 
@@ -16,9 +21,7 @@ def observe(
     if not dsn:
         return False
 
-    try:
-        import sentry_sdk
-    except ImportError:
+    if sentry_sdk is None:
         return False
 
     sentry_sdk.init(

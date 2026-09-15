@@ -3,7 +3,7 @@
 ```bash
 pipx install action-platform          # library + CLI
 pip install "action-platform[mcp]"    # + MCP server
-pip install "action-platform[api]"    # + the JSON API the web app uses
+pip install ./apps/api    # + the JSON API the web app uses
 ```
 
 ## Scaffold
@@ -52,13 +52,13 @@ action-platform destroy [--target name]
 ## Platform services
 
 ```bash
-action-platform api [--reload] [--host] [--port] [--cors]   # JSON API for the web app (:7788, OpenAPI at /docs)
+action-platform-api serve [--reload] [--host] [--port] [--cors]   # JSON API for the web app (:7788, OpenAPI at /docs)
 action-platform mcp [--http] [--remote]                     # MCP server (local tools, or the hosted platform's)
 action-platform login <url> [--scope read,write] [--name label] [--no-browser]   # device flow → bearer token; asks for everything your role allows unless --scope narrows it
 action-platform whoami                                      # server — account — scope — on Org / project / app
 action-platform logout
-action-platform db status | migrate [--url …]            # the API's database: revision, migrate on demand
-action-platform worker [--once] [--interval 2] [--name]  # run queued jobs against AP_DATABASE_URL
+action-platform-api db status | migrate [--url …]            # the API's database: revision, migrate on demand
+action-platform-api worker [--once] [--interval 2] [--name]  # run queued jobs against AP_DATABASE_URL
 ```
 
 Credentials from `login` live in `~/.action-platform/credentials.json` (mode 600); `AP_SERVER` + `AP_TOKEN` override them.

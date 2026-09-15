@@ -13,9 +13,6 @@ from action_platform.cli.commands import install as install_cmd
 from action_platform.cli.commands import login as login_cmd
 from action_platform.cli.commands import release as release_cmd
 from action_platform.cli.commands import service as service_cmd
-from action_platform.cli.commands import api as api_cmd
-from action_platform.cli.commands import db as db_cmd
-from action_platform.cli.commands import worker as worker_cmd
 
 app = typer.Typer(
     name="action-platform",
@@ -35,11 +32,8 @@ app.command("rollback")(deploy_cmd.rollback)
 app.command("diagnose")(deploy_cmd.diagnose)
 app.command("destroy")(deploy_cmd.destroy)
 app.command("mcp")(mcp_cmd.run)
-app.command("api")(api_cmd.run)
-app.command("worker")(worker_cmd.run)
 app.command("login")(login_cmd.login)
 app.command("logout")(login_cmd.logout)
 app.command("whoami")(login_cmd.whoami)
 app.add_typer(cloud_cmd.app, name="cloud")
 app.add_typer(service_cmd.app, name="service")
-app.add_typer(db_cmd.app, name="db")

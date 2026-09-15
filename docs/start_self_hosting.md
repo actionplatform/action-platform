@@ -63,7 +63,7 @@ flowchart LR
 |---|---|---|
 | `postgres` | `postgres:16-alpine` | volume `pgdata` |
 | `api` | `actionplatformio/action-platform-api` | Python; keeps nothing on disk — clones are made under the container's temp dir when a request needs them and rebuilt from the code host any time. Reachable from `web`, which also forwards `/api/v1` and `/api/auth` to it. |
-| `worker` | `actionplatformio/action-platform-api` | same image, `action-platform worker`: runs queued syncs, releases, deploys and imports. Stateless like the API: any host, any number — `docker compose up --scale worker=3`. |
+| `worker` | `actionplatformio/action-platform-api` | same image, `action-platform-api worker`: runs queued syncs, releases, deploys and imports. Stateless like the API: any host, any number — `docker compose up --scale worker=3`. |
 | `web` | `actionplatformio/action-platform-web` | Next.js standalone, stateless: pages and server actions over the API. Port 3000. |
 | `traefik` | `traefik:v3.3` | only with `--profile tls`; certificates in volume `letsencrypt` |
 
@@ -116,7 +116,7 @@ AP_IMAGE_API=action-platform-api:local AP_IMAGE_WEB=action-platform-web:local do
 Each component ships on its own tag and image: `api/vX.Y.Z` → `actionplatformio/action-platform-api`, `web/vX.Y.Z` → `actionplatformio/action-platform-web`, `vX.Y.Z` → `action-platform` on PyPI ([releases](concept_releases.md)). To upgrade:
 
 1. Pull the new images (`install.sh` again, or *Redeploy* on Dokploy). Start the **api** before or together with the **web**: the web client is generated from the API's schema, so an older API may miss fields a newer web sends.
-2. The API applies its migrations on boot (`action_platform/api/db/migrations/`); nothing to run by hand. Back up the database first for a major jump.
+2. The API applies its migrations on boot (`apps/api/app/core/db/migrations/`); nothing to run by hand. Back up the database first for a major jump.
 3. Update the CLI where people use it: `pip install -U action-platform`. Tokens minted by `action-platform login` keep working across upgrades until they expire (90 days) or are revoked.
 
 `GET /api/version` on the API and the sidebar footer in the web app (`web · api · lib`) show what is running.

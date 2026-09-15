@@ -1,0 +1,4 @@
+[project]
+name = "action-platform-api"
+type = "web"
+language = "python"

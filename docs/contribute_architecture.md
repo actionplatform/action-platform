@@ -12,7 +12,7 @@ flowchart TB
         v1["/api/v1/* → rewrite to the API"]
     end
 
-    subgraph api["action-platform api — FastAPI"]
+    subgraph api["action-platform-api serve — FastAPI"]
         reg[apps registry]
         ws[(disposable clones under the temp dir)]
     end
@@ -45,18 +45,22 @@ action_platform/
     action_platform.py   ActionPlatform: the facade the CLI, MCP and API call (releaser, deployer, flow)
   providers/
     source/       rest (urllib helper), github, gitlab, bitbucket, generic; build_source_host(kind, …)
-  abc/            SourceHost, CIRunner, DeployTarget, WorkingCopy, TemplateStore, ImportSource, HostDirectory contracts
-  api/            FastAPI: main (app factory, AP_API_TOKEN middleware, Sentry), v1/routers (apps, catalog, configuration, flow, actions),
-                  services — one package per concern: directory (organizations, projects, teams, invitations, hosts, oauth_apps, template_sources), apps (inventory, generate, remote), workspace (disposable clones, manifest, configuration, flow, state, lifecycle), hosts (oauth, providers, access), imports (one ImportSource per code host), github_import (one HostDirectory), catalog (matrix + published index), jobs, shared (common, http, credentials) — repositories/registry (`registry` table) and repositories/drafts (`draft` table: pending edits),
-                  schemas (the Pydantic models behind the OpenAPI contract), core/credentials (per-request token + identity), LAST_VERSION
+  abc/            SourceHost, CIRunner, DeployTarget, WorkingCopy, TemplateStore contracts
   remote/         client (urllib): device-flow login, scoped token exchange, every /api/v1 call; credentials file
   mcp/            server (local or --remote), tools/{matrix,project,flow,lifecycle,remote}, prompts, annotations
-  cli/            Typer commands: init install branch gitflow pr release deploy rollback diagnose destroy cloud service mcp api login logout whoami
-  observability.py   Sentry init shared by the CLI and the API (docs/concept_observability.md)
+  cli/            Typer commands: init install branch gitflow pr release deploy rollback diagnose destroy cloud service mcp login logout whoami
   observability.py   Sentry init shared by the CLI and the API (docs/concept_observability.md)
   hooks/          commit-msg, pre-commit, pre-push, gitflow.sh
 apps/web/         the web app
 deploy/           Dockerfiles, compose, install.sh
+apps/api/app/  (package `app`, depends on the library, never the other way round)
+  api/            FastAPI: app (factory, AP_API_TOKEN middleware, Sentry), gate (the /api/v1 gate: role ∩ scope ∩ reach), deps, ratelimit, routers (workspace, directory, management, imports, auth)
+  core/           abc (HostProvider, HostDirectory, ImportSource: one implementation per code host), access (Caller, rules, enrich), auth (AuthService, crypto, jwt, passwords, secrets, cookies), db (models, database, migrations), cli (serve, worker, db), shared (clock, ids, urls, http, credentials, git_auth)
+  repositories/   registry (`registry` table), drafts (`draft` table: pending edits), source (the registry this process opens)
+  services/       directory (organizations, projects, teams, invitations, hosts, oauth_apps, template_sources), apps (inventory, scaffolding, remote), workspace (disposable clones, manifest, configuration, flow, state, lifecycle), hosts (one HostProvider per code host, OAuth state, access report), activity (releases and pull requests, one ImportSource per host), organization_import (preview and the import steps), catalog (matrix view, published index), jobs (queue)
+  schemas/        the Pydantic models behind the OpenAPI contract
+  worker.py       `action-platform-api worker`: runs queued jobs with the same services
+
 ```
 
 ### Objects in the core
@@ -88,7 +92,7 @@ sequenceDiagram
     participant M as Member (browser)
     participant W as apps/web
     participant DB as web database
-    participant A as action-platform api
+    participant A as action-platform-api serve
     participant G as Code host
 
     M->>W: Connect with GitHub
@@ -159,7 +163,7 @@ erDiagram
     }
 ```
 
-`user`, `session`, `account`, `verification`, `device_code`, `organization`, `member`, `invitation` were created by better-auth and are now written by the API's `AuthService` (`action_platform/api/auth/`), with the same password hashes and cookie signatures so nothing had to be re-issued; `team`, `team_member`, `project`, `app`, `source_host`, `release`, `pull_request`, `template_source`, `organization_setting`, `api_token`, `api_token_client` are the platform's. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/` (0001–0014), applied on boot. The Python API mirrors the same tables in `action_platform/api/db/models.py` and, given `AP_DATABASE_URL`, connects to the same database, adopts it and adds its own tables (`job`) through Alembic — see [database](concept_database.md).
+`user`, `session`, `account`, `verification`, `device_code`, `organization`, `member`, `invitation` were created by better-auth and are now written by the API's `AuthService` (`apps/api/app/core/auth/`), with the same password hashes and cookie signatures so nothing had to be re-issued; `team`, `team_member`, `project`, `app`, `source_host`, `release`, `pull_request`, `template_source`, `organization_setting`, `api_token`, `api_token_client` are the platform's. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/` (0001–0014), applied on boot. The Python API mirrors the same tables in `apps/api/app/core/db/models.py` and, given `AP_DATABASE_URL`, connects to the same database, adopts it and adds its own tables (`job`) through Alembic — see [database](concept_database.md).
 
 ## Trust between web and API
 
