@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.17.8 — 2026-09-15
+
+### Breaking Changes
+- **core:** drop AP_PLUGINS_DIR and AP_PLATFORM_ADMINS — plugins install into the interpreter's environment only
+
+### Docs
+- plugins are a dependency of the image; no runtime install, no platform admins, no plugins volume
+
+### Tests
+- **api:** plugins list the bundled ones and their load failures; install and restart routes are gone
+
+### Build
+- **deploy:** no plugins volume — the image carries its plugins
+
 ## v0.17.7 — 2026-09-15
 
 ### Features
