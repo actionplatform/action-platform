@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.18.5 — 2026-09-15
+
+### Features
+- **web:** remove the plugins marketplace page
+- **web:** drop the Plugins entry from the navigation
+
 ## v0.18.4 — 2026-09-15
 
 ### Bug Fixes
