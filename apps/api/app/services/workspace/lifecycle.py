@@ -42,7 +42,12 @@ class LifecycleService:
                 self._switch(platform.repo_root, body.branch)
 
             ctx = platform.release(
-                level=body.level, dry_run=body.dry_run, component=body.component
+                level=body.level,
+                dry_run=body.dry_run,
+                component=body.component,
+                name=body.name,
+                notes=body.notes,
+                latest=body.latest,
             )
 
         return {

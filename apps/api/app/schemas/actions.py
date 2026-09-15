@@ -47,6 +47,9 @@ class ReleaseRequest(BaseModel):
     dry_run: bool = True
     branch: Optional[str] = None
     component: Optional[str] = None
+    name: Optional[str] = None
+    notes: Optional[str] = None
+    latest: bool = True
     credentials: Optional[SourceCredentials] = None
 
 
