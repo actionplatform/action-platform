@@ -9,7 +9,7 @@ from action_platform.core.scaffold.templates import (
     load_source,
 )
 from action_platform.settings import settings
-from app.core.shared import git_auth as auth
+from app.services.workspace import git_auth as auth
 from app.schemas import SourceSpec
 
 OFFICIAL_REF = settings.TEMPLATES_REF

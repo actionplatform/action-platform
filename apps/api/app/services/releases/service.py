@@ -9,7 +9,7 @@ from action_platform.core.flow import git
 from action_platform.core.flow.repository import Repository
 from action_platform.core.release.components import resolve
 from action_platform.core.release.release import STABLE_BRANCHES
-from app.core.shared import git_auth as auth
+from app.services.workspace import git_auth as auth
 from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.workspace.registry import Registry
 from app.schemas import ReleaseRequest

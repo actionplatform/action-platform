@@ -5,13 +5,33 @@ root_packages =
 include_external_packages = True
 
 [importlinter:contract:api-layers]
-name = api: routers → services → repositories, never upwards
+name = api: routes → services → repositories → core, never upwards
 type = layers
 layers =
     app.api
     app.services
     app.repositories
+    app.schemas
     app.core
+
+[importlinter:contract:api-routes-only-http]
+name = api: only api/routes and api/app import FastAPI routers; schemas and core know no services
+type = forbidden
+source_modules =
+    app.schemas
+    app.core
+forbidden_modules =
+    app.services
+    app.repositories
+    app.api
+
+[importlinter:contract:contexts-independent]
+name = api: app contexts talk to each other only through their package interface
+type = independence
+modules =
+    app.services.releases
+    app.services.deployments
+    app.services.templates
 
 [importlinter:contract:services-no-fastapi]
 name = api: services and repositories raise domain errors, not HTTPException
