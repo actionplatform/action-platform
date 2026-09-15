@@ -28,6 +28,13 @@ class SurfaceTest(unittest.TestCase):
                     self.assertTrue(t.description)
                     self.assertIsNotNone(t.annotations)
 
+    def test_both_servers_offer_prompts(self):
+        for remote, expected in ((None, "new_service"), ("", "new_app")):
+            names = {p.name for p in asyncio.run(server.build(remote).list_prompts())}
+
+            self.assertIn(expected, names)
+            self.assertGreaterEqual(len(names), 6)
+
     def test_rules_ride_with_the_instructions(self):
         for remote in (None, ""):
             text = server.build(remote).instructions or ""
