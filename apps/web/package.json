@@ -9,7 +9,8 @@
     "api:types": "cd ../.. && AP_ALLOW_UNAUTHENTICATED=1 AP_DATABASE_URL=sqlite:// poetry run python -c \"import json; from app.api.app import build; json.dump(build().openapi(), open('apps/web/openapi.json','w'))\" && cd apps/web && openapi-typescript openapi.json -o lib/api.d.ts && node scripts/strip-comments.mjs lib/api.d.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "check": "npm run lint && npm run typecheck && npm run build"
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "test": "vitest run"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.74.0",
@@ -28,14 +29,20 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^22.0.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^6.1.1",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "^15.5.25",
+    "jsdom": "^29.1.1",
     "openapi-typescript": "^7.13.0",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.11"
   },
   "overrides": {
     "postcss": "$postcss"
