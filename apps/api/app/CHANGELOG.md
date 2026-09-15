@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.19.0 — 2026-09-15
+
+### Features
+- **api:** GET /api/plugins — the plugins index plus which plugins this platform runs
+- **core:** every process is a class in a wiring slot — gitflow_rules, gitflow, releaser, deployer, installer, scaffolder — so a plugin can replace it with a subclass
+
 ## v0.18.5 — 2026-09-15
 
 ## v0.18.4 — 2026-09-14
