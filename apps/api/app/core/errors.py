@@ -41,3 +41,12 @@ class Upstream(ServiceError):
     """The code host or another remote system failed."""
 
     status = 502
+
+
+class Refused(ServiceError):
+    """A refusal with the status chosen at the point of refusal — what the /api/v1 gate says before a route runs."""
+
+    def __init__(self, status: int, detail: str) -> None:
+        super().__init__(detail)
+        self.status = status
+        self.detail = detail
