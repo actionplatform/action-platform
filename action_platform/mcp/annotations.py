@@ -1,8 +1,14 @@
-"""Tool hints, so a client can ask the human before anything irreversible."""
+"""Tool hints, so a client can ask the human before anything irreversible, and the decorator every tool registers through."""
 
 from __future__ import annotations
 
+import functools
+from typing import Any, Callable
+
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
+
+from action_platform.core.exception import ActionPlatformError
 
 READ_ONLY = ToolAnnotations(
     read_only_hint=True,
@@ -31,3 +37,19 @@ DESTRUCTIVE = ToolAnnotations(
     idempotent_hint=False,
     open_world_hint=True,
 )
+
+
+def tool(mcp: Any, **options: Any) -> Callable:
+    """`@tool(mcp, annotations=...)`: registers the function as an MCP tool whose platform errors — a refused permission, an unknown app, a git-flow violation — reach the model as the tool's error text instead of a bare `Error executing tool`."""
+
+    def decorate(fn: Callable) -> Callable:
+        @functools.wraps(fn)
+        def guarded(*args: Any, **kwargs: Any) -> Any:
+            try:
+                return fn(*args, **kwargs)
+            except ActionPlatformError as e:
+                raise ToolError(str(e)) from e
+
+        return mcp.tool(**options)(guarded)
+
+    return decorate
