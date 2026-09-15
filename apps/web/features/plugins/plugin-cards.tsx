@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { savePluginOptions } from "./actions";
 import { Button } from "@/components/ui/button";
+import { Hint } from "@/components/ui/hint";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -70,6 +71,7 @@ export function PluginCards({
                 >
                   {p.name}
                 </h3>
+                {p.description && <Hint text={p.description} />}
                 <span
                   className={cn(
                     "ml-auto inline-flex h-6 shrink-0 items-center gap-1 rounded-full border px-2 text-[12px] font-medium",
@@ -97,9 +99,7 @@ export function PluginCards({
                   {state}
                 </span>
               </div>
-              <p className="mt-2 text-sm leading-5 text-secondary">
-                {p.description || p.slug}
-              </p>
+              <p className="mt-2 font-mono text-[13px] text-secondary">{p.slug}</p>
               {p.error !== null && (
                 <p className="mt-2 text-[13px] text-[#e07070]">{p.error}</p>
               )}
