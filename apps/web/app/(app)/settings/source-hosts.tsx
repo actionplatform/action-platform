@@ -46,7 +46,7 @@ export function SourceHosts({ hosts, access = {}, canManage }: Props) {
       </header>
 
       {open && (
-        <form action={action} className="space-y-3 border-b border-border px-6 py-5">
+        <form method="post" action={action} className="space-y-3 border-b border-border px-6 py-5">
           <input type="hidden" name="kind" value={kind} />
           <div className="flex gap-1 rounded-[8px] bg-surface-hover p-1 text-[13px]">
             {HOST_KINDS.map((k) => (
