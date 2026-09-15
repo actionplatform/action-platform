@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.16.0 — 2026-09-15
+
+### Features
+- **web:** settings by category — General, People (members, teams), Integrations, Developers; import moves into Projects and Integrations; old paths redirect
+
 ## v0.15.3 — 2026-09-15
 
 ## v0.15.2 — 2026-09-15
