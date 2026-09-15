@@ -6,6 +6,7 @@ from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session as DbSession
 
 from app.core.auth.service import AuthService
+from app.repositories.config_store import ConfigStore
 from app.repositories.registry import Registry
 from app.repositories.source import get_registry
 from app.services.apps import AppService
@@ -68,26 +69,40 @@ def get_state_signer(request: Request) -> OAuthState:
     return OAuthState(request.app.state.secrets)
 
 
-def get_app_service(registry: Registry = Depends(get_registry)) -> AppService:
-    return AppService(registry)
+def get_config_store(registry: Registry = Depends(get_registry)) -> ConfigStore:
+    return ConfigStore(registry.store.database)
+
+
+def get_app_service(
+    registry: Registry = Depends(get_registry),
+    configs: ConfigStore = Depends(get_config_store),
+) -> AppService:
+    return AppService(registry, configs)
 
 
 def get_git_state(registry: Registry = Depends(get_registry)) -> GitStateService:
     return GitStateService(registry)
 
 
-def get_lifecycle(registry: Registry = Depends(get_registry)) -> LifecycleService:
-    return LifecycleService(registry)
+def get_lifecycle(
+    registry: Registry = Depends(get_registry),
+    configs: ConfigStore = Depends(get_config_store),
+) -> LifecycleService:
+    return LifecycleService(registry, configs=configs)
 
 
-def get_flow(registry: Registry = Depends(get_registry)) -> FlowService:
-    return FlowService(registry)
+def get_flow(
+    registry: Registry = Depends(get_registry),
+    configs: ConfigStore = Depends(get_config_store),
+) -> FlowService:
+    return FlowService(registry, configs)
 
 
 def get_configuration(
     registry: Registry = Depends(get_registry),
+    configs: ConfigStore = Depends(get_config_store),
 ) -> ConfigurationService:
-    return ConfigurationService(registry)
+    return ConfigurationService(registry, configs)
 
 
 def get_projects(

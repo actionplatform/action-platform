@@ -9,6 +9,7 @@ from action_platform.core.flow.repository import Repository
 from action_platform.core.release.components import resolve
 from action_platform.core.release.release import STABLE_BRANCHES
 from app.core.shared import git_auth as auth
+from app.repositories.config_store import ConfigStore
 from app.repositories.registry import Registry
 from app.schemas import DeployRequest, ReleaseRequest
 from app.services.workspace import Workspaces
@@ -21,16 +22,18 @@ class LifecycleService:
         registry: Registry,
         identity: Callable[[str], str] | None = None,
         env: dict[str, str] | None = None,
+        configs: ConfigStore | None = None,
     ) -> None:
         self.registry = registry
         self.identity = identity
         self.env = env
+        self.configs = configs or ConfigStore(registry.store.database)
 
     def _tool(self, id: str, fresh: bool = False) -> ActionPlatform:
         _, root = Workspaces(self.registry).checkout(id, fresh=fresh)
 
         return ActionPlatform(
-            config=self.registry.configs.config(id, root),
+            config=self.configs.config(id, root),
             repo_root=root,
             identity=self.identity,
             env=self.env,

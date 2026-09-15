@@ -17,7 +17,6 @@ from __future__ import annotations
 import json
 import os
 import shutil
-import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Optional
@@ -26,10 +25,7 @@ from sqlalchemy import select
 from ulid import ULID
 
 from action_platform.core.exception import ActionPlatformError
-from action_platform.core.flow.git import UnsafeUrl, check_remote_url
-from action_platform.core.flow.repository import Repository
 from action_platform.settings import settings
-from app.repositories.config_store import ConfigStore
 from app.core.db.models import RegistryEntry
 
 
@@ -154,7 +150,6 @@ class Registry:
         self.workspaces = settings.WORKSPACES
         self.store = store
         self.drafts = drafts
-        self.configs = ConfigStore(store.database)
 
     def _entry(self, row: dict) -> Entry:
         return Entry(
@@ -204,56 +199,8 @@ class Registry:
 
         return self._entry(row)
 
-    def add(
-        self, url: str, name: Optional[str] = None, require_manifest: bool = True
-    ) -> Entry:
-        url = url.strip()
-
-        if not url.strip() or any(c.isspace() for c in url):
-            raise ActionPlatformError(f"not a git url: {url}")
-
-        try:
-            check_remote_url(url)
-        except UnsafeUrl as e:
-            raise ActionPlatformError(str(e)) from e
-
-        rows = self._load()
-
-        for row in rows:
-            if row.url == url:
-                return row
-
-        id = str(ULID()).lower()
-        name = name or _name_from(url)
-        path = self.workspaces / id
-        path.parent.mkdir(parents=True, exist_ok=True)
-
-        try:
-            repo = Repository.clone(url, path)
-        except subprocess.CalledProcessError as e:
-            raise ActionPlatformError(
-                f"clone failed: {(e.stderr or '').strip() or url}"
-            ) from e
-
-        try:
-            check_workspace(path)
-        except UnsafeWorkspace:
-            shutil.rmtree(path, ignore_errors=True)
-            raise
-
-        if require_manifest and not (path / settings.CONFIG_FILE).exists():
-            shutil.rmtree(path, ignore_errors=True)
-
-            raise MissingManifest(
-                f"{settings.CONFIG_FILE} not found in {url} — install the platform on it first"
-            )
-
-        entry = Entry(
-            id=id, name=name, url=url, path=str(path), default_branch=repo.branch
-        )
-        self._put(entry)
-
-        return entry
+    def by_url(self, url: str) -> Optional[Entry]:
+        return next((row for row in self._load() if row.url == url), None)
 
     def new_id(self) -> str:
         return str(ULID()).lower()
@@ -283,7 +230,7 @@ class Registry:
             shutil.rmtree(path, ignore_errors=True)
 
 
-def _name_from(url: str) -> str:
+def name_from_url(url: str) -> str:
     tail = url.rstrip("/").rsplit("/", 1)[-1].rsplit(":", 1)[-1]
 
     return tail[:-4] if tail.endswith(".git") else tail

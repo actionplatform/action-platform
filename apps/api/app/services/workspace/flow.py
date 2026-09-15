@@ -6,6 +6,7 @@ from action_platform.core.wiring import wired
 from action_platform.core.flow import git
 from action_platform.core.flow.repository import Repository
 from app.core.shared import git_auth as auth
+from app.repositories.config_store import ConfigStore
 from app.repositories.registry import Registry
 from app.schemas import PullRequestRequest, StartBranchRequest
 from app.services.workspace import Workspaces
@@ -13,8 +14,9 @@ from app.core.errors import Conflict, Invalid, NotFound
 
 
 class FlowService:
-    def __init__(self, registry: Registry) -> None:
+    def __init__(self, registry: Registry, configs: ConfigStore | None = None) -> None:
         self.registry = registry
+        self.configs = configs or ConfigStore(registry.store.database)
 
     def _root(self, id: str) -> Path:
         return Workspaces(self.registry).checkout(id)[1]
@@ -70,7 +72,7 @@ class FlowService:
 
     def open_pr(self, id: str, body: PullRequestRequest) -> dict:
         root = self._root(id)
-        config = self.registry.configs.config(id, root)
+        config = self.configs.config(id, root)
         auth.apply(config, body.credentials)
 
         with auth.git_auth(body.credentials):
