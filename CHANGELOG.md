@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.16.0 — 2026-09-15
+
+### Features
+- **core:** slots import their home lazily; plain overlays without cookiecutter are copied as they are
+- **abc:** export Surface
+- **hooks:** git hooks ask action-platform gitflow-check when the CLI is on PATH, so replaced rules hold at commit time
+- **plugins:** Plugin ABC, discovery through action_platform.plugins, on/off state, tools as <slug>.<name>, overlays, lifecycle hooks, action-platform plugin commands
+- **release:** [release] strategy and changelog pick a ReleaseStrategy / ChangelogRenderer — semver and conventional built in, others from entry points
+- **core:** every process is a class in a wiring slot — gitflow_rules, gitflow, releaser, deployer, installer, scaffolder — so a plugin can replace it with a subclass
+
+### Refactoring
+- **plugins:** packages are apx-<slug>; tools come out as <slug>_<name> since MCP clients refuse dots
+
+### Docs
+- plain overlays
+- plugins — using, writing, wiring slots and providers
+
+### Tests
+- **mcp:** the core surface ignores plugin tools
+- **plugins:** plain overlay
+- plugins registry, wiring slots, release strategies; hooks call gitflow-check
+
+### CI
+- plugin issue template
+
 ## v0.15.0 — 2026-09-15
 
 ### Features
