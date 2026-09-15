@@ -39,7 +39,7 @@ Pending migrations run on boot, so upgrading the image is enough.
 
 ## Plugins
 
-**Plugins** in the sidebar is the marketplace: every plugin the [plugins-index](https://github.com/actionplatform/plugins-index) publishes, with its description, `verified` mark, package, latest version, what it `needs` (hosts, variables, tools), tags, repository and PyPI links, and the install command to copy — `action-platform plugin install <slug>`. Search and tag filters narrow the list. Plugins are installed with the CLI on each developer's machine; on a platform with a plugins volume (`AP_PLUGINS_DIR`) the page also installs, enables, disables, updates and removes verified plugins for `org.manage` — install and enable take effect at once, update and remove after **Restart platform** (see [plugins](use_plugins.md)). **On this platform** marks what the API runs. `GET /api/plugins` is the call behind it; the index is read raw from GitHub and revalidated with its ETag, `ACTION_PLATFORM_PLUGINS_INDEX` points at another one. See [plugins](use_plugins.md).
+The hosted platform ships with the plugins it runs — `apx-aws-lambda` is a dependency of the API image, so the `aws/lambda` deploy target, its overlay and tools are always there. The web has no plugin marketplace; `GET /api/plugins` and `/api/v1/plugins` still answer for the CLI and for automation (see [plugins](use_plugins.md)).
 
 ## Code hosts
 
