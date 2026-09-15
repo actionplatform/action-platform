@@ -10,7 +10,9 @@ from tests.support import TempCase
 class DotEnvTest(TempCase):
     def test_reads_quotes_exports_and_comments_and_never_overrides(self):
         path = Path(self.tmp_path) / ".env"
-        path.write_text('# db\nexport AP_X="one two"\nAP_Y=plain\nAP_Z=\'q\'\nbroken line\n')
+        path.write_text(
+            "# db\nexport AP_X=\"one two\"\nAP_Y=plain\nAP_Z='q'\nbroken line\n"
+        )
         self.setenv("AP_Y", "shell")
 
         applied = DotEnv(path).apply()
