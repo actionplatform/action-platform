@@ -22,11 +22,13 @@ class PluginManager:
             "plugins": [
                 {
                     "slug": row["slug"],
+                    "name": row["name"],
                     "package": row["package"],
                     "version": row["version"],
                     "description": row["description"],
                     "min_core": row["min_core"],
                     "needs": row["needs"],
+                    "options": row["options"],
                     "error": None,
                 }
                 for row in plugins.rows()
@@ -34,11 +36,13 @@ class PluginManager:
             + [
                 {
                     "slug": slug,
+                    "name": slug,
                     "package": "",
                     "version": "",
                     "description": "",
                     "min_core": "",
                     "needs": [],
+                    "options": [],
                     "error": why,
                 }
                 for slug, why in sorted(registry.FAILURES.items())
