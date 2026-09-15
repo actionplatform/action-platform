@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.13 — 2026-09-15
+
+### Bug Fixes
+- **web:** SubNav receives href, label and exact only — icon components cannot cross into a client component
+
 ## v0.18.12 — 2026-09-15
 
 ### Bug Fixes
