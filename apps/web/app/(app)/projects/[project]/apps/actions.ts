@@ -78,10 +78,12 @@ export async function previewRelease(registryId: string, level: string, branch: 
   }
 }
 
-export async function runRelease(projectId: string, _appId: string, registryId: string, level: string, branch: string | null = null): Promise<Result<ReleasePreview>> {
+export type ReleaseExtra = { name?: string | null; notes?: string | null; latest?: boolean };
+
+export async function runRelease(projectId: string, _appId: string, registryId: string, level: string, branch: string | null = null, extra: ReleaseExtra = {}): Promise<Result<ReleasePreview>> {
   await requireOrg();
   try {
-    const data = await api.apps.release(registryId, level, false, branch);
+    const data = await api.apps.release(registryId, level, false, branch, extra);
     refresh(projectId);
     return { ok: true, data };
   } catch (e) {
@@ -203,10 +205,11 @@ export async function discardChanges(projectId: string, registryId: string): Pro
   }
 }
 
-export async function startDeploy(registryId: string, stage: string, dryRun: boolean): Promise<Result<{ job: string }>> {
+export async function startDeploy(registryId: string, stage: string, dryRun: boolean, version: string): Promise<Result<{ job: string }>> {
   await requireOrg();
+  if (!version) return { ok: false, error: "A deploy ships a release: pick one." };
   try {
-    const data = await api.apps.deployAsync(registryId, stage, dryRun);
+    const data = await api.apps.deployAsync(registryId, stage, dryRun, version);
     return { ok: true, data: { job: data.job } };
   } catch (e) {
     return failed(e);

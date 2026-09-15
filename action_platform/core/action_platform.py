@@ -80,9 +80,18 @@ class ActionPlatform:
         dry_run: bool = False,
         prerelease: bool | None = None,
         component: str | None = None,
+        name: str | None = None,
+        notes: str | None = None,
+        latest: bool = True,
     ) -> Context:
         ctx = self.releaser.release(
-            level, dry_run=dry_run, prerelease=prerelease, component=component
+            level,
+            dry_run=dry_run,
+            prerelease=prerelease,
+            component=component,
+            name=name,
+            notes=notes,
+            latest=latest,
         )
 
         if not dry_run:
@@ -91,9 +100,15 @@ class ActionPlatform:
         return ctx
 
     def deploy(
-        self, target: str | None = None, dry_run: bool = False, stage: str | None = None
+        self,
+        target: str | None = None,
+        dry_run: bool = False,
+        stage: str | None = None,
+        version: str | None = None,
     ) -> list[DeployResult]:
-        results = self.deployer.deploy(target, dry_run=dry_run, stage=stage)
+        results = self.deployer.deploy(
+            target, dry_run=dry_run, stage=stage, version=version
+        )
 
         if not dry_run:
             registry.installed().after_deploy(results)

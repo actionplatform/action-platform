@@ -4,6 +4,8 @@ import type { AppDetail, Branch, Commit, GitflowReport } from "@/lib/api";
 export type AppView = {
   projectId: string;
   projectName: string;
+  projectSlug: string;
+  orgSlug: string;
   appId: string;
   registryId: string;
   name: string;
@@ -47,7 +49,7 @@ export function ciLabel(ci: string | null): string | null {
   return ci ? (CIS[ci] ?? ci) : null;
 }
 
-export function toView(input: { projectId: string; projectName: string; appId: string; appName: string; detail: AppDetail; health: GitflowReport; commits: Commit[]; branches: Branch[]; tags: string[]; lastSyncedAt: Date | null; manifest: string; changes: string[]; grants: Grants; rules: { kinds: string[]; protected: string[] } }): AppView {
+export function toView(input: { projectId: string; projectName: string; projectSlug: string; orgSlug: string; appId: string; appName: string; detail: AppDetail; health: GitflowReport; commits: Commit[]; branches: Branch[]; tags: string[]; lastSyncedAt: Date | null; manifest: string; changes: string[]; grants: Grants; rules: { kinds: string[]; protected: string[] } }): AppView {
   const { detail } = input;
   const meta = detail.project;
   const repo = detail.source_host.repo || null;
@@ -56,6 +58,8 @@ export function toView(input: { projectId: string; projectName: string; appId: s
   return {
     projectId: input.projectId,
     projectName: input.projectName,
+    projectSlug: input.projectSlug,
+    orgSlug: input.orgSlug,
     appId: input.appId,
     registryId: detail.id,
     name: input.appName || meta.name,

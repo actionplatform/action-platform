@@ -142,7 +142,7 @@ CASES: list[tuple[str, dict[str, Any], str, tuple, dict]] = [
         ("a1", "minor", False, "main"),
         {},
     ),
-    ("deploy", {"id": "a1"}, "deploy", ("a1", None, True), {}),
+    ("deploy", {"id": "a1"}, "deploy", ("a1", None, True, None), {}),
     ("diagnose", {"id": "a1"}, "diagnose", ("a1", None), {}),
     (
         "start_branch",

@@ -31,9 +31,16 @@ def run(
     target: str | None = TARGET,
     stage: str | None = STAGE,
     dry_run: bool = typer.Option(False, "--dry-run"),
+    version: str | None = typer.Option(
+        None,
+        "--version",
+        help="Release to ship (tag v<version>); default: the tag HEAD sits on",
+    ),
 ) -> None:
-    """Ship the current version to the [deploy] target in platform.toml."""
-    for r in _tool().deploy(target=target, dry_run=dry_run, stage=stage):
+    """Ship a release to the [deploy] target in platform.toml — a tag, never a working tree."""
+    for r in _tool().deploy(
+        target=target, dry_run=dry_run, stage=stage, version=version
+    ):
         logger.info(
             "deploy %s ok=%s version=%s url=%s", r.target, r.ok, r.version, r.url
         )

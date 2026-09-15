@@ -40,7 +40,7 @@ See [git-flow](concept_git_flow.md).
 
 ```bash
 action-platform release [patch|minor|major|X.Y.Z] [--dry-run] [--rc|--stable] [--component web]
-action-platform deploy [--target name] [--stage dev|prod] [--dry-run]
+action-platform deploy [--version X.Y.Z] [--target name] [--stage dev|prod] [--dry-run]
 action-platform rollback [--target name] [--to X.Y.Z] [--stage …]
 action-platform diagnose [--target name]
 action-platform destroy [--target name]
@@ -48,7 +48,7 @@ action-platform destroy [--target name]
 
 `release` plans first (refuses a dirty tree, an existing version or tag), then bumps `LAST_VERSION`, prepends `CHANGELOG.md`, syncs `pyproject.toml` / `package.json` / `Cargo.toml` / `composer.json` / `pom.xml`, `__version__` and version constants, commits `chore(release): X.Y.Z`, tags, pushes, publishes the release on the source host and triggers CI runners. A push the remote refuses undoes the commit and the tag. Off `main`/`master` the version is `X.Y.Z-rc.N`. `--component <name>` releases one [component](concept_releases.md).
 
-`deploy` runs the `[deploy]` target's `preflight`, then `create` / `deploy` / `switch_traffic`; `--dry-run` stops after preflight.
+`deploy` ships a release, never a working tree: `--version X.Y.Z` names the tag `vX.Y.Z` (or pass the tag itself); without it, HEAD must sit on a release tag, otherwise the command refuses. The tag is checked out for the duration and the branch put back afterwards. It runs the `[deploy]` target's `preflight`, then `create` / `deploy` / `switch_traffic`; `--dry-run` stops after preflight.
 
 ## Platform services
 

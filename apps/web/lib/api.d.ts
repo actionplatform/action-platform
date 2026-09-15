@@ -1725,6 +1725,7 @@ export interface components {
         Branch: {
             name: string;
             date: string;
+            sha?: string | null;
             kind?: string | null;
             protected: boolean;
             stable: boolean;
@@ -1805,6 +1806,7 @@ export interface components {
         DeployRequest: {
             stage?: string | null;
             dry_run: boolean;
+            version?: string | null;
         };
         DeployResult: {
             target: string;
@@ -2103,7 +2105,9 @@ export interface components {
             attempts: number;
             stage?: string | null;
             dry_run?: boolean | null;
+            version?: string | null;
             by?: string | null;
+            started_at?: string | null;
             result?: unknown | null;
             error?: string | null;
             created_at: string;
@@ -2408,6 +2412,9 @@ export interface components {
             dry_run: boolean;
             branch?: string | null;
             component?: string | null;
+            name?: string | null;
+            notes?: string | null;
+            latest: boolean;
             credentials?: components["schemas"]["SourceCredentials"] | null;
         };
         ReleaseRow: {

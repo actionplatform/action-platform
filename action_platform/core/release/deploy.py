@@ -1,8 +1,13 @@
-"""Deploy, rollback, diagnose, destroy against the [deploy] targets of one repository."""
+"""Deploy, rollback, diagnose, destroy against the [deploy] targets of one repository.
+
+A deploy ships a release, never a working tree: it names a version (or takes the tag HEAD sits on), checks that tag out for the duration, and puts the repository back afterwards."""
 
 from __future__ import annotations
 
+import re
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Iterator
 from typing import Callable
 
 from action_platform.abc.deploy_target import DeployTarget
@@ -53,28 +58,73 @@ class Deployer:
 
         return ctx
 
+    def release_tag(self, version: str | None = None) -> tuple[str, str]:
+        """The tag a deploy ships and its version: `v<version>` (or the tag itself when `version` names one), else the tag HEAD sits on. Anything else is refused — a deploy is always a release."""
+        if version:
+            candidates = [version, f"v{version.lstrip('v')}"]
+            tag = next((c for c in candidates if self.repo.has_tag(c)), None)
+
+            if tag is None:
+                raise DeployError(
+                    f"no release {version!r}: tags are {', '.join(self.repo.tags()[-5:]) or 'none'} — release first"
+                )
+        else:
+            tag = self.repo.tag_at_head()
+
+            if tag is None:
+                raise DeployError(
+                    "a deploy ships a release: pass the version to deploy, or check out a release tag"
+                )
+
+        found = re.search(r"v?(\d[^/]*)$", tag)
+
+        return tag, found.group(1) if found else tag
+
+    @contextmanager
+    def at_release(self, tag: str) -> Iterator[None]:
+        """The repository checked out at `tag` for the block, then back where it was."""
+        before = self.repo.branch
+        moved = self.repo.tag_at_head() != tag
+
+        if moved:
+            self.repo.checkout(tag)
+
+        try:
+            yield
+        finally:
+            if moved and before and before != "HEAD":
+                self.repo.checkout(before)
+
     def deploy(
-        self, target: str | None = None, dry_run: bool = False, stage: str | None = None
+        self,
+        target: str | None = None,
+        dry_run: bool = False,
+        stage: str | None = None,
+        version: str | None = None,
     ) -> list[DeployResult]:
         ctx = self._context(dry_run=dry_run, stage=stage)
+        tag, shipped = self.release_tag(version)
+        ctx.current_version = ctx.next_version = shipped
         results: list[DeployResult] = []
 
-        for t in self.targets(target):
-            logger.info(
-                "deploy target=%s stage=%s version=%s",
-                t.name,
-                ctx.stage,
-                ctx.next_version,
-            )
-            t.preflight(ctx)
-
-            if dry_run:
-                results.append(
-                    DeployResult(ok=True, target=t.name, version=ctx.next_version)
+        with self.at_release(tag):
+            for t in self.targets(target):
+                logger.info(
+                    "deploy target=%s stage=%s version=%s tag=%s",
+                    t.name,
+                    ctx.stage,
+                    shipped,
+                    tag,
                 )
-                continue
+                t.preflight(ctx)
 
-            results.append(t.deploy(ctx))
+                if dry_run:
+                    results.append(
+                        DeployResult(ok=True, target=t.name, version=shipped)
+                    )
+                    continue
+
+                results.append(t.deploy(ctx))
 
         return results
 
@@ -115,9 +165,10 @@ def deploy(
     repo_root: Path,
     dry_run: bool = False,
     stage: str | None = None,
+    version: str | None = None,
 ) -> list[DeployResult]:
     return wired.deployer(config, repo_root).deploy(
-        target_name, dry_run=dry_run, stage=stage
+        target_name, dry_run=dry_run, stage=stage, version=version
     )
 
 

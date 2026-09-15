@@ -159,29 +159,37 @@ class SourceGithub(SourceHost):
         assets: list[Path] | None = None,
         draft: bool = False,
         prerelease: bool = False,
+        name: str | None = None,
+        latest: bool = True,
     ) -> ReleaseRef:
+        title = name or tag
+
         if self.token:
             data = self._rest(
                 "POST",
                 f"/repos/{self.repo}/releases",
                 {
                     "tag_name": tag,
-                    "name": tag,
+                    "name": title,
                     "body": notes,
                     "draft": draft,
                     "prerelease": prerelease,
+                    "make_latest": "true" if latest and not prerelease else "false",
                 },
             )
 
             return ReleaseRef(id=str(data["id"]), tag=tag, url=data["html_url"])
 
-        args = ["release", "create", tag, "--title", tag, "--notes", notes]
+        args = ["release", "create", tag, "--title", title, "--notes", notes]
 
         if draft:
             args.append("--draft")
 
         if prerelease:
             args.append("--prerelease")
+
+        if not latest:
+            args += ["--latest=false"]
 
         if assets:
             args.extend(str(a) for a in assets)

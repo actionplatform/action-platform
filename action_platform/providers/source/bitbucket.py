@@ -98,6 +98,8 @@ class SourceBitbucket(SourceHost):
         assets: list[Path] | None = None,
         draft: bool = False,
         prerelease: bool = False,
+        name: str | None = None,
+        latest: bool = True,
     ) -> ReleaseRef:
         return ReleaseRef(id=tag, tag=tag, url=f"{self.web}/{self.repo}/src/{tag}/")
 

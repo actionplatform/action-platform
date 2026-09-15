@@ -280,10 +280,16 @@ class Remote:
         return self._call("POST", f"projects/{project}/apps/init", body, organization)
 
     def deploy(
-        self, id: str, stage: Optional[str] = None, dry_run: bool = True
+        self,
+        id: str,
+        stage: Optional[str] = None,
+        dry_run: bool = True,
+        version: Optional[str] = None,
     ) -> list[dict]:
         return self._call(
-            "POST", f"apps/{id}/deploy", {"stage": stage, "dry_run": dry_run}
+            "POST",
+            f"apps/{id}/deploy",
+            {"stage": stage, "dry_run": dry_run, "version": version},
         )
 
     def diagnose(self, id: str, stage: Optional[str] = None) -> list[dict]:

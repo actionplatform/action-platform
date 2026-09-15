@@ -70,14 +70,14 @@ class GitStateService:
             [
                 "for-each-ref",
                 "--sort=-committerdate",
-                "--format=%(refname:short)|%(committerdate:short)",
+                "--format=%(refname:short)|%(committerdate:short)|%(objectname:short)",
                 "refs/remotes/origin",
             ]
         )
-        rows = [line.rsplit("|", 1) for line in out.splitlines() if line]
+        rows = [line.rsplit("|", 2) for line in out.splitlines() if line]
         names = [
-            (ref.removeprefix("origin/"), date)
-            for ref, date in rows
+            (ref.removeprefix("origin/"), date, sha)
+            for ref, date, sha in rows
             if ref != "origin/HEAD"
         ]
 
@@ -85,10 +85,11 @@ class GitStateService:
             {
                 "name": name,
                 "date": date,
+                "sha": sha,
                 "kind": gitflow.kind_of(name),
                 "protected": name in gitflow.current().protected,
                 "stable": name in STABLE_BRANCHES,
                 "problem": gitflow.check_branch(name),
             }
-            for name, date in names
+            for name, date, sha in names
         ]
