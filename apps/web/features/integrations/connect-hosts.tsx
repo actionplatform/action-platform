@@ -2,7 +2,7 @@
 
 import { AlertCircle, Check, ExternalLink, KeyRound, Settings2, Sparkles, UserRound, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { type ReactNode, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { disconnectHost, removeOAuthApp, saveOAuthApp } from "./oauth-actions";
 import { siBitbucket, siGithub, siGitlab } from "simple-icons";
 import { BrandIcon } from "@/components/ui/brand-icon";
@@ -27,7 +27,6 @@ export type ConnectProps = {
   returnTo: string;
   githubApp?: string | null;
   error?: string | null;
-  extra?: ReactNode;
 };
 
 const DESCRIPTION: Record<Provider, string> = {
@@ -42,7 +41,7 @@ const OAUTH_ERRORS: Record<string, string> = {
   "access_denied": "The provider reported that access was denied. Approve the request and try again.",
 };
 
-export function ConnectHosts({ configured, connected, origin, orgId, returnTo, githubApp, error: initialError, extra }: ConnectProps) {
+export function ConnectHosts({ configured, connected, origin, orgId, returnTo, githubApp, error: initialError }: ConnectProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [setup, setSetup] = useState<Provider | null>(null);
@@ -145,7 +144,6 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
             </section>
           );
         })}
-        {extra}
       </div>
 
       {setup && <OAuthAppDialog provider={setup} origin={origin} onClose={() => { setSetup(null); router.refresh(); }} onSaved={() => { setDone({ ...done, [setup]: true }); setSetup(null); router.refresh(); }} />}
