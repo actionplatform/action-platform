@@ -12,7 +12,7 @@ from action_platform.core.flow.repository import Repository
 from action_platform.core.flow.workflow import GitFlow
 from action_platform.core.release.deploy import Deployer
 from action_platform.core.release.release import ReleasePlan, Releaser
-from action_platform.plugins import registry
+from action_platform.core import extensions
 
 
 class ActionPlatform:
@@ -95,7 +95,7 @@ class ActionPlatform:
         )
 
         if not dry_run:
-            registry.installed().after_release(ctx)
+            extensions.current().after_release(ctx)
 
         return ctx
 
@@ -111,7 +111,7 @@ class ActionPlatform:
         )
 
         if not dry_run:
-            registry.installed().after_deploy(results)
+            extensions.current().after_deploy(results)
 
         return results
 

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from importlib.metadata import entry_points
 
-from action_platform.plugins import registry
+from action_platform.core import extensions
 
 
 def load_providers(group: str) -> dict[str, type]:
     """Every entry point of `group`, minus those shipped by a plugin the user disabled."""
-    off = registry.installed().disabled_packages()
+    off = extensions.current().disabled_packages()
 
     return {
         ep.name: ep.load()

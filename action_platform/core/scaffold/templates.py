@@ -10,7 +10,7 @@ from pathlib import Path
 from action_platform.core.exception import TemplateError
 from action_platform.core.scaffold.detect import detect_language
 from action_platform.core.scaffold.store import LocalTemplateStore, TemplateSource
-from action_platform.plugins import registry
+from action_platform.core import extensions
 from action_platform.logging import logger
 from action_platform.settings import settings
 
@@ -317,7 +317,7 @@ def ensure_source(source: TemplateSource, update: bool = False) -> Path:
 
 def with_plugin_clouds(matrix: Matrix) -> Matrix:
     """Overlays installed plugins ship join the matrix; a plugin's cloud replaces the repository's of the same name, since the code that deploys it lives there too."""
-    for slug, root in registry.installed().overlay_roots():
+    for slug, root in extensions.current().overlay_roots():
         for cloud in Matrix.from_json(root / "index.json").clouds:
             cloud.source = slug
             cloud.root = root
