@@ -69,13 +69,20 @@ def register(mcp: Any) -> None:
         project: ProjectDir = None,
         stage: Stage = None,
         dry_run: Annotated[bool, Field(description="true runs preflight only")] = True,
+        version: Annotated[
+            Optional[str],
+            Field(
+                description="Release to ship (its tag v<version>); default: the tag HEAD sits on. A deploy never ships an untagged tree"
+            ),
+        ] = None,
     ) -> list[schemas.DeployResult]:
-        """Ship the current version to the [deploy] target of platform.toml.
+        """Ship a release to the [deploy] target of platform.toml.
 
-        Defaults to a dry run (preflight). Needs a deploy provider installed
-        for the target; the error says which one is missing.
+        Defaults to a dry run (preflight). The release must exist — cut it
+        with `release` first. Needs a deploy provider installed for the
+        target; the error says which one is missing.
         """
-        results = _tool(project).deploy(stage=stage, dry_run=dry_run)
+        results = _tool(project).deploy(stage=stage, dry_run=dry_run, version=version)
 
         return [
             {

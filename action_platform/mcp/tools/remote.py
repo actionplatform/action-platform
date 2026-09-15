@@ -490,9 +490,15 @@ def register(mcp: Any, remote: Remote) -> None:
             Optional[str], Field(description="dev or prod; default from the branch")
         ] = None,
         dry_run: Annotated[bool, Field(description="true runs preflight only")] = True,
+        version: Annotated[
+            Optional[str],
+            Field(
+                description="Release to ship (tag v<version>); default: the tag the app's checkout sits on. A deploy never ships an untagged tree"
+            ),
+        ] = None,
     ) -> list[schemas.DeployResult]:
-        """Ship the current version to the app's [deploy] target. Defaults to preflight; call again with dry_run=false to deploy."""
-        return remote.deploy(id, stage, dry_run)
+        """Ship a release to the app's [deploy] target. Defaults to preflight; call again with dry_run=false to deploy. Cut the release first (`release`) when none exists."""
+        return remote.deploy(id, stage, dry_run, version)
 
     @tool(mcp, annotations=READ_ONLY)
     def diagnose(id: AppId, stage: Optional[str] = None) -> list[schemas.Diagnosis]:
