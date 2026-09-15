@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.18.8 — 2026-09-15
+
+### Features
+- **web:** Configuration edits the platform's copy; Export to repository writes the mirror
+
+### Style
+- **web:** escape the apostrophe
+
 ## v0.18.7 — 2026-09-15
 
 ### Features
