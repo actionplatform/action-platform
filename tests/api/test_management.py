@@ -466,7 +466,7 @@ class HostsAndSettingsTest(GateCase):
         )
 
     def test_oauth_callback_connects_a_host(self):
-        from action_platform.api.services import hosts as oauth
+        from action_platform.api.services.hosts import GitlabProvider
 
         self.client.put(
             "/api/v1/oauth/apps/gitlab",
@@ -480,11 +480,11 @@ class HostsAndSettingsTest(GateCase):
         ).json()
         state = started["url"].split("state=")[1].split("&")[0]
         self.patch(
-            oauth,
+            GitlabProvider,
             "exchange_code",
-            lambda provider, app, origin, code: ("access", "refresh", None),
+            lambda self, app, origin, code: ("access", "refresh", None),
         )
-        self.patch(oauth, "identity", lambda provider, app, token: ("ana", "Ana"))
+        self.patch(GitlabProvider, "identity", lambda self, app, token: ("ana", "Ana"))
         done = self.client.post(
             "/api/v1/oauth/gitlab/callback",
             json={"origin": "https://ap.example.com", "state": state, "code": "c"},

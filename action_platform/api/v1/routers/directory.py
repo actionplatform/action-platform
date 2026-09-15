@@ -12,7 +12,7 @@ from action_platform.api.core.deps import get_db
 from action_platform.api.db.models import Organization
 from action_platform.api.schemas import directory as schemas
 from action_platform.api.services.directory import DirectoryService
-from action_platform.api.services.jobs import JobQueue, job_view
+from action_platform.api.services.jobs import JobQueue
 from action_platform.core.access import (
     catalog,
     ROLE_LABELS,
@@ -410,7 +410,7 @@ def job(
     ):
         raise HTTPException(404, "no such job")
 
-    return JobOut(**job_view(found))
+    return JobOut(**JobQueue.view(found))
 
 
 @router.get("/jobs")
@@ -429,4 +429,4 @@ def jobs(
     ):
         raise HTTPException(404, "app not found")
 
-    return [JobOut(**job_view(j)) for j in queue.for_app(found[0].id)]
+    return [JobOut(**JobQueue.view(j)) for j in queue.for_app(found[0].id)]

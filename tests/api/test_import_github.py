@@ -79,7 +79,7 @@ class GithubImportTest(GateCase):
         super().setUp()
         from action_platform.api.auth.crypto import Sealer
         from action_platform.api.db.models import SourceHost
-        from action_platform.api.services.github_import import client, context
+        from action_platform.api.services.organization_import import client, context
 
         with self.app.state.db.session() as s:
             s.add(
@@ -94,11 +94,17 @@ class GithubImportTest(GateCase):
 
         fake = FakeGithub(self.url)
         self.patch(client, "GithubDirectory", lambda creds: fake)
-        self.patch(
-            context,
-            "repo_from_url",
-            lambda url: "acme/web" if url == self.url else None,
-        )
+        url = self.url
+
+        class KnownUrl:
+            def __init__(self, value):
+                self.value = value
+
+            @property
+            def repo(self):
+                return "acme/web" if self.value == url else None
+
+        self.patch(context, "GitUrl", KnownUrl)
 
     def test_lists_organizations_and_previews_one(self):
         orgs = self.client.get(
@@ -171,7 +177,7 @@ class GithubImportTest(GateCase):
         self.assertEqual(summary["members"], [])
         self.assertEqual(summary["invitations"], ["bob@example.com"])
         self.assertTrue(any(s.startswith("acme/broken:") for s in summary["skipped"]))
-        self.assertIn("acme/missing: not found on GitHub", summary["skipped"])
+        self.assertIn("acme/missing: not found on the host", summary["skipped"])
         self.assertTrue(any(s.startswith("ghost:") for s in summary["skipped"]))
 
         projects = self.client.get("/api/v1/projects", headers=self.h()).json()

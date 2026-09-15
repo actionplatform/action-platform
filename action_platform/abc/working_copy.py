@@ -1,4 +1,4 @@
-"""Vcs ABC: what the release, git-flow and scaffolding code need from a working copy."""
+"""WorkingCopy ABC: what the release, git-flow and scaffolding code need from a working copy."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 
-class Vcs(ABC):
+class WorkingCopy(ABC):
     path: Path
 
     @property

@@ -7,15 +7,15 @@ from typing import Optional
 from fastapi import HTTPException
 
 from action_platform.api.schemas import SourceCredentials
-from action_platform.api.services.shared.common import kind_of_url, repo_from_url
-from action_platform.api.services.workspace.manifest import read_manifest
+from action_platform.api.services.shared.urls import GitUrl
+from action_platform.api.services.workspace.manifest import AppManifest
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import build_source_host
 
 from action_platform.api.services.apps.base import AppsBase
 
 
-class Remote(AppsBase):
+class AppRemote(AppsBase):
     def repository_of(self, id: str) -> Optional[tuple[str, str]]:
         """(kind, owner/name) of the remote this app was pushed to or added from; None when it has none."""
         entry, root = self.workspace(id)
@@ -24,12 +24,12 @@ class Remote(AppsBase):
             return None
 
         try:
-            host = read_manifest(root)["source_host"]
+            host = AppManifest(root).as_dict()["source_host"]
         except HTTPException:
             host = {}
 
-        repo = host.get("repo") or repo_from_url(entry.url)
-        kind = host.get("kind") or kind_of_url(entry.url)
+        repo = host.get("repo") or GitUrl(entry.url).repo
+        kind = host.get("kind") or GitUrl(entry.url).kind
 
         if not repo or not kind:
             return None

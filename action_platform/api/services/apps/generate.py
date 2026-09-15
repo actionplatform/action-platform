@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from action_platform.api.core import credentials as auth
 from action_platform.api.repositories.registry import Entry
 from action_platform.api.schemas import InitRequest, PushRequest
-from action_platform.api.services.catalog import resolve_repo
+from action_platform.api.services.catalog import TemplateRepos
 from action_platform.core.manifest import write_source_host
 from action_platform.core.scaffold.generate import (
     apply_cloud,
@@ -21,9 +21,9 @@ from action_platform.settings import settings
 from action_platform.api.services.apps.base import AppsBase
 
 
-class Generate(AppsBase):
+class AppScaffolding(AppsBase):
     def init(self, body: InitRequest) -> dict:
-        repo, m = resolve_repo(body.source)
+        repo, m = TemplateRepos.resolve(body.source)
         leaf = m.resolve(body.type, body.stack, body.template)
         id = self.registry.new_id()
         creds = body.credentials

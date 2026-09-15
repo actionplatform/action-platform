@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from action_platform.abc.vcs import Vcs
+from action_platform.abc.working_copy import WorkingCopy
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.flow.git import check_ref, git_env
 
@@ -16,7 +16,7 @@ class SyncError(ActionPlatformError):
     """The clone could not be brought level with its remote."""
 
 
-class Repository(Vcs):
+class Repository(WorkingCopy):
     def __init__(self, path: Path) -> None:
         self.path = Path(path)
 

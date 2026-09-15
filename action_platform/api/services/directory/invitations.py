@@ -12,7 +12,8 @@ from action_platform.api.db.models import (
     Organization,
     User,
 )
-from action_platform.api.services.shared.common import new_id, now
+from action_platform.api.services.shared.clock import now
+from action_platform.api.services.shared.ids import new_id
 from action_platform.api.services.directory.base import (
     EMAIL,
     INVITATION_TTL,

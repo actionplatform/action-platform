@@ -1,84 +1,136 @@
-"""Bitbucket specifics: workspaces and their permissions."""
+"""Bitbucket: OAuth consumers, workspaces and their permissions."""
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Optional
+from urllib.parse import urlencode
 
-from action_platform.api.services.shared.credentials import Credentials
-from action_platform.api.services.shared.http import basic, get_json
+from action_platform.abc import HostProvider
+from action_platform.api.services.hosts.access import AccessReport, Owner, Probe
+from action_platform.api.services.hosts.tokens import TokenResponse
+from action_platform.api.services.shared.credentials import Credentials, OAuthApp
+from action_platform.api.services.shared.http import BasicAuth, http
 from action_platform.core.exception import ProviderError
-from action_platform.api.services.hosts.access import _get, _owner
+
+API = "https://api.bitbucket.org/2.0"
 
 
-def first_workspace(access_token: str) -> Optional[str]:
-    try:
-        data = get_json(
-            "https://api.bitbucket.org/2.0/user/permissions/workspaces?pagelen=100",
-            {"authorization": f"Bearer {access_token}"},
-        )
-    except ProviderError:
+class BitbucketProvider(HostProvider):
+    kind = "bitbucket"
+    label = "Bitbucket"
+    scopes = ""
+    callback_hint = "Bitbucket → Workspace settings → OAuth consumers (permissions: account, repositories write/admin/delete, pull requests write)"
+
+    def web_base(self, app: OAuthApp) -> str:
+        return "https://bitbucket.org"
+
+    def api_base(self, app: OAuthApp) -> str:
+        return API
+
+    def stored_base_url(self, app: OAuthApp) -> Optional[str]:
         return None
 
-    spaces = data.get("values", [])
-    chosen = (
-        next((w for w in spaces if w.get("permission") == "owner"), None)
-        or next((w for w in spaces if w.get("permission") == "collaborator"), None)
-        or (spaces[0] if spaces else None)
-    )
-
-    return chosen["workspace"]["slug"] if chosen else None
-
-
-def _bitbucket_access(creds: Credentials) -> dict[str, Any]:
-    auth = (
-        basic(creds.username, creds.token)
-        if creds.username
-        else f"Bearer {creds.token}"
-    )
-    headers = {"authorization": auth}
-    status, me = _get("https://api.bitbucket.org/2.0/user", headers)
-
-    if not me:
-        return {
-            "ok": False,
-            "error": f"token rejected by Bitbucket ({status}); reconnect the host",
+    def authorize_url(self, app: OAuthApp, origin: str, state: str) -> str:
+        params = {
+            "client_id": app.client_id,
+            "redirect_uri": self.callback_url(origin),
+            "state": state,
+            "response_type": "code",
         }
 
-    spaces_status, spaces = _get(
-        "https://api.bitbucket.org/2.0/user/permissions/workspaces?pagelen=100", headers
-    )
-    installations = [
-        _owner(
-            w["workspace"]["slug"],
-            "org",
-            "all",
-            "write" if w.get("permission") in ("owner", "collaborator") else "none",
-            "write",
-        )
-        for w in (spaces or {}).get("values", [])
-    ]
+        return f"https://bitbucket.org/site/oauth2/authorize?{urlencode(params)}"
 
-    if not installations:
-        _, member = _get(
-            "https://api.bitbucket.org/2.0/workspaces?role=member&pagelen=100", headers
+    def exchange_code(
+        self, app: OAuthApp, origin: str, code: str
+    ) -> tuple[str, Optional[str], Optional[datetime]]:
+        data = http.post_form(
+            "https://bitbucket.org/site/oauth2/access_token",
+            {
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": self.callback_url(origin),
+            },
+            {"authorization": BasicAuth.header(app.client_id, app.client_secret)},
         )
-        installations = [
-            _owner(w["slug"], "org", "all", "write", "write")
-            for w in (member or {}).get("values", [])
+
+        return TokenResponse(data).read()
+
+    def refresh(
+        self, app: OAuthApp, refresh_token: str
+    ) -> tuple[str, Optional[str], Optional[datetime]]:
+        data = http.post_form(
+            "https://bitbucket.org/site/oauth2/access_token",
+            {"grant_type": "refresh_token", "refresh_token": refresh_token},
+            {"authorization": BasicAuth.header(app.client_id, app.client_secret)},
+        )
+
+        return TokenResponse(data).read()
+
+    def identity(self, app: OAuthApp, access_token: str) -> tuple[str, Optional[str]]:
+        user = http.get_json(f"{API}/user", {"authorization": f"Bearer {access_token}"})
+
+        if not user.get("username"):
+            raise ProviderError("Bitbucket: could not read the signed-in user")
+
+        return user["username"], user.get("display_name")
+
+    def first_workspace(self, access_token: str) -> Optional[str]:
+        """The workspace new repositories default to: owned first, then collaborated, then any."""
+        try:
+            data = http.get_json(
+                f"{API}/user/permissions/workspaces?pagelen=100",
+                {"authorization": f"Bearer {access_token}"},
+            )
+        except ProviderError:
+            return None
+
+        spaces = data.get("values", [])
+        chosen = (
+            next((w for w in spaces if w.get("permission") == "owner"), None)
+            or next((w for w in spaces if w.get("permission") == "collaborator"), None)
+            or (spaces[0] if spaces else None)
+        )
+
+        return chosen["workspace"]["slug"] if chosen else None
+
+    def access(self, creds: Credentials, app_slug: Optional[str]) -> dict[str, Any]:
+        auth = (
+            BasicAuth.header(creds.username, creds.token)
+            if creds.username
+            else f"Bearer {creds.token}"
+        )
+        probe = Probe({"authorization": auth})
+        status, me = probe.get(f"{API}/user")
+
+        if not me:
+            return AccessReport.refused(self.label, status)
+
+        spaces_status, spaces = probe.get(
+            f"{API}/user/permissions/workspaces?pagelen=100"
+        )
+        report = AccessReport(kind=self.kind, login=me["username"])
+        report.installations = [
+            Owner(
+                w["workspace"]["slug"],
+                "org",
+                "all",
+                "write" if w.get("permission") in ("owner", "collaborator") else "none",
+                "write",
+            )
+            for w in (spaces or {}).get("values", [])
         ]
 
-    problems = []
+        if not report.installations:
+            _, member = probe.get(f"{API}/workspaces?role=member&pagelen=100")
+            report.installations = [
+                Owner(w["slug"], "org", "all", "write", "write")
+                for w in (member or {}).get("values", [])
+            ]
 
-    if not installations:
-        problems.append(
-            f"Bitbucket lists no workspace for this account (permissions endpoint answered {spaces_status}). The OAuth consumer needs Workspace membership: Read and Account: Read; repositories are created inside a workspace, never under the account name."
-        )
+        if not report.installations:
+            report.problems.append(
+                f"Bitbucket lists no workspace for this account (permissions endpoint answered {spaces_status}). The OAuth consumer needs Workspace membership: Read and Account: Read; repositories are created inside a workspace, never under the account name."
+            )
 
-    return {
-        "ok": True,
-        "kind": "bitbucket",
-        "login": me["username"],
-        "installations": installations,
-        "installUrl": None,
-        "problems": problems,
-    }
+        return report.as_dict()

@@ -14,8 +14,9 @@ from action_platform.api.auth.errors import AuthError
 from action_platform.api.auth.router import router as auth_router
 from action_platform.api.auth.secrets import Secrets
 from action_platform.api.core.deps import configure_registry, get_registry
+from action_platform.api.services.shared.urls import GitUrl
 from action_platform.api.db import Database
-from action_platform.api.services.directory import repo_from_url
+
 from action_platform.api.v1 import router as v1
 from action_platform.api.v1.routers.directory import router as v1_directory
 from action_platform.api.v1.routers.imports import router as v1_imports
@@ -127,7 +128,7 @@ def build(
 
     def repo_of(registry_id: str) -> Optional[str]:
         try:
-            return repo_from_url(get_registry().get(registry_id).url)
+            return GitUrl(get_registry().get(registry_id).url).repo
         except ActionPlatformError:
             return None
 

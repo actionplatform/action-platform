@@ -38,7 +38,8 @@ class QueueTest(TempCase):
         )
 
     def test_fail_retries_with_backoff_then_gives_up(self):
-        from action_platform.api.services.jobs import MAX_ATTEMPTS, now
+        from action_platform.api.services.jobs import MAX_ATTEMPTS
+        from action_platform.api.services.shared.clock import now
 
         queue = self.queue()
         job = queue.enqueue("release", {})
@@ -66,7 +67,7 @@ class QueueTest(TempCase):
         from datetime import timedelta
 
         from action_platform.api.db.models import Job
-        from action_platform.api.services.jobs import now
+        from action_platform.api.services.shared.clock import now
 
         queue = self.queue()
         job = queue.enqueue("sync", {})

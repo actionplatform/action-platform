@@ -4,21 +4,10 @@ from typing import Any
 
 from action_platform.abc import HostDirectory
 from action_platform.api.services.shared.credentials import Credentials
-from action_platform.api.services.shared.http import get_json, get_pages, post_json
+from action_platform.api.services.shared.http import http
 from action_platform.core.exception import ProviderError
 
 PEOPLE_LOOKUP_LIMIT = 200
-
-
-def _headers(creds: Credentials) -> dict[str, str]:
-    return {
-        "authorization": f"Bearer {creds.token}",
-        "x-github-api-version": "2022-11-28",
-    }
-
-
-def _api(creds: Credentials) -> str:
-    return (creds.base_url or "").rstrip("/") or "https://api.github.com"
 
 
 class GithubDirectory(HostDirectory):
@@ -28,18 +17,21 @@ class GithubDirectory(HostDirectory):
         if creds.kind != "github":
             raise ProviderError("only GitHub hosts can be imported for now")
 
-        self.api = _api(creds)
+        self.api = (creds.base_url or "").rstrip("/") or "https://api.github.com"
         self.graphql = (
             "https://api.github.com/graphql"
             if self.api == "https://api.github.com"
             else self.api.removesuffix("/api/v3") + "/api/graphql"
         )
-        self.headers = _headers(creds)
+        self.headers = {
+            "authorization": f"Bearer {creds.token}",
+            "x-github-api-version": "2022-11-28",
+        }
         self._me: dict[str, Any] | None = None
 
     def me(self) -> dict[str, Any]:
         if self._me is None:
-            self._me = get_json(f"{self.api}/user", self.headers)
+            self._me = http.get_json(f"{self.api}/user", self.headers)
 
         return self._me
 
@@ -88,12 +80,14 @@ class GithubDirectory(HostDirectory):
             (f"{self.api}/user/orgs", lambda o: o),
         ):
             try:
-                found.extend(pick(row) for row in get_pages(url, self.headers))
+                found.extend(pick(row) for row in http.get_pages(url, self.headers))
             except ProviderError:
                 continue
 
         try:
-            installations = get_json(f"{self.api}/user/installations", self.headers)
+            installations = http.get_json(
+                f"{self.api}/user/installations", self.headers
+            )
         except ProviderError:
             installations = {}
 
@@ -125,7 +119,7 @@ class GithubDirectory(HostDirectory):
                 "url": r["clone_url"],
                 "pushed_at": r.get("pushed_at"),
             }
-            for r in get_pages(url, self.headers)
+            for r in http.get_pages(url, self.headers)
             if r["full_name"].split("/")[0].lower() == login.lower()
         ]
 
@@ -135,12 +129,12 @@ class GithubDirectory(HostDirectory):
 
         rows = []
 
-        for t in get_pages(f"{self.api}/orgs/{login}/teams", self.headers):
+        for t in http.get_pages(f"{self.api}/orgs/{login}/teams", self.headers):
             slug = t["slug"]
-            members = get_pages(
+            members = http.get_pages(
                 f"{self.api}/orgs/{login}/teams/{slug}/members", self.headers
             )
-            repos = get_pages(
+            repos = http.get_pages(
                 f"{self.api}/orgs/{login}/teams/{slug}/repos", self.headers
             )
             rows.append(
@@ -168,7 +162,7 @@ class GithubDirectory(HostDirectory):
         after = None
 
         while True:
-            data = post_json(
+            data = http.post_json(
                 self.graphql,
                 {"query": query, "variables": {"login": login, "after": after}},
                 self.headers,
@@ -207,13 +201,13 @@ class GithubDirectory(HostDirectory):
         if self.is_user(login):
             members = [self.me()]
         else:
-            members = get_pages(f"{self.api}/orgs/{login}/members", self.headers)
+            members = http.get_pages(f"{self.api}/orgs/{login}/members", self.headers)
 
         rows = []
 
         for m in members[:PEOPLE_LOOKUP_LIMIT]:
             try:
-                profile = get_json(f"{self.api}/users/{m['login']}", self.headers)
+                profile = http.get_json(f"{self.api}/users/{m['login']}", self.headers)
             except ProviderError:
                 profile = {}
 

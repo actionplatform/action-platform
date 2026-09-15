@@ -1,16 +1,22 @@
 """Releases and pull requests as Gitlab answers them, in the platform's shape."""
 
+import re
 from typing import Any
 from urllib.parse import quote
 
 from action_platform.abc import ImportSource
 from action_platform.api.services.shared.credentials import Credentials
-from action_platform.api.services.shared.http import get_pages
-from action_platform.api.services.imports.common import RC, auth, parse_time
+from action_platform.api.services.shared.http import http
+from action_platform.api.services.shared.clock import parse_utc
+
+RC = re.compile(r"-rc\.")
 
 
-class GitlabImports(ImportSource):
+class GitlabActivity(ImportSource):
     kind = "gitlab"
+
+    def headers(self, creds: Credentials) -> dict[str, str]:
+        return {"authorization": f"Bearer {creds.token}"}
 
     def releases(self, creds: Credentials, repo: str) -> list[dict[str, Any]]:
         base = (creds.base_url or "").rstrip("/") or "https://gitlab.com"
@@ -27,11 +33,12 @@ class GitlabImports(ImportSource):
                 "prerelease": bool(r.get("upcoming_release"))
                 or bool(RC.search(r["tag_name"])),
                 "draft": False,
-                "published_at": parse_time(r.get("released_at") or r.get("created_at")),
+                "published_at": parse_utc(r.get("released_at") or r.get("created_at")),
                 "source": "gitlab",
             }
-            for r in get_pages(
-                f"{base}/api/v4/projects/{quote(repo, safe='')}/releases", auth(creds)
+            for r in http.get_pages(
+                f"{base}/api/v4/projects/{quote(repo, safe='')}/releases",
+                self.headers(creds),
             )
         ]
 
@@ -52,14 +59,14 @@ class GitlabImports(ImportSource):
                 if r.get("state") == "opened"
                 else "closed",
                 "draft": bool(r.get("draft")),
-                "created_at": parse_time(r["created_at"]),
-                "updated_at": parse_time(r["updated_at"]),
-                "merged_at": parse_time(r.get("merged_at")),
+                "created_at": parse_utc(r["created_at"]),
+                "updated_at": parse_utc(r["updated_at"]),
+                "merged_at": parse_utc(r.get("merged_at")),
                 "source": "gitlab",
             }
-            for r in get_pages(
+            for r in http.get_pages(
                 f"{base}/api/v4/projects/{quote(repo, safe='')}/merge_requests?state=all&order_by=updated_at",
-                auth(creds),
+                self.headers(creds),
                 10,
             )
         ]

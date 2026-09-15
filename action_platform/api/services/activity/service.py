@@ -9,34 +9,38 @@ from sqlalchemy.orm import Session as DbSession
 from action_platform.api.db.models import PullRequest, Release
 from action_platform.api.services.shared.credentials import Credentials
 from action_platform.abc import ImportSource
-from action_platform.api.services.imports.bitbucket import BitbucketImports
-from action_platform.api.services.imports.github import GithubImports
-from action_platform.api.services.imports.gitlab import GitlabImports
-from action_platform.api.services.imports.common import now, parse_time
+from action_platform.api.services.activity.bitbucket import BitbucketActivity
+from action_platform.api.services.activity.github import GithubActivity
+from action_platform.api.services.activity.gitlab import GitlabActivity
+from action_platform.api.services.shared.clock import now
 from action_platform.core.exception import ProviderError
 
 SOURCES: dict[str, ImportSource] = {
-    s.kind: s for s in (GithubImports(), GitlabImports(), BitbucketImports())
+    s.kind: s for s in (GithubActivity(), GitlabActivity(), BitbucketActivity())
 }
 
 
-def remote_releases(creds: Credentials, repo: str) -> list[dict[str, Any]]:
-    source = SOURCES.get(creds.kind)
-
-    return source.releases(creds, repo) if source else []
-
-
-def remote_pull_requests(creds: Credentials, repo: str) -> list[dict[str, Any]]:
-    source = SOURCES.get(creds.kind)
-
-    return source.pull_requests(creds, repo) if source else []
-
-
-class ImportService:
+class ActivityService:
     """Releases and pull requests copied from the source host into the database, so pages and agents read them without touching the provider."""
 
     def __init__(self, db: DbSession) -> None:
         self.db = db
+
+    @staticmethod
+    def source_for(creds: Credentials) -> Optional[ImportSource]:
+        return SOURCES.get(creds.kind)
+
+    def remote_releases(self, creds: Credentials, repo: str) -> list[dict[str, Any]]:
+        source = self.source_for(creds)
+
+        return source.releases(creds, repo) if source else []
+
+    def remote_pull_requests(
+        self, creds: Credentials, repo: str
+    ) -> list[dict[str, Any]]:
+        source = self.source_for(creds)
+
+        return source.pull_requests(creds, repo) if source else []
 
     def sync_releases(
         self, app_id: str, creds: Optional[Credentials], repo: Optional[str]
@@ -44,7 +48,7 @@ class ImportService:
         if creds is None or not repo:
             raise ProviderError("no source host")
 
-        remote = remote_releases(creds, repo)
+        remote = self.remote_releases(creds, repo)
         by_tag = {
             r.tag: r
             for r in self.db.scalars(select(Release).where(Release.app_id == app_id))
@@ -73,7 +77,7 @@ class ImportService:
         if creds is None or not repo:
             raise ProviderError("no source host")
 
-        remote = remote_pull_requests(creds, repo)
+        remote = self.remote_pull_requests(creds, repo)
         by_number = {
             r.number: r
             for r in self.db.scalars(
@@ -111,12 +115,3 @@ class ImportService:
                 errors[name] = str(e)
 
         return errors
-
-
-__all__ = [
-    "ImportService",
-    "now",
-    "parse_time",
-    "remote_pull_requests",
-    "remote_releases",
-]

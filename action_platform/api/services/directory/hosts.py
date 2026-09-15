@@ -10,10 +10,14 @@ from sqlalchemy import select
 from action_platform.api.db.models import (
     SourceHost,
 )
-from action_platform.api.services.shared.common import kind_of_url, new_id, now
+from action_platform.api.services.hosts import PROVIDERS
+from action_platform.api.services.shared.clock import now
+from action_platform.core.exception import ProviderError
+from action_platform.api.services.shared.ids import new_id
+from action_platform.api.services.shared.urls import GitUrl
 from action_platform.api.services.shared.credentials import (
     Credentials,
-    refresh_oauth,
+    CredentialsError,
 )
 from action_platform.api.services.directory.base import (
     HOST_KINDS,
@@ -35,7 +39,7 @@ class HostsReads(DirectoryBase):
         )
 
     def host_id_for_url(self, organization_id: str, url: str) -> Optional[str]:
-        kind = kind_of_url(url)
+        kind = GitUrl(url).kind
 
         if kind is None:
             return None
@@ -67,10 +71,8 @@ class HostsReads(DirectoryBase):
             and host.expires_at
             and host.expires_at - now() < REFRESH_MARGIN
         ):
-            token, refreshed, expires_at = refresh_oauth(
-                self.oauth_app(host.kind),
-                host.kind,
-                self.sealer.open(host.refresh_token_encrypted),
+            token, refreshed, expires_at = self._refresh(
+                host.kind, self.sealer.open(host.refresh_token_encrypted)
             )
             host.token_encrypted = self.sealer.seal(token)
 
@@ -83,6 +85,21 @@ class HostsReads(DirectoryBase):
         return Credentials(
             host.kind, token, host.username, host.base_url, host.default_owner
         )
+
+    def _refresh(
+        self, kind: str, refresh_token: str
+    ) -> tuple[str, Optional[str], Optional[datetime]]:
+        app = self.oauth_app(kind)
+
+        if app is None:
+            raise CredentialsError(
+                f"the {kind} token expired and no OAuth app is configured on the API to refresh it"
+            )
+
+        try:
+            return PROVIDERS.get(kind).refresh(app, refresh_token)
+        except ProviderError as e:
+            raise CredentialsError(str(e)) from e
 
 
 class HostsWrites(HostsReads):

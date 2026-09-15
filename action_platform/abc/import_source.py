@@ -13,6 +13,10 @@ class ImportSource(ABC):
     kind: str
 
     @abstractmethod
+    def headers(self, creds: "Credentials") -> dict[str, str]:
+        """The HTTP headers that authenticate `creds` on this host."""
+
+    @abstractmethod
     def releases(self, creds: "Credentials", repo: str) -> list[dict[str, Any]]:
         """Every release of `repo` (owner/name): tag, name, body, url, author, sha, prerelease, draft, published_at, source."""
 

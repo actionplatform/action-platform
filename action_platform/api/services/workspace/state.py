@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 from action_platform.api.repositories.registry import Registry
-from action_platform.api.services.workspace.manifest import workspace_of
+from action_platform.api.services.workspace.checkout import Workspaces
 from action_platform.core.flow import gitflow
 from action_platform.core.flow.repository import Repository
 from action_platform.core.flow.workflow import GitFlow
@@ -15,7 +15,7 @@ class GitStateService:
         self.registry = registry
 
     def _root(self, id: str) -> Path:
-        return workspace_of(self.registry, id)[1]
+        return Workspaces(self.registry).checkout(id)[1]
 
     def gitflow(self, id: str) -> dict:
         report = GitFlow(self._root(id)).audit()

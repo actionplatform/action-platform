@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 
-class TemplateStoreABC(ABC):
+class TemplateStore(ABC):
     @abstractmethod
     def checkout(self, source: Any, update: bool = False) -> Path: ...
 

@@ -7,7 +7,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-from action_platform.abc.template_store import TemplateStoreABC
+from action_platform.abc.template_store import TemplateStore
 from action_platform.core.exception import TemplateError
 from action_platform.core.flow.git import (
     BadRef,
@@ -49,7 +49,7 @@ class TemplateSource:
         return settings.TEMPLATES_CACHE.parent / "sources" / key
 
 
-class TemplateStore(TemplateStoreABC):
+class LocalTemplateStore(TemplateStore):
     """Clones template repositories under the cache directory and keeps them fresh; a refresh that fails falls back to the copy on disk unless `update` insists."""
 
     def checkout(self, source: TemplateSource, update: bool = False) -> Path:
