@@ -53,6 +53,7 @@ class ReleaseRequest(BaseModel):
 class DeployRequest(BaseModel):
     stage: Optional[str] = None
     dry_run: bool = True
+    version: Optional[str] = None
 
 
 class InitRequest(BaseModel):

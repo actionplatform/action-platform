@@ -99,7 +99,9 @@ class LifecycleService:
         }
 
     def deploy(self, id: str, body: DeployRequest) -> list[dict]:
-        results = self._tool(id).deploy(stage=body.stage, dry_run=body.dry_run)
+        results = self._tool(id).deploy(
+            stage=body.stage, dry_run=body.dry_run, version=body.version
+        )
 
         return [
             {
