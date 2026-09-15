@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.20.13 — 2026-09-15
+
+### Features
+- **api:** GET /api/v1/plugins carries each plugin's name and declared options
+
 ## v0.20.12 — 2026-09-15
 
 ## v0.20.11 — 2026-09-15
