@@ -1,4 +1,4 @@
-"""app.services.catalog — the official matrix merged with an organization's template sources."""
+"""app.services.templates — the official matrix merged with an organization's template sources."""
 
 from __future__ import annotations
 

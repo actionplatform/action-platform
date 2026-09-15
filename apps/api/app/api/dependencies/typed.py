@@ -27,13 +27,13 @@ from app.api.dependencies.services import (
 from app.core.auth.service import AuthService
 from app.core.db.models import Organization
 from app.services.access.caller import Caller
-from app.services.apps import AppService
+from app.services.projects.apps import AppService
 from app.services.directory import DirectoryService, DirectoryWrites
 from app.services.hosts import OAuthState
 from app.services.jobs import JobQueue
 from app.services.plugins import PluginManager
-from app.services.organization_import import ImportGateway
-from app.services.projects import ProjectService
+from app.services.projects.organization_import import ImportGateway
+from app.services.projects.service import ProjectService
 from app.services.configuration.commit import CommitService
 from app.services.configuration.service import ConfigurationService
 from app.services.activity.flow import FlowService

@@ -9,8 +9,8 @@ from app.core.shared.credentials import Credentials
 from app.repositories.registry import Registry
 from app.services.directory import DirectoryWrites
 from app.services.jobs import JobQueue
-from app.services.organization_import import client
-from app.services.organization_import.importer import OrganizationImport
+from app.services.projects.organization_import import client
+from app.services.projects.organization_import.importer import OrganizationImport
 from app.core.errors import Invalid, NotFound, Upstream
 
 JOB_KIND = "import_github"

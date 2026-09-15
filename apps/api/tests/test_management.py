@@ -101,7 +101,7 @@ class ProjectsAndAppsTest(GateCase):
     def _app_on_github(self):
         from app.core.auth.crypto import Sealer
         from app.core.db.models import SourceHost
-        from app.services.apps import AppService
+        from app.services.projects.apps import AppService
 
         from action_platform.providers.source.github import SourceGithub
 

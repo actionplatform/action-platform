@@ -2,7 +2,7 @@
 
 from action_platform.plugins import registry
 from action_platform.settings import settings
-from app.services.catalog.published import plugins_index as published_plugins
+from app.services.templates.published import plugins_index as published_plugins
 
 
 class PluginsCatalog:

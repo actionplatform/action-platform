@@ -9,13 +9,13 @@ from app.core.auth.service import AuthService
 from app.repositories.config_store import ConfigStore
 from app.repositories.registry import Registry
 from app.repositories.source import get_registry
-from app.services.apps import AppService
+from app.services.projects.apps import AppService
 from app.services.directory import DirectoryService, DirectoryWrites
 from app.services.hosts import OAuthState
 from app.services.jobs import JobQueue
-from app.services.organization_import import ImportGateway
+from app.services.projects.organization_import import ImportGateway
 from app.services.plugins import PluginManager
-from app.services.projects import ProjectService
+from app.services.projects.service import ProjectService
 from app.services.configuration.commit import CommitService
 from app.services.configuration.service import ConfigurationService
 from app.services.activity.flow import FlowService

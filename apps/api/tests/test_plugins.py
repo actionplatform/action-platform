@@ -9,7 +9,7 @@ from action_platform.abc import Plugin
 from action_platform.plugins import registry
 from action_platform.plugins.state import PluginState
 from action_platform.settings import settings
-from app.services.catalog import published
+from app.services.templates import published
 from app.services.plugins import manager
 from tests.test_access import GateCase
 

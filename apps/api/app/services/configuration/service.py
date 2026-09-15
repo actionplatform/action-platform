@@ -9,7 +9,7 @@ from action_platform.settings import settings
 from app.repositories.config_store import ConfigStore
 from app.repositories.registry import Registry
 from app.schemas import SourceSpec
-from app.services.catalog import TemplateRepos
+from app.services.templates import TemplateRepos
 from app.services.workspace import Workspaces
 from app.core.errors import Invalid
 

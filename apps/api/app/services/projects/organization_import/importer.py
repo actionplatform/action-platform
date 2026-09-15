@@ -9,15 +9,15 @@ from app.services.directory import (
     DirectoryError,
     DirectoryWrites,
 )
-from app.services.organization_import import client
-from app.services.organization_import.context import ImportContext
-from app.services.organization_import.people import PeopleImporter
-from app.services.organization_import.preview import ImportPreview
-from app.services.organization_import.projects import ProjectImporter
-from app.services.organization_import.repositories import (
+from app.services.projects.organization_import import client
+from app.services.projects.organization_import.context import ImportContext
+from app.services.projects.organization_import.people import PeopleImporter
+from app.services.projects.organization_import.preview import ImportPreview
+from app.services.projects.organization_import.projects import ProjectImporter
+from app.services.projects.organization_import.repositories import (
     RepositoryImporter,
 )
-from app.services.organization_import.teams import TeamImporter
+from app.services.projects.organization_import.teams import TeamImporter
 
 
 class OrganizationImport:

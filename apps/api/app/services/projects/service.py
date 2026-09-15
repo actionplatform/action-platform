@@ -9,7 +9,7 @@ from app.core.shared.urls import GitUrl
 from app.schemas import InitRequest, InstallSpec, SourceCredentials
 from app.services.access.enrich import credentials_for
 from app.services.activity import ActivityService
-from app.services.apps import AppService
+from app.services.projects.apps import AppService
 from app.services.directory import DirectoryWrites
 from app.core.errors import Invalid
 

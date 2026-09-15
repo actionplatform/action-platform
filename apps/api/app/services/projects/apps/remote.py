@@ -9,7 +9,7 @@ from action_platform.core.exception import ActionPlatformError, ProviderError
 from action_platform.providers.source import build_source_host
 from app.core.shared.urls import GitUrl
 from app.schemas import SourceCredentials
-from app.services.apps.base import AppsBase
+from app.services.projects.apps.base import AppsBase
 from app.services.workspace.manifest import AppManifest
 from app.core.errors import Conflict, ServiceError, Upstream
 

@@ -79,7 +79,7 @@ class GithubImportTest(GateCase):
         super().setUp()
         from app.core.auth.crypto import Sealer
         from app.core.db.models import SourceHost
-        from app.services.organization_import import client, context
+        from app.services.projects.organization_import import client, context
 
         with self.app.state.db.session() as s:
             s.add(
