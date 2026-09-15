@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.20.3 — 2026-09-15
+
+### Bug Fixes
+- **api:** plugin removal marks the row removed and the catalog reports it
+
 ## v0.20.2 — 2026-09-15
 
 ### Bug Fixes
