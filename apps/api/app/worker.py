@@ -9,11 +9,12 @@ from typing import Any, Callable, Optional
 
 from action_platform.core.exception import ActionPlatformError
 from action_platform.plugins import registry
+from action_platform.settings import settings
 from app.core.access.rules import rule_for
 from app.core.auth.crypto import Sealer
 from app.core.auth.secrets import Secrets
 from app.core.db.database import Database
-from app.core.db.models import App, Job, Organization
+from app.core.db.models import App, Job, Organization, Project
 from app.core.shared.urls import GitUrl
 from app.repositories.source import configure_registry, get_registry
 from app.schemas import (
@@ -24,7 +25,7 @@ from app.schemas import (
 )
 from app.services.access.enrich import enrich
 from app.services.activity import ActivityService
-from app.services import plugins
+from app.services import identity, plugins
 from app.services.apps import AppService
 from app.services.directory import (
     DirectoryService,
@@ -158,11 +159,39 @@ class Worker:
         return result
 
     def _deploy(self, payload: dict[str, Any]) -> Any:
-        _, _, body = self._context(payload)
+        organization, app, body = self._context(payload)
 
-        return LifecycleService(get_registry()).deploy(
-            payload["registry_id"], DeployRequest(**body)
+        return LifecycleService(
+            get_registry(), identity=self._identity(organization, app, body)
+        ).deploy(payload["registry_id"], DeployRequest(**body))
+
+    def _identity(
+        self, organization: Optional[Organization], app: Optional[App], body: dict
+    ) -> Optional[Callable[[str], str]]:
+        """What a deploy target calls for an OIDC token about this app, signed by the platform — None when the platform cannot sign."""
+        if organization is None or app is None or self.sealer is None:
+            return None
+
+        with self.database.session() as db:
+            project = db.get(Project, app.project_id)
+
+        project_slug = project.slug if project else None
+        subject = identity.subject_for(organization.slug, project_slug, app.name)
+        issuer = identity.IdentityIssuer(
+            self.database, self.sealer, settings.PUBLIC_URL
         )
+
+        def mint(audience: str) -> str:
+            return issuer.mint(
+                subject,
+                audience,
+                organization=organization.slug,
+                project=project_slug,
+                app=app.name,
+                stage=body.get("stage"),
+            )
+
+        return mint
 
     def _push(self, payload: dict[str, Any]) -> Any:
         _, _, body = self._context(payload)

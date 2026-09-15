@@ -5,6 +5,7 @@ from app.core.db.models.auth import Account, DeviceCode, Session, User, Verifica
 from app.core.db.models.base import KEY, SHORT, Base, now
 from app.core.db.models.hosts import OAuthApp, SourceHost, TemplateSource
 from app.core.db.models.jobs import Job
+from app.core.db.models.keys import SigningKey
 from app.core.db.models.organizations import (
     Invitation,
     Member,
@@ -41,6 +42,7 @@ __all__ = [
     "Release",
     "SHORT",
     "Session",
+    "SigningKey",
     "SourceHost",
     "TABLES",
     "Team",

@@ -1,6 +1,6 @@
 from dataclasses import asdict
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 from fastapi import HTTPException
 
@@ -18,14 +18,19 @@ from app.services.workspace import Workspaces
 
 
 class LifecycleService:
-    def __init__(self, registry: Registry) -> None:
+    def __init__(
+        self, registry: Registry, identity: Callable[[str], str] | None = None
+    ) -> None:
         self.registry = registry
+        self.identity = identity
 
     def _tool(self, id: str, fresh: bool = False) -> ActionPlatform:
         _, root = Workspaces(self.registry).checkout(id, fresh=fresh)
 
         return ActionPlatform(
-            config=Config.from_toml(root / settings.CONFIG_FILE), repo_root=root
+            config=Config.from_toml(root / settings.CONFIG_FILE),
+            repo_root=root,
+            identity=self.identity,
         )
 
     def release(self, id: str, body: ReleaseRequest) -> dict:

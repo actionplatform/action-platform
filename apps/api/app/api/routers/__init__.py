@@ -7,6 +7,7 @@ from app.api.routers import (
     auth,
     catalog,
     hosts,
+    identity,
     jobs,
     organizations,
     plugins,
@@ -15,7 +16,17 @@ from app.api.routers import (
 
 router = APIRouter()
 
-for part in (auth, organizations, hosts, projects, apps, catalog, jobs, plugins):
+for part in (
+    auth,
+    organizations,
+    hosts,
+    projects,
+    apps,
+    catalog,
+    jobs,
+    plugins,
+    identity,
+):
     router.include_router(part.router)
 
 __all__ = ["router"]

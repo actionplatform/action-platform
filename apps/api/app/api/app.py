@@ -23,7 +23,14 @@ from app.core.db import Database
 from app.core.shared.urls import GitUrl
 from app.repositories.source import configure_registry, get_registry
 
-OPEN_PATHS = {"/api/version", "/docs", "/openapi.json", "/redoc"}
+OPEN_PATHS = {
+    "/api/version",
+    "/docs",
+    "/openapi.json",
+    "/redoc",
+    "/.well-known/openid-configuration",
+    "/.well-known/jwks.json",
+}
 SELF_AUTHENTICATED = ("/api/v1/", "/api/auth/")
 
 
@@ -57,6 +64,7 @@ def build(
     app.state.sealer = Sealer(app.state.secrets) if app.state.secrets else None
     base = (settings.PUBLIC_URL if public_url is None else public_url).rstrip("/")
     app.state.verification_uri = f"{base}/device"
+    app.state.public_url = base
     expected = settings.API_TOKEN if token is None else token
 
     if not expected and not settings.ALLOW_UNAUTHENTICATED_API:
