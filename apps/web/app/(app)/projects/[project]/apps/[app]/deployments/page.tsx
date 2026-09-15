@@ -10,16 +10,20 @@ export default async function DeploymentsPage({ params }: { params: Promise<{ pr
   if (!loaded.ok) return null;
   const { view } = loaded;
   const base = `/projects/${view.projectId}/apps/${view.appId}`;
-  const jobs = await v1.jobs(view.registryId, "deploy").catch(() => []);
+  const [jobs, aws] = await Promise.all([
+    v1.jobs(view.registryId, "deploy").catch(() => []),
+    view.can["org.manage"] ? v1.pluginOptions("aws-lambda").catch(() => null) : Promise.resolve(null),
+  ]);
+  const proxyUrl = typeof aws?.options?.proxy_url === "string" ? aws.options.proxy_url : null;
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,65fr)_minmax(300px,35fr)]">
         <DeployCard view={view} />
         <div className="relative">
-          <div className="lg:absolute lg:inset-0"><TargetCard view={view} base={base} /></div>
+          <div className="lg:absolute lg:inset-0"><TargetCard view={view} base={base} proxyUrl={proxyUrl} /></div>
         </div>
       </div>
-      <DeploymentsTable jobs={jobs} />
+      <DeploymentsTable jobs={jobs} registryId={view.registryId} canDeploy={!!view.can["app.release"] && !!view.repositoryUrl} />
     </div>
   );
 }
