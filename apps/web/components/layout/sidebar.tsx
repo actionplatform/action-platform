@@ -8,7 +8,7 @@ import { Logo } from "@/components/logo";
 import type { Org } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { OrgSwitcher } from "./org-switcher";
-import { INTEGRATIONS_PAGES, ORGANIZATION_PAGES, pageActive, type SubPage } from "./nav";
+import { ORGANIZATION_PAGES, pageActive, type SubPage } from "./nav";
 import { useScope } from "./scope";
 import { UserMenu } from "./user-menu";
 
@@ -16,7 +16,7 @@ const items: { href: string; label: string; icon: typeof FolderGit2; children?: 
   { href: "/projects", label: "Projects", icon: FolderGit2 },
   { href: "/templates", label: "Templates", icon: LayoutTemplate },
   { href: "/organization", label: "Organization", icon: Building2, children: ORGANIZATION_PAGES },
-  { href: "/integrations", label: "Integrations", icon: Plug, children: INTEGRATIONS_PAGES },
+  { href: "/integrations", label: "Integrations", icon: Plug },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
