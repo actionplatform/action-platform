@@ -16,7 +16,8 @@ from app.services.integrations import plugins
 from app.services.activity import ActivityService
 from app.services.projects.apps import AppService
 from app.services.deployments import DeployEnv
-from app.services.directory import DirectoryService, DirectoryWrites
+from app.services.integrations.hosts.directory import IntegrationsDirectory
+from app.services.projects.organization_import.directory import ImportDirectory
 from app.services.deployments.identity import AppIdentity
 from app.services.jobs.context import JobContext
 from app.services.jobs.registry import JobServices, register
@@ -96,7 +97,7 @@ class JobHandlers:
             url = ""
 
         with self.database.session() as db:
-            directory = DirectoryService(db, self.sealer)
+            directory = IntegrationsDirectory(db, self.sealer)
             creds = directory.credentials_for(
                 payload["organization_id"],
                 db.get(App, payload["app_id"]).source_host_id,
@@ -108,7 +109,7 @@ class JobHandlers:
 
     def import_github(self, payload: dict[str, Any]) -> Any:
         with self.database.session() as db:
-            writes = DirectoryWrites(db, self.sealer)
+            writes = ImportDirectory(db, self.sealer)
             creds = writes.credentials_for(
                 payload["organization_id"], payload["host_id"]
             )

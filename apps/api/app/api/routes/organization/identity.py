@@ -11,7 +11,7 @@ from action_platform.core.access import (
 from app.api.dependencies import (
     AuthDep,
     CallerDep,
-    DirectoryDep,
+    ProjectsRepoDep,
     org_dict,
 )
 from app.schemas import common
@@ -25,7 +25,7 @@ router = APIRouter(prefix="/api/v1", tags=["identity"])
 @router.get("/me")
 def me(
     caller: CallerDep,
-    directory: DirectoryDep,
+    directory: ProjectsRepoDep,
 ) -> schemas.Me:
     org = caller.organization
     role = caller.role_in(org.id) if org else None
@@ -90,7 +90,7 @@ def issue(
     body: schemas.IssueRequest,
     caller: CallerDep,
     auth: AuthDep,
-    directory: DirectoryDep,
+    directory: ProjectsRepoDep,
 ) -> schemas.Issued:
     minted = TokenMinter(auth, directory).mint(caller, body.scope, body.name)
     organization, project, app = minted.organization, minted.project, minted.app

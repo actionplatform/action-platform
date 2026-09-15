@@ -9,7 +9,7 @@ from action_platform.core.exception import ActionPlatformError
 from app.core.db.models import App, Project, User
 from app.core.shared.urls import GitUrl
 from app.repositories.workspace.registry import Registry
-from app.services.directory import DirectoryWrites
+from app.services.projects.organization_import.directory import ImportDirectory
 
 
 @dataclass
@@ -37,7 +37,7 @@ class Summary:
 
 @dataclass
 class ImportContext:
-    writes: DirectoryWrites
+    writes: ImportDirectory
     registry: Registry
     organization_id: str
     summary: Summary = field(default_factory=Summary)

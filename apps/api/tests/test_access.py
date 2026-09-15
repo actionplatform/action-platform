@@ -250,7 +250,7 @@ class AppsTest(GateCase):
     def test_source_host_token_is_decrypted_from_the_web_apps_ciphertext(self):
         from app.core.auth.crypto import Sealer
         from app.core.db.models import SourceHost
-        from app.services.directory import DirectoryService
+        from app.services.integrations.hosts.directory import IntegrationsDirectory
 
         sealer = Sealer(self.app.state.secrets)
         with self.app.state.db.session() as s:
@@ -266,13 +266,13 @@ class AppsTest(GateCase):
                 )
             )
         with self.app.state.db.session() as s:
-            creds = DirectoryService(s, sealer).credentials_for(self.org["id"], "h1")
+            creds = IntegrationsDirectory(s, sealer).credentials_for(self.org["id"], "h1")
         self.assertEqual(
             (creds.kind, creds.token, creds.owner), ("github", "ghp_x", "acme")
         )
         with self.app.state.db.session() as s:
             self.assertEqual(
-                DirectoryService(s, sealer).host_id_for_url(
+                IntegrationsDirectory(s, sealer).host_id_for_url(
                     self.org["id"], "https://github.com/acme/x.git"
                 ),
                 "h1",
@@ -294,9 +294,9 @@ class MatrixTest(GateCase):
                 )
             )
         with self.app.state.db.session() as s:
-            from app.services.directory import DirectoryService
+            from app.services.integrations.hosts.directory import IntegrationsDirectory
 
-            specs = DirectoryService(s).source_specs_of(self.org["id"])
+            specs = IntegrationsDirectory(s).source_specs_of(self.org["id"])
         self.assertEqual(
             specs,
             [
@@ -310,7 +310,7 @@ class MatrixTest(GateCase):
         )
         with self.assertRaises(Exception):
             with self.app.state.db.session() as s:
-                DirectoryService(s).source_spec_by_name(self.org["id"], "other")
+                IntegrationsDirectory(s).source_spec_by_name(self.org["id"], "other")
 
 
 class CatalogAndPreviewTest(GateCase):

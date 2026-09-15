@@ -317,11 +317,11 @@ class HostsAndSettingsTest(GateCase):
         listed = self.client.get("/api/v1/hosts", headers=self.h()).json()
         self.assertEqual(listed[0]["default_owner"], "other")
         self.assertNotIn("token", listed[0])
-        from app.services.directory import DirectoryService
+        from app.services.integrations.hosts.directory import IntegrationsDirectory
 
         with self.app.state.db.session() as s:
             self.assertEqual(
-                DirectoryService(s, self.app.state.sealer)
+                IntegrationsDirectory(s, self.app.state.sealer)
                 .credentials_for(self.org["id"], host["id"])
                 .token,
                 "ghp_2",
@@ -517,7 +517,7 @@ class DeadTokenTest(GateCase):
 
         from app.core.auth.crypto import Sealer
         from app.core.db.models import SourceHost
-        from app.services.directory import now
+        from app.core.shared.clock import now
 
         sealer = Sealer(self.app.state.secrets)
 

@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 from app.api.dependencies import (
     CallerDep,
     OrgDep,
-    WritesDep,
+    IntegrationsDep,
     allowed,
     get_state_signer,
 )
@@ -22,7 +22,7 @@ def oauth_start(
     request: Request,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> schemas.OAuthStarted:
     if provider not in PROVIDERS.by_kind:
         raise HTTPException(404, "unknown provider")
@@ -50,7 +50,7 @@ def oauth_callback(
     body: schemas.OAuthCallbackRequest,
     request: Request,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> schemas.OAuthFinished:
     if provider not in PROVIDERS.by_kind:
         raise HTTPException(404, "unknown provider")
@@ -104,7 +104,7 @@ def disconnect_oauth_host(
     login: str,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> None:
     allowed(caller, org, "org.manage")
     writes.remove_oauth_host(org.id, provider, login)

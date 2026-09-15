@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from app.api.dependencies import (
     CallerDep,
-    DirectoryDep,
+    ProjectsRepoDep,
     QueueDep,
 )
 from app.core.db.models.auth import User
@@ -39,7 +39,7 @@ class JobOut(BaseModel):
 def job(
     id: str,
     caller: CallerDep,
-    directory: DirectoryDep,
+    directory: ProjectsRepoDep,
     queue: QueueDep,
 ) -> JobOut:
     found = queue.get(id)
@@ -52,7 +52,7 @@ def job(
     return _out(directory, JobQueue.view(found))
 
 
-def _out(directory: DirectoryDep, view: dict) -> JobOut:
+def _out(directory: ProjectsRepoDep, view: dict) -> JobOut:
     user_id = view.pop("user_id", None)
     user = directory.db.get(User, user_id) if user_id else None
 
@@ -63,7 +63,7 @@ def _out(directory: DirectoryDep, view: dict) -> JobOut:
 def jobs(
     app: str,
     caller: CallerDep,
-    directory: DirectoryDep,
+    directory: ProjectsRepoDep,
     queue: QueueDep,
     kind: Optional[str] = None,
 ) -> list[JobOut]:

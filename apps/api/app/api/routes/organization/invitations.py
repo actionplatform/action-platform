@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from app.api.dependencies import (
     CallerDep,
     OrgDep,
-    WritesDep,
+    OrganizationRepoDep,
     allowed,
 )
 from app.schemas import organization as schemas
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/v1", tags=["management"])
 def invitations(
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: OrganizationRepoDep,
 ) -> list[schemas.InvitationRow]:
     allowed(caller, org, "org.manage")
 
@@ -40,7 +40,7 @@ def invite(
     body: schemas.InviteRequest,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: OrganizationRepoDep,
 ) -> schemas.InvitationRow:
     allowed(caller, org, "org.manage")
     i = writes.create_invitation(org.id, caller.user.id, body.email, body.role)
@@ -61,7 +61,7 @@ def cancel_invitation(
     id: str,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: OrganizationRepoDep,
 ) -> None:
     allowed(caller, org, "org.manage")
     writes.cancel_invitation(org.id, id)

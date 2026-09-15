@@ -6,10 +6,9 @@ from fastapi import APIRouter, Header
 
 from app.api.dependencies import (
     CallerDep,
-    DirectoryDep,
     OrgDep,
     ProjectsDep,
-    WritesDep,
+    ProjectsRepoDep,
     allowed,
     manageable,
     project_of,
@@ -20,13 +19,13 @@ from app.core.db.models import Organization
 from app.schemas import common
 from app.schemas import projects as schemas
 from app.services.access.caller import Caller
-from app.services.directory import DirectoryService
+from app.repositories.projects import ProjectsRepository
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
 
 def project_rows(
-    directory: DirectoryService, caller: Caller, org: Organization, tag: bool
+    directory: ProjectsRepository, caller: Caller, org: Organization, tag: bool
 ) -> list[schemas.ProjectRow]:
     rows = []
 
@@ -65,7 +64,7 @@ def project_rows(
 @router.get("/projects")
 def projects(
     caller: CallerDep,
-    directory: DirectoryDep,
+    directory: ProjectsRepoDep,
     x_organization: Optional[str] = Header(default=None),
     organization: Optional[str] = None,
 ) -> list[schemas.ProjectRow]:
@@ -85,7 +84,7 @@ def projects(
 def create_project(
     body: schemas.CreateProjectRequest,
     caller: CallerDep,
-    directory: DirectoryDep,
+    directory: ProjectsRepoDep,
     x_organization: Optional[str] = Header(default=None),
 ) -> common.Created:
     org = required_org(caller, x_organization, None)
@@ -99,7 +98,7 @@ def create_project(
 def assign_project_team(
     body: schemas.ProjectTeamRequest,
     caller: CallerDep,
-    directory: DirectoryDep,
+    directory: ProjectsRepoDep,
     x_organization: Optional[str] = Header(default=None),
 ) -> common.Ok:
     org = required_org(caller, x_organization, None)
@@ -114,7 +113,7 @@ def delete_project(
     project_id: str,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: ProjectsRepoDep,
     projects: ProjectsDep,
     repositories: bool = False,
 ) -> common.Removed:

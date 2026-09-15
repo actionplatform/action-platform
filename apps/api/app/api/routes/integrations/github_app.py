@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 from app.api.dependencies import (
     CallerDep,
     OrgDep,
-    WritesDep,
+    IntegrationsDep,
     allowed,
     get_state_signer,
 )
@@ -21,7 +21,7 @@ def github_install(
     request: Request,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> schemas.OAuthStarted:
     allowed(caller, org, "org.manage")
     app = writes.oauth_app("github")
@@ -44,7 +44,7 @@ def github_manifest(
     request: Request,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> schemas.Manifest:
     allowed(caller, org, "org.manage")
 
@@ -74,7 +74,7 @@ def github_manifest_callback(
     body: schemas.ManifestCallbackRequest,
     request: Request,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> schemas.OAuthFinished:
     state = get_state_signer(request).verify(body.state, caller.user.id)
 

@@ -9,7 +9,7 @@ from app.core.auth.cookies import SessionCookie
 from app.core.auth.jwt import looks_like_jwt
 from app.services.auth.service import AuthService
 from app.core.db.models import Organization, User
-from app.services.directory import DirectoryService
+from app.repositories.organization import OrganizationRepository
 
 
 @dataclass
@@ -87,7 +87,7 @@ class Caller:
 def resolve_caller(
     headers: dict[str, str], db: DbSession, auth: AuthService
 ) -> Optional[Caller]:
-    directory = DirectoryService(db)
+    directory = OrganizationRepository(db)
     authorization = headers.get("authorization", "")
     bearer = (
         authorization[7:].strip() if authorization.lower().startswith("bearer ") else ""

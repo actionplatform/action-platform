@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from app.api.dependencies import (
     CallerDep,
     OrgDep,
-    WritesDep,
+    OrganizationRepoDep,
     allowed,
 )
 from app.schemas import organization as schemas
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/v1", tags=["management"])
 def git_author(
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: OrganizationRepoDep,
 ) -> schemas.GitAuthor:
     name, email = writes.git_author_of(org.id)
 
@@ -29,7 +29,7 @@ def set_git_author(
     body: schemas.GitAuthor,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: OrganizationRepoDep,
 ) -> schemas.GitAuthor:
     allowed(caller, org, "org.manage")
     name, email = writes.set_git_author(org.id, body.name, body.email)

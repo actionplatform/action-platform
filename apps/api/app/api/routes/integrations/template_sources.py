@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from app.api.dependencies import (
     CallerDep,
     OrgDep,
-    WritesDep,
+    IntegrationsDep,
     allowed,
 )
 from app.schemas import organization as schemas
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/v1", tags=["management"])
 def template_sources(
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> list[schemas.TemplateSourceRow]:
     return [
         schemas.TemplateSourceRow.model_validate(r, from_attributes=True)
@@ -30,7 +30,7 @@ def add_template_source(
     body: schemas.AddTemplateSource,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> schemas.TemplateSourceRow:
     allowed(caller, org, "org.manage")
 
@@ -45,7 +45,7 @@ def remove_template_source(
     id: str,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> None:
     allowed(caller, org, "org.manage")
     writes.remove_template_source(org.id, id)

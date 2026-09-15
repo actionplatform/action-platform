@@ -8,7 +8,7 @@ from action_platform.core.access import Grant, parse_scopes
 from app.services.auth.service import AuthService
 from app.core.db.models import ApiToken, App, Organization, Project
 from app.services.access.caller import Caller
-from app.services.directory import DirectoryService
+from app.repositories.projects import ProjectsRepository
 from app.core.errors import Forbidden, Invalid
 
 
@@ -31,7 +31,7 @@ class MintedToken:
 
 
 class TokenMinter:
-    def __init__(self, auth: AuthService, directory: DirectoryService) -> None:
+    def __init__(self, auth: AuthService, directory: ProjectsRepository) -> None:
         self.auth = auth
         self.directory = directory
 

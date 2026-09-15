@@ -6,7 +6,7 @@ from action_platform.core.exception import ActionPlatformError
 from app.api.dependencies import (
     CallerDep,
     OrgDep,
-    WritesDep,
+    IntegrationsDep,
     allowed,
     host_row,
 )
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/v1", tags=["management"])
 def hosts(
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> list[schemas.HostRow]:
     return [host_row(h) for h in writes.hosts_of(org.id)]
 
@@ -30,7 +30,7 @@ def add_host(
     body: schemas.AddHostRequest,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> schemas.HostRow:
     allowed(caller, org, "org.manage")
 
@@ -52,7 +52,7 @@ def remove_host(
     host_id: str,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> None:
     allowed(caller, org, "org.manage")
     writes.remove_host(org.id, host_id)
@@ -64,7 +64,7 @@ def rotate_host_token(
     body: schemas.HostTokenRequest,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> None:
     allowed(caller, org, "org.manage")
     writes.update_host_token(org.id, host_id, body.token)
@@ -76,7 +76,7 @@ def set_host_owner(
     body: schemas.HostOwnerRequest,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> None:
     allowed(caller, org, "org.manage")
     writes.set_host_owner(org.id, host_id, body.owner)
@@ -87,7 +87,7 @@ def host_access(
     host_id: str,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> dict:
     try:
         creds = writes.credentials_for(org.id, host_id)

@@ -13,7 +13,7 @@ from app.services.access.caller import Caller, resolve_caller
 from app.services.access.dispatch import Dispatcher
 from app.services.access.enrich import enrich
 from app.services.access.target import Authorizer, Target
-from app.services.directory import DirectoryService
+from app.services.access.directory import AccessDirectory
 from app.services.jobs import JobQueue
 
 
@@ -51,7 +51,7 @@ class Planner:
             if path in DIRECTORY or path.split("/")[0] not in WORKSPACE_ROOTS:
                 return caller, None
 
-            directory = DirectoryService(db, self.state.sealer)
+            directory = AccessDirectory(db, self.state.sealer)
             authorizer = Authorizer(directory)
             target = authorizer.target(caller, method, path, headers)
             parsed = self._parse(method, body)

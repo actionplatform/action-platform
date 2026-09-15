@@ -10,7 +10,7 @@ from app.core.db.models import Organization, PullRequest, Release
 from app.schemas import integrations as hosts
 from app.schemas import projects
 from app.services.access.caller import Caller
-from app.services.directory import DirectoryWrites
+from app.repositories.projects import ProjectsRepository
 
 
 def org_dict(organization: Organization) -> dict:
@@ -58,7 +58,7 @@ def imports_of(
     )
 
 
-def project_of(writes: DirectoryWrites, org: Organization, project_id: str):
+def project_of(writes: ProjectsRepository, org: Organization, project_id: str):
     project = writes.project(org.id, project_id)
 
     if project is None:
@@ -67,7 +67,7 @@ def project_of(writes: DirectoryWrites, org: Organization, project_id: str):
     return project
 
 
-def app_of(writes: DirectoryWrites, caller: Caller, project, app_id: str):
+def app_of(writes: ProjectsRepository, caller: Caller, project, app_id: str):
     app = writes.app(project.id, app_id)
 
     if app is None or not caller.within_reach(app.id, project.id):

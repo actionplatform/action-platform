@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException, Request
 
 from app.schemas import identity as schemas
-from app.api.dependencies import CallerDep, DirectoryDep, OrgDep, allowed
+from app.api.dependencies import CallerDep, ProjectsRepoDep, OrgDep, allowed
 from app.services.identity import TTL, IdentityIssuer, subject_for
 
 router = APIRouter(tags=["identity"])
@@ -34,7 +34,7 @@ def identity_token(
     request: Request,
     org: OrgDep,
     caller: CallerDep,
-    directory: DirectoryDep,
+    directory: ProjectsRepoDep,
 ) -> schemas.IdentityToken:
     """A short-lived token about the caller's organization (and project, app) for `audience` — what a local `action-platform deploy` hands to `sts assume-role-with-web-identity`."""
     allowed(caller, org, "app.release", whole_org=False)

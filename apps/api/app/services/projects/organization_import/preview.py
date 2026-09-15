@@ -3,7 +3,7 @@
 from typing import Any, Callable
 
 from action_platform.core.exception import ProviderError
-from app.services.directory import slugify
+from app.core.shared.ids import slugify
 from app.services.projects.organization_import.step import ImportStep
 
 MEMBERS_HINT = (

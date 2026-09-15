@@ -10,7 +10,7 @@ from app.core.auth.crypto import Sealer
 from app.core.db.database import Database
 from app.core.db.models import App, Organization
 from app.services.access.enrich import enrich
-from app.services.directory import DirectoryService
+from app.services.access.directory import AccessDirectory
 
 
 @dataclass
@@ -29,7 +29,7 @@ class JobContext:
         cls, payload: dict[str, Any], database: Database, sealer: Optional[Sealer]
     ) -> "JobContext":
         with database.session() as db:
-            directory = DirectoryService(db, sealer)
+            directory = AccessDirectory(db, sealer)
             organization = (
                 db.get(Organization, payload["organization_id"])
                 if payload.get("organization_id")

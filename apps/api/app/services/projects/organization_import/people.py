@@ -1,7 +1,9 @@
 """People → members (when they already have an account) or invitations (when the host shows an email)."""
 
 from app.core.db.models import Member, User
-from app.services.directory import DirectoryError, new_id, now
+from app.core.shared.clock import now
+from app.core.shared.ids import new_id
+from app.repositories.base import DirectoryError
 from app.services.projects.organization_import.step import ImportStep
 
 

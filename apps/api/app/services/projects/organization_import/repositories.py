@@ -8,7 +8,8 @@ from app.core.db.models import Project
 from app.core.shared import git_auth as auth
 from app.schemas import SourceCredentials
 from app.services.activity import ActivityService
-from app.services.directory import Credentials, DirectoryError
+from app.core.shared.credentials import Credentials
+from app.repositories.base import DirectoryError
 from app.services.projects.organization_import.step import ImportStep
 from app.services.workspace.checkout import Workspaces
 
