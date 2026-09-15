@@ -10,6 +10,7 @@ from pathlib import Path
 from action_platform.core.exception import TemplateError
 from action_platform.core.scaffold.detect import detect_language
 from action_platform.core.scaffold.store import LocalTemplateStore, TemplateSource
+from action_platform.plugins import registry
 from action_platform.logging import logger
 from action_platform.settings import settings
 
@@ -48,6 +49,8 @@ class Cloud:
     languages: list[str] = field(default_factory=list)
     types: list[str] = field(default_factory=list)
     icon: str = ""
+    source: str = "official"
+    root: Path | None = None
 
     @property
     def directory(self) -> str:
@@ -312,17 +315,30 @@ def ensure_source(source: TemplateSource, update: bool = False) -> Path:
     return LocalTemplateStore().checkout(source, update=update)
 
 
+def with_plugin_clouds(matrix: Matrix) -> Matrix:
+    """Overlays installed plugins ship join the matrix; a plugin's cloud replaces the repository's of the same name, since the code that deploys it lives there too."""
+    for slug, root in registry.installed().overlay_roots():
+        for cloud in Matrix.from_json(root / "index.json").clouds:
+            cloud.source = slug
+            cloud.root = root
+            matrix.clouds = [c for c in matrix.clouds if c.name != cloud.name] + [cloud]
+
+    return matrix
+
+
 def load_matrix(update: bool = False, source: str | None = None) -> tuple[Path, Matrix]:
     if source:
-        return load_source(TemplateSource.parse(source), update=update)
+        repo, matrix = load_source(TemplateSource.parse(source), update=update)
+
+        return repo, with_plugin_clouds(matrix)
 
     repo = ensure_repo(update=update)
-    matrix = Matrix.from_json(repo / "index.json")
+    matrix = with_plugin_clouds(Matrix.from_json(repo / "index.json"))
 
     if not matrix.leaves and not update and settings.TEMPLATES_DIR is None:
         logger.info("templates cache has no projects, refreshing")
         repo = ensure_repo(update=True)
-        matrix = Matrix.from_json(repo / "index.json")
+        matrix = with_plugin_clouds(Matrix.from_json(repo / "index.json"))
 
     if not matrix.leaves:
         raise TemplateError(
