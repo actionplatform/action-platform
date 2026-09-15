@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.15.0 — 2026-09-15
+
+### Features
+- **mcp:** ci none on install_platform and install_ci; cli help says so
+- **install:** ci none writes no pipeline files; git-flow stays enforced by the hooks
+
+### Docs
+- --ci none
+
+### Tests
+- **install:** ci none
+
 ## v0.14.0 — 2026-09-15
 
 ### Features
