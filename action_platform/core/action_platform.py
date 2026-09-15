@@ -31,6 +31,9 @@ class ActionPlatform:
         identity: signs a short-lived OIDC token for an audience — the hosted
             platform's issuer for a deploy it runs, the platform the CLI is
             logged in to otherwise; None on a plain machine.
+        env: what the platform knows and the repository does not — settings a
+            deploy target may read from `ctx.env` (`AP_APP`, a cloud's proxy
+            url) instead of platform.toml.
     """
 
     def __init__(
@@ -38,10 +41,12 @@ class ActionPlatform:
         config: Config | None = None,
         repo_root: Path | None = None,
         identity: Callable[[str], str] | None = None,
+        env: dict[str, str] | None = None,
     ) -> None:
         self.config = config or Config()
         self.repo = Repository(repo_root or Path.cwd())
         self.identity = identity
+        self.env = dict(env or {})
 
     @property
     def repo_root(self) -> Path:
@@ -53,7 +58,9 @@ class ActionPlatform:
 
     @property
     def deployer(self) -> Deployer:
-        return wired.deployer(self.config, self.repo, identity=self.identity)
+        return wired.deployer(
+            self.config, self.repo, identity=self.identity, env=self.env
+        )
 
     @property
     def flow(self) -> GitFlow:
