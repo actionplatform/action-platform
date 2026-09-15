@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.20.11 — 2026-09-15
+
+### Breaking Changes
+- **api:** plugins are bundled in the image — no runtime install, remove, switch or restart; GET /api/v1/plugins lists what the image carries, options stay per organization
+
 ## v0.20.10 — 2026-09-15
 
 ### Refactoring
