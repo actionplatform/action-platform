@@ -15,6 +15,7 @@ from app.api.dependencies.services import (
     get_flow,
     get_git_state,
     get_lifecycle,
+    get_import_gateway,
     get_projects,
     get_queue,
     get_state_signer,
@@ -27,6 +28,7 @@ from app.services.apps import AppService
 from app.services.directory import DirectoryService, DirectoryWrites
 from app.services.hosts import OAuthState
 from app.services.jobs import JobQueue
+from app.services.organization_import import ImportGateway
 from app.services.projects import ProjectService
 from app.services.workspace.configuration import ConfigurationService
 from app.services.workspace.flow import FlowService
@@ -42,6 +44,7 @@ QueueDep = Annotated[JobQueue, Depends(get_queue)]
 SignerDep = Annotated[OAuthState, Depends(get_state_signer)]
 AppsDep = Annotated[AppService, Depends(get_app_service)]
 ProjectsDep = Annotated[ProjectService, Depends(get_projects)]
+ImportsDep = Annotated[ImportGateway, Depends(get_import_gateway)]
 GitStateDep = Annotated[GitStateService, Depends(get_git_state)]
 LifecycleDep = Annotated[LifecycleService, Depends(get_lifecycle)]
 FlowDep = Annotated[FlowService, Depends(get_flow)]

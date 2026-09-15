@@ -59,3 +59,16 @@ class HostConnector:
             return PROVIDERS.bitbucket.first_workspace(access)
 
         return None
+
+    def create_github_app(self, code: str) -> tuple[Optional[str], Optional[str]]:
+        """Turn a manifest code into a stored GitHub App: (slug, None) when created, (None, problem) otherwise."""
+        try:
+            app = PROVIDERS.github.convert_manifest(code)
+        except ActionPlatformError as e:
+            return None, str(e)
+
+        self.writes.save_oauth_app(
+            "github", app["client_id"], app["client_secret"], None, app.get("slug")
+        )
+
+        return app.get("slug") or "created", None

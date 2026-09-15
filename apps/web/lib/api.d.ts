@@ -3285,7 +3285,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 team_id: string;
@@ -3322,7 +3322,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 team_id: string;
@@ -3351,7 +3351,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 team_id: string;
@@ -3381,7 +3381,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 user_id: string;
@@ -3410,7 +3410,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -3439,7 +3439,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -3472,7 +3472,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 id: string;
@@ -3501,7 +3501,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -3530,7 +3530,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -3563,7 +3563,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -3592,7 +3592,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -3625,7 +3625,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 id: string;
@@ -3654,7 +3654,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -3683,7 +3683,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -3716,7 +3716,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 host_id: string;
@@ -3745,7 +3745,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 host_id: string;
@@ -3778,7 +3778,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 host_id: string;
@@ -3811,7 +3811,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 host_id: string;
@@ -3863,7 +3863,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 provider: string;
@@ -3896,7 +3896,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 provider: string;
@@ -3925,7 +3925,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 provider: string;
@@ -3993,7 +3993,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 provider: string;
@@ -4023,7 +4023,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -4056,7 +4056,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -4219,7 +4219,7 @@ export interface operations {
                 repositories?: boolean;
             };
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 project_id: string;
@@ -4250,7 +4250,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 project_id: string;
@@ -4285,7 +4285,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 project_id: string;
@@ -4322,7 +4322,7 @@ export interface operations {
                 repository?: boolean;
             };
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 project_id: string;
@@ -4354,7 +4354,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 project_id: string;
@@ -4390,7 +4390,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 project_id: string;
@@ -4422,7 +4422,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 project_id: string;
@@ -4456,7 +4456,7 @@ export interface operations {
                 host: string;
             };
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -4487,7 +4487,7 @@ export interface operations {
                 host: string;
             };
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 login: string;
@@ -4518,7 +4518,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;

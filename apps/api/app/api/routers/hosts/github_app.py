@@ -2,7 +2,6 @@
 
 from fastapi import APIRouter, HTTPException, Request
 
-from action_platform.core.exception import ActionPlatformError
 from app.api.dependencies import (
     CallerDep,
     OrgDep,
@@ -11,7 +10,7 @@ from app.api.dependencies import (
     get_state_signer,
 )
 from app.schemas import hosts as schemas
-from app.services.hosts import PROVIDERS
+from app.services.hosts import PROVIDERS, HostConnector
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -94,17 +93,13 @@ def github_manifest_callback(
             return_to=state["returnTo"], query={"oauth_error": "GitHub sent no code"}
         )
 
-    try:
-        app = PROVIDERS.github.convert_manifest(body.code)
-    except ActionPlatformError as e:
+    slug, problem = HostConnector(writes).create_github_app(body.code)
+
+    if problem:
         return schemas.OAuthFinished(
-            return_to=state["returnTo"], query={"oauth_error": str(e)}
+            return_to=state["returnTo"], query={"oauth_error": problem}
         )
 
-    writes.save_oauth_app(
-        "github", app["client_id"], app["client_secret"], None, app.get("slug")
-    )
-
     return schemas.OAuthFinished(
-        return_to=state["returnTo"], query={"github_app": app.get("slug") or "created"}
+        return_to=state["returnTo"], query={"github_app": slug}
     )

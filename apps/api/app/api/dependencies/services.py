@@ -12,6 +12,7 @@ from app.services.apps import AppService
 from app.services.directory import DirectoryService, DirectoryWrites
 from app.services.hosts import OAuthState
 from app.services.jobs import JobQueue
+from app.services.organization_import import ImportGateway
 from app.services.projects import ProjectService
 from app.services.workspace.configuration import ConfigurationService
 from app.services.workspace.flow import FlowService
@@ -86,3 +87,11 @@ def get_projects(
     apps: AppService = Depends(get_app_service),
 ) -> ProjectService:
     return ProjectService(writes, apps)
+
+
+def get_import_gateway(
+    writes: DirectoryWrites = Depends(get_writes),
+    queue: JobQueue = Depends(get_queue),
+    registry: Registry = Depends(get_registry),
+) -> ImportGateway:
+    return ImportGateway(writes, registry, queue)
