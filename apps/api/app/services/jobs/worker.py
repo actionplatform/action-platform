@@ -13,8 +13,8 @@ from app.core.auth.crypto import Sealer
 from app.core.auth.secrets import Secrets
 from app.core.db.database import Database
 from app.core.db.models import Job
-from app.repositories.registry import Registry
-from app.repositories.source import configure_registry, get_registry
+from app.repositories.workspace.registry import Registry
+from app.repositories.workspace.source import configure_registry, get_registry
 from app.services.integrations import plugins
 from app.services.jobs import JobQueue, handlers as _handlers  # noqa: F401 — registers the job kinds
 from app.services.jobs.registry import JobServices, handlers

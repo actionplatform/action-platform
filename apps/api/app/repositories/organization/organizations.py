@@ -14,7 +14,7 @@ from app.core.db.models import (
     User,
 )
 from app.core.shared.clock import now
-from app.services.directory.base import (
+from app.repositories.base import (
     DEFAULT_GIT_AUTHOR,
     EMAIL,
     DirectoryBase,

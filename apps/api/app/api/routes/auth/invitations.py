@@ -17,7 +17,7 @@ from app.core.db.models import (
     Session,
 )
 from app.schemas import auth as schemas
-from app.services.directory import DirectoryWrites
+from app.repositories.organization import OrganizationRepository
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -27,7 +27,7 @@ def open_invitation(
     id: str,
     db: DbDep,
 ) -> schemas.OpenInvitation:
-    found = DirectoryWrites(db).invitation(id)
+    found = OrganizationRepository(db).invitation(id)
 
     if found is None:
         raise HTTPException(404, "invitation not found")
@@ -52,7 +52,7 @@ def accept_invitation(
     session: Session = Depends(current_session),
 ) -> schemas.OrganizationOut:
     identity = auth.identity_of(session)
-    organization = DirectoryWrites(auth.db).accept_invitation(id, identity.user)
+    organization = OrganizationRepository(auth.db).accept_invitation(id, identity.user)
     session.active_organization_id = organization.id
     auth.db.flush()
 

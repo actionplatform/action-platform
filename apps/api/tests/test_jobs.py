@@ -205,7 +205,7 @@ class AsyncRouteTest(GateCase):
         import shutil
         from pathlib import Path
 
-        from app.repositories.source import get_registry
+        from app.repositories.workspace.source import get_registry
 
         registry_id = self.register()
         entry = get_registry().get(registry_id)
@@ -220,8 +220,8 @@ class RegistryAdoptionTest(GateCase):
         import json
         from pathlib import Path
 
-        from app.repositories.registry import home
-        from app.repositories.source import (
+        from app.repositories.workspace.registry import home
+        from app.repositories.workspace.source import (
             configure_registry,
             get_registry,
         )

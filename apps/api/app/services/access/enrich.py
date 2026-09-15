@@ -3,13 +3,13 @@ from typing import Any, Optional
 
 from app.core.access.rules import Rule
 from app.core.db.models import App, Organization
-from app.services.directory import DirectoryService
+from app.services.access.directory import AccessDirectory
 
 SOURCE_BODY = re.compile(r"^apps/(init|[^/]+/(cloud|services))$")
 
 
 def enrich(
-    directory: DirectoryService,
+    directory: AccessDirectory,
     organization: Optional[Organization],
     app: Optional[App],
     path: str,
@@ -33,7 +33,7 @@ def enrich(
 
 
 def credentials_for(
-    directory: DirectoryService,
+    directory: AccessDirectory,
     organization: Organization,
     app: Optional[App],
     parsed: dict[str, Any],

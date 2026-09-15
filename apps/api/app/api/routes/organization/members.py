@@ -7,9 +7,8 @@ from fastapi import APIRouter, Header
 from action_platform.core.access import ROLE_LABELS
 from app.api.dependencies import (
     CallerDep,
-    DirectoryDep,
     OrgDep,
-    WritesDep,
+    OrganizationRepoDep,
     allowed,
     manageable,
     required_org,
@@ -23,7 +22,7 @@ router = APIRouter(prefix="/api/v1", tags=["management"])
 @router.get("/teams")
 def teams(
     caller: CallerDep,
-    directory: DirectoryDep,
+    directory: OrganizationRepoDep,
     x_organization: Optional[str] = Header(default=None),
     organization: Optional[str] = None,
 ) -> list[schemas.TeamRow]:
@@ -51,7 +50,7 @@ def teams(
 @router.get("/members")
 def members(
     caller: CallerDep,
-    directory: DirectoryDep,
+    directory: OrganizationRepoDep,
     x_organization: Optional[str] = Header(default=None),
     organization: Optional[str] = None,
 ) -> list[schemas.MemberRow]:
@@ -73,7 +72,7 @@ def members(
 def create_team(
     body: schemas.CreateTeamRequest,
     caller: CallerDep,
-    directory: DirectoryDep,
+    directory: OrganizationRepoDep,
     x_organization: Optional[str] = Header(default=None),
 ) -> common.Created:
     org = required_org(caller, x_organization, None)
@@ -87,7 +86,7 @@ def create_team(
 def add_team_member(
     body: schemas.TeamMemberRequest,
     caller: CallerDep,
-    directory: DirectoryDep,
+    directory: OrganizationRepoDep,
     x_organization: Optional[str] = Header(default=None),
 ) -> common.Ok:
     org = required_org(caller, x_organization, None)
@@ -101,7 +100,7 @@ def add_team_member(
 def set_member_role(
     body: schemas.MemberRoleRequest,
     caller: CallerDep,
-    directory: DirectoryDep,
+    directory: OrganizationRepoDep,
     x_organization: Optional[str] = Header(default=None),
 ) -> common.Ok:
     org = required_org(caller, x_organization, None)
@@ -117,7 +116,7 @@ def update_team(
     body: schemas.TeamUpdate,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: OrganizationRepoDep,
 ) -> dict:
     allowed(caller, org, "org.manage")
     team = writes.update_team(org.id, team_id, body.name, body.description or "")
@@ -130,7 +129,7 @@ def delete_team(
     team_id: str,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: OrganizationRepoDep,
 ) -> None:
     allowed(caller, org, "org.manage")
     writes.delete_team(org.id, team_id)
@@ -142,7 +141,7 @@ def remove_team_member(
     user_id: str,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: OrganizationRepoDep,
 ) -> None:
     allowed(caller, org, "org.manage")
     writes.remove_team_member(org.id, team_id, user_id)
@@ -153,7 +152,7 @@ def remove_member(
     user_id: str,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: OrganizationRepoDep,
 ) -> None:
     allowed(caller, org, "org.manage")
     writes.remove_member(org.id, user_id)

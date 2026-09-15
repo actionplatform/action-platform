@@ -6,8 +6,8 @@ from typing import Any, Optional
 from action_platform.core.exception import ActionPlatformError
 from app.core.db.models import Job, Organization
 from app.core.shared.credentials import Credentials
-from app.repositories.registry import Registry
-from app.services.directory import DirectoryWrites
+from app.repositories.workspace.registry import Registry
+from app.services.projects.organization_import.directory import ImportDirectory
 from app.services.jobs import JobQueue
 from app.services.projects.organization_import import client
 from app.services.projects.organization_import.importer import OrganizationImport
@@ -19,7 +19,7 @@ JOB_KIND = "import_github"
 class ImportGateway:
     def __init__(
         self,
-        writes: DirectoryWrites,
+        writes: ImportDirectory,
         registry: Registry,
         queue: Optional[JobQueue] = None,
     ) -> None:

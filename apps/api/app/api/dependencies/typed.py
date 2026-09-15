@@ -12,7 +12,9 @@ from app.api.dependencies.services import (
     get_commits,
     get_configuration,
     get_db,
-    get_directory,
+    get_integrations,
+    get_organization_repository,
+    get_projects_repository,
     get_flow,
     get_git_state,
     get_deployments,
@@ -22,13 +24,14 @@ from app.api.dependencies.services import (
     get_plugins,
     get_queue,
     get_state_signer,
-    get_writes,
 )
 from app.services.auth.service import AuthService
 from app.core.db.models import Organization
 from app.services.access.caller import Caller
 from app.services.projects.apps import AppService
-from app.services.directory import DirectoryService, DirectoryWrites
+from app.repositories.organization import OrganizationRepository
+from app.repositories.projects import ProjectsRepository
+from app.services.integrations.hosts.directory import IntegrationsDirectory
 from app.services.integrations.hosts import OAuthState
 from app.services.jobs import JobQueue
 from app.services.integrations.plugins import PluginManager
@@ -43,8 +46,11 @@ from app.services.workspace.state import GitStateService
 
 CallerDep = Annotated[Caller, Depends(get_caller)]
 DbDep = Annotated[DbSession, Depends(get_db)]
-DirectoryDep = Annotated[DirectoryService, Depends(get_directory)]
-WritesDep = Annotated[DirectoryWrites, Depends(get_writes)]
+OrganizationRepoDep = Annotated[
+    OrganizationRepository, Depends(get_organization_repository)
+]
+ProjectsRepoDep = Annotated[ProjectsRepository, Depends(get_projects_repository)]
+IntegrationsDep = Annotated[IntegrationsDirectory, Depends(get_integrations)]
 AuthDep = Annotated[AuthService, Depends(get_auth)]
 QueueDep = Annotated[JobQueue, Depends(get_queue)]
 PluginsDep = Annotated[PluginManager, Depends(get_plugins)]

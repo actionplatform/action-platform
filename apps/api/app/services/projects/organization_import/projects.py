@@ -3,7 +3,7 @@
 from typing import Optional
 
 from app.core.db.models import Project
-from app.services.directory import DirectoryError
+from app.repositories.base import DirectoryError
 from app.services.projects.organization_import.step import ImportStep
 
 

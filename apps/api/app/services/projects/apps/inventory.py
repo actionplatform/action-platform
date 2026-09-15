@@ -11,7 +11,7 @@ from action_platform.core.flow.repository import Repository
 from action_platform.core.scaffold.install import InstallError, install
 from action_platform.settings import settings
 from app.core.shared import git_auth as auth
-from app.repositories.registry import Entry, MissingManifest
+from app.repositories.workspace.registry import Entry, MissingManifest
 from app.schemas import InstallSpec, SourceCredentials
 from app.services.projects.apps.base import AppsBase
 from app.services.workspace.checkout import Workspaces

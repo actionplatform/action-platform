@@ -3,8 +3,8 @@
 from functools import lru_cache
 
 from action_platform.core.exception import ConfigError
-from app.repositories.drafts import DraftStore
-from app.repositories.registry import DbStore, Registry
+from app.repositories.workspace.drafts import DraftStore
+from app.repositories.workspace.registry import DbStore, Registry
 
 
 class RegistrySource:

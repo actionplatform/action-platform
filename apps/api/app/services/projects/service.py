@@ -10,12 +10,12 @@ from app.schemas import InitRequest, InstallSpec, SourceCredentials
 from app.services.access.enrich import credentials_for
 from app.services.activity import ActivityService
 from app.services.projects.apps import AppService
-from app.services.directory import DirectoryWrites
+from app.services.projects.organization_import.directory import ImportDirectory
 from app.core.errors import Invalid
 
 
 class ProjectService:
-    def __init__(self, writes: DirectoryWrites, apps: AppService) -> None:
+    def __init__(self, writes: ImportDirectory, apps: AppService) -> None:
         self.writes = writes
         self.apps = apps
         self.activity = ActivityService(writes.db)

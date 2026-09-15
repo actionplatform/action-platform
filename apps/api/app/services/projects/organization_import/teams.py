@@ -1,7 +1,7 @@
 """Teams → teams, with the members who are already in the organization and the projects of their repositories."""
 
 from app.core.db.models import Project, Team, User
-from app.services.directory import slugify
+from app.core.shared.ids import slugify
 from app.services.projects.organization_import.step import ImportStep
 
 

@@ -7,11 +7,11 @@ from app.core.db.models import Organization
 from app.services.integrations.hosts.registry import PROVIDERS
 
 if TYPE_CHECKING:
-    from app.services.directory import DirectoryWrites
+    from app.services.integrations.hosts.directory import IntegrationsDirectory
 
 
 class HostConnector:
-    def __init__(self, writes: "DirectoryWrites") -> None:
+    def __init__(self, writes: "IntegrationsDirectory") -> None:
         self.writes = writes
 
     def finish(

@@ -8,8 +8,8 @@ from action_platform.core.flow.workflow import BranchError
 from action_platform.core.wiring import wired
 from app.core.errors import Conflict, Invalid
 from app.core.shared import git_auth as auth
-from app.repositories.config_store import ConfigStore
-from app.repositories.registry import Registry
+from app.repositories.configuration.config_store import ConfigStore
+from app.repositories.workspace.registry import Registry
 from app.schemas import CommitRequest
 from app.services.workspace.checkout import Workspaces
 

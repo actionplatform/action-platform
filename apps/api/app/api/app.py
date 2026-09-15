@@ -23,7 +23,7 @@ from app.services.auth.errors import AuthError
 from app.core.auth.secrets import Secrets
 from app.core.db import Database
 from app.core.shared.urls import GitUrl
-from app.repositories.source import configure_registry, get_registry
+from app.repositories.workspace.source import configure_registry, get_registry
 
 log = logging.getLogger("action_platform.api")
 

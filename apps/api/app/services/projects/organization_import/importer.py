@@ -3,12 +3,10 @@
 from typing import Any, Optional
 
 from action_platform.core import access
-from app.repositories.registry import Registry
-from app.services.directory import (
-    Credentials,
-    DirectoryError,
-    DirectoryWrites,
-)
+from app.repositories.workspace.registry import Registry
+from app.services.projects.organization_import.directory import ImportDirectory
+from app.repositories.base import DirectoryError
+from app.core.shared.credentials import Credentials
 from app.services.projects.organization_import import client
 from app.services.projects.organization_import.context import ImportContext
 from app.services.projects.organization_import.people import PeopleImporter
@@ -22,7 +20,7 @@ from app.services.projects.organization_import.teams import TeamImporter
 
 class OrganizationImport:
     def __init__(
-        self, writes: DirectoryWrites, organization_id: str, registry: Registry
+        self, writes: ImportDirectory, organization_id: str, registry: Registry
     ) -> None:
         self.ctx = ImportContext(writes, registry, organization_id)
 

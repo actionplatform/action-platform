@@ -6,8 +6,8 @@ from action_platform.core.wiring import wired
 from action_platform.core.flow import git
 from action_platform.core.flow.repository import Repository
 from app.core.shared import git_auth as auth
-from app.repositories.config_store import ConfigStore
-from app.repositories.registry import Registry
+from app.repositories.configuration.config_store import ConfigStore
+from app.repositories.workspace.registry import Registry
 from app.schemas import PullRequestRequest, StartBranchRequest
 from app.services.workspace import Workspaces
 from app.core.errors import Conflict, Invalid, NotFound

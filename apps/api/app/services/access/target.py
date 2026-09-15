@@ -9,7 +9,7 @@ from app.core.access.rules import Rule, rule_for
 from app.core.db.models import App, Organization, Project
 from app.core.errors import Refused
 from app.services.access.caller import Caller
-from app.services.directory import DirectoryService
+from app.repositories.projects import ProjectsRepository
 
 
 @dataclass
@@ -35,7 +35,7 @@ def requested_organization(
 
 
 class Authorizer:
-    def __init__(self, directory: DirectoryService) -> None:
+    def __init__(self, directory: ProjectsRepository) -> None:
         self.directory = directory
 
     def target(

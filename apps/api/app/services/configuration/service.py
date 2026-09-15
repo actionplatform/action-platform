@@ -6,8 +6,8 @@ from action_platform.core.wiring import wired
 from action_platform.core.scaffold.install import install
 from action_platform.core.scaffold.templates import TemplateError
 from action_platform.settings import settings
-from app.repositories.config_store import ConfigStore
-from app.repositories.registry import Registry
+from app.repositories.configuration.config_store import ConfigStore
+from app.repositories.workspace.registry import Registry
 from app.schemas import SourceSpec
 from app.services.templates import TemplateRepos
 from app.services.workspace import Workspaces

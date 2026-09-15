@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from app.api.dependencies import (
     CallerDep,
     OrgDep,
-    WritesDep,
+    IntegrationsDep,
     allowed,
 )
 from app.schemas import integrations as schemas
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/v1", tags=["management"])
 @router.get("/oauth/apps")
 def oauth_apps(
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> list[schemas.OAuthAppRow]:
     rows = []
 
@@ -45,7 +45,7 @@ def save_oauth_app(
     body: schemas.OAuthAppRequest,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> None:
     allowed(caller, org, "org.manage")
     writes.save_oauth_app(provider, body.client_id, body.client_secret, body.base_url)
@@ -56,7 +56,7 @@ def clear_oauth_app(
     provider: str,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: IntegrationsDep,
 ) -> None:
     allowed(caller, org, "org.manage")
     writes.clear_oauth_app(provider)

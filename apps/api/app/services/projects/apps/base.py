@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from app.repositories.config_store import ConfigStore
-from app.repositories.registry import Registry
+from app.repositories.configuration.config_store import ConfigStore
+from app.repositories.workspace.registry import Registry
 
 
 class AppsBase:

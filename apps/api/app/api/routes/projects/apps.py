@@ -6,7 +6,8 @@ from app.api.dependencies import (
     CallerDep,
     OrgDep,
     ProjectsDep,
-    WritesDep,
+    IntegrationsDep,
+    ProjectsRepoDep,
     allowed,
     app_of,
     imports_of,
@@ -24,7 +25,7 @@ def add_app(
     body: schemas.AddAppToProject,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: ProjectsRepoDep,
     projects: ProjectsDep,
 ) -> schemas.AppAdded:
     allowed(caller, org, "project.manage")
@@ -45,7 +46,7 @@ def init_app(
     body: schemas.InitAppInProject,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: ProjectsRepoDep,
     projects: ProjectsDep,
 ) -> schemas.AppInitialized:
     allowed(caller, org, "project.manage")
@@ -68,7 +69,7 @@ def delete_app(
     app_id: str,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: ProjectsRepoDep,
     projects: ProjectsDep,
     repository: bool = False,
 ) -> common.Removed:
@@ -91,13 +92,14 @@ def set_app_host(
     body: schemas.AppHostRequest,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: ProjectsRepoDep,
+    integrations: IntegrationsDep,
 ) -> schemas.AppHostRequest:
     allowed(caller, org, "app.flow", whole_org=False)
     project = project_of(writes, org, project_id)
     app = app_of(writes, caller, project, app_id)
 
-    if body.source_host_id and writes.host(org.id, body.source_host_id) is None:
+    if body.source_host_id and integrations.host(org.id, body.source_host_id) is None:
         raise HTTPException(404, "host not found")
 
     writes.set_app_host(app, body.source_host_id or None)
@@ -111,7 +113,7 @@ def imports(
     app_id: str,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: ProjectsRepoDep,
 ) -> schemas.Imports:
     project = project_of(writes, org, project_id)
     app = app_of(writes, caller, project, app_id)
@@ -125,7 +127,7 @@ def sync_imports(
     app_id: str,
     org: OrgDep,
     caller: CallerDep,
-    writes: WritesDep,
+    writes: ProjectsRepoDep,
     projects: ProjectsDep,
 ) -> schemas.Imports:
     allowed(caller, org, "app.sync", whole_org=False)

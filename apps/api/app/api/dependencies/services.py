@@ -6,11 +6,14 @@ from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session as DbSession
 
 from app.services.auth.service import AuthService
-from app.repositories.config_store import ConfigStore
-from app.repositories.registry import Registry
-from app.repositories.source import get_registry
+from app.repositories.configuration.config_store import ConfigStore
+from app.repositories.workspace.registry import Registry
+from app.repositories.workspace.source import get_registry
 from app.services.projects.apps import AppService
-from app.services.directory import DirectoryService, DirectoryWrites
+from app.repositories.organization import OrganizationRepository
+from app.repositories.projects import ProjectsRepository
+from app.services.integrations.hosts.directory import IntegrationsDirectory
+from app.services.projects.organization_import.directory import ImportDirectory
 from app.services.integrations.hosts import OAuthState
 from app.services.jobs import JobQueue
 from app.services.projects.organization_import import ImportGateway
@@ -34,12 +37,22 @@ def get_db(request: Request) -> Iterator[DbSession]:
         yield session
 
 
-def get_directory(db: DbSession = Depends(get_db)) -> DirectoryService:
-    return DirectoryService(db)
+def get_organization_repository(
+    request: Request, db: DbSession = Depends(get_db)
+) -> OrganizationRepository:
+    return OrganizationRepository(db, request.app.state.sealer)
 
 
-def get_writes(request: Request, db: DbSession = Depends(get_db)) -> DirectoryWrites:
-    return DirectoryWrites(db, request.app.state.sealer)
+def get_projects_repository(
+    request: Request, db: DbSession = Depends(get_db)
+) -> ProjectsRepository:
+    return ProjectsRepository(db, request.app.state.sealer)
+
+
+def get_integrations(
+    request: Request, db: DbSession = Depends(get_db)
+) -> IntegrationsDirectory:
+    return IntegrationsDirectory(db, request.app.state.sealer)
 
 
 def get_auth(
@@ -121,15 +134,21 @@ def get_configuration(
     return ConfigurationService(registry, configs)
 
 
+def get_import_directory(
+    request: Request, db: DbSession = Depends(get_db)
+) -> ImportDirectory:
+    return ImportDirectory(db, request.app.state.sealer)
+
+
 def get_projects(
-    writes: DirectoryWrites = Depends(get_writes),
+    writes: ImportDirectory = Depends(get_import_directory),
     apps: AppService = Depends(get_app_service),
 ) -> ProjectService:
     return ProjectService(writes, apps)
 
 
 def get_import_gateway(
-    writes: DirectoryWrites = Depends(get_writes),
+    writes: ImportDirectory = Depends(get_import_directory),
     queue: JobQueue = Depends(get_queue),
     registry: Registry = Depends(get_registry),
 ) -> ImportGateway:

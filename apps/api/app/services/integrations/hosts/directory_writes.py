@@ -12,12 +12,12 @@ from app.core.db.models import (
 )
 from app.core.shared.clock import now
 from app.core.shared.ids import new_id
-from app.services.directory.base import (
+from app.repositories.base import (
     HOST_KINDS,
     HOST_LABELS,
     DirectoryError,
 )
-from app.services.directory.hosts_reads import HostsReads
+from app.services.integrations.hosts.directory_reads import HostsReads
 
 
 class HostsWrites(HostsReads):
