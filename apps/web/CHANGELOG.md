@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.18.0 — 2026-09-15
+
+### Features
+- **web:** /.well-known served from the API
+- **web:** Plugins page installs, switches, updates, removes and restarts on a hosted platform; requirements as a collapsible row
+
+### Bug Fixes
+- **web:** shorter Plugins page description
+- **web:** a plugin card grows alone when its requirements open
+
 ## v0.17.0 — 2026-09-15
 
 ### Features
