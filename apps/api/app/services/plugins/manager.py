@@ -149,8 +149,7 @@ class PluginManager:
             PipInstaller(str(settings.PLUGINS_DIR)).uninstall(package)
 
         if loaded:
-            state.set_enabled(slug, False)
-            state.mark_restart(slug)
+            state.mark_removed(slug)
         else:
             state.forget(slug)
 
