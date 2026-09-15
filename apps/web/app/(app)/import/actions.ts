@@ -45,7 +45,7 @@ export async function importJob(id: string): Promise<Result<{ status: string; re
     if (job.status === "done") {
       revalidatePath("/projects");
       revalidatePath("/teams");
-      revalidatePath("/settings");
+      revalidatePath("/settings", "layout");
     }
     return { ok: true, data: { status: job.status, result: (job.result as ImportSummary | null) ?? null, error: job.error ?? null } };
   } catch (e) {

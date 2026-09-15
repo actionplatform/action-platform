@@ -118,6 +118,8 @@ Listing teams and people needs the GitHub App permission *Organization › Membe
 
 ## Settings
 
+One page per concern, listed under **Settings** in the sidebar (tabs on a phone): **General** (name, slug, your role, commit identity), **Members** (members, invitations, the roles table), **Code hosts** (connect with OAuth or a token, what each connected account may create with), **Git-flow** (the rules) and **API** (base URL, version, docs). The OAuth flows come back to `/settings/hosts`.
+
 Organization members, source hosts (add, update token, remove), the API URL and the git-flow rules.
 
 ### Commit identity

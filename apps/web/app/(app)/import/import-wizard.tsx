@@ -103,7 +103,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
       <Panel>
         <PanelBody className="space-y-3 text-sm">
           <p className="text-secondary">No GitHub host is connected to this organization yet.</p>
-          <Link href="/settings"><Button>Connect GitHub in Settings</Button></Link>
+          <Link href="/settings/hosts"><Button>Connect GitHub in Settings</Button></Link>
         </PanelBody>
       </Panel>
     );
