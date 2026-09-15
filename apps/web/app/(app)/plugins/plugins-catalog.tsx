@@ -171,7 +171,7 @@ function HostedActions({ item }: { item: PluginItem }) {
       {item.installed && (
         <>
           {!item.error && <Button size="sm" variant="outline" disabled={busy} onClick={toggle}>{item.enabled ? "Disable" : "Enable"}</Button>}
-          {item.latest && item.latest !== item.installed_version && <Button size="sm" variant="outline" disabled={busy} onClick={() => setConfirm("install")}>Update to {item.latest}</Button>}
+          {item.latest && item.latest !== item.installed_version && !item.restart_pending && <Button size="sm" variant="outline" disabled={busy} onClick={() => setConfirm("install")}>Update to {item.latest}</Button>}
           <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirm("remove")}>{job ? "Working…" : "Remove"}</Button>
         </>
       )}
