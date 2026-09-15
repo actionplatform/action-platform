@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.14.5 — 2026-09-14
+
+### Refactoring
+- **api:** routers by context (workspace, management, auth packages) over api/dependencies; AuthService and the models split by context; delete_through_host on AppRemote
+- **api:** the package is app
+- the API is its own package under apps/api (action_platform_api): core (abc, access, auth, db, cli, shared), api (FastAPI), repositories, services, schemas; the library no longer ships api extras or api commands; action-platform-api serve|worker|db; shared test fixtures in action_platform.testing
+
+### Build
+- **web:** regenerate package-lock
+
 ## v0.14.4 — 2026-09-14
 
 ### Bug Fixes
