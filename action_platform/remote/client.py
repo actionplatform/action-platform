@@ -333,6 +333,19 @@ class Remote:
             "POST", "projects/team", {"project_id": project_id, "team_id": team_id}
         )
 
+    def identity_token(
+        self,
+        audience: str,
+        project_id: Optional[str] = None,
+        app_id: Optional[str] = None,
+    ) -> dict:
+        """A short-lived OIDC token the platform signs about this organization for `audience` — what a deploy target hands to a cloud instead of a stored key."""
+        return self._call(
+            "POST",
+            "identity/token",
+            {"audience": audience, "project_id": project_id, "app_id": app_id},
+        )
+
     def set_member_role(self, user_id: str, role: str) -> dict:
         return self._call("POST", "members/role", {"user_id": user_id, "role": role})
 

@@ -64,6 +64,7 @@ from app.schemas.catalog import (
     SourceStatus,
     Version,
 )
+from app.schemas.identity import IdentityToken, IdentityTokenRequest
 from app.schemas.plugins import PluginOptions, PluginQueued
 from app.schemas.common import (
     AppRef,
@@ -188,6 +189,8 @@ __all__ = [
     "MatrixCloud",
     "MatrixProject",
     "MatrixService",
+    "IdentityToken",
+    "IdentityTokenRequest",
     "PluginOptions",
     "PluginQueued",
     "PluginRow",

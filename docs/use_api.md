@@ -68,3 +68,7 @@ The registry — id, name, url, default branch of every app — is the `registry
 ## Errors
 
 `ActionPlatformError` and its subclasses (`ReleaseError`, `BranchError`, `PullRequestError`, `SyncError`, `TemplateError`, `InstallError`) answer `400 {"detail": "…"}` with a message meant for the user; `HTTPException` carries `404`, `409`, `410` and `422` (`{"code": "needs_install"}` when a repository has no `platform.toml`). Anything else is a `500` and reaches Sentry when `AP_SENTRY_DSN` is set ([observability](concept_observability.md)).
+
+## Identity
+
+`GET /.well-known/openid-configuration` and `GET /.well-known/jwks.json` are open; `POST /api/v1/identity/token` (`audience`, optional `project_id`, `app_id`) answers a five-minute RS256 token for a caller with `app.release` — see [identity](concept_identity.md).

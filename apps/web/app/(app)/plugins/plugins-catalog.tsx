@@ -278,7 +278,7 @@ export function PluginsCatalog({ plugins, index, hosted, restartPending, canMana
       <PageHeader
         title="Plugins"
         badge={<Badge className="h-[26px] bg-surface px-2.5 text-xs font-medium">{plugins.length} {plugins.length === 1 ? "plugin" : "plugins"}</Badge>}
-        description={hosted ? "Extensions for the CLI, the MCP server and this platform — deploy targets, overlays, tools, release strategies. Verified plugins install here without a restart; updates and removals restart." : "Extensions for the CLI and the MCP server — deploy targets, overlays, tools, release strategies. Installed with the CLI on each machine; this platform has no plugins volume (AP_PLUGINS_DIR)."}
+        description={hosted ? "Deploy targets, overlays, tools and release strategies. Verified plugins install here at once; updates and removals need a restart." : "Deploy targets, overlays, tools and release strategies. Install with the CLI; this platform has no plugins volume."}
       />
 
       <RestartBanner slugs={restartPending} canManage={canManage} />
