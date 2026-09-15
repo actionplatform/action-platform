@@ -23,9 +23,9 @@ class AppRemote(AppsBase):
             return None
 
         try:
-            host = AppManifest(
-                root, self.registry.configs.resolve(id, root) or None
-            ).as_dict()["source_host"]
+            host = AppManifest(root, self.configs.resolve(id, root) or None).as_dict()[
+                "source_host"
+            ]
         except HTTPException:
             host = {}
 

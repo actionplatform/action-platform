@@ -11,6 +11,7 @@ from action_platform.core.scaffold.install import install
 from action_platform.core.scaffold.templates import TemplateError
 from action_platform.settings import settings
 from app.core.shared import git_auth as auth
+from app.repositories.config_store import ConfigStore
 from app.repositories.registry import Registry
 from app.schemas import CommitRequest, SourceSpec
 from app.services.catalog import TemplateRepos
@@ -25,8 +26,9 @@ def _same(a: str, b: str) -> bool:
 
 
 class ConfigurationService:
-    def __init__(self, registry: Registry) -> None:
+    def __init__(self, registry: Registry, configs: ConfigStore | None = None) -> None:
         self.registry = registry
+        self.configs = configs or ConfigStore(registry.store.database)
 
     def _root(self, id: str) -> Path:
         return Workspaces(self.registry).checkout(id)[1]
@@ -37,7 +39,7 @@ class ConfigurationService:
     def manifest(self, id: str) -> dict:
         """The configuration the platform keeps, rendered as platform.toml; whether the clone's file matches it."""
         root = self._root(id)
-        content = self.registry.configs.render(id, root)
+        content = self.configs.render(id, root)
         file = root / settings.CONFIG_FILE
         mirrored = file.exists() and _same(file.read_text(), content)
 
@@ -50,14 +52,14 @@ class ConfigurationService:
         except tomllib.TOMLDecodeError as e:
             raise HTTPException(400, f"invalid TOML: {e}") from e
 
-        self.registry.configs.set(id, data)
+        self.configs.set(id, data)
 
         return self.manifest(id)
 
     def export_manifest(self, id: str) -> dict:
         """Write platform.toml in the clone from what the platform keeps — a pending change to commit like any other."""
         root = self._root(id)
-        self.registry.configs.export(id, root)
+        self.configs.export(id, root)
         self._drafted(id, root)
 
         return self.manifest(id)
@@ -85,7 +87,7 @@ class ConfigurationService:
             return
 
         data = tomllib.loads(file.read_text())
-        self.registry.configs.merge(
+        self.configs.merge(
             id, root, deploy=data.get("deploy", {}), services=data.get("services", {})
         )
 
@@ -166,7 +168,7 @@ class ConfigurationService:
             }
 
             if body.pull_request:
-                config = self.registry.configs.config(id, root)
+                config = self.configs.config(id, root)
                 auth.apply(config, body.credentials)
                 ref = wired.gitflow(repo).open_pr(config=config)
                 result["pull_request"] = {"number": ref.number, "url": ref.url}
