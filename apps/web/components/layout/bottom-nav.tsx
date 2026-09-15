@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderGit2, LayoutTemplate, Puzzle, Settings } from "lucide-react";
+import { FolderGit2, LayoutTemplate, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 const items = [
   { href: "/projects", label: "Projects", icon: FolderGit2 },
   { href: "/templates", label: "Templates", icon: LayoutTemplate },
-  { href: "/plugins", label: "Plugins", icon: Puzzle },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
