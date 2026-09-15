@@ -1,4 +1,4 @@
-"""app.repositories.registry — clones into workspaces, refuses what it must, cleans up."""
+"""app.repositories.registry keeps the rows; Workspaces.adopt clones into workspaces, refuses what it must, cleans up."""
 
 from __future__ import annotations
 
@@ -13,19 +13,21 @@ class RegistryTest(ApiCase):
         super().setUp()
         from app.core.db import Database
         from app.repositories.registry import DbStore, Registry
+        from app.services.workspace.checkout import Workspaces
 
         database = Database(f"sqlite:///{self.tmp_path / 'registry.db'}")
         database.migrate()
         self.registry = Registry(DbStore(database), self.tmp_path / "home")
+        self.adopter = Workspaces(self.registry)
 
     def test_clones_into_workspace_and_removes(self):
-        entry = self.registry.add(self.url)
+        entry = self.adopter.adopt(self.url)
 
         self.assertEqual(entry.name, "demo")
         self.assertEqual(entry.default_branch, "feature/1")
         self.assertTrue(Path(entry.path).is_relative_to(self.workspaces))
         self.assertTrue((Path(entry.path) / "platform.toml").exists())
-        self.assertEqual(self.registry.add(self.url).id, entry.id)
+        self.assertEqual(self.adopter.adopt(self.url).id, entry.id)
 
         self.registry.remove(entry.id)
 
@@ -41,12 +43,12 @@ class RegistryTest(ApiCase):
         git(bare, "commit", "-q", "-m", "chore: x")
 
         with self.assertRaisesRegex(Exception, "platform.toml"):
-            self.registry.add(bare.as_uri())
+            self.adopter.adopt(bare.as_uri())
         self.assertFalse(any(self.workspaces.glob("*")))
 
     def test_refuses_non_https_url(self):
         with self.assertRaisesRegex(Exception, "https:// only"):
-            self.registry.add("/some/local/path")
+            self.adopter.adopt("/some/local/path")
 
     def test_refuses_escaping_symlinks(self):
         evil = self.tmp_path / "evil"
