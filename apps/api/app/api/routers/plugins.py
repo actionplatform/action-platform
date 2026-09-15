@@ -2,25 +2,27 @@
 
 from fastapi import APIRouter
 
-from app import schemas
+from app.schemas.catalog import Plugins
+from app.schemas.common import Ok
+from app.schemas.plugins import PluginOptions, PluginQueued
 from app.api.dependencies import CallerDep, OrgDep, PluginsDep, allowed, platform_admin
 
 router = APIRouter(prefix="/api/v1/plugins", tags=["plugins"])
 
 
-def queued(job) -> schemas.PluginQueued:
-    return schemas.PluginQueued(job=job.id, poll=f"/api/v1/jobs/{job.id}")
+def queued(job) -> PluginQueued:
+    return PluginQueued(job=job.id, poll=f"/api/v1/jobs/{job.id}")
 
 
 @router.get("")
-def plugins(org: OrgDep, caller: CallerDep, manager: PluginsDep) -> schemas.Plugins:
+def plugins(org: OrgDep, caller: CallerDep, manager: PluginsDep) -> Plugins:
     return manager.catalog()
 
 
 @router.post("/{slug}/install", status_code=202)
 def install_plugin(
     slug: str, org: OrgDep, caller: CallerDep, manager: PluginsDep
-) -> schemas.PluginQueued:
+) -> PluginQueued:
     platform_admin(caller)
 
     return queued(manager.enqueue_install(slug, caller.user.id))
@@ -29,36 +31,34 @@ def install_plugin(
 @router.post("/{slug}/remove", status_code=202)
 def remove_plugin(
     slug: str, org: OrgDep, caller: CallerDep, manager: PluginsDep
-) -> schemas.PluginQueued:
+) -> PluginQueued:
     platform_admin(caller)
 
     return queued(manager.enqueue_remove(slug, caller.user.id))
 
 
 @router.post("/{slug}/enable")
-def enable_plugin(
-    slug: str, org: OrgDep, caller: CallerDep, manager: PluginsDep
-) -> schemas.Ok:
+def enable_plugin(slug: str, org: OrgDep, caller: CallerDep, manager: PluginsDep) -> Ok:
     platform_admin(caller)
     manager.enable(slug)
 
-    return schemas.Ok()
+    return Ok()
 
 
 @router.post("/{slug}/disable")
 def disable_plugin(
     slug: str, org: OrgDep, caller: CallerDep, manager: PluginsDep
-) -> schemas.Ok:
+) -> Ok:
     platform_admin(caller)
     manager.disable(slug)
 
-    return schemas.Ok()
+    return Ok()
 
 
 @router.post("/restart", status_code=202)
 def restart_platform(
     org: OrgDep, caller: CallerDep, manager: PluginsDep
-) -> schemas.PluginQueued:
+) -> PluginQueued:
     """The worker restarts through its job; the API answers and leaves right after — the container's restart policy brings both back."""
     platform_admin(caller)
     job = manager.enqueue_restart(caller.user.id)
@@ -70,20 +70,20 @@ def restart_platform(
 @router.get("/{slug}/options")
 def plugin_options(
     slug: str, org: OrgDep, caller: CallerDep, manager: PluginsDep
-) -> schemas.PluginOptions:
+) -> PluginOptions:
     allowed(caller, org, "org.manage")
 
-    return schemas.PluginOptions(options=manager.options(slug, org.id).all())
+    return PluginOptions(options=manager.options(slug, org.id).all())
 
 
 @router.put("/{slug}/options")
 def set_plugin_options(
     slug: str,
-    body: schemas.PluginOptions,
+    body: PluginOptions,
     org: OrgDep,
     caller: CallerDep,
     manager: PluginsDep,
-) -> schemas.PluginOptions:
+) -> PluginOptions:
     """Replaces the plugin's options with the body's; a key left out is deleted."""
     allowed(caller, org, "org.manage")
     store = manager.options(slug, org.id)
@@ -94,4 +94,4 @@ def set_plugin_options(
     for key, value in body.options.items():
         store.set(key, value)
 
-    return schemas.PluginOptions(options=store.all())
+    return PluginOptions(options=store.all())

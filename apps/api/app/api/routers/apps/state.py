@@ -2,7 +2,23 @@ from typing import Optional
 
 from fastapi import APIRouter, Request
 
-from app import schemas
+from app.schemas.actions import (
+    AddAppRequest,
+    InitRequest,
+    InitResult,
+    PushRequest,
+    PushResult,
+    SyncRequest,
+)
+from app.schemas.apps import (
+    AppDetail,
+    AppEntry,
+    AppRow,
+    Branch,
+    Commit,
+    GitflowReport,
+    Release,
+)
 from app.api.dependencies import (
     AppsDep,
     GitStateDep,
@@ -15,24 +31,24 @@ router = APIRouter(prefix="/api/apps", tags=["apps"])
 def list_apps(
     request: Request,
     apps: AppsDep,
-) -> list[schemas.AppRow]:
+) -> list[AppRow]:
     """Every app, or only those within the caller's reach when the gate said which."""
     return apps.list(only=getattr(request.state, "allowed_registry_ids", None))
 
 
 @router.post("", status_code=201)
 def add_app(
-    body: schemas.AddAppRequest,
+    body: AddAppRequest,
     apps: AppsDep,
-) -> schemas.AppEntry:
+) -> AppEntry:
     return apps.add(body.url, body.name, body.credentials, body.install)
 
 
 @router.post("/init", status_code=201)
 def init_app(
-    body: schemas.InitRequest,
+    body: InitRequest,
     apps: AppsDep,
-) -> schemas.InitResult:
+) -> InitResult:
     return apps.init(body)
 
 
@@ -40,7 +56,7 @@ def init_app(
 def app_detail(
     id: str,
     apps: AppsDep,
-) -> schemas.AppDetail:
+) -> AppDetail:
     return apps.detail(id)
 
 
@@ -56,8 +72,8 @@ def remove_app(
 def sync_app(
     id: str,
     apps: AppsDep,
-    body: Optional[schemas.SyncRequest] = None,
-) -> schemas.AppEntry:
+    body: Optional[SyncRequest] = None,
+) -> AppEntry:
     return apps.sync(
         id, body.credentials if body else None, reset=bool(body and body.reset)
     )
@@ -66,9 +82,9 @@ def sync_app(
 @router.post("/{id}/push")
 def push_app(
     id: str,
-    body: schemas.PushRequest,
+    body: PushRequest,
     apps: AppsDep,
-) -> schemas.PushResult:
+) -> PushResult:
     return apps.push(id, body)
 
 
@@ -76,7 +92,7 @@ def push_app(
 def app_gitflow(
     id: str,
     state: GitStateDep,
-) -> schemas.GitflowReport:
+) -> GitflowReport:
     return state.gitflow(id)
 
 
@@ -85,7 +101,7 @@ def app_commits(
     id: str,
     state: GitStateDep,
     limit: int = 20,
-) -> list[schemas.Commit]:
+) -> list[Commit]:
     return state.commits(id, limit)
 
 
@@ -101,7 +117,7 @@ def app_tags(
 def app_releases(
     id: str,
     state: GitStateDep,
-) -> list[schemas.Release]:
+) -> list[Release]:
     return state.releases(id)
 
 
@@ -109,5 +125,5 @@ def app_releases(
 def app_branches(
     id: str,
     state: GitStateDep,
-) -> list[schemas.Branch]:
+) -> list[Branch]:
     return state.branches(id)
