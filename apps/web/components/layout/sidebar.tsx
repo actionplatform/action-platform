@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, ArrowLeft, Building2, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Plug, Rocket, Settings, SlidersHorizontal, X } from "lucide-react";
+import { Activity, ArrowLeft, Building2, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Puzzle, Rocket, Settings, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -8,7 +8,7 @@ import { Logo } from "@/components/logo";
 import type { Org } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { OrgSwitcher } from "./org-switcher";
-import { INTEGRATIONS_PAGES, ORGANIZATION_PAGES, pageActive, type SubPage } from "./nav";
+import { ORGANIZATION_PAGES, pageActive, type SubPage } from "./nav";
 import { useScope } from "./scope";
 import { UserMenu } from "./user-menu";
 
@@ -16,7 +16,7 @@ const items: { href: string; label: string; icon: typeof FolderGit2; children?: 
   { href: "/projects", label: "Projects", icon: FolderGit2 },
   { href: "/templates", label: "Templates", icon: LayoutTemplate },
   { href: "/organization", label: "Organization", icon: Building2, children: ORGANIZATION_PAGES },
-  { href: "/integrations", label: "Integrations", icon: Plug, children: INTEGRATIONS_PAGES },
+  { href: "/plugins", label: "Plugins", icon: Puzzle },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

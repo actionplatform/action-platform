@@ -39,15 +39,15 @@ The compose files run migrations in a one-shot `migrate` service the API and the
 
 ## Plugins
 
-The hosted platform ships with the plugins it runs — `apx-aws-lambda` is a dependency of the API image, so the `aws/lambda` deploy target, its overlay and tools are always there. The web has no plugin marketplace and nothing installs at runtime — a plugin joins the platform as a dependency of the image (see [plugins](use_plugins.md)). `GET /api/v1/plugins` lists what the image carries.
+The hosted platform ships with the plugins it runs — `apx-aws-lambda` is a dependency of the API image, so the `aws/lambda` deploy target, its overlay and tools are always there. The web has no plugin marketplace and nothing installs at runtime — a plugin joins the platform as a dependency of the image (see [plugins](use_plugins.md)). **Plugins** in the sidebar lists them: one card per plugin, with its version, and, when the plugin declares options (`Plugin.options` — see [writing a plugin](contribute_plugins.md)), the form right on the card, drawn from that declaration and the values land in `plugin_option` per organization (`org.manage`). A plugin that failed to load shows the error on its card.
 
 ## AWS
 
-Integrations → **Cloud** keeps the url of the deploy proxy installed in the organization's AWS account (`plugin_option` of `aws-lambda`, key `proxy_url`; `org.manage`). **Check** calls the proxy's `/health` and shows its version, organization and account. Every deploy job carries it as `AP_AWS_LAMBDA_PROXY_URL` with `AP_APP` = `org/project/app`, so an app whose `platform.toml` says only `target = "aws/lambda"` deploys through the proxy; `proxy_url` in a repository overrides it. The worker passes every plugin option the same way (`AP_<SLUG>_<KEY>`), so other targets can be configured here too. See the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README for installing the proxy and registering apps.
+Plugins → **AWS Lambda** keeps the url of the deploy proxy installed in the organization's AWS account (`plugin_option` of `aws-lambda`, key `proxy_url`). `action-platform aws-lambda proxy health <url>` checks it from a terminal. Every deploy job carries it as `AP_AWS_LAMBDA_PROXY_URL` with `AP_APP` = `org/project/app`, so an app whose `platform.toml` says only `target = "aws/lambda"` deploys through the proxy; `proxy_url` in a repository overrides it. The worker passes every plugin option the same way (`AP_<SLUG>_<KEY>`), so other targets can be configured here too. See the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README for installing the proxy and registering apps.
 
 ## Git (GitHub, GitLab, Bitbucket)
 
-Integrations → Git → **Connect a code host**.
+Settings → **Git** → **Connect GitHub** (or GitLab, Bitbucket).
 
 **GitHub, in two clicks**: *Create GitHub App* opens GitHub with a pre-filled manifest (permissions: contents, workflows, administration, pull requests, organization members; callback already set); confirm the name and the app's credentials land in the platform. Then *Install the app on GitHub* on the account or organization whose repositories it should manage, and *Connect with GitHub*. Tokens from a GitHub App expire and are refreshed automatically.
 
@@ -131,19 +131,19 @@ Listing teams and people needs the GitHub App permission *Organization › Membe
 
 ## Navigation
 
-The sidebar: **Projects**, **Templates**, **Organization** (Teams, Members, Sessions), **Integrations** (Git, Cloud), **Settings**; on a phone each section shows its pages as tabs. Old paths redirect: `/settings/people` → `/organization/members`, `/settings/people/teams` → `/organization/teams`, `/settings/integrations` → `/integrations/hosts`, `/settings/developers` and `/account` → `/organization/sessions`.
+The sidebar: **Projects**, **Templates**, **Organization** (Teams, Members, Sessions), **Plugins**, **Settings**; on a phone Organization shows its pages as tabs. Old paths redirect: `/settings/people` → `/organization/members`, `/settings/people/teams` → `/organization/teams`, `/settings/integrations`, `/integrations` and `/integrations/hosts` → `/settings`, `/integrations/cloud` → `/plugins`, `/settings/developers` and `/account` → `/organization/sessions`.
 
 ## Organization
 
 **Members**: the people, their roles, invitations and the roles table. **Teams**: groups of members and the projects they look after. **Sessions**: everything signed in as you — API tokens (CLI, MCP servers), browser sessions — and the API base URL, version and docs.
 
-## Integrations
+## Plugins (sidebar)
 
-**Git**: GitHub, GitLab or Bitbucket — connect with OAuth or a token, what each connected account may create with; the GitHub import starts from here too (the OAuth flows come back to `/integrations/hosts`). **Cloud**: the AWS deploy proxy url (see [AWS](#aws)).
+One card per plugin the platform runs, the settings form on the ones that declare options (the AWS deploy proxy url, see [AWS](#aws)).
 
 ## Settings
 
-The organization itself: name, slug, your role, the commit identity and the git-flow rules.
+The organization itself: name, slug, your role, the commit identity, the git-flow rules, and **Git** — GitHub, GitLab and Bitbucket: connect with OAuth or a token, what each connected account may create with; the GitHub import starts from here too. The OAuth flows come back to `/settings`.
 
 ### Commit identity
 
