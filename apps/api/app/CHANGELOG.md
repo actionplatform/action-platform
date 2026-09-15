@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.20.4 — 2026-09-15
+
+### Features
+- **api:** identity tokens carry the caller's scopes
+
 ## v0.20.3 — 2026-09-15
 
 ### Bug Fixes
