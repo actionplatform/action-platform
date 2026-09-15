@@ -9,7 +9,8 @@ from sqlalchemy import select
 from action_platform.api.db.models import (
     TemplateSource,
 )
-from action_platform.api.services.shared.common import new_id, now, slugify
+from action_platform.api.services.shared.clock import now
+from action_platform.api.services.shared.ids import new_id, slugify
 from action_platform.api.services.directory.base import (
     GIT_URL,
     DirectoryBase,

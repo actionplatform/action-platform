@@ -24,13 +24,13 @@ from action_platform.api.services.apps import AppService
 from action_platform.api.services.directory import (
     DirectoryService,
     DirectoryWrites,
-    repo_from_url,
 )
-from action_platform.api.services.github_import import GithubImport
-from action_platform.api.services.imports import ImportService
+from action_platform.api.services.organization_import import OrganizationImport
+from action_platform.api.services.activity import ActivityService
 from action_platform.api.services.jobs import JobQueue
 from action_platform.api.services.workspace.lifecycle import LifecycleService
 from action_platform.core.exception import ActionPlatformError
+from action_platform.api.services.shared.urls import GitUrl
 
 log = logging.getLogger("action_platform.worker")
 
@@ -179,7 +179,9 @@ class Worker:
             if creds is None:
                 raise ActionPlatformError("the host has no credentials any more")
 
-            return GithubImport(writes, payload["organization_id"], get_registry()).run(
+            return OrganizationImport(
+                writes, payload["organization_id"], get_registry()
+            ).run(
                 creds,
                 payload["host_id"],
                 payload["inviter_id"],
@@ -211,6 +213,6 @@ class Worker:
                 db.get(App, payload["app_id"]).source_host_id,
             )
 
-            return ImportService(db).sync_all(
-                payload["app_id"], creds, repo_from_url(url)
+            return ActivityService(db).sync_all(
+                payload["app_id"], creds, GitUrl(url).repo
             )

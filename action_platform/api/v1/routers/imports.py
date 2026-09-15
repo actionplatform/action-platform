@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from action_platform.api.access.caller import Caller
 from action_platform.api.core.deps import get_registry
 from action_platform.api.repositories.registry import Registry
-from action_platform.api.services.github_import import GithubImport, client
+from action_platform.api.services.organization_import import OrganizationImport, client
 from action_platform.api.services.jobs import JobQueue
 from action_platform.api.services.directory import DirectoryWrites
 from action_platform.api.v1.routers.directory import get_caller, get_queue
@@ -163,7 +163,7 @@ def github_organization(
     creds = github_credentials(writes, org, host)
 
     try:
-        return GithubImport(writes, org.id, registry).preview(creds, login)
+        return OrganizationImport(writes, org.id, registry).preview(creds, login)
     except ActionPlatformError as e:
         raise HTTPException(502, str(e)) from e
 

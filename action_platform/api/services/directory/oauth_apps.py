@@ -6,11 +6,8 @@ from typing import Optional
 
 
 from action_platform.api.db.models import OAuthApp as OAuthAppRow
-from action_platform.api.services.shared.common import now
-from action_platform.api.services.shared.credentials import (
-    OAuthApp,
-    oauth_app_for,
-)
+from action_platform.api.services.shared.clock import now
+from action_platform.api.services.shared.credentials import OAuthApp
 from action_platform.api.services.directory.base import (
     PROVIDERS,
     DirectoryBase,
@@ -18,7 +15,7 @@ from action_platform.api.services.directory.base import (
 )
 
 
-class OauthAppsReads(DirectoryBase):
+class OAuthAppsReads(DirectoryBase):
     def oauth_app(self, provider: str) -> Optional[OAuthApp]:
         row = self.db.get(OAuthAppRow, provider)
 
@@ -30,13 +27,13 @@ class OauthAppsReads(DirectoryBase):
                 row.slug,
             )
 
-        return oauth_app_for(provider)
+        return OAuthApp.from_env(provider)
 
     def oauth_apps(self) -> dict[str, Optional[OAuthApp]]:
         return {provider: self.oauth_app(provider) for provider in PROVIDERS}
 
 
-class OauthAppsWrites(OauthAppsReads):
+class OAuthAppsWrites(OAuthAppsReads):
     def save_oauth_app(
         self,
         provider: str,

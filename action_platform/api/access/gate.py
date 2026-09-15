@@ -10,7 +10,7 @@ from action_platform.api.access.rules import DIRECTORY, WORKSPACE_ROOTS, rule_fo
 from action_platform.api.auth.service import AuthService
 from action_platform.api.db.models import App, Organization, Project
 from action_platform.api.services.directory import DirectoryService
-from action_platform.api.services.imports import ImportService
+from action_platform.api.services.activity import ActivityService
 from action_platform.api.services.jobs import JobQueue
 from action_platform.core.exception import ActionPlatformError
 
@@ -297,7 +297,7 @@ class AccessGate:
         with self.state.db.session() as db:
             directory = DirectoryService(db, self.state.sealer)
             creds = directory.credentials_for(organization.id, app.source_host_id)
-            ImportService(db).sync_all(app.id, creds, repo)
+            ActivityService(db).sync_all(app.id, creds, repo)
 
     @staticmethod
     async def _read(receive: Receive) -> bytes:

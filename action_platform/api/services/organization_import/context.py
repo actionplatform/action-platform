@@ -7,8 +7,9 @@ from sqlalchemy import select
 
 from action_platform.api.db.models import App, Project, User
 from action_platform.api.repositories.registry import Registry
-from action_platform.api.services.directory import DirectoryWrites, repo_from_url
+from action_platform.api.services.directory import DirectoryWrites
 from action_platform.core.exception import ActionPlatformError
+from action_platform.api.services.shared.urls import GitUrl
 
 
 @dataclass
@@ -60,7 +61,7 @@ class ImportContext:
             except ActionPlatformError:
                 continue
 
-            repo = repo_from_url(url)
+            repo = GitUrl(url).repo
 
             if repo:
                 known[repo.lower()] = project_name

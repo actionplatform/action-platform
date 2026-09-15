@@ -1,15 +1,24 @@
 """Releases and pull requests as Bitbucket answers them, in the platform's shape."""
 
+import re
 from typing import Any
 
 from action_platform.abc import ImportSource
 from action_platform.api.services.shared.credentials import Credentials
-from action_platform.api.services.shared.http import get_values
-from action_platform.api.services.imports.common import RC, auth, parse_time
+from action_platform.api.services.shared.http import BasicAuth, http
+from action_platform.api.services.shared.clock import parse_utc
+
+RC = re.compile(r"-rc\.")
 
 
-class BitbucketImports(ImportSource):
+class BitbucketActivity(ImportSource):
     kind = "bitbucket"
+
+    def headers(self, creds: Credentials) -> dict[str, str]:
+        if creds.username:
+            return {"authorization": BasicAuth.header(creds.username, creds.token)}
+
+        return {"authorization": f"Bearer {creds.token}"}
 
     def releases(self, creds: Credentials, repo: str) -> list[dict[str, Any]]:
         return [
@@ -25,12 +34,12 @@ class BitbucketImports(ImportSource):
                 "sha": ((r.get("target") or {}).get("hash") or "")[:7] or None,
                 "prerelease": bool(RC.search(r["name"])),
                 "draft": False,
-                "published_at": parse_time((r.get("target") or {}).get("date")),
+                "published_at": parse_utc((r.get("target") or {}).get("date")),
                 "source": "bitbucket",
             }
-            for r in get_values(
+            for r in http.get_values(
                 f"https://api.bitbucket.org/2.0/repositories/{repo}/refs/tags?sort=-target.date&pagelen=100",
-                auth(creds),
+                self.headers(creds),
             )
         ]
 
@@ -50,15 +59,15 @@ class BitbucketImports(ImportSource):
                 if r.get("state") == "OPEN"
                 else "closed",
                 "draft": False,
-                "created_at": parse_time(r["created_on"]),
-                "updated_at": parse_time(r["updated_on"]),
-                "merged_at": parse_time(r["updated_on"])
+                "created_at": parse_utc(r["created_on"]),
+                "updated_at": parse_utc(r["updated_on"]),
+                "merged_at": parse_utc(r["updated_on"])
                 if r.get("state") == "MERGED"
                 else None,
                 "source": "bitbucket",
             }
-            for r in get_values(
+            for r in http.get_values(
                 f"https://api.bitbucket.org/2.0/repositories/{repo}/pullrequests?state=OPEN&state=MERGED&state=DECLINED&sort=-updated_on&pagelen=50",
-                auth(creds),
+                self.headers(creds),
             )
         ]

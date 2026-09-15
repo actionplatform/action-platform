@@ -73,7 +73,7 @@ class SentryTest(ApiCase):
 
 class CatalogIndexTest(ApiCase):
     def test_matrix_prefers_the_published_index(self):
-        from action_platform.api.services import catalog
+        from action_platform.api.services.catalog import service as catalog
         from action_platform.api.services.catalog import published
         from action_platform.settings import settings
 
@@ -146,7 +146,7 @@ class CatalogIndexTest(ApiCase):
         )
 
     def test_matrix_falls_back_to_the_checkout_when_the_index_is_down(self):
-        from action_platform.api.services import catalog
+        from action_platform.api.services.catalog import service as catalog
         from action_platform.api.services.catalog import published
 
         from action_platform.settings import settings

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from action_platform.core.exception import TemplateError
 from action_platform.core.scaffold.detect import detect_language
-from action_platform.core.scaffold.store import TemplateSource, TemplateStore
+from action_platform.core.scaffold.store import LocalTemplateStore, TemplateSource
 from action_platform.logging import logger
 from action_platform.settings import settings
 
@@ -295,7 +295,7 @@ def plain_matrix(source: TemplateSource, repo: Path) -> Matrix:
 
 
 def load_source(source: TemplateSource, update: bool = False) -> tuple[Path, Matrix]:
-    repo = TemplateStore().checkout(source, update=update)
+    repo = LocalTemplateStore().checkout(source, update=update)
     index = repo / "index.json"
 
     if not index.exists():
@@ -305,11 +305,11 @@ def load_source(source: TemplateSource, update: bool = False) -> tuple[Path, Mat
 
 
 def ensure_repo(update: bool = False) -> Path:
-    return TemplateStore().official(update=update)
+    return LocalTemplateStore().official(update=update)
 
 
 def ensure_source(source: TemplateSource, update: bool = False) -> Path:
-    return TemplateStore().checkout(source, update=update)
+    return LocalTemplateStore().checkout(source, update=update)
 
 
 def load_matrix(update: bool = False, source: str | None = None) -> tuple[Path, Matrix]:

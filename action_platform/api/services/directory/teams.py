@@ -12,7 +12,8 @@ from action_platform.api.db.models import (
     TeamMember,
     User,
 )
-from action_platform.api.services.shared.common import new_id, now, slugify
+from action_platform.api.services.shared.clock import now
+from action_platform.api.services.shared.ids import new_id, slugify
 from action_platform.api.services.directory.base import (
     DirectoryBase,
     DirectoryError,

@@ -1,68 +1,27 @@
-"""Code hosts: OAuth connection, GitHub App manifests, and what a connected account may do."""
+"""Code hosts: one HostProvider per kind (OAuth, API bases, access checks), the signed OAuth state, and the registry that picks one by kind."""
 
-from typing import Any, Optional
-
-from action_platform.api.services.shared.credentials import Credentials
-from action_platform.api.services.hosts.bitbucket import (
-    _bitbucket_access,
-    first_workspace,
-)
+from action_platform.api.services.hosts.access import AccessReport, Owner, Probe
+from action_platform.api.services.hosts.bitbucket import BitbucketProvider
 from action_platform.api.services.hosts.github import (
-    _github_access,
-    convert_github_manifest,
-    github_manifest,
-    installation_owner,
+    MANIFEST_PERMISSIONS,
+    GithubProvider,
 )
-from action_platform.api.services.hosts.gitlab import _gitlab_access
-from action_platform.api.services.hosts.oauth import (
-    STATE_TTL,
-    OAuthState,
-    authorize_url,
-    callback_url,
-    exchange_code,
-    identity,
-)
-from action_platform.api.services.hosts.providers import (
-    GITHUB_MANIFEST_PERMISSIONS,
-    PROVIDER_INFO,
-    api_base_of,
-    base_of,
-    now,
-    stored_base_url,
-)
-
-
-def host_access(creds: Credentials, github_app_slug: Optional[str]) -> dict[str, Any]:
-    """What the connected account may create with: accounts, installations or workspaces, with what is wrong about each."""
-
-    if creds.kind == "github":
-        return _github_access(creds, github_app_slug)
-
-    if creds.kind == "gitlab":
-        return _gitlab_access(creds)
-
-    if creds.kind == "bitbucket":
-        return _bitbucket_access(creds)
-
-    return {"ok": False, "error": f"no access check for {creds.kind}"}
-
+from action_platform.api.services.hosts.gitlab import GitlabProvider
+from action_platform.api.services.hosts.registry import PROVIDERS, HostProviders
+from action_platform.api.services.hosts.state import STATE_TTL, OAuthState
+from action_platform.api.services.hosts.tokens import TokenResponse
 
 __all__ = [
-    "GITHUB_MANIFEST_PERMISSIONS",
-    "PROVIDER_INFO",
+    "MANIFEST_PERMISSIONS",
+    "PROVIDERS",
     "STATE_TTL",
+    "AccessReport",
+    "BitbucketProvider",
+    "GithubProvider",
+    "GitlabProvider",
+    "HostProviders",
     "OAuthState",
-    "api_base_of",
-    "authorize_url",
-    "base_of",
-    "callback_url",
-    "convert_github_manifest",
-    "exchange_code",
-    "first_workspace",
-    "github_manifest",
-    "host_access",
-    "identity",
-    "installation_owner",
-    "now",
-    "stored_base_url",
+    "Owner",
+    "Probe",
+    "TokenResponse",
 ]

@@ -4,12 +4,18 @@ from typing import Any
 
 from action_platform.abc import ImportSource
 from action_platform.api.services.shared.credentials import Credentials
-from action_platform.api.services.shared.http import get_pages
-from action_platform.api.services.imports.common import auth, parse_time
+from action_platform.api.services.shared.http import http
+from action_platform.api.services.shared.clock import parse_utc
 
 
-class GithubImports(ImportSource):
+class GithubActivity(ImportSource):
     kind = "github"
+
+    def headers(self, creds: Credentials) -> dict[str, str]:
+        return {
+            "authorization": f"Bearer {creds.token}",
+            "x-github-api-version": "2022-11-28",
+        }
 
     def releases(self, creds: Credentials, repo: str) -> list[dict[str, Any]]:
         api = (creds.base_url or "").rstrip("/") or "https://api.github.com"
@@ -24,12 +30,10 @@ class GithubImports(ImportSource):
                 "sha": None,
                 "prerelease": bool(r.get("prerelease")),
                 "draft": bool(r.get("draft")),
-                "published_at": parse_time(
-                    r.get("published_at") or r.get("created_at")
-                ),
+                "published_at": parse_utc(r.get("published_at") or r.get("created_at")),
                 "source": "github",
             }
-            for r in get_pages(f"{api}/repos/{repo}/releases", auth(creds))
+            for r in http.get_pages(f"{api}/repos/{repo}/releases", self.headers(creds))
         ]
 
     def pull_requests(self, creds: Credentials, repo: str) -> list[dict[str, Any]]:
@@ -49,14 +53,14 @@ class GithubImports(ImportSource):
                 if r.get("state") == "open"
                 else "closed",
                 "draft": bool(r.get("draft")),
-                "created_at": parse_time(r["created_at"]),
-                "updated_at": parse_time(r["updated_at"]),
-                "merged_at": parse_time(r.get("merged_at")),
+                "created_at": parse_utc(r["created_at"]),
+                "updated_at": parse_utc(r["updated_at"]),
+                "merged_at": parse_utc(r.get("merged_at")),
                 "source": "github",
             }
-            for r in get_pages(
+            for r in http.get_pages(
                 f"{api}/repos/{repo}/pulls?state=all&sort=updated&direction=desc",
-                auth(creds),
+                self.headers(creds),
                 10,
             )
         ]

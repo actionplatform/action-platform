@@ -11,8 +11,8 @@ from fastapi import HTTPException
 from action_platform.api.core import credentials as auth
 from action_platform.api.repositories.registry import Entry, MissingManifest
 from action_platform.api.schemas import InstallSpec, SourceCredentials
-from action_platform.api.services.workspace.manifest import read_manifest
-from action_platform.api.services.workspace import Workspaces
+from action_platform.api.services.workspace.manifest import AppManifest
+from action_platform.api.services.workspace.checkout import Workspaces
 from action_platform.core.flow.repository import Repository
 from action_platform.core.scaffold.install import InstallError, install
 from action_platform.settings import settings
@@ -20,7 +20,7 @@ from action_platform.settings import settings
 from action_platform.api.services.apps.base import AppsBase
 
 
-class Inventory(AppsBase):
+class AppInventory(AppsBase):
     def workspace(self, id: str) -> tuple[Entry, Path]:
         return Workspaces(self.registry).checkout(id)
 
@@ -35,7 +35,7 @@ class Inventory(AppsBase):
             row["branch"] = entry.checked_out
 
             if root.is_dir() and (root / settings.CONFIG_FILE).exists():
-                info = read_manifest(root)
+                info = AppManifest(root).as_dict()
                 row["language"] = info["project"].get("language")
                 row["type"] = info["project"].get("type")
                 row["last_version"] = info["last_version"]
@@ -105,7 +105,7 @@ class Inventory(AppsBase):
 
     def detail(self, id: str) -> dict:
         entry, root = self.workspace(id)
-        info = read_manifest(root)
+        info = AppManifest(root).as_dict()
         info["id"] = id
         info["url"] = entry.url
         info["default_branch"] = entry.default_branch

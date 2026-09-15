@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from action_platform.api.core import credentials as auth
 from action_platform.api.repositories.registry import Registry
 from action_platform.api.schemas import CommitRequest, SourceSpec
-from action_platform.api.services.catalog import resolve_repo
+from action_platform.api.services.catalog import TemplateRepos
 from action_platform.api.services.workspace import Workspaces
 from action_platform.core.config import Config
 from action_platform.core.flow import gitflow
@@ -52,7 +52,7 @@ class ConfigurationService:
         return {"content": path.read_text()}
 
     def set_cloud(self, id: str, target: str, source: SourceSpec | None = None) -> dict:
-        repo, matrix = resolve_repo(source)
+        repo, matrix = TemplateRepos.resolve(source)
 
         root = self._root(id)
 
@@ -68,7 +68,7 @@ class ConfigurationService:
     def add_service(
         self, id: str, name: str, provider: str | None, source: SourceSpec | None = None
     ) -> dict:
-        repo, matrix = resolve_repo(source)
+        repo, matrix = TemplateRepos.resolve(source)
         service = next((s for s in matrix.services if s.name == name), None)
 
         if service is None:

@@ -12,7 +12,7 @@ from action_platform.api.db.models import (
     OrganizationSetting,
     User,
 )
-from action_platform.api.services.shared.common import now
+from action_platform.api.services.shared.clock import now
 from action_platform.api.services.directory.base import (
     DEFAULT_GIT_AUTHOR,
     EMAIL,

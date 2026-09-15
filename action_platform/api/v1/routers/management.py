@@ -10,16 +10,15 @@ from action_platform.api.core.deps import get_app_service, get_db
 from action_platform.api.db.models import Organization, PullRequest, Release
 from action_platform.api.schemas import SourceCredentials
 from action_platform.api.schemas import management as schemas
-from action_platform.api.services import hosts as oauth
+from action_platform.api.services.hosts import PROVIDERS, OAuthState
 from action_platform.api.services.apps import AppService
 from action_platform.api.services.directory import (
     DirectoryWrites,
-    kind_of_url,
-    repo_from_url,
 )
-from action_platform.api.services.imports import ImportService
+from action_platform.api.services.activity import ActivityService
 from action_platform.api.v1.routers.directory import get_caller, required_org
 from action_platform.core.exception import ActionPlatformError
+from action_platform.api.services.shared.urls import GitUrl
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -179,7 +178,7 @@ def add_app(
         raise HTTPException(400, "url is required")
 
     host_id = writes.host_id_for_url(org.id, url)
-    kind = kind_of_url(url)
+    kind = GitUrl(url).kind
 
     if kind and host_id is None:
         raise HTTPException(
@@ -190,8 +189,8 @@ def add_app(
     credentials = credentials_for(writes, org, None, {"url": url})
     entry = apps.add(url, None, SourceCredentials(**credentials), body.install)
     app = writes.create_app(project.id, entry["id"], entry["name"], host_id)
-    ImportService(writes.db).sync_all(
-        app.id, writes.credentials_for(org.id, host_id), repo_from_url(url)
+    ActivityService(writes.db).sync_all(
+        app.id, writes.credentials_for(org.id, host_id), GitUrl(url).repo
     )
 
     return schemas.AppAdded(
@@ -242,8 +241,8 @@ def init_app(
     )
 
     if result.get("pushed") and creds is not None:
-        ImportService(writes.db).sync_all(
-            app.id, creds, repo_from_url(result.get("url", ""))
+        ActivityService(writes.db).sync_all(
+            app.id, creds, GitUrl(result.get("url", "")).repo
         )
 
     return schemas.AppInitialized(
@@ -337,8 +336,8 @@ def sync_imports(
     project = project_of(writes, org, project_id)
     app = app_of(writes, caller, project, app_id)
     detail = apps.detail(app.registry_id)
-    repo = detail.get("source_host", {}).get("repo") or repo_from_url(
-        detail.get("url", "")
+    repo = (
+        detail.get("source_host", {}).get("repo") or GitUrl(detail.get("url", "")).repo
     )
 
     if app.source_host_id is None:
@@ -347,7 +346,7 @@ def sync_imports(
         if host_id:
             writes.set_app_host(app, host_id)
 
-    errors = ImportService(writes.db).sync_all(
+    errors = ActivityService(writes.db).sync_all(
         app.id, writes.credentials_for(org.id, app.source_host_id), repo
     )
 
@@ -555,7 +554,9 @@ def host_access(
     github = writes.oauth_app("github")
 
     try:
-        access = oauth.host_access(creds, github.slug if github else None)
+        access = PROVIDERS.get(creds.kind).access(
+            creds, github.slug if github else None
+        )
     except ActionPlatformError as e:
         return {"ok": False, "error": str(e)}
 
@@ -579,17 +580,17 @@ def oauth_apps(
     rows = []
 
     for provider, app in writes.oauth_apps().items():
-        info = oauth.PROVIDER_INFO[provider]
+        host = PROVIDERS.get(provider)
         rows.append(
             schemas.OAuthAppRow(
                 provider=provider,
-                label=info["label"],
+                label=host.label,
                 configured=app is not None,
                 client_id=app.client_id if app else None,
                 base_url=app.base_url if app else None,
                 slug=app.slug if app else None,
-                scopes=info["scopes"],
-                callback_hint=info["callback_hint"],
+                scopes=host.scopes,
+                callback_hint=host.callback_hint,
             )
         )
 
@@ -621,8 +622,8 @@ def clear_oauth_app(
     writes.clear_oauth_app(provider)
 
 
-def state_signer(request: Request) -> oauth.OAuthState:
-    return oauth.OAuthState(request.app.state.secrets)
+def state_signer(request: Request) -> OAuthState:
+    return OAuthState(request.app.state.secrets)
 
 
 @router.post("/oauth/{provider}/start")
@@ -634,7 +635,7 @@ def oauth_start(
     caller: Caller = Depends(get_caller),
     writes: DirectoryWrites = Depends(get_writes),
 ) -> schemas.OAuthStarted:
-    if provider not in oauth.PROVIDER_INFO:
+    if provider not in PROVIDERS.by_kind:
         raise HTTPException(404, "unknown provider")
 
     org = org_of(caller, x_organization)
@@ -643,7 +644,7 @@ def oauth_start(
 
     if app is None:
         raise HTTPException(
-            400, f"{oauth.PROVIDER_INFO[provider]['label']} OAuth app is not configured"
+            400, f"{PROVIDERS.get(provider).label} OAuth app is not configured"
         )
 
     state = state_signer(request).sign(
@@ -651,7 +652,7 @@ def oauth_start(
     )
 
     return schemas.OAuthStarted(
-        url=oauth.authorize_url(provider, app, body.origin.rstrip("/"), state)
+        url=PROVIDERS.get(provider).authorize_url(app, body.origin.rstrip("/"), state)
     )
 
 
@@ -663,7 +664,7 @@ def oauth_callback(
     caller: Caller = Depends(get_caller),
     writes: DirectoryWrites = Depends(get_writes),
 ) -> schemas.OAuthFinished:
-    if provider not in oauth.PROVIDER_INFO:
+    if provider not in PROVIDERS.by_kind:
         raise HTTPException(404, "unknown provider")
 
     state = state_signer(request).verify(body.state, caller.user.id)
@@ -703,19 +704,20 @@ def oauth_callback(
         return schemas.OAuthFinished(
             return_to=return_to,
             query={
-                "oauth_error": f"{oauth.PROVIDER_INFO[provider]['label']} OAuth app is not configured"
+                "oauth_error": f"{PROVIDERS.get(provider).label} OAuth app is not configured"
             },
         )
 
     try:
-        access, refresh, expires_at = oauth.exchange_code(
-            provider, app, body.origin.rstrip("/"), body.code
+        host = PROVIDERS.get(provider)
+        access, refresh, expires_at = host.exchange_code(
+            app, body.origin.rstrip("/"), body.code
         )
-        login, _ = oauth.identity(provider, app, access)
+        login, _ = host.identity(app, access)
         owner = (
-            oauth.installation_owner(access, body.installation_id)
+            PROVIDERS.github.installation_owner(access, body.installation_id)
             if body.installation_id
-            else oauth.first_workspace(access)
+            else PROVIDERS.bitbucket.first_workspace(access)
             if provider == "bitbucket"
             else None
         )
@@ -726,7 +728,7 @@ def oauth_callback(
             access,
             refresh,
             expires_at,
-            oauth.stored_base_url(provider, app),
+            host.stored_base_url(app),
             owner,
         )
     except ActionPlatformError as e:
@@ -798,7 +800,9 @@ def github_manifest(
     return schemas.Manifest(
         target=f"{target}?state={state}",
         state=state,
-        manifest=oauth.github_manifest(body.origin.rstrip("/"), body.host, return_to),
+        manifest=PROVIDERS.github.manifest(
+            body.origin.rstrip("/"), body.host, return_to
+        ),
     )
 
 
@@ -827,7 +831,7 @@ def github_manifest_callback(
         )
 
     try:
-        app = oauth.convert_github_manifest(body.code)
+        app = PROVIDERS.github.convert_manifest(body.code)
     except ActionPlatformError as e:
         return schemas.OAuthFinished(
             return_to=state["returnTo"], query={"oauth_error": str(e)}
