@@ -1725,6 +1725,7 @@ export interface components {
         Branch: {
             name: string;
             date: string;
+            sha?: string | null;
             kind?: string | null;
             protected: boolean;
             stable: boolean;
@@ -2411,6 +2412,9 @@ export interface components {
             dry_run: boolean;
             branch?: string | null;
             component?: string | null;
+            name?: string | null;
+            notes?: string | null;
+            latest: boolean;
             credentials?: components["schemas"]["SourceCredentials"] | null;
         };
         ReleaseRow: {

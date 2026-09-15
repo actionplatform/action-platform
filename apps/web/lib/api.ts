@@ -116,8 +116,8 @@ export const api = {
       unwrap(await client.GET("/api/apps/{id}/branches", { params: { path: { id } } })),
     nextVersion: async (id: string, level: string, branch: string | null = null) =>
       unwrap(await client.GET("/api/apps/{id}/next-version", { params: { path: { id }, query: { level, branch: branch ?? undefined } } })),
-    release: async (id: string, level: string, dry_run: boolean, branch: string | null = null) =>
-      unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run, branch } })),
+    release: async (id: string, level: string, dry_run: boolean, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean } = {}) =>
+      unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run, branch, latest: true, ...extra } })),
     deploy: async (id: string, stage: string | null, dry_run: boolean) =>
       unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run } })),
     deployAsync: async (id: string, stage: string | null, dry_run: boolean, version: string | null = null) =>

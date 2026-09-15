@@ -78,10 +78,12 @@ export async function previewRelease(registryId: string, level: string, branch: 
   }
 }
 
-export async function runRelease(projectId: string, _appId: string, registryId: string, level: string, branch: string | null = null): Promise<Result<ReleasePreview>> {
+export type ReleaseExtra = { name?: string | null; notes?: string | null; latest?: boolean };
+
+export async function runRelease(projectId: string, _appId: string, registryId: string, level: string, branch: string | null = null, extra: ReleaseExtra = {}): Promise<Result<ReleasePreview>> {
   await requireOrg();
   try {
-    const data = await api.apps.release(registryId, level, false, branch);
+    const data = await api.apps.release(registryId, level, false, branch, extra);
     refresh(projectId);
     return { ok: true, data };
   } catch (e) {
