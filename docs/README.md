@@ -8,9 +8,9 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 |---|---|
 | install it and ship a first project | [Getting started](start_getting_started.md) |
 | run the platform for my team | [Self-hosting](start_self_hosting.md) |
-| know what a screen, command or tool does | [Web](use_web.md) · [CLI](use_cli.md) · [MCP](use_mcp.md) · [API](use_api.md) |
+| know what a screen, command or tool does | [Web](use_web.md) · [CLI](use_cli.md) · [MCP](use_mcp.md) · [API](use_api.md) · [Plugins](use_plugins.md) |
 | understand who may do what | [Access control](concept_access_control.md) |
-| change or extend the code | [Architecture](contribute_architecture.md) · [Development](contribute_development.md) |
+| change or extend the code | [Architecture](contribute_architecture.md) · [Development](contribute_development.md) · [Writing a plugin](contribute_plugins.md) |
 
 ## All guides
 
@@ -28,6 +28,7 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 | [Web](use_web.md) | organizations › teams › projects › apps, setup wizard, source hosts, creating apps, releases, settings, connected apps |
 | [CLI](use_cli.md) | every command, its flags and environment |
 | [MCP](use_mcp.md) | tools, prompts and skills for AI clients — locally or against a hosted platform |
+| [Plugins](use_plugins.md) | install, enable, disable; what a plugin can add or replace |
 | [API](use_api.md) | the JSON API behind the web app: routes, credentials contract, trust, errors |
 
 **Concept** — the model, one term per guide
