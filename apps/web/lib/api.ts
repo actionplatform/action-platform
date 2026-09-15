@@ -71,6 +71,7 @@ export function unwrap<T>(res: { data?: T; error?: unknown; response: Response }
 export const api = {
   version: async () => unwrap(await client.GET("/api/version")),
   matrix: async () => unwrap(await client.GET("/api/matrix")),
+  plugins: async () => unwrap(await client.GET("/api/plugins")),
   gitflowRules: async () => unwrap(await client.GET("/api/gitflow/rules")),
   apps: {
     list: async () => unwrap(await client.GET("/api/apps")),

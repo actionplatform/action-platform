@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderGit2, LayoutTemplate, Settings } from "lucide-react";
+import { FolderGit2, LayoutTemplate, Puzzle, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const items = [
   { href: "/projects", label: "Projects", icon: FolderGit2 },
   { href: "/templates", label: "Templates", icon: LayoutTemplate },
+  { href: "/plugins", label: "Plugins", icon: Puzzle },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -15,7 +16,7 @@ export function BottomNav() {
   const pathname = usePathname();
   return (
     <nav aria-label="Main" className="md:hidden fixed inset-x-0 bottom-0 z-30 border-t border-border bg-sidebar pb-[env(safe-area-inset-bottom)]">
-      <ul className="grid h-[76px] grid-cols-3">
+      <ul className="grid h-[76px] grid-cols-4">
         {items.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
