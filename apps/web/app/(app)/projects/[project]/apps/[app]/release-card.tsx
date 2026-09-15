@@ -1,26 +1,47 @@
 "use client";
 
-import { GitBranch, Rocket } from "lucide-react";
+import { ArrowRight, FileText, GitBranch, Rocket, ShieldCheck } from "lucide-react";
 import { call } from "@/lib/call";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CheckIndicator } from "@/components/ui/check-indicator";
+import { Hint } from "@/components/ui/hint";
+import { Input, Textarea } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import type { ReleasePreview } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { nextVersion, previewRelease, runRelease } from "../actions";
+import type { AppView } from "./model";
+import { RunAlert, summarize } from "./run-alert";
 
 type Increment = "patch" | "minor" | "major";
-import type { AppView } from "./model";
 
 const LEVELS: { id: Increment; label: string }[] = [
   { id: "patch", label: "Patch" },
   { id: "minor", label: "Minor" },
   { id: "major", label: "Major" },
 ];
+
+export function bump(current: string, level: Increment): string {
+  const m = current.match(/^(\d+)\.(\d+)\.(\d+)/);
+  if (!m) return current;
+  const [major, minor, patch] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (level === "major") return `${major + 1}.0.0`;
+  if (level === "minor") return `${major}.${minor + 1}.0`;
+  return `${major}.${minor}.${patch + 1}`;
+}
+
+export function withNotes(entry: string, notes: string): string {
+  if (!notes.trim()) return entry;
+  const lines = entry.split("\n");
+  const head = lines.findIndex((l) => l.startsWith("#"));
+  if (head < 0) return `${notes.trim()}\n\n${entry}`;
+  return [...lines.slice(0, head + 1), "", notes.trim(), ...lines.slice(head + 1)].join("\n");
+}
 
 export function ReleaseCard({ view }: { view: AppView }) {
   const router = useRouter();
@@ -31,24 +52,35 @@ export function ReleaseCard({ view }: { view: AppView }) {
   const [result, setResult] = useState<ReleasePreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const [creating, setCreating] = useState(false);
 
   const [branch, setBranch] = useState(view.branch);
   const branches = view.branches.map((b) => b.name);
   const options = branches.includes(view.branch) ? branches : [view.branch, ...branches];
   const switching = branch !== view.branch;
+  const selected = view.branches.find((b) => b.name === branch);
+  const branchMissing = switching && !branches.includes(branch);
 
   const current = view.version ?? "0.0.0";
   const [computed, setComputed] = useState<{ next: string; prerelease: boolean } | null>(null);
-  const stable = computed ? !computed.prerelease : true;
+  const stable = computed ? !computed.prerelease : (view.stableBranches.includes(branch));
   useEffect(() => {
     let live = true;
     setComputed(null);
     nextVersion(view.registryId, level, switching ? branch : null).then((r) => { if (live && r.ok) setComputed({ next: r.data.next, prerelease: r.data.prerelease }); });
     return () => { live = false; };
   }, [view.registryId, view.version, level, branch, switching]);
-  const next = preview && !preview.dry_run ? preview.next : computed?.next ?? "…";
-  const canRelease = view.can["app.release"] && view.workingTree === "clean" && (switching || view.health.ok) && !!view.repositoryUrl;
-  const blocker = !view.can["app.release"] ? "Your role cannot create releases." : !view.repositoryUrl ? "This app has no remote." : view.workingTree !== "clean" ? (switching ? "Commit or discard the pending changes before switching branches." : "Commit or discard the pending changes first.") : !switching && !view.health.ok ? "Fix the branch policy problems first." : null;
+  const next = computed?.next ?? bump(current, level);
+  const tagExists = view.tags.includes(`v${next}`);
+
+  const [name, setName] = useState(`Release ${next}`);
+  const [nameTouched, setNameTouched] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [latest, setLatest] = useState(true);
+  useEffect(() => { if (!nameTouched) setName(`Release ${next}`); }, [next, nameTouched]);
+
+  const canRelease = view.can["app.release"] && view.workingTree === "clean" && (switching || view.health.ok) && !!view.repositoryUrl && !tagExists && !branchMissing;
+  const blocker = !view.can["app.release"] ? "Your role cannot create releases." : !view.repositoryUrl ? "This app has no remote." : branchMissing ? `Branch ${branch} is not on the remote.` : tagExists ? `Tag v${next} already exists.` : view.workingTree !== "clean" ? (switching ? "Commit or discard the pending changes before switching branches." : "Commit or discard the pending changes first.") : !switching && !view.health.ok ? "Fix the branch policy problems first." : null;
 
   const loadPreview = () =>
     start(async () => {
@@ -57,30 +89,39 @@ export function ReleaseCard({ view }: { view: AppView }) {
       if (r.ok) { setPreview(r.data); setShowPreview(true); } else setError(r.error);
     });
 
-  const create = () =>
+  const create = () => {
+    setCreating(true);
     start(async () => {
       setError(null);
-      const r = await call(() => runRelease(view.projectId, view.appId, view.registryId, level, switching ? branch : null), (error) => ({ ok: false as const, error }), "The release may have been cut anyway: check the tags before trying again.");
+      const r = await call(() => runRelease(view.projectId, view.appId, view.registryId, level, switching ? branch : null, { name: name.trim() || null, notes: notes.trim() || null, latest }), (error) => ({ ok: false as const, error }), "The release may have been cut anyway: check the tags before trying again.");
       setConfirm(false);
-      if (r.ok) { setResult(r.data); setPreview(null); router.refresh(); } else setError(r.error);
+      setCreating(false);
+      if (r.ok) { setResult(r.data); setPreview(null); setNotes(""); setNameTouched(false); router.refresh(); } else setError(r.error);
     });
+  };
 
   return (
     <Panel>
-      <PanelHeader title="Release" aside={<Badge tone={stable ? "ok" : "neutral"}>{stable ? "Stable" : "Pre-release"}</Badge>} />
+      <PanelHeader title="Create release" aside={<Hint text={stable ? "Stable version, published as the latest release." : `Pre-release (rc). Stable versions are cut from ${view.stableBranches[0] ?? "main"}.`}><Badge tone={stable ? "ok" : "neutral"}>{stable ? "Stable" : "Pre-release"}</Badge></Hint>} />
       <PanelBody className="space-y-5">
         <div className="space-y-2">
-          <div className="text-xs text-secondary">Branch</div>
+          <div className="text-xs text-secondary">Release branch</div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Select size="lg" mono className="sm:w-64" icon={<GitBranch className="size-4" strokeWidth={1.75} />} value={branch} onChange={(v) => { setBranch(v); setPreview(null); setResult(null); }} options={options.map((b) => ({ value: b, label: b, hint: view.stableBranches.includes(b) ? "stable" : "rc" }))} />
-            <div className="text-[13px] text-secondary">{stable ? "Stable version, published as the latest release." : `Pre-release (rc). Stable versions are cut from ${view.stableBranches[0] ?? "main"}.`}{switching && <> The release is cut from <span className="font-mono text-foreground">{branch}</span>.</>}</div>
+            <div className="flex items-start gap-2 text-[13px]">
+              <ShieldCheck className={cn("mt-0.5 size-4 shrink-0", selected?.protected ? "text-status-ok" : "text-muted-foreground")} strokeWidth={1.75} />
+              <div>
+                <div className="font-medium">{selected?.protected ? "Protected branch" : selected?.kind ? `${selected.kind} branch` : "Branch"}</div>
+                <div className="text-secondary">Releases will be created from this branch.</div>
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs text-secondary">Increment</div>
-          <div className="flex flex-wrap items-center gap-4">
-            <div role="radiogroup" aria-label="Version increment" className="inline-flex h-10 overflow-hidden rounded-[7px] border border-border">
+          <div className="text-xs text-secondary">Version increment</div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div role="radiogroup" aria-label="Version increment" className="grid h-10 grid-cols-3 overflow-hidden rounded-[7px] border border-border sm:inline-flex">
               {LEVELS.map((l) => (
                 <button
                   key={l.id}
@@ -94,18 +135,37 @@ export function ReleaseCard({ view }: { view: AppView }) {
                 </button>
               ))}
             </div>
-            <div className="font-mono text-[22px] font-semibold leading-7"><span className="text-secondary">{current}</span> <span className="text-muted-foreground">→</span> {next}</div>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:flex sm:gap-4">
+              <div className="text-center sm:text-left"><div className="text-xs text-secondary">Current</div><div className="font-mono text-lg text-secondary">{current}</div></div>
+              <ArrowRight className="size-4 text-muted-foreground" strokeWidth={1.75} />
+              <div className="text-center sm:text-left"><div className="text-xs text-secondary">Next</div><div className="font-mono text-[22px] font-semibold leading-7">{next}</div></div>
+            </div>
           </div>
         </div>
 
-        {result && !result.dry_run && (
-          <div className="rounded-md border border-border-subtle bg-background px-3 py-2 text-sm">Released <span className="font-mono">{result.next}</span>.</div>
-        )}
-        {error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <label className="block space-y-2">
+            <span className="block text-xs text-secondary">Release name</span>
+            <Input value={name} onChange={(e) => { setName(e.target.value); setNameTouched(true); }} onBlur={() => { if (!name.trim()) { setNameTouched(false); setName(`Release ${next}`); } }} disabled={!view.can["app.release"]} />
+          </label>
+          <label className="flex cursor-pointer items-start gap-3 md:pt-6">
+            <input type="checkbox" className="sr-only" checked={latest} onChange={(e) => setLatest(e.target.checked)} disabled={!stable} />
+            <CheckIndicator selected={latest && stable} className="mt-0.5 rounded-[5px]" />
+            <span className="text-sm"><span className="font-medium">Mark as latest release</span><span className="block text-[13px] text-secondary">{stable ? `This release will be marked as the latest in ${view.sourceKind === "github" ? "GitHub" : "the code host"}.` : "Pre-releases are never marked as latest."}</span></span>
+          </label>
+        </div>
+
+        <label className="block space-y-2">
+          <span className="flex items-center gap-1.5 text-xs text-secondary">Release notes <span className="text-muted-foreground">(optional)</span> <Hint text="Markdown. Goes above the generated commit list, in CHANGELOG.md and on the code host's release." /></span>
+          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Add notes or generate from commits…" rows={3} className="font-mono text-[13px]" disabled={!view.can["app.release"]} />
+        </label>
+
+        {result && !result.dry_run && <RunAlert tone="success" title={`Released ${result.next}`} summary={`Tag v${result.next} pushed and published from ${result.branch}.`} />}
+        {error && <RunAlert tone="danger" title="Release failed" summary={summarize(error)} log={error} />}
 
         <div className="flex flex-col gap-2 border-t border-border-subtle pt-4 sm:flex-row sm:items-center">
-          <Button disabled={pending || !canRelease} onClick={() => setConfirm(true)}><Rocket className="size-4" strokeWidth={1.75} /> Create {next}</Button>
-          <Button variant="outline" disabled={pending || !view.repositoryUrl || !view.can["app.release"]} onClick={loadPreview}>{pending && !confirm ? "Loading…" : "Preview changelog"}</Button>
+          <Button className="w-full sm:w-auto" disabled={pending || creating || !canRelease} onClick={() => setConfirm(true)}>{creating ? <span className="size-3.5 animate-spin rounded-full border-2 border-primary-foreground/40 border-t-primary-foreground" /> : <Rocket className="size-4" strokeWidth={1.75} />} {creating ? "Creating release…" : `Create release ${next}`}</Button>
+          <Button className="w-full sm:w-auto" variant="outline" disabled={pending || creating || !view.repositoryUrl || !view.can["app.release"]} onClick={loadPreview}><FileText className="size-4" strokeWidth={1.75} /> {pending && !confirm && !creating ? "Loading…" : "Preview changelog"}</Button>
           {blocker && !error && <div className="text-[13px] text-muted-foreground sm:ml-auto">{blocker}</div>}
         </div>
       </PanelBody>
@@ -118,7 +178,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
             </dl>
             <div>
               <div className="mb-1 text-xs text-secondary">Changelog</div>
-              <pre className="max-h-72 overflow-auto rounded-md border border-border bg-background p-3 font-mono text-xs whitespace-pre-wrap">{preview.changelog || "No conventional commits since the last tag."}</pre>
+              <pre className="max-h-72 overflow-auto rounded-md border border-border bg-background p-3 font-mono text-xs whitespace-pre-wrap">{withNotes(preview.changelog || "No conventional commits since the last tag.", notes)}</pre>
             </div>
             {blocker && <div className="rounded-md border border-foreground px-3 py-2">{blocker}</div>}
           </div>
@@ -128,19 +188,23 @@ export function ReleaseCard({ view }: { view: AppView }) {
       <ConfirmDialog
         open={confirm}
         onClose={() => setConfirm(false)}
-        title={`Create release ${next}?`}
-        confirmLabel={`Create ${next}`}
-        pending={pending}
+        title={level === "major" ? `Create major release ${next}?` : `Create release ${next}?`}
+        confirmLabel={creating ? "Creating…" : `Create ${next}`}
+        pending={pending || creating}
         onConfirm={create}
+        danger={level === "major"}
       >
+        {level === "major" && <div className="mb-4 rounded-md border border-border border-l-2 border-l-status-warn px-3 py-2 text-sm">A major version signals breaking changes. <span className="text-secondary">{current} → {next} cannot be undone once published.</span></div>}
         <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
           <Item k="Repository" v={view.repository ?? "—"} />
           <Item k="Branch" v={branch} />
-          <Item k="Kind" v={stable ? "stable" : "pre-release (rc)"} />
+          <Item k="Name" v={name.trim() || `Release ${next}`} />
           <Item k="Tag" v={`v${next}`} />
+          <Item k="Kind" v={stable ? "stable" : "pre-release (rc)"} />
+          <Item k="Latest" v={latest && stable ? "yes" : "no"} />
         </dl>
         <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-secondary">
-          <li>Bump LAST_VERSION and prepend CHANGELOG.md</li>
+          <li>Bump LAST_VERSION and prepend CHANGELOG.md{notes.trim() ? " with your notes" : ""}</li>
           <li>Commit <span className="font-mono">chore(release): {next}</span> and tag it</li>
           <li>Push and publish the release on {view.sourceKind === "github" ? "GitHub" : "the source host"}</li>
         </ul>
@@ -151,9 +215,9 @@ export function ReleaseCard({ view }: { view: AppView }) {
 
 function Item({ k, v }: { k: string; v: string }) {
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="text-xs text-secondary">{k}</dt>
-      <dd className="font-mono text-[13px]">{v}</dd>
+      <dd className="truncate font-mono text-[13px]" title={v}>{v}</dd>
     </div>
   );
 }

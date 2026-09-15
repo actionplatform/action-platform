@@ -1,5 +1,11 @@
-import { Tag } from "lucide-react";
+"use client";
+
+import { MoreHorizontal, Tag } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { Menu } from "@/components/ui/menu";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import type { Release } from "@/lib/api";
 import type { StoredRelease } from "@/lib/releases";
@@ -24,10 +30,19 @@ export function toRows(stored: StoredRelease[], fromGit: Release[], repositoryUr
 export function ReleasesTable({ stored, fromGit, repositoryUrl }: { stored: StoredRelease[]; fromGit: Release[]; repositoryUrl: string | null }) {
   const rows = toRows(stored, fromGit, repositoryUrl);
   const source = rows[0]?.source ?? "git";
+  const [changelog, setChangelog] = useState<Row | null>(null);
+  const copy = (text: string) => { navigator.clipboard.writeText(text).catch(() => undefined); };
+  const actions = (r: Row) => [
+    ...(r.url ? [{ label: `View on ${SOURCE[r.source] ?? "the code host"}`, onSelect: () => window.open(r.url!, "_blank", "noopener") }] : []),
+    { label: "Copy tag", onSelect: () => copy(r.tag) },
+    ...(r.sha ? [{ label: "Copy commit SHA", onSelect: () => copy(r.sha!) }] : []),
+    ...(r.body ? [{ label: "View changelog", onSelect: () => setChangelog(r) }] : []),
+  ];
+  const menu = (r: Row) => <Menu label={`Actions for ${r.tag}`} items={actions(r)} trigger={({ toggle, open, id }) => <Button size="icon" variant="ghost" aria-label={`Actions for ${r.tag}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle}><MoreHorizontal className="size-4" strokeWidth={1.75} /></Button>} />;
 
   return (
     <Panel>
-      <PanelHeader title="All releases" aside={<span className="text-[13px] text-secondary">{rows.length} {rows.length === 1 ? "release" : "releases"} · {SOURCE[source] ?? source}</span>} />
+      <PanelHeader title="Release history" aside={<span className="text-[13px] text-secondary">{rows.length} {rows.length === 1 ? "release" : "releases"} · {SOURCE[source] ?? source}</span>} />
       {rows.length === 0 ? (
         <div className="flex flex-col items-center px-4 py-10 text-center">
           <Tag className="size-5 text-secondary" strokeWidth={1.5} />
@@ -37,7 +52,7 @@ export function ReleasesTable({ stored, fromGit, repositoryUrl }: { stored: Stor
       ) : (
         <>
           <div className="overflow-x-auto"><table className="hidden w-full min-w-[640px] text-sm md:table">
-            <thead><tr className="text-left text-xs text-muted-foreground"><th className="px-4 py-2 font-medium">Version</th><th className="py-2 font-medium">Tag</th><th className="py-2 font-medium">Name</th><th className="py-2 font-medium">Author</th><th className="py-2 font-medium">Commit</th><th className="py-2 pr-4 font-medium">Published</th></tr></thead>
+            <thead><tr className="text-left text-xs text-muted-foreground"><th className="px-4 py-2 font-medium">Version</th><th className="py-2 font-medium">Tag</th><th className="py-2 font-medium">Name</th><th className="py-2 font-medium">Author</th><th className="py-2 font-medium">Commit</th><th className="py-2 font-medium">Published</th><th className="py-2 pr-2" /></tr></thead>
             <tbody className="divide-y divide-border-subtle border-t border-border-subtle">
               {rows.map((r, i) => (
                 <tr key={r.tag}>
@@ -50,10 +65,11 @@ export function ReleasesTable({ stored, fromGit, repositoryUrl }: { stored: Stor
                     </span>
                   </td>
                   <td className="whitespace-nowrap py-2.5 pr-4">{repositoryUrl ? <a href={`${repositoryUrl}/releases/tag/${r.tag}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-6 items-center gap-1 rounded border border-border bg-background px-1.5 font-mono text-xs hover:border-border-hover"><Tag className="size-3" strokeWidth={1.75} />{r.tag}</a> : <span className="inline-flex h-6 items-center gap-1 rounded border border-border bg-background px-1.5 font-mono text-xs"><Tag className="size-3" strokeWidth={1.75} />{r.tag}</span>}</td>
-                  <td className="max-w-0 truncate py-2.5 pr-4 text-secondary" title={r.body ?? undefined}>{r.name ?? r.body ?? r.tag}</td>
+                  <td className="max-w-0 truncate py-2.5 pr-4 text-secondary" title={r.name ?? r.body ?? undefined}>{r.name ?? r.body ?? r.tag}</td>
                   <td className="whitespace-nowrap py-2.5 pr-4 text-secondary">{r.author ?? "—"}</td>
                   <td className="py-2.5 pr-4">{r.sha ? <span className="inline-flex h-6 items-center rounded border border-border bg-background px-1.5 font-mono text-xs">{r.sha}</span> : <span className="text-muted-foreground">—</span>}</td>
                   <td className="whitespace-nowrap py-2.5 pr-4 text-secondary">{formatDate(r.date)}</td>
+                  <td className="py-1.5 pr-2 text-right">{menu(r)}</td>
                 </tr>
               ))}
             </tbody>
@@ -66,6 +82,7 @@ export function ReleasesTable({ stored, fromGit, repositoryUrl }: { stored: Stor
                   {i === 0 && !r.draft && <Badge tone="ok">Latest</Badge>}
                   {r.prerelease && <Badge>Pre-release</Badge>}
                   <span className="ml-auto text-xs text-secondary">{formatDate(r.date)}</span>
+                  {menu(r)}
                 </div>
                 <div className="mt-1 truncate text-[13px] text-secondary">{r.name ?? r.body ?? r.tag}</div>
                 <div className="mt-1 font-mono text-xs text-muted-foreground">{r.tag}{r.sha ? ` · ${r.sha}` : ""}{r.author ? ` · ${r.author}` : ""}</div>
@@ -74,6 +91,9 @@ export function ReleasesTable({ stored, fromGit, repositoryUrl }: { stored: Stor
           </ul>
         </>
       )}
+      <Dialog open={changelog !== null} onClose={() => setChangelog(null)} title={changelog ? `${changelog.name ?? changelog.tag}` : ""} description={changelog ? `${changelog.tag}${changelog.sha ? ` · ${changelog.sha}` : ""}${changelog.date ? ` · ${formatDate(changelog.date)}` : ""}` : undefined} className="max-w-2xl">
+        {changelog && <pre className="max-h-96 overflow-auto rounded-md border border-border bg-background p-3 font-mono text-xs whitespace-pre-wrap">{changelog.body}</pre>}
+      </Dialog>
     </Panel>
   );
 }
