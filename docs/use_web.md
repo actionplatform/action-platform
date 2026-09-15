@@ -118,7 +118,7 @@ Listing teams and people needs the GitHub App permission *Organization › Membe
 
 ## Settings
 
-One page per concern, listed under **Settings** in the sidebar (tabs on a phone): **General** (name, slug, your role, commit identity), **Members** (members, invitations, the roles table), **Code hosts** (connect with OAuth or a token, what each connected account may create with), **Git-flow** (the rules) and **API** (base URL, version, docs). The OAuth flows come back to `/settings/hosts`.
+One page per concern, listed under **Settings** in the sidebar (tabs on a phone): **General** (name, slug, your role, commit identity, the git-flow rules), **People** (members, invitations and the roles table; teams under their own tab), **Integrations** (code hosts: connect with OAuth or a token, what each connected account may create with; the GitHub import starts from here too) and **Developers** (API base URL, version, docs, a pointer to your personal tokens). The OAuth flows come back to `/settings/integrations`. The sidebar itself has three entries: Projects, Templates, Settings — importing is a button on Projects and on Integrations, teams live under People, and the old paths (`/teams`, `/settings/hosts`, `/settings/members`, `/settings/gitflow`, `/settings/api`) redirect.
 
 Organization members, source hosts (add, update token, remove), the API URL and the git-flow rules.
 
