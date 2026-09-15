@@ -29,14 +29,14 @@ export async function createHost(_prev: { error?: string } | null, formData: For
     return { error: (e as Error).message };
   }
 
-  revalidatePath("/settings");
+  revalidatePath("/settings", "layout");
   return { error: undefined };
 }
 
 export async function deleteHost(id: string) {
   await requireOrg();
   await v1.removeHost(id);
-  revalidatePath("/settings");
+  revalidatePath("/settings", "layout");
 }
 
 export async function rotateHostToken(id: string, token: string): Promise<{ error?: string } | null> {
@@ -47,7 +47,7 @@ export async function rotateHostToken(id: string, token: string): Promise<{ erro
   } catch (e) {
     return { error: (e as Error).message };
   }
-  revalidatePath("/settings");
+  revalidatePath("/settings", "layout");
   return null;
 }
 
@@ -56,7 +56,7 @@ export async function inviteMember(email: string, role: Role): Promise<Result<{ 
   try {
     if (!ROLES.includes(role)) throw new Error("unknown role");
     const invitation = await v1.invite(email, role);
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { ok: true, data: { id: invitation.id } };
   } catch (e) {
     return failed(e);
@@ -67,7 +67,7 @@ export async function revokeInvitation(id: string): Promise<Result> {
   await requireOrg();
   try {
     await v1.cancelInvitation(id);
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { ok: true, data: null };
   } catch (e) {
     return failed(e);
@@ -79,7 +79,7 @@ export async function changeRole(userId: string, role: Role): Promise<Result> {
   try {
     if (!ROLES.includes(role)) throw new Error("unknown role");
     await v1.setMemberRole(userId, role);
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { ok: true, data: null };
   } catch (e) {
     return failed(e);
@@ -90,7 +90,7 @@ export async function kickMember(userId: string): Promise<Result> {
   await requireOrg();
   try {
     await v1.removeMember(userId);
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     revalidatePath("/teams");
     return { ok: true, data: null };
   } catch (e) {
@@ -105,7 +105,7 @@ export async function addMember(input: { name: string; email: string; password: 
     const cookie = await sessionCookie();
     if (!cookie) throw new Error("sign in first");
     const added = await authApi.addMember({ cookie }, { organization_id: org.id, name: input.name, email: input.email, password: input.password, role: input.role });
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     revalidatePath("/teams");
     return { ok: true, data: { existed: added.existed } };
   } catch (e) {
@@ -117,7 +117,7 @@ export async function changeHostOwner(id: string, owner: string): Promise<Result
   await requireOrg();
   try {
     await v1.setHostOwner(id, owner);
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { ok: true, data: null };
   } catch (e) {
     return failed(e);
@@ -128,7 +128,7 @@ export async function saveGitAuthor(author: { name: string; email: string }): Pr
   await requireOrg();
   try {
     const data = await v1.setGitAuthor(author.name, author.email);
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { ok: true, data };
   } catch (e) {
     return failed(e);

@@ -8,6 +8,7 @@ import { Logo } from "@/components/logo";
 import type { Org } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { OrgSwitcher } from "./org-switcher";
+import { SETTINGS_PAGES, settingsPageActive } from "@/app/(app)/settings/nav";
 import { useScope } from "./scope";
 import { UserMenu } from "./user-menu";
 
@@ -85,15 +86,33 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
       ) : (
         <nav aria-label="Main" className="flex-1 py-2">
           {items.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              aria-current={isActive(href) ? "page" : undefined}
-              className={cn(link, isActive(href) ? "bg-surface-selected text-foreground" : "text-secondary hover:bg-surface-hover hover:text-foreground")}
-            >
-              <Icon className="size-[18px]" strokeWidth={1.75} />
-              {label}
-            </Link>
+            <div key={href}>
+              <Link
+                href={href}
+                aria-current={isActive(href) ? "page" : undefined}
+                className={cn(link, isActive(href) ? "bg-surface-selected text-foreground" : "text-secondary hover:bg-surface-hover hover:text-foreground")}
+              >
+                <Icon className="size-[18px]" strokeWidth={1.75} />
+                {label}
+              </Link>
+              {href === "/settings" && isActive(href) && (
+                <div className="mb-1 ml-[38px] border-l border-border-subtle">
+                  {SETTINGS_PAGES.map((page) => {
+                    const active = settingsPageActive(pathname, page.href, page.exact);
+                    return (
+                      <Link
+                        key={page.href}
+                        href={page.href}
+                        aria-current={active ? "page" : undefined}
+                        className={cn("-ml-px flex h-9 items-center border-l pl-4 pr-3 text-[13px] transition-colors", active ? "border-foreground text-foreground" : "border-transparent text-secondary hover:text-foreground")}
+                      >
+                        {page.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
       )}
