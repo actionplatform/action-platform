@@ -84,9 +84,15 @@ class ActionPlatform:
         return ctx
 
     def deploy(
-        self, target: str | None = None, dry_run: bool = False, stage: str | None = None
+        self,
+        target: str | None = None,
+        dry_run: bool = False,
+        stage: str | None = None,
+        version: str | None = None,
     ) -> list[DeployResult]:
-        results = self.deployer.deploy(target, dry_run=dry_run, stage=stage)
+        results = self.deployer.deploy(
+            target, dry_run=dry_run, stage=stage, version=version
+        )
 
         if not dry_run:
             registry.installed().after_deploy(results)

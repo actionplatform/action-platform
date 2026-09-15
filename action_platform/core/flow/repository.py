@@ -115,10 +115,23 @@ class Repository(WorkingCopy):
         self.run(["remote", "add", remote, url])
 
     def tags(self) -> list[str]:
-        return [t for t in self.run(["tag", "--list"]).split("\n") if t]
+        return [
+            t for t in self.run(["tag", "--list", "--sort=v:refname"]).split("\n") if t
+        ]
 
     def has_tag(self, glob: str) -> bool:
         return bool(self.attempt(["tag", "--list", glob]).stdout.strip())
+
+    def tag_at_head(self, match: str | None = None) -> str | None:
+        """The tag HEAD sits on exactly, None when it sits on none."""
+        args = ["describe", "--tags", "--exact-match"]
+
+        if match:
+            args += ["--match", match]
+
+        result = self.attempt(args)
+
+        return result.stdout.strip() or None if result.returncode == 0 else None
 
     def latest_tag(self, match: str | None = None) -> str | None:
         args = ["describe", "--tags", "--abbrev=0"]
