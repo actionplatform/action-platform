@@ -4,11 +4,11 @@
 """
 
 from app.core.shared.clock import now
-from app.core.shared.ids import new_id, slugify
 from app.core.shared.credentials import (
     Credentials,
     OAuthApp,
 )
+from app.core.shared.ids import new_id, slugify
 from app.services.directory.base import (
     DEFAULT_GIT_AUTHOR,
     EMAIL,

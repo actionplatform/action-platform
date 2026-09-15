@@ -4,8 +4,8 @@ from fastapi import APIRouter
 
 from app.api.routers.organizations import (
     identity,
-    members,
     invitations,
+    members,
     settings,
     template_sources,
 )

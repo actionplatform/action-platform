@@ -11,11 +11,10 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
-
-from app.schemas.actions import SourceCredentials
 from action_platform.core.config import Config
 from action_platform.core.flow import git
 from action_platform.providers.source import build_source_host
+from app.schemas.actions import SourceCredentials
 
 GIT_USERNAMES = {
     "github": "x-access-token",

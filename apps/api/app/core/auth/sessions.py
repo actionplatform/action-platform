@@ -4,14 +4,6 @@ from typing import Optional
 
 from sqlalchemy import select
 
-from app.core.auth.errors import (
-    Unauthenticated,
-)
-from app.core.db.models import (
-    Member,
-    Session,
-    User,
-)
 from app.core.auth.base import (
     SESSION_REFRESH_AFTER,
     SESSION_TTL,
@@ -19,6 +11,14 @@ from app.core.auth.base import (
     _token,
     new_id,
     now,
+)
+from app.core.auth.errors import (
+    Unauthenticated,
+)
+from app.core.db.models import (
+    Member,
+    Session,
+    User,
 )
 
 

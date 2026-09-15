@@ -2,30 +2,26 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Header
 
 from action_platform.core.exception import ActionPlatformError
 from app.api.dependencies import (
+    AppsDep,
+    CallerDep,
+    DirectoryDep,
+    OrgDep,
+    WritesDep,
     allowed,
-    get_app_service,
-    get_caller,
-    get_directory,
-    get_writes,
     manageable,
-    org_of,
     project_of,
-    required_org,
     requested_org,
+    required_org,
 )
 from app.core.db.models import Organization
-from app.services.access.caller import Caller
-from app.services.apps import AppService
-from app.services.directory import DirectoryService, DirectoryWrites
-
-
-from app.schemas import projects as schemas
-
 from app.schemas import common
+from app.schemas import projects as schemas
+from app.services.access.caller import Caller
+from app.services.directory import DirectoryService
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -69,10 +65,10 @@ def project_rows(
 
 @router.get("/projects")
 def projects(
+    caller: CallerDep,
+    directory: DirectoryDep,
     x_organization: Optional[str] = Header(default=None),
     organization: Optional[str] = None,
-    caller: Caller = Depends(get_caller),
-    directory: DirectoryService = Depends(get_directory),
 ) -> list[schemas.ProjectRow]:
     org = requested_org(caller, x_organization, organization)
 
@@ -89,9 +85,9 @@ def projects(
 @router.post("/projects", status_code=201)
 def create_project(
     body: schemas.CreateProjectRequest,
+    caller: CallerDep,
+    directory: DirectoryDep,
     x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    directory: DirectoryService = Depends(get_directory),
 ) -> common.Created:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "projects")
@@ -103,9 +99,9 @@ def create_project(
 @router.post("/projects/team")
 def assign_project_team(
     body: schemas.ProjectTeamRequest,
+    caller: CallerDep,
+    directory: DirectoryDep,
     x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    directory: DirectoryService = Depends(get_directory),
 ) -> common.Ok:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "projects/team")
@@ -117,13 +113,12 @@ def assign_project_team(
 @router.delete("/projects/{project_id}")
 def delete_project(
     project_id: str,
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
+    apps: AppsDep,
     repositories: bool = False,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
-    apps: AppService = Depends(get_app_service),
 ) -> common.Removed:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
     project_apps = writes.apps_of(project.id)

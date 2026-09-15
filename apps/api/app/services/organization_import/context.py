@@ -5,11 +5,11 @@ from typing import Any
 
 from sqlalchemy import select
 
+from action_platform.core.exception import ActionPlatformError
 from app.core.db.models import App, Project, User
+from app.core.shared.urls import GitUrl
 from app.repositories.registry import Registry
 from app.services.directory import DirectoryWrites
-from action_platform.core.exception import ActionPlatformError
-from app.core.shared.urls import GitUrl
 
 
 @dataclass

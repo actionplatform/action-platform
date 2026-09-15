@@ -18,7 +18,9 @@ def matrix() -> schemas.Matrix:
 
 
 @router.post("/matrix")
-def matrix_with_sources(body: schemas.SourcesRequest) -> schemas.Matrix:
+def matrix_with_sources(
+    body: schemas.SourcesRequest,
+) -> schemas.Matrix:
     return service.matrix(body.sources)
 
 

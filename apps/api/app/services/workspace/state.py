@@ -1,13 +1,12 @@
 from dataclasses import asdict
 from pathlib import Path
 
-
-from app.repositories.registry import Registry
-from app.services.workspace.checkout import Workspaces
 from action_platform.core.flow import gitflow
 from action_platform.core.flow.repository import Repository
 from action_platform.core.flow.workflow import GitFlow
 from action_platform.core.release.release import STABLE_BRANCHES
+from app.repositories.registry import Registry
+from app.services.workspace.checkout import Workspaces
 
 
 class GitStateService:

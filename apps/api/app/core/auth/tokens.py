@@ -5,19 +5,11 @@ from typing import Optional
 
 from sqlalchemy import select
 
-from app.core.auth import jwt
-from app.core.auth.errors import (
-    Forbidden,
-)
-from app.core.db.models import (
-    ApiToken,
-    ApiTokenClient,
-    Session,
-)
 from action_platform.core.access import (
     Grant,
     grantable_scopes,
 )
+from app.core.auth import jwt
 from app.core.auth.base import (
     ADMIN_TOKEN_TTL,
     AUDIENCE,
@@ -26,6 +18,14 @@ from app.core.auth.base import (
     AuthBase,
     new_id,
     now,
+)
+from app.core.auth.errors import (
+    Forbidden,
+)
+from app.core.db.models import (
+    ApiToken,
+    ApiTokenClient,
+    Session,
 )
 
 

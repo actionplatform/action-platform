@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from action_platform.settings import settings
-from tests.support import ApiCase
 from action_platform.testing.fixtures import git, template_repo
+from tests.support import ApiCase
 
 
 class CatalogCase(ApiCase):

@@ -4,24 +4,21 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 
-from app.core.auth.errors import Unauthenticated
-from app.core.auth.service import (
-    AuthService,
+from action_platform.core.access import Grant, parse_scopes
+from app.api.dependencies import (
+    AuthDep,
 )
-from app.api.dependencies import get_auth
+from app.api.routers.auth.support import (
+    current_session,
+    organization_out,
+    token_out,
+    user_out,
+)
+from app.core.auth.errors import Unauthenticated
 from app.core.db.models import (
     Session,
 )
 from app.schemas import auth as schemas
-from action_platform.core.access import Grant, parse_scopes
-
-
-from app.api.routers.auth.support import (
-    current_session,
-    user_out,
-    organization_out,
-    token_out,
-)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -29,8 +26,8 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 @router.post("/tokens", status_code=201)
 def issue_token(
     body: schemas.IssueTokenRequest,
+    auth: AuthDep,
     session: Session = Depends(current_session),
-    auth: AuthService = Depends(get_auth),
 ) -> schemas.TokenIssued:
     grant = Grant.parse(body.scope)
     grant = Grant(
@@ -51,9 +48,9 @@ def issue_token(
 
 @router.get("/tokens")
 def tokens(
+    auth: AuthDep,
     organization_id: Optional[str] = None,
     session: Session = Depends(current_session),
-    auth: AuthService = Depends(get_auth),
 ) -> list[schemas.TokenOut]:
     rows = auth.tokens_of(session.user_id, organization_id)
     clients = auth.clients_of(rows)
@@ -64,8 +61,8 @@ def tokens(
 @router.delete("/tokens/{id}", status_code=204)
 def revoke_token(
     id: str,
+    auth: AuthDep,
     session: Session = Depends(current_session),
-    auth: AuthService = Depends(get_auth),
 ) -> Response:
     if not auth.revoke_token(session.user_id, id):
         raise HTTPException(404, "no such token")
@@ -75,7 +72,8 @@ def revoke_token(
 
 @router.post("/tokens/verify")
 def verify_token(
-    body: schemas.VerifyTokenRequest, auth: AuthService = Depends(get_auth)
+    body: schemas.VerifyTokenRequest,
+    auth: AuthDep,
 ) -> schemas.TokenClaimsOut:
     token = auth.verify_token(body.token, body.client)
 

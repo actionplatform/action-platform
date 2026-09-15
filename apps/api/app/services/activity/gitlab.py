@@ -5,9 +5,9 @@ from typing import Any
 from urllib.parse import quote
 
 from app.core.abc import ImportSource
+from app.core.shared.clock import parse_utc
 from app.core.shared.credentials import Credentials
 from app.core.shared.http import http
-from app.core.shared.clock import parse_utc
 
 RC = re.compile(r"-rc\.")
 

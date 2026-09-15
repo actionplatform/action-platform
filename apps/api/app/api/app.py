@@ -8,19 +8,18 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app import api_version
-from app.api.gate import AccessGate
-from app.core.auth.crypto import Sealer
-from app.core.auth.errors import AuthError
-from app.core.auth.secrets import Secrets
-from app.repositories.source import configure_registry, get_registry
-from app.core.shared.urls import GitUrl
-from app.api.routers import router as routes
-from app.core.db import Database
-
 from action_platform.core.exception import ActionPlatformError, ConfigError
 from action_platform.observability import observe
 from action_platform.settings import settings
+from app import api_version
+from app.api.gate import AccessGate
+from app.api.routers import router as routes
+from app.core.auth.crypto import Sealer
+from app.core.auth.errors import AuthError
+from app.core.auth.secrets import Secrets
+from app.core.db import Database
+from app.core.shared.urls import GitUrl
+from app.repositories.source import configure_registry, get_registry
 
 OPEN_PATHS = {"/api/version", "/docs", "/openapi.json", "/redoc"}
 SELF_AUTHENTICATED = ("/api/v1/", "/api/auth/")

@@ -6,14 +6,14 @@ from typing import Any, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
-from app.core.db.models import PullRequest, Release
-from app.core.shared.credentials import Credentials
+from action_platform.core.exception import ProviderError
 from app.core.abc import ImportSource
+from app.core.db.models import PullRequest, Release
+from app.core.shared.clock import now
+from app.core.shared.credentials import Credentials
 from app.services.activity.bitbucket import BitbucketActivity
 from app.services.activity.github import GithubActivity
 from app.services.activity.gitlab import GitlabActivity
-from app.core.shared.clock import now
-from action_platform.core.exception import ProviderError
 
 SOURCES: dict[str, ImportSource] = {
     s.kind: s for s in (GithubActivity(), GitlabActivity(), BitbucketActivity())

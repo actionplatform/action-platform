@@ -6,6 +6,7 @@ from typing import Optional
 
 from sqlalchemy import func, select
 
+from action_platform.core.access import ROLES, normalize_role
 from app.core.db.models import (
     Member,
     Organization,
@@ -19,7 +20,6 @@ from app.services.directory.base import (
     DirectoryBase,
     DirectoryError,
 )
-from action_platform.core.access import ROLES, normalize_role
 
 
 class OrganizationsReads(DirectoryBase):

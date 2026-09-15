@@ -2,17 +2,21 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
-from app.services.access.caller import Caller
-from app.repositories.source import get_registry
-from app.repositories.registry import Registry
-from app.services.organization_import import OrganizationImport, client
-from app.services.jobs import JobQueue
-from app.services.directory import DirectoryWrites
-from app.api.dependencies import allowed, get_caller, get_queue, get_writes, org_of
 from action_platform.core.exception import ActionPlatformError
+from app.api.dependencies import (
+    CallerDep,
+    OrgDep,
+    QueueDep,
+    WritesDep,
+    allowed,
+)
+from app.repositories.registry import Registry
+from app.repositories.source import get_registry
+from app.services.directory import DirectoryWrites
+from app.services.organization_import import OrganizationImport, client
 
 router = APIRouter(prefix="/api/v1/import", tags=["import"])
 JOB_KIND = "import_github"
@@ -124,11 +128,10 @@ def github_credentials(writes: DirectoryWrites, org, host_id: str):
 @router.get("/github/organizations")
 def github_organizations(
     host: str,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> GithubOrganizations:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     creds = github_credentials(writes, org, host)
     github_app = writes.oauth_app("github")
@@ -152,12 +155,11 @@ def github_organizations(
 def github_organization(
     login: str,
     host: str,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
     registry: Registry = Depends(get_registry),
 ) -> GithubPreview:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     creds = github_credentials(writes, org, host)
 
@@ -171,12 +173,11 @@ def github_organization(
 def import_github(
     body: ImportRequest,
     request: Request,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
-    queue: JobQueue = Depends(get_queue),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
+    queue: QueueDep,
 ) -> ImportQueued:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     github_credentials(writes, org, body.host_id)
 

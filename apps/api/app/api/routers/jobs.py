@@ -3,18 +3,15 @@
 from datetime import datetime
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.api.dependencies import (
-    get_caller,
-    get_directory,
-    get_queue,
+    CallerDep,
+    DirectoryDep,
+    QueueDep,
 )
-from app.services.access.caller import Caller
-from app.services.directory import DirectoryService
 from app.services.jobs import JobQueue
-
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -34,7 +31,9 @@ class JobOut(BaseModel):
 
 @router.get("/jobs/{id}")
 def job(
-    id: str, caller: Caller = Depends(get_caller), queue: JobQueue = Depends(get_queue)
+    id: str,
+    caller: CallerDep,
+    queue: QueueDep,
 ) -> JobOut:
     found = queue.get(id)
 
@@ -49,9 +48,9 @@ def job(
 @router.get("/jobs")
 def jobs(
     app: str,
-    caller: Caller = Depends(get_caller),
-    directory: DirectoryService = Depends(get_directory),
-    queue: JobQueue = Depends(get_queue),
+    caller: CallerDep,
+    directory: DirectoryDep,
+    queue: QueueDep,
 ) -> list[JobOut]:
     found = directory.app_by_registry_id(app)
 

@@ -1,17 +1,19 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from app import schemas
-from app.api.dependencies import get_configuration
-from app.services.workspace.configuration import ConfigurationService
+from app.api.dependencies import (
+    ConfigurationDep,
+)
 
 router = APIRouter(prefix="/api/apps", tags=["configuration"])
 
 
 @router.get("/{id}/manifest")
 def read_manifest(
-    id: str, config: ConfigurationService = Depends(get_configuration)
+    id: str,
+    config: ConfigurationDep,
 ) -> schemas.ManifestBody:
     return config.manifest(id)
 
@@ -20,7 +22,7 @@ def read_manifest(
 def write_manifest(
     id: str,
     body: schemas.ManifestBody,
-    config: ConfigurationService = Depends(get_configuration),
+    config: ConfigurationDep,
 ) -> schemas.ManifestBody:
     return config.write_manifest(id, body.content)
 
@@ -29,7 +31,7 @@ def write_manifest(
 def set_cloud(
     id: str,
     body: schemas.CloudRequest,
-    config: ConfigurationService = Depends(get_configuration),
+    config: ConfigurationDep,
 ) -> dict:
     return config.set_cloud(id, body.target, body.source)
 
@@ -38,14 +40,15 @@ def set_cloud(
 def add_service(
     id: str,
     body: schemas.ServiceRequest,
-    config: ConfigurationService = Depends(get_configuration),
+    config: ConfigurationDep,
 ) -> dict:
     return config.add_service(id, body.name, body.provider, body.source)
 
 
 @router.get("/{id}/changes")
 def changes(
-    id: str, config: ConfigurationService = Depends(get_configuration)
+    id: str,
+    config: ConfigurationDep,
 ) -> schemas.Changes:
     return config.changes(id)
 
@@ -53,8 +56,8 @@ def changes(
 @router.post("/{id}/install", status_code=201)
 def install_platform(
     id: str,
+    config: ConfigurationDep,
     body: Optional[schemas.InstallSpec] = None,
-    config: ConfigurationService = Depends(get_configuration),
 ) -> schemas.Installed:
     spec = body or schemas.InstallSpec()
 
@@ -63,7 +66,8 @@ def install_platform(
 
 @router.post("/{id}/discard")
 def discard(
-    id: str, config: ConfigurationService = Depends(get_configuration)
+    id: str,
+    config: ConfigurationDep,
 ) -> schemas.Changes:
     return config.discard(id)
 
@@ -72,6 +76,6 @@ def discard(
 def commit(
     id: str,
     body: schemas.CommitRequest,
-    config: ConfigurationService = Depends(get_configuration),
+    config: ConfigurationDep,
 ) -> schemas.CommitResult:
     return config.commit(id, body)

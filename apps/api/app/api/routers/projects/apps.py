@@ -1,32 +1,23 @@
 """Apps inside a project: added from a repository or generated, their host, their imported activity."""
 
-from typing import Optional
-
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, HTTPException
 
 from action_platform.core.exception import ActionPlatformError
 from app.api.dependencies import (
+    AppsDep,
+    CallerDep,
+    OrgDep,
+    WritesDep,
     allowed,
     app_of,
-    get_app_service,
-    get_caller,
-    get_writes,
     imports_of,
-    org_of,
     project_of,
 )
 from app.core.shared.urls import GitUrl
-from app.schemas import SourceCredentials
-from app.services.access.caller import Caller
+from app.schemas import SourceCredentials, common
+from app.schemas import projects as schemas
 from app.services.access.enrich import credentials_for
 from app.services.activity import ActivityService
-from app.services.apps import AppService
-from app.services.directory import DirectoryWrites
-
-
-from app.schemas import projects as schemas
-
-from app.schemas import common
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -35,12 +26,11 @@ router = APIRouter(prefix="/api/v1", tags=["management"])
 def add_app(
     project_id: str,
     body: schemas.AddAppToProject,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
-    apps: AppService = Depends(get_app_service),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
+    apps: AppsDep,
 ) -> schemas.AppAdded:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
     url = body.url.strip()
@@ -76,12 +66,11 @@ def add_app(
 def init_app(
     project_id: str,
     body: schemas.InitAppInProject,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
-    apps: AppService = Depends(get_app_service),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
+    apps: AppsDep,
 ) -> schemas.AppInitialized:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
     creds = (
@@ -128,13 +117,12 @@ def init_app(
 def delete_app(
     project_id: str,
     app_id: str,
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
+    apps: AppsDep,
     repository: bool = False,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
-    apps: AppService = Depends(get_app_service),
 ) -> common.Removed:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
     app = writes.app(project.id, app_id)
@@ -161,11 +149,10 @@ def set_app_host(
     project_id: str,
     app_id: str,
     body: schemas.AppHostRequest,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> schemas.AppHostRequest:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "app.flow", whole_org=False)
     project = project_of(writes, org, project_id)
     app = app_of(writes, caller, project, app_id)
@@ -182,11 +169,10 @@ def set_app_host(
 def imports(
     project_id: str,
     app_id: str,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> schemas.Imports:
-    org = org_of(caller, x_organization)
     project = project_of(writes, org, project_id)
     app = app_of(writes, caller, project, app_id)
 
@@ -197,12 +183,11 @@ def imports(
 def sync_imports(
     project_id: str,
     app_id: str,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
-    apps: AppService = Depends(get_app_service),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
+    apps: AppsDep,
 ) -> schemas.Imports:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "app.sync", whole_org=False)
     project = project_of(writes, org, project_id)
     app = app_of(writes, caller, project, app_id)

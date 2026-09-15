@@ -23,6 +23,7 @@ class StaticEndpointsTest(ApiCase):
 class ApiTokenTest(ApiCase):
     def test_refuses_to_start_open_unless_asked(self):
         from app.api.app import build
+
         from action_platform.core.exception import ConfigError
         from action_platform.settings import settings
 
@@ -73,8 +74,9 @@ class SentryTest(ApiCase):
 
 class CatalogIndexTest(ApiCase):
     def test_matrix_prefers_the_published_index(self):
-        from app.services.catalog import service as catalog
         from app.services.catalog import published
+        from app.services.catalog import service as catalog
+
         from action_platform.settings import settings
 
         self.patch(settings, "TEMPLATES_DIR", None)
@@ -146,8 +148,8 @@ class CatalogIndexTest(ApiCase):
         )
 
     def test_matrix_falls_back_to_the_checkout_when_the_index_is_down(self):
-        from app.services.catalog import service as catalog
         from app.services.catalog import published
+        from app.services.catalog import service as catalog
 
         from action_platform.settings import settings
         from action_platform.testing.fixtures import template_repo

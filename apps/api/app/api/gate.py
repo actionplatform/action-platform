@@ -4,8 +4,7 @@ from typing import Any, Callable, Optional
 
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app.services.access.caller import Caller, resolve_caller
-from app.services.access.enrich import enrich
+from action_platform.core.exception import ActionPlatformError
 from app.core.access.rules import (
     DIRECTORY,
     WORKSPACE_ROOTS,
@@ -13,10 +12,11 @@ from app.core.access.rules import (
 )
 from app.core.auth.service import AuthService
 from app.core.db.models import App, Organization, Project
-from app.services.directory import DirectoryService
+from app.services.access.caller import Caller, resolve_caller
+from app.services.access.enrich import enrich
 from app.services.activity import ActivityService
+from app.services.directory import DirectoryService
 from app.services.jobs import JobQueue
-from action_platform.core.exception import ActionPlatformError
 
 PREFIX = "/api/v1/"
 

@@ -2,20 +2,17 @@
 
 from fastapi import APIRouter, Depends
 
-from app.core.auth.service import (
-    AuthService,
+from app.api.dependencies import (
+    AuthDep,
 )
-from app.api.dependencies import get_auth
-from app.core.db.models import (
-    Session,
-)
-from app.schemas import auth as schemas
-
-
 from app.api.routers.auth.support import (
     current_session,
     organization_out,
 )
+from app.core.db.models import (
+    Session,
+)
+from app.schemas import auth as schemas
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -23,8 +20,8 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 @router.post("/organizations", status_code=201)
 def create_organization(
     body: schemas.CreateOrganizationRequest,
+    auth: AuthDep,
     session: Session = Depends(current_session),
-    auth: AuthService = Depends(get_auth),
 ) -> schemas.OrganizationOut:
     return organization_out(
         auth.create_organization(
@@ -36,8 +33,8 @@ def create_organization(
 @router.post("/members", status_code=201)
 def add_member(
     body: schemas.AddMemberRequest,
+    auth: AuthDep,
     session: Session = Depends(current_session),
-    auth: AuthService = Depends(get_auth),
 ) -> schemas.MemberAdded:
     user, existed = auth.add_member_account(
         session, body.organization_id, body.name, body.email, body.password, body.role

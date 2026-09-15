@@ -3,13 +3,13 @@
 import logging
 from typing import Any, Optional
 
-from app.core.shared import git_auth as auth
+from action_platform.core.exception import ActionPlatformError
 from app.core.db.models import Project
+from app.core.shared import git_auth as auth
 from app.schemas import SourceCredentials
 from app.services.activity import ActivityService
 from app.services.directory import Credentials, DirectoryError
 from app.services.organization_import.step import ImportStep
-from action_platform.core.exception import ActionPlatformError
 
 log = logging.getLogger("action_platform.import")
 

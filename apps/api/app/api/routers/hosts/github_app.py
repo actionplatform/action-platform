@@ -1,26 +1,17 @@
 """GitHub Apps: created from a manifest, installed on an account."""
 
-from typing import Optional
+from fastapi import APIRouter, HTTPException, Request
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
-
-from app.services.access.caller import Caller
-from app.services.hosts import PROVIDERS
-from app.services.directory import (
-    DirectoryWrites,
-)
 from action_platform.core.exception import ActionPlatformError
-
 from app.api.dependencies import (
-    get_state_signer,
+    CallerDep,
+    OrgDep,
+    WritesDep,
     allowed,
-    get_caller,
-    get_writes,
-    org_of,
+    get_state_signer,
 )
-
-
 from app.schemas import hosts as schemas
+from app.services.hosts import PROVIDERS
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -29,11 +20,10 @@ router = APIRouter(prefix="/api/v1", tags=["management"])
 def github_install(
     body: schemas.OAuthStartRequest,
     request: Request,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> schemas.OAuthStarted:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     app = writes.oauth_app("github")
 
@@ -53,11 +43,10 @@ def github_install(
 def github_manifest(
     body: schemas.ManifestRequest,
     request: Request,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> schemas.Manifest:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
 
     if writes.oauth_app("github") is not None:
@@ -85,8 +74,8 @@ def github_manifest(
 def github_manifest_callback(
     body: schemas.ManifestCallbackRequest,
     request: Request,
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> schemas.OAuthFinished:
     state = get_state_signer(request).verify(body.state, caller.user.id)
 

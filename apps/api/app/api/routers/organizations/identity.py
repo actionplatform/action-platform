@@ -1,6 +1,6 @@
 """The caller: who they are, what they may do, the organizations they belong to, and tokens for CLI and MCP."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
 from action_platform.core.access import (
     ROLE_LABELS,
@@ -11,27 +11,21 @@ from action_platform.core.access import (
     parse_scopes,
 )
 from app.api.dependencies import (
-    get_auth,
-    get_caller,
-    get_directory,
+    AuthDep,
+    CallerDep,
+    DirectoryDep,
     org_dict,
 )
-from app.core.auth.service import AuthService
-from app.services.access.caller import Caller
-from app.services.directory import DirectoryService
-
-
-from app.schemas import organizations as schemas
-
 from app.schemas import common
+from app.schemas import organizations as schemas
 
 router = APIRouter(prefix="/api/v1", tags=["identity"])
 
 
 @router.get("/me")
 def me(
-    caller: Caller = Depends(get_caller),
-    directory: DirectoryService = Depends(get_directory),
+    caller: CallerDep,
+    directory: DirectoryDep,
 ) -> schemas.Me:
     org = caller.organization
     role = caller.role_in(org.id) if org else None
@@ -67,13 +61,15 @@ def me(
 
 
 @router.get("/access")
-def access(caller: Caller = Depends(get_caller)) -> schemas.AccessCatalog:
+def access(
+    caller: CallerDep,
+) -> schemas.AccessCatalog:
     return schemas.AccessCatalog(**catalog())
 
 
 @router.get("/organizations")
 def organizations(
-    caller: Caller = Depends(get_caller),
+    caller: CallerDep,
 ) -> list[schemas.OrganizationRow]:
     return [
         schemas.OrganizationRow(
@@ -92,9 +88,9 @@ def organizations(
 @router.post("/tokens", status_code=200)
 def issue(
     body: schemas.IssueRequest,
-    caller: Caller = Depends(get_caller),
-    auth: AuthService = Depends(get_auth),
-    directory: DirectoryService = Depends(get_directory),
+    caller: CallerDep,
+    auth: AuthDep,
+    directory: DirectoryDep,
 ) -> schemas.Issued:
     if caller.scope is not None or not caller.session_token:
         raise HTTPException(403, "a token cannot mint another token; sign in again")

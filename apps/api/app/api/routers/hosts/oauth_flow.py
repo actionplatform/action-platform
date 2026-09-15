@@ -1,26 +1,17 @@
 """Connecting a host with OAuth: start, callback, disconnect."""
 
-from typing import Optional
+from fastapi import APIRouter, HTTPException, Request
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
-
-from app.services.access.caller import Caller
-from app.services.hosts import PROVIDERS
-from app.services.directory import (
-    DirectoryWrites,
-)
 from action_platform.core.exception import ActionPlatformError
-
 from app.api.dependencies import (
-    get_state_signer,
+    CallerDep,
+    OrgDep,
+    WritesDep,
     allowed,
-    get_caller,
-    get_writes,
-    org_of,
+    get_state_signer,
 )
-
-
 from app.schemas import hosts as schemas
+from app.services.hosts import PROVIDERS
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -30,14 +21,13 @@ def oauth_start(
     provider: str,
     body: schemas.OAuthStartRequest,
     request: Request,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> schemas.OAuthStarted:
     if provider not in PROVIDERS.by_kind:
         raise HTTPException(404, "unknown provider")
 
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     app = writes.oauth_app(provider)
 
@@ -60,8 +50,8 @@ def oauth_callback(
     provider: str,
     body: schemas.OAuthCallbackRequest,
     request: Request,
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> schemas.OAuthFinished:
     if provider not in PROVIDERS.by_kind:
         raise HTTPException(404, "unknown provider")
@@ -140,10 +130,9 @@ def oauth_callback(
 def disconnect_oauth_host(
     provider: str,
     login: str,
-    x_organization: Optional[str] = Header(default=None),
-    caller: Caller = Depends(get_caller),
-    writes: DirectoryWrites = Depends(get_writes),
+    org: OrgDep,
+    caller: CallerDep,
+    writes: WritesDep,
 ) -> None:
-    org = org_of(caller, x_organization)
     allowed(caller, org, "org.manage")
     writes.remove_oauth_host(org.id, provider, login)

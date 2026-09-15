@@ -2,9 +2,9 @@
 
 from functools import lru_cache
 
+from action_platform.core.exception import ConfigError
 from app.repositories.drafts import DraftStore
 from app.repositories.registry import DbStore, Registry
-from action_platform.core.exception import ConfigError
 
 
 class RegistrySource:

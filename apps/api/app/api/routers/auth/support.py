@@ -5,6 +5,9 @@ from typing import Optional
 from fastapi import Depends, Header, HTTPException, Request
 from sqlalchemy import select
 
+from action_platform.core.access import Grant, grants_of, parse_scopes
+from app.api.dependencies import get_auth
+from app.api.ratelimit import RateLimiter
 from app.core.auth.cookies import SessionCookie
 from app.core.auth.errors import Unauthenticated
 from app.core.auth.jwt import looks_like_jwt
@@ -12,8 +15,6 @@ from app.core.auth.service import (
     AuthService,
     Identity,
 )
-from app.api.dependencies import get_auth
-from app.api.ratelimit import RateLimiter
 from app.core.db.models import (
     ApiToken,
     App,
@@ -23,9 +24,7 @@ from app.core.db.models import (
     Session,
 )
 from app.schemas import auth as schemas
-from action_platform.core.access import Grant, grants_of, parse_scopes
 from app.schemas import common
-
 
 LIMITS = {
     "sign-in": RateLimiter(10, 60),
