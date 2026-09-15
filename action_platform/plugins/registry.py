@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from action_platform.core.context import Context, DeployResult, PRRef
 
 GROUP = "action_platform.plugins"
+FAILURES: dict[str, str] = {}
 
 
 class PluginError(ActionPlatformError):
@@ -119,16 +120,20 @@ class Plugins:
                 loaded = ep.load()
                 plugin = loaded() if isinstance(loaded, type) else loaded
             except Exception as e:
+                FAILURES[ep.name] = f"{type(e).__name__}: {e}"
                 logger.warning(f"plugin {ep.name} failed to load: {e}")
 
                 continue
 
             if not isinstance(plugin, Plugin):
+                FAILURES[ep.name] = "not an action_platform.abc.Plugin"
                 logger.warning(
                     f"plugin {ep.name} is not an action_platform.abc.Plugin; skipped"
                 )
 
                 continue
+
+            FAILURES.pop(ep.name, None)
 
             dist = getattr(ep, "dist", None)
             found.append(

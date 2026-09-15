@@ -115,8 +115,12 @@ class PluginManager:
         loaded = next((row for row in new if row.slug == slug), None)
 
         if loaded is None:
+            why = registry.FAILURES.get(slug)
+
             raise PluginError(
-                f"installed {spec}, but nothing registered the slug {slug!r}"
+                f"installed {spec}, but the plugin did not load: {why}"
+                if why
+                else f"installed {spec}, but nothing registered the slug {slug!r}"
             )
 
         state.record(slug, loaded.version, loaded.package)
