@@ -71,8 +71,28 @@ class PluginsApiTest(GateCase):
         )
 
         self.assertEqual(replaced.json()["options"], {"region": "sa-east-1"})
+        self.assertIsNone(
+            registry.installed().options_for("aws-lambda").get("region"),
+            "an organization's value is not the platform's default",
+        )
+
+    def test_options_belong_to_the_organization_over_platform_defaults(self):
+        from app.services.plugins.options import DbOptions
+
+        db = self.app.state.db
+        DbOptions(db, "aws-lambda").set("proxy_url", "https://default.test")
+        DbOptions(db, "aws-lambda", "org-a").set("proxy_url", "https://a.test")
+
         self.assertEqual(
-            registry.installed().options_for("aws-lambda").get("region"), "sa-east-1"
+            DbOptions(db, "aws-lambda", "org-a").all(), {"proxy_url": "https://a.test"}
+        )
+        self.assertEqual(
+            DbOptions(db, "aws-lambda", "org-b").all(),
+            {"proxy_url": "https://default.test"},
+        )
+        self.assertEqual(
+            DbOptions(db, "aws-lambda", "org-b").get("proxy_url"),
+            "https://default.test",
         )
 
     def test_catalog_says_it_is_hosted_and_what_waits_for_a_restart(self):
@@ -86,7 +106,20 @@ class PluginsApiTest(GateCase):
             [p["slug"] for p in rows["plugins"]], ["aws-lambda", "sketchy"]
         )
 
+    def test_install_needs_a_platform_admin(self):
+        for path in (
+            "aws-lambda/install",
+            "aws-lambda/remove",
+            "aws-lambda/enable",
+            "restart",
+        ):
+            refused = self.client.post(f"/api/v1/plugins/{path}", headers=self.h())
+
+            self.assertEqual(refused.status_code, 403, path)
+            self.assertIn("platform admin", refused.json()["detail"])
+
     def test_install_queues_a_job_for_verified_plugins_only(self):
+        self.patch(settings, "PLATFORM_ADMINS", ("ana@example.com",))
         queued = self.client.post(
             "/api/v1/plugins/aws-lambda/install", headers=self.h()
         )
@@ -147,6 +180,7 @@ class PluginsApiTest(GateCase):
         self.assertEqual(PluginState.load().plugins, {})
 
     def test_switching_an_unknown_plugin_is_a_readable_error(self):
+        self.patch(settings, "PLATFORM_ADMINS", ("ana@example.com",))
         res = self.client.post("/api/v1/plugins/nope/enable", headers=self.h())
 
         self.assertEqual(res.status_code, 400)
