@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.4 — 2026-09-14
+
+### Features
+- **env:** a .env in the working directory fills in unset variables for the CLI, the API and the worker; api errors print one line
+
 ## v0.18.3 — 2026-09-14
 
 ### Refactoring
