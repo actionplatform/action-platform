@@ -2,6 +2,8 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 import { version } from "./package.json";
 
+const dev = process.env.NODE_ENV !== "production";
+
 const config: NextConfig = {
   reactStrictMode: true,
   output: "standalone",
@@ -20,7 +22,7 @@ const config: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline'",
+              `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`,
               "worker-src 'self' blob:",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
