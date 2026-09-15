@@ -1,4 +1,4 @@
-"""`action-platform worker`: takes queued jobs from the database and hands each to its handler — the same services the API uses."""
+"""`action-platform-api worker`: takes queued jobs from the database and hands each to the handler its context registered — the same services the API uses."""
 
 import json
 import logging
@@ -16,8 +16,8 @@ from app.core.db.models import Job
 from app.repositories.registry import Registry
 from app.repositories.source import configure_registry, get_registry
 from app.services import plugins
-from app.services.jobs import JobQueue
-from app.services.jobs.handlers import JobHandlers
+from app.services.jobs import JobQueue, handlers as _handlers  # noqa: F401 — registers the job kinds
+from app.services.jobs.registry import JobServices, handlers
 
 log = logging.getLogger("action_platform.worker")
 
@@ -53,7 +53,9 @@ class Worker:
             registry = get_registry()
 
         self.registry = registry
-        self.handlers = JobHandlers(database, self.sealer, registry, self.plugins).all()
+        self.handlers = handlers(
+            JobServices(database, self.sealer, registry, self.plugins)
+        )
         plugin_registry.use_options(lambda slug: plugins.DbOptions(database, slug))
 
     def run(self, interval: float = 2.0, once: bool = False) -> int:

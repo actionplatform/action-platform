@@ -84,7 +84,7 @@ class QueueTest(TempCase):
 
 class AsyncRouteTest(GateCase):
     def test_sync_with_prefer_async_is_queued_and_the_worker_runs_it(self):
-        from app.worker import Worker
+        from app.services.jobs.worker import Worker
 
         registry_id = self.register()
         res = self.client.post(
