@@ -32,7 +32,7 @@ export function OrgForm({ first }: { first: boolean }) {
           <h1 className="text-lg font-semibold">{first ? "Create your organization" : "New organization"}</h1>
           <p className="text-sm text-secondary">Organizations own projects; projects group apps.</p>
         </div>
-        <form action={action} className="space-y-3">
+        <form method="post" action={action} className="space-y-3">
           <Field label="Name">
             <Input name="name" value={name} onChange={(e) => { setName(e.target.value); if (!touched) setSlug(slugify(e.target.value)); }} placeholder="Acme" required autoFocus />
           </Field>

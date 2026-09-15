@@ -81,7 +81,7 @@ function AdminStep({ onDone }: { onDone: () => void }) {
   const [pending, start] = useTransition();
 
   return (
-    <form
+    <form method="post"
       className="space-y-3"
       onSubmit={(e) => {
         e.preventDefault();
@@ -112,7 +112,7 @@ function OrganizationStep({ onDone }: { onDone: (id: string) => void }) {
   const [pending, start] = useTransition();
 
   return (
-    <form
+    <form method="post"
       className="space-y-3"
       onSubmit={(e) => {
         e.preventDefault();
@@ -179,7 +179,7 @@ function HostsStep({ orgId, oauth }: { orgId: string | null; oauth: OAuthInfo })
         </ul>
       )}
 
-      {manual && <form
+      {manual && <form method="post"
         className="space-y-3 rounded-md border border-border p-3"
         onSubmit={(e) => {
           e.preventDefault();
