@@ -7,8 +7,8 @@ from typing import Annotated, Any, Optional
 
 from pydantic import Field
 
-from action_platform.core.flow import gitflow, workflow
-from action_platform.core.flow.workflow import GitFlow
+from action_platform.core.wiring import wired
+from action_platform.core.flow import gitflow
 from action_platform.mcp import schemas
 from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL, tool
 
@@ -26,13 +26,13 @@ def register_rules(mcp: Any) -> None:
     def gitflow_rules() -> schemas.GitflowRules:
         """The git-flow rules every project follows: branch kinds, their base and merge target, protected branches, commit format."""
         return {
-            "kinds": sorted(gitflow.KINDS),
-            "protected": sorted(gitflow.PROTECTED),
+            "kinds": sorted(gitflow.current().kinds),
+            "protected": sorted(gitflow.current().protected),
             "base": {
                 "develop (or default branch when no develop)": sorted(
-                    workflow.DEVELOP_BASED
+                    gitflow.current().develop_based
                 ),
-                "default branch (main/master)": sorted(workflow.MAIN_BASED),
+                "default branch (main/master)": sorted(gitflow.current().main_based),
             },
             "merge_into": {
                 "feature, bugfix, chore, docs, refactor, test, ci, perf": "develop (or default)",
@@ -42,7 +42,7 @@ def register_rules(mcp: Any) -> None:
             },
             "branch_name": "<kind>/<code>[-slug], e.g. feature/42-login, hotfix/PROJ-7",
             "commit": "Conventional Commits 1.0.0: type(scope)!: description, types "
-            + ", ".join(sorted(gitflow.TYPES)),
+            + ", ".join(sorted(gitflow.current().types)),
             "exceptions_on_protected": [
                 "chore(release): X.Y.Z",
                 "chore: bootstrap ...",
@@ -76,7 +76,7 @@ def register(mcp: Any) -> None:
         Refuses a dirty working tree and an existing branch name. With push=true
         the branch is created on origin too.
         """
-        branch = GitFlow(_root(project)).start(kind, code, slug, push=push)
+        branch = wired.gitflow(_root(project)).start(kind, code, slug, push=push)
 
         return {"branch": branch.name, "base": branch.base, "pushed": branch.pushed}
 
@@ -95,7 +95,7 @@ def register(mcp: Any) -> None:
         Returns every problem found; an empty list means the branch can be
         pushed and opened as a pull request.
         """
-        report = GitFlow(_root(project)).audit(since=since)
+        report = wired.gitflow(_root(project)).audit(since=since)
 
         return {
             "branch": report.branch,
@@ -119,7 +119,7 @@ def register(mcp: Any) -> None:
         Audits git-flow first and refuses a branch that does not pass. Nothing
         is opened; show the result and use open_pull_request on approval.
         """
-        proposal = GitFlow(_root(project)).propose(base=base, title=title)
+        proposal = wired.gitflow(_root(project)).propose(base=base, title=title)
 
         return {
             "head": proposal.head,
@@ -140,7 +140,7 @@ def register(mcp: Any) -> None:
         draft: bool = False,
     ) -> schemas.PullRequestOpened:
         """Open the pull request on the source host, pushing the branch first if needed. Confirm with the user before calling."""
-        ref = GitFlow(_root(project)).open_pr(
+        ref = wired.gitflow(_root(project)).open_pr(
             base=base, title=title, body=body, draft=draft
         )
 
@@ -149,7 +149,7 @@ def register(mcp: Any) -> None:
     @tool(mcp, annotations=WRITES_LOCAL)
     def install_hooks(project: ProjectDir = None) -> schemas.HooksInstalled:
         """Install the platform git hooks into .git/hooks so git-flow is enforced before commit and push. Re-run after upgrading the CLI."""
-        report = GitFlow(_root(project)).install_hooks()
+        report = wired.gitflow(_root(project)).install_hooks()
 
         return {
             "installed": report.installed,

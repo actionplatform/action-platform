@@ -3,11 +3,11 @@ from pathlib import Path
 import tomllib
 from fastapi import HTTPException
 
+from action_platform.core.wiring import wired
 from action_platform.core.config import Config
 from action_platform.core.flow import gitflow
 from action_platform.core.flow.repository import Repository
-from action_platform.core.flow.workflow import BranchError, GitFlow
-from action_platform.core.scaffold.generate import apply_cloud, apply_service
+from action_platform.core.flow.workflow import BranchError
 from action_platform.core.scaffold.install import install
 from action_platform.core.scaffold.templates import TemplateError
 from action_platform.settings import settings
@@ -57,7 +57,7 @@ class ConfigurationService:
         root = self._root(id)
 
         try:
-            apply_cloud(repo, matrix.cloud(target), root)
+            wired.scaffolder().apply_cloud(repo, matrix.cloud(target), root)
         except TemplateError as e:
             raise HTTPException(400, str(e)) from e
 
@@ -75,7 +75,7 @@ class ConfigurationService:
             raise HTTPException(400, f"unknown service: {name}")
 
         root = self._root(id)
-        apply_service(repo, service, root, provider=provider)
+        wired.scaffolder().apply_service(repo, service, root, provider=provider)
         self._drafted(id, root)
 
         return {
@@ -143,7 +143,7 @@ class ConfigurationService:
             if body.pull_request:
                 config = Config.from_toml(root / settings.CONFIG_FILE)
                 auth.apply(config, body.credentials)
-                ref = GitFlow(repo).open_pr(config=config)
+                ref = wired.gitflow(repo).open_pr(config=config)
                 result["pull_request"] = {"number": ref.number, "url": ref.url}
 
         return result
@@ -153,7 +153,7 @@ class ConfigurationService:
 
         with repo.stashed():
             try:
-                branch = GitFlow(repo).start(
+                branch = wired.gitflow(repo).start(
                     spec.kind, spec.code, spec.slug, push=False
                 )
             except BranchError as e:

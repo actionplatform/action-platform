@@ -6,7 +6,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   [ -z "$local_ref" ] && continue
   case "$remote_ref" in refs/heads/*) ;; *) continue ;; esac
   branch="${remote_ref#refs/heads/}"
-  gitflow_branch "$branch"
+  gitflow_check branch "$branch"
   printf '%s' "$branch" | grep -Eq "^(${AP_PROTECTED})$" || continue
   if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then range="$local_sha"; else range="$remote_sha..$local_sha"; fi
   while IFS= read -r msg; do

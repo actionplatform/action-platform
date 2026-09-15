@@ -12,23 +12,11 @@ from action_platform.core.context import PRRef
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.flow import gitflow as rules
 from action_platform.core.flow.repository import Repository
+from action_platform.plugins import registry
 from action_platform.core.release import changelog
-from action_platform.core.release.release import Releaser
+from action_platform.core.wiring import slot, wired
 from action_platform.settings import settings
 
-DEVELOP_BASED = {
-    "feature",
-    "bugfix",
-    "chore",
-    "docs",
-    "refactor",
-    "test",
-    "ci",
-    "perf",
-    "release",
-}
-MAIN_BASED = {"hotfix", "support"}
-KINDS = sorted(DEVELOP_BASED | MAIN_BASED)
 
 HOOK_MARK = "# action-platform hook"
 HOOK_NAMES = ("pre-commit", "commit-msg", "pre-push")
@@ -70,9 +58,9 @@ class HooksReport:
 
 
 def branch_name(kind: str, code: str, slug: str | None = None) -> str:
-    if kind not in KINDS:
+    if kind not in rules.current().kinds:
         raise BranchError(
-            f"unknown branch kind: {kind} (available: {', '.join(KINDS)})"
+            f"unknown branch kind: {kind} (available: {', '.join(sorted(rules.current().kinds))})"
         )
 
     code = code.strip()
@@ -92,6 +80,7 @@ def slugify(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
 
 
+@slot("gitflow")
 class GitFlow:
     def __init__(self, repo: Repository | Path) -> None:
         self.repo = repo if isinstance(repo, Repository) else Repository(repo)
@@ -111,7 +100,7 @@ class GitFlow:
         """develop when it exists on origin, else the default branch; hotfix/support always the default."""
         default = self.default_branch()
 
-        if kind in MAIN_BASED:
+        if kind in rules.current().main_based:
             return default
 
         return "develop" if self.has_develop() else default
@@ -125,7 +114,7 @@ class GitFlow:
         if problem:
             report.problems.append(problem)
 
-        if since is None and branch in rules.PROTECTED:
+        if since is None and branch in rules.current().protected:
             commits = self._commits_on_protected()
         else:
             base = since or self._merge_base(branch)
@@ -176,7 +165,7 @@ class GitFlow:
         """Everything a pull request needs, computed from the branch."""
         head = self.repo.branch
 
-        if head in rules.PROTECTED:
+        if head in rules.current().protected:
             raise PullRequestError(
                 f"'{head}' is a protected branch — start a branch first: action-platform branch feature <code>"
             )
@@ -241,9 +230,9 @@ class GitFlow:
         if not self.repo.remote_branch_exists(proposal.head):
             self.repo.push_upstream(proposal.head)
 
-        ctx = Releaser(config, self.repo).context()
+        ctx = wired.releaser(config, self.repo).context()
 
-        return config.source_host.open_pr(
+        ref = config.source_host.open_pr(
             ctx,
             base=proposal.base,
             head=proposal.head,
@@ -251,6 +240,9 @@ class GitFlow:
             body=body or proposal.body,
             draft=draft,
         )
+        registry.installed().after_pull_request(ref)
+
+        return ref
 
     def install_hooks(self) -> HooksReport:
         """Install the bundled hooks where git looks for them, keeping any hook the user already had: it is renamed to <name>.pre-action-platform and still runs after ours."""
@@ -315,7 +307,7 @@ class GitFlow:
         return path, None
 
     def _merge_base(self, branch: str) -> str | None:
-        if branch in rules.PROTECTED:
+        if branch in rules.current().protected:
             return self.repo.latest_tag()
 
         for candidate in (

@@ -7,7 +7,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from action_platform.core.scaffold.generate import apply_service
+from action_platform.core.wiring import wired
 from action_platform.core.scaffold.templates import load_matrix
 from action_platform.logging import logger
 
@@ -38,7 +38,9 @@ def add(
     repo, matrix = load_matrix(update=update, source=source)
     target = (project or Path.cwd()).resolve()
 
-    apply_service(repo, matrix.service(name), target, provider=provider)
+    wired.scaffolder().apply_service(
+        repo, matrix.service(name), target, provider=provider
+    )
 
     logger.info("added service %s to %s", name, target)
 

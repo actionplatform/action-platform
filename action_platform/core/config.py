@@ -5,11 +5,14 @@ from __future__ import annotations
 import tomllib
 from pathlib import Path
 
+from action_platform.abc.changelog_renderer import ChangelogRenderer
 from action_platform.abc.ci_runner import CIRunner
 from action_platform.abc.deploy_target import DeployTarget
+from action_platform.abc.release_strategy import ReleaseStrategy
 from action_platform.abc.source_host import SourceHost
 from action_platform.core.exception import ConfigError
 from action_platform.core import module
+from action_platform.core.release import strategies
 from action_platform.core.release.components import parse as parse_components
 from action_platform.providers.source import build_source_host
 
@@ -49,6 +52,7 @@ class Config:
         self._deploy = deploy
         self._deploy_spec: dict = {}
         self._components_spec: dict = {}
+        self._release_spec: dict = {}
 
     @property
     def components(self):
@@ -62,6 +66,18 @@ class Config:
             self._deploy = _build_deploy_targets(self._deploy_spec)
 
         return self._deploy
+
+    @property
+    def release_strategy(self) -> ReleaseStrategy:
+        """`[release] strategy`, semver unless platform.toml or a plugin says otherwise."""
+        return strategies.strategy(self._release_spec.get("strategy") or "semver")
+
+    @property
+    def changelog(self) -> ChangelogRenderer:
+        """`[release] changelog`, conventional unless platform.toml or a plugin says otherwise."""
+        return strategies.renderer(
+            self._release_spec.get("changelog") or "conventional"
+        )
 
     @classmethod
     def from_toml(cls, path: Path) -> "Config":
@@ -78,6 +94,7 @@ class Config:
         )
         config._deploy_spec = data.get("deploy", {})
         config._components_spec = data.get("components", {})
+        config._release_spec = data.get("release", {})
 
         return config
 

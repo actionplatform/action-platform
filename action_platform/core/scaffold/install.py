@@ -10,11 +10,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from action_platform.core.flow.repository import Repository
-from action_platform.core.flow.workflow import GitFlow
 from action_platform.core.manifest import toml_str
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.scaffold.templates import Matrix, load_matrix
 from action_platform.core.scaffold.templates import detect_language as detect
+from action_platform.core.wiring import slot, wired
 from action_platform.settings import settings
 
 MARKERS = [
@@ -70,6 +70,7 @@ def detect_language(root: Path) -> str | None:
     return detect(root) or None
 
 
+@slot("installer")
 class Installer:
     """Bring an existing repository onto the platform: platform.toml, LAST_VERSION, AGENTS.md, the quality config and CI files borrowed from the closest template, the git hooks. `plan()` says what would happen; `apply()` does it."""
 
@@ -139,7 +140,7 @@ class Installer:
             _copy_file(plan, source / rel, rel, dry_run)
 
         if not dry_run:
-            report = GitFlow(self.repo).install_hooks()
+            report = wired.gitflow(self.repo).install_hooks()
             plan.hooks_installed = bool(report)
             plan.hooks_preserved = list(report.preserved)
             plan.hooks_skipped = report.skipped
@@ -155,7 +156,7 @@ def install(
     dry_run: bool = False,
     name: str | None = None,
 ) -> Plan:
-    installer = Installer(root, type_=type_, language=language, ci=ci, name=name)
+    installer = wired.installer(root, type_=type_, language=language, ci=ci, name=name)
 
     return installer.plan() if dry_run else installer.apply()
 

@@ -9,10 +9,11 @@ from action_platform.core.config import Config
 from action_platform.core.context import Context, DeployResult, Diagnosis
 from action_platform.core.exception import DeployError
 from action_platform.core.flow.repository import Repository
-from action_platform.core.release.release import Releaser
+from action_platform.core.wiring import slot, wired
 from action_platform.logging import logger
 
 
+@slot("deployer")
 class Deployer:
     def __init__(self, config: Config, repo: Repository | Path) -> None:
         self.config = config
@@ -34,7 +35,9 @@ class Deployer:
         return targets
 
     def _context(self, dry_run: bool = False, stage: str | None = None) -> Context:
-        ctx = Releaser(self.config, self.repo).context(dry_run=dry_run, stage=stage)
+        ctx = wired.releaser(self.config, self.repo).context(
+            dry_run=dry_run, stage=stage
+        )
         ctx.next_version = ctx.current_version
 
         return ctx
@@ -102,7 +105,9 @@ def deploy(
     dry_run: bool = False,
     stage: str | None = None,
 ) -> list[DeployResult]:
-    return Deployer(config, repo_root).deploy(target_name, dry_run=dry_run, stage=stage)
+    return wired.deployer(config, repo_root).deploy(
+        target_name, dry_run=dry_run, stage=stage
+    )
 
 
 def rollback(
@@ -112,7 +117,7 @@ def rollback(
     to_version: str | None = None,
     stage: str | None = None,
 ) -> None:
-    Deployer(config, repo_root).rollback(
+    wired.deployer(config, repo_root).rollback(
         target_name, to_version=to_version, stage=stage
     )
 
@@ -120,10 +125,10 @@ def rollback(
 def diagnose(
     config: Config, target_name: str | None, repo_root: Path, stage: str | None = None
 ) -> list[Diagnosis]:
-    return Deployer(config, repo_root).diagnose(target_name, stage=stage)
+    return wired.deployer(config, repo_root).diagnose(target_name, stage=stage)
 
 
 def destroy(
     config: Config, target_name: str | None, repo_root: Path, stage: str | None = None
 ) -> None:
-    Deployer(config, repo_root).destroy(target_name, stage=stage)
+    wired.deployer(config, repo_root).destroy(target_name, stage=stage)

@@ -1,0 +1,83 @@
+name: Plugin
+description: Propose a plugin, or ask the core for a slot, hook or provider a plugin needs.
+title: "plugin: <slug> — <one line>"
+labels: ["plugin"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read [writing a plugin](https://github.com/actionplatform/action-platform/blob/master/docs/contribute_plugins.md) first. A finished plugin goes to [plugins-index](https://github.com/actionplatform/plugins-index) as a pull request; this issue is for the idea, or for something the core must expose before the plugin can exist.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What is this
+      options:
+        - A plugin I want to build
+        - A plugin I want someone to build
+        - The core needs a new slot, hook or provider group for my plugin
+    validations:
+      required: true
+  - type: input
+    id: slug
+    attributes:
+      label: Slug
+      description: "`[a-z][a-z0-9-]*`, 2–32 chars; package becomes `apx-<slug>`, module `apx_<slug>`. Not `core platform official admin system test internal`."
+      placeholder: aws-lambda
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What it does
+      description: One paragraph. Who runs it, when, and what changes for them.
+    validations:
+      required: true
+  - type: checkboxes
+    id: brings
+    attributes:
+      label: What it brings
+      options:
+        - label: MCP tools (`<slug>_<name>`)
+        - label: CLI commands (`action-platform <slug> …`)
+        - label: Cloud overlays (`overlays/index.json` + `cloud/<name>/`)
+        - label: Deploy targets (`action_platform.deploy_target`)
+        - label: CI runner (`action_platform.ci_runner`)
+        - label: Source host (`action_platform.source_host`)
+        - label: Release strategy (`action_platform.release_strategy`)
+        - label: Changelog renderer (`action_platform.changelog`)
+        - label: Replaces a core slot (`gitflow_rules`, `gitflow`, `releaser`, `deployer`, `installer`, `scaffolder`)
+        - label: Lifecycle hooks (`after_release`, `after_deploy`, `after_pull_request`)
+  - type: textarea
+    id: needs
+    attributes:
+      label: Needs
+      description: Every host it talks to, every environment variable it reads, every tool it shells out to. This is what the CLI shows before install.
+      placeholder: |
+        net: hooks.slack.com
+        env: SLACK_WEBHOOK_URL
+        tool: none
+    validations:
+      required: true
+  - type: textarea
+    id: core
+    attributes:
+      label: What the core is missing (if anything)
+      description: A slot that does not exist, a hook at the wrong moment, a provider group you cannot declare. Say which class or process, and what you would subclass or call. Leave empty when the current extension points are enough.
+  - type: input
+    id: repo
+    attributes:
+      label: Repository
+      description: Once it exists — `<you>/apx-<slug>`, started from the [template](https://github.com/actionplatform/apx-example).
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Rules I will follow
+      options:
+        - label: No side effects at import; nothing outside `register` and the tools themselves
+          required: true
+        - label: No assignment to `action_platform.*` attributes — replace a slot or ask for a hook here
+          required: true
+        - label: "`needs` will list every host, variable and tool"
+          required: true
+        - label: Tests fake every external call; nothing in the test suite reaches a network
+          required: true

@@ -3,10 +3,10 @@ from typing import Optional
 
 from fastapi import HTTPException
 
+from action_platform.core.wiring import wired
 from action_platform.core.config import Config
 from action_platform.core.flow import git
 from action_platform.core.flow.repository import Repository
-from action_platform.core.flow.workflow import GitFlow
 from action_platform.settings import settings
 from app.core.shared import git_auth as auth
 from app.repositories.registry import Registry
@@ -26,7 +26,7 @@ class FlowService:
 
     def start_branch(self, id: str, body: StartBranchRequest) -> dict:
         with auth.git_auth(body.credentials):
-            branch = GitFlow(self._repo(id)).start(
+            branch = wired.gitflow(self._repo(id)).start(
                 body.kind, body.code, body.slug, push=True
             )
 
@@ -35,7 +35,7 @@ class FlowService:
         return {"branch": branch.name, "base": branch.base, "pushed": True}
 
     def plan_branch(self, id: str, kind: str, code: str, slug: Optional[str]) -> dict:
-        branch = GitFlow(self._repo(id)).plan_branch(kind, code or "code", slug)
+        branch = wired.gitflow(self._repo(id)).plan_branch(kind, code or "code", slug)
 
         return {"branch": branch.name, "base": branch.base, "pushed": False}
 
@@ -60,7 +60,7 @@ class FlowService:
         return {"branch": Repository(root).branch}
 
     def propose_pr(self, id: str, base: str | None, title: str | None) -> dict:
-        proposal = GitFlow(self._repo(id)).propose(base=base, title=title)
+        proposal = wired.gitflow(self._repo(id)).propose(base=base, title=title)
 
         return {
             "head": proposal.head,
@@ -76,7 +76,7 @@ class FlowService:
         auth.apply(config, body.credentials)
 
         with auth.git_auth(body.credentials):
-            ref = GitFlow(root).open_pr(
+            ref = wired.gitflow(root).open_pr(
                 base=body.base,
                 title=body.title,
                 body=body.body,

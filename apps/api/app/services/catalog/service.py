@@ -194,7 +194,7 @@ class CatalogService:
 
     def gitflow_rules(self) -> dict:
         return {
-            "kinds": sorted(gitflow.KINDS),
-            "protected": sorted(gitflow.PROTECTED),
-            "types": sorted(gitflow.TYPES),
+            "kinds": sorted(gitflow.current().kinds),
+            "protected": sorted(gitflow.current().protected),
+            "types": sorted(gitflow.current().types),
         }

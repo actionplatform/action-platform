@@ -26,6 +26,19 @@ gitflow_commit_msg() {
   return 1
 }
 
+gitflow_check() {
+  if [ -z "${AP_HOOKS_SHELL:-}" ] && command -v action-platform >/dev/null 2>&1; then
+    action-platform gitflow-check "$@"
+    return $?
+  fi
+  local what="$1"; shift
+  case "$what" in
+    branch)     gitflow_branch "$@" ;;
+    commit-msg) gitflow_commit_msg "$@" ;;
+    protect)    gitflow_protect "$@" ;;
+  esac
+}
+
 gitflow_current_branch() {
   git symbolic-ref --short -q HEAD 2>/dev/null || git rev-parse --abbrev-ref HEAD
 }

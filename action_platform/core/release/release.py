@@ -11,8 +11,9 @@ from action_platform.core.exception import ReleaseError
 from action_platform.core.flow.repository import Repository
 from action_platform.core.release import changelog
 from action_platform.core.release.components import Component, resolve
-from action_platform.core.release.versioning import Version, VersionFiles
+from action_platform.core.release.versioning import VersionFiles
 from action_platform.logging import logger
+from action_platform.core.wiring import slot, wired
 from action_platform.settings import settings
 
 STABLE_BRANCHES = {"main", "master"}
@@ -29,6 +30,7 @@ class ReleasePlan:
     commits: list[str] = field(default_factory=list)
 
 
+@slot("releaser")
 class Releaser:
     def __init__(self, config: Config, repo: Repository | Path) -> None:
         self.config = config
@@ -67,11 +69,10 @@ class Releaser:
         if prerelease is None:
             prerelease = ctx.branch not in STABLE_BRANCHES
 
-        current = Version.parse(ctx.current_version)
-        next_version = self._next(current, level, prerelease, comp)
-        tag = comp.tag(str(next_version))
+        next_version = self._next(ctx.current_version, level, prerelease, comp)
+        tag = comp.tag(next_version)
 
-        if str(next_version) == ctx.current_version:
+        if next_version == ctx.current_version:
             raise ReleaseError(f"{ctx.current_version} is already the current version")
 
         if tag in self.repo.tags() or self.repo.remote_tag_exists(tag):
@@ -83,10 +84,10 @@ class Releaser:
         return ReleasePlan(
             component=comp,
             current=ctx.current_version,
-            next=str(next_version),
+            next=next_version,
             tag=tag,
             prerelease=prerelease,
-            changelog=changelog.render(str(next_version), commits),
+            changelog=self.config.changelog.render(next_version, commits),
             commits=commits,
         )
 
@@ -190,33 +191,20 @@ class Releaser:
     ) -> str:
         """The version a release would produce, without checking the tree or the tags — for previews."""
         comp = resolve(self.config.components, component)
-        current = Version.parse(self.current_version(comp))
 
         if prerelease is None:
             prerelease = (branch or self.repo.branch) not in STABLE_BRANCHES
 
-        return str(self._next(current, level, prerelease, comp))
+        return self._next(self.current_version(comp), level, prerelease, comp)
 
     def _next(
-        self, current: Version, level: str, prerelease: bool, component: Component
-    ) -> Version:
-        """Stable: plain bump. Pre-release: bump the stable base (or keep it when already on an rc) and add -rc.N."""
-        base = current.stable
-
-        if not prerelease:
-            return base.bump(level)
-
-        if Version.is_valid(level):
-            target = Version.parse(level).stable
-        elif current.is_prerelease:
-            target = base
-        else:
-            target = base.bump(level)
-
+        self, current: str, level: str, prerelease: bool, component: Component
+    ) -> str:
+        """The `[release] strategy` decides — semver unless platform.toml or a plugin says otherwise; it sees the versions already tagged for the component."""
         prefix = component.tag_prefix[:-1]
-        tags = [t[len(prefix) :] for t in self.repo.tags() if t.startswith(prefix)]
+        taken = [t[len(prefix) :] for t in self.repo.tags() if t.startswith(prefix)]
 
-        return target.next_rc(tags)
+        return self.config.release_strategy.next(current, level, prerelease, taken)
 
     def _undo_writes(
         self, touched: list[str], had_changelog: bool, where: Path
@@ -242,7 +230,7 @@ def build_context(
     stage: str | None = None,
     component: Component | None = None,
 ) -> Context:
-    return Releaser(config, repo_root).context(
+    return wired.releaser(config, repo_root).context(
         dry_run=dry_run, stage=stage, component=component
     )
 
@@ -255,7 +243,7 @@ def release(
     prerelease: bool | None = None,
     component: str | None = None,
 ) -> Context:
-    return Releaser(config, repo_root).release(
+    return wired.releaser(config, repo_root).release(
         level, dry_run=dry_run, prerelease=prerelease, component=component
     )
 

@@ -94,15 +94,15 @@ flowchart LR
 | | |
 |---|---|
 | Start | [Getting started](docs/start_getting_started.md) · [Self-hosting](docs/start_self_hosting.md) |
-| Use | [Web](docs/use_web.md) · [CLI](docs/use_cli.md) · [MCP](docs/use_mcp.md) · [API](docs/use_api.md) |
+| Use | [Web](docs/use_web.md) · [CLI](docs/use_cli.md) · [MCP](docs/use_mcp.md) · [API](docs/use_api.md) · [Plugins](docs/use_plugins.md) |
 | Concept | [Access control](docs/concept_access_control.md) · [Git-flow](docs/concept_git_flow.md) · [Manifest](docs/concept_manifest.md) · [Templates](docs/concept_templates.md) · [Releases](docs/concept_releases.md) · [Observability](docs/concept_observability.md) |
-| Contribute | [Architecture](docs/contribute_architecture.md) · [Development](docs/contribute_development.md) |
+| Contribute | [Architecture](docs/contribute_architecture.md) · [Development](docs/contribute_development.md) · [Writing a plugin](docs/contribute_plugins.md) |
 
 Versions and history: [`LAST_VERSION`](LAST_VERSION) / [`CHANGELOG.md`](CHANGELOG.md) for the library and CLI, [`apps/web`](apps/web/CHANGELOG.md) and [`apps/api`](apps/api/app/CHANGELOG.md) for the web app and the API.
 
 ## Extend it
 
-Deploy targets are plugins. Implement the `DeployTarget` contract — `preflight`, `create`, `deploy`, `switch_traffic`, `rollback`, `diagnose`, `delete` — publish it under the `action_platform.deploy_target` entry-point group, and `action-platform deploy` finds it by name.
+Everything is a plugin. Deploy targets, CI runners, release strategies and changelog formats are named providers behind entry-point groups; git-flow rules, the releaser, the deployer, the installer and the scaffolder are slots a plugin replaces with a subclass; MCP tools, CLI commands and cloud overlays ride along. `action-platform plugin install aws-lambda` — see [plugins](docs/use_plugins.md).
 
 ```python
 from action_platform import ActionPlatform, Config

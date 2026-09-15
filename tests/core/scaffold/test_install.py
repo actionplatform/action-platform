@@ -122,7 +122,7 @@ class HooksTest(InstallCase):
         install.install(self.repo)
 
         self.assertIn(
-            "gitflow_branch", (self.repo / ".git/hooks/pre-commit").read_text()
+            "gitflow_check branch", (self.repo / ".git/hooks/pre-commit").read_text()
         )
 
     def test_existing_hooks_are_kept_and_chained(self):
@@ -134,7 +134,7 @@ class HooksTest(InstallCase):
         plan = install.install(self.repo)
 
         self.assertEqual(plan.hooks_preserved, ["pre-commit"])
-        self.assertIn("gitflow_branch", (hooks / "pre-commit").read_text())
+        self.assertIn("gitflow_check branch", (hooks / "pre-commit").read_text())
         self.assertTrue(
             (hooks / "pre-commit.pre-action-platform")
             .read_text()

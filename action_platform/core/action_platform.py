@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from action_platform.core.wiring import wired
 from action_platform.core.config import Config
 from action_platform.core.context import Context, DeployResult, Diagnosis
 from action_platform.core.flow.repository import Repository
 from action_platform.core.flow.workflow import GitFlow
 from action_platform.core.release.deploy import Deployer
 from action_platform.core.release.release import ReleasePlan, Releaser
+from action_platform.plugins import registry
 
 
 class ActionPlatform:
@@ -39,15 +41,15 @@ class ActionPlatform:
 
     @property
     def releaser(self) -> Releaser:
-        return Releaser(self.config, self.repo)
+        return wired.releaser(self.config, self.repo)
 
     @property
     def deployer(self) -> Deployer:
-        return Deployer(self.config, self.repo)
+        return wired.deployer(self.config, self.repo)
 
     @property
     def flow(self) -> GitFlow:
-        return GitFlow(self.repo)
+        return wired.gitflow(self.repo)
 
     def plan_release(
         self,
@@ -64,14 +66,24 @@ class ActionPlatform:
         prerelease: bool | None = None,
         component: str | None = None,
     ) -> Context:
-        return self.releaser.release(
+        ctx = self.releaser.release(
             level, dry_run=dry_run, prerelease=prerelease, component=component
         )
+
+        if not dry_run:
+            registry.installed().after_release(ctx)
+
+        return ctx
 
     def deploy(
         self, target: str | None = None, dry_run: bool = False, stage: str | None = None
     ) -> list[DeployResult]:
-        return self.deployer.deploy(target, dry_run=dry_run, stage=stage)
+        results = self.deployer.deploy(target, dry_run=dry_run, stage=stage)
+
+        if not dry_run:
+            registry.installed().after_deploy(results)
+
+        return results
 
     def rollback(
         self,

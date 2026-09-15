@@ -2,7 +2,7 @@
 # action-platform hook
 set -euo pipefail
 . "$(dirname "$0")/gitflow.sh"
-gitflow_branch "$(gitflow_current_branch)"
+gitflow_check branch "$(gitflow_current_branch)"
 previous="$0.pre-action-platform"
 [ -x "$previous" ] && exec "$previous" "$@"
 exit 0
