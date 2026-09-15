@@ -203,10 +203,11 @@ export async function discardChanges(projectId: string, registryId: string): Pro
   }
 }
 
-export async function startDeploy(registryId: string, stage: string, dryRun: boolean): Promise<Result<{ job: string }>> {
+export async function startDeploy(registryId: string, stage: string, dryRun: boolean, version: string): Promise<Result<{ job: string }>> {
   await requireOrg();
+  if (!version) return { ok: false, error: "A deploy ships a release: pick one." };
   try {
-    const data = await api.apps.deployAsync(registryId, stage, dryRun);
+    const data = await api.apps.deployAsync(registryId, stage, dryRun, version);
     return { ok: true, data: { job: data.job } };
   } catch (e) {
     return failed(e);
