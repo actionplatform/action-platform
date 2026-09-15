@@ -89,6 +89,7 @@ def build(remote: Optional[str] = None) -> MCPServer:
         )
         remote_tools.register(mcp, client)
         flow.register_rules(mcp)
+        prompts.register_remote(mcp)
         mcp.middleware.append(_name_the_client(client))
 
         return mcp
