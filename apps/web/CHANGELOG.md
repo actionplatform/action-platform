@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.15.0 — 2026-09-14
+
+### Features
+- **web:** settings split into pages — General, Members, Code hosts, Git-flow, API — as a sidebar submenu and tabs on a phone
+
+### Refactoring
+- **api:** TokenMinter, ImportGateway and HostConnector.create_github_app take the last orchestration out of the routers; import schemas in schemas/imports
+
 ## v0.14.6 — 2026-09-14
 
 ### Refactoring
