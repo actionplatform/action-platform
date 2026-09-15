@@ -23,7 +23,7 @@ export default async function CodeHostsPage({ searchParams }: { searchParams: Pr
   return (
     <div className="space-y-5">
       <Card className="rounded-[11px]">
-        <header className="border-b border-border px-6 py-4"><h2 className="text-[18px] font-semibold">Code hosts</h2></header>
+        <header className="border-b border-border px-6 py-4"><h2 className="text-[18px] font-semibold">Git</h2><p className="mt-0.5 text-sm text-secondary">GitHub, GitLab, Bitbucket.</p></header>
         <div className="space-y-3 px-4 py-4 sm:px-6">
           {query.connected && <div className="text-sm text-secondary">Connected {query.connected}.</div>}
           {query.github_app && <div className="text-sm text-secondary">GitHub App <code className="font-mono">{query.github_app}</code> created. Install it, then connect.</div>}
