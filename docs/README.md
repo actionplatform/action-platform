@@ -29,6 +29,7 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 | [CLI](use_cli.md) | every command, its flags and environment |
 | [MCP](use_mcp.md) | tools, prompts and skills for AI clients — locally or against a hosted platform |
 | [Plugins](use_plugins.md) | install, enable, disable; what a plugin can add or replace |
+| [Identity](concept_identity.md) | the platform as an OIDC issuer: deploys without cloud access keys |
 | [API](use_api.md) | the JSON API behind the web app: routes, credentials contract, trust, errors |
 
 **Concept** — the model, one term per guide
