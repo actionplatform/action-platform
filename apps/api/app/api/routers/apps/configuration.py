@@ -15,16 +15,16 @@ router = APIRouter(prefix="/api/apps", tags=["configuration"])
 def read_manifest(
     id: str,
     config: ConfigurationDep,
-) -> schemas.ManifestBody:
+) -> schemas.AppConfigBody:
     return config.manifest(id)
 
 
 @router.put("/{id}/manifest")
 def write_manifest(
     id: str,
-    body: schemas.ManifestBody,
+    body: schemas.AppConfigBody,
     config: ConfigurationDep,
-) -> schemas.ManifestBody:
+) -> schemas.AppConfigBody:
     return config.write_manifest(id, body.content)
 
 
@@ -32,7 +32,7 @@ def write_manifest(
 def export_manifest(
     id: str,
     config: ConfigurationDep,
-) -> schemas.ManifestBody:
+) -> schemas.AppConfigBody:
     return config.export_manifest(id)
 
 

@@ -1664,6 +1664,10 @@ export interface components {
             name: string;
             installed?: string[] | null;
         };
+        AppConfigBody: {
+            content: string;
+            mirrored?: boolean | null;
+        };
         AppDetail: {
             id: string;
             url: string;
@@ -1881,6 +1885,12 @@ export interface components {
         GitAuthor: {
             name: string;
             email: string;
+        };
+        GitHubAppManifestRequest: {
+            origin: string;
+            host: string;
+            return_to: string | null;
+            github_org: string | null;
         };
         GitflowReport: {
             branch: string;
@@ -2137,19 +2147,9 @@ export interface components {
                 [key: string]: unknown;
             };
         };
-        ManifestBody: {
-            content: string;
-            mirrored?: boolean | null;
-        };
         ManifestCallbackRequest: {
             code?: string | null;
             state?: string | null;
-        };
-        ManifestRequest: {
-            origin: string;
-            host: string;
-            return_to: string | null;
-            github_org: string | null;
         };
         Matrix: {
             projects: components["schemas"]["MatrixProject"][];
@@ -2619,6 +2619,8 @@ export interface components {
         Version: {
             version: string;
             api: string;
+            ready: boolean;
+            database?: string | null;
         };
     };
     responses: never;
@@ -4311,7 +4313,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ManifestRequest"];
+                "application/json": components["schemas"]["GitHubAppManifestRequest"];
             };
         };
         responses: {
@@ -5457,7 +5459,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ManifestBody"];
+                    "application/json": components["schemas"]["AppConfigBody"];
                 };
             };
             422: {
@@ -5481,7 +5483,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ManifestBody"];
+                "application/json": components["schemas"]["AppConfigBody"];
             };
         };
         responses: {
@@ -5490,7 +5492,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ManifestBody"];
+                    "application/json": components["schemas"]["AppConfigBody"];
                 };
             };
             422: {
@@ -5519,7 +5521,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ManifestBody"];
+                    "application/json": components["schemas"]["AppConfigBody"];
                 };
             };
             422: {

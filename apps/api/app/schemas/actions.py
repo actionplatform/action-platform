@@ -179,7 +179,7 @@ class ServiceRequest(BaseModel):
     source: Optional[SourceSpec] = None
 
 
-class ManifestBody(BaseModel):
+class AppConfigBody(BaseModel):
     content: str
     mirrored: Optional[bool] = None
 
