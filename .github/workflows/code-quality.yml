@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actionplatform/ci-github/setup@v1
-      - run: poetry run pip install -e apps/api
+      - run: poetry run pip install -e "apps/api[dev]"
       - run: poetry run ruff check apps/api && poetry run ruff format --check apps/api
       - run: |
           python="$(poetry run python -c 'import sys; print(sys.executable)')"

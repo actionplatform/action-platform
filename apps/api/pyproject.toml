@@ -22,7 +22,7 @@ dependencies = [
 action-platform-api = "action_platform_api.core.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=8.3", "httpx>=0.28", "ruff>=0.9"]
+dev = ["pytest>=8.3", "httpx>=0.28", "httpx2", "ruff>=0.9"]
 
 [build-system]
 requires = ["setuptools>=69"]
