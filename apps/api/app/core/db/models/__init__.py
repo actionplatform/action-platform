@@ -3,10 +3,18 @@
 from app.core.db.models.activity import PullRequest, Release
 from app.core.db.models.auth import Account, DeviceCode, Session, User, Verification
 from app.core.db.models.base import KEY, SHORT, Base, now
-from app.core.db.models.hosts import OAuthApp, SourceHost, TemplateSource
+from app.core.db.models.configuration import AppConfig
+from app.core.db.models.integrations import (
+    OAuthApp,
+    PluginOption,
+    SigningKey,
+    SourceHost,
+    TemplateSource,
+)
 from app.core.db.models.jobs import Job
-from app.core.db.models.keys import SigningKey
-from app.core.db.models.organizations import (
+from app.core.db.models.organization import (
+    ApiToken,
+    ApiTokenClient,
     Invitation,
     Member,
     Organization,
@@ -14,18 +22,14 @@ from app.core.db.models.organizations import (
     Team,
     TeamMember,
 )
-from app.core.db.models.app_config import AppConfig
-from app.core.db.models.plugins import PluginOption
 from app.core.db.models.projects import App, Draft, Project, RegistryEntry
-from app.core.db.models.tokens import ApiToken, ApiTokenClient
-
-TABLES = list(Base.metadata.sorted_tables)
 
 __all__ = [
     "Account",
     "ApiToken",
     "ApiTokenClient",
     "App",
+    "AppConfig",
     "Base",
     "DeviceCode",
     "Draft",
@@ -35,9 +39,8 @@ __all__ = [
     "Member",
     "OAuthApp",
     "Organization",
-    "AppConfig",
-    "PluginOption",
     "OrganizationSetting",
+    "PluginOption",
     "Project",
     "PullRequest",
     "RegistryEntry",

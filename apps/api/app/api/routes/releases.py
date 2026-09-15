@@ -4,7 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter
 
-from app.schemas import actions as schemas
+from app.schemas import releases as schemas
 from app.api.dependencies import (
     ReleasesDep,
 )

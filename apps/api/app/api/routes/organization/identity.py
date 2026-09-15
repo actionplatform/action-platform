@@ -15,7 +15,7 @@ from app.api.dependencies import (
     org_dict,
 )
 from app.schemas import common
-from app.schemas import organizations as schemas
+from app.schemas import organization as schemas
 
 from app.services.organization.sessions import TokenMinter
 

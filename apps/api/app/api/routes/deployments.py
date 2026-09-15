@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter
 
 from app.api.dependencies import DeploymentsDep
-from app.schemas import actions as schemas
+from app.schemas import deployments as schemas
 
 router = APIRouter(prefix="/api/apps", tags=["deployments"])
 

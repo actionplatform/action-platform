@@ -8,7 +8,7 @@ from app.api.dependencies import (
     WritesDep,
     allowed,
 )
-from app.schemas import organizations as schemas
+from app.schemas import organization as schemas
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 

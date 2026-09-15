@@ -14,7 +14,7 @@ from typing import Iterator, Optional
 from action_platform.core.config import Config
 from action_platform.core.flow import git
 from action_platform.providers.source import build_source_host
-from app.schemas.actions import SourceCredentials
+from app.schemas.common import SourceCredentials
 
 GIT_USERNAMES = {
     "github": "x-access-token",

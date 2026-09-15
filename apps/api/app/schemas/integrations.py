@@ -91,3 +91,38 @@ class Manifest(BaseModel):
 class ManifestCallbackRequest(BaseModel):
     code: Optional[str] = None
     state: Optional[str] = None
+
+
+class PluginRow(BaseModel):
+    slug: str
+    description: str = ""
+    author: str = ""
+    verified: bool = False
+    repo: str = ""
+    pypi: str = ""
+    latest: str = ""
+    min_core: str = ""
+    needs: list[str] = []
+    tags: list[str] = []
+    installed: bool = False
+    installed_version: Optional[str] = None
+    enabled: bool = False
+    removed: bool = False
+    restart_pending: bool = False
+    error: Optional[str] = None
+
+
+class Plugins(BaseModel):
+    plugins: list[PluginRow]
+    index: str
+    hosted: bool = False
+    restart_pending: list[str] = []
+
+
+class PluginQueued(BaseModel):
+    job: str
+    poll: str
+
+
+class PluginOptions(BaseModel):
+    options: dict[str, Any]

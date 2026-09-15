@@ -12,7 +12,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db.models.base import KEY, SHORT, Base, now
-from app.core.db.models.organizations import Organization
+from app.core.db.models.organization import Organization
 
 
 class Project(Base):
