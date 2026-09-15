@@ -307,7 +307,7 @@ export function PluginsCatalog({ plugins, index, hosted, restartPending, canMana
           {visible.length === 0 ? (
             <PluginsNoResults onClear={() => { setSearch(""); setTag("all"); }} />
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
               {visible.map((p) => <PluginCard key={p.slug} item={p} hosted={hosted} canManage={canManage} />)}
             </div>
           )}
