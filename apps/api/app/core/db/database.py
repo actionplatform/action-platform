@@ -10,7 +10,7 @@ from alembic import command
 from alembic.config import Config
 from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from sqlalchemy import Engine, create_engine, event, inspect
+from sqlalchemy import text, Engine, create_engine, event, inspect
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -18,6 +18,7 @@ from action_platform.core.exception import ConfigError
 
 MIGRATIONS = Path(__file__).parent / "migrations"
 FIRST_REVISION = "0001"
+LOCK_KEY = 7_788_001
 WEB_MANAGED_TABLE = "user"
 log = logging.getLogger("action_platform.db")
 
@@ -91,17 +92,42 @@ class Database:
             WEB_MANAGED_TABLE
         )
 
+    def behind(self) -> bool:
+        """Whether migrations are pending — what a process checks when it is not the one migrating."""
+        return self.current_revision() != self.head_revision()
+
     def migrate(self) -> str | None:
+        """Bring the schema to head. On PostgreSQL an advisory lock serializes replicas that start together; the others find nothing left to do."""
         config = self.config()
 
-        if self.adopted_from_web():
-            command.stamp(config, FIRST_REVISION)
+        with self._migration_lock():
+            if self.adopted_from_web():
+                command.stamp(config, FIRST_REVISION)
 
-        command.upgrade(config, "head")
+            if self.behind():
+                command.upgrade(config, "head")
+
         revision = self.current_revision()
         log.info("database %s at revision %s", self.dialect, revision)
 
         return revision
+
+    @contextmanager
+    def _migration_lock(self) -> Iterator[None]:
+        if self.dialect != "postgresql":
+            yield
+
+            return
+
+        with self.engine.connect() as connection:
+            connection.execute(text("SELECT pg_advisory_lock(:key)"), {"key": LOCK_KEY})
+
+            try:
+                yield
+            finally:
+                connection.execute(
+                    text("SELECT pg_advisory_unlock(:key)"), {"key": LOCK_KEY}
+                )
 
     @contextmanager
     def session(self) -> Iterator[Session]:
