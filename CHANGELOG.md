@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.17.0 — 2026-09-15
+
+### Features
+- **remote:** identity_token
+- **api:** the platform as an OIDC issuer — discovery, JWKS, tokens per deploy from the worker and for logged-in callers
+- **core:** a deploy context can ask for an identity token; ActionPlatform and Deployer carry the signer
+- **plugins:** AP_PLUGINS_DIR as a shared install directory, refresh when plugins.json changes, options store on the surface, pip installer shared by CLI and platform
+
+### Docs
+- identity — deploys without cloud access keys
+- hosted plugins, options store
+
+### Tests
+- plugin options, refresh, hosted install and options endpoints
+
+### Build
+- **deploy:** plugins volume for the api and the worker
+
 ## v0.16.1 — 2026-09-15
 
 ### Features
