@@ -9,6 +9,7 @@ from app.api.dependencies.access import get_caller, org_of
 from app.api.dependencies.services import (
     get_app_service,
     get_auth,
+    get_commits,
     get_configuration,
     get_db,
     get_directory,
@@ -32,6 +33,7 @@ from app.services.jobs import JobQueue
 from app.services.plugins import PluginManager
 from app.services.organization_import import ImportGateway
 from app.services.projects import ProjectService
+from app.services.workspace.commit import CommitService
 from app.services.workspace.configuration import ConfigurationService
 from app.services.workspace.flow import FlowService
 from app.services.workspace.lifecycle import LifecycleService
@@ -52,6 +54,7 @@ GitStateDep = Annotated[GitStateService, Depends(get_git_state)]
 LifecycleDep = Annotated[LifecycleService, Depends(get_lifecycle)]
 FlowDep = Annotated[FlowService, Depends(get_flow)]
 ConfigurationDep = Annotated[ConfigurationService, Depends(get_configuration)]
+CommitsDep = Annotated[CommitService, Depends(get_commits)]
 OrganizationHeader = Annotated[Optional[str], Header(alias="X-Organization")]
 
 
