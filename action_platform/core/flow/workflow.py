@@ -12,7 +12,7 @@ from action_platform.core.context import PRRef
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.flow import gitflow as rules
 from action_platform.core.flow.repository import Repository
-from action_platform.plugins import registry
+from action_platform.core import extensions
 from action_platform.core.release import changelog
 from action_platform.core.wiring import slot, wired
 from action_platform.settings import settings
@@ -240,7 +240,7 @@ class GitFlow:
             body=body or proposal.body,
             draft=draft,
         )
-        registry.installed().after_pull_request(ref)
+        extensions.current().after_pull_request(ref)
 
         return ref
 
