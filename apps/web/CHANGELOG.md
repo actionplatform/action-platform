@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.18.3 — 2026-09-15
+
+### Features
+- **web:** Deploy card on the app page — stage, preflight, deploy through a worker job
+- **web:** async deploy call and job polling actions
+
 ## v0.18.2 — 2026-09-15
 
 ### Bug Fixes
