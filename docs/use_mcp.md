@@ -8,10 +8,10 @@ action-platform mcp                 # stdio
 action-platform mcp --http          # http://127.0.0.1:8765/mcp
 ```
 
-Claude Code:
+Claude Code — the plugin, its 13 skills and the Codex/Cursor manifests live in [actionplatform/action-platform-mcp](https://github.com/actionplatform/action-platform-mcp):
 
 ```bash
-/plugin marketplace add actionplatform/action-platform
+/plugin marketplace add actionplatform/action-platform-mcp
 /plugin install action-platform@action-platform
 ```
 
