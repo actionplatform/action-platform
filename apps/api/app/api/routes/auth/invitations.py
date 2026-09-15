@@ -6,7 +6,7 @@ from app.api.dependencies import (
     AuthDep,
     DbDep,
 )
-from app.api.routers.auth.support import (
+from app.api.routes.auth.support import (
     current_session,
     organization_out,
 )

@@ -8,7 +8,7 @@ from action_platform.core.access import Grant, parse_scopes
 from app.api.dependencies import (
     AuthDep,
 )
-from app.api.routers.auth.support import (
+from app.api.routes.auth.support import (
     current_session,
     organization_out,
     token_out,

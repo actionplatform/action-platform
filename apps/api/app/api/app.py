@@ -16,7 +16,7 @@ from action_platform.plugins import registry
 from action_platform.settings import settings
 from app import api_version
 from app.api.gate import AccessGate
-from app.api.routers import router as routes
+from app.api.routes import router as routes
 from app.services.plugins import DbOptions
 from app.core.auth.crypto import Sealer
 from app.core.auth.errors import AuthError

@@ -18,7 +18,7 @@ class GateCase(TempCase):
     def setUp(self):
         super().setUp()
         from app.api.app import build
-        from app.api.routers.auth.support import LIMITS
+        from app.api.routes.auth.support import LIMITS
 
         self.setenv("AP_HOME", str(self.tmp_path / "home"))
         self.patch(

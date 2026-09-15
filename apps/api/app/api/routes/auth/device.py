@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api.dependencies import (
     AuthDep,
 )
-from app.api.routers.auth.support import (
+from app.api.routes.auth.support import (
     current_session,
     device_request_out,
     grant_of,
