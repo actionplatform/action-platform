@@ -29,7 +29,7 @@ export function Menu({ trigger, items, align = "end", label }: { trigger: (props
               <div key={i} role="separator" className="my-1 h-px bg-border-subtle" />
             ) : (
               <button
-                key={item.label}
+                key={i}
                 type="button"
                 role="menuitem"
                 onClick={() => { setOpen(false); item.onSelect(); }}
