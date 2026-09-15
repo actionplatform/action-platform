@@ -7,8 +7,8 @@ import { projectsOf } from "@/lib/projects";
 
 import { requireOrg } from "@/lib/session";
 import { teamsOf } from "@/lib/teams";
-import { NewProjectForm } from "./new-project-form";
-import { ProjectsView } from "./projects-view";
+import { NewProjectForm } from "@/features/projects";
+import { ProjectsView } from "@/features/projects";
 
 export default async function ProjectsPage() {
   const { session, org } = await requireOrg();

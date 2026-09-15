@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/layout/page";
 import { SkeletonStage } from "@/components/ui/skeleton";
-import { ProjectCardSkeleton } from "./project-card-skeleton";
+import { ProjectCardSkeleton } from "@/features/projects";
 
 export default function Loading() {
   return (

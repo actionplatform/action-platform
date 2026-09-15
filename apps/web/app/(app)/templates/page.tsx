@@ -5,9 +5,9 @@ import { appsOf, projectsOf } from "@/lib/projects";
 
 import { requireOrg } from "@/lib/session";
 import { templateSourcesOf } from "@/lib/template-sources";
-import { type SourceRow, TemplateSources } from "./template-sources";
-import { TemplatesCatalog } from "./templates-catalog";
-import { TemplatesErrorState } from "./templates-empty-state";
+import { type SourceRow, TemplateSources } from "@/features/templates";
+import { TemplatesCatalog } from "@/features/templates";
+import { TemplatesErrorState } from "@/features/templates";
 
 export const dynamic = "force-dynamic";
 
