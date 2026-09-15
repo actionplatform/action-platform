@@ -1,0 +1,160 @@
+"""Plugins: found, switched on and off, tools prefixed and guarded, overlays merged, hooks called."""
+
+import asyncio
+import json
+from pathlib import Path
+
+from action_platform.abc import Plugin
+from action_platform.core.flow import gitflow
+from action_platform.core.wiring import wired
+from action_platform.core.scaffold.templates import Matrix, with_plugin_clouds
+from action_platform.plugins import Loaded, PluginError, PluginState, Plugins, registry
+from tests.support import TempCase
+
+
+class Example(Plugin):
+    slug = "example"
+    description = "Says hello"
+    needs = ["net: example.com"]
+
+    def __init__(self) -> None:
+        self.seen: list = []
+        self.root: Path | None = None
+
+    @property
+    def overlays(self):
+        return self.root
+
+    def register(self, surface) -> None:
+        surface.core.replace("gitflow_rules", StrictRules)
+
+        if surface.mcp is None:
+            return
+
+        @surface.mcp.tool()
+        def hello(name: str = "world") -> dict:
+            return {"greeting": f"hello {name}"}
+
+    def after_release(self, ctx) -> None:
+        self.seen.append(("release", ctx))
+
+    def after_deploy(self, results) -> None:
+        raise RuntimeError("boom")
+
+
+class StrictRules(gitflow.Rules):
+    kinds = {"feature", "hotfix"}
+
+
+class PluginsTest(TempCase):
+    def setUp(self):
+        super().setUp()
+        self.state = PluginState(file=Path(self.tmp_path) / "plugins.json")
+        self.example = Example()
+        self.plugins = Plugins(
+            [Loaded(self.example, "action-platform-plugin-example", "1.0.0")],
+            self.state,
+        )
+        registry._current = self.plugins
+        self.addCleanup(registry.reset)
+        self.addCleanup(wired.restore, "gitflow_rules")
+
+    def test_rows_and_flags_persist(self):
+        self.assertEqual(self.plugins.rows()[0]["enabled"], True)
+
+        self.plugins.disable("example")
+
+        self.assertEqual(self.plugins.rows()[0]["enabled"], False)
+        self.assertEqual(
+            self.plugins.disabled_packages(), {"action-platform-plugin-example"}
+        )
+        self.assertEqual(
+            json.loads(self.state.file.read_text())["plugins"]["example"]["enabled"],
+            False,
+        )
+        self.assertEqual(PluginState.load(self.state.file).enabled("example"), False)
+
+    def test_unknown_slug_is_a_readable_error(self):
+        with self.assertRaises(PluginError) as caught:
+            self.plugins.enable("nope")
+
+        self.assertIn("installed: example", str(caught.exception))
+
+    def test_tools_come_out_prefixed_and_guarded(self):
+        from action_platform.mcp import server
+
+        mcp = server.build()
+        names = {t.name for t in asyncio.run(mcp.list_tools())}
+
+        self.assertIn("example.hello", names)
+
+        result = asyncio.run(mcp.call_tool("example.hello", {"name": "you"}))
+
+        self.assertEqual(json.loads(result.content[0].text)["greeting"], "hello you")
+
+        self.plugins.disable("example")
+
+        with self.assertRaises(Exception) as caught:
+            asyncio.run(mcp.call_tool("example.hello", {}))
+
+        self.assertIn("disabled", str(caught.exception))
+
+    def test_plugin_overlay_replaces_the_repository_cloud(self):
+        root = Path(self.tmp_path) / "overlays"
+        (root / "cloud" / "fly").mkdir(parents=True)
+        (root / "index.json").write_text(
+            json.dumps(
+                {"clouds": [{"id": "fly", "description": "Fly.io", "types": ["web"]}]}
+            )
+        )
+        self.example.root = root
+        matrix = Matrix.from_dict(
+            {"clouds": [{"id": "fly", "description": "old"}, {"id": "docker"}]}
+        )
+
+        merged = with_plugin_clouds(matrix)
+        fly = merged.cloud("fly")
+
+        self.assertEqual({c.name for c in merged.clouds}, {"fly", "docker"})
+        self.assertEqual(fly.description, "Fly.io")
+        self.assertEqual(fly.source, "example")
+        self.assertEqual(fly.root, root)
+
+        self.plugins.disable("example")
+
+        self.assertEqual(
+            with_plugin_clouds(Matrix.from_dict({"clouds": []})).clouds, []
+        )
+
+    def test_a_plugin_replaces_a_slot_and_disabling_restores_it(self):
+        self.plugins.register()
+
+        self.assertIs(wired.gitflow_rules, StrictRules)
+        self.assertIsNotNone(gitflow.check_branch("chore/1"))
+        self.assertEqual(self.plugins.rows()[0]["replaces"], ["gitflow_rules"])
+
+        self.plugins.disable("example")
+
+        self.assertIs(wired.gitflow_rules, gitflow.Rules)
+        self.assertIsNone(gitflow.check_branch("chore/1"))
+
+        self.plugins.enable("example")
+
+        self.assertIs(wired.gitflow_rules, StrictRules)
+
+    def test_a_replacement_must_subclass_the_default(self):
+        with self.assertRaises(Exception) as caught:
+            wired.replace("releaser", StrictRules)
+
+        self.assertIn("must subclass", str(caught.exception))
+
+    def test_hooks_reach_enabled_plugins_and_failures_do_not_propagate(self):
+        self.plugins.after_release("ctx")
+        self.plugins.after_deploy([])
+
+        self.assertEqual(self.example.seen, [("release", "ctx")])
+
+        self.plugins.disable("example")
+        self.plugins.after_release("again")
+
+        self.assertEqual(len(self.example.seen), 1)

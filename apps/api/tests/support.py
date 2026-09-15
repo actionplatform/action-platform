@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import unittest
 
+from action_platform.core.flow.repository import Repository
+from action_platform.core.scaffold import generate
 from action_platform.settings import settings
 from action_platform.testing.fixtures import TempCase, git, platform_repo
 
@@ -47,14 +49,10 @@ class ApiCase(TempCase):
 
     def fake_push(self):
         """Make `init` push into a bare repository under the temp dir instead of a code host."""
-        from app.services.apps import generate as apps
-
-        from action_platform.core.flow.repository import Repository
-
         remotes = self.tmp_path / "remotes"
         remotes.mkdir(exist_ok=True)
 
-        def push(path, private=False, credentials=None):
+        def push(path, private=False, branch="main", credentials=None):
             remote = remotes / f"{path.name}.git"
             git(remotes, "init", "-q", "--bare", str(remote))
             repo = Repository.init(path, branch="main")
@@ -65,7 +63,7 @@ class ApiCase(TempCase):
 
             return remote.as_uri()
 
-        self.patch(apps, "push_project", push)
+        self.patch(generate.Scaffolder, "push", staticmethod(push))
 
     @property
     def workspaces(self):
