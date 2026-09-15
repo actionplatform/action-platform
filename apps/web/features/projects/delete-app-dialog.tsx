@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { ConfirmDialog } from "@/components/ui/dialog";
-import { DeleteRepositoryOption } from "../../delete-repository-option";
-import { removeApp } from "./actions";
+import { DeleteRepositoryOption } from "./delete-repository-option";
+import { removeApp } from "@/features/projects/actions";
 
 export function DeleteAppDialog({ open, onClose, onDeleted, projectId, appId, name, repositoryUrl }: {
   open: boolean;

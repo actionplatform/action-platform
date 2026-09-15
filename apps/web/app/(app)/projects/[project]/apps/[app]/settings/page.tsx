@@ -1,5 +1,5 @@
-import { loadApp } from "../load";
-import { SettingsTab } from "../settings-tab";
+import { loadApp } from "@/features/projects";
+import { SettingsTab } from "@/features/projects";
 
 export default async function SettingsPage({ params }: { params: Promise<{ project: string; app: string }> }) {
   const { project, app } = await params;

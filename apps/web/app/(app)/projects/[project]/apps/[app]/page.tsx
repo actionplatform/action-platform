@@ -1,8 +1,8 @@
-import { CommitsCard } from "./commits-card";
-import { HealthCard } from "./health-card";
-import { loadApp } from "./load";
-import { SourceCard } from "./source-card";
-import { PendingChangesBanner, SummaryGrid } from "./summary-grid";
+import { CommitsCard } from "@/features/projects";
+import { HealthCard } from "@/features/projects";
+import { loadApp } from "@/features/projects";
+import { SourceCard } from "@/features/projects";
+import { PendingChangesBanner, SummaryGrid } from "@/features/projects";
 
 export default async function OverviewPage({ params }: { params: Promise<{ project: string; app: string }> }) {
   const { project, app } = await params;

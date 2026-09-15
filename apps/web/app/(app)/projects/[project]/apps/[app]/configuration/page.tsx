@@ -1,8 +1,8 @@
 import { api } from "@/lib/api";
 import { requireOrg } from "@/lib/session";
-import { ConfigurationPanels } from "../configuration-panels";
-import { loadApp } from "../load";
-import { SourceCard } from "../source-card";
+import { ConfigurationPanels } from "@/features/configuration";
+import { loadApp } from "@/features/projects";
+import { SourceCard } from "@/features/projects";
 
 export default async function ConfigurationPage({ params }: { params: Promise<{ project: string; app: string }> }) {
   const { project, app } = await params;

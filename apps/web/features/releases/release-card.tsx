@@ -14,9 +14,9 @@ import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import type { ReleasePreview } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { nextVersion, previewRelease, runRelease } from "../actions";
-import type { AppView } from "./model";
-import { RunAlert, summarize } from "./run-alert";
+import { nextVersion, previewRelease, runRelease } from "@/features/releases/actions";
+import type { AppView } from "@/features/projects";
+import { RunAlert, summarize } from "@/features/deployments";
 
 type Increment = "patch" | "minor" | "major";
 

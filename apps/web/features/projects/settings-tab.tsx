@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
-import { DeleteAppDialog } from "../delete-app-dialog";
+import { DeleteAppDialog } from "./delete-app-dialog";
 import type { AppView } from "./model";
 
 export function SettingsTab({ view }: { view: AppView }) {

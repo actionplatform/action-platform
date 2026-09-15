@@ -51,7 +51,7 @@ action_platform/
   cli/            Typer commands: init install branch gitflow pr release deploy rollback diagnose destroy cloud service mcp login logout whoami
   observability.py   Sentry init shared by the CLI and the API (docs/concept_observability.md)
   hooks/          commit-msg, pre-commit, pre-push, gitflow.sh
-apps/web/         the web app
+apps/web/         the web app: `app/` holds the routes (pages of a few lines), `features/<context>/` the code — projects (app view, header, cards, the wizard), activity, releases, deployments, configuration — each with `index.ts` (what pages import), `actions.ts` (server actions) and its tests; `lib/` and `components/` are shared. ESLint `no-restricted-imports` keeps pages on a feature's index and features off other features' internals.
 deploy/           Dockerfiles, compose, install.sh
 apps/api/app/  (package `app`, depends on the library, never the other way round)
   api/            FastAPI: app (factory, AP_API_TOKEN middleware, Sentry), gate (the /api/v1 ASGI gate: body, scope rewrite, threadpool — the decisions live in `services/access/planner`), dependencies (typed: CallerDep, OrgDep, ReleasesDep… so a route declares what it needs), ratelimit, routes — every router, one file per context mirroring the menu: activity, apps, releases, deployments, configuration, templates, jobs, identity; auth/ (sessions, setup, invitations, device), organization/ (members, invitations, identity, settings, sessions = connected apps), integrations/ (hosts, oauth_apps, oauth_flow, github_app, template_sources, plugins), projects/ (projects, apps, organization_import)

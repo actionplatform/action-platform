@@ -7,7 +7,7 @@ import { projectById, projectsOf } from "@/lib/projects";
 import { requireOrg } from "@/lib/session";
 import { hostsOf } from "@/lib/source-hosts";
 import { hostAccess } from "@/lib/host-access";
-import { Wizard } from "./wizard";
+import { Wizard } from "@/features/projects";
 
 type Search = { type?: string; stack?: string; template?: string; source?: string };
 

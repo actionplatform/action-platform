@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 
-import { addApp } from "./actions";
+import { addApp } from "@/features/projects/actions";
 
 const CI = [{ value: "github", label: "GitHub Actions" }, { value: "gitlab", label: "GitLab CI" }, { value: "jenkins", label: "Jenkins" }, { value: "bitbucket", label: "Bitbucket Pipelines" }, { value: "none", label: "No CI" }];
 

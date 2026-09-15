@@ -8,7 +8,7 @@ import { Select } from "@/components/ui/select";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
 import { assignTeam, removeProject } from "./actions";
-import { DeleteRepositoryOption } from "./delete-repository-option";
+import { DeleteRepositoryOption } from "@/features/projects";
 import type { ProjectItem, TeamOption } from "./project-card";
 
 export function ProjectActionsMenu({ project, teams }: { project: ProjectItem; teams: TeamOption[] }) {

@@ -2,7 +2,7 @@ import { Cloud, ExternalLink, Globe, KeyRound, Link2, Package, type LucideIcon }
 import Link from "next/link";
 import { Hint } from "@/components/ui/hint";
 import { Panel, PanelHeader } from "@/components/ui/panel";
-import type { AppView } from "./model";
+import type { AppView } from "@/features/projects";
 
 function Row({ icon: Icon, label, value, mono, muted }: { icon: LucideIcon; label: string; value: string; mono?: boolean; muted?: boolean }) {
   return (
