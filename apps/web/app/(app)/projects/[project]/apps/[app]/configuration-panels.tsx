@@ -250,7 +250,7 @@ function ManifestPanel({ view }: { view: AppView }) {
       <PanelBody className="space-y-2">
         <textarea value={content} onChange={(e) => setContent(e.target.value)} readOnly={!canEdit} spellCheck={false} rows={Math.max(12, content.split("\n").length + 1)} className="w-full rounded-md px-3 py-2 font-mono text-xs leading-5" />
         {error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
-        <p className="text-xs text-muted-foreground">TOML, validated on save. Saving changes the platform's copy at once — no commit needed. <span className="font-mono">Export to repository</span> writes platform.toml into the clone as a pending change to commit.</p>
+        <p className="text-xs text-muted-foreground">TOML, validated on save. Saving changes the platform&apos;s copy at once — no commit needed. <span className="font-mono">Export to repository</span> writes platform.toml into the clone as a pending change to commit.</p>
       </PanelBody>
     </Panel>
   );
