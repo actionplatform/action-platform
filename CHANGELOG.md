@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.17.1 — 2026-09-15
+
+### Bug Fixes
+- **plugins:** a plugin loads on an install without the mcp extra — action_platform.mcp imports without the SDK; a load failure names its cause
+
+### Build
+- **deploy:** plugins volume in every compose; build.sh keeps docker-compose.dokploy.yml in step with the template
+
 ## v0.17.0 — 2026-09-15
 
 ### Features
