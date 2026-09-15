@@ -16,4 +16,4 @@ changelog = "conventional"
 path = "apps/web"
 
 [components.api]
-path = "action_platform/api"
+path = "apps/api"

@@ -7,7 +7,7 @@ Two ways in: the CLI on your machine, or a hosted platform in the browser with t
 ```bash
 pipx install action-platform            # library + CLI
 pip install "action-platform[mcp]"      # + MCP server for Claude Code, Codex, Cursor
-pip install "action-platform[api]"      # + the JSON API (only for self-hosting)
+pip install ./apps/api      # + the JSON API (only for self-hosting)
 ```
 
 Needs `git` and, for the source host, either the `gh` CLI or a token (`ACTION_PLATFORM_GITHUB_TOKEN`, `ACTION_PLATFORM_GITLAB_TOKEN`, `ACTION_PLATFORM_BITBUCKET_TOKEN` + `_USERNAME`).

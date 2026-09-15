@@ -5,7 +5,7 @@ One repository, three artifacts, three versions.
 | Component | Path | Command | Tag | Publishes |
 |---|---|---|---|---|
 | library + CLI (root) | `.` | `action-platform release minor` | `v0.3.0` | `action-platform` on PyPI |
-| api | `action_platform/api` | `action-platform release --component api patch` | `api/v0.1.2` | `actionplatformio/action-platform-api` (Docker Hub + GHCR) |
+| api | `apps/api` | `action-platform release --component api patch` | `api/v0.1.2` | `actionplatformio/action-platform-api` (Docker Hub + GHCR) |
 | web | `apps/web` | `action-platform release --component web minor` | `web/v0.2.0` | `actionplatformio/action-platform-web` (Docker Hub + GHCR) |
 
 Declared in `platform.toml`:
@@ -15,7 +15,7 @@ Declared in `platform.toml`:
 path = "apps/web"
 
 [components.api]
-path = "action_platform/api"
+path = "apps/api"
 ```
 
 ```mermaid

@@ -29,7 +29,7 @@ flowchart LR
         L1[MCP tools] --> C1[[core]] --> F[(files in cwd)]
     end
     subgraph remote["action-platform mcp --remote"]
-        L2[MCP tools] -->|Bearer| V["/api/v1/* (gate: role ∩ scope ∩ reach)"] --> API[action-platform api] --> WS[(workspaces)]
+        L2[MCP tools] -->|Bearer| V["/api/v1/* (gate: role ∩ scope ∩ reach)"] --> API[action-platform-api serve] --> WS[(workspaces)]
     end
     login["action-platform login <url>"] -.->|device flow · scoped JWT| L2
 ```
