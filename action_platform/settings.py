@@ -28,6 +28,10 @@ class Settings:
         + "/index.json",
     )
     TEMPLATES_INDEX_TTL = int(os.getenv("ACTION_PLATFORM_TEMPLATES_INDEX_TTL", "60"))
+    PLUGINS_INDEX_URL = os.getenv(
+        "ACTION_PLATFORM_PLUGINS_INDEX",
+        "https://raw.githubusercontent.com/actionplatform/plugins-index/main/index.json",
+    )
     TEMPLATES_CACHE = Path.home() / ".cache" / "action-platform" / "templates"
     WORKSPACES = Path(
         os.getenv("AP_WORKSPACES")

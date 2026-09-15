@@ -3,6 +3,7 @@ from typing import Optional
 from action_platform import __version__
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.flow import gitflow
+from action_platform.plugins import registry
 from action_platform.core.scaffold.templates import (
     OFFICIAL,
     Matrix,
@@ -15,6 +16,7 @@ from app import api_version
 from app.core.shared import git_auth as auth
 from app.schemas import SourceSpec
 from app.services.catalog.published import index
+from app.services.catalog.published import plugins_index as published_plugins
 
 OFFICIAL_REF = settings.TEMPLATES_REF
 
@@ -191,6 +193,35 @@ class CatalogService:
             out["sources"].append(status)
 
         return out
+
+    def plugins(self) -> dict:
+        """The marketplace: what the plugins index publishes, and which of them this platform runs."""
+        published = published_plugins.get() or {}
+        installed = {row["slug"]: row for row in registry.installed().rows()}
+        rows = []
+
+        for row in published.get("plugins") or []:
+            slug = row.get("name") or ""
+            here = installed.get(slug)
+            rows.append(
+                {
+                    "slug": slug,
+                    "description": row.get("description") or "",
+                    "author": row.get("author") or "",
+                    "verified": bool(row.get("verified")),
+                    "repo": row.get("repo") or "",
+                    "pypi": row.get("pypi") or "",
+                    "latest": row.get("latest") or "",
+                    "min_core": row.get("min_core") or "",
+                    "needs": list(row.get("needs") or []),
+                    "tags": list(row.get("tags") or []),
+                    "installed": here is not None,
+                    "installed_version": here["version"] if here else None,
+                    "enabled": bool(here and here["enabled"]),
+                }
+            )
+
+        return {"plugins": rows, "index": settings.PLUGINS_INDEX_URL}
 
     def gitflow_rules(self) -> dict:
         return {
