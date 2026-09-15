@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import HTTPException
 
 from action_platform.core.exception import ActionPlatformError, ProviderError
 from action_platform.providers.source import build_source_host
@@ -12,6 +11,7 @@ from app.core.shared.urls import GitUrl
 from app.schemas import SourceCredentials
 from app.services.apps.base import AppsBase
 from app.services.workspace.manifest import AppManifest
+from app.core.errors import Conflict, ServiceError, Upstream
 
 
 class AppRemote(AppsBase):
@@ -26,7 +26,7 @@ class AppRemote(AppsBase):
             host = AppManifest(
                 root, self.registry.configs.resolve(id, root) or None
             ).as_dict()["source_host"]
-        except HTTPException:
+        except ServiceError:
             host = {}
 
         repo = host.get("repo") or GitUrl(entry.url).repo
@@ -42,13 +42,12 @@ class AppRemote(AppsBase):
         remote = self.repository_of(id)
 
         if remote is None:
-            raise HTTPException(409, "this app has no remote repository")
+            raise Conflict("this app has no remote repository")
 
         kind, repo = remote
 
         if credentials.kind and credentials.kind != kind:
-            raise HTTPException(
-                409,
+            raise Conflict(
                 f"the app lives on {kind}; the connected host is {credentials.kind}",
             )
 
@@ -63,9 +62,9 @@ class AppRemote(AppsBase):
         try:
             host.delete_repository(repo)
         except NotImplementedError as e:
-            raise HTTPException(409, str(e)) from e
+            raise Conflict(str(e)) from e
         except ProviderError as e:
-            raise HTTPException(502, str(e)) from e
+            raise Upstream(str(e)) from e
 
         return repo
 
@@ -82,8 +81,7 @@ class AppRemote(AppsBase):
         creds = writes.credentials_for(organization_id, app.source_host_id)
 
         if creds is None:
-            raise HTTPException(
-                409,
+            raise Conflict(
                 f"{app.name} lives on {remote[0]} but no connected host is attached to it; "
                 "attach one in the app's settings or keep the repository",
             )

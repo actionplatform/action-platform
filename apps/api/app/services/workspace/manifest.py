@@ -3,10 +3,10 @@
 from pathlib import Path
 
 import tomllib
-from fastapi import HTTPException
 
 from action_platform.core.flow.repository import Repository
 from action_platform.settings import settings
+from app.core.errors import Invalid
 
 
 class AppManifest:
@@ -22,7 +22,7 @@ class AppManifest:
         elif self.path.exists():
             data = tomllib.loads(self.path.read_text())
         else:
-            raise HTTPException(400, f"{settings.CONFIG_FILE} not found in {self.root}")
+            raise Invalid(f"{settings.CONFIG_FILE} not found in {self.root}")
 
         return {
             "project": dict(data.get("project", {})),

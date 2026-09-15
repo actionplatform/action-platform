@@ -2,7 +2,6 @@
 
 from typing import Any, Optional
 
-from fastapi import HTTPException
 
 from action_platform.core.exception import ActionPlatformError
 from app.core.db.models import App, Organization, Project
@@ -12,6 +11,7 @@ from app.services.access.enrich import credentials_for
 from app.services.activity import ActivityService
 from app.services.apps import AppService
 from app.services.directory import DirectoryWrites
+from app.core.errors import Invalid
 
 
 class ProjectService:
@@ -31,14 +31,13 @@ class ProjectService:
         url = url.strip()
 
         if not url:
-            raise HTTPException(400, "url is required")
+            raise Invalid("url is required")
 
         host_id = self.writes.host_id_for_url(org.id, url)
         kind = GitUrl(url).kind
 
         if kind and host_id is None:
-            raise HTTPException(
-                400,
+            raise Invalid(
                 f"No {kind} host is connected to this organization. Connect one in Settings so private repositories can be cloned.",
             )
 
@@ -67,7 +66,7 @@ class ProjectService:
         )
 
         if body.push and creds is None:
-            raise HTTPException(400, "pushing needs a source host")
+            raise Invalid("pushing needs a source host")
 
         name, email = self.writes.git_author_of(org.id)
         request = body.model_copy(
