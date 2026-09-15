@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from action_platform.core.exception import ActionPlatformError
 from app.core.db.models import Project
-from app.core.shared import git_auth as auth
+from app.services.workspace import git_auth as auth
 from app.schemas import SourceCredentials
 from app.services.activity import ActivityService
 from app.core.shared.credentials import Credentials
