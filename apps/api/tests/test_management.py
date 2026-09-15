@@ -7,7 +7,7 @@ from tests.test_access import GateCase
 
 class ProjectsAndAppsTest(GateCase):
     def test_add_app_to_project_then_remove_project(self):
-        from app.repositories.source import get_registry
+        from app.repositories.workspace.source import get_registry
 
         project = self.client.post(
             "/api/v1/projects", json={"name": "Web"}, headers=self.h()

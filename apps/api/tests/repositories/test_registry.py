@@ -1,4 +1,4 @@
-"""app.repositories.registry keeps the rows; Workspaces.adopt clones into workspaces, refuses what it must, cleans up."""
+"""app.repositories.workspace.registry keeps the rows; Workspaces.adopt clones into workspaces, refuses what it must, cleans up."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ class RegistryTest(ApiCase):
     def setUp(self):
         super().setUp()
         from app.core.db import Database
-        from app.repositories.registry import DbStore, Registry
+        from app.repositories.workspace.registry import DbStore, Registry
         from app.services.workspace.checkout import Workspaces
 
         database = Database(f"sqlite:///{self.tmp_path / 'registry.db'}")

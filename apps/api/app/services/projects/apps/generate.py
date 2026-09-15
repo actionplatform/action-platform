@@ -9,7 +9,7 @@ from action_platform.core.wiring import wired
 from action_platform.core.manifest import write_source_host
 from action_platform.settings import settings
 from app.core.shared import git_auth as auth
-from app.repositories.registry import Entry
+from app.repositories.workspace.registry import Entry
 from app.schemas import InitRequest, PushRequest
 from app.services.projects.apps.base import AppsBase
 from app.services.templates import TemplateRepos

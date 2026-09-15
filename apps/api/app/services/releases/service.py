@@ -10,8 +10,8 @@ from action_platform.core.flow.repository import Repository
 from action_platform.core.release.components import resolve
 from action_platform.core.release.release import STABLE_BRANCHES
 from app.core.shared import git_auth as auth
-from app.repositories.config_store import ConfigStore
-from app.repositories.registry import Registry
+from app.repositories.configuration.config_store import ConfigStore
+from app.repositories.workspace.registry import Registry
 from app.schemas import ReleaseRequest
 from app.services.workspace import Workspaces
 from app.core.errors import Conflict, Invalid

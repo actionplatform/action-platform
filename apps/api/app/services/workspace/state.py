@@ -5,7 +5,7 @@ from action_platform.core.wiring import wired
 from action_platform.core.flow import gitflow
 from action_platform.core.flow.repository import Repository
 from action_platform.core.release.release import STABLE_BRANCHES
-from app.repositories.registry import Registry
+from app.repositories.workspace.registry import Registry
 from app.services.workspace.checkout import Workspaces
 
 

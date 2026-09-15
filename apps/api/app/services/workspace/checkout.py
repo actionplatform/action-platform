@@ -17,7 +17,7 @@ from action_platform.core.flow.repository import Repository, SyncError, _fetch_p
 from action_platform.core.scaffold.install import InstallError, install
 from action_platform.settings import settings
 from app.core.errors import Gone, Upstream
-from app.repositories.registry import (
+from app.repositories.workspace.registry import (
     Entry,
     MissingManifest,
     Registry,

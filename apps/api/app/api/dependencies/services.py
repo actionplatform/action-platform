@@ -6,9 +6,9 @@ from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session as DbSession
 
 from app.services.auth.service import AuthService
-from app.repositories.config_store import ConfigStore
-from app.repositories.registry import Registry
-from app.repositories.source import get_registry
+from app.repositories.configuration.config_store import ConfigStore
+from app.repositories.workspace.registry import Registry
+from app.repositories.workspace.source import get_registry
 from app.services.projects.apps import AppService
 from app.services.directory import DirectoryService, DirectoryWrites
 from app.services.integrations.hosts import OAuthState

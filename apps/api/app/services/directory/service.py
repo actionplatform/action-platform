@@ -9,7 +9,7 @@ from app.core.shared.credentials import (
     OAuthApp,
 )
 from app.core.shared.ids import new_id, slugify
-from app.services.directory.base import (
+from app.repositories.base import (
     DEFAULT_GIT_AUTHOR,
     EMAIL,
     HOST_KINDS,
@@ -19,26 +19,26 @@ from app.services.directory.base import (
     REFRESH_MARGIN,
     DirectoryError,
 )
-from app.services.directory.hosts_reads import HostsReads
-from app.services.directory.hosts_writes import HostsWrites
-from app.services.directory.invitations import (
+from app.services.integrations.hosts.directory_reads import HostsReads
+from app.services.integrations.hosts.directory_writes import HostsWrites
+from app.repositories.organization.invitations import (
     InvitationsReads,
     InvitationsWrites,
 )
-from app.services.directory.oauth_apps import (
+from app.repositories.integrations.oauth_apps import (
     OAuthAppsReads,
     OAuthAppsWrites,
 )
-from app.services.directory.organizations import (
+from app.repositories.organization.organizations import (
     OrganizationsReads,
     OrganizationsWrites,
 )
-from app.services.directory.projects import (
+from app.repositories.projects.projects import (
     ProjectsReads,
     ProjectsWrites,
 )
-from app.services.directory.teams import TeamsReads, TeamsWrites
-from app.services.directory.template_sources import (
+from app.repositories.organization.teams import TeamsReads, TeamsWrites
+from app.repositories.integrations.template_sources import (
     TemplateSourcesReads,
     TemplateSourcesWrites,
 )

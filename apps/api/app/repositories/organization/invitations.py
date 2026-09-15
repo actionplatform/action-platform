@@ -15,7 +15,7 @@ from app.core.db.models import (
 )
 from app.core.shared.clock import now
 from app.core.shared.ids import new_id
-from app.services.directory.base import (
+from app.repositories.base import (
     EMAIL,
     INVITATION_TTL,
     DirectoryBase,

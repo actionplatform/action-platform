@@ -6,7 +6,7 @@ from typing import Any, Optional
 from action_platform.core.exception import ActionPlatformError
 from app.core.db.models import Job, Organization
 from app.core.shared.credentials import Credentials
-from app.repositories.registry import Registry
+from app.repositories.workspace.registry import Registry
 from app.services.directory import DirectoryWrites
 from app.services.jobs import JobQueue
 from app.services.projects.organization_import import client

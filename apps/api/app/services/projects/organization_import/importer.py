@@ -3,7 +3,7 @@
 from typing import Any, Optional
 
 from action_platform.core import access
-from app.repositories.registry import Registry
+from app.repositories.workspace.registry import Registry
 from app.services.directory import (
     Credentials,
     DirectoryError,

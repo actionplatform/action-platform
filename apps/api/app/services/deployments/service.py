@@ -4,8 +4,8 @@ from dataclasses import asdict
 from typing import Callable, Optional
 
 from action_platform.core.action_platform import ActionPlatform
-from app.repositories.config_store import ConfigStore
-from app.repositories.registry import Registry
+from app.repositories.configuration.config_store import ConfigStore
+from app.repositories.workspace.registry import Registry
 from app.schemas import DeployRequest
 from app.services.workspace import Workspaces
 

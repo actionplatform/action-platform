@@ -7,7 +7,7 @@ from typing import Optional
 from app.core.db.models import OAuthApp as OAuthAppRow
 from app.core.shared.clock import now
 from app.core.shared.credentials import OAuthApp
-from app.services.directory.base import (
+from app.repositories.base import (
     PROVIDERS,
     DirectoryBase,
     DirectoryError,

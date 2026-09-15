@@ -10,7 +10,7 @@ from app.core.auth.crypto import Sealer
 from app.core.db.database import Database
 from app.core.db.models import App
 from app.core.shared.urls import GitUrl
-from app.repositories.registry import Registry
+from app.repositories.workspace.registry import Registry
 from app.schemas import DeployRequest, PushRequest, ReleaseRequest, SyncRequest
 from app.services.integrations import plugins
 from app.services.activity import ActivityService

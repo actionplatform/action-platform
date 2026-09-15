@@ -17,7 +17,7 @@ from app.core.shared.credentials import (
     CredentialsError,
 )
 from app.core.shared.urls import GitUrl
-from app.services.directory.base import (
+from app.repositories.base import (
     REFRESH_MARGIN,
     DirectoryBase,
 )
