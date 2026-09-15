@@ -19,7 +19,8 @@ from app.services.directory.base import (
     REFRESH_MARGIN,
     DirectoryError,
 )
-from app.services.directory.hosts import HostsReads, HostsWrites
+from app.services.directory.hosts_reads import HostsReads
+from app.services.directory.hosts_writes import HostsWrites
 from app.services.directory.invitations import (
     InvitationsReads,
     InvitationsWrites,
