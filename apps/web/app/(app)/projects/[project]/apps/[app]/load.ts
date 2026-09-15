@@ -36,7 +36,7 @@ export const loadApp = cache(async (projectId: string, appId: string): Promise<L
       api.gitflowRules(),
     ]);
     const changes = detail.clean ? [] : (await api.apps.changes(app.registryId).catch(() => ({ files: [] as string[] }))).files;
-    const view = toView({ projectId, projectName: project.name, projectSlug: project.slug, orgSlug: org.slug, appId: app.id, appName: app.name, detail, health, commits, branches, tags, lastSyncedAt: app.lastSyncedAt, manifest: manifest.content, changes, grants: session.grants as Grants, rules: { kinds: rules.kinds, protected: rules.protected } });
+    const view = toView({ projectId, projectName: project.name, projectSlug: project.slug, orgSlug: org.slug, appId: app.id, appName: app.name, detail, health, commits, branches, tags, lastSyncedAt: app.lastSyncedAt, manifest: manifest.content, manifestMirrored: manifest.mirrored ?? true, changes, grants: session.grants as Grants, rules: { kinds: rules.kinds, protected: rules.protected } });
     return { ok: true, view, hosts: hosts.map((h) => ({ id: h.id, name: h.name, kind: h.kind, defaultOwner: h.defaultOwner })), currentHost: app.sourceHostId, releases, stored };
   } catch (e) {
     if (e instanceof ApiError && e.status === 410) notFound();

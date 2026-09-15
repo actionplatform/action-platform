@@ -1,9 +1,10 @@
 "use client";
 
-import { Check, Cloud, ExternalLink, GitCommitHorizontal, Save } from "lucide-react";
+import { Check, Cloud, ExternalLink, GitCommitHorizontal, Save, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Hint } from "@/components/ui/hint";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { CheckIndicator } from "@/components/ui/check-indicator";
@@ -11,7 +12,7 @@ import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
-import { addService, commitChanges, discardChanges, planBranch, saveManifest, setCloudTarget } from "../actions";
+import { addService, commitChanges, discardChanges, exportManifest, planBranch, saveManifest, setCloudTarget } from "../actions";
 import type { AppView } from "./model";
 
 type CloudOption = { name: string; description: string; source: string };
@@ -232,14 +233,24 @@ function ManifestPanel({ view }: { view: AppView }) {
   const [saved, setSaved] = useState(false);
   const [pending, start] = useTransition();
   const dirty = content !== view.manifest;
+  const canEdit = view.can["app.configure"];
 
   return (
     <Panel>
-      <PanelHeader title="platform.toml" aside={<Button size="sm" disabled={pending || !dirty || !view.can["app.configure"]} onClick={() => start(async () => { setError(null); const r = await saveManifest(view.projectId, view.registryId, content); if (r.ok) { setSaved(true); setTimeout(() => setSaved(false), 1500); router.refresh(); } else setError(r.error); })}>{saved ? <Check className="size-4" strokeWidth={2.5} /> : <Save className="size-4" strokeWidth={1.75} />} {pending ? "Saving…" : saved ? "Saved" : "Save"}</Button>} />
+      <PanelHeader
+        title="Configuration"
+        aside={
+          <div className="flex items-center gap-2">
+            <Hint text="Stored on the platform and used by every release and deploy. platform.toml in the repository is a mirror: export it when the CLI, git hooks or CI need the same values."><Badge tone={view.manifestMirrored ? "neutral" : "inverse"}>{view.manifestMirrored ? "Repository in sync" : "Repository differs"}</Badge></Hint>
+            {canEdit && !view.manifestMirrored && <Button size="sm" variant="outline" disabled={pending || dirty} onClick={() => start(async () => { setError(null); const r = await exportManifest(view.projectId, view.registryId); if (r.ok) router.refresh(); else setError(r.error); })}><Upload className="size-4" strokeWidth={1.75} /> Export to repository</Button>}
+            <Button size="sm" disabled={pending || !dirty || !canEdit} onClick={() => start(async () => { setError(null); const r = await saveManifest(view.projectId, view.registryId, content); if (r.ok) { setSaved(true); setTimeout(() => setSaved(false), 1500); router.refresh(); } else setError(r.error); })}>{saved ? <Check className="size-4" strokeWidth={2.5} /> : <Save className="size-4" strokeWidth={1.75} />} {pending ? "Saving…" : saved ? "Saved" : "Save"}</Button>
+          </div>
+        }
+      />
       <PanelBody className="space-y-2">
-        <textarea value={content} onChange={(e) => setContent(e.target.value)} readOnly={!view.can["app.configure"]} spellCheck={false} rows={Math.max(12, content.split("\n").length + 1)} className="w-full rounded-md px-3 py-2 font-mono text-xs leading-5" />
+        <textarea value={content} onChange={(e) => setContent(e.target.value)} readOnly={!canEdit} spellCheck={false} rows={Math.max(12, content.split("\n").length + 1)} className="w-full rounded-md px-3 py-2 font-mono text-xs leading-5" />
         {error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
-        <p className="text-xs text-muted-foreground">Validated as TOML on save. The name, type, language, CI, source host, release strategy and deploy target all live here.</p>
+        <p className="text-xs text-muted-foreground">TOML, validated on save. Saving changes the platform&apos;s copy at once — no commit needed. <span className="font-mono">Export to repository</span> writes platform.toml into the clone as a pending change to commit.</p>
       </PanelBody>
     </Panel>
   );

@@ -36,3 +36,7 @@ postgres = "aws-rds"
 `LAST_VERSION` next to it holds the current version; `CHANGELOG.md` is generated.
 
 Read and edited by `action_platform/core/manifest`.
+
+## On the hosted platform
+
+The platform keeps these tables itself (`app_config`, one row per app): every release, deploy, pull request and the app's pages read from there, and the Configuration tab edits there — saving takes effect at once, no commit. The first time an app is seen, its `platform.toml` seeds the record; after that the file is a **mirror**. **Export to repository** writes the record back as `platform.toml` in the clone (a pending change to commit), for the CLI, the git hooks and the repository's CI, which keep reading the file. Applying a cloud overlay or adding a service still writes files into the clone, and the `[deploy]` / `[services]` they produce are copied into the record.

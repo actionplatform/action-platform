@@ -101,6 +101,8 @@ export const api = {
       unwrap(await client.GET("/api/apps/{id}/manifest", { params: { path: { id } } })),
     writeManifest: async (id: string, content: string) =>
       unwrap(await client.PUT("/api/apps/{id}/manifest", { params: { path: { id } }, body: { content } })),
+    exportManifest: async (id: string) =>
+      unwrap(await client.POST("/api/apps/{id}/manifest/export", { params: { path: { id } } })),
     setCloud: async (id: string, target: string, source: string | null = null) =>
       unwrap(await client.POST("/api/apps/{id}/cloud", { params: { path: { id } }, body: { target, source: source as never } })),
     addService: async (id: string, name: string, provider: string | null, source: string | null = null) =>

@@ -84,7 +84,11 @@ class Config:
         if not path.exists():
             raise ConfigError(f"platform.toml not found at {path}")
 
-        data = tomllib.loads(path.read_text())
+        return cls.from_dict(tomllib.loads(path.read_text()))
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Config":
+        """The same tables platform.toml holds, from wherever they were kept — the file, or the hosted platform's database."""
         project = data.get("project", {})
 
         config = cls(

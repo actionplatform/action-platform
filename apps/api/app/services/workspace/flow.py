@@ -4,10 +4,8 @@ from typing import Optional
 from fastapi import HTTPException
 
 from action_platform.core.wiring import wired
-from action_platform.core.config import Config
 from action_platform.core.flow import git
 from action_platform.core.flow.repository import Repository
-from action_platform.settings import settings
 from app.core.shared import git_auth as auth
 from app.repositories.registry import Registry
 from app.schemas import PullRequestRequest, StartBranchRequest
@@ -72,7 +70,7 @@ class FlowService:
 
     def open_pr(self, id: str, body: PullRequestRequest) -> dict:
         root = self._root(id)
-        config = Config.from_toml(root / settings.CONFIG_FILE)
+        config = self.registry.configs.config(id, root)
         auth.apply(config, body.credentials)
 
         with auth.git_auth(body.credentials):

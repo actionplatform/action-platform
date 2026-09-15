@@ -10,15 +10,19 @@ from action_platform.settings import settings
 
 
 class AppManifest:
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, data: dict | None = None) -> None:
         self.root = root
         self.path = root / settings.CONFIG_FILE
+        self.data = data
 
     def as_dict(self) -> dict:
-        if not self.path.exists():
+        """The tables the platform keeps for the app when given, the clone's file otherwise."""
+        if self.data is not None:
+            data = self.data
+        elif self.path.exists():
+            data = tomllib.loads(self.path.read_text())
+        else:
             raise HTTPException(400, f"{settings.CONFIG_FILE} not found in {self.root}")
-
-        data = tomllib.loads(self.path.read_text())
 
         return {
             "project": dict(data.get("project", {})),

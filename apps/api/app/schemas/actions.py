@@ -181,6 +181,7 @@ class ServiceRequest(BaseModel):
 
 class ManifestBody(BaseModel):
     content: str
+    mirrored: Optional[bool] = None
 
 
 class Installed(BaseModel):

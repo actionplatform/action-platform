@@ -40,6 +40,40 @@ def toml_str(value: str) -> str:
     return '"' + "".join(out) + '"'
 
 
+def toml_value(value: object) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+
+    if isinstance(value, (int, float)):
+        return str(value)
+
+    if isinstance(value, list):
+        return "[" + ", ".join(toml_value(v) for v in value) + "]"
+
+    return toml_str(str(value))
+
+
+def dump_toml(data: dict, prefix: str = "") -> str:
+    """The tables of platform.toml as text: scalars of a table first, then its sub-tables as `[a.b]` — enough for what the platform writes, no inline tables."""
+    lines: list[str] = []
+    scalars = {k: v for k, v in data.items() if not isinstance(v, dict)}
+    tables = {k: v for k, v in data.items() if isinstance(v, dict)}
+
+    if prefix and (scalars or not tables):
+        lines.append(f"[{prefix}]")
+
+    for key, value in scalars.items():
+        lines.append(f"{key} = {toml_value(value)}")
+
+    if prefix and (scalars or not tables):
+        lines.append("")
+
+    for key, value in tables.items():
+        lines.append(dump_toml(value, f"{prefix}.{key}" if prefix else key))
+
+    return "\n".join(line for line in lines if line is not None).rstrip("\n") + "\n"
+
+
 def check_owner(owner: str) -> str:
     if not OWNER_RE.match(owner):
         raise TemplateError(f"invalid repository owner: {owner!r}")

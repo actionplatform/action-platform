@@ -29,6 +29,7 @@ from action_platform.core.exception import ActionPlatformError
 from action_platform.core.flow.git import UnsafeUrl, check_remote_url
 from action_platform.core.flow.repository import Repository
 from action_platform.settings import settings
+from app.repositories.config_store import ConfigStore
 from app.core.db.models import RegistryEntry
 
 
@@ -153,6 +154,7 @@ class Registry:
         self.workspaces = settings.WORKSPACES
         self.store = store
         self.drafts = drafts
+        self.configs = ConfigStore(store.database)
 
     def _entry(self, row: dict) -> Entry:
         return Entry(

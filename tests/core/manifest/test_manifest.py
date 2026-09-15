@@ -5,6 +5,8 @@ from __future__ import annotations
 import tomllib
 import unittest
 
+from action_platform.core.manifest.manifest import dump_toml
+
 from action_platform.core.exception import TemplateError
 from action_platform.core.manifest import (
     check_owner,
@@ -127,3 +129,32 @@ class EscapingTest(TempCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DumpTomlTest(unittest.TestCase):
+    def test_round_trips_the_tables_platform_toml_holds(self):
+        data = {
+            "project": {
+                "name": "shop",
+                "type": "web",
+                "language": "python",
+                "ci": "github",
+            },
+            "source_host": {"kind": "github", "repo": "acme/shop"},
+            "release": {"strategy": "semver", "changelog": "conventional"},
+            "deploy": {
+                "target": "aws/lambda",
+                "region": "us-east-1",
+                "retries": 2,
+                "quiet": True,
+            },
+            "services": {"cache": {"kind": "redis"}},
+            "components": {"web": {"path": "apps/web"}, "api": {"path": "apps/api"}},
+        }
+
+        self.assertEqual(tomllib.loads(dump_toml(data)), data)
+
+    def test_a_quote_in_a_value_stays_inside_the_string(self):
+        text = dump_toml({"project": {"name": 'a "quoted" name'}})
+
+        self.assertEqual(tomllib.loads(text)["project"]["name"], 'a "quoted" name')
