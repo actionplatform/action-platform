@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Request
 
-from app.schemas.integrations import Plugins
 from app.schemas.templates import GitflowRules, Matrix, SourcesRequest, Version
-from app.services.integrations.plugins.catalog import PluginsCatalog
 from app.services.templates import CatalogService
 
 router = APIRouter(prefix="/api", tags=["catalog"])
@@ -32,11 +30,6 @@ def matrix_with_sources(
     body: SourcesRequest,
 ) -> Matrix:
     return service.matrix(body.sources)
-
-
-@router.get("/plugins")
-def plugins() -> Plugins:
-    return PluginsCatalog().rows()
 
 
 @router.get("/gitflow/rules")

@@ -12,7 +12,6 @@ from app.core.db.models import App
 from app.core.shared.urls import GitUrl
 from app.repositories.workspace.registry import Registry
 from app.schemas import DeployRequest, PushRequest, ReleaseRequest, SyncRequest
-from app.services.integrations import plugins
 from app.services.activity import ActivityService
 from app.services.projects.apps import AppService
 from app.services.deployments import DeployEnv
@@ -28,22 +27,15 @@ from app.services.releases import ReleasesService
 
 class JobHandlers:
     def __init__(
-        self,
-        database: Database,
-        sealer: Optional[Sealer],
-        registry: Registry,
-        plugin_manager: plugins.PluginManager,
+        self, database: Database, sealer: Optional[Sealer], registry: Registry
     ) -> None:
         self.database = database
         self.sealer = sealer
         self.registry = registry
-        self.plugins = plugin_manager
 
     @classmethod
     def of(cls, services: JobServices) -> "JobHandlers":
-        return cls(
-            services.database, services.sealer, services.registry, services.plugins
-        )
+        return cls(services.database, services.sealer, services.registry)
 
     def context(self, payload: dict[str, Any]) -> JobContext:
         return JobContext.of(payload, self.database, self.sealer)
@@ -142,6 +134,3 @@ register("deploy", lambda s: JobHandlers.of(s).deploy)
 register("push", lambda s: JobHandlers.of(s).push)
 register("import", lambda s: JobHandlers.of(s).import_activity)
 register("import_github", lambda s: JobHandlers.of(s).import_github)
-register(plugins.INSTALL, lambda s: s.plugins.install)
-register(plugins.REMOVE, lambda s: s.plugins.remove)
-register(plugins.RESTART, lambda s: s.plugins.restart)
