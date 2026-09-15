@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.17.2 — 2026-09-15
+
+### Bug Fixes
+- **plugins:** a removed plugin stays disabled until the restart forgets it, and cannot be enabled meanwhile
+
+### Tests
+- **plugins:** removal flow through disable, restart and discovery
+
 ## v0.17.1 — 2026-09-15
 
 ### Bug Fixes
