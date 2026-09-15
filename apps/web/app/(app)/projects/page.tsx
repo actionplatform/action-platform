@@ -1,4 +1,7 @@
+import { Download } from "lucide-react";
+import Link from "next/link";
 import { PageHeader } from "@/components/layout/page";
+import { Button } from "@/components/ui/button";
 import { projectsOf } from "@/lib/projects";
 
 
@@ -14,7 +17,7 @@ export default async function ProjectsPage() {
 
   return (
     <>
-      <PageHeader title="Projects" description="Manage your projects and the apps that ship together." actions={manage ? <NewProjectForm /> : undefined} />
+      <PageHeader title="Projects" description="Manage your projects and the apps that ship together." actions={manage ? <div className="flex items-center gap-2"><Link href="/import"><Button size="lg" variant="outline"><Download className="size-4" strokeWidth={2} /> Import</Button></Link><NewProjectForm /></div> : undefined} />
       <ProjectsView
         projects={projects.map((p) => ({ id: p.id, name: p.name, slug: p.slug, description: p.description, apps: p.apps, teamId: p.teamId, teamName: p.teamName, updatedAt: p.updatedAt }))}
         teams={teams.map((t) => ({ id: t.id, name: t.name }))}

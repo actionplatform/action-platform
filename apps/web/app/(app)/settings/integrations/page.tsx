@@ -1,4 +1,6 @@
+import { Download } from "lucide-react";
 import { headers } from "next/headers";
+import Link from "next/link";
 import { ConnectHosts } from "@/components/connect-hosts";
 import { Card } from "@/components/ui/card";
 import { hostAccess } from "@/lib/host-access";
@@ -10,7 +12,7 @@ import { SourceHosts } from "../source-hosts";
 
 export const dynamic = "force-dynamic";
 
-export default async function HostsSettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
+export default async function IntegrationsSettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
   const { session, org } = await requireOrg();
   const canManage = !!session.grants["org.manage"];
   const [hosts, query, apps] = await Promise.all([hostsOf(org.id), searchParams, oauthApps()]);
@@ -22,7 +24,7 @@ export default async function HostsSettingsPage({ searchParams }: { searchParams
   return (
     <div className="space-y-5">
       <Card className="rounded-[11px]">
-        <header className="border-b border-border px-6 py-4"><h2 className="text-[18px] font-semibold">Connect a code host</h2></header>
+        <header className="border-b border-border px-6 py-4"><h2 className="text-[18px] font-semibold">Code hosts</h2></header>
         <div className="space-y-3 px-4 py-4 sm:px-6">
           {query.connected && <div className="text-sm text-secondary">Connected {query.connected}.</div>}
           {query.github_app && <div className="text-sm text-secondary">GitHub App <code className="font-mono">{query.github_app}</code> created. Install it, then connect.</div>}
@@ -31,13 +33,19 @@ export default async function HostsSettingsPage({ searchParams }: { searchParams
             connected={connected}
             origin={origin}
             orgId={org.id}
-            returnTo="/settings/hosts"
+            returnTo="/settings/integrations"
             githubApp={apps.github.slug ?? null}
             error={query.oauth_error ?? null}
           />
         </div>
       </Card>
       <SourceHosts hosts={hosts} access={access} canManage={canManage} />
+      {canManage && connected.github.length > 0 && (
+        <Link href="/import" className="flex items-center gap-3 rounded-[11px] border border-border px-6 py-4 text-sm transition-colors hover:border-border-hover hover:bg-surface-hover">
+          <Download className="size-4 text-secondary" strokeWidth={1.75} />
+          <span><span className="font-medium">Import from GitHub</span> <span className="text-secondary">— bring the repositories, teams, people and projects in.</span></span>
+        </Link>
+      )}
     </div>
   );
 }

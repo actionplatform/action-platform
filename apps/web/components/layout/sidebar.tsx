@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, ArrowLeft, Download, Users, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Rocket, Settings, SlidersHorizontal, X } from "lucide-react";
+import { Activity, ArrowLeft, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Rocket, Settings, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -15,8 +15,6 @@ import { UserMenu } from "./user-menu";
 const items = [
   { href: "/projects", label: "Projects", icon: FolderGit2 },
   { href: "/templates", label: "Templates", icon: LayoutTemplate },
-  { href: "/teams", label: "Teams", icon: Users },
-  { href: "/import", label: "Import", icon: Download },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
