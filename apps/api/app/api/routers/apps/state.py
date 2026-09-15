@@ -7,7 +7,7 @@ from app.api.dependencies import get_app_service, get_git_state
 from app.services.apps import AppService
 from app.services.workspace.state import GitStateService
 
-router = APIRouter(prefix="/apps", tags=["apps"])
+router = APIRouter(prefix="/api/apps", tags=["apps"])
 
 
 @router.get("")

@@ -15,9 +15,7 @@ from app.core.auth.errors import AuthError
 from app.core.auth.secrets import Secrets
 from app.repositories.source import configure_registry, get_registry
 from app.core.shared.urls import GitUrl
-from app.api.routers import auth as auth_router
-from app.api.routers import management as v1_management
-from app.api.routers import workspace as v1
+from app.api.routers import router as routes
 from app.core.db import Database
 
 from action_platform.core.exception import ActionPlatformError, ConfigError
@@ -119,9 +117,7 @@ def build(
     def _platform_error(_, exc: ActionPlatformError):
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
-    app.include_router(v1)
-    app.include_router(v1_management)
-    app.include_router(auth_router)
+    app.include_router(routes)
 
     def repo_of(registry_id: str) -> Optional[str]:
         try:

@@ -24,6 +24,7 @@ from app.core.db.models import (
 )
 from app.schemas import auth as schemas
 from action_platform.core.access import Grant, grants_of, parse_scopes
+from app.schemas import common
 
 
 LIMITS = {
@@ -164,13 +165,13 @@ def device_request_out(auth: AuthService, code: DeviceCode) -> schemas.DeviceReq
 def token_out(auth: AuthService, token: ApiToken, clients) -> schemas.TokenOut:
     db = auth.db
 
-    def named(model, id: Optional[str], fallback: str) -> Optional[schemas.Named]:
+    def named(model, id: Optional[str], fallback: str) -> Optional[common.Named]:
         if not id:
             return None
 
         name = db.scalar(select(model.name).where(model.id == id))
 
-        return schemas.Named(id=id, name=name or fallback)
+        return common.Named(id=id, name=name or fallback)
 
     return schemas.TokenOut(
         id=token.id,

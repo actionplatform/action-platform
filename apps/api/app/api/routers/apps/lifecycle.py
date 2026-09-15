@@ -6,7 +6,7 @@ from app import schemas
 from app.api.dependencies import get_lifecycle
 from app.services.workspace.lifecycle import LifecycleService
 
-router = APIRouter(prefix="/apps", tags=["actions"])
+router = APIRouter(prefix="/api/apps", tags=["actions"])
 
 
 @router.post("/{id}/release")

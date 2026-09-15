@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from app import schemas
 from app.services.catalog import CatalogService
 
-router = APIRouter(tags=["catalog"])
+router = APIRouter(prefix="/api", tags=["catalog"])
 service = CatalogService()
 
 

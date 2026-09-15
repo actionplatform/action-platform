@@ -17,13 +17,16 @@ from app.api.dependencies import (
 )
 from app.core.shared.urls import GitUrl
 from app.schemas import SourceCredentials
-from app.schemas import management as schemas
 from app.services.access.caller import Caller
 from app.services.access.enrich import credentials_for
 from app.services.activity import ActivityService
 from app.services.apps import AppService
 from app.services.directory import DirectoryWrites
 
+
+from app.schemas import projects as schemas
+
+from app.schemas import common
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -130,14 +133,14 @@ def delete_app(
     caller: Caller = Depends(get_caller),
     writes: DirectoryWrites = Depends(get_writes),
     apps: AppService = Depends(get_app_service),
-) -> schemas.Removed:
+) -> common.Removed:
     org = org_of(caller, x_organization)
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
     app = writes.app(project.id, app_id)
 
     if app is None:
-        return schemas.Removed()
+        return common.Removed()
 
     deleted = apps.delete_through_host(writes, org.id, app) if repository else None
 
@@ -148,7 +151,7 @@ def delete_app(
 
     writes.delete_app(project.id, app_id)
 
-    return schemas.Removed(
+    return common.Removed(
         removed=[app.registry_id], repositories=[deleted] if deleted else []
     )
 

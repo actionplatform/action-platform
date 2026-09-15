@@ -17,10 +17,13 @@ from app.api.dependencies import (
     org_dict,
 )
 from app.core.auth.service import AuthService
-from app.schemas import directory as dschemas
 from app.services.access.caller import Caller
 from app.services.directory import DirectoryService
 
+
+from app.schemas import organizations as schemas
+
+from app.schemas import common
 
 router = APIRouter(prefix="/api/v1", tags=["identity"])
 
@@ -29,7 +32,7 @@ router = APIRouter(prefix="/api/v1", tags=["identity"])
 def me(
     caller: Caller = Depends(get_caller),
     directory: DirectoryService = Depends(get_directory),
-) -> dschemas.Me:
+) -> schemas.Me:
     org = caller.organization
     role = caller.role_in(org.id) if org else None
     project = (
@@ -41,7 +44,7 @@ def me(
         directory.app(project.id, caller.app_id) if project and caller.app_id else None
     )
 
-    return dschemas.Me(
+    return schemas.Me(
         user={
             "id": caller.user.id,
             "name": caller.user.name,
@@ -56,24 +59,24 @@ def me(
         scope=caller.scope,
         permissions=caller.permissions_in(org.id if org else None),
         token=caller.token_id,
-        project=dschemas.Named(id=project.id, name=project.name) if project else None,
-        app=dschemas.AppRef(id=app.id, name=app.name, registry_id=app.registry_id)
+        project=common.Named(id=project.id, name=project.name) if project else None,
+        app=common.AppRef(id=app.id, name=app.name, registry_id=app.registry_id)
         if app
         else None,
     )
 
 
 @router.get("/access")
-def access(caller: Caller = Depends(get_caller)) -> dschemas.AccessCatalog:
-    return dschemas.AccessCatalog(**catalog())
+def access(caller: Caller = Depends(get_caller)) -> schemas.AccessCatalog:
+    return schemas.AccessCatalog(**catalog())
 
 
 @router.get("/organizations")
 def organizations(
     caller: Caller = Depends(get_caller),
-) -> list[dschemas.OrganizationRow]:
+) -> list[schemas.OrganizationRow]:
     return [
-        dschemas.OrganizationRow(
+        schemas.OrganizationRow(
             id=o.id,
             name=o.name,
             slug=o.slug,
@@ -88,11 +91,11 @@ def organizations(
 
 @router.post("/tokens", status_code=200)
 def issue(
-    body: dschemas.IssueRequest,
+    body: schemas.IssueRequest,
     caller: Caller = Depends(get_caller),
     auth: AuthService = Depends(get_auth),
     directory: DirectoryService = Depends(get_directory),
-) -> dschemas.Issued:
+) -> schemas.Issued:
     if caller.scope is not None or not caller.session_token:
         raise HTTPException(403, "a token cannot mint another token; sign in again")
 
@@ -117,7 +120,7 @@ def issue(
     )
     app = directory.app(project.id, token.app_id) if project and token.app_id else None
 
-    return dschemas.Issued(
+    return schemas.Issued(
         token=raw,
         id=token.id,
         scope=Grant(
@@ -131,8 +134,8 @@ def issue(
         organizations=None
         if organization
         else [org_dict(o) for o, _ in caller.organizations],
-        project=dschemas.Named(id=project.id, name=project.name) if project else None,
-        app=dschemas.AppRef(id=app.id, name=app.name, registry_id=app.registry_id)
+        project=common.Named(id=project.id, name=project.name) if project else None,
+        app=common.AppRef(id=app.id, name=app.name, registry_id=app.registry_id)
         if app
         else None,
     )
