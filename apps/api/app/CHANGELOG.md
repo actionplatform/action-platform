@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.20.2 — 2026-09-15
+
+### Bug Fixes
+- **plugins:** a plugin that failed to load still shows as installed with its error and can be removed
+
 ## v0.20.1 — 2026-09-15
 
 ### Bug Fixes
