@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.18.6 — 2026-09-15
+
+### Features
+- **web:** Deployments tab — deploy card, target summary, list of runs
+- **web:** jobs by kind with stage, dry run and author
+
+### Refactoring
+- **web:** overview shows only summary, health, commits and source
+
 ## v0.18.5 — 2026-09-15
 
 ### Features
