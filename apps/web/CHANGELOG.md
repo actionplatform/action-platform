@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.18.7 — 2026-09-15
+
+### Features
+- **web:** Releases — Create release form with name, notes and latest, Git references with commits, Release history with row actions
+- **web:** release extras through the client; Textarea
+- **core:** a release takes a name, Markdown notes above the commit list, and whether it is the latest
+- **web:** Deployments — compact run alerts, target summary, expandable history with redeploy
+- **web:** the app view knows its organization and project slugs
+- **web:** status colours on badges; Hint tooltip rendered through a portal
+- **api:** jobs carry version and started_at
+- **web:** the Deploy card picks a release; no release, no deploy
+- **web:** AWS deploy proxy url under Settings → Integrations
+
+### Bug Fixes
+- **web:** the Release card recomputes the next version after a release
+
+### Chores
+- merge master
+
 ## v0.18.6 — 2026-09-15
 
 ### Features
