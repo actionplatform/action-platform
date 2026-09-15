@@ -1,14 +1,12 @@
 """The caller: who they are, what they may do, the organizations they belong to, and tokens for CLI and MCP."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from action_platform.core.access import (
     ROLE_LABELS,
-    Grant,
     catalog,
     grantable_scopes,
     grants_of,
-    parse_scopes,
 )
 from app.api.dependencies import (
     AuthDep,
@@ -18,6 +16,8 @@ from app.api.dependencies import (
 )
 from app.schemas import common
 from app.schemas import organizations as schemas
+
+from app.services.tokens import TokenMinter
 
 router = APIRouter(prefix="/api/v1", tags=["identity"])
 
@@ -92,40 +92,14 @@ def issue(
     auth: AuthDep,
     directory: DirectoryDep,
 ) -> schemas.Issued:
-    if caller.scope is not None or not caller.session_token:
-        raise HTTPException(403, "a token cannot mint another token; sign in again")
-
-    grant = Grant.parse(body.scope)
-
-    if not grant.scope:
-        raise HTTPException(
-            400, "scope must include at least one of read, write, release, admin"
-        )
-
-    session = auth.require_session(caller.session_token)
-    token, raw = auth.issue_token(
-        session, grant, (body.name or "").strip()[:80] or "cli"
-    )
-    organization = (
-        caller.member_of(token.organization_id) if token.organization_id else None
-    )
-    project = (
-        directory.project(organization.id, token.project_id)
-        if organization and token.project_id
-        else None
-    )
-    app = directory.app(project.id, token.app_id) if project and token.app_id else None
+    minted = TokenMinter(auth, directory).mint(caller, body.scope, body.name)
+    organization, project, app = minted.organization, minted.project, minted.app
 
     return schemas.Issued(
-        token=raw,
-        id=token.id,
-        scope=Grant(
-            parse_scopes(token.scope),
-            token.organization_id or "*",
-            token.project_id,
-            token.app_id,
-        ).format(),
-        expires_at=token.expires_at,
+        token=minted.raw,
+        id=minted.token.id,
+        scope=minted.scope,
+        expires_at=minted.token.expires_at,
         organization=org_dict(organization) if organization else None,
         organizations=None
         if organization
