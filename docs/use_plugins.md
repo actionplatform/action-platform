@@ -29,6 +29,21 @@ State lives in `~/.action-platform/plugins.json` (`AP_HOME` moves it): which plu
 
 The git hooks the CLI installs ask the core (`action-platform gitflow-check`) when the CLI is on `PATH`, so a plugin that changed the git-flow rules is obeyed at commit time too; without the CLI they fall back to the shell rules in `ci-scripts`. CI on the server keeps the shell rules: the repository's minimum, whatever a developer installed locally.
 
+## On the hosted platform — the Jenkins model
+
+With `AP_PLUGINS_DIR` pointing at a volume the API and the worker share (`deploy/dokploy/docker-compose.yml` mounts `plugins:/data/plugins`), the **Plugins** page does what the CLI does on a machine, for whoever has `org.manage`:
+
+- **Install** a plugin the index marks `verified` — a job runs `pip install --target` into the volume, then the new plugin joins the running API and worker without a restart: its deploy targets, overlays, strategies, hooks and replaced slots are live at once. Unverified plugins cannot be installed here.
+- **Enable / Disable** — at once, no restart.
+- **Update** (a newer `latest`) and **Remove** — the files change on disk, but the code already loaded stays until a **Restart**: the page shows *Restart required* and a button that makes the API and the worker exit; the container's restart policy brings them back with the change. Exactly what Jenkins does with plugin upgrades.
+- API and worker are separate processes; each rediscovers plugins when `plugins.json` in the volume changes.
+
+No sandbox: an installed plugin runs inside the API and the worker with their permissions — the same trust as a Jenkins plugin, which is why only verified ones install.
+
+## Options
+
+A plugin keeps what it needs to remember in its own options store, WordPress-style: `surface.options.get("channel")`, `set`, `delete`, `all` — a JSON file per plugin on a machine (`~/.action-platform/plugins/<slug>.json`, or `options/` under `AP_PLUGINS_DIR`), the `plugin_option` table on the hosted platform. `GET/PUT /api/v1/plugins/{slug}/options` reads and replaces them for `org.manage`.
+
 ## Index
 
 The web app shows the index as a marketplace under **Plugins** (search, tags, `needs`, install command to copy, which ones the hosted platform runs).
