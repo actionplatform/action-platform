@@ -1375,6 +1375,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/plugins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["plugins_api_plugins_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/gitflow/rules": {
         parameters: {
             query?: never;
@@ -2101,6 +2117,25 @@ export interface components {
         PermissionInfo: {
             id: string;
             description: string;
+        };
+        PluginRow: {
+            slug: string;
+            description: string;
+            author: string;
+            verified: boolean;
+            repo: string;
+            pypi: string;
+            latest: string;
+            min_core: string;
+            needs: string[];
+            tags: string[];
+            installed: boolean;
+            installed_version?: string | null;
+            enabled: boolean;
+        };
+        Plugins: {
+            plugins: components["schemas"]["PluginRow"][];
+            index: string;
         };
         ProjectPick: {
             number: number;
@@ -5514,6 +5549,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    plugins_api_plugins_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plugins"];
                 };
             };
         };

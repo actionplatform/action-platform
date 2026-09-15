@@ -87,3 +87,24 @@ class GitflowRules(BaseModel):
     kinds: list[str]
     protected: list[str]
     types: list[str]
+
+
+class PluginRow(BaseModel):
+    slug: str
+    description: str = ""
+    author: str = ""
+    verified: bool = False
+    repo: str = ""
+    pypi: str = ""
+    latest: str = ""
+    min_core: str = ""
+    needs: list[str] = []
+    tags: list[str] = []
+    installed: bool = False
+    installed_version: Optional[str] = None
+    enabled: bool = False
+
+
+class Plugins(BaseModel):
+    plugins: list[PluginRow]
+    index: str

@@ -1,4 +1,4 @@
-"""The templates catalog as the repository publishes it: `index.json`, fetched raw, revalidated with its ETag."""
+"""Catalogs their repositories publish — the templates matrix and the plugins index — as `index.json` fetched raw and revalidated with its ETag."""
 
 import json
 import logging
@@ -70,3 +70,4 @@ class TemplatesIndex:
 
 
 index = TemplatesIndex()
+plugins_index = TemplatesIndex(settings.PLUGINS_INDEX_URL)

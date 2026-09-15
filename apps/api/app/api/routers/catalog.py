@@ -24,6 +24,11 @@ def matrix_with_sources(
     return service.matrix(body.sources)
 
 
+@router.get("/plugins")
+def plugins() -> schemas.Plugins:
+    return service.plugins()
+
+
 @router.get("/gitflow/rules")
 def gitflow_rules() -> schemas.GitflowRules:
     return service.gitflow_rules()
