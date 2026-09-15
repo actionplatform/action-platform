@@ -53,7 +53,7 @@ action_platform/
   hooks/          commit-msg, pre-commit, pre-push, gitflow.sh
 apps/web/         the web app
 deploy/           Dockerfiles, compose, install.sh
-apps/api/action_platform_api/  (package `action_platform_api`, depends on the library, never the other way round)
+apps/api/app/  (package `app`, depends on the library, never the other way round)
   api/            FastAPI: app (factory, AP_API_TOKEN middleware, Sentry), gate (the /api/v1 gate: role ∩ scope ∩ reach), deps, ratelimit, routers (workspace, directory, management, imports, auth)
   core/           abc (HostProvider, HostDirectory, ImportSource: one implementation per code host), access (Caller, rules, enrich), auth (AuthService, crypto, jwt, passwords, secrets, cookies), db (models, database, migrations), cli (serve, worker, db), shared (clock, ids, urls, http, credentials, git_auth)
   repositories/   registry (`registry` table), drafts (`draft` table: pending edits), source (the registry this process opens)
@@ -163,7 +163,7 @@ erDiagram
     }
 ```
 
-`user`, `session`, `account`, `verification`, `device_code`, `organization`, `member`, `invitation` were created by better-auth and are now written by the API's `AuthService` (`apps/api/action_platform_api/core/auth/`), with the same password hashes and cookie signatures so nothing had to be re-issued; `team`, `team_member`, `project`, `app`, `source_host`, `release`, `pull_request`, `template_source`, `organization_setting`, `api_token`, `api_token_client` are the platform's. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/` (0001–0014), applied on boot. The Python API mirrors the same tables in `apps/api/action_platform_api/core/db/models.py` and, given `AP_DATABASE_URL`, connects to the same database, adopts it and adds its own tables (`job`) through Alembic — see [database](concept_database.md).
+`user`, `session`, `account`, `verification`, `device_code`, `organization`, `member`, `invitation` were created by better-auth and are now written by the API's `AuthService` (`apps/api/app/core/auth/`), with the same password hashes and cookie signatures so nothing had to be re-issued; `team`, `team_member`, `project`, `app`, `source_host`, `release`, `pull_request`, `template_source`, `organization_setting`, `api_token`, `api_token_client` are the platform's. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/` (0001–0014), applied on boot. The Python API mirrors the same tables in `apps/api/app/core/db/models.py` and, given `AP_DATABASE_URL`, connects to the same database, adopts it and adds its own tables (`job`) through Alembic — see [database](concept_database.md).
 
 ## Trust between web and API
 

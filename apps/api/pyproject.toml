@@ -19,13 +19,13 @@ dependencies = [
 ]
 
 [project.scripts]
-action-platform-api = "action_platform_api.core.cli:main"
+action-platform-api = "app.core.cli:main"
 
 [tool.poetry]
-packages = [{ include = "action_platform_api" }]
+packages = [{ include = "app" }]
 include = [
-  { path = "action_platform_api/LAST_VERSION", format = ["sdist", "wheel"] },
-  { path = "action_platform_api/core/db/migrations/**/*", format = ["sdist", "wheel"] },
+  { path = "app/LAST_VERSION", format = ["sdist", "wheel"] },
+  { path = "app/core/db/migrations/**/*", format = ["sdist", "wheel"] },
 ]
 
 [tool.poetry.dependencies]
@@ -44,7 +44,7 @@ ruff = "^0.9.0"
 testpaths = ["tests"]
 
 [tool.ruff.lint.per-file-ignores]
-"action_platform_api/core/db/database.py" = ["E402"]
+"app/core/db/database.py" = ["E402"]
 
 [build-system]
 requires = ["poetry-core"]

@@ -1,4 +1,4 @@
-"""action_platform_api.core.shared.git_auth — per-request git credentials that never touch the process environment."""
+"""app.core.shared.git_auth — per-request git credentials that never touch the process environment."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from action_platform.core.flow import git
 from action_platform.testing.fixtures import TempCase
 
 try:
-    from action_platform_api.core.shared.git_auth import SourceCredentials, git_auth
+    from app.core.shared.git_auth import SourceCredentials, git_auth
 except ImportError:
     SourceCredentials = git_auth = None
 

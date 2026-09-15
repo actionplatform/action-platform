@@ -77,9 +77,9 @@ class FakeGithub:
 class GithubImportTest(GateCase):
     def setUp(self):
         super().setUp()
-        from action_platform_api.core.auth.crypto import Sealer
-        from action_platform_api.core.db.models import SourceHost
-        from action_platform_api.services.organization_import import client, context
+        from app.core.auth.crypto import Sealer
+        from app.core.db.models import SourceHost
+        from app.services.organization_import import client, context
 
         with self.app.state.db.session() as s:
             s.add(
@@ -133,7 +133,7 @@ class GithubImportTest(GateCase):
         )
 
     def test_needs_a_github_host_and_org_manage(self):
-        from action_platform_api.core.db.models import Member
+        from app.core.db.models import Member
 
         missing = self.client.get(
             "/api/v1/import/github/organizations?host=nope", headers=self.h()
@@ -149,7 +149,7 @@ class GithubImportTest(GateCase):
         self.assertEqual(forbidden.status_code, 403)
 
     def test_import_runs_as_a_job(self):
-        from action_platform_api.worker import Worker
+        from app.worker import Worker
 
         queued = self.client.post(
             "/api/v1/import/github",
@@ -200,7 +200,7 @@ class GithubImportTest(GateCase):
         )
 
     def test_import_into_one_project(self):
-        from action_platform_api.worker import Worker
+        from app.worker import Worker
 
         project = self.client.post(
             "/api/v1/projects", json={"name": "Platform"}, headers=self.h()
@@ -232,7 +232,7 @@ class GithubImportTest(GateCase):
         self.assertEqual(projects[0]["team"]["name"], "Platform")
 
     def test_import_a_github_project_with_its_repositories(self):
-        from action_platform_api.worker import Worker
+        from app.worker import Worker
 
         queued = self.client.post(
             "/api/v1/import/github",
@@ -262,7 +262,7 @@ class GithubImportTest(GateCase):
         )
 
     def test_import_a_github_project_into_an_existing_project(self):
-        from action_platform_api.worker import Worker
+        from app.worker import Worker
 
         target = self.client.post(
             "/api/v1/projects", json={"name": "Shop"}, headers=self.h()

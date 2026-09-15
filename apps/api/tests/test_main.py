@@ -1,4 +1,4 @@
-"""action_platform_api.api.app — the app factory, its open endpoints and the shared token."""
+"""app.api.app — the app factory, its open endpoints and the shared token."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ class StaticEndpointsTest(ApiCase):
 
 class ApiTokenTest(ApiCase):
     def test_refuses_to_start_open_unless_asked(self):
-        from action_platform_api.api.app import build
+        from app.api.app import build
         from action_platform.core.exception import ConfigError
         from action_platform.settings import settings
 
@@ -32,7 +32,7 @@ class ApiTokenTest(ApiCase):
             build(token="", database_url="sqlite://")
 
     def test_guards_every_route_but_version(self):
-        from action_platform_api.api.app import build
+        from app.api.app import build
 
         guarded = TestClient(build(token="s3cret", database_url="sqlite://"))
 
@@ -73,8 +73,8 @@ class SentryTest(ApiCase):
 
 class CatalogIndexTest(ApiCase):
     def test_matrix_prefers_the_published_index(self):
-        from action_platform_api.services.catalog import service as catalog
-        from action_platform_api.services.catalog import published
+        from app.services.catalog import service as catalog
+        from app.services.catalog import published
         from action_platform.settings import settings
 
         self.patch(settings, "TEMPLATES_DIR", None)
@@ -146,8 +146,8 @@ class CatalogIndexTest(ApiCase):
         )
 
     def test_matrix_falls_back_to_the_checkout_when_the_index_is_down(self):
-        from action_platform_api.services.catalog import service as catalog
-        from action_platform_api.services.catalog import published
+        from app.services.catalog import service as catalog
+        from app.services.catalog import published
 
         from action_platform.settings import settings
         from action_platform.testing.fixtures import template_repo
@@ -166,7 +166,7 @@ class CatalogIndexTest(ApiCase):
 
 class TemplatesIndexTest(unittest.TestCase):
     def test_revalidates_with_etag_and_keeps_cache_on_304(self):
-        from action_platform_api.services.catalog import published
+        from app.services.catalog import published
 
         calls = []
 

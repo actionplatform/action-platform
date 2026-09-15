@@ -8,8 +8,8 @@ from action_platform.testing.fixtures import TempCase
 
 class QueueTest(TempCase):
     def queue(self):
-        from action_platform_api.core.db import Database
-        from action_platform_api.services.jobs import JobQueue
+        from app.core.db import Database
+        from app.services.jobs import JobQueue
 
         db = Database(f"sqlite:///{self.tmp_path / 'q.db'}")
         db.migrate()
@@ -38,15 +38,15 @@ class QueueTest(TempCase):
         )
 
     def test_fail_retries_with_backoff_then_gives_up(self):
-        from action_platform_api.services.jobs import MAX_ATTEMPTS
-        from action_platform_api.core.shared.clock import now
+        from app.services.jobs import MAX_ATTEMPTS
+        from app.core.shared.clock import now
 
         queue = self.queue()
         job = queue.enqueue("release", {})
 
         for attempt in range(1, MAX_ATTEMPTS + 1):
             with queue.database.session() as s:
-                from action_platform_api.core.db.models import Job
+                from app.core.db.models import Job
 
                 s.query(Job).filter(Job.id == job.id).update({"run_after": now()})
             claimed = queue.claim("w")
@@ -66,8 +66,8 @@ class QueueTest(TempCase):
     def test_stale_running_jobs_are_reaped(self):
         from datetime import timedelta
 
-        from action_platform_api.core.db.models import Job
-        from action_platform_api.core.shared.clock import now
+        from app.core.db.models import Job
+        from app.core.shared.clock import now
 
         queue = self.queue()
         job = queue.enqueue("sync", {})
@@ -84,7 +84,7 @@ class QueueTest(TempCase):
 
 class AsyncRouteTest(GateCase):
     def test_sync_with_prefer_async_is_queued_and_the_worker_runs_it(self):
-        from action_platform_api.worker import Worker
+        from app.worker import Worker
 
         registry_id = self.register()
         res = self.client.post(
@@ -115,7 +115,7 @@ class AsyncRouteTest(GateCase):
         self.assertEqual([j["id"] for j in listed], [job_id])
 
     def test_jobs_of_another_organization_are_invisible(self):
-        from action_platform_api.services.jobs import JobQueue
+        from app.services.jobs import JobQueue
 
         job = JobQueue(self.app.state.db).enqueue("sync", {}, organization_id="other")
         self.assertEqual(
@@ -126,7 +126,7 @@ class AsyncRouteTest(GateCase):
         import shutil
         from pathlib import Path
 
-        from action_platform_api.repositories.source import get_registry
+        from app.repositories.source import get_registry
 
         registry_id = self.register()
         entry = get_registry().get(registry_id)
@@ -141,11 +141,11 @@ class RegistryAdoptionTest(GateCase):
         import json
         from pathlib import Path
 
-        from action_platform_api.repositories.source import (
+        from app.repositories.source import (
             configure_registry,
             get_registry,
         )
-        from action_platform_api.repositories.registry import home
+        from app.repositories.registry import home
 
         file = home() / "apps.json"
         file.parent.mkdir(parents=True, exist_ok=True)

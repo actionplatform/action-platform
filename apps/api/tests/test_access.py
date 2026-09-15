@@ -17,8 +17,8 @@ except ImportError:
 class GateCase(TempCase):
     def setUp(self):
         super().setUp()
-        from action_platform_api.api.routers.auth import LIMITS
-        from action_platform_api.api.app import build
+        from app.api.routers.auth import LIMITS
+        from app.api.app import build
 
         self.setenv("AP_HOME", str(self.tmp_path / "home"))
         self.patch(
@@ -57,7 +57,7 @@ class GateCase(TempCase):
         return {"Authorization": f"Bearer {token or self.session}"}
 
     def register(self) -> str:
-        from action_platform_api.core.db.models import App, Project
+        from app.core.db.models import App, Project
 
         res = self.client.post(
             "/api/apps",
@@ -203,7 +203,7 @@ class AppsTest(GateCase):
             ).status_code,
             404,
         )
-        from action_platform_api.core.db.models import Member
+        from app.core.db.models import Member
 
         with self.app.state.db.session() as s:
             s.query(Member).update({"role": "viewer"})
@@ -215,7 +215,7 @@ class AppsTest(GateCase):
         self.assertIn("viewer", refused.json()["detail"])
 
     def test_credentials_and_identity_are_filled_in(self):
-        from action_platform_api.core.db.models import OrganizationSetting
+        from app.core.db.models import OrganizationSetting
 
         registry_id = self.register()
         with self.app.state.db.session() as s:
@@ -226,7 +226,7 @@ class AppsTest(GateCase):
                     git_author_email="bot@acme.io",
                 )
             )
-        from action_platform_api.services.apps import AppService
+        from app.services.apps import AppService
 
         seen = {}
         original = AppService.sync
@@ -248,9 +248,9 @@ class AppsTest(GateCase):
         self.assertIsNotNone(listed[0]["apps"][0]["last_synced_at"])
 
     def test_source_host_token_is_decrypted_from_the_web_apps_ciphertext(self):
-        from action_platform_api.core.auth.crypto import Sealer
-        from action_platform_api.core.db.models import SourceHost
-        from action_platform_api.services.directory import DirectoryService
+        from app.core.auth.crypto import Sealer
+        from app.core.db.models import SourceHost
+        from app.services.directory import DirectoryService
 
         sealer = Sealer(self.app.state.secrets)
         with self.app.state.db.session() as s:
@@ -281,7 +281,7 @@ class AppsTest(GateCase):
 
 class MatrixTest(GateCase):
     def test_matrix_carries_the_organizations_template_sources(self):
-        from action_platform_api.core.db.models import TemplateSource
+        from app.core.db.models import TemplateSource
 
         with self.app.state.db.session() as s:
             s.add(
@@ -294,7 +294,7 @@ class MatrixTest(GateCase):
                 )
             )
         with self.app.state.db.session() as s:
-            from action_platform_api.services.directory import DirectoryService
+            from app.services.directory import DirectoryService
 
             specs = DirectoryService(s).source_specs_of(self.org["id"])
         self.assertEqual(

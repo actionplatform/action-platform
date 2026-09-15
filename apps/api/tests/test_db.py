@@ -43,7 +43,7 @@ class DatabaseTest(TempCase):
         return f"sqlite:///{self.tmp_path / name}"
 
     def test_migrate_creates_every_table_and_reaches_head(self):
-        from action_platform_api.core.db import Database
+        from app.core.db import Database
 
         db = Database(self.url())
         self.assertEqual(db.migrate(), db.head_revision())
@@ -53,8 +53,8 @@ class DatabaseTest(TempCase):
         self.assertEqual(db.migrate(), "0005")
 
     def test_web_created_schema_is_adopted_not_recreated(self):
-        from action_platform_api.core.db import Base, Database
-        from action_platform_api.core.db.models import (
+        from app.core.db import Base, Database
+        from app.core.db.models import (
             Draft,
             Job,
             OAuthApp,
@@ -78,8 +78,8 @@ class DatabaseTest(TempCase):
         self.assertFalse(db.adopted_from_web())
 
     def test_session_commits_and_cascades(self):
-        from action_platform_api.core.db import Database
-        from action_platform_api.core.db.models import App, Organization, Project
+        from app.core.db import Database
+        from app.core.db.models import App, Organization, Project
 
         db = Database(self.url())
         db.migrate()
@@ -99,8 +99,8 @@ class DatabaseTest(TempCase):
             self.assertIsNone(s.get(App, "a1"))
 
     def test_session_rolls_back_on_error(self):
-        from action_platform_api.core.db import Database
-        from action_platform_api.core.db.models import Organization
+        from app.core.db import Database
+        from app.core.db.models import Organization
 
         db = Database(self.url())
         db.migrate()
@@ -116,8 +116,8 @@ class DatabaseTest(TempCase):
     def test_job_dedupe_and_defaults(self):
         from sqlalchemy.exc import IntegrityError
 
-        from action_platform_api.core.db import Database
-        from action_platform_api.core.db.models import Job
+        from app.core.db import Database
+        from app.core.db.models import Job
 
         db = Database(self.url())
         db.migrate()
@@ -140,7 +140,7 @@ class DatabaseTest(TempCase):
                 s.add(Job(id="j2", kind="sync", app_id="a1", dedupe_key="a1"))
 
     def test_url_normalization(self):
-        from action_platform_api.core.db import normalize_url
+        from app.core.db import normalize_url
 
         self.assertEqual(
             normalize_url("postgres://u:p@h/db"), "postgresql+psycopg://u:p@h/db"
@@ -152,7 +152,7 @@ class DatabaseTest(TempCase):
         self.assertEqual(normalize_url("sqlite:///x.db"), "sqlite:///x.db")
 
     def test_empty_url_is_a_config_error(self):
-        from action_platform_api.core.db import Database
+        from app.core.db import Database
         from action_platform.core.exception import ConfigError
 
         with self.assertRaises(ConfigError):
@@ -167,13 +167,13 @@ class BootTest(TempCase):
         self.patch(settings, "ALLOW_UNAUTHENTICATED_API", True)
 
     def test_build_migrates_when_url_given(self):
-        from action_platform_api.api.app import build
+        from app.api.app import build
 
         app = build(database_url=f"sqlite:///{self.tmp_path / 'boot.db'}")
         self.assertEqual(app.state.db.current_revision(), app.state.db.head_revision())
 
     def test_build_without_url_refuses(self):
-        from action_platform_api.api.app import build
+        from app.api.app import build
         from action_platform.core.exception import ConfigError
 
         with self.assertRaisesRegex(ConfigError, "AP_DATABASE_URL"):

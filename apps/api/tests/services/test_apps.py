@@ -1,4 +1,4 @@
-"""action_platform_api.services.apps — register, inspect, sync, generate and import apps."""
+"""app.services.apps — register, inspect, sync, generate and import apps."""
 
 from __future__ import annotations
 

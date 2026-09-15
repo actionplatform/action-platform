@@ -20,8 +20,8 @@ GRANT = "urn:ietf:params:oauth:grant-type:device_code"
 class AuthCase(TempCase):
     def setUp(self):
         super().setUp()
-        from action_platform_api.api.routers.auth import LIMITS
-        from action_platform_api.api.app import build
+        from app.api.routers.auth import LIMITS
+        from app.api.app import build
 
         self.setenv("AP_HOME", str(self.tmp_path / "home"))
         self.patch(settings, "ALLOW_UNAUTHENTICATED_API", True)
@@ -76,7 +76,7 @@ class AccountsTest(AuthCase):
         )
 
     def test_sign_in_with_better_auth_hash(self):
-        from action_platform_api.core.db.models import Account, User
+        from app.core.db.models import Account, User
 
         with self.app.state.db.session() as s:
             s.add(User(id="u1", name="Old", email="old@example.com"))
@@ -154,8 +154,8 @@ class AccountsTest(AuthCase):
         )
 
     def test_invitation_opens_sign_up_for_that_email_only(self):
-        from action_platform_api.core.auth.service import now
-        from action_platform_api.core.db.models import Invitation
+        from app.core.auth.service import now
+        from app.core.db.models import Invitation
 
         owner = self.owner()
         with self.app.state.db.session() as s:
@@ -302,7 +302,7 @@ class DeviceFlowTest(AuthCase):
         )
         self.assertEqual(approved.status_code, 200, approved.text)
         with self.app.state.db.session() as s:
-            from action_platform_api.core.db.models import DeviceCode
+            from app.core.db.models import DeviceCode
 
             s.query(DeviceCode).update({"polling_interval": 0})
         token = self.poll(start["device_code"])
@@ -327,7 +327,7 @@ class DeviceFlowTest(AuthCase):
             headers=self.h(owner["token"]),
         )
         with self.app.state.db.session() as s:
-            from action_platform_api.core.db.models import DeviceCode
+            from app.core.db.models import DeviceCode
 
             s.query(DeviceCode).update({"polling_interval": 0})
         self.assertEqual(
@@ -335,7 +335,7 @@ class DeviceFlowTest(AuthCase):
         )
 
     def test_grant_is_cut_to_the_role(self):
-        from action_platform_api.core.db.models import Member
+        from app.core.db.models import Member
 
         owner = self.owner()
         with self.app.state.db.session() as s:
@@ -418,8 +418,8 @@ class TokensTest(AuthCase):
         )
 
     def test_token_signed_with_the_web_apps_key(self):
-        from action_platform_api.core.auth import jwt
-        from action_platform_api.core.auth.secrets import Secrets
+        from app.core.auth import jwt
+        from app.core.auth.secrets import Secrets
 
         owner = self.owner()
         raw = self.client.post(
@@ -457,7 +457,7 @@ class TokensTest(AuthCase):
         self.assertEqual(claims["organization"]["id"], owner["org"]["id"])
 
     def test_scope_cut_to_role_and_read_required(self):
-        from action_platform_api.core.db.models import Member
+        from app.core.db.models import Member
 
         owner = self.owner()
         with self.app.state.db.session() as s:
@@ -514,7 +514,7 @@ class LimitsTest(AuthCase):
         self.assertEqual(other.status_code, 200)
 
     def test_without_secret_auth_is_503(self):
-        from action_platform_api.api.app import build
+        from app.api.app import build
 
         app = build(
             database_url=f"sqlite:///{self.tmp_path / 'nosecret.db'}", auth_secret=""

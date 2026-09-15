@@ -1,4 +1,4 @@
-"""action_platform_api.repositories.registry — clones into workspaces, refuses what it must, cleans up."""
+"""app.repositories.registry — clones into workspaces, refuses what it must, cleans up."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ from action_platform.testing.fixtures import git
 class RegistryTest(ApiCase):
     def setUp(self):
         super().setUp()
-        from action_platform_api.core.db import Database
-        from action_platform_api.repositories.registry import DbStore, Registry
+        from app.core.db import Database
+        from app.repositories.registry import DbStore, Registry
 
         database = Database(f"sqlite:///{self.tmp_path / 'registry.db'}")
         database.migrate()

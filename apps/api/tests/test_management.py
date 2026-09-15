@@ -7,7 +7,7 @@ from tests.test_access import GateCase
 
 class ProjectsAndAppsTest(GateCase):
     def test_add_app_to_project_then_remove_project(self):
-        from action_platform_api.repositories.source import get_registry
+        from app.repositories.source import get_registry
 
         project = self.client.post(
             "/api/v1/projects", json={"name": "Web"}, headers=self.h()
@@ -54,8 +54,8 @@ class ProjectsAndAppsTest(GateCase):
         self.assertIn("github", res.json()["detail"])
 
     def test_delete_app_and_host_assignment(self):
-        from action_platform_api.core.auth.crypto import Sealer
-        from action_platform_api.core.db.models import SourceHost
+        from app.core.auth.crypto import Sealer
+        from app.core.db.models import SourceHost
 
         project = self.client.post(
             "/api/v1/projects", json={"name": "Web"}, headers=self.h()
@@ -99,9 +99,9 @@ class ProjectsAndAppsTest(GateCase):
         )
 
     def _app_on_github(self):
-        from action_platform_api.core.auth.crypto import Sealer
-        from action_platform_api.core.db.models import SourceHost
-        from action_platform_api.services.apps import AppService
+        from app.core.auth.crypto import Sealer
+        from app.core.db.models import SourceHost
+        from app.services.apps import AppService
         from action_platform.providers.source.github import SourceGithub
 
         project = self.client.post(
@@ -189,7 +189,7 @@ class ProjectsAndAppsTest(GateCase):
         )
 
     def test_viewer_cannot_manage(self):
-        from action_platform_api.core.db.models import Member
+        from app.core.db.models import Member
 
         with self.app.state.db.session() as s:
             s.query(Member).update({"role": "viewer"})
@@ -316,7 +316,7 @@ class HostsAndSettingsTest(GateCase):
         listed = self.client.get("/api/v1/hosts", headers=self.h()).json()
         self.assertEqual(listed[0]["default_owner"], "other")
         self.assertNotIn("token", listed[0])
-        from action_platform_api.services.directory import DirectoryService
+        from app.services.directory import DirectoryService
 
         with self.app.state.db.session() as s:
             self.assertEqual(
@@ -466,7 +466,7 @@ class HostsAndSettingsTest(GateCase):
         )
 
     def test_oauth_callback_connects_a_host(self):
-        from action_platform_api.services.hosts import GitlabProvider
+        from app.services.hosts import GitlabProvider
 
         self.client.put(
             "/api/v1/oauth/apps/gitlab",
@@ -514,9 +514,9 @@ class DeadTokenTest(GateCase):
     def test_expired_oauth_host_without_refresh_answers_not_ok(self):
         from datetime import timedelta
 
-        from action_platform_api.core.auth.crypto import Sealer
-        from action_platform_api.core.db.models import SourceHost
-        from action_platform_api.services.directory import now
+        from app.core.auth.crypto import Sealer
+        from app.core.db.models import SourceHost
+        from app.services.directory import now
 
         sealer = Sealer(self.app.state.secrets)
 
