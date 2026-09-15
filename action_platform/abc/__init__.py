@@ -3,7 +3,7 @@
 from .changelog_renderer import ChangelogRenderer
 from .ci_runner import CIRunner
 from .deploy_target import DeployTarget
-from .plugin import Plugin, Surface
+from .plugin import Option, Plugin, Surface
 from .release_strategy import ReleaseStrategy
 from .source_host import SourceHost
 from .template_store import TemplateStore
@@ -13,6 +13,7 @@ __all__ = [
     "CIRunner",
     "ChangelogRenderer",
     "DeployTarget",
+    "Option",
     "Plugin",
     "ReleaseStrategy",
     "SourceHost",

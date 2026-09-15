@@ -38,14 +38,18 @@ plain = "apx_calver:Plain"
 ```python
 from pathlib import Path
 
-from action_platform.abc import Plugin, Surface
+from action_platform.abc import Option, Plugin, Surface
 
 
 class AwsLambdaPlugin(Plugin):
     slug = "aws-lambda"
+    name = "AWS Lambda"
     description = "Deploy to AWS Lambda with SAM"
     min_core = "0.16"
     needs = ["env: AWS_PROFILE or AWS_ACCESS_KEY_ID", "tool: sam, aws"]
+    options = [
+        Option("proxy_url", "Deploy proxy URL", "url", help="The deploy proxy in your AWS account.", required=True),
+    ]
 
     @property
     def overlays(self) -> Path:
@@ -71,6 +75,7 @@ class AwsLambdaPlugin(Plugin):
 - `surface.core` is the wiring. `replace(slot, cls)` puts a **subclass** of the core's class in a slot; anything else is refused. Slots: `gitflow_rules` (`core.flow.gitflow.Rules`), `gitflow` (`core.flow.workflow.GitFlow`), `releaser` (`core.release.release.Releaser`), `deployer` (`core.release.deploy.Deployer`), `installer` (`core.scaffold.install.Installer`), `scaffolder` (`core.scaffold.generate.Scaffolder`). Disabling the plugin restores what it replaced.
 - `overlays` points at a directory shaped like the templates repository: an `index.json` with `clouds` (`id`, `description`, `types`, `languages`) and one `cloud/<name>/` directory per cloud. A directory with a `cookiecutter.json` is rendered like the official overlays; without one it is copied as it is, file over file — enough for most plugins. Together with a `DeployTarget` of the same name, that is a complete cloud.
 - `surface.options` is the plugin's key/value store — `get(key, default)`, `set(key, value)` (anything JSON carries), `delete(key)`, `all()`. A file per plugin on a machine, a table on the hosted platform; the plugin never cares which.
+- `options` declares the settings a user fills in: `Option(key, label, kind, help, required)` with `kind` one of `text`, `url`, `secret`, `bool`. The hosted platform draws the form on **Integrations** from this list and stores each value under `key`, per organization; the CLI reads the same keys from the file. A plugin with no `options` shows up as installed and nothing else. `name` is the title shown; the slug when empty.
 - `after_release(ctx)`, `after_deploy(results)`, `after_pull_request(ref)` run after the real thing; an exception is logged and never undoes the action.
 
 ## Providers

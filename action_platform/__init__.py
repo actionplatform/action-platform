@@ -1,6 +1,6 @@
 """Action Platform __init__ module."""
 
-__version__ = "0.17.8"
+__version__ = "0.17.9"
 __description__ = "Your platform team, as a CLI."
 
 from .core import extensions

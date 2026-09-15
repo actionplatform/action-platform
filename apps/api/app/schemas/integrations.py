@@ -93,13 +93,23 @@ class ManifestCallbackRequest(BaseModel):
     state: Optional[str] = None
 
 
+class PluginOption(BaseModel):
+    key: str
+    label: str
+    kind: str = "text"
+    help: str = ""
+    required: bool = False
+
+
 class PluginRow(BaseModel):
     slug: str
+    name: str = ""
     package: str = ""
     version: str = ""
     description: str = ""
     min_core: str = ""
     needs: list[str] = []
+    options: list[PluginOption] = []
     error: Optional[str] = None
 
 

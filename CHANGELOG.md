@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.17.9 — 2026-09-15
+
+### Features
+- **core:** a plugin declares its settings — Plugin.options (Option: key, label, kind, help, required) and a display name
+
+### Bug Fixes
+- **deploy:** drop the empty volumes keys left on api and worker — compose refuses a null list
+
+### Docs
+- **plugins:** declaring options
+- **web:** Integrations → Git
+
+### Tests
+- **api:** plugin rows carry name and options
+
+### Build
+- **api:** python <3.14 (cfn-lint, aws-sam-cli caps) and cryptography>=50 — lock resolves aws-sam-cli 1.166.2
+- **api:** bound python to <4.0 so poetry can solve aws-sam-cli; relock
+
+### CI
+- pin python 3.13 — aws-sam-cli and cfn-lint stop at <3.14
+
 ## v0.17.8 — 2026-09-15
 
 ### Breaking Changes
