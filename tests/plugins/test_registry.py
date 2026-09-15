@@ -3,6 +3,7 @@
 import asyncio
 import json
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from action_platform.abc import Plugin
@@ -73,6 +74,28 @@ class PluginsTest(TempCase):
             False,
         )
         self.assertEqual(PluginState.load(self.state.file).enabled("example"), False)
+
+    def test_a_removed_plugin_cannot_be_enabled_and_is_forgotten_by_the_restart(self):
+        self.state.mark_removed("example")
+
+        with self.assertRaises(PluginError) as caught:
+            self.plugins.enable("example")
+
+        self.assertIn("removed", str(caught.exception))
+        self.assertEqual(self.state.restart_pending(), ["example"])
+
+        self.state.clear_restart()
+
+        self.assertEqual(self.state.plugins, {})
+
+    def test_discovery_forgets_a_removed_plugin_whose_package_is_gone(self):
+        self.state.mark_removed("gone")
+
+        with mock.patch.object(Plugins, "find", staticmethod(lambda known=None: [])):
+            found = Plugins.discover(PluginState.load(self.state.file))
+
+        self.assertEqual(found.state.plugins, {})
+        self.assertEqual(PluginState.load(self.state.file).plugins, {})
 
     def test_unknown_slug_is_a_readable_error(self):
         with self.assertRaises(PluginError) as caught:

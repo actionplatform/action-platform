@@ -207,7 +207,12 @@ class CatalogService:
             slug = row.get("name") or ""
             here = installed.get(slug)
             kept = remembered.get(slug)
-            error = registry.FAILURES.get(slug) if here is None and kept else None
+            removed = bool(kept and kept.removed)
+            error = (
+                registry.FAILURES.get(slug)
+                if here is None and kept and not removed
+                else None
+            )
             rows.append(
                 {
                     "slug": slug,
@@ -220,11 +225,12 @@ class CatalogService:
                     "min_core": row.get("min_core") or "",
                     "needs": list(row.get("needs") or []),
                     "tags": list(row.get("tags") or []),
-                    "installed": here is not None or kept is not None,
+                    "installed": (here is not None or kept is not None) and not removed,
                     "installed_version": here["version"]
                     if here
                     else (kept.version if kept else None),
-                    "enabled": bool(here and here["enabled"]),
+                    "enabled": bool(here and here["enabled"]) and not removed,
+                    "removed": removed,
                     "restart_pending": slug in pending,
                     "error": error,
                 }

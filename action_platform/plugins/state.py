@@ -33,6 +33,7 @@ class Installed:
     source: str = "pypi"
     package: str = ""
     pending_restart: bool = False
+    removed: bool = False
 
 
 @dataclass
@@ -106,10 +107,22 @@ class PluginState:
         self.plugins.setdefault(slug, Installed()).pending_restart = value
         self.save()
 
+    def mark_removed(self, slug: str) -> None:
+        """The package left the disk but the code is still loaded: disabled now, forgotten by the restart that drops it."""
+        row = self.plugins.setdefault(slug, Installed())
+        row.enabled = False
+        row.pending_restart = True
+        row.removed = True
+        self.save()
+
     def restart_pending(self) -> list[str]:
         return sorted(slug for slug, row in self.plugins.items() if row.pending_restart)
 
     def clear_restart(self) -> None:
+        self.plugins = {
+            slug: row for slug, row in self.plugins.items() if not row.removed
+        }
+
         for row in self.plugins.values():
             row.pending_restart = False
 

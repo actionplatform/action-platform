@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from unittest import mock
 
+from action_platform.abc import Plugin
 from action_platform.plugins import registry
 from action_platform.plugins.state import PluginState
 from action_platform.settings import settings
@@ -29,6 +30,14 @@ INDEX = {
         },
     ]
 }
+
+
+class Lambda(Plugin):
+    slug = "aws-lambda"
+    description = "fake"
+
+    def register(self, surface):
+        pass
 
 
 class PluginsApiTest(GateCase):
@@ -109,6 +118,33 @@ class PluginsApiTest(GateCase):
 
         self.assertEqual(seen, ["apx-aws-lambda==0.1.0"])
         self.assertIn("nothing registered", str(caught.exception))
+
+    def test_the_remove_job_disables_a_loaded_plugin_until_the_restart_forgets_it(self):
+        loaded = registry.Loaded(Lambda(), "apx-aws-lambda", "0.1.0")
+
+        with (
+            mock.patch.object(manager.PipInstaller, "uninstall", lambda self, p: ""),
+            mock.patch.object(
+                registry.Plugins, "find", staticmethod(lambda known=None: [loaded])
+            ),
+        ):
+            out = manager.PluginManager().remove(
+                {"slug": "aws-lambda", "package": "apx-aws-lambda"}
+            )
+            rows = self.client.get("/api/v1/plugins", headers=self.h()).json()
+
+        row = next(p for p in rows["plugins"] if p["slug"] == "aws-lambda")
+
+        self.assertTrue(out["restart_required"])
+        self.assertEqual(
+            (row["installed"], row["enabled"], row["removed"], row["restart_pending"]),
+            (False, False, True, True),
+        )
+        self.assertEqual(rows["restart_pending"], ["aws-lambda"])
+
+        PluginState.load().clear_restart()
+
+        self.assertEqual(PluginState.load().plugins, {})
 
     def test_switching_needs_org_manage(self):
         res = self.client.post("/api/v1/plugins/aws-lambda/enable", headers=self.h())

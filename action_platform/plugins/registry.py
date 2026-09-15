@@ -104,7 +104,19 @@ class Plugins:
 
     @classmethod
     def discover(cls, state: Optional[PluginState] = None) -> "Plugins":
-        return cls(cls.find(), state)
+        plugins = cls(cls.find(), state)
+        present = {row.slug for row in plugins.found}
+
+        for slug in [
+            slug
+            for slug, row in plugins.state.plugins.items()
+            if row.removed and slug not in present
+        ]:
+            plugins.state.forget(slug)
+
+        plugins.seen_stamp = plugins.state.stamp()
+
+        return plugins
 
     @staticmethod
     def find(known: Optional[set[str]] = None) -> list[Loaded]:
@@ -177,6 +189,11 @@ class Plugins:
     def enable(self, slug: str) -> None:
         """Switch on and register again, so the slots the plugin replaces come back."""
         row = self.get(slug)
+        kept = self.state.plugins.get(slug)
+
+        if kept is not None and kept.removed:
+            raise PluginError(f"plugin {slug} was removed; restart to finish")
+
         self.state.set_enabled(slug, True)
         self.seen_stamp = self.state.stamp()
         self._register(row)
