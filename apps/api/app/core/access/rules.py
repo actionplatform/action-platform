@@ -13,7 +13,7 @@ class Rule:
 
 
 RULES = [
-    Rule("GET", re.compile(r"^(version|matrix|plugins|gitflow/rules)$"), None),
+    Rule("GET", re.compile(r"^(version|matrix|gitflow/rules)$"), None),
     Rule("GET", re.compile(r"^apps$"), None),
     Rule("POST", re.compile(r"^apps$"), "project.manage", credentials=True),
     Rule("POST", re.compile(r"^apps/init$"), "project.manage", credentials=True),
@@ -84,4 +84,4 @@ def rule_for(method: str, path: str) -> Optional[Rule]:
     )
 
 
-WORKSPACE_ROOTS = {"apps", "matrix", "plugins", "version", "gitflow"}
+WORKSPACE_ROOTS = {"apps", "matrix", "version", "gitflow"}

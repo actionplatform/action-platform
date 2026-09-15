@@ -8,6 +8,7 @@ import uuid
 from typing import Any, Callable, Optional
 
 from action_platform.core.exception import ActionPlatformError
+from action_platform.plugins import registry
 from app.core.access.rules import rule_for
 from app.core.auth.crypto import Sealer
 from app.core.auth.secrets import Secrets
@@ -23,6 +24,7 @@ from app.schemas import (
 )
 from app.services.access.enrich import enrich
 from app.services.activity import ActivityService
+from app.services import plugins
 from app.services.apps import AppService
 from app.services.directory import (
     DirectoryService,
@@ -54,6 +56,7 @@ class Worker:
         self.secrets = secrets
         self.sealer = Sealer(secrets) if secrets else None
         self.queue = JobQueue(database)
+        self.plugins = plugins.PluginManager(self.queue, database)
         self.name = name or worker_name()
         self.handlers: dict[str, Callable[[dict[str, Any]], Any]] = {
             "sync": self._sync,
@@ -62,8 +65,12 @@ class Worker:
             "push": self._push,
             "import": self._import,
             "import_github": self._import_github,
+            plugins.INSTALL: self.plugins.install,
+            plugins.REMOVE: self.plugins.remove,
+            plugins.RESTART: self.plugins.restart,
         }
         configure_registry(database)
+        registry.use_options(lambda slug: plugins.DbOptions(database, slug))
 
     def run(self, interval: float = 2.0, once: bool = False) -> int:
         done = 0

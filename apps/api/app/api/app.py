@@ -10,10 +10,12 @@ from fastapi.responses import JSONResponse
 
 from action_platform.core.exception import ActionPlatformError, ConfigError
 from action_platform.observability import observe
+from action_platform.plugins import registry
 from action_platform.settings import settings
 from app import api_version
 from app.api.gate import AccessGate
 from app.api.routers import router as routes
+from app.services.plugins import DbOptions
 from app.core.auth.crypto import Sealer
 from app.core.auth.errors import AuthError
 from app.core.auth.secrets import Secrets
@@ -48,6 +50,7 @@ def build(
     )
     app.state.db.migrate()
     configure_registry(app.state.db)
+    registry.use_options(lambda slug: DbOptions(app.state.db, slug))
 
     secret = settings.AUTH_SECRET if auth_secret is None else auth_secret
     app.state.secrets = Secrets(secret) if secret else None

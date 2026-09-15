@@ -13,6 +13,7 @@ from app.core.db.models.organizations import (
     Team,
     TeamMember,
 )
+from app.core.db.models.plugins import PluginOption
 from app.core.db.models.projects import App, Draft, Project, RegistryEntry
 from app.core.db.models.tokens import ApiToken, ApiTokenClient
 
@@ -32,6 +33,7 @@ __all__ = [
     "Member",
     "OAuthApp",
     "Organization",
+    "PluginOption",
     "OrganizationSetting",
     "Project",
     "PullRequest",
