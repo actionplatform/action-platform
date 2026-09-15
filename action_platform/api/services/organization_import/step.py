@@ -1,6 +1,6 @@
 """What every import step shares: the context of the platform organization and the host directory it reads from."""
 
-from action_platform.abc import HostDirectory
+from action_platform.api.abc import HostDirectory
 from action_platform.api.services.organization_import.context import ImportContext
 
 

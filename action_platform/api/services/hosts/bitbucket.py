@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any, Optional
 from urllib.parse import urlencode
 
-from action_platform.abc import HostProvider
+from action_platform.api.abc import HostProvider
 from action_platform.api.services.hosts.access import AccessReport, Owner, Probe
 from action_platform.api.services.hosts.tokens import TokenResponse
 from action_platform.api.services.shared.credentials import Credentials, OAuthApp

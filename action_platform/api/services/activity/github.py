@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from action_platform.abc import ImportSource
+from action_platform.api.abc import ImportSource
 from action_platform.api.services.shared.credentials import Credentials
 from action_platform.api.services.shared.http import http
 from action_platform.api.services.shared.clock import parse_utc

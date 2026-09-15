@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from action_platform.abc import HostDirectory
+from action_platform.api.abc import HostDirectory
 from action_platform.api.services.shared.credentials import Credentials
 from action_platform.api.services.shared.http import http
 from action_platform.core.exception import ProviderError

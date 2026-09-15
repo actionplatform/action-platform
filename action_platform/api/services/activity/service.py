@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session as DbSession
 
 from action_platform.api.db.models import PullRequest, Release
 from action_platform.api.services.shared.credentials import Credentials
-from action_platform.abc import ImportSource
+from action_platform.api.abc import ImportSource
 from action_platform.api.services.activity.bitbucket import BitbucketActivity
 from action_platform.api.services.activity.github import GithubActivity
 from action_platform.api.services.activity.gitlab import GitlabActivity

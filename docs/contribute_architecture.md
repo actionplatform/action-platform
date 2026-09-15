@@ -45,8 +45,8 @@ action_platform/
     action_platform.py   ActionPlatform: the facade the CLI, MCP and API call (releaser, deployer, flow)
   providers/
     source/       rest (urllib helper), github, gitlab, bitbucket, generic; build_source_host(kind, …)
-  abc/            SourceHost, CIRunner, DeployTarget, WorkingCopy, TemplateStore, ImportSource, HostDirectory contracts
-  api/            FastAPI: main (app factory, AP_API_TOKEN middleware, Sentry), v1/routers (apps, catalog, configuration, flow, actions),
+  abc/            SourceHost, CIRunner, DeployTarget, WorkingCopy, TemplateStore contracts
+  api/            FastAPI: abc (HostProvider, HostDirectory, ImportSource — contracts only the API implements, one per code host), main (app factory, AP_API_TOKEN middleware, Sentry), v1/routers (apps, catalog, configuration, flow, actions),
                   services — one package per concern: directory (organizations, projects, teams, invitations, hosts, oauth_apps, template_sources), apps (inventory, generate, remote), workspace (disposable clones, manifest, configuration, flow, state, lifecycle), hosts (oauth, providers, access), imports (one ImportSource per code host), github_import (one HostDirectory), catalog (matrix + published index), jobs, shared (common, http, credentials) — repositories/registry (`registry` table) and repositories/drafts (`draft` table: pending edits),
                   schemas (the Pydantic models behind the OpenAPI contract), core/credentials (per-request token + identity), LAST_VERSION
   remote/         client (urllib): device-flow login, scoped token exchange, every /api/v1 call; credentials file

@@ -1,6 +1,6 @@
 """Every code host the platform knows, by kind."""
 
-from action_platform.abc import HostProvider
+from action_platform.api.abc import HostProvider
 from action_platform.api.services.hosts.bitbucket import BitbucketProvider
 from action_platform.api.services.hosts.github import GithubProvider
 from action_platform.api.services.hosts.gitlab import GitlabProvider
