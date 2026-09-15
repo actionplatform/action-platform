@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.20.7 — 2026-09-15
+
+### Features
+- **api:** branches carry their latest commit sha
+- **api:** name, notes and latest on ReleaseRequest
+- **api:** jobs carry version and started_at
+- **api:** version on DeployRequest
+- **api:** deploy jobs carry AP_APP and every plugin option as AP_<SLUG>_<KEY>
+
+### Chores
+- merge master
+
 ## v0.20.6 — 2026-09-15
 
 ### Features
