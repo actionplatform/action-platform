@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.20.0 — 2026-09-15
+
+### Features
+- **api:** the platform as an OIDC issuer — discovery, JWKS, tokens per deploy from the worker and for logged-in callers
+- **api:** plugins the Jenkins way — install verified plugins into the volume without a restart, enable/disable, update and remove with a restart, options table
+
 ## v0.19.0 — 2026-09-15
 
 ### Features
