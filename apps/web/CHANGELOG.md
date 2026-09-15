@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.16.1 — 2026-09-15
+
+### Features
+- **web:** No CI option when installing the platform on an added repository
+
 ## v0.16.0 — 2026-09-15
 
 ### Features
