@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest import mock
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import inspect, select
@@ -163,6 +164,22 @@ class DatabaseTest(TempCase):
 
         with self.assertRaises(ConfigError):
             Database("")
+
+    def test_without_auto_migrate_the_app_reports_readiness(self):
+        from fastapi.testclient import TestClient
+
+        from action_platform.settings import settings
+        from app.api.app import build
+        from app.core.db import Database
+
+        with mock.patch.object(settings, "DATABASE_AUTO_MIGRATE", False):
+            behind = build(database_url=self.url(), auth_secret="s" * 32, token="t")
+            before = TestClient(behind).get("/api/version").json()
+            Database(self.url()).migrate()
+            after = TestClient(behind).get("/api/version").json()
+
+        self.assertEqual((before["ready"], before["database"]), (False, "behind"))
+        self.assertEqual((after["ready"], after["database"]), (True, "up to date"))
 
 
 @unittest.skipUnless(TestClient, "fastapi is not installed")

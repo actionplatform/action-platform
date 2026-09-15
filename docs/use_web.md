@@ -35,7 +35,7 @@ flowchart LR
 3. **Organization** — name and slug.
 4. **Source hosts** — connect GitHub / GitLab / Bitbucket, or skip.
 
-Pending migrations run on boot, so upgrading the image is enough.
+The compose files run migrations in a one-shot `migrate` service the API and the worker wait for (`action-platform-api db migrate`); with `AP_DATABASE_AUTO_MIGRATE=0` neither process migrates on boot, and `GET /api/version` answers `ready: false` / `database: behind` until the schema is at head. Without that variable (a plain `pip install`, development) each process still migrates on boot, serialized on PostgreSQL by an advisory lock.
 
 ## Plugins
 

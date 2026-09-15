@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from app import schemas
 from app.services.catalog import CatalogService
@@ -8,8 +8,16 @@ service = CatalogService()
 
 
 @router.get("/version")
-def version() -> schemas.Version:
-    return service.version()
+def version(request: Request) -> schemas.Version:
+    """Versions, and readiness: `ready` is false while the database waits for a migration."""
+    db = getattr(request.app.state, "db", None)
+    behind = db.behind() if db is not None else False
+
+    return schemas.Version(
+        **service.version(),
+        ready=not behind,
+        database="behind" if behind else ("up to date" if db is not None else None),
+    )
 
 
 @router.get("/matrix")

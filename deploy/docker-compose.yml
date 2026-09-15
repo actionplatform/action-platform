@@ -37,6 +37,17 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
+    pull_policy: always
+    restart: "no"
+    command: ["action-platform-api", "db", "migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@postgres:5432/action_platform
+
   api:
     image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
     pull_policy: always
@@ -48,9 +59,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       AP_API_TOKEN: ${AP_API_TOKEN:-}
       AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@postgres:5432/action_platform
+      AP_DATABASE_AUTO_MIGRATE: "0"
       AP_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       AP_PUBLIC_URL: ${PUBLIC_URL}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
@@ -76,11 +90,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       api:
         condition: service_started
     environment:
       AP_API_TOKEN: ${AP_API_TOKEN:-}
       AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@postgres:5432/action_platform
+      AP_DATABASE_AUTO_MIGRATE: "0"
       AP_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       AP_PUBLIC_URL: ${PUBLIC_URL}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}

@@ -26,7 +26,13 @@ def run(
         raise ActionPlatformError("no database: set AP_DATABASE_URL")
 
     database = Database(settings.DATABASE_URL, settings.DATABASE_POOL_SIZE)
-    database.migrate()
+
+    if settings.DATABASE_AUTO_MIGRATE:
+        database.migrate()
+    elif database.behind():
+        raise ActionPlatformError(
+            "database behind head: run `action-platform-api db migrate` before the worker"
+        )
     worker = Worker(
         database,
         Secrets(settings.AUTH_SECRET) if settings.AUTH_SECRET else None,

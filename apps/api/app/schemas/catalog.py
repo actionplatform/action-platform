@@ -10,6 +10,8 @@ from app.schemas.actions import SourceSpec
 class Version(BaseModel):
     version: str
     api: str
+    ready: bool = True
+    database: Optional[str] = None
 
 
 class MatrixProject(BaseModel):
