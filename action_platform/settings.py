@@ -4,6 +4,10 @@ import os
 import tempfile
 from pathlib import Path
 
+from action_platform.env import load
+
+load()
+
 
 class Settings:
     CONFIG_FILE = "platform.toml"

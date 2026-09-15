@@ -228,3 +228,5 @@ apps/web/next-env.d.ts
 apps/web/openapi.json
 
 !apps/web/lib/
+
+ap.db
