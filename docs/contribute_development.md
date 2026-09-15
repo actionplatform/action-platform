@@ -9,7 +9,7 @@ poetry run pytest -q                      # the library; or: python -m unittest 
 (cd apps/api && ../../.venv/bin/python -m pytest -q)   # the API
 poetry run ruff check . && poetry run ruff format --check .
 (cd apps/web && npm run check)                     # lint, typecheck, build
-AP_ALLOW_UNAUTHENTICATED=1 poetry run action-platform-api serve --reload   # :7788, OpenAPI at /docs; without a token the API refuses to start unless told so
+poetry run action-platform-api serve --reload            # reads .env in the current directory (AP_DATABASE_URL, AP_AUTH_SECRET, …)   # :7788, OpenAPI at /docs; without a token the API refuses to start unless told so
 ```
 
 Tests use throwaway git repositories and a tiny templates index under `tmp_path`; nothing touches the network or the user's home.

@@ -1,5 +1,7 @@
 """Typer app assembly."""
 
+import sys
+
 import typer
 
 from action_platform.core.exception import ActionPlatformError
@@ -24,4 +26,4 @@ def main() -> None:
         app()
     except ActionPlatformError as e:
         typer.echo(f"error: {e}", err=True)
-        raise typer.Exit(1) from e
+        sys.exit(1)
