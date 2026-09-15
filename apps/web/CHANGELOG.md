@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.15.1 — 2026-09-15
+
+### Chores
+- **web:** sync package-lock with package.json so npm ci works in the image
+
 ## v0.15.0 — 2026-09-14
 
 ### Features
