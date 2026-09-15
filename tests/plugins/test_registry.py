@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import unittest
 from pathlib import Path
 
 from action_platform.abc import Plugin
@@ -9,6 +10,7 @@ from action_platform.core.flow import gitflow
 from action_platform.core.wiring import wired
 from action_platform.core.scaffold.templates import Matrix, with_plugin_clouds
 from action_platform.plugins import Loaded, PluginError, PluginState, Plugins, registry
+from tests.mcp.support import HAS_MCP
 from tests.support import TempCase
 
 
@@ -78,6 +80,7 @@ class PluginsTest(TempCase):
 
         self.assertIn("installed: example", str(caught.exception))
 
+    @unittest.skipUnless(HAS_MCP, "mcp is not installed")
     def test_tools_come_out_prefixed_and_guarded(self):
         from action_platform.mcp import server
 
