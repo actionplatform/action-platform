@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
-import { ConnectHosts } from "@/components/connect-hosts";
+import { ConnectHosts } from "@/features/integrations";
 import { HOST_KINDS, type HostKind } from "@/lib/source-host-kinds";
 import { slugify } from "@/lib/utils";
 import { addSetupHost, checkApi, createAdmin, createFirstOrganization, type HostInput } from "./actions";

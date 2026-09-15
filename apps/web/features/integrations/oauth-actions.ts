@@ -15,7 +15,7 @@ export async function saveOAuthApp(input: { provider: Provider; clientId: string
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
-  revalidatePath("/settings", "layout");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -27,7 +27,7 @@ export async function removeOAuthApp(provider: Provider): Promise<Outcome> {
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
-  revalidatePath("/settings", "layout");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -38,6 +38,6 @@ export async function disconnectHost(provider: Provider, login: string): Promise
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
-  revalidatePath("/settings", "layout");
+  revalidatePath("/", "layout");
   return { ok: true };
 }

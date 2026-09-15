@@ -1,6 +1,6 @@
 import { requireOrg } from "@/lib/session";
 import { teamsOf } from "@/lib/teams";
-import { NewTeamButton, TeamsView } from "./teams-view";
+import { NewTeamButton, TeamsView } from "@/features/organization";
 
 export const dynamic = "force-dynamic";
 

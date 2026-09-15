@@ -7,7 +7,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
-import { newTeam } from "./actions";
+import { newTeam } from "./teams-actions";
 
 export type TeamItem = { id: string; name: string; slug: string; description: string | null; members: number; projects: number };
 
@@ -36,7 +36,7 @@ export function TeamsView({ teams, canManage }: { teams: TeamItem[]; canManage: 
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {teams.map((t) => (
-            <Link key={t.id} href={`/settings/people/teams/${t.id}`} className="group flex min-h-[180px] flex-col rounded-[9px] border border-border bg-surface px-6 py-[22px] transition-[border-color,background-color,transform] duration-150 ease-out hover:-translate-y-px hover:border-border-hover hover:bg-[#131313] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">
+            <Link key={t.id} href={`/organization/teams/${t.id}`} className="group flex min-h-[180px] flex-col rounded-[9px] border border-border bg-surface px-6 py-[22px] transition-[border-color,background-color,transform] duration-150 ease-out hover:-translate-y-px hover:border-border-hover hover:bg-[#131313] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">
               <div className="flex items-start justify-between">
                 <div className="flex size-12 items-center justify-center rounded-lg border border-[#303030]"><Users className="size-[22px] text-secondary" strokeWidth={1.5} /></div>
                 <ArrowUpRight className="size-[18px] text-muted-foreground transition-colors group-hover:text-foreground" strokeWidth={1.75} />

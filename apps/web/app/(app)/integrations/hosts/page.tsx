@@ -1,24 +1,20 @@
 import { Download } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { ConnectHosts } from "@/components/connect-hosts";
 import { Card } from "@/components/ui/card";
 import { hostAccess } from "@/lib/host-access";
 import { oauthApps } from "@/lib/oauth";
 import { publicOrigin } from "@/lib/origin";
 import { requireOrg } from "@/lib/session";
 import { hostsOf } from "@/lib/source-hosts";
-import { v1 } from "@/lib/v1";
-import { AwsCard } from "../aws-card";
-import { SourceHosts } from "../source-hosts";
+import { ConnectHosts, SourceHosts } from "@/features/integrations";
 
 export const dynamic = "force-dynamic";
 
-export default async function IntegrationsSettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
+export default async function CodeHostsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
   const { session, org } = await requireOrg();
   const canManage = !!session.grants["org.manage"];
-  const [hosts, query, apps, aws] = await Promise.all([hostsOf(org.id), searchParams, oauthApps(), canManage ? v1.pluginOptions("aws-lambda").catch(() => null) : Promise.resolve(null)]);
-  const proxyUrl = typeof aws?.options?.proxy_url === "string" ? aws.options.proxy_url : null;
+  const [hosts, query, apps] = await Promise.all([hostsOf(org.id), searchParams, oauthApps()]);
   const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind !== "generic").map(async (h) => [h.id, await hostAccess(org.id, h.id)] as const)));
   const origin = publicOrigin(await headers());
   const connected = { github: [] as string[], gitlab: [] as string[], bitbucket: [] as string[] };
@@ -36,14 +32,13 @@ export default async function IntegrationsSettingsPage({ searchParams }: { searc
             connected={connected}
             origin={origin}
             orgId={org.id}
-            returnTo="/settings/integrations"
+            returnTo="/integrations/hosts"
             githubApp={apps.github.slug ?? null}
             error={query.oauth_error ?? null}
           />
         </div>
       </Card>
       <SourceHosts hosts={hosts} access={access} canManage={canManage} />
-      <AwsCard proxyUrl={proxyUrl} orgSlug={org.slug} canManage={canManage} />
       {canManage && connected.github.length > 0 && (
         <Link href="/import" className="flex items-center gap-3 rounded-[11px] border border-border px-6 py-4 text-sm transition-colors hover:border-border-hover hover:bg-surface-hover">
           <Download className="size-4 text-secondary" strokeWidth={1.75} />

@@ -10,7 +10,7 @@ export async function revokeApiToken(id: string): Promise<Result> {
   try {
     await requireSession();
     if (!(await revokeToken(id))) return { ok: false, error: "token not found" };
-    revalidatePath("/account");
+    revalidatePath("/organization/sessions");
     return { ok: true, data: null };
   } catch (e) {
     return failed(e);
@@ -21,7 +21,7 @@ export async function revokeBrowserSession(id: string): Promise<Result> {
   try {
     await requireSession();
     if (!(await revokeSession(id))) return { ok: false, error: "session not found" };
-    revalidatePath("/account");
+    revalidatePath("/organization/sessions");
     return { ok: true, data: null };
   } catch (e) {
     return failed(e);

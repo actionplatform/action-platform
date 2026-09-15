@@ -6,7 +6,7 @@ import { projectsOf } from "@/lib/projects";
 
 import { requireOrg } from "@/lib/session";
 import { projectsOfTeam, teamById, teamMembersOf } from "@/lib/teams";
-import { TeamDetail } from "./team-detail";
+import { TeamDetail } from "@/features/organization";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,7 @@ export default async function TeamPage({ params }: { params: Promise<{ team: str
   return (
     <>
       <div className="mb-5">
-        <Link href="/settings/people/teams" className="inline-flex items-center gap-1.5 text-sm text-secondary hover:text-foreground"><ArrowLeft className="size-3.5" strokeWidth={1.75} /> Teams</Link>
+        <Link href="/organization/teams" className="inline-flex items-center gap-1.5 text-sm text-secondary hover:text-foreground"><ArrowLeft className="size-3.5" strokeWidth={1.75} /> Teams</Link>
         <h2 className="mt-2 text-[18px] font-semibold">{team.name}</h2>
         <p className="text-sm text-secondary">{team.description || `${org.name} team.`}</p>
       </div>

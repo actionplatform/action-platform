@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/select";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
-import { addMemberToTeam, editTeam, removeMemberFromTeam, removeTeam, setProjectTeam } from "../actions";
+import { addMemberToTeam, editTeam, removeMemberFromTeam, removeTeam, setProjectTeam } from "./teams-actions";
 
 type Member = { id: string; userId: string; name: string; email: string };
 type Candidate = { userId: string; name: string; email: string };
