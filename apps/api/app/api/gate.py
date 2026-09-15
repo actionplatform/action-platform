@@ -2,6 +2,7 @@ import json
 import re
 from typing import Any, Callable, Optional
 
+from starlette.concurrency import run_in_threadpool
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from action_platform.core.exception import ActionPlatformError
@@ -14,7 +15,6 @@ from app.core.auth.service import AuthService
 from app.core.db.models import App, Organization, Project
 from app.services.access.caller import Caller, resolve_caller
 from app.services.access.enrich import enrich
-from app.services.activity import ActivityService
 from app.services.directory import DirectoryService
 from app.services.jobs import JobQueue
 
@@ -72,21 +72,9 @@ class AccessGate:
         method = scope["method"]
 
         try:
-            with self.state.db.session() as db:
-                auth = AuthService(db, self.state.secrets, self.state.verification_uri)
-                caller = resolve_caller(headers, db, auth)
-
-                if caller is None:
-                    raise Refused(401, "unauthorized")
-
-                if caller.organization is None and not caller.all_organizations:
-                    raise Refused(403, "no organization")
-
-                if path in DIRECTORY or path.split("/")[0] not in WORKSPACE_ROOTS:
-                    scope.setdefault("state", {})["caller"] = caller
-                    plan = None
-                else:
-                    plan = self._plan(db, caller, method, path, headers, body)
+            caller, plan = await run_in_threadpool(
+                self._decide, headers, method, path, body
+            )
         except Refused as e:
             await self._json(send, e.status, {"detail": e.detail})
 
@@ -109,6 +97,7 @@ class AccessGate:
             return
 
         if plan is None:
+            scope.setdefault("state", {})["caller"] = caller
             await self.app(scope, self._replay(body), send)
 
             return
@@ -128,20 +117,7 @@ class AccessGate:
         scope.setdefault("state", {})["caller"] = caller
 
         if method == "GET" and path == "apps":
-            allowed: set[str] = set()
-
-            with self.state.db.session() as db:
-                directory = DirectoryService(db)
-
-                for org in (
-                    [organization]
-                    if organization
-                    else [o for o, _ in caller.organizations]
-                ):
-                    allowed |= directory.registry_ids_of(
-                        org.id, caller.project_id, caller.app_id
-                    )
-
+            allowed = await run_in_threadpool(self._reach, caller, organization)
             await self._filtered(scope, new_body, send, allowed)
 
             return
@@ -154,7 +130,43 @@ class AccessGate:
             and organization is not None
             and 200 <= status < 300
         ):
-            self._import(organization, app)
+            await run_in_threadpool(
+                self._import_later, organization, app, caller, path, method
+            )
+
+    def _decide(
+        self, headers: dict[str, str], method: str, path: str, body: bytes
+    ) -> tuple[Caller, Optional[tuple]]:
+        """Who calls and what the call becomes — the database work of the gate, run off the event loop."""
+        with self.state.db.session() as db:
+            auth = AuthService(db, self.state.secrets, self.state.verification_uri)
+            caller = resolve_caller(headers, db, auth)
+
+            if caller is None:
+                raise Refused(401, "unauthorized")
+
+            if caller.organization is None and not caller.all_organizations:
+                raise Refused(403, "no organization")
+
+            if path in DIRECTORY or path.split("/")[0] not in WORKSPACE_ROOTS:
+                return caller, None
+
+            return caller, self._plan(db, caller, method, path, headers, body)
+
+    def _reach(self, caller: Caller, organization: Optional[Organization]) -> set[str]:
+        allowed: set[str] = set()
+
+        with self.state.db.session() as db:
+            directory = DirectoryService(db)
+
+            for org in (
+                [organization] if organization else [o for o, _ in caller.organizations]
+            ):
+                allowed |= directory.registry_ids_of(
+                    org.id, caller.project_id, caller.app_id
+                )
+
+        return allowed
 
     def _plan(
         self,
@@ -295,13 +307,30 @@ class AccessGate:
 
         return caller.organization
 
-    def _import(self, organization: Organization, app: App) -> None:
-        repo = self.repo_of(app.registry_id)
-
-        with self.state.db.session() as db:
-            directory = DirectoryService(db, self.state.sealer)
-            creds = directory.credentials_for(organization.id, app.source_host_id)
-            ActivityService(db).sync_all(app.id, creds, repo)
+    def _import_later(
+        self,
+        organization: Organization,
+        app: App,
+        caller: Caller,
+        path: str,
+        method: str,
+    ) -> None:
+        """Releases and pull requests are copied from the code host by the worker, after the answer went out — never on the request's clock."""
+        JobQueue(self.state.db).enqueue(
+            "import",
+            {
+                "path": path,
+                "method": method,
+                "body": {},
+                "registry_id": app.registry_id,
+                "organization_id": organization.id,
+                "app_id": app.id,
+                "user_id": caller.user.id,
+            },
+            organization_id=organization.id,
+            app_id=app.id,
+            dedupe_key="import",
+        )
 
     @staticmethod
     async def _read(receive: Receive) -> bytes:
