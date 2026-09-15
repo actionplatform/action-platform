@@ -13,3 +13,7 @@ Git-flow: work on `<kind>/<code>[-slug]` started with `action-platform branch <k
 ## Platform
 
 `platform.toml` declares the project; `action-platform release` cuts versions from `LAST_VERSION`; `action-platform gitflow` audits a branch before a pull request.
+
+## Layout
+
+The API is layers (`api/routes → services → repositories → schemas → core`) and every layer has a folder per context (activity, releases, deployments, configuration, projects, templates, organization, integrations, auth, identity, jobs); the web app has `features/<context>`. New code goes in the context folder of each layer — never a new top-level module, never a route that reaches a repository directly, never a feature importing another feature's internals. `.importlinter` and ESLint enforce it; [docs/contribute_architecture.md](docs/contribute_architecture.md) has the map.
