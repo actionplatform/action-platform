@@ -281,3 +281,41 @@ class RegistryAdoptionTest(GateCase):
         self.assertFalse(file.exists())
         self.assertTrue(file.with_suffix(".json.imported").exists())
         self.assertEqual(get_registry().adopt_file(), [])
+
+    def test_deleting_an_app_with_cloud_cleanup_tears_the_stacks_down_then_removes_it(
+        self,
+    ):
+        from unittest import mock
+
+        from app.core.db.models import App
+        from app.services.deployments import DeploymentsService
+        from app.services.jobs.worker import Worker
+
+        registry_id = self.register()
+        res = self.client.delete(
+            "/api/v1/projects/p1/apps/a1", params={"cloud": 1}, headers=self.h()
+        )
+
+        self.assertEqual(res.status_code, 202, res.text)
+        job_id = res.json()["job"]
+
+        with self.app.state.db.session() as s:
+            self.assertIsNotNone(s.get(App, "a1"))
+
+        torn: list[tuple[str, tuple[str, ...]]] = []
+
+        def destroy(self_, id, stages=("dev", "prod")):
+            torn.append((id, stages))
+
+        with mock.patch.object(DeploymentsService, "destroy", destroy):
+            worker = Worker(self.app.state.db, self.app.state.secrets, "test")
+            self.assertEqual(worker.run(once=True), 1)
+
+        done = self.client.get(f"/api/v1/jobs/{job_id}", headers=self.h()).json()
+
+        self.assertEqual(done["status"], "done", done)
+        self.assertEqual(torn, [(registry_id, ("dev", "prod"))])
+        self.assertEqual(done["result"]["removed"], [registry_id])
+
+        with self.app.state.db.session() as s:
+            self.assertIsNone(s.get(App, "a1"))
