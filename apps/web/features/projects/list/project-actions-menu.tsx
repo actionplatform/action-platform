@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, MoreHorizontal, Trash2, Users } from "lucide-react";
+import { ArrowUpRight, FolderGit2, MoreHorizontal, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,16 @@ import { Select } from "@/components/ui/select";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
 import { assignTeam, removeProject } from "./actions";
-import { DeleteRepositoryOption } from "@/features/projects";
+import { DangerIcon, DeleteRepositoryOption } from "@/features/projects";
+import { TypeToConfirm } from "@/components/ui/type-to-confirm";
 import type { ProjectItem, TeamOption } from "./project-card";
 
 export function ProjectActionsMenu({ project, teams }: { project: ProjectItem; teams: TeamOption[] }) {
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
   const [repositories, setRepositories] = useState(false);
+  const [typed, setTyped] = useState("");
+  const confirmed = typed.trim() === project.name;
   const [assigning, setAssigning] = useState(false);
   const [teamId, setTeamId] = useState(project.teamId ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -62,15 +65,23 @@ export function ProjectActionsMenu({ project, teams }: { project: ProjectItem; t
       </Dialog>
       <ConfirmDialog
         open={confirm}
-        onClose={() => { if (!pending) { setConfirm(false); setRepositories(false); setError(null); } }}
+        onClose={() => { if (!pending) { setConfirm(false); setRepositories(false); setTyped(""); setError(null); } }}
+        icon={<DangerIcon />}
         title={`Delete ${project.name}?`}
-        description="Every app in it and their pending changes are removed from the platform."
-        confirmLabel={repositories ? "Delete project and repositories" : "Delete project"}
+        description="Every app in it goes too. This action is permanent and cannot be undone."
+        confirmLabel="Delete project"
+        confirmIcon={<Trash2 className="size-4" strokeWidth={1.75} aria-hidden="true" />}
         danger
         pending={pending}
-        onConfirm={() => start(async () => { setError(null); const r = await removeProject(project.id, repositories); if (r.ok) { setConfirm(false); setRepositories(false); } else setError(r.error); })}
+        disabled={!confirmed}
+        className="rounded-[14px]"
+        onConfirm={() => start(async () => { setError(null); const r = await removeProject(project.id, repositories); if (r.ok) { setConfirm(false); setRepositories(false); setTyped(""); } else setError(r.error); })}
       >
-        <DeleteRepositoryOption id={`delete-repos-${project.id}`} checked={repositories} onChange={setRepositories} disabled={pending} label="Also delete the repositories" error={confirm ? error : null} />
+        <div className="space-y-3">
+          <DeleteRepositoryOption id={`delete-repos-${project.id}`} checked={repositories} onChange={setRepositories} disabled={pending} label="Delete repositories on the code host" icon={<FolderGit2 className="size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />} />
+          <TypeToConfirm id={`confirm-delete-${project.id}`} expected={project.name} value={typed} onChange={setTyped} disabled={pending} />
+          {confirm && error && <div role="alert" className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
+        </div>
       </ConfirmDialog>
     </>
   );
