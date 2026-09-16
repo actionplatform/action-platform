@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.19 — 2026-09-15
+
+### Bug Fixes
+- **web:** deployment times render in the viewer's zone — no hydration mismatch against the server's UTC
+
 ## v0.18.18 — 2026-09-15
 
 ### Features
