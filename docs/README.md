@@ -8,6 +8,8 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 |---|---|
 | install it and ship a first project | [Getting started](start_getting_started.md) |
 | run the platform for my team | [Self-hosting](start_self_hosting.md) |
+| understand what happens when I deploy | [Deployments](concept_deployments.md) · [Identity](concept_identity.md) |
+| fix something that was refused | [Troubleshooting](start_troubleshooting.md) |
 | know what a screen, command or tool does | [Web](use_web.md) · [CLI](use_cli.md) · [MCP](use_mcp.md) · [API](use_api.md) · [Plugins](use_plugins.md) |
 | understand who may do what | [Access control](concept_access_control.md) |
 | change or extend the code | [Architecture](contribute_architecture.md) · [Development](contribute_development.md) · [Writing a plugin](contribute_plugins.md) |
@@ -20,12 +22,13 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 |---|---|
 | [Getting started](start_getting_started.md) | install, first project locally or hosted, point the CLI and an agent at a platform |
 | [Self-hosting](start_self_hosting.md) | `install.sh`, the compose files, Dokploy, environment, upgrades, backups |
+| [Troubleshooting](start_troubleshooting.md) | every message the platform refuses with, what it means, what to do |
 
 **Use** — one guide per surface
 
 | | |
 |---|---|
-| [Web](use_web.md) | organizations › teams › projects › apps, setup wizard, source hosts, creating apps, releases, settings, connected apps |
+| [Web](use_web.md) | one section per screen: setup, projects and apps, the app's tabs, templates, import, organization, plugins, settings |
 | [CLI](use_cli.md) | every command, its flags and environment |
 | [MCP](use_mcp.md) | tools, prompts and skills for AI clients — locally or against a hosted platform |
 | [Plugins](use_plugins.md) | what a plugin adds or replaces, its options, how the hosted platform bundles them |
@@ -41,6 +44,7 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 | [Manifest](concept_manifest.md) | `platform.toml`, the file that declares a project |
 | [Templates](concept_templates.md) | project types, stacks, cloud overlays, services; adding your own repositories |
 | [Releases](concept_releases.md) | versions per component, tags, what each one publishes |
+| [Deployments](concept_deployments.md) | stages, targets, preflight, the deploy job, history, redeploy, tearing down |
 | [Observability](concept_observability.md) | Sentry per component: variables, what is sent, what is not |
 | [Database](concept_database.md) | the one database web and API share: connecting the API, migrations, adopting an existing schema, the tables |
 
@@ -67,8 +71,21 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 | Term | Means |
 |---|---|
 | organization › project › app | the hierarchy; an app is one git repository |
-| workspace | the platform's clone of an app, where it commits, releases and syncs |
-| source host | GitHub, GitLab, Bitbucket or a generic remote, connected per organization |
+| team | a group of organization members that looks after projects; a project belongs to at most one |
+| workspace | the platform's disposable clone of an app, rebuilt from the remote whenever a request needs its files |
+| pending edits | changes the platform holds for an app (rows in `draft`), written onto the clone until **Commit changes** or **Discard changes** |
+| source host | GitHub, GitLab, Bitbucket or a generic remote, connected per organization under Settings → Git |
+| manifest | `platform.toml`, the file that declares a project: type, language, git-flow rules, `[deploy]` |
+| template · overlay | a project skeleton (type › stack › template); an overlay adds a cloud or Docker on top of it |
 | template source | a repository of templates; the official one plus any the organization adds |
-| token · scope · reach | what `action-platform login` mints; what it may do; where |
-| release · component | a version cut from the repository; `web`, `api` and the library each have their own |
+| release · component | a version cut from the repository (tag, changelog, release on the host); `web`, `api` and the library each have their own |
+| deploy target | where an app goes (`aws/lambda`, `docker`…), declared under `[deploy]` and implemented by a plugin |
+| stage | an environment of an app, `dev` or `prod`; one stack, one history and one deploy at a time each |
+| preflight | a deploy's checks without the deploy (`dry_run`) |
+| job | queued work the worker runs — sync, release, deploy, destroy, import; what Deployment history lists |
+| plugin · option | a package that adds targets, overlays and tools; an option is a setting it declares, filled per organization under Plugins |
+| deploy proxy | the Lambda in an AWS account that turns the platform's identity token into credentials for one app |
+| identity token | the short-lived JWT the platform signs about an app for a deploy; what the cloud trusts instead of a key |
+| token · scope · reach | what `action-platform login` mints; what it may do; where (organizations, a project, an app) |
+| role · permission | owner, admin, deployer, developer, viewer; the six things a role may do in an organization |
+| git-flow | the branch kinds, the base each starts from, the Conventional Commit format the hooks and CI enforce |
