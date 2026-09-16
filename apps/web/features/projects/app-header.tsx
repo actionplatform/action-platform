@@ -114,7 +114,7 @@ export function AppHeader({ view }: { view: AppView }) {
         </div>
       </div>
 
-      <DeleteAppDialog open={confirmDelete} onClose={() => setConfirmDelete(false)} onDeleted={() => router.push(`/projects/${view.projectId}`)} projectId={view.projectId} appId={view.appId} name={view.name} repositoryUrl={view.repositoryUrl} />
+      <DeleteAppDialog open={confirmDelete} onClose={() => setConfirmDelete(false)} onDeleted={(queued) => router.push(queued ? `/projects/${view.projectId}/apps/${view.appId}/deployments` : `/projects/${view.projectId}`)} projectId={view.projectId} appId={view.appId} name={view.name} repositoryUrl={view.repositoryUrl} deployTarget={typeof view.deploy.target === "string" ? view.deploy.target : null} />
     </header>
   );
 }

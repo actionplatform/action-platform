@@ -37,15 +37,17 @@ export async function addApp(projectId: string, url: string, install: { type: st
 }
 
 
-export async function removeApp(projectId: string, appId: string, repository = false): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function removeApp(projectId: string, appId: string, repository = false, cloud = false): Promise<{ ok: true; job: string | null } | { ok: false; error: string }> {
   await requireOrg();
+  let job: string | null = null;
   try {
-    await v1.deleteApp(projectId, appId, repository);
+    const r = await v1.deleteApp(projectId, appId, repository, cloud);
+    job = r.job ?? null;
   } catch (e) {
     return failed(e);
   }
   revalidatePath(`/projects/${projectId}`);
-  return { ok: true };
+  return { ok: true, job };
 }
 
 

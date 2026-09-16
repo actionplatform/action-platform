@@ -10,8 +10,8 @@ export const projects = {
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps", { params: { path: { project_id: projectId } }, body: { url, install } })),
   initApp: async (projectId: string, body: Schemas["InitAppInProject"]) =>
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/init", { params: { path: { project_id: projectId } }, body })),
-  deleteApp: async (projectId: string, appId: string, repository = false) =>
-    unwrap(await client.DELETE("/api/v1/projects/{project_id}/apps/{app_id}", { params: { path: { project_id: projectId, app_id: appId }, query: { repository } } })),
+  deleteApp: async (projectId: string, appId: string, repository = false, cloud = false) =>
+    unwrap(await client.DELETE("/api/v1/projects/{project_id}/apps/{app_id}", { params: { path: { project_id: projectId, app_id: appId }, query: { repository, cloud } } })),
   setAppHost: async (projectId: string, appId: string, sourceHostId: string | null) =>
     unwrap(await client.PUT("/api/v1/projects/{project_id}/apps/{app_id}/host", { params: { path: { project_id: projectId, app_id: appId } }, body: { source_host_id: sourceHostId } })),
   imports: async (projectId: string, appId: string) =>

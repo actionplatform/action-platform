@@ -8,7 +8,7 @@ from action_platform.core.exception import ActionPlatformError
 from action_platform.settings import settings
 from app.core.auth.crypto import Sealer
 from app.core.db.database import Database
-from app.core.db.models import App
+from app.core.db.models import App, Project
 from app.core.shared.urls import GitUrl
 from app.repositories.workspace.registry import Registry
 from app.schemas import DeployRequest, PushRequest, ReleaseRequest, SyncRequest
@@ -20,6 +20,7 @@ from app.services.projects.organization_import.directory import ImportDirectory
 from app.services.deployments.identity import AppIdentity
 from app.services.jobs.context import JobContext
 from app.services.jobs.registry import JobServices, register
+from app.services.projects import ProjectService
 from app.services.projects.organization_import import OrganizationImport
 from app.services.deployments import DeploymentsService
 from app.services.releases import ReleasesService
@@ -73,6 +74,29 @@ class JobHandlers:
             ),
             env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
         ).deploy(ctx.registry_id, DeployRequest(**ctx.body))
+
+    def destroy(self, payload: dict[str, Any]) -> Any:
+        """Every stage's stack down, then the app off the platform — the job the web queues for a deletion with cloud cleanup."""
+        ctx = self.context(payload)
+        identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
+        DeploymentsService(
+            self.registry,
+            identity=identity.minter(
+                ctx.organization, ctx.app, manages=bool(payload.get("manages"))
+            ),
+            env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
+        ).destroy(ctx.registry_id)
+
+        with self.database.session() as db:
+            project = db.get(Project, ctx.app.project_id)
+            projects = ProjectService(
+                ImportDirectory(db, self.sealer), AppService(self.registry)
+            )
+            removed, repositories = projects.delete_app(
+                ctx.organization, project, ctx.app, bool(ctx.body.get("repository"))
+            )
+
+        return {"removed": removed, "repositories": repositories}
 
     def push(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
@@ -137,5 +161,6 @@ register("sync", lambda s: JobHandlers.of(s).sync)
 register("release", lambda s: JobHandlers.of(s).release)
 register("deploy", lambda s: JobHandlers.of(s).deploy)
 register("push", lambda s: JobHandlers.of(s).push)
+register("destroy", lambda s: JobHandlers.of(s).destroy)
 register("import", lambda s: JobHandlers.of(s).import_activity)
 register("import_github", lambda s: JobHandlers.of(s).import_github)

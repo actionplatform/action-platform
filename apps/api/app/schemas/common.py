@@ -22,6 +22,7 @@ class Created(BaseModel):
 class Removed(BaseModel):
     removed: list[str] = []
     repositories: list[str] = []
+    job: Optional[str] = None
 
 
 class AppRef(BaseModel):

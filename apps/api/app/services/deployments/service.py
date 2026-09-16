@@ -49,5 +49,11 @@ class DeploymentsService:
             for r in results
         ]
 
+    def destroy(self, id: str, stages: tuple[str, ...] = ("dev", "prod")) -> None:
+        tool = self._tool(id)
+
+        for stage in stages:
+            tool.destroy(stage=stage)
+
     def diagnose(self, id: str, stage: Optional[str]) -> list[dict]:
         return [asdict(r) for r in self._tool(id).diagnose(stage=stage)]

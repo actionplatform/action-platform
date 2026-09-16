@@ -69,7 +69,7 @@ export function DeploymentsTable({ jobs, registryId, canDeploy }: { jobs: JobRow
 
   const actions = (job: JobRow) => [
     { label: "View details", onSelect: () => setDetails(job) },
-    ...(canDeploy && (job.version || versionOf(job)) ? [{ label: job.dry_run ? "Run preflight again" : "Redeploy", icon: <RotateCcw className="size-3.5" strokeWidth={1.75} />, onSelect: () => redeploy(job) }] : []),
+    ...(canDeploy && job.kind !== "destroy" && (job.version || versionOf(job)) ? [{ label: job.dry_run ? "Run preflight again" : "Redeploy", icon: <RotateCcw className="size-3.5" strokeWidth={1.75} />, onSelect: () => redeploy(job) }] : []),
   ];
 
   return (
@@ -96,7 +96,7 @@ export function DeploymentsTable({ jobs, registryId, canDeploy }: { jobs: JobRow
                     <tr key={job.id} className={cn("align-middle", expanded && "bg-surface-hover/40")}>
                       <td className="px-4 py-2.5"><Badge tone={s.tone}>{s.label}</Badge></td>
                       <td className="whitespace-nowrap py-2.5 pr-4 font-mono">{job.stage ?? "dev"}</td>
-                      <td className="whitespace-nowrap py-2.5 pr-4 text-secondary">{job.dry_run ? "Preflight" : "Deploy"}</td>
+                      <td className="whitespace-nowrap py-2.5 pr-4 text-secondary">{job.kind === "destroy" ? "Tear down" : job.dry_run ? "Preflight" : "Deploy"}</td>
                       <td className="whitespace-nowrap py-2.5 pr-4 font-mono">{versionOf(job) ?? "—"}</td>
                       <td className="whitespace-nowrap py-2.5 pr-4 font-mono text-secondary" suppressHydrationWarning>{duration(job, now)}</td>
                       <td className="max-w-0 truncate py-2.5 pr-4 text-secondary" title={job.by ?? undefined}>{job.by ?? "—"}</td>
@@ -169,7 +169,7 @@ function RunDetails({ job, status, error, first, canDeploy, pending, onDetails, 
     <div className="space-y-3 rounded-md border border-border bg-surface p-3">
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium">{error ? (job.dry_run ? "Preflight failed" : "Deploy failed") : job.dry_run ? "Preflight passed" : status.label}</div>
+          <div className="text-sm font-medium">{job.kind === "destroy" ? (error ? "Tear down failed" : status.label) : error ? (job.dry_run ? "Preflight failed" : "Deploy failed") : job.dry_run ? "Preflight passed" : status.label}</div>
           <div className="break-words text-[13px] text-secondary">{summary}</div>
           {first?.url && !error && <a href={first.url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-[13px] text-secondary hover:text-foreground">{first.url} <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
         </div>
@@ -177,7 +177,7 @@ function RunDetails({ job, status, error, first, canDeploy, pending, onDetails, 
           {error && <Button size="sm" variant="ghost" onClick={() => setLogs((v) => !v)} aria-expanded={logs}>{logs ? "Hide logs" : "View logs"}</Button>}
           {error && <CopyButton text={error} label="Copy error" />}
           <Button size="sm" variant="outline" onClick={onDetails}>View details</Button>
-          {canDeploy && (job.version || first?.version) && <Button size="sm" variant="outline" disabled={pending} onClick={onRedeploy}><RotateCcw className="size-3.5" strokeWidth={1.75} /> {job.dry_run ? "Run again" : "Redeploy"}</Button>}
+          {canDeploy && job.kind !== "destroy" && (job.version || first?.version) && <Button size="sm" variant="outline" disabled={pending} onClick={onRedeploy}><RotateCcw className="size-3.5" strokeWidth={1.75} /> {job.dry_run ? "Run again" : "Redeploy"}</Button>}
         </div>
       </div>
       {error && logs && <LogBox text={error} />}

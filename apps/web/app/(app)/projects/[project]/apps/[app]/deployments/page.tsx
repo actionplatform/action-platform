@@ -10,7 +10,8 @@ export default async function DeploymentsPage({ params }: { params: Promise<{ pr
   if (!loaded.ok) return null;
   const { view } = loaded;
   const base = `/projects/${view.projectId}/apps/${view.appId}`;
-  const jobs = await v1.jobs(view.registryId, "deploy").catch(() => []);
+  const [deploys, teardowns] = await Promise.all([v1.jobs(view.registryId, "deploy").catch(() => []), v1.jobs(view.registryId, "destroy").catch(() => [])]);
+  const jobs = [...deploys, ...teardowns].sort((a, b) => (b.created_at > a.created_at ? 1 : b.created_at < a.created_at ? -1 : 0));
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,65fr)_minmax(300px,35fr)]">
