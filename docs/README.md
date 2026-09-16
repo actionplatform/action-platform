@@ -57,6 +57,8 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 
 ## Project
 
+`index.json` in this directory lists the guides in reading order; the website's Docs pages read it and the markdown files straight from this repository.
+
 | | |
 |---|---|
 | [Changelog](../CHANGELOG.md) · [web](../apps/web/CHANGELOG.md) · [api](../apps/api/app/CHANGELOG.md) | what changed in each release of the library and CLI, the web app and the API |
