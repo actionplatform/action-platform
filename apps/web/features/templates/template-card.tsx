@@ -17,7 +17,7 @@ import type { TemplateItem } from "./template-item";
 export function TemplateLogo({ item, className }: { item: TemplateItem; className?: string }) {
   const Fallback = typeIcon(item.plain ? "repos" : item.type);
   return (
-    <div className={cn("flex size-[42px] shrink-0 items-center justify-center rounded-lg border border-[#292929] bg-[#0e0e0e]", className)}>
+    <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg border border-[#292929] bg-[#0e0e0e] md:size-[42px]", className)}>
       {item.icon ? <BrandIcon src={item.icon} title={item.name} className="size-6" /> : <Fallback className="size-[22px] text-secondary" strokeWidth={1.5} />}
     </div>
   );
@@ -25,18 +25,20 @@ export function TemplateLogo({ item, className }: { item: TemplateItem; classNam
 
 export function TemplateMeta({ item, className }: { item: TemplateItem; className?: string }) {
   const TypeIcon = typeIcon(item.plain ? "repos" : item.type);
+  const languages = item.language ? item.language.split(", ") : [];
+  const shown = 2;
+  const chip = "inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-border px-1.5 text-[11px] md:h-auto md:gap-1.5 md:border-0 md:px-0 md:text-[13px]";
   return (
-    <div className={cn("flex min-w-0 items-center gap-2.5 text-[13px] text-secondary", className)}>
-      <span className="flex items-center gap-1.5"><TypeIcon className="size-4" strokeWidth={1.75} />{item.categoryLabel}</span>
-      {item.language && (
-        <>
-          <span aria-hidden className="text-muted-foreground">·</span>
-          <span className="flex items-center gap-1.5">
-            {item.stackIcon && <BrandIcon src={item.stackIcon} className="size-3.5" />}
-            {item.language}
-          </span>
-        </>
-      )}
+    <div className={cn("flex min-w-0 items-center gap-1.5 overflow-hidden text-[13px] text-secondary md:flex-wrap md:gap-2.5", className)} title={languages.length > shown ? languages.join(", ") : undefined}>
+      <span className={chip}><TypeIcon className="size-3.5 md:size-4" strokeWidth={1.75} />{item.categoryLabel}</span>
+      {languages.length > 0 && <span aria-hidden className="hidden text-muted-foreground md:inline">·</span>}
+      {languages.map((language, i) => (
+        <span key={language} className={cn(chip, i >= shown && "hidden md:inline-flex")}>
+          {i === 0 && item.stackIcon && <BrandIcon src={item.stackIcon} className="size-3.5" />}
+          {language}
+        </span>
+      ))}
+      {languages.length > shown && <span className={cn(chip, "md:hidden")} aria-label={`${languages.length - shown} more languages`}>+{languages.length - shown}</span>}
     </div>
   );
 }
@@ -80,19 +82,19 @@ export function TemplateCard({ item, targets }: { item: TemplateItem; targets: O
       <div className="flex items-start gap-3">
         <TemplateLogo item={item} />
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-mono text-base font-semibold leading-6">{item.name}</h3>
-            {item.isDefault && <Badge tone="inverse" className="h-6 px-[9px]">Default</Badge>}
-            {item.source !== "official" && <Badge className="h-6 px-[9px] font-mono">{item.source}</Badge>}
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h3 className="truncate font-mono text-base font-semibold leading-6">{item.name}</h3>
+            {item.isDefault && <Badge tone="inverse" className="h-5 px-2 md:h-6 md:px-[9px]">Default</Badge>}
+            {item.source !== "official" && <Badge className="h-5 px-2 font-mono md:h-6 md:px-[9px]">{item.source}</Badge>}
           </div>
           <p className="mt-1 line-clamp-2 text-sm leading-5 text-secondary">{item.description}</p>
         </div>
-        <ArrowUpRight className="size-[17px] shrink-0 text-muted-foreground transition-[color,transform] duration-150 group-hover:-translate-y-px group-hover:translate-x-px group-hover:text-foreground group-focus-visible:text-foreground" strokeWidth={1.75} />
+        <ArrowUpRight aria-hidden="true" className="size-[17px] shrink-0 text-muted-foreground transition-[color,transform] duration-150 group-hover:-translate-y-px group-hover:translate-x-px group-hover:text-foreground group-focus-visible:text-foreground" strokeWidth={1.75} />
       </div>
-      <div className="mt-auto flex items-center gap-2.5 border-t border-[#242424] pt-3.5">
-        <TemplateMeta item={item} />
+      <div className="mt-3 flex items-center justify-between gap-2 md:mt-auto md:gap-2.5 md:border-t md:border-[#242424] md:pt-3.5">
+        <TemplateMeta item={item} className="min-w-0 flex-1" />
         {(item.href || (item.type === "cloud" && targets.length > 0)) && (
-          <span className="ml-auto flex h-[34px] items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 [@media(hover:none)]:opacity-100">
+          <span className="flex min-h-11 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground md:ml-auto md:h-[34px] md:min-h-0 md:gap-1.5 md:text-xs md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:opacity-100 md:group-focus-visible:opacity-100 md:[@media(hover:none)]:opacity-100">
             {item.href ? "Use template" : "Apply to app"} <ArrowRight className="size-3.5" strokeWidth={2} />
           </span>
         )}
@@ -100,7 +102,7 @@ export function TemplateCard({ item, targets }: { item: TemplateItem; targets: O
     </>
   );
 
-  const className = "group flex min-h-[164px] flex-col rounded-[9px] border border-border bg-surface p-4 transition-[background-color,border-color,transform] duration-150 ease-out hover:-translate-y-px hover:border-border-hover hover:bg-[#141414] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/[0.18]";
+  const className = "group flex flex-col rounded-[9px] border border-border bg-surface p-4 md:min-h-[164px] transition-[background-color,border-color,transform] duration-150 ease-out hover:-translate-y-px hover:border-border-hover hover:bg-[#141414] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/[0.18]";
 
   if (item.href) return <Link href={item.href} aria-label={`Use the ${item.name} template`} className={className}>{body}</Link>;
   if (item.type !== "cloud" || targets.length === 0) return <article aria-label={item.name} className={className}>{body}</article>;
