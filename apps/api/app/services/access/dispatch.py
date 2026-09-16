@@ -6,6 +6,7 @@ import re
 from typing import Any, Optional
 
 from app.core.db.models import App, Organization
+from app.core.errors import Conflict
 from app.services.access.caller import Caller
 from app.services.jobs import JobQueue
 
@@ -67,6 +68,16 @@ class Dispatcher:
             return None
 
         kind = queued.group(2)
+
+        if kind == "deploy":
+            stage = body.get("stage") or "dev"
+            running = self.queue.live_deploy(app.id, stage)
+
+            if running is not None:
+                raise Conflict(
+                    f"a deploy to {stage} is already {running.status}; wait for it to finish"
+                )
+
         job = self.queue.enqueue(
             kind,
             self._payload(

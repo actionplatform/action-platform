@@ -320,6 +320,30 @@ class RegistryAdoptionTest(GateCase):
         with self.app.state.db.session() as s:
             self.assertIsNone(s.get(App, "a1"))
 
+    def test_one_deploy_at_a_time_per_environment(self):
+        registry_id = self.register()
+        headers = {**self.h(), "Prefer": "respond-async"}
+        first = self.client.post(
+            f"/api/v1/apps/{registry_id}/deploy",
+            json={"stage": "dev", "dry_run": False},
+            headers=headers,
+        )
+        again = self.client.post(
+            f"/api/v1/apps/{registry_id}/deploy",
+            json={"stage": "dev", "dry_run": True},
+            headers=headers,
+        )
+        other = self.client.post(
+            f"/api/v1/apps/{registry_id}/deploy",
+            json={"stage": "prod", "dry_run": False},
+            headers=headers,
+        )
+
+        self.assertEqual(first.status_code, 202, first.text)
+        self.assertEqual(again.status_code, 409, again.text)
+        self.assertIn("already queued", again.json()["detail"])
+        self.assertEqual(other.status_code, 202, other.text)
+
     def test_deleting_a_project_with_cloud_cleanup_tears_every_app_down_then_removes_it(
         self,
     ):
