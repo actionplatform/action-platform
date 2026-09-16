@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.18.24 — 2026-09-16
+
+### Features
+- **web:** members as cards on the phone; roles as a per-role permission list
+- **web:** templates on the phone — compact header, collapsible repositories, full-width search, one-row filters, chip metadata with at most two languages, one-row card footer
+- **web:** the release confirmation — repository on its own line, a two-column summary, a checklist, Create release
+- **web:** deployment history on the phone — tappable rows, endpoint block, two-column metadata, equal action buttons
+- **web:** 16px gutter and a shorter header on the phone; PageHeader takes a short description
+- **web:** dialogs fit the phone — full width, capped height with a scrolling body, focus trap and return, body scroll lock, 44px close, equal-width footer buttons
+
 ## v0.18.23 — 2026-09-15
 
 ### Features
