@@ -59,3 +59,5 @@ The web app's API client is generated from the API's OpenAPI schema. Ship `api` 
 ## Deploys ship releases
 
 A deploy names a version — `action-platform deploy --version X.Y.Z`, the `version` field of `POST /api/v1/apps/{id}/deploy`, the release picked in the web — or takes the tag HEAD sits on; anything else is refused. The tag is checked out for the build and the deploy, so what runs in the cloud is always a commit the release process produced, reproducible from the tag alone.
+
+One deploy at a time per environment: while a deploy (or preflight) to a stage is queued or running, the API refuses another for the same stage with `409` — the stack and the clone are touched by one job at a time; another stage goes ahead. On the platform a deploy never carries a cloud key: the worker signs a token about the app and the target exchanges it for credentials — see [identity](concept_identity.md).

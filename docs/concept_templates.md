@@ -6,7 +6,7 @@ action-platform init --list
 
 | Type | Stacks | Ready with |
 |------|--------|-----------|
-| `web` | python (FastAPI, FastMCP), go (Gin), node (Fastify, React), java (Spring), kotlin (Spring), ruby (Sinatra) | `/ping`, versioned API, tests, lint, CI |
+| `web` | python (FastAPI, FastMCP), go (Gin), node (Fastify, React), java (Spring), kotlin (Spring), ruby (Sinatra) | `/health` (never `/ping` — API Gateway keeps that path on `execute-api`), versioned API, tests, lint, CI |
 | `library` | python, go, php, node, java, rust | packaging, version test, publish workflow |
 | `docs` | mkdocs | Material theme, strict build in CI |
 | `plugin` | chrome | Manifest V3, popup, background, tests, store zip |
@@ -14,7 +14,7 @@ action-platform init --list
 
 | Cloud | Adds |
 |-------|------|
-| `aws/lambda` | SAM template, HTTP API, custom domain, deploy workflow, IAM policy |
+| `aws/lambda` | SAM template, HTTP API, custom domain, deploy workflow, IAM policy — for every `web` language: Mangum for Python, the Lambda Web Adapter for Node and Spring (Java, Kotlin), `aws-lambda-go-api-proxy` for Go, a Rack call for Ruby; the plugin `apx-aws-lambda` carries the canonical copy |
 | `aws/amplify` | `amplify.yml`, security headers, start-job workflow, IAM policy |
 | `docker` | Dockerfile per language, compose |
 
