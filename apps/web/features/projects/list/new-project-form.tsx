@@ -11,7 +11,7 @@ export function NewProjectForm() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button size="lg" onClick={() => setOpen(true)}><Plus className="size-4" strokeWidth={2} /> New project</Button>
+      <Button size="lg" className="h-12 w-full whitespace-nowrap md:h-[42px] md:w-auto" onClick={() => setOpen(true)}><Plus className="size-4" strokeWidth={2} /> New project</Button>
       <NewProjectDialog open={open} onClose={() => setOpen(false)} />
     </>
   );
