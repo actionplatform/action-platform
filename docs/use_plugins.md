@@ -35,7 +35,7 @@ The API image bundles the plugins the platform runs: `apx-aws-lambda` is a depen
 
 ## Options
 
-A plugin keeps what it needs to remember in its own options store, WordPress-style: `surface.options.get("channel")`, `set`, `delete`, `all` — a JSON file per plugin on a machine (`~/.action-platform/plugins/<slug>.json`, or `options/` under `AP_PLUGINS_DIR`), the `plugin_option` table on the hosted platform, one set per organization: `GET/PUT /api/v1/plugins/{slug}/options` reads and replaces the caller's organization's values (`org.manage`), and rows with an empty organization are platform-wide defaults an organization's values override. A deploy job carries only its organization's options.
+A plugin keeps what it needs to remember in its own options store, WordPress-style: `surface.options.get("channel")`, `set`, `delete`, `all` — a JSON file per plugin on a machine (`~/.action-platform/plugins/<slug>.json`; `AP_HOME` moves it), the `plugin_option` table on the hosted platform, one set per organization: `GET/PUT /api/v1/plugins/{slug}/options` reads and replaces the caller's organization's values (`org.manage`), and rows with an empty organization are platform-wide defaults an organization's values override. A deploy job carries only its organization's options.
 
 ## Index
 

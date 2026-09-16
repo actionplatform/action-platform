@@ -16,7 +16,7 @@ On boot the API migrates to the latest revision before it serves a request. The 
 
 ## Migrations
 
-Alembic, under `apps/api/core/db/migrations/versions/`:
+Alembic, under `apps/api/app/core/db/migrations/versions/`:
 
 | Revision | What |
 |---|---|
@@ -45,9 +45,9 @@ Both read `AP_DATABASE_URL` unless `--url` is given.
 
 ## Jobs
 
-`JobQueue` (`apps/api/services/jobs.py`) claims with `SELECT … FOR UPDATE SKIP LOCKED` on Postgres and a compare-and-set update elsewhere, so several workers share one queue without taking the same row. `action-platform-api worker [--once] [--interval]` loops: reap jobs whose worker vanished (running for over thirty minutes), claim, run, `done` with the result or `failed` with the error — a refusal from the platform's own rules (`ActionPlatformError`) fails at once, anything else retries up to three times with a 30 s · 2ⁿ backoff. Payloads never hold credentials; the worker reads them from `source_host` when it runs, exactly as the gate does for inline calls ([API](use_api.md#jobs)).
+`JobQueue` (`apps/api/app/services/jobs/queue.py`) claims with `SELECT … FOR UPDATE SKIP LOCKED` on Postgres and a compare-and-set update elsewhere, so several workers share one queue without taking the same row. `action-platform-api worker [--once] [--interval]` loops: reap jobs whose worker vanished (running for over thirty minutes), claim, run, `done` with the result or `failed` with the error — a refusal from the platform's own rules (`ActionPlatformError`) fails at once, anything else retries up to three times with a 30 s · 2ⁿ backoff. Payloads never hold credentials; the worker reads them from `source_host` when it runs, exactly as the gate does for inline calls ([API](use_api.md#jobs)).
 
-Models live in `apps/api/core/db/models.py` (SQLAlchemy 2, one class per table, parents reachable from children); `Database` in `database.py` owns the engine, `migrate()` and a `session()` context manager that commits on success and rolls back on any exception. Ids are 36-character strings, so the same rows are valid on every dialect and the ids the web app minted stay as they are.
+Models live in `apps/api/app/core/db/models/` (SQLAlchemy 2, one module per context — auth, organization, projects, configuration, activity, integrations, jobs —, one class per table, parents reachable from children); `Database` in `database.py` owns the engine, `migrate()` and a `session()` context manager that commits on success and rolls back on any exception. Ids are 36-character strings, so the same rows are valid on every dialect and the ids the web app minted stay as they are.
 
 ## What still lives in the web app
 
