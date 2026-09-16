@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.18.22 — 2026-09-15
+
+### Features
+- **web:** Create release card — branch and version on the left, name and notes on the right; no latest checkbox
+- **web:** an app being torn down shows the badge and the list refreshes until it is gone
+- **web:** delete dialogs — danger icon, compact host and cloud rows, name typed to confirm, solid red Delete
+- **web:** ConfirmDialog with icon, submit form, confirm icon and disabled state; danger button; type-to-confirm field
+
+### Refactoring
+- **web:** Releases drops the Git references card
+
 ## v0.18.21 — 2026-09-15
 
 ### Bug Fixes
