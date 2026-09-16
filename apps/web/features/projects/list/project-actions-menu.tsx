@@ -43,7 +43,7 @@ export function ProjectActionsMenu({ project, teams }: { project: ProjectItem; t
             aria-expanded={open}
             aria-controls={id}
             onClick={toggle}
-            className="flex size-9 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground"
+            className="flex size-11 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground md:size-9"
           >
             <MoreHorizontal className="size-[18px]" strokeWidth={1.75} />
           </button>

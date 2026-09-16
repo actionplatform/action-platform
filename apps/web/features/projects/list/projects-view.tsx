@@ -38,7 +38,7 @@ export function ProjectsView({ projects, teams, canManage }: { projects: Project
       {visible.length === 0 ? (
         <ProjectsNoResults query={query.trim()} onClear={() => setQuery("")} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-3">
           {visible.map((p) => <ProjectCard key={p.id} project={p} teams={teams} canManage={canManage} />)}
         </div>
       )}
