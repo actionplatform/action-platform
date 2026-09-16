@@ -21,9 +21,13 @@ Alembic, under `apps/api/core/db/migrations/versions/`:
 | Revision | What |
 |---|---|
 | `0001` | the 19 tables the web app already has — same names, same columns, same foreign keys and cascades |
-| `0002` | `job`: the queue for sync, release, deploy, push and import work |
+| `0002` | `job`: the queue for sync, release, deploy, push, import and tear-down (`destroy`, `destroy_project`) work |
 | `0003` | `registry`: the apps the API manages (id, name, url, default branch), shared by every instance and worker |
 | `0004` | `oauth_app`: the OAuth apps used to connect code hosts (client id, sealed secret, base URL, GitHub App slug) |
+| `0005` | `registry.branch` and `draft`: the checked-out branch per app and pending edits as rows — clones are disposable |
+| `0006`, `0009` | `plugin_option`: what a plugin remembers, keyed by organization, plugin and key (the values behind Plugins → Configure) |
+| `0007` | `signing_key`: the RSA pair behind the platform's OIDC issuer, private half sealed |
+| `0008` | `app_config`: the app's `platform.toml` as the platform keeps it — the database is the source of truth, the file in the repository a mirror |
 
 A database the web app created has no `alembic_version` table but does have `user`; the API recognises that, stamps it at `0001` and applies only what follows. Nothing is recreated, nothing is copied: pointing the API at the web app's database is the whole data migration.
 

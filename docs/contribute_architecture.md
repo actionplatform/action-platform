@@ -107,7 +107,63 @@ Two folders are not contexts but the glue between them: `services/access` (who c
 
 ## The API
 
-One process, file-backed, single-tenant; every route, the credentials contract and the OpenAPI client are in [api](use_api.md).
+Every route, the credentials contract and the OpenAPI client are in [api](use_api.md). Two processes share the code and the database: `serve` (FastAPI) answers, `worker` runs what takes time.
+
+### A call through the gate
+
+```mermaid
+flowchart LR
+    C[browser · CLI · MCP] -->|/api/v1/apps/id/deploy| G[gate]
+    G --> PL[Planner: caller, role ∩ scope ∩ reach, target app]
+    PL -->|inline| R[route → service → core on the clone]
+    PL -->|Prefer: respond-async| D[Dispatcher → job row]
+    D -->|202 job id| C
+    W[worker] -->|claim| D
+    W --> H[handlers: kind → service]
+    H --> R
+```
+
+The Planner (`services/access/planner.py`) is the one place the gate reads the database: who calls, which app, whether the call becomes a job. The Dispatcher refuses a second `deploy` to a stage that already has one live (`409`) and records whether the caller manages the organization — the deploy token then carries `org.manage`, which the cloud side may require to register the app.
+
+### Jobs
+
+| Kind | Queued by | Handler does |
+|---|---|---|
+| `sync` | `POST apps/{id}/sync` (async) | fetch and rebuild the clone, then import the host's activity |
+| `release` | `POST apps/{id}/release` (async) | `Releaser.plan → apply` on the clone, push, publish on the host |
+| `deploy` | `POST apps/{id}/deploy` (async) | `Deployer` on the tagged release with the app's identity token and the plugin options as env |
+| `push` | `POST apps/{id}/push` (async) | push the clone's branch, then import activity |
+| `import` | after a sync, release or push | releases and pull requests copied into the platform's tables |
+| `import_github` | the organization import wizard | repositories, teams, people and projects from a GitHub organization |
+| `destroy` | `DELETE projects/{p}/apps/{a}?cloud=true` | every stage's stack down through the target, then the app off the platform |
+| `destroy_project` | `DELETE projects/{id}?cloud=true` | the same for each app, then the project |
+
+Kinds are registered in `services/jobs/handlers.py` (`register(kind, factory)`); the worker builds the table once with `JobServices` and claims with `SELECT … FOR UPDATE SKIP LOCKED`. A job is one row: kind, status, payload (the enriched body, the organization, the app, the user, `manages`), attempts, result or error — what the Deployments history shows.
+
+### A deploy, end to end
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as web
+    participant A as API (gate)
+    participant W as worker
+    participant L as core Deployer
+    participant T as target (apx-aws-lambda)
+    participant X as deploy proxy
+    U->>A: POST apps/{id}/deploy {stage, version}  Prefer: respond-async
+    A->>A: role ∩ scope ∩ reach · no live deploy for the stage
+    A-->>U: 202 {job}
+    W->>W: claim · JobContext (credentials, plugin options as AP_AWS_LAMBDA_PROXY_URL, AP_APP)
+    W->>L: deploy(stage, version) with identity=minter(org, app, stage, manages)
+    L->>L: checkout tag v<version> (refused without a tag)
+    L->>T: preflight(ctx) · deploy(ctx)
+    T->>X: credentials (token from ctx.identity_token) — registers the app on 404 when the token may
+    T->>T: sam build · sam deploy --stack-name ap-org-project-app-stage
+    T-->>L: DeployResult(url)
+    L-->>W: results → job done
+    U->>A: GET jobs/{id} (polled) → history row, URL
+```
 
 ## How credentials travel
 
@@ -185,9 +241,24 @@ erDiagram
     session {
         string active_organization_id
     }
+    app ||--o{ job : "runs"
+    app ||--o| app_config : "platform.toml"
+    app ||--o{ draft : "pending edits"
+    organization ||--o{ plugin_option : "plugin settings"
+    job {
+        string kind "sync release deploy push import import_github destroy destroy_project"
+        string status "queued running done failed"
+        text payload
+        text result
+    }
+    plugin_option {
+        string plugin "slug"
+        string key
+        text value
+    }
 ```
 
-`user`, `session`, `account`, `verification`, `device_code`, `organization`, `member`, `invitation` were created by better-auth and are now written by the API's `AuthService` (`apps/api/app/core/auth/`), with the same password hashes and cookie signatures so nothing had to be re-issued; `team`, `team_member`, `project`, `app`, `source_host`, `release`, `pull_request`, `template_source`, `organization_setting`, `api_token`, `api_token_client` are the platform's. Same schema in three dialects under `apps/web/lib/db/schema/`, migrations per dialect under `apps/web/drizzle/` (0001–0014), applied on boot. The Python API mirrors the same tables in `apps/api/app/core/db/models.py` and, given `AP_DATABASE_URL`, connects to the same database, adopts it and adds its own tables (`job`) through Alembic — see [database](concept_database.md).
+`user`, `session`, `account`, `verification`, `device_code`, `organization`, `member`, `invitation` were created by better-auth and are now written by the API's `AuthService` (`apps/api/app/core/auth/`), with the same password hashes and cookie signatures so nothing had to be re-issued; `team`, `team_member`, `project`, `app`, `source_host`, `release`, `pull_request`, `template_source`, `organization_setting`, `api_token`, `api_token_client` are the platform's, and `job`, `registry`, `draft`, `oauth_app`, `plugin_option`, `signing_key`, `app_config` the API's own (see [database](concept_database.md)). The web app has no database connection: every table is owned by the API (`apps/api/app/core/db/models/`, one module per context) and migrated by Alembic on boot (`AP_DATABASE_AUTO_MIGRATE`) or by the compose `migrate` service.
 
 ## Trust between web and API
 

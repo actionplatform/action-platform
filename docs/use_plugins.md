@@ -39,7 +39,7 @@ A plugin keeps what it needs to remember in its own options store, WordPress-sty
 
 ## Index
 
-The web app shows the index as a marketplace under **Plugins** (search, tags, `needs`, install command to copy, which ones the hosted platform runs).
+The web app lists the plugins the platform runs under **Plugins** — one card each, the settings a plugin declares behind **Configure**; the index stays a CLI matter (`action-platform plugin search`).
 
 An index is a directory of `<slug>.json` files served over HTTPS — the official one is `actionplatform/plugins-index` on GitHub raw. Each file names the PyPI package, the latest version, the repository, `min_core`, a `verified` flag (someone read the code) and what the plugin `needs` (hosts it talks to, environment variables it reads — shown before you accept). Anyone can publish another index and add it with `plugin index add`.
 
