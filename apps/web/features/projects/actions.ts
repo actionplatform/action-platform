@@ -46,7 +46,7 @@ export async function removeApp(projectId: string, appId: string, repository = f
   } catch (e) {
     return failed(e);
   }
-  revalidatePath(`/projects/${projectId}`);
+  refreshProject(projectId);
   return { ok: true, job };
 }
 
