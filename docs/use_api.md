@@ -32,7 +32,7 @@
 
 Sessions last 7 days, refreshed when used after a day. Refusals answer `{"detail", "error", "error_description"}` with `401` (`unauthenticated`, `invalid_credentials`), `403` (`forbidden`), `409` (`exists`), `429` (rate limit) or `400` for the rest.
 
-Every response is a Pydantic model under `api/schemas/`; `apps/web` generates its TypeScript client from the resulting OpenAPI schema (`npm run api:types`, comments stripped). Requests that touch a source host reach the route with `credentials {kind, token, username, base_url, owner, author_name, author_email}`, added by the gate from the database — no client sends them; identity alone is valid for a local commit.
+Every response is typed and published as OpenAPI at `/docs`; the web app generates its client from that schema. Requests that touch a source host reach the route with `credentials {kind, token, username, base_url, owner, author_name, author_email}`, added by the gate from the database — no client sends them; identity alone is valid for a local commit.
 
 ## Trust
 
@@ -40,7 +40,13 @@ Every route but `/api/version`, `/docs` and `/openapi.json` requires `Authorizat
 
 ## `/api/v1`
 
-A gate (`apps/api/app/api/gate.py`) sits in front of `/api/v1/*`. It identifies the caller — a JWT from `action-platform login`, a session token, or the browser cookie — then, for each route under `apps/…`, finds the app's organization through `registry_id`, checks the caller's role there against the route's permission, the token's scope against the same permission, and the token's reach (one project, one app); a token spanning every organization names one with `X-Organization: <id or slug>` on organization-level routes. Before handing the call to `/api/apps/…` it fills in what the workspace needs from the database: the source host's credentials (decrypted with the same key the web app used, refreshed through the OAuth app when expired), the organization's commit identity, the template repositories it added (`GET /matrix` becomes `POST /matrix {sources}`, `source=<name>` becomes the repository). After `sync`, `release`, `push`, `branches`, `checkout`, `pull-request` and `commit` it copies releases and pull requests from the source host into the database. `GET /apps` is cut to the apps the caller may see.
+A gate sits in front of `/api/v1/*` and, for every call:
+
+- identifies the caller — a token from `action-platform login`, a session token or the browser cookie;
+- finds the app's organization and checks the caller's role there against the route's permission, the token's scope against the same permission, and the token's reach (one project, one app). A token spanning every organization names one with `X-Organization: <id or slug>` on organization-level routes;
+- fills in what the workspace needs from the database: the source host's credentials (refreshed through the OAuth app when expired), the organization's commit identity, the template repositories it added;
+- after `sync`, `release`, `push`, `branches`, `checkout`, `pull-request` and `commit`, copies releases and pull requests from the source host into the database;
+- cuts `GET /apps` to the apps the caller may see.
 
 Routes that are not workspaces live directly under `/api/v1` and are what the web app's pages and server actions call:
 

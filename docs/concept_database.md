@@ -10,13 +10,13 @@ One Postgres (or MySQL, or SQLite) holds every organization, project, app, token
 | `AP_DATABASE_POOL_SIZE` | connections kept open per API process (default 10; SQLite ignores it) |
 | `AP_DATABASE_MAX_OVERFLOW` | extra connections opened under load and closed afterwards (default 20) |
 
-`postgres://` and `postgresql://` are rewritten to the `psycopg` driver, `mysql://` to `pymysql`; both ship with `pip install ./apps/api`.
+Postgres and MySQL drivers ship with the API; SQLite needs nothing.
 
-On boot the API migrates to the latest revision before it serves a request. The compose files point `AP_DATABASE_URL` at the same Postgres as the web app and start the API only after Postgres is healthy.
+On boot the API migrates to the latest revision before it serves a request. The compose files start the API and the worker only after Postgres is healthy.
 
 ## Migrations
 
-Alembic, under `apps/api/app/core/db/migrations/versions/`:
+Alembic, shipped with the API — one revision per change:
 
 | Revision | What |
 |---|---|
@@ -45,9 +45,9 @@ Both read `AP_DATABASE_URL` unless `--url` is given.
 
 ## Jobs
 
-`JobQueue` (`apps/api/app/services/jobs/queue.py`) claims with `SELECT … FOR UPDATE SKIP LOCKED` on Postgres and a compare-and-set update elsewhere, so several workers share one queue without taking the same row. `action-platform-api worker [--once] [--interval]` loops: reap jobs whose worker vanished (running for over thirty minutes), claim, run, `done` with the result or `failed` with the error — a refusal from the platform's own rules (`ActionPlatformError`) fails at once, anything else retries up to three times with a 30 s · 2ⁿ backoff. Payloads never hold credentials; the worker reads them from `source_host` when it runs, exactly as the gate does for inline calls ([API](use_api.md#jobs)).
+The queue claims with `SELECT … FOR UPDATE SKIP LOCKED` on Postgres and a compare-and-set update elsewhere, so several workers share one queue without taking the same row. `action-platform-api worker [--once] [--interval]` loops: reap jobs whose worker vanished (running for over thirty minutes), claim, run, `done` with the result or `failed` with the error — a refusal from the platform's own rules fails at once, anything else retries up to three times with a 30 s · 2ⁿ backoff. Payloads never hold credentials; the worker reads them from `source_host` when it runs, exactly as the gate does for inline calls ([API](use_api.md#jobs)).
 
-Models live in `apps/api/app/core/db/models/` (SQLAlchemy 2, one module per context — auth, organization, projects, configuration, activity, integrations, jobs —, one class per table, parents reachable from children); `Database` in `database.py` owns the engine, `migrate()` and a `session()` context manager that commits on success and rolls back on any exception. Ids are 36-character strings, so the same rows are valid on every dialect and the ids the web app minted stay as they are.
+One model per table, grouped by context (auth, organization, projects, configuration, activity, integrations, jobs); every request runs in one session that commits on success and rolls back on any exception. Ids are 36-character strings, valid on every dialect.
 
 ## What still lives in the web app
 

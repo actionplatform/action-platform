@@ -35,7 +35,6 @@ postgres = "aws-rds"
 
 `LAST_VERSION` next to it holds the current version; `CHANGELOG.md` is generated.
 
-Read and edited by `action_platform/core/manifest`.
 
 ## On the hosted platform
 
