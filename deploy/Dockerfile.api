@@ -1,8 +1,28 @@
+FROM golang:1.23-bookworm AS go
+FROM node:22-bookworm-slim AS node
+FROM ruby:3.3-slim-bookworm AS ruby
+
 FROM python:3.12-slim
 
 RUN apt-get update -qq \
- && apt-get install -y --no-install-recommends git curl ca-certificates openssh-client make \
+ && apt-get install -y --no-install-recommends git curl ca-certificates openssh-client make zip \
+      openjdk-21-jdk-headless maven libyaml-0-2 libgmp10 \
  && rm -rf /var/lib/apt/lists/*
+
+COPY --from=go /usr/local/go /usr/local/go
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=ruby /usr/local/bin/ruby /usr/local/bin/gem /usr/local/bin/bundle /usr/local/bin/bundler /usr/local/bin/
+COPY --from=ruby /usr/local/lib/ruby /usr/local/lib/ruby
+COPY --from=ruby /usr/local/lib/libruby.so* /usr/local/lib/
+COPY --from=ruby /usr/local/bundle /usr/local/bundle
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+ && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+ && ldconfig
+
+ENV PATH=/usr/local/go/bin:/root/go/bin:$PATH \
+    GEM_HOME=/usr/local/bundle \
+    BUNDLE_SILENCE_ROOT_WARNING=1
 
 WORKDIR /src
 COPY pyproject.toml poetry.lock README.md LICENSE ./
