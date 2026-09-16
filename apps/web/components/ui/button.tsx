@@ -11,6 +11,7 @@ const button = cva(
         outline: "border border-border bg-transparent text-foreground hover:border-border-hover hover:bg-surface-hover",
         ghost: "text-secondary hover:bg-surface-hover hover:text-foreground",
         destructive: "border border-border text-foreground hover:border-foreground hover:bg-surface-hover",
+        danger: "bg-[#dc2626] text-white hover:bg-[#b91c1c] focus-visible:ring-[#f87171]",
       },
       size: { sm: "h-8 px-3", md: "h-9 px-4", lg: "h-[42px] px-[18px] rounded-[7px]", icon: "h-8 w-8" },
     },
