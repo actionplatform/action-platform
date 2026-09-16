@@ -1,0 +1,46 @@
+{
+  "title": "Documentation",
+  "source": "https://github.com/actionplatform/action-platform/tree/master/docs",
+  "groups": [
+    {
+      "title": "Start",
+      "pages": [
+        { "slug": "start_getting_started", "title": "Getting started" },
+        { "slug": "start_self_hosting", "title": "Self-hosting" },
+        { "slug": "start_troubleshooting", "title": "Troubleshooting" }
+      ]
+    },
+    {
+      "title": "Use",
+      "pages": [
+        { "slug": "use_web", "title": "Web" },
+        { "slug": "use_cli", "title": "CLI" },
+        { "slug": "use_mcp", "title": "MCP" },
+        { "slug": "use_api", "title": "API" },
+        { "slug": "use_plugins", "title": "Plugins" }
+      ]
+    },
+    {
+      "title": "Concept",
+      "pages": [
+        { "slug": "concept_access_control", "title": "Access control" },
+        { "slug": "concept_git_flow", "title": "Git-flow" },
+        { "slug": "concept_manifest", "title": "Manifest" },
+        { "slug": "concept_templates", "title": "Templates" },
+        { "slug": "concept_releases", "title": "Releases" },
+        { "slug": "concept_deployments", "title": "Deployments" },
+        { "slug": "concept_identity", "title": "Identity" },
+        { "slug": "concept_observability", "title": "Observability" },
+        { "slug": "concept_database", "title": "Database" }
+      ]
+    },
+    {
+      "title": "Contribute",
+      "pages": [
+        { "slug": "contribute_architecture", "title": "Architecture" },
+        { "slug": "contribute_development", "title": "Development" },
+        { "slug": "contribute_plugins", "title": "Writing a plugin" }
+      ]
+    }
+  ]
+}
