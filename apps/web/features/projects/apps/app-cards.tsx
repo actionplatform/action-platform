@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import type { AppRow } from "@/lib/api";
 import { RemoveButton } from "./remove-button";
 
-type Item = { id: string; name: string; registryId: string };
+type Item = { id: string; name: string; registryId: string; tearing?: boolean };
 
 export function AppCards({ projectId, apps, rows, manage }: { projectId: string; apps: Item[]; rows: Map<string, AppRow>; manage: boolean }) {
   if (apps.length === 0) {
@@ -22,11 +22,12 @@ export function AppCards({ projectId, apps, rows, manage }: { projectId: string;
                 <Link href={`/projects/${projectId}/apps/${a.id}`} className="block truncate text-[16px] font-semibold hover:underline underline-offset-4">{a.name}</Link>
                 <div className="mt-1 flex min-w-0 items-center gap-2">
                   <span className="truncate font-mono text-xs text-muted-foreground">{r?.url ? r.url.replace(/^https?:\/\//, "") : "no remote"}</span>
+                  {a.tearing && <Badge tone="warning">tearing down</Badge>}
                   {r && !r.exists && <Badge tone="bad">missing</Badge>}
                   {!r && <Badge>not on API</Badge>}
                 </div>
               </div>
-              {manage && <RemoveButton projectId={projectId} appId={a.id} name={a.name} repositoryUrl={r?.url || null} />}
+              {manage && !a.tearing && <RemoveButton projectId={projectId} appId={a.id} name={a.name} repositoryUrl={r?.url || null} />}
             </div>
             <dl className="mt-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
               <Meta icon={<Layers className="size-3.5" strokeWidth={1.75} />} label="Type" value={r?.type ?? "—"} />

@@ -14,7 +14,8 @@ import { appsOf, projectById } from "@/lib/projects";
 import { requireOrg } from "@/lib/session";
 import { AddForm } from "@/features/projects";
 import { AppCards } from "@/features/projects";
-import { RemoveButton } from "@/features/projects";
+import { LiveList, RemoveButton } from "@/features/projects";
+import { v1 } from "@/lib/v1";
 
 export default async function ProjectPage({ params }: { params: Promise<{ project: string }> }) {
   const { project: projectId } = await params;
@@ -24,6 +25,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
   if (!project) notFound();
 
   const apps = await appsOf(project.id);
+  const tearing = new Set(
+    (await Promise.all(apps.map(async (a) => ((await v1.jobs(a.registryId, "destroy").catch(() => [])).some((j) => j.status === "queued" || j.status === "running") ? a.id : null)))).filter((id): id is string => id !== null),
+  );
 
   let rows: Map<string, AppRow>;
   let catalog: { types: { id: string; label: string; description: string }[]; stacks: { id: string; label: string }[] };
@@ -44,9 +48,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
       />
 
       {manage && <div className="mb-6"><AddForm projectId={project.id} types={catalog.types} stacks={catalog.stacks} /></div>}
+      <LiveList active={tearing.size > 0} />
 
       <div className="md:hidden">
-        <AppCards projectId={project.id} apps={apps.map((a) => ({ id: a.id, name: a.name, registryId: a.registryId }))} rows={rows} manage={manage} />
+        <AppCards projectId={project.id} apps={apps.map((a) => ({ id: a.id, name: a.name, registryId: a.registryId, tearing: tearing.has(a.id) }))} rows={rows} manage={manage} />
       </div>
 
       <Card className="hidden md:block">
@@ -64,6 +69,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
                 <tr key={a.id} className="hover:bg-surface-hover">
                   <Td>
                     <Link href={`/projects/${project.id}/apps/${a.id}`} className="font-medium hover:underline underline-offset-4">{a.name}</Link>
+                    {tearing.has(a.id) && <Badge tone="warning" className="ml-2">tearing down</Badge>}
                     {r && !r.exists && <Badge tone="bad" className="ml-2">missing</Badge>}
                     {!r && <Badge className="ml-2">not on API</Badge>}
                   </Td>
@@ -72,7 +78,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
                   <Td><code className="font-mono text-xs">{r?.branch ?? "—"}</code></Td>
                   <Td>{r?.last_version ?? "—"}</Td>
                   <Td className="text-muted-foreground font-mono text-xs">{r?.url || "no remote"}</Td>
-                  <Td className="text-right">{manage && <RemoveButton projectId={project.id} appId={a.id} name={a.name} repositoryUrl={r?.url || null} />}</Td>
+                  <Td className="text-right">{manage && !tearing.has(a.id) && <RemoveButton projectId={project.id} appId={a.id} name={a.name} repositoryUrl={r?.url || null} />}</Td>
                 </tr>
               );
             })}
