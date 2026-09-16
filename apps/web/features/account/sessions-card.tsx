@@ -1,6 +1,7 @@
 "use client";
 
-import { Monitor, Smartphone, Trash2 } from "lucide-react";
+import { LogOut, Monitor, Smartphone, Terminal, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -20,27 +21,31 @@ export function SessionsCard({ sessions, now }: { sessions: Row[]; now: number }
 
   return (
     <Card className="rounded-[11px]">
-      <header className="border-b border-border px-6 py-5">
+      <header className="border-b border-border px-4 py-4 md:px-6 md:py-5">
         <h2 className="text-[15px] font-semibold">Browser sessions</h2>
-        <p className="mt-1 text-[13px] text-secondary">Where this account is signed in. Signing out a session logs that browser out immediately.</p>
+        <p className="mt-1 text-[13px] text-secondary md:hidden">Devices currently signed in.</p>
+        <p className="mt-1 hidden text-[13px] text-secondary md:block">Where this account is signed in. Signing out a session logs that browser out immediately.</p>
       </header>
       <ul className="divide-y divide-border-subtle">
         {sessions.map((s) => {
           const agent = describeAgent(s.userAgent);
           const mobile = agent.os === "iOS" || agent.os === "Android";
+          const cli = /cli|curl|python|node|go-http|action-platform/i.test(s.userAgent ?? "") && !agent.os;
+          const Icon = cli ? Terminal : mobile ? Smartphone : Monitor;
           return (
-            <li key={s.id} className="flex items-center gap-3 px-6 py-4">
+            <li key={s.id} className="flex items-center gap-3 px-4 py-3 md:px-6 md:py-4">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-[8px] border border-border bg-background">
-                {mobile ? <Smartphone className="size-4 text-secondary" strokeWidth={1.75} /> : <Monitor className="size-4 text-secondary" strokeWidth={1.75} />}
+                <Icon className="size-4 text-secondary" strokeWidth={1.75} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="truncate text-sm font-medium">{agent.browser}{agent.os ? ` on ${agent.os}` : ""}</span>
                   {s.current && <Badge tone="inverse" className="h-5 px-2 text-[11px]">This browser</Badge>}
                 </div>
-                <div className="mt-0.5 truncate text-[13px] text-secondary">{s.ipAddress ?? "unknown address"} · active {relativeTime(s.updatedAt, now)} · signed in {relativeTime(s.createdAt, now)}</div>
+                <div className="mt-0.5 line-clamp-2 text-[13px] text-secondary md:truncate" suppressHydrationWarning>{s.ipAddress ?? "Unknown address"} · Active {relativeTime(s.updatedAt, now)}<span className="hidden md:inline"> · signed in {relativeTime(s.createdAt, now)}</span></div>
               </div>
-              {!s.current && <button type="button" aria-label="Sign out this session" onClick={() => setRevoking(s)} className="flex size-11 shrink-0 items-center justify-center rounded-[7px] text-secondary transition-colors hover:bg-surface-hover hover:text-foreground sm:size-8"><Trash2 className="size-4" strokeWidth={1.75} /></button>}
+              {!s.current && <Button variant="outline" className="min-h-11 shrink-0 md:hidden" onClick={() => setRevoking(s)}><LogOut className="size-4" strokeWidth={1.75} /> Sign out</Button>}
+              {!s.current && <button type="button" aria-label="Sign out this session" onClick={() => setRevoking(s)} className="hidden size-11 shrink-0 items-center justify-center rounded-[7px] md:flex text-secondary transition-colors hover:bg-surface-hover hover:text-foreground sm:size-8"><Trash2 className="size-4" strokeWidth={1.75} /></button>}
             </li>
           );
         })}

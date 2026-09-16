@@ -1,6 +1,7 @@
 "use client";
 
 import { Bot, KeyRound, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -20,9 +21,10 @@ export function TokensCard({ tokens, now, scopes }: { tokens: UserToken[]; now: 
 
   return (
     <Card className="rounded-[11px]">
-      <header className="border-b border-border px-6 py-5">
-        <h2 className="text-[15px] font-semibold">API tokens and the apps using them</h2>
-        <p className="mt-1 text-[13px] text-secondary">Bearer tokens issued by <code className="font-mono">action-platform login</code>. Each token shows which programs have used it — Claude Code, Codex, Cursor, the CLI — and carries a scope on top of your role. Revoke what you no longer recognise.</p>
+      <header className="border-b border-border px-4 py-4 md:px-6 md:py-5">
+        <h2 className="text-[15px] font-semibold">API tokens<span className="hidden md:inline"> and the apps using them</span></h2>
+        <p className="mt-1 text-[13px] text-secondary md:hidden">Tokens used by CLI and connected apps.</p>
+        <p className="mt-1 hidden text-[13px] text-secondary md:block">Bearer tokens issued by <code className="font-mono">action-platform login</code>. Each token shows which programs have used it — Claude Code, Codex, Cursor, the CLI — and carries a scope on top of your role. Revoke what you no longer recognise.</p>
       </header>
       {tokens.length === 0 ? (
         <div className="flex flex-col items-center px-6 py-10 text-center">
@@ -33,7 +35,7 @@ export function TokensCard({ tokens, now, scopes }: { tokens: UserToken[]; now: 
       ) : (
         <ul className="divide-y divide-border-subtle">
           {tokens.map((t) => (
-            <li key={t.id} className="flex flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:gap-4">
+            <li key={t.id} className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:gap-4 md:px-6">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="truncate text-sm font-medium">{t.name}</span>
@@ -50,9 +52,14 @@ export function TokensCard({ tokens, now, scopes }: { tokens: UserToken[]; now: 
                     {t.clients.map((c) => <span key={c.name} className="inline-flex h-6 items-center gap-1.5 rounded-[6px] border border-border bg-background px-2 text-[12px]"><Bot className="size-3.5 text-secondary" strokeWidth={1.75} aria-hidden="true" />{c.product}{c.version && <span className="font-mono text-[11px] text-muted-foreground">{c.version}</span>}<span className="text-muted-foreground">· {relativeTime(c.lastSeenAt, now)}</span></span>)}
                   </div>
                 )}
-                <div className="mt-0.5 text-[13px] text-secondary">Created {relativeTime(t.createdAt, now)} · {t.lastUsedAt ? `last used ${relativeTime(t.lastUsedAt, now)}` : "never used"} · expires {relativeTime(t.expiresAt, now)}</div>
+                <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[13px] text-secondary" suppressHydrationWarning>
+                  <span>Created {relativeTime(t.createdAt, now)}</span><span aria-hidden="true">·</span>
+                  <span>{t.lastUsedAt ? `last used ${relativeTime(t.lastUsedAt, now)}` : "never used"}</span><span aria-hidden="true">·</span>
+                  {new Date(t.expiresAt).getTime() <= now ? <Badge tone="danger" className="h-5 px-1.5 text-[11px]">Expired</Badge> : <span>expires {relativeTime(t.expiresAt, now)}</span>}
+                </div>
               </div>
-              <button type="button" aria-label={`Revoke ${t.name}`} onClick={() => setRevoking(t)} className="flex size-11 shrink-0 items-center justify-center self-end rounded-[7px] text-secondary transition-colors hover:bg-surface-hover hover:text-foreground sm:size-8 sm:self-auto"><Trash2 className="size-4" strokeWidth={1.75} /></button>
+              <Button variant="destructive" className="min-h-11 w-full md:hidden" onClick={() => setRevoking(t)}><Trash2 className="size-4" strokeWidth={1.75} /> Revoke</Button>
+              <button type="button" aria-label={`Revoke ${t.name}`} onClick={() => setRevoking(t)} className="hidden size-11 shrink-0 items-center justify-center self-end rounded-[7px] md:flex text-secondary transition-colors hover:bg-surface-hover hover:text-foreground sm:size-8 sm:self-auto"><Trash2 className="size-4" strokeWidth={1.75} /></button>
             </li>
           ))}
         </ul>
