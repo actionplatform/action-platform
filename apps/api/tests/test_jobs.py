@@ -319,3 +319,42 @@ class RegistryAdoptionTest(GateCase):
 
         with self.app.state.db.session() as s:
             self.assertIsNone(s.get(App, "a1"))
+
+    def test_deleting_a_project_with_cloud_cleanup_tears_every_app_down_then_removes_it(
+        self,
+    ):
+        from unittest import mock
+
+        from app.core.db.models import App, Project
+        from app.services.deployments import DeploymentsService
+        from app.services.jobs.worker import Worker
+
+        registry_id = self.register()
+        res = self.client.delete(
+            "/api/v1/projects/p1", params={"cloud": 1}, headers=self.h()
+        )
+
+        self.assertEqual(res.status_code, 202, res.text)
+        torn: list[str] = []
+
+        def destroy(self_, id, stages=("dev", "prod")):
+            torn.append(id)
+
+        with mock.patch.object(DeploymentsService, "destroy", destroy):
+            self.assertEqual(
+                Worker(self.app.state.db, self.app.state.secrets, "test").run(
+                    once=True
+                ),
+                1,
+            )
+
+        done = self.client.get(
+            f"/api/v1/jobs/{res.json()['job']}", headers=self.h()
+        ).json()
+
+        self.assertEqual(done["status"], "done", done)
+        self.assertEqual(torn, [registry_id])
+
+        with self.app.state.db.session() as s:
+            self.assertIsNone(s.get(App, "a1"))
+            self.assertIsNone(s.get(Project, "p1"))
