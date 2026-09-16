@@ -4,7 +4,7 @@ Every component reports to [Sentry](https://sentry.io) when given a DSN, and sta
 
 | Component | Variable | Release tag | Extra |
 |---|---|---|---|
-| API | `AP_SENTRY_DSN` | `api@<version>` (the api component version, `apps/api/LAST_VERSION`) | installed with `pip install ./apps/api` |
+| API | `AP_SENTRY_DSN` | `api@<version>` (the api component version, `apps/api/app/LAST_VERSION`) | installed with `pip install ./apps/api` |
 | CLI | `AP_SENTRY_DSN` | `cli@<version>` | opt-in: `pip install "action-platform[sentry]"` and export the DSN |
 | Web | `SENTRY_DSN` | `web@<version>` | `@sentry/nextjs`; browser, server and edge |
 

@@ -79,7 +79,7 @@ Every operation starts from a `Repository` — one clone, every git command as a
 | `TemplateStore()` | `official()` and `checkout(source)` clones of template repositories | matrix loading |
 | `Version` / `VersionFiles` | semver value object; the files a project declares its version in | releaser |
 
-Rules that need no repository — branch names, commit messages, merge targets — are the `Rules` object in `flow/gitflow.py`, mirrored by `ci-scripts/gitflow.sh` for CI. `ActionPlatform` is the facade the CLI, MCP and API call; it exposes `releaser`, `deployer` and `flow` for one project.
+Rules that need no repository — branch names, commit messages, merge targets — are the `Rules` object in `flow/gitflow.py`, mirrored by `gitflow.sh` in the [ci-scripts](https://github.com/actionplatform/ci-scripts) repository for CI. `ActionPlatform` is the facade the CLI, MCP and API call; it exposes `releaser`, `deployer` and `flow` for one project.
 
 Every process is a class in a slot of `core/wiring.py` (`gitflow_rules`, `gitflow`, `releaser`, `deployer`, `installer`, `scaffolder`); callers write `wired.releaser(config, repo)` and a plugin may put a subclass in the slot. Named providers — deploy targets, CI runners, source hosts, release strategies, changelog renderers — come from entry-point groups (`core/module.py`) and platform.toml picks one by name; the core's own (`semver`, `conventional`) live in `core/release/strategies.py`. `plugins/` discovers the `action_platform.plugins` group, keeps the on/off state, registers tools and commands and calls the lifecycle hooks — see [plugins](use_plugins.md) and [writing a plugin](contribute_plugins.md).
 
