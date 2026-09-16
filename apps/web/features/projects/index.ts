@@ -1,7 +1,7 @@
 export { AppHeader } from "./app-header";
 export { AppErrorState } from "./app-states";
 export { CommitsCard } from "./commits-card";
-export { DeleteAppDialog } from "./delete-app-dialog";
+export { DangerIcon, DeleteAppDialog } from "./delete-app-dialog";
 export { DeleteRepositoryOption } from "./delete-repository-option";
 export { HealthCard } from "./health-card";
 export type { AppView } from "./model";
@@ -12,6 +12,7 @@ export { Wizard } from "./wizard/wizard";
 export { AddForm } from "./apps/add-form";
 export { AppCards } from "./apps/app-cards";
 export { RemoveButton } from "./apps/remove-button";
+export { LiveList } from "./apps/live-list";
 export { NewProjectDialog, NewProjectForm } from "./list/new-project-form";
 export { ProjectsView } from "./list/projects-view";
 export { ProjectCardSkeleton } from "./list/project-card-skeleton";
