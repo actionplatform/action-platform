@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.20.18 — 2026-09-15
+
+### Features
+- **api:** DELETE an app with ?cloud=true queues a destroy job — every stage's stack down through the target, then the app off the platform
+
 ## v0.20.17 — 2026-09-15
 
 ## v0.20.16 — 2026-09-15
