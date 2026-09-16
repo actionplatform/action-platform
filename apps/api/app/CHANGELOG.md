@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.20.20 — 2026-09-15
+
+### Features
+- **api:** one deploy at a time per environment — a second deploy to a stage with one queued or running is refused with 409
+- **api:** DELETE a project with ?cloud=true queues destroy_project — every app's stacks down, then the project off; project rows say tearing_down
+
+### Chores
+- merge master
+
 ## v0.20.19 — 2026-09-15
 
 ## v0.20.18 — 2026-09-15
