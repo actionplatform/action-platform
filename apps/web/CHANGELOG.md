@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.21 — 2026-09-15
+
+### Bug Fixes
+- **web:** a deleted app leaves the project's list at once — layout revalidated and the router refreshed
+
 ## v0.18.20 — 2026-09-15
 
 ### Features
