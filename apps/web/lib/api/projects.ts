@@ -3,8 +3,8 @@ import { client, type Schemas, unwrap } from "@/lib/api";
 export const projects = {
   projects: async (organizationId: string | null = null) => unwrap(await client.GET("/api/v1/projects", { headers: organizationId ? { "X-Organization": organizationId } : {} })),
   createProject: async (name: string, description = "") => unwrap(await client.POST("/api/v1/projects", { body: { name, description } })),
-  deleteProject: async (id: string, repositories = false) =>
-    unwrap(await client.DELETE("/api/v1/projects/{project_id}", { params: { path: { project_id: id }, query: { repositories } } })),
+  deleteProject: async (id: string, repositories = false, cloud = false) =>
+    unwrap(await client.DELETE("/api/v1/projects/{project_id}", { params: { path: { project_id: id }, query: { repositories, cloud } } })),
   assignProjectTeam: async (projectId: string, teamId: string | null) => unwrap(await client.POST("/api/v1/projects/team", { body: { project_id: projectId, team_id: teamId } })),
   addApp: async (projectId: string, url: string, install: { type: string; language?: string | null; ci?: string | null } | null) =>
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps", { params: { path: { project_id: projectId } }, body: { url, install } })),

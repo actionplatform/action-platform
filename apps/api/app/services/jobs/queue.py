@@ -87,6 +87,21 @@ class JobQueue:
 
             return list(s.scalars(query))
 
+    def projects_being_destroyed(self, organization_id: str) -> set[str]:
+        """The projects of the organization with a `destroy_project` job still queued or running."""
+        with self.database.session() as s:
+            rows = s.scalars(
+                select(Job).where(
+                    Job.kind == "destroy_project",
+                    Job.organization_id == organization_id,
+                    Job.status.in_(LIVE),
+                )
+            )
+
+            return {
+                str(json.loads(j.payload).get("project_id") or "") for j in rows
+            } - {""}
+
     def claim(self, worker: str, kinds: Optional[list[str]] = None) -> Optional[Job]:
         moment = now()
 

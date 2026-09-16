@@ -86,6 +86,7 @@ class ProjectRow(BaseModel):
     organization: Optional[Named] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    tearing_down: bool = False
 
 
 class CreateProjectRequest(BaseModel):
