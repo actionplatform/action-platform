@@ -116,6 +116,29 @@ class Dispatcher:
 
         return job.id
 
+    def destroy_project(
+        self, organization: Organization, project: Any, caller: Caller, repository: bool
+    ) -> str:
+        """Every app's stacks down on the worker, then the project off the platform."""
+        job = self.queue.enqueue(
+            "destroy_project",
+            {
+                "path": f"projects/{project.id}/destroy",
+                "method": "POST",
+                "body": {"repository": repository},
+                "registry_id": "",
+                "organization_id": organization.id,
+                "project_id": project.id,
+                "user_id": caller.user.id,
+                "manages": caller.allows(organization.id, "org.manage")[0]
+                and not (caller.project_id or caller.app_id),
+            },
+            organization_id=organization.id,
+            dedupe_key=f"destroy_project:{project.id}",
+        )
+
+        return job.id
+
     def import_later(
         self,
         organization: Organization,
