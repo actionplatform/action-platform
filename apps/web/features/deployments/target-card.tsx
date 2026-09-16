@@ -33,8 +33,8 @@ export function TargetCard({ view, base }: { view: AppView; base: string }) {
         {target && <Row icon={Package} label="App" value={app} mono />}
         {role && <Row icon={Package} label="Role" value={role} mono />}
       </div>
-      <div className="mt-auto flex items-center gap-1.5 px-4 pb-4 pt-2 text-[13px] text-secondary">
-        No cloud key on the platform <Hint text="Deploys run on the platform's worker with a token signed for this app; the platform stores no cloud key." />
+      <div className="mt-auto flex min-h-11 w-full items-center justify-between gap-2 px-4 pb-4 pt-2 text-[13px] text-secondary">
+        <span>No cloud key on the platform</span> <Hint text="Deploys run on the platform's worker with a token signed for this app; the platform stores no cloud key." />
       </div>
     </Panel>
   );
