@@ -2,7 +2,7 @@
 
 import { createPortal } from "react-dom";
 import { Loader2, X } from "lucide-react";
-import { type ReactNode, useEffect, useId, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { Button } from "./button";
 import { Field, Input } from "./input";
 
@@ -27,14 +27,53 @@ export function Dialog({
 }) {
   const id = useId();
   const descriptionId = useId();
+  const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    const opener = document.activeElement as HTMLElement | null;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusable = () =>
+      Array.from(
+        box.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+    const wanted = box.current?.querySelector<HTMLElement>("[autofocus]");
+    const first = focusable().find(
+      (el) => el.getAttribute("aria-label") !== "Close modal",
+    );
+    (wanted ?? first ?? box.current)?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !box.current) return;
+      const items = focusable();
+      if (items.length === 0) {
+        e.preventDefault();
+        box.current.focus();
+        return;
+      }
+      const head = items[0];
+      const tail = items[items.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === head || !box.current.contains(active))) {
+        e.preventDefault();
+        tail.focus();
+      } else if (!e.shiftKey && active === tail) {
+        e.preventDefault();
+        head.focus();
+      }
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previous;
+      opener?.focus?.();
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -47,17 +86,19 @@ export function Dialog({
       }}
     >
       <div
+        ref={box}
+        tabIndex={-1}
         role="dialog"
-        aria-modal
+        aria-modal="true"
         aria-labelledby={id}
         aria-describedby={description ? descriptionId : undefined}
-        className={`max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-lg border border-border bg-surface ${className ?? ""}`}
+        className={`flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md flex-col rounded-[14px] border border-border bg-surface focus:outline-none sm:w-full sm:rounded-lg ${className ?? ""}`}
       >
-        <div className="flex items-start justify-between gap-4 px-4 pt-4">
+        <div className="flex shrink-0 items-start justify-between gap-3 px-6 pt-5 sm:px-4 sm:pt-4">
           <div className="flex min-w-0 items-start gap-3">
             {icon}
-            <div className="min-w-0">
-              <h2 id={id} className="text-base font-semibold">
+            <div className="min-w-0 pt-2 sm:pt-0">
+              <h2 id={id} className="text-base font-semibold leading-6">
                 {title}
               </h2>
               {description && (
@@ -70,15 +111,19 @@ export function Dialog({
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 rounded-sm text-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground"
-            aria-label="Close"
+            className="-mr-3 -mt-2 flex size-11 shrink-0 items-center justify-center rounded-md text-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground sm:-mr-1 sm:-mt-1 sm:size-8"
+            aria-label="Close modal"
           >
             <X className="size-4" />
           </button>
         </div>
-        {children && <div className="px-4 py-4">{children}</div>}
+        {children && (
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 sm:px-4 sm:py-4">
+            {children}
+          </div>
+        )}
         {footer && (
-          <div className="flex flex-wrap justify-end gap-2 border-t border-border px-4 py-3">
+          <div className="grid shrink-0 grid-cols-1 gap-2 border-t border-border px-6 py-4 min-[350px]:grid-cols-2 sm:flex sm:flex-wrap sm:justify-end sm:px-4 sm:py-3">
             {footer}
           </div>
         )}
@@ -132,7 +177,12 @@ export function ConfirmDialog({
       className={className}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} disabled={pending}>
+          <Button
+            variant="outline"
+            className="min-h-12 w-full sm:h-9 sm:min-h-0 sm:w-auto sm:border-0 sm:bg-transparent sm:text-secondary sm:hover:bg-surface-hover sm:hover:text-foreground"
+            onClick={onClose}
+            disabled={pending}
+          >
             {cancelLabel}
           </Button>
           <Button
@@ -141,6 +191,7 @@ export function ConfirmDialog({
             variant={
               danger ? (confirmIcon ? "danger" : "destructive") : "default"
             }
+            className="min-h-12 w-full sm:h-9 sm:min-h-0 sm:w-auto"
             disabled={blocked}
             aria-busy={pending || undefined}
           >

@@ -1,6 +1,7 @@
 "use client";
 
-import { BookMarked, ExternalLink, Plus, Trash2 } from "lucide-react";
+import { BookMarked, ChevronDown, ExternalLink, Plus, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,14 +21,28 @@ export function TemplateSources({ sources, canManage }: { sources: SourceRow[]; 
   const [removing, setRemoving] = useState<SourceRow | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const [expanded, setExpanded] = useState(false);
+  const official = sources.find((s) => s.official) ?? sources[0];
+  const summary = sources.length === 1 && official ? `${official.projects} projects` : `${sources.length} repositories`;
 
   return (
-    <section className="mb-6 overflow-hidden rounded-[9px] border border-border bg-surface">
-      <header className="flex min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-4 py-2">
+    <section className="mb-4 overflow-hidden rounded-[9px] border border-border bg-surface md:mb-6">
+      <header className="hidden min-h-12 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-4 py-2 md:flex">
         <h2 className="flex items-center gap-2 text-sm font-semibold"><BookMarked className="size-4 text-secondary" strokeWidth={1.75} /> Template repositories</h2>
         {canManage && <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus className="size-3.5" strokeWidth={2} /> Add repository</Button>}
       </header>
-      <ul className="divide-y divide-border-subtle">
+      <div className="flex items-center gap-1 pl-4 pr-1 md:hidden">
+        <button type="button" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)} className="flex min-h-12 min-w-0 flex-1 items-center gap-3 py-2 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground rounded-sm">
+          <BookMarked className="size-4 shrink-0 text-secondary" strokeWidth={1.75} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold">{sources.length === 1 && official?.official ? "Official repository" : "Template repositories"}</span>
+            <span className="block text-xs text-secondary">{summary}</span>
+          </span>
+          <ChevronDown className={cn("size-4 shrink-0 text-secondary transition-transform", expanded && "rotate-180")} strokeWidth={1.75} aria-hidden="true" />
+        </button>
+        {canManage && <button type="button" aria-label="Add repository" onClick={() => setAdding(true)} className="flex size-11 shrink-0 items-center justify-center rounded-md text-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground"><Plus className="size-4" strokeWidth={2} /></button>}
+      </div>
+      <ul className={cn("divide-y divide-border-subtle border-t border-border-subtle md:block md:border-t-0", expanded ? "block" : "hidden")}>
         {sources.map((s) => {
           const link = webUrl(s.url);
           return (

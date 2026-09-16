@@ -11,7 +11,7 @@ export function SubNav({ label, pages }: { label: string; pages: SubNavPage[] })
   const pathname = usePathname();
 
   return (
-    <nav aria-label={label} className="-mx-5 mb-5 overflow-x-auto border-b border-border px-5 md:hidden">
+    <nav aria-label={label} className="-mx-4 mb-5 overflow-x-auto border-b border-border px-4 md:hidden">
       <ul className="flex gap-1">
         {pages.map(({ href, label, exact }) => {
           const active = pageActive(pathname, href, exact);

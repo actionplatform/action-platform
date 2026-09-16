@@ -31,7 +31,38 @@ export function MembersPanel({ org, members, invitations, me, canManage, origin,
 
   return (
     <Panel>
-      <PanelHeader title="Members" aside={<div className="flex items-center gap-2"><Badge className="font-mono">{org.slug}</Badge>{canManage && <><Button size="sm" variant="outline" onClick={() => setInviting(true)}><Link2 className="size-3.5" strokeWidth={2} /> Invite</Button><Button size="sm" onClick={() => setAdding(true)}><UserPlus className="size-3.5" strokeWidth={2} /> Add member</Button></>}</div>} />
+      <PanelHeader
+        title="Members"
+        className="md:flex-nowrap"
+        aside={
+          <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
+            <Badge className="hidden font-mono md:inline-flex">{org.slug}</Badge>
+            <Badge className="md:hidden">{members.length} {members.length === 1 ? "member" : "members"}</Badge>
+            {canManage && (
+              <div className="grid w-full grid-cols-1 gap-2 min-[380px]:grid-cols-2 md:flex md:w-auto">
+                <Button variant="outline" className="min-h-11 w-full md:h-8 md:min-h-0 md:w-auto" onClick={() => setInviting(true)}><Link2 className="size-3.5" strokeWidth={2} /> Copy invite link</Button>
+                <Button className="min-h-11 w-full md:h-8 md:min-h-0 md:w-auto" onClick={() => setAdding(true)}><UserPlus className="size-3.5" strokeWidth={2} /> Add member</Button>
+              </div>
+            )}
+          </div>
+        }
+      />
+      <ul className="divide-y divide-border-subtle md:hidden">
+        {members.map((m) => (
+          <li key={m.id} className="flex items-center gap-3 px-4 py-3">
+            <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-background text-sm font-semibold">{initials(m.name || m.email)}</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-2"><span className="truncate text-sm font-medium">{m.name}</span>{m.userId === me && <Badge className="h-5 shrink-0 px-1.5 text-[11px]">You</Badge>}</div>
+              <div className="truncate text-xs text-secondary" title={m.email}>{m.email}</div>
+            </div>
+            {canManage ? (
+              <Select size="md" className="w-[7.5rem] shrink-0" aria-label={`Role of ${m.name}`} value={m.role === "member" ? "developer" : m.role} disabled={pending} options={ROLE_OPTIONS} onChange={(v) => start(async () => { setError(null); const r = await changeRole(m.id, v as Role); if (!r.ok) setError(r.error); })} />
+            ) : <Badge className="shrink-0">{m.role}</Badge>}
+            {canManage && <button type="button" title="Remove member" aria-label={`Remove ${m.name}`} disabled={pending || m.userId === me} onClick={() => setRemoving(m)} className="flex size-11 shrink-0 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground disabled:opacity-40"><UserMinus className="size-4" strokeWidth={1.75} /></button>}
+          </li>
+        ))}
+      </ul>
+      <div className="hidden md:block">
       <Table>
         <thead><tr><Th>member</Th><Th>email</Th><Th>role</Th>{canManage && <Th className="w-12"> </Th>}</tr></thead>
         <tbody>
@@ -49,6 +80,7 @@ export function MembersPanel({ org, members, invitations, me, canManage, origin,
           ))}
         </tbody>
       </Table>
+      </div>
       {invitations.length > 0 && (
         <PanelBody className="border-t border-border">
           <div className="mb-2 text-xs text-secondary">Pending invitations</div>
@@ -170,4 +202,10 @@ function AddMemberDialog({ open, onClose, org, roles }: { open: boolean; onClose
       </div>
     </Dialog>
   );
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/[\s@._-]+/).filter(Boolean);
+
+  return (parts.length > 1 ? parts[0][0] + parts[1][0] : (parts[0] ?? "?").slice(0, 2)).toUpperCase();
 }

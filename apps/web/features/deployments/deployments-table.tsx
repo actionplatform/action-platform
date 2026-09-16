@@ -125,15 +125,15 @@ export function DeploymentsTable({ jobs, registryId, canDeploy }: { jobs: JobRow
               const s = statusOf(job);
               const expanded = open === job.id;
               return (
-                <li key={job.id} className="px-4 py-3 text-sm">
-                  <div className="flex items-center gap-2">
+                <li key={job.id} className="min-w-0 px-4 py-3 text-sm">
+                  <button type="button" className="flex min-h-11 w-full min-w-0 items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground rounded-sm" aria-expanded={expanded} onClick={() => setOpen(expanded ? null : job.id)}>
                     <Badge tone={s.tone}>{s.label}</Badge>
                     <span className="font-mono">{job.stage ?? "dev"}</span>
-                    <span className="text-secondary">{job.dry_run ? "preflight" : "deploy"}</span>
-                    {versionOf(job) && <span className="font-mono text-secondary">{versionOf(job)}</span>}
-                    <Button size="icon" variant="ghost" className="ml-auto" aria-label={expanded ? "Collapse" : "Expand"} aria-expanded={expanded} onClick={() => setOpen(expanded ? null : job.id)}><ChevronDown className={cn("size-4 transition-transform", expanded && "rotate-180")} strokeWidth={1.75} /></Button>
-                  </div>
-                  <div className="mt-1 text-xs text-secondary" suppressHydrationWarning>{duration(job, now)} · {job.by ?? "—"} · {when(job.created_at)}</div>
+                    <span className="text-secondary">{job.kind === "destroy" ? "tear down" : job.dry_run ? "preflight" : "deploy"}</span>
+                    {versionOf(job) && <span className="truncate font-mono text-secondary">{versionOf(job)}</span>}
+                    <ChevronDown className={cn("ml-auto size-4 shrink-0 text-secondary transition-transform", expanded && "rotate-180")} strokeWidth={1.75} aria-hidden="true" />
+                  </button>
+                  <div className="mt-1 flex flex-wrap gap-x-1.5 text-xs text-secondary" suppressHydrationWarning><span>{duration(job, now)}</span><span aria-hidden="true">·</span><span className="min-w-0 break-all">{job.by ?? "—"}</span><span aria-hidden="true">·</span><span className="whitespace-nowrap">{when(job.created_at)}</span></div>
                   {expanded && <div className="mt-3"><RunDetails job={job} status={s} error={errorOf(job)} first={rowsOf(job)[0] ?? null} canDeploy={canDeploy} pending={pending} onDetails={() => setDetails(job)} onRedeploy={() => redeploy(job)} /></div>}
                 </li>
               );
@@ -164,29 +164,45 @@ export function DeploymentsTable({ jobs, registryId, canDeploy }: { jobs: JobRow
 
 function RunDetails({ job, status, error, first, canDeploy, pending, onDetails, onRedeploy }: { job: JobRow; status: Status; error: string | null; first: DeployResult | null; canDeploy: boolean; pending: boolean; onDetails: () => void; onRedeploy: () => void }) {
   const [logs, setLogs] = useState(false);
-  const summary = error ? summarize(error) : first ? `${first.target} · ${first.version}${first.url ? ` · ${first.url}` : ""}` : status.label;
+  const title = job.kind === "destroy" ? (error ? "Tear down failed" : status.label) : error ? (job.dry_run ? "Preflight failed" : "Deploy failed") : job.dry_run ? "Preflight passed" : status.label;
+  const redeployable = canDeploy && job.kind !== "destroy" && !!(job.version || first?.version);
   return (
-    <div className="space-y-3 rounded-md border border-border bg-surface p-3">
-      <div className="flex flex-wrap items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium">{job.kind === "destroy" ? (error ? "Tear down failed" : status.label) : error ? (job.dry_run ? "Preflight failed" : "Deploy failed") : job.dry_run ? "Preflight passed" : status.label}</div>
-          <div className="break-words text-[13px] text-secondary">{summary}</div>
-          {first?.url && !error && <a href={first.url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-[13px] text-secondary hover:text-foreground">{first.url} <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {error && <Button size="sm" variant="ghost" onClick={() => setLogs((v) => !v)} aria-expanded={logs}>{logs ? "Hide logs" : "View logs"}</Button>}
-          {error && <CopyButton text={error} label="Copy error" />}
-          <Button size="sm" variant="outline" onClick={onDetails}>View details</Button>
-          {canDeploy && job.kind !== "destroy" && (job.version || first?.version) && <Button size="sm" variant="outline" disabled={pending} onClick={onRedeploy}><RotateCcw className="size-3.5" strokeWidth={1.75} /> {job.dry_run ? "Run again" : "Redeploy"}</Button>}
-        </div>
+    <div className="min-w-0 space-y-3 rounded-md border border-border bg-surface p-3">
+      <div className="min-w-0">
+        <div className="text-sm font-medium">{title}</div>
+        {error ? (
+          <div className="break-words text-[13px] text-secondary">{summarize(error)}</div>
+        ) : first ? (
+          <div className="text-[13px]"><span className="font-medium">{first.target}</span>{first.version && <span className="text-secondary"> · {first.version}</span>}</div>
+        ) : null}
       </div>
+      {first?.url && !error && (
+        <div className="min-w-0">
+          <div className="mb-1 text-xs text-secondary">Endpoint</div>
+          <div className="flex min-w-0 items-center gap-1 rounded-md border border-border bg-background pl-3 pr-1">
+            <a href={first.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 py-2 font-mono text-[13px] leading-5 [overflow-wrap:anywhere] line-clamp-2 hover:text-foreground">{first.url}</a>
+            <CopyButton text={first.url} label="Copy endpoint" size="icon" />
+            <a href={first.url} target="_blank" rel="noopener noreferrer" aria-label="Open endpoint" className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-secondary hover:text-foreground md:size-8"><ExternalLink className="size-4" strokeWidth={1.75} /></a>
+          </div>
+        </div>
+      )}
+      {error && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Button size="sm" variant="ghost" onClick={() => setLogs((v) => !v)} aria-expanded={logs}>{logs ? "Hide logs" : "View logs"}</Button>
+          <CopyButton text={error} label="Copy error" />
+        </div>
+      )}
       {error && logs && <LogBox text={error} />}
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs sm:grid-cols-4">
+      <dl className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-x-4 gap-y-2 text-xs sm:grid-cols-4">
         <Item k="Run id" v={job.id.slice(0, 8)} />
         <Item k="Started" v={when(job.started_at ?? job.created_at)} />
         <Item k="Finished" v={when(job.finished_at)} />
         <Item k="Attempts" v={String(job.attempts)} />
       </dl>
+      <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2 md:flex md:justify-end">
+        <Button variant="outline" className="min-h-11 w-full md:h-8 md:min-h-0 md:w-auto" onClick={onDetails}>View details</Button>
+        {redeployable && <Button variant="outline" className="min-h-11 w-full md:h-8 md:min-h-0 md:w-auto" disabled={pending} onClick={onRedeploy}><RotateCcw className="size-3.5" strokeWidth={1.75} /> {job.dry_run ? "Run again" : "Redeploy"}</Button>}
+      </div>
     </div>
   );
 }

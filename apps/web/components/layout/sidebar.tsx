@@ -130,7 +130,7 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
     <>
       <aside className="hidden md:block fixed inset-y-0 left-0 w-[280px] border-r border-border bg-sidebar">{panel}</aside>
 
-      <header className="md:hidden sticky top-0 z-30 flex h-16 items-center gap-2.5 border-b border-border bg-sidebar pl-5 pr-2">
+      <header className="md:hidden sticky top-0 z-30 flex h-14 items-center gap-2.5 border-b border-border bg-sidebar pl-4 pr-1.5">
         <Logo className="size-5" />
         <span className="truncate text-[15px] font-semibold">action-platform</span>
         <button type="button" aria-label="Open navigation" aria-expanded={open} aria-controls="mobile-nav" onClick={() => setOpen(true)} className="ml-auto flex size-11 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">

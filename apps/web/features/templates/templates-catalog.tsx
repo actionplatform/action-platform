@@ -72,8 +72,9 @@ export function TemplatesCatalog({ matrix, targets, canCreate, sources }: { matr
     <>
       <PageHeader
         title="Templates"
-        badge={<Badge className="h-[26px] bg-surface px-2.5 text-xs font-medium">{items.length} {items.length === 1 ? "template" : "templates"}</Badge>}
+        badge={<Badge className="h-6 bg-surface px-2 text-xs font-medium md:h-[26px] md:px-2.5">{items.length}<span className="hidden md:inline">&nbsp;{items.length === 1 ? "template" : "templates"}</span></Badge>}
         description="Start faster with production-ready foundations for apps, libraries, documentation, plugins, and cloud services."
+        shortDescription="Production-ready foundations for your next project."
       />
 
       {sources}
