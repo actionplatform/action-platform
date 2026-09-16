@@ -98,9 +98,9 @@ export function DeploymentsTable({ jobs, registryId, canDeploy }: { jobs: JobRow
                       <td className="whitespace-nowrap py-2.5 pr-4 font-mono">{job.stage ?? "dev"}</td>
                       <td className="whitespace-nowrap py-2.5 pr-4 text-secondary">{job.dry_run ? "Preflight" : "Deploy"}</td>
                       <td className="whitespace-nowrap py-2.5 pr-4 font-mono">{versionOf(job) ?? "—"}</td>
-                      <td className="whitespace-nowrap py-2.5 pr-4 font-mono text-secondary">{duration(job, now)}</td>
+                      <td className="whitespace-nowrap py-2.5 pr-4 font-mono text-secondary" suppressHydrationWarning>{duration(job, now)}</td>
                       <td className="max-w-0 truncate py-2.5 pr-4 text-secondary" title={job.by ?? undefined}>{job.by ?? "—"}</td>
-                      <td className="whitespace-nowrap py-2.5 pr-4 text-secondary">{when(job.created_at)}</td>
+                      <td className="whitespace-nowrap py-2.5 pr-4 text-secondary" suppressHydrationWarning>{when(job.created_at)}</td>
                       <td className="py-1.5 pr-3">
                         <div className="flex items-center justify-end gap-0.5">
                           <Menu label="Run actions" items={actions(job)} trigger={({ toggle, open: menuOpen, id }) => <Button size="icon" variant="ghost" aria-label="More actions" aria-haspopup="menu" aria-expanded={menuOpen} aria-controls={id} onClick={toggle}><MoreHorizontal className="size-4" strokeWidth={1.75} /></Button>} />
@@ -133,7 +133,7 @@ export function DeploymentsTable({ jobs, registryId, canDeploy }: { jobs: JobRow
                     {versionOf(job) && <span className="font-mono text-secondary">{versionOf(job)}</span>}
                     <Button size="icon" variant="ghost" className="ml-auto" aria-label={expanded ? "Collapse" : "Expand"} aria-expanded={expanded} onClick={() => setOpen(expanded ? null : job.id)}><ChevronDown className={cn("size-4 transition-transform", expanded && "rotate-180")} strokeWidth={1.75} /></Button>
                   </div>
-                  <div className="mt-1 text-xs text-secondary">{duration(job, now)} · {job.by ?? "—"} · {when(job.created_at)}</div>
+                  <div className="mt-1 text-xs text-secondary" suppressHydrationWarning>{duration(job, now)} · {job.by ?? "—"} · {when(job.created_at)}</div>
                   {expanded && <div className="mt-3"><RunDetails job={job} status={s} error={errorOf(job)} first={rowsOf(job)[0] ?? null} canDeploy={canDeploy} pending={pending} onDetails={() => setDetails(job)} onRedeploy={() => redeploy(job)} /></div>}
                 </li>
               );
@@ -195,7 +195,7 @@ function Item({ k, v }: { k: string; v: string }) {
   return (
     <div className="min-w-0">
       <dt className="text-xs text-secondary">{k}</dt>
-      <dd className="truncate font-mono text-[13px]" title={v}>{v}</dd>
+      <dd className="truncate font-mono text-[13px]" title={v} suppressHydrationWarning>{v}</dd>
     </div>
   );
 }
