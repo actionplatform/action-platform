@@ -1,6 +1,6 @@
 """Apps inside a project: added from a repository or generated, their host, their imported activity."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
 from app.api.dependencies import (
     CallerDep,
@@ -8,6 +8,7 @@ from app.api.dependencies import (
     ProjectsDep,
     IntegrationsDep,
     ProjectsRepoDep,
+    QueueDep,
     allowed,
     app_of,
     imports_of,
@@ -15,6 +16,7 @@ from app.api.dependencies import (
 )
 from app.schemas import common
 from app.schemas import projects as schemas
+from app.services.access.dispatch import Dispatcher
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -71,14 +73,26 @@ def delete_app(
     caller: CallerDep,
     writes: ProjectsRepoDep,
     projects: ProjectsDep,
+    queue: QueueDep,
+    response: Response,
     repository: bool = False,
+    cloud: bool = False,
 ) -> common.Removed:
+    """`cloud` tears the deploy stacks down first, on the worker; the app leaves the platform when that job is done (202 with the job id)."""
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
     app = writes.app(project.id, app_id)
 
     if app is None:
         return common.Removed()
+
+    if cloud:
+        allowed(caller, org, "app.release", whole_org=False)
+        response.status_code = 202
+
+        return common.Removed(
+            job=Dispatcher(queue).destroy_app(org, app, caller, repository)
+        )
 
     removed, repositories = projects.delete_app(org, project, app, repository)
 

@@ -84,6 +84,27 @@ class Dispatcher:
 
         return job.id
 
+    def destroy_app(
+        self, organization: Organization, app: App, caller: Caller, repository: bool
+    ) -> str:
+        """Tear the app's stacks down on the worker, then remove the app — the deletion the web asks for with cloud cleanup."""
+        job = self.queue.enqueue(
+            "destroy",
+            self._payload(
+                organization,
+                app,
+                caller,
+                f"apps/{app.registry_id}/destroy",
+                "POST",
+                {"repository": repository},
+            ),
+            organization_id=organization.id,
+            app_id=app.id,
+            dedupe_key="destroy",
+        )
+
+        return job.id
+
     def import_later(
         self,
         organization: Organization,
