@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.25 — 2026-09-16
+
+### Features
+- **web:** Sessions on the phone — token cards with a Revoke button and an Expired badge, session rows with Sign out, the API card with copy inside the field
+
 ## v0.18.24 — 2026-09-16
 
 ### Features
