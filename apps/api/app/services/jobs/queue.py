@@ -87,6 +87,23 @@ class JobQueue:
 
             return list(s.scalars(query))
 
+    def live_deploy(self, app_id: str, stage: str) -> Optional[Job]:
+        """The deploy (or preflight) of the app still queued or running for `stage` — one at a time per environment."""
+        with self.database.session() as s:
+            for job in s.scalars(
+                select(Job).where(
+                    Job.kind == "deploy",
+                    Job.app_id == app_id,
+                    Job.status.in_(LIVE),
+                )
+            ):
+                body = json.loads(job.payload).get("body") or {}
+
+                if (body.get("stage") or "dev") == stage:
+                    return job
+
+            return None
+
     def claim(self, worker: str, kinds: Optional[list[str]] = None) -> Optional[Job]:
         moment = now()
 
