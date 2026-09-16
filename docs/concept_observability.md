@@ -4,7 +4,7 @@ Every component reports to [Sentry](https://sentry.io) when given a DSN, and sta
 
 | Component | Variable | Release tag | Extra |
 |---|---|---|---|
-| API | `AP_SENTRY_DSN` | `api@<version>` (the api component version, `apps/api/app/LAST_VERSION`) | installed with `pip install ./apps/api` |
+| API | `AP_SENTRY_DSN` | `api@<version>` (the api component version) | always installed |
 | CLI | `AP_SENTRY_DSN` | `cli@<version>` | opt-in: `pip install "action-platform[sentry]"` and export the DSN |
 | Web | `SENTRY_DSN` | `web@<version>` | `@sentry/nextjs`; browser, server and edge |
 
@@ -21,12 +21,8 @@ With the compose files and Dokploy, set `AP_SENTRY_DSN_API` and `AP_SENTRY_DSN_W
 
 The environment defaults to `production`; set `AP_SENTRY_ENVIRONMENT` / `SENTRY_ENVIRONMENT` to tell staging apart.
 
-## Web details
+## Web and CLI details
 
-The browser needs the DSN without a rebuild, so the root layout renders it as `<meta name="sentry">` from the runtime `SENTRY_DSN` and `instrumentation-client.ts` reads it there — no `NEXT_PUBLIC_*` baked into the image. `instrumentation.ts` forwards every server-side request error to Sentry after logging it as JSON, and `app/global-error.tsx` catches what escapes the root layout.
+The browser reads the DSN at runtime from the page, so no rebuild is needed to set or change it; server-side request errors are logged as JSON and forwarded. Source maps upload only when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT` are present at build time; the published images do not upload them.
 
-Source maps upload only when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT` are present at build time; the published images do not upload them.
-
-## CLI details
-
-The CLI initialises Sentry in `action_platform/main.py` through `action_platform/observability.py` when both the SDK and `AP_SENTRY_DSN` are present. Nothing is reported from a developer's machine unless they choose to export the DSN.
+The CLI reports only when the SDK is installed and `AP_SENTRY_DSN` is exported — never from a developer's machine by default.
