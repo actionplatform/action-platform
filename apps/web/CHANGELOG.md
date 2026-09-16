@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.26 — 2026-09-16
+
+### Features
+- **web:** Projects on the phone — shorter header, 48px Import and New project on one row, full-width search with clear and sort, compact cards with icon, name and slug on one row, metadata in two lines
+
 ## v0.18.25 — 2026-09-16
 
 ### Features
