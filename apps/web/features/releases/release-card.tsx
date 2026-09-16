@@ -2,6 +2,7 @@
 
 import {
   ArrowRight,
+  Check,
   FileText,
   GitBranch,
   Rocket,
@@ -400,7 +401,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
             ? `Create major release ${next}?`
             : `Create release ${next}?`
         }
-        confirmLabel={creating ? "Creating…" : `Create ${next}`}
+        confirmLabel={creating ? "Creating…" : "Create release"}
         pending={pending || creating}
         onConfirm={create}
         danger={level === "major"}
@@ -413,27 +414,56 @@ export function ReleaseCard({ view }: { view: AppView }) {
             </span>
           </div>
         )}
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+        <dl className="text-sm">
           <Item k="Repository" v={view.repository ?? "—"} />
+        </dl>
+        <dl className="mt-3 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-x-4 gap-y-3 border-t border-border-subtle pt-3 text-sm">
           <Item k="Branch" v={branch} />
-          <Item k="Name" v={name.trim() || `Release ${next}`} />
           <Item k="Tag" v={`v${next}`} />
+          <Item k="Name" v={name.trim() || `Release ${next}`} />
           <Item k="Kind" v={stable ? "stable" : "pre-release (rc)"} />
         </dl>
-        <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-secondary">
-          <li>
-            Bump LAST_VERSION and prepend CHANGELOG.md
-            {notes.trim() ? " with your notes" : ""}
-          </li>
-          <li>
-            Commit <span className="font-mono">chore(release): {next}</span> and
-            tag it
-          </li>
-          <li>
-            Push and publish the release on{" "}
-            {view.sourceKind === "github" ? "GitHub" : "the source host"}
-          </li>
-        </ul>
+        <div className="mt-4 border-t border-border-subtle pt-3">
+          <div className="text-xs text-secondary">This will</div>
+          <div className="mt-2 space-y-1.5 text-sm text-secondary">
+            <div className="flex items-start gap-2">
+              <Check
+                className="mt-0.5 size-4 shrink-0"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              <span className="min-w-0">
+                Bump LAST_VERSION and prepend CHANGELOG.md
+                {notes.trim() ? " with your notes" : ""}
+              </span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Check
+                className="mt-0.5 size-4 shrink-0"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              <span className="min-w-0">
+                Commit{" "}
+                <span className="font-mono text-foreground">
+                  chore(release): {next}
+                </span>{" "}
+                and tag it
+              </span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Check
+                className="mt-0.5 size-4 shrink-0"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              <span className="min-w-0">
+                Push and publish the release on{" "}
+                {view.sourceKind === "github" ? "GitHub" : "the source host"}
+              </span>
+            </div>
+          </div>
+        </div>
       </ConfirmDialog>
     </Panel>
   );
@@ -443,7 +473,7 @@ function Item({ k, v }: { k: string; v: string }) {
   return (
     <div className="min-w-0">
       <dt className="text-xs text-secondary">{k}</dt>
-      <dd className="truncate font-mono text-[13px]" title={v}>
+      <dd className="truncate font-mono text-[13px] text-foreground" title={v}>
         {v}
       </dd>
     </div>
