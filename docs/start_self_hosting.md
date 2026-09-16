@@ -52,11 +52,11 @@ flowchart LR
     I((internet)) -->|443| T[traefik · TLS]
     I -.->|3000 without a domain| W
     T --> W[web · Next.js]
-    W --> A[api · Python]
-    W --> P[(postgres)]
-    K[worker · Python] --> D
-    K --> P
+    W -->|"/api/v1 · /api/auth"| A[api · Python]
+    A --> P[(postgres)]
+    K[worker · Python] --> P
     A -->|"push · release"| G{{source hosts}}
+    K -->|"deploy"| C{{cloud}}
 ```
 
 | Service | Image | Notes |
@@ -74,12 +74,12 @@ Images are published for every `api/vX.Y.Z` and `web/vX.Y.Z` tag to Docker Hub a
 | Variable | Required | Meaning |
 |---|---|---|
 | `PUBLIC_URL` | yes | where browsers reach the app; also the OAuth callback origin |
-| `POSTGRES_PASSWORD` | yes | Postgres password; `DATABASE_URL` is derived from it in the compose file |
+| `POSTGRES_PASSWORD` | yes | Postgres password; the compose file derives `AP_DATABASE_URL` from it for the API, the worker and the `migrate` service — the web app has no database connection |
 | `ACTION_PLATFORM_GIT_HOSTS` | no | comma-separated hosts the API may clone from (`github.com,gitlab.example.com`; subdomains included). Empty allows any `https://` host. `ssh://`, `git@` and `file://` are always refused for user-supplied URLs; `AP_ALLOW_INSECURE_HTTP=1` admits `http://` for an internal GitLab. |
 | `AP_GIT_AUTHOR_NAME`, `AP_GIT_AUTHOR_EMAIL` | no | fallback identity for commits when a request carries none (defaults `Action Platform <cloud@actionplatform.io>`). Each organization sets its own commit identity in Setup and Settings → Commit identity; the web app sends it with every call. |
 | `AP_API_TOKEN` | yes | shared secret between web and API: the API refuses every request without `Authorization: Bearer <token>` (except `/api/version`), so a neighbour on the Docker network cannot drive it. Set the same value on both services; unset, the API trusts the network (local development). |
 | — | — | A `.env` in the working directory is read on start for every variable the shell did not set (the CLI, the API and the worker alike). |
-| `AP_DATABASE_URL` | yes | the API's connection to the same Postgres (`postgres://…`, `mysql://…` or `sqlite:///…`). Set, the API runs its migrations on boot and adopts the tables the web app created — see [database](concept_database.md). The compose file derives it from `POSTGRES_PASSWORD`; `AP_DATABASE_POOL_SIZE` (default 10) and `AP_DATABASE_MAX_OVERFLOW` (default 20) size its pool — every request holds one connection and some hold two, so keep the sum below the Postgres `max_connections` shared with the web app and the worker. |
+| `AP_DATABASE_URL` | yes | the API's connection to the same Postgres (`postgres://…`, `mysql://…` or `sqlite:///…`). Set, the API runs its migrations on boot and adopts the tables the web app created — see [database](concept_database.md). The compose file derives it from `POSTGRES_PASSWORD`; `AP_DATABASE_POOL_SIZE` (default 10) and `AP_DATABASE_MAX_OVERFLOW` (default 20) size its pool — every request holds one connection and some hold two, so keep the sum, across API and worker replicas, below the Postgres `max_connections`. |
 | `AP_ALLOW_UNAUTHENTICATED` | no | `1` lets the API start without `AP_API_TOKEN` — local development only |
 | `AP_SENTRY_DSN_API`, `AP_SENTRY_DSN_WEB` | no | Sentry DSNs, one project per component; empty keeps reporting off. Reaches the containers as `AP_SENTRY_DSN` (API) and `SENTRY_DSN` (web); `AP_SENTRY_ENVIRONMENT` / `SENTRY_ENVIRONMENT` and `*_TRACES_SAMPLE_RATE` (default 0.1) tune them. See [observability](concept_observability.md). |
 | `BETTER_AUTH_SECRET` | yes | signs sessions, API tokens and encrypts stored tokens — rotating it invalidates all three. The compose files hand it to the API as `AP_AUTH_SECRET`, with `PUBLIC_URL` as `AP_PUBLIC_URL` (the device-flow verification address, and the OIDC issuer: clouds read `<url>/.well-known/jwks.json` to trust deploy tokens — [identity](concept_identity.md)). |
@@ -109,9 +109,9 @@ AP_IMAGE_API=action-platform-api:local AP_IMAGE_WEB=action-platform-web:local do
 
 ## Limits today
 
-- The API image ships Python and git only: releases work anywhere; a `deploy` to Lambda / Amplify needs `sam`, `aws` or `node` inside the container, which it does not have yet.
+- The API image carries git, `sam`, the AWS CLI and the toolchains of every web language (Go, Node, JDK + Maven, Ruby) — 2.3 GB; the host needs room for it and for the build artifacts of deploys.
 - Domains are set in `.env` (or in Dokploy), not from the app's Settings.
-- Calls run inline unless the client asks for `Prefer: respond-async`; the web app still waits for each action. Queued work is in [database](concept_database.md#jobs).
+- Sync, release, deploy, destroy and import run as jobs on the worker; the rest of the calls run inline. Queued work is in [database](concept_database.md#jobs).
 
 ## Upgrading
 

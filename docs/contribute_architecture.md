@@ -15,6 +15,7 @@ flowchart TB
     subgraph api["action-platform-api serve — FastAPI"]
         reg[apps registry]
         ws[(disposable clones under the temp dir)]
+        db[(database)]
     end
 
     core[[action_platform.core]]
@@ -22,12 +23,13 @@ flowchart TB
 
     browser --> ui
     ui --> auth
-    ui -->|"JSON + credentials per request"| api
+    ui -->|"JSON over /api/v1"| api
     agent -->|"mcp --remote · Bearer token"| v1
     v1 --> api
     term -->|"action-platform …"| core
     api --> core
     api --> ws
+    api --> db
     core -->|"push · release · pull request"| hosts
 ```
 
@@ -171,19 +173,20 @@ sequenceDiagram
 sequenceDiagram
     participant M as Member (browser)
     participant W as apps/web
-    participant DB as web database
     participant A as action-platform-api serve
+    participant DB as database
     participant G as Code host
 
     M->>W: Connect with GitHub
-    W->>G: OAuth authorize → code
-    G-->>W: access (+ refresh) token
-    W->>DB: source_host (token AES-256-GCM)
+    W->>A: POST /api/v1/oauth/github/start
+    A->>G: OAuth authorize → code
+    G-->>A: access (+ refresh) token
+    A->>DB: source_host (token AES-256-GCM)
 
     M->>W: Push / Release / Commit
-    W->>DB: read token (refresh if expiring) + organization commit identity
-    W->>A: POST /api/apps/{id}/release {credentials + author}
-    A->>A: config.source_host = build_source_host(kind, token)
+    W->>A: POST /api/v1/apps/{id}/release {author}
+    A->>DB: read token (refresh if expiring)
+    A->>A: gate adds credentials · config.source_host = build_source_host(kind, token)
     A->>A: git_auth(): credential helper + GIT_AUTHOR_* via GIT_CONFIG_* / env
     A->>G: git push · REST create release
     A-->>W: result

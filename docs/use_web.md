@@ -179,7 +179,7 @@ One card per plugin, with its version and, when the plugin declares options (`Pl
 
 ### Commit identity
 
-Releases and configuration commits are made by the platform on its clone, signed with the organization's commit identity — name and email chosen in Setup (default `Action Platform <cloud@actionplatform.io>`) and editable here. Stored per organization in `organization_setting`. The web app sends it on every request that may commit — with the code-host token when the app has one, alone otherwise (`credentials.author_name/author_email`) — so every commit carries it; the API's `AP_GIT_AUTHOR_*` only apply when nothing arrives.
+Releases and configuration commits are made by the platform on its clone, signed with the organization's commit identity — name and email chosen in Setup (default `Action Platform <cloud@actionplatform.io>`) and editable here. Stored per organization in `organization_setting`. The API's gate attaches it to every `/api/v1` call that may commit, together with the code-host token when the app has one (`credentials.author_name/author_email`), so every commit carries it; the API's `AP_GIT_AUTHOR_*` only apply to an organization that set none. The web app never handles either.
 
 ### Git
 

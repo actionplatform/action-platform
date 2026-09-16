@@ -32,7 +32,7 @@
 
 Sessions last 7 days, refreshed when used after a day. Refusals answer `{"detail", "error", "error_description"}` with `401` (`unauthenticated`, `invalid_credentials`), `403` (`forbidden`), `409` (`exists`), `429` (rate limit) or `400` for the rest.
 
-Every response is a Pydantic model under `api/schemas/`; `apps/web` generates its TypeScript client from the resulting OpenAPI schema (`npm run api:types`, comments stripped). Requests that touch a source host carry `credentials {kind, token, username, base_url, owner, author_name, author_email}`; identity alone is valid for a local commit.
+Every response is a Pydantic model under `api/schemas/`; `apps/web` generates its TypeScript client from the resulting OpenAPI schema (`npm run api:types`, comments stripped). Requests that touch a source host reach the route with `credentials {kind, token, username, base_url, owner, author_name, author_email}`, added by the gate from the database — no client sends them; identity alone is valid for a local commit.
 
 ## Trust
 
