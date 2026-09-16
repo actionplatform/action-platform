@@ -2,13 +2,14 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, Header
+from fastapi import APIRouter, Header, Response
 
 from app.api.dependencies import (
     CallerDep,
     OrgDep,
     ProjectsDep,
     ProjectsRepoDep,
+    QueueDep,
     allowed,
     manageable,
     project_of,
@@ -19,15 +20,22 @@ from app.core.db.models import Organization
 from app.schemas import common
 from app.schemas import projects as schemas
 from app.services.access.caller import Caller
+from app.services.access.dispatch import Dispatcher
+from app.services.jobs import JobQueue
 from app.repositories.projects import ProjectsRepository
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
 
 def project_rows(
-    directory: ProjectsRepository, caller: Caller, org: Organization, tag: bool
+    directory: ProjectsRepository,
+    queue: JobQueue,
+    caller: Caller,
+    org: Organization,
+    tag: bool,
 ) -> list[schemas.ProjectRow]:
     rows = []
+    tearing = queue.projects_being_destroyed(org.id)
 
     for p in directory.projects_of(org.id, caller.project_id):
         team = directory.team(org.id, p.team_id) if p.team_id else None
@@ -55,6 +63,7 @@ def project_rows(
                 organization=common.Named(id=org.id, name=org.name) if tag else None,
                 created_at=p.created_at,
                 updated_at=max(moments),
+                tearing_down=p.id in tearing,
             )
         )
 
@@ -65,6 +74,7 @@ def project_rows(
 def projects(
     caller: CallerDep,
     directory: ProjectsRepoDep,
+    queue: QueueDep,
     x_organization: Optional[str] = Header(default=None),
     organization: Optional[str] = None,
 ) -> list[schemas.ProjectRow]:
@@ -74,10 +84,10 @@ def projects(
         return [
             row
             for o, _ in caller.organizations
-            for row in project_rows(directory, caller, o, True)
+            for row in project_rows(directory, queue, caller, o, True)
         ]
 
-    return project_rows(directory, caller, org, False)
+    return project_rows(directory, queue, caller, org, False)
 
 
 @router.post("/projects", status_code=201)
@@ -115,10 +125,23 @@ def delete_project(
     caller: CallerDep,
     writes: ProjectsRepoDep,
     projects: ProjectsDep,
+    queue: QueueDep,
+    response: Response,
     repositories: bool = False,
+    cloud: bool = False,
 ) -> common.Removed:
+    """`cloud` tears every app's deploy stacks down first, on the worker; the project leaves the platform when that job is done (202 with the job id)."""
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
+
+    if cloud:
+        allowed(caller, org, "app.release", whole_org=False)
+        response.status_code = 202
+
+        return common.Removed(
+            job=Dispatcher(queue).destroy_project(org, project, caller, repositories)
+        )
+
     removed, deleted = projects.delete(org, project, repositories)
 
     return common.Removed(removed=removed, repositories=deleted)

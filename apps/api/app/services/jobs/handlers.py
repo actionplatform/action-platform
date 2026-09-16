@@ -8,7 +8,7 @@ from action_platform.core.exception import ActionPlatformError
 from action_platform.settings import settings
 from app.core.auth.crypto import Sealer
 from app.core.db.database import Database
-from app.core.db.models import App, Project
+from app.core.db.models import App, Organization, Project
 from app.core.shared.urls import GitUrl
 from app.repositories.workspace.registry import Registry
 from app.schemas import DeployRequest, PushRequest, ReleaseRequest, SyncRequest
@@ -20,6 +20,7 @@ from app.services.projects.organization_import.directory import ImportDirectory
 from app.services.deployments.identity import AppIdentity
 from app.services.jobs.context import JobContext
 from app.services.jobs.registry import JobServices, register
+from app.repositories.projects import ProjectsRepository
 from app.services.projects import ProjectService
 from app.services.projects.organization_import import OrganizationImport
 from app.services.deployments import DeploymentsService
@@ -98,6 +99,36 @@ class JobHandlers:
 
         return {"removed": removed, "repositories": repositories}
 
+    def destroy_project(self, payload: dict[str, Any]) -> Any:
+        """Each app's stacks down, then the project off the platform."""
+        identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
+        env = DeployEnv(self.database)
+        manages = bool(payload.get("manages"))
+
+        with self.database.session() as db:
+            organization = db.get(Organization, payload["organization_id"])
+            project = db.get(Project, payload["project_id"])
+            apps = list(ProjectsRepository(db, self.sealer).apps_of(project.id))
+
+        for app in apps:
+            DeploymentsService(
+                self.registry,
+                identity=identity.minter(organization, app, manages=manages),
+                env=env.for_app(organization, app),
+            ).destroy(app.registry_id)
+
+        with self.database.session() as db:
+            projects = ProjectService(
+                ImportDirectory(db, self.sealer), AppService(self.registry)
+            )
+            removed, repositories = projects.delete(
+                organization,
+                project,
+                bool((payload.get("body") or {}).get("repository")),
+            )
+
+        return {"removed": removed, "repositories": repositories}
+
     def push(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
         result = AppService(self.registry).push(
@@ -162,5 +193,6 @@ register("release", lambda s: JobHandlers.of(s).release)
 register("deploy", lambda s: JobHandlers.of(s).deploy)
 register("push", lambda s: JobHandlers.of(s).push)
 register("destroy", lambda s: JobHandlers.of(s).destroy)
+register("destroy_project", lambda s: JobHandlers.of(s).destroy_project)
 register("import", lambda s: JobHandlers.of(s).import_activity)
 register("import_github", lambda s: JobHandlers.of(s).import_github)
