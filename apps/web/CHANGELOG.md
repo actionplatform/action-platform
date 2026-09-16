@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.18.23 — 2026-09-15
+
+### Features
+- **web:** the history shows a deploy as soon as it is queued; Deploy waits while the stage has a live run
+- **web:** Delete stacks on the cloud on the project dialog; Tearing down status and live refresh on the projects list
+
+### Chores
+- merge master
+
 ## v0.18.22 — 2026-09-15
 
 ### Features
