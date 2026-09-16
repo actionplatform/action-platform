@@ -1,6 +1,7 @@
 "use client";
 
 import { Cloud, ExternalLink, ListChecks, Rocket, Tag } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,8 @@ type Outcome = { dryRun: boolean; rows: DeployResult[]; error: string | null };
 
 const versionOf = (tag: string) => tag.replace(/^v/, "");
 
-export function DeployCard({ view }: { view: AppView }) {
+export function DeployCard({ view, liveStages = [] }: { view: AppView; liveStages?: string[] }) {
+  const router = useRouter();
   const target = typeof view.deploy.target === "string" ? String(view.deploy.target) : null;
   const releases = view.tags.filter((t) => /^v?\d/.test(t));
   const [stage, setStage] = useState("dev");
@@ -34,8 +36,9 @@ export function DeployCard({ view }: { view: AppView }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const busy = pending || run !== null;
-  const canDeploy = !!target && view.can["app.release"] && !!view.repositoryUrl && !!tag;
-  const blocker = !target ? "Pick a deploy target in Configuration first." : !view.can["app.release"] ? "Your role cannot deploy." : !view.repositoryUrl ? "This app has no remote." : releases.length === 0 ? "A deploy ships a release: create one in Releases first." : null;
+  const live = liveStages.includes(stage);
+  const canDeploy = !!target && view.can["app.release"] && !!view.repositoryUrl && !!tag && !live;
+  const blocker = !target ? "Pick a deploy target in Configuration first." : !view.can["app.release"] ? "Your role cannot deploy." : !view.repositoryUrl ? "This app has no remote." : releases.length === 0 ? "A deploy ships a release: create one in Releases first." : live ? `A deploy to ${stage} is running — one at a time per environment.` : null;
 
   useEffect(() => {
     if (!run) return;
@@ -54,7 +57,7 @@ export function DeployCard({ view }: { view: AppView }) {
       setOutcome(null);
       const r = await startDeploy(view.registryId, stage, dryRun, versionOf(tag));
       setConfirm(false);
-      if (r.ok) setRun({ job: r.data.job, dryRun }); else setError(r.error);
+      if (r.ok) { setRun({ job: r.data.job, dryRun }); router.refresh(); } else setError(r.error);
     });
 
   const failedRow = outcome?.rows.find((r) => !r.ok) ?? null;

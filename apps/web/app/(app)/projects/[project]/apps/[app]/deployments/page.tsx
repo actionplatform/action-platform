@@ -15,7 +15,7 @@ export default async function DeploymentsPage({ params }: { params: Promise<{ pr
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,65fr)_minmax(300px,35fr)]">
-        <DeployCard view={view} />
+        <DeployCard view={view} liveStages={jobs.filter((j) => j.kind === "deploy" && (j.status === "queued" || j.status === "running")).map((j) => j.stage ?? "dev")} />
         <div className="relative">
           <div className="lg:absolute lg:inset-0"><TargetCard view={view} base={base} /></div>
         </div>
