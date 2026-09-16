@@ -7,13 +7,13 @@ import { relativeTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { ProjectActionsMenu } from "./project-actions-menu";
 
-export type ProjectItem = { id: string; name: string; slug: string; description: string | null; apps: number; teamId: string | null; teamName: string | null; updatedAt: string };
+export type ProjectItem = { id: string; name: string; slug: string; description: string | null; apps: number; teamId: string | null; teamName: string | null; updatedAt: string; tearingDown?: boolean };
 export type TeamOption = { id: string; name: string };
 
 export function ProjectCard({ project, teams, canManage }: { project: ProjectItem; teams: TeamOption[]; canManage: boolean }) {
   const router = useRouter();
   const href = `/projects/${project.id}`;
-  const status = project.apps > 0 ? "Active" : "Empty";
+  const status = project.tearingDown ? "Tearing down" : project.apps > 0 ? "Active" : "Empty";
 
   return (
     <article
@@ -37,7 +37,7 @@ export function ProjectCard({ project, teams, canManage }: { project: ProjectIte
           >
             <ArrowUpRight className="size-[18px]" strokeWidth={1.75} />
           </Link>
-          {canManage && <ProjectActionsMenu project={project} teams={teams} />}
+          {canManage && !project.tearingDown && <ProjectActionsMenu project={project} teams={teams} />}
         </div>
       </div>
 
@@ -48,7 +48,7 @@ export function ProjectCard({ project, teams, canManage }: { project: ProjectIte
 
       <div className="mt-auto flex items-center gap-3 border-t border-[#242424] pt-4 text-[13px] text-secondary">
         <span className="flex items-center gap-2">
-          <span aria-hidden className={cn("size-1.5 rounded-full", status === "Active" ? "bg-foreground" : "bg-muted-foreground")} />
+          <span aria-hidden className={cn("size-1.5 rounded-full", status === "Active" ? "bg-foreground" : status === "Tearing down" ? "bg-status-warn" : "bg-muted-foreground")} />
           {status}
         </span>
         <span aria-hidden className="h-3 w-px bg-border" />

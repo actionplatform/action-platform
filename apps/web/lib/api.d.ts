@@ -2258,6 +2258,7 @@ export interface components {
             organization?: components["schemas"]["Named"] | null;
             created_at?: string | null;
             updated_at?: string | null;
+            tearing_down: boolean;
         };
         ProjectTeamRequest: {
             project_id: string;
@@ -4365,6 +4366,7 @@ export interface operations {
         parameters: {
             query?: {
                 repositories?: boolean;
+                cloud?: boolean;
             };
             header?: {
                 "X-Organization"?: string | null;

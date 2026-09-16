@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, FolderGit2, MoreHorizontal, Trash2, Users } from "lucide-react";
+import { ArrowUpRight, Cloud, FolderGit2, MoreHorizontal, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ export function ProjectActionsMenu({ project, teams }: { project: ProjectItem; t
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
   const [repositories, setRepositories] = useState(false);
+  const [cloud, setCloud] = useState(false);
   const [typed, setTyped] = useState("");
   const confirmed = typed.trim() === project.name;
   const [assigning, setAssigning] = useState(false);
@@ -65,7 +66,7 @@ export function ProjectActionsMenu({ project, teams }: { project: ProjectItem; t
       </Dialog>
       <ConfirmDialog
         open={confirm}
-        onClose={() => { if (!pending) { setConfirm(false); setRepositories(false); setTyped(""); setError(null); } }}
+        onClose={() => { if (!pending) { setConfirm(false); setRepositories(false); setCloud(false); setTyped(""); setError(null); } }}
         icon={<DangerIcon />}
         title={`Delete ${project.name}?`}
         description="Every app in it goes too. This action is permanent and cannot be undone."
@@ -75,10 +76,11 @@ export function ProjectActionsMenu({ project, teams }: { project: ProjectItem; t
         pending={pending}
         disabled={!confirmed}
         className="rounded-[14px]"
-        onConfirm={() => start(async () => { setError(null); const r = await removeProject(project.id, repositories); if (r.ok) { setConfirm(false); setRepositories(false); setTyped(""); } else setError(r.error); })}
+        onConfirm={() => start(async () => { setError(null); const r = await removeProject(project.id, repositories, cloud); if (r.ok) { setConfirm(false); setRepositories(false); setCloud(false); setTyped(""); router.refresh(); } else setError(r.error); })}
       >
         <div className="space-y-3">
           <DeleteRepositoryOption id={`delete-repos-${project.id}`} checked={repositories} onChange={setRepositories} disabled={pending} label="Delete repositories on the code host" icon={<FolderGit2 className="size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />} />
+          {project.apps > 0 && <DeleteRepositoryOption id={`delete-cloud-${project.id}`} checked={cloud} onChange={setCloud} disabled={pending} label="Delete stacks on the cloud" icon={<Cloud className="size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />} />}
           <TypeToConfirm id={`confirm-delete-${project.id}`} expected={project.name} value={typed} onChange={setTyped} disabled={pending} />
           {confirm && error && <div role="alert" className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
         </div>
