@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.18.20 — 2026-09-15
+
+### Features
+- **web:** Also tear down <target> on the delete dialog; tear-down jobs on Deployments
+
 ## v0.18.19 — 2026-09-15
 
 ### Bug Fixes
