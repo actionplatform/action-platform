@@ -2348,6 +2348,7 @@ export interface components {
         Removed: {
             removed: string[];
             repositories: string[];
+            job?: string | null;
         };
         RoleInfo: {
             id: string;
@@ -4467,6 +4468,7 @@ export interface operations {
         parameters: {
             query?: {
                 repository?: boolean;
+                cloud?: boolean;
             };
             header?: {
                 "X-Organization"?: string | null;
