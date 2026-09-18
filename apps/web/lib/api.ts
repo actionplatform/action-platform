@@ -122,9 +122,9 @@ export const api = {
     releaseAsync: async (id: string, level: string, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean } = {}) =>
       unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run: false, branch, latest: true, ...extra }, headers: { "X-Async": "1" } })) as unknown as { job: string; status: string; poll: string },
     deploy: async (id: string, stage: string | null, dry_run: boolean) =>
-      unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run } })),
-    deployAsync: async (id: string, stage: string | null, dry_run: boolean, version: string | null = null) =>
-      unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run, version }, headers: { "X-Async": "1" } })) as unknown as { job: string; status: string; poll: string },
+      unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run, force: false } })),
+    deployAsync: async (id: string, stage: string | null, dry_run: boolean, version: string | null = null, force = false) =>
+      unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run, version, force }, headers: { "X-Async": "1" } })) as unknown as { job: string; status: string; poll: string },
     diagnose: async (id: string, stage?: string) =>
       unwrap(await client.GET("/api/apps/{id}/diagnose", { params: { path: { id }, query: stage ? { stage } : {} } })),
   },

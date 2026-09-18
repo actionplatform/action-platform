@@ -36,6 +36,10 @@ export const projects = {
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/deployments/sync", { params: { path: { project_id: projectId, app_id: appId } } })),
   recordDeployment: async (projectId: string, appId: string, body: Schemas["RecordDeploymentRequest"]) =>
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/deployments", { params: { path: { project_id: projectId, app_id: appId } }, body })),
+  readiness: async (projectId: string, appId: string, tag: string) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/releases/{tag}/readiness", { params: { path: { project_id: projectId, app_id: appId, tag } } })),
+  checkReadiness: async (projectId: string, appId: string, tag: string, stage: string | null = null) =>
+    unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/releases/{tag}/readiness", { params: { path: { project_id: projectId, app_id: appId, tag } }, body: { stage } })),
   timeline: async (projectId: string, appId: string, tag: string) =>
     unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/releases/{tag}/timeline", { params: { path: { project_id: projectId, app_id: appId, tag } } })),
   githubOrganizations: async (host: string) => unwrap(await client.GET("/api/v1/import/github/organizations", { params: { query: { host } } })),
