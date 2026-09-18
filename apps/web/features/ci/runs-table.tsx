@@ -1,25 +1,40 @@
 "use client";
 
-import { ExternalLink, RefreshCw, Workflow } from "lucide-react";
+import { ExternalLink, Play, RefreshCw, Workflow } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { Field, Input } from "@/components/ui/input";
 import { Cell, DataTable, Inline } from "@/components/ui/data-table";
 import { CI_LABELS, type CiRun, type CiState, duration } from "@/lib/ci-kinds";
 import { call } from "@/lib/call";
 import { relativeTime } from "@/lib/time";
-import { syncCi } from "./actions";
+import { startCi, syncCi } from "./actions";
 import { RunBadge, RunIcon } from "./run-badge";
 
-type Props = { projectId: string; appId: string; state: CiState; connectHref: string | null; canSync: boolean };
+type Props = { projectId: string; appId: string; state: CiState; connectHref: string | null; canSync: boolean; canRun?: boolean; defaultRef?: string };
 
-export function RunsTable({ projectId, appId, state: initial, connectHref, canSync }: Props) {
+export function RunsTable({ projectId, appId, state: initial, connectHref, canSync, canRun = false, defaultRef = "main" }: Props) {
   const router = useRouter();
   const [state, setState] = useState(initial);
   const [error, setError] = useState<string | null>(initial.error);
   const [status, setStatus] = useState<"idle" | "syncing" | "done">("idle");
+  const [running, setRunning] = useState(false);
+  const [ref, setRef] = useState(defaultRef);
+  const [started, setStarted] = useState<{ id: string; url: string | null } | null>(null);
   const [pending, start] = useTransition();
   const connected = state.link.kind !== "none";
+
+  const run = () =>
+    start(async () => {
+      setError(null);
+      const r = await call(() => startCi(projectId, appId, ref.trim()), (e) => ({ ok: false as const, error: e }), "Check the CI for the run.");
+      if (!r.ok) { setError(r.error); return; }
+      setStarted(r.data);
+      setRunning(false);
+      router.refresh();
+    });
 
   const sync = () =>
     start(async () => {
@@ -38,6 +53,10 @@ export function RunsTable({ projectId, appId, state: initial, connectHref, canSy
   return (
     <div className="space-y-3">
       {error && <div className="rounded-md border border-border px-3 py-2 text-[13px] text-secondary">{error}</div>}
+      {started && <div className="rounded-md border border-border px-3 py-2 text-[13px] text-secondary">Run started{started.url ? <> — <a href={started.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-foreground">open on the CI</a></> : "."} Sync in a moment to see it here.</div>}
+      <Dialog open={running} onClose={() => !pending && setRunning(false)} title="Run the job" description={`${CI_LABELS[state.link.kind] ?? state.link.kind}${state.link.job ? ` · ${state.link.job}` : ""}`} footer={<><Button variant="ghost" onClick={() => setRunning(false)} disabled={pending}>Cancel</Button><Button onClick={run} disabled={pending || !ref.trim()}><Play className="size-3.5" strokeWidth={2} /> {pending ? "Starting…" : "Run"}</Button></>}>
+        <Field label="Branch or tag" hint="The ref the run checks out."><Input value={ref} onChange={(e) => setRef(e.target.value)} className="font-mono" autoFocus /></Field>
+      </Dialog>
       <DataTable
         title="CI runs"
         rows={state.runs}
@@ -45,7 +64,14 @@ export function RunsTable({ projectId, appId, state: initial, connectHref, canSy
         rowKey={(r) => r.id}
         noun={["run", "runs"]}
         meta={connected ? <>{CI_LABELS[state.link.kind] ?? state.link.kind}{state.link.job && <span className="font-mono"> · {state.link.job}</span>}</> : undefined}
-        action={canSync && connected ? <Button size="sm" variant="outline" onClick={sync} disabled={pending}><RefreshCw className={`size-3.5 ${status === "syncing" ? "animate-spin" : ""}`} strokeWidth={2} /> {status === "syncing" ? "Syncing…" : status === "done" ? "Synced" : "Sync"}</Button> : undefined}
+        action={
+          connected ? (
+            <>
+              {canRun && <Button size="sm" variant="outline" onClick={() => { setStarted(null); setRunning(true); }} disabled={pending}><Play className="size-3.5" strokeWidth={2} /> Run</Button>}
+              {canSync && <Button size="sm" variant="outline" onClick={sync} disabled={pending}><RefreshCw className={`size-3.5 ${status === "syncing" ? "animate-spin" : ""}`} strokeWidth={2} /> {status === "syncing" ? "Syncing…" : status === "done" ? "Synced" : "Sync"}</Button>}
+            </>
+          ) : undefined
+        }
         newHref={connectHref}
         newLabel={connected ? "Change CI" : "Connect CI"}
         empty={{ icon: Workflow, title: connected ? "No runs yet" : "No CI connected", text: connected ? "Sync to import the latest runs from the CI." : "Connect a runner — a CI server of the organization, or the one in the source host — to read its runs here." }}

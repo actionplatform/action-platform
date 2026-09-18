@@ -4,14 +4,18 @@ from __future__ import annotations
 
 from action_platform.abc.ci_runner import CIRunner
 from action_platform.core.exception import ConfigError
+from action_platform.providers.ci.bitbucket_pipelines import CIBitbucket
 from action_platform.providers.ci.github_actions import CIGithubActions
+from action_platform.providers.ci.gitlab_ci import CIGitlab
 from action_platform.providers.ci.jenkins import CIJenkins
 from action_platform.providers.ci.none import CINone
 
-CI_KINDS = ("github_actions", "jenkins", "none")
+CI_KINDS = ("github_actions", "gitlab_ci", "bitbucket_pipelines", "jenkins", "none")
 
 EMBEDDED_CI = {
     "github": "github_actions",
+    "gitlab": "gitlab_ci",
+    "bitbucket": "bitbucket_pipelines",
 }
 
 
@@ -30,6 +34,12 @@ def build_ci_runner(
     """A CIRunner for `kind`. Embedded kinds take the source host's `repo` and `token`; servers take their own `base_url`, `username` and `token`."""
     if kind == "github_actions":
         return CIGithubActions(repo=repo or "", token=token, base_url=base_url)
+
+    if kind == "gitlab_ci":
+        return CIGitlab(repo=repo or "", token=token, base_url=base_url)
+
+    if kind == "bitbucket_pipelines":
+        return CIBitbucket(repo=repo or "", token=token, username=username)
 
     if kind == "jenkins":
         return CIJenkins(base_url=base_url or "", token=token, username=username)

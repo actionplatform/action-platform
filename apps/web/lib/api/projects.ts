@@ -20,6 +20,8 @@ export const projects = {
     unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/pull-requests", { params: { path: { project_id: projectId, app_id: appId }, query: { page, per } } })),
   ci: async (projectId: string, appId: string, page = 1, per = 10) =>
     unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/ci", { params: { path: { project_id: projectId, app_id: appId }, query: { page, per } } })),
+  startCi: async (projectId: string, appId: string, ref: string) =>
+    unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/ci/run", { params: { path: { project_id: projectId, app_id: appId } }, body: { ref } })),
   syncCi: async (projectId: string, appId: string, page = 1, per = 10) =>
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/ci/sync", { params: { path: { project_id: projectId, app_id: appId }, query: { page, per } } })),
   imports: async (projectId: string, appId: string) =>

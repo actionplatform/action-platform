@@ -63,3 +63,15 @@ export async function syncCi(projectId: string, appId: string, page = 1, per = 1
     return failed(e);
   }
 }
+
+
+export async function startCi(projectId: string, appId: string, ref: string): Promise<Result<{ id: string; url: string | null; ref: string }>> {
+  await requireOrg();
+  try {
+    const r = await v1.startCi(projectId, appId, ref);
+    refreshProject(projectId);
+    return { ok: true, data: { id: r.id, url: r.url ?? null, ref: r.ref } };
+  } catch (e) {
+    return failed(e);
+  }
+}

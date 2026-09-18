@@ -56,3 +56,13 @@ class CiRuns(BaseModel):
     total: int = 0
     page: int = 1
     per: int = 10
+
+
+class CiStartRequest(BaseModel):
+    ref: str
+
+
+class CiStarted(BaseModel):
+    id: str
+    url: Optional[str] = None
+    ref: str
