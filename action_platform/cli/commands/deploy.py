@@ -190,6 +190,35 @@ def deployments(
         console.print(f"[yellow]{body['error']}[/yellow]")
 
 
+def logs(
+    job: str = typer.Argument(..., help="The job id the platform answered with"),
+    follow: bool = typer.Option(
+        False, "--follow", "-f", help="Keep printing until the job finishes"
+    ),
+) -> None:
+    """What the worker wrote while running a job — a deploy, a release, a readiness check — on the hosted platform."""
+    import time
+
+    remote = Remote.from_credentials()
+    after = 0
+
+    while True:
+        page = remote.job_logs(job, after=after)
+
+        for row in page["lines"]:
+            console.print(row["line"], highlight=False, markup=False)
+
+        after = page["next"]
+
+        if page["finished"] or not follow:
+            if follow or page["finished"]:
+                console.print(f"[dim]job {page['status']}[/dim]")
+
+            return
+
+        time.sleep(1.5)
+
+
 def record(
     target: str = typer.Argument(
         ..., help="A target name of [deploy] in platform.toml"

@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.api.dependencies import (
@@ -15,6 +15,7 @@ from app.core.db.models.auth import User
 from app.core.shared import people
 from app.schemas.common import page_bounds
 from app.services.jobs import JobQueue
+from app.services.jobs.logs import JobLogs
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -92,6 +93,42 @@ def job(
         raise HTTPException(404, "no such job")
 
     return _out(directory, JobQueue.view(found))
+
+
+class LogLine(BaseModel):
+    seq: int
+    at: datetime
+    line: str
+
+
+class JobLogsOut(BaseModel):
+    lines: list[LogLine]
+    next: int
+    status: str
+    finished: bool
+
+
+@router.get("/jobs/{id}/logs")
+def job_logs(
+    id: str,
+    request: Request,
+    caller: CallerDep,
+    queue: QueueDep,
+    after: int = 0,
+    limit: int = 1000,
+) -> JobLogsOut:
+    found = queue.get(id)
+
+    if found is None or (
+        found.organization_id and caller.member_of(found.organization_id) is None
+    ):
+        raise HTTPException(404, "no such job")
+
+    logs = JobLogs(request.app.state.db)
+
+    return JobLogsOut(
+        **JobLogs.view(found, logs.after(id, max(0, after), limit), after)
+    )
 
 
 def _out(directory: ProjectsRepoDep, view: dict) -> JobOut:

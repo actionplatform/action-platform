@@ -29,7 +29,7 @@ function Stage({ row }: { row: ReadinessRow }) {
       <div className="flex min-h-11 flex-wrap items-center gap-2 border-b border-border-subtle px-4 py-2">
         <span className="font-mono text-sm font-semibold">{row.stage}</span>
         <Badge tone={v.tone} className="h-5 px-2 text-[11px]">{row.verdict === "pending" && <Loader2 className="mr-1 size-3 animate-spin" aria-hidden="true" />}{v.label}</Badge>
-        <span className="ml-auto text-xs text-secondary">{row.checked_at ? `checked ${relativeTime(row.checked_at)}` : row.status}</span>
+        <span className="ml-auto text-xs text-secondary" suppressHydrationWarning>{row.checked_at ? `checked ${relativeTime(row.checked_at)}` : row.status}</span>
       </div>
       {checks.length === 0 ? (
         <div className="px-4 py-3 text-[13px] text-secondary">{row.verdict === "pending" ? "The worker is running the checks." : "Nothing was checked."}</div>

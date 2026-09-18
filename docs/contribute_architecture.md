@@ -45,6 +45,8 @@ action_platform/
     config.py     Config.from_toml → source host, deploy targets, components
     context.py    Context, DeployResult, Diagnosis, PRRef, ReleaseRef
     action_platform.py   ActionPlatform: the facade the CLI, MCP and API call (releaser, deployer, readiness, flow)
+    process.py    stream(args): a subprocess whose lines go to the log sink as they arrive
+  logging.py      the `action_platform` logger and the log sink: `capture(sink)` routes records and `emit(line)` to whoever follows the job
   providers/
     source/       rest (urllib helper), github, gitlab, bitbucket, generic; build_source_host(kind, …)
   abc/            SourceHost, CIRunner, DeployTarget, WorkingCopy, TemplateStore contracts
@@ -145,6 +147,8 @@ The Planner (`services/access/planner.py`) is the one place the gate reads the d
 | `import_github` | the organization import wizard | repositories, teams, people and projects from a GitHub organization |
 | `destroy` | `DELETE projects/{p}/apps/{a}?cloud=true` | every stage's stack down through the target, then the app off the platform |
 | `destroy_project` | `DELETE projects/{id}?cloud=true` | the same for each app, then the project |
+
+While a job runs, the worker captures the library's log records and every line a plugin emits (`action_platform.logging.capture`) into `job_log`, flushed every half second; `GET jobs/{id}/logs?after=` serves them and the web follows a live run by polling.
 
 Kinds are registered in `services/jobs/handlers.py` (`register(kind, factory)`); the worker builds the table once with `JobServices` and claims with `SELECT … FOR UPDATE SKIP LOCKED`. A job is one row: kind, status, payload (the enriched body, the organization, the app, the user, `manages`), attempts, result or error — what the Deployments history shows.
 

@@ -31,7 +31,7 @@ export function CommitsCard({ commits, repositoryUrl, base, limit = 8, title = "
                   <td className="px-4 py-2.5"><Hash sha={c.sha} href={hashLink(c.sha)} /></td>
                   <td className="max-w-0 truncate py-2.5 pr-4">{c.subject}</td>
                   <td className="whitespace-nowrap py-2.5 pr-4 text-secondary">{c.author}</td>
-                  <td className="whitespace-nowrap py-2.5 pr-4 text-secondary">{formatDate(c.date)}</td>
+                  <td className="whitespace-nowrap py-2.5 pr-4 text-secondary" suppressHydrationWarning>{formatDate(c.date)}</td>
                 </tr>
               ))}
             </tbody>
@@ -39,7 +39,7 @@ export function CommitsCard({ commits, repositoryUrl, base, limit = 8, title = "
           <ul className="divide-y divide-border-subtle md:hidden">
             {rows.map((c) => (
               <li key={c.sha} className="px-4 py-3 text-sm">
-                <div className="flex items-center gap-2 text-xs text-secondary"><Hash sha={c.sha} href={hashLink(c.sha)} /> · {formatDate(c.date)}</div>
+                <div className="flex items-center gap-2 text-xs text-secondary" suppressHydrationWarning><Hash sha={c.sha} href={hashLink(c.sha)} /> · {formatDate(c.date)}</div>
                 <div className="mt-1">{c.subject}</div>
                 <div className="text-[13px] text-secondary">{c.author}</div>
               </li>

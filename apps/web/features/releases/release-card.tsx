@@ -15,6 +15,7 @@ import { useAction } from "@/lib/use-action";
 import { nextVersion, previewRelease, releaseJob, runRelease } from "@/features/releases/actions";
 import type { AppView } from "@/features/projects";
 import { RunAlert, summarize } from "@/features/deployments";
+import { LiveLog } from "@/features/jobs";
 
 type Increment = "patch" | "minor" | "major";
 
@@ -107,6 +108,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
       alerts={
         <>
           {action.step === "polling" && <Running label="Cutting the release" detail={`${next} from ${branch}`} />}
+          {action.job && <LiveLog jobId={action.job} live={action.step === "polling"} title="Release log" />}
           {action.result && !action.result.dry_run && <RunAlert tone="success" title={`Released ${action.result.next}`} summary={`Tag v${action.result.next} pushed and published from ${action.result.branch}.`} />}
           {action.error && <RunAlert tone="danger" title="Release failed" summary={summarize(action.error)} log={action.error} />}
         </>

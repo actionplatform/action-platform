@@ -295,6 +295,12 @@ class Remote:
     def diagnose(self, id: str, stage: Optional[str] = None) -> list[dict]:
         return self._call("GET", f"apps/{id}/diagnose", stage=stage)
 
+    def job(self, id: str) -> dict:
+        return self._call("GET", f"jobs/{id}")
+
+    def job_logs(self, id: str, after: int = 0, limit: int = 1000) -> dict:
+        return self._call("GET", f"jobs/{id}/logs", after=after, limit=limit)
+
     def deployments(self, project: str, app: str) -> dict:
         return self._call("GET", f"projects/{project}/apps/{app}/deployments")
 

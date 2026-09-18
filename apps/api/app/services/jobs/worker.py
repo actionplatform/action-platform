@@ -18,6 +18,7 @@ from app.repositories.workspace.registry import Registry
 from app.repositories.workspace.source import configure_registry, get_registry
 from app.services.integrations import plugins
 from app.services.jobs import JobQueue, handlers as _handlers  # noqa: F401 — registers the job kinds
+from app.services.jobs.logs import JobLogs
 from app.services.jobs.registry import JobServices, handlers
 
 log = logging.getLogger("action_platform.worker")
@@ -46,6 +47,7 @@ class Worker:
         self.secrets = secrets
         self.sealer = Sealer(secrets) if secrets else None
         self.queue = JobQueue(database)
+        self.logs = JobLogs(database)
         self.name = name or worker_name()
 
         if registry is None:
@@ -136,20 +138,22 @@ class Worker:
 
             return
 
-        log.info("job %s %s starts (attempt %s)", job.kind, job.id, job.attempts)
+        with self.logs.record(job.id):
+            log.info("job %s %s starts (attempt %s)", job.kind, job.id, job.attempts)
 
-        try:
-            result = handler(payload)
-        except ActionPlatformError as e:
-            log.warning("job %s %s refused: %s", job.kind, job.id, e)
-            self.queue.fail(job.id, str(e), retry=False)
+            try:
+                result = handler(payload)
+            except ActionPlatformError as e:
+                log.warning("job %s %s refused: %s", job.kind, job.id, e)
+                self.queue.fail(job.id, str(e), retry=False)
 
-            return
-        except Exception as e:
-            log.exception("job %s %s failed", job.kind, job.id)
-            self.queue.fail(job.id, f"{type(e).__name__}: {e}")
+                return
+            except Exception as e:
+                log.exception("job %s %s failed", job.kind, job.id)
+                self.queue.fail(job.id, f"{type(e).__name__}: {e}")
 
-            return
+                return
+
+            log.info("job %s %s done", job.kind, job.id)
 
         self.queue.finish(job.id, result)
-        log.info("job %s %s done", job.kind, job.id)

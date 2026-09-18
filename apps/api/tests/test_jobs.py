@@ -116,6 +116,58 @@ class AsyncRouteTest(GateCase):
         ).json()
         self.assertEqual([j["id"] for j in listed], [job_id])
 
+    def test_what_the_worker_writes_can_be_followed_line_by_line(self):
+        from action_platform.logging import emit, logger
+        from app.services.jobs import registry
+        from app.services.jobs.worker import Worker
+
+        registry_id = self.register()
+        res = self.client.post(
+            f"/api/v1/apps/{registry_id}/sync",
+            json={},
+            headers={**self.h(), "Prefer": "respond-async"},
+        )
+        job_id = res.json()["job"]
+
+        def chatty(payload):
+            logger.info("deploy target=%s", "fake")
+            emit("$ sam build")
+            emit("Build Succeeded")
+
+            return {"ok": True}
+
+        original = registry._factories["sync"]
+        registry.register("sync", lambda s: chatty)
+
+        try:
+            Worker(self.app.state.db, self.app.state.secrets, "test").run(once=True)
+        finally:
+            registry.register("sync", original)
+
+        first = self.client.get(
+            f"/api/v1/jobs/{job_id}/logs", params={"limit": 2}, headers=self.h()
+        ).json()
+        rest = self.client.get(
+            f"/api/v1/jobs/{job_id}/logs",
+            params={"after": first["next"]},
+            headers=self.h(),
+        ).json()
+        lines = [row["line"] for row in first["lines"] + rest["lines"]]
+
+        self.assertEqual(first["next"], 2)
+        self.assertIn("deploy target=fake", lines)
+        self.assertEqual(
+            lines[-3:], ["$ sam build", "Build Succeeded", f"job sync {job_id} done"]
+        )
+        self.assertTrue(rest["finished"])
+        self.assertEqual(rest["status"], "done")
+        self.assertEqual(
+            self.client.get(
+                f"/api/v1/jobs/{job_id}/logs", params={"after": 99}, headers=self.h()
+            ).json(),
+            {"lines": [], "next": 99, "status": "done", "finished": True},
+        )
+
     def test_a_deploy_job_carries_the_app_and_the_plugin_options(self):
         from app.services.deployments import DeployEnv
         from app.services.jobs.context import JobContext

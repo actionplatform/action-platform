@@ -46,6 +46,7 @@ action-platform rollback [--target name] [--to X.Y.Z] [--stage …]
 action-platform diagnose [--target name]
 action-platform destroy [--target name]
 action-platform deployments [--app id|name] [--sync]      # on the hosted platform: every target, what arrived at each
+action-platform logs <job-id> [--follow]                  # on the hosted platform: what the worker wrote for a job, live with -f
 action-platform deploy-record <target> <version> [--stage s] [--url u] [--failed]
 ```
 
