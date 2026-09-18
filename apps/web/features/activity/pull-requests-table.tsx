@@ -39,7 +39,7 @@ export function PullRequestsTable({ page, currentBranch, repositoryUrl, newHref,
         { key: "state", label: "State", width: 8, render: (r) => <Inline><StateIcon state={r.state} draft={r.draft} /><Badge tone={r.state === "merged" ? "inverse" : r.state === "open" ? "ok" : "neutral"}>{r.state === "merged" ? "Merged" : r.state === "open" ? (r.draft ? "Draft" : "Open") : "Closed"}</Badge></Inline> },
         { key: "title", label: "Title", width: 59, render: (r) => <Inline><a href={r.url} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate font-medium hover:underline underline-offset-4" title={r.title}>{r.title}</a><span className="shrink-0 font-mono text-xs text-muted-foreground">#{r.number}</span>{r.head === currentBranch && <Badge tone="ok" className="shrink-0">Current branch</Badge>}</Inline> },
         { key: "branches", label: "Branches", width: 12, hide: "md", render: (r) => <Cell mono muted title={`${r.head} → ${r.base}`}>{r.head} → {r.base}</Cell> },
-        { key: "author", label: "Author", width: 9, hide: "lg", render: (r) => <Cell muted title={r.author ?? undefined}>{r.author ?? "—"}</Cell> },
+        { key: "author", label: "Author", width: 9, hide: "md", render: (r) => <Cell muted title={r.author ?? undefined}>{r.author ?? "—"}</Cell> },
         { key: "when", label: "When", width: 12, hide: "sm", render: (r) => <Cell muted>{when(r)}</Cell> },
       ]}
     />
