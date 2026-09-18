@@ -991,6 +991,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/apps/{app_id}/deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["deployments_api_v1_projects__project_id__apps__app_id__deployments_get"];
+        put?: never;
+        post: operations["record_deployment_api_v1_projects__project_id__apps__app_id__deployments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/deployments/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["sync_deployments_api_v1_projects__project_id__apps__app_id__deployments_sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/import/github/organizations": {
         parameters: {
             query?: never;
@@ -1862,6 +1894,30 @@ export interface components {
             url?: string | null;
             error?: string | null;
         };
+        DeploymentRow: {
+            id: string;
+            target: string;
+            kind: string;
+            stage?: string | null;
+            version: string;
+            sha?: string | null;
+            status: string;
+            executor: string;
+            job_id?: string | null;
+            ci_run_id?: string | null;
+            url?: string | null;
+            actor?: string | null;
+            error?: string | null;
+            started_at?: string | null;
+            finished_at?: string | null;
+            verified_at?: string | null;
+            synced_at: string;
+        };
+        Deployments: {
+            targets: components["schemas"]["TargetRow"][];
+            deployments: components["schemas"]["DeploymentRow"][];
+            error?: string | null;
+        };
         DeviceCodeOut: {
             device_code: string;
             user_code: string;
@@ -2428,6 +2484,14 @@ export interface components {
             id: string;
             url: string;
         };
+        RecordDeploymentRequest: {
+            target: string;
+            version: string;
+            stage?: string | null;
+            url?: string | null;
+            sha?: string | null;
+            ok: boolean;
+        };
         Release: {
             tag: string;
             version: string;
@@ -2557,6 +2621,14 @@ export interface components {
         SyncRequest: {
             credentials?: components["schemas"]["SourceCredentials"] | null;
             reset: boolean;
+        };
+        TargetRow: {
+            name: string;
+            kind: string;
+            run_by: string;
+            stages: string[];
+            workflow?: string | null;
+            job?: string | null;
         };
         TeamMemberRequest: {
             team_id: string;
@@ -4936,6 +5008,106 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CiRuns"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deployments_api_v1_projects__project_id__apps__app_id__deployments_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deployments"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_deployment_api_v1_projects__project_id__apps__app_id__deployments_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordDeploymentRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentRow"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_deployments_api_v1_projects__project_id__apps__app_id__deployments_sync_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deployments"];
                 };
             };
             422: {

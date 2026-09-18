@@ -4,18 +4,21 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from action_platform.core.context import DeployResult
 from action_platform.core.exception import ActionPlatformError
 from action_platform.settings import settings
 from app.core.auth.crypto import Sealer
 from app.core.db.database import Database
 from app.core.db.models import App, Organization, Project
+from app.core.shared.clock import now
 from app.core.shared.urls import GitUrl
+from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.workspace.registry import Registry
 from app.schemas import DeployRequest, PushRequest, ReleaseRequest, SyncRequest
 from app.services.activity import ActivityService
 from app.services.ci import CiService
 from app.services.projects.apps import AppService
-from app.services.deployments import DeployEnv
+from app.services.deployments import DeployEnv, DeploymentRecords
 from app.services.integrations.hosts.directory import IntegrationsDirectory
 from app.services.projects.organization_import.directory import ImportDirectory
 from app.services.deployments.identity import AppIdentity
@@ -35,6 +38,7 @@ class JobHandlers:
         self.database = database
         self.sealer = sealer
         self.registry = registry
+        self.configs = ConfigStore(database)
 
     @classmethod
     def of(cls, services: JobServices) -> "JobHandlers":
@@ -65,17 +69,78 @@ class JobHandlers:
     def deploy(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
         identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
-
-        return DeploymentsService(
+        request = DeployRequest(**ctx.body)
+        service = DeploymentsService(
             self.registry,
             identity=identity.minter(
                 ctx.organization,
                 ctx.app,
-                ctx.body.get("stage"),
+                request.stage,
                 manages=bool(payload.get("manages")),
             ),
             env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
-        ).deploy(ctx.registry_id, DeployRequest(**ctx.body))
+        )
+        started = now()
+
+        try:
+            results = service.deploy(ctx.registry_id, request)
+        except ActionPlatformError as e:
+            if not request.dry_run:
+                self._record_deploy_failure(ctx, payload, request, started, str(e))
+
+            raise
+
+        if not request.dry_run:
+            self._record_deploy(ctx, payload, request, started, results)
+
+        return results
+
+    def _record_deploy(
+        self,
+        ctx: JobContext,
+        payload: dict[str, Any],
+        request: DeployRequest,
+        started: Any,
+        results: list[dict],
+    ) -> None:
+        if ctx.app is None or not payload.get("job_id"):
+            return
+
+        with self.database.session() as db:
+            records = DeploymentRecords(db, self.sealer)
+            records.record_platform(
+                db.get(App, ctx.app.id),
+                self.configs.config_of(ctx.registry_id),
+                [DeployResult(**r) for r in results],
+                request.stage,
+                payload["job_id"],
+                records.actor_name(payload.get("user_id")),
+                started,
+            )
+
+    def _record_deploy_failure(
+        self,
+        ctx: JobContext,
+        payload: dict[str, Any],
+        request: DeployRequest,
+        started: Any,
+        error: str,
+    ) -> None:
+        if ctx.app is None or not payload.get("job_id"):
+            return
+
+        with self.database.session() as db:
+            records = DeploymentRecords(db, self.sealer)
+            records.record_failure(
+                db.get(App, ctx.app.id),
+                self.configs.config_of(ctx.registry_id),
+                request.stage,
+                request.version,
+                payload["job_id"],
+                records.actor_name(payload.get("user_id")),
+                started,
+                error,
+            )
 
     def destroy(self, payload: dict[str, Any]) -> Any:
         """Every stage's stack down, then the app off the platform — the job the web queues for a deletion with cloud cleanup."""
@@ -166,6 +231,19 @@ class JobHandlers:
                 errors["ci"] = None
             except ActionPlatformError as e:
                 errors["ci"] = str(e)
+
+            try:
+                observed = DeploymentRecords(db, self.sealer).sync_observed(
+                    payload["organization_id"],
+                    app,
+                    self.configs.config_of(payload["registry_id"]),
+                    GitUrl(url).repo,
+                )
+                errors["deployments"] = (
+                    "; ".join(f"{k}: {v}" for k, v in observed.items() if v) or None
+                )
+            except ActionPlatformError as e:
+                errors["deployments"] = str(e)
 
             return errors
 

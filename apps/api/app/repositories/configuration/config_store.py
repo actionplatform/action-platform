@@ -73,6 +73,10 @@ class ConfigStore:
     def config(self, registry_id: str, root: Path) -> Config:
         return Config.from_dict(self.resolve(registry_id, root))
 
+    def config_of(self, registry_id: str) -> Config:
+        """The stored configuration without a clone — empty when the app was never opened."""
+        return Config.from_dict(self.get(registry_id) or {})
+
     def render(self, registry_id: str, root: Path) -> str:
         return dump_toml(self.resolve(registry_id, root))
 

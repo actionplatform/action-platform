@@ -18,5 +18,8 @@ export type JobRow = Schemas["JobOut"];
 export type CiHostRow = Schemas["CiHostRow"];
 export type CiRunRow = Schemas["CiRunRow"];
 export type CiRunsRow = Schemas["CiRuns"];
+export type DeploymentsRow = Schemas["Deployments"];
+export type DeploymentRow = Schemas["DeploymentRow"];
+export type TargetRow = Schemas["TargetRow"];
 
 export const v1 = { ...organization, ...projects, ...integrations, ...jobs };

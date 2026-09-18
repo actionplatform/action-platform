@@ -44,6 +44,8 @@ action-platform deploy [--version X.Y.Z] [--target name] [--stage dev|prod] [--d
 action-platform rollback [--target name] [--to X.Y.Z] [--stage …]
 action-platform diagnose [--target name]
 action-platform destroy [--target name]
+action-platform deployments [--app id|name] [--sync]      # on the hosted platform: every target, what arrived at each
+action-platform deploy-record <target> <version> [--stage s] [--url u] [--failed]
 ```
 
 `release` plans first (refuses a dirty tree, an existing version or tag), then bumps `LAST_VERSION`, prepends `CHANGELOG.md`, syncs `pyproject.toml` / `package.json` / `Cargo.toml` / `composer.json` / `pom.xml`, `__version__` and version constants, commits `chore(release): X.Y.Z`, tags, pushes, publishes the release on the source host and triggers CI runners. A push the remote refuses undoes the commit and the tag. Off `main`/`master` the version is `X.Y.Z-rc.N`. `--component <name>` releases one [component](concept_releases.md).

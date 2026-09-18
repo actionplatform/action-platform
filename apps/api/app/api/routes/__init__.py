@@ -31,6 +31,7 @@ from app.api.routes.organization import (
 )
 from app.api.routes.projects import apps as project_apps
 from app.api.routes.projects import ci as project_ci
+from app.api.routes.projects import deployments as project_deployments
 from app.api.routes.projects import organization_import, projects
 
 routers = [
@@ -52,6 +53,7 @@ routers = [
     projects,
     project_apps,
     project_ci,
+    project_deployments,
     organization_import,
     apps,
     releases,
