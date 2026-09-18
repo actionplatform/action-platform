@@ -42,6 +42,10 @@ class App(Base):
     registry_id: Mapped[str] = mapped_column(SHORT, nullable=False, unique=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     source_host_id: Mapped[Optional[str]] = mapped_column(KEY)
+    ci_host_id: Mapped[Optional[str]] = mapped_column(KEY)
+    ci_job: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=""
+    )
     last_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=now, server_default=func.now()

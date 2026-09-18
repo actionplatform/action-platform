@@ -13,6 +13,7 @@ from app.core.shared.urls import GitUrl
 from app.repositories.workspace.registry import Registry
 from app.schemas import DeployRequest, PushRequest, ReleaseRequest, SyncRequest
 from app.services.activity import ActivityService
+from app.services.ci import CiService
 from app.services.projects.apps import AppService
 from app.services.deployments import DeployEnv
 from app.services.integrations.hosts.directory import IntegrationsDirectory
@@ -150,14 +151,23 @@ class JobHandlers:
 
         with self.database.session() as db:
             directory = IntegrationsDirectory(db, self.sealer)
+            app = db.get(App, payload["app_id"])
             creds = directory.credentials_for(
-                payload["organization_id"],
-                db.get(App, payload["app_id"]).source_host_id,
+                payload["organization_id"], app.source_host_id
             )
-
-            return ActivityService(db).sync_all(
+            errors = ActivityService(db).sync_all(
                 payload["app_id"], creds, GitUrl(url).repo
             )
+
+            try:
+                CiService(db, self.sealer).sync_runs(
+                    payload["organization_id"], app, GitUrl(url).repo
+                )
+                errors["ci"] = None
+            except ActionPlatformError as e:
+                errors["ci"] = str(e)
+
+            return errors
 
     def import_github(self, payload: dict[str, Any]) -> Any:
         with self.database.session() as db:

@@ -14,6 +14,7 @@ from app.api.routes import (
 )
 from app.api.routes.auth import device, invitations as invites, sessions, setup
 from app.api.routes.integrations import (
+    ci_hosts,
     github_app,
     hosts,
     oauth_apps,
@@ -29,6 +30,7 @@ from app.api.routes.organization import (
     settings,
 )
 from app.api.routes.projects import apps as project_apps
+from app.api.routes.projects import ci as project_ci
 from app.api.routes.projects import organization_import, projects
 
 routers = [
@@ -43,11 +45,13 @@ routers = [
     settings,
     template_sources,
     hosts,
+    ci_hosts,
     oauth_apps,
     oauth_flow,
     github_app,
     projects,
     project_apps,
+    project_ci,
     organization_import,
     apps,
     releases,

@@ -3,6 +3,7 @@
 from app.core.db.models.activity import PullRequest, Release
 from app.core.db.models.auth import Account, DeviceCode, Session, User, Verification
 from app.core.db.models.base import KEY, SHORT, Base, now
+from app.core.db.models.ci import CiHost, CiRun
 from app.core.db.models.configuration import AppConfig
 from app.core.db.models.integrations import (
     OAuthApp,
@@ -30,6 +31,8 @@ __all__ = [
     "ApiTokenClient",
     "App",
     "AppConfig",
+    "CiHost",
+    "CiRun",
     "Base",
     "DeviceCode",
     "Draft",

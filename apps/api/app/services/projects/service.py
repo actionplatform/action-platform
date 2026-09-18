@@ -7,8 +7,10 @@ from action_platform.core.exception import ActionPlatformError
 from app.core.db.models import App, Organization, Project
 from app.core.shared.urls import GitUrl
 from app.schemas import InitRequest, InstallSpec, SourceCredentials
+from app.schemas import ci as ci_schemas
 from app.services.access.enrich import credentials_for
 from app.services.activity import ActivityService
+from app.services.ci import CiService
 from app.services.projects.apps import AppService
 from app.services.projects.organization_import.directory import ImportDirectory
 from app.core.errors import Invalid
@@ -19,6 +21,7 @@ class ProjectService:
         self.writes = writes
         self.apps = apps
         self.activity = ActivityService(writes.db)
+        self.ci = CiService(writes.db, writes.sealer)
 
     def add_app(
         self,
@@ -141,6 +144,27 @@ class ProjectService:
         return self.activity.sync_all(
             app.id, self.writes.credentials_for(org.id, app.source_host_id), repo
         )
+
+    def _repo_of(self, app: App) -> str:
+        detail = self.apps.detail(app.registry_id)
+
+        return (
+            detail.get("source_host", {}).get("repo")
+            or GitUrl(detail.get("url", "")).repo
+        )
+
+    def sync_ci(self, org: Organization, app: App) -> int:
+        return self.ci.sync_runs(org.id, app, self._repo_of(app))
+
+    def ci_link(self, org: Organization, app: App) -> ci_schemas.CiLink:
+        return ci_schemas.CiLink(
+            kind=self.ci.kind_of(org.id, app),
+            ci_host_id=app.ci_host_id,
+            job=app.ci_job or "",
+        )
+
+    def ci_runs(self, app: App) -> list:
+        return self.ci.runs(app.id)
 
     def _forget(self, registry_id: str) -> None:
         try:
