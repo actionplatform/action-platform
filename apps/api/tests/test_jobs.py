@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import unittest
+
 from action_platform.testing.fixtures import TempCase
 from tests.test_access import GateCase
 
@@ -222,7 +224,7 @@ class AsyncRouteTest(GateCase):
         self.assertEqual(len(deploys), 1)
         self.assertEqual(
             (deploys[0]["stage"], deploys[0]["dry_run"], deploys[0]["by"]),
-            ("prod", True, "ana@example.com"),
+            ("prod", True, "Ana"),
         )
         self.assertEqual(syncs, [])
 
@@ -429,3 +431,14 @@ class ConcurrentWorkerTest(GateCase):
             self.assertEqual(
                 s.query(Job).filter_by(kind="other").one().status, "queued"
             )
+
+
+class PersonLabelTest(unittest.TestCase):
+    def test_name_first_email_when_there_is_none(self):
+        from types import SimpleNamespace
+
+        from app.core.shared import people
+
+        self.assertEqual(people.label(SimpleNamespace(name="Ana", email="a@x")), "Ana")
+        self.assertEqual(people.label(SimpleNamespace(name="  ", email="a@x")), "a@x")
+        self.assertIsNone(people.label(None))

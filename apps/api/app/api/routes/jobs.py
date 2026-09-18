@@ -12,6 +12,7 @@ from app.api.dependencies import (
     QueueDep,
 )
 from app.core.db.models.auth import User
+from app.core.shared import people
 from app.schemas.common import page_bounds
 from app.services.jobs import JobQueue
 
@@ -97,7 +98,7 @@ def _out(directory: ProjectsRepoDep, view: dict) -> JobOut:
     user_id = view.pop("user_id", None)
     user = directory.db.get(User, user_id) if user_id else None
 
-    return JobOut(**view, by=user.email if user else None)
+    return JobOut(**view, by=people.label(user))
 
 
 @router.get("/jobs")

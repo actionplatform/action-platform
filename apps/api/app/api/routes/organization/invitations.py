@@ -1,5 +1,6 @@
 """Invitations into the organization."""
 
+from app.core.shared import people
 from fastapi import APIRouter
 
 from app.api.dependencies import (
@@ -29,7 +30,7 @@ def invitations(
             status=i.status,
             expires_at=i.expires_at,
             created_at=i.created_at,
-            inviter=u.name,
+            inviter=people.label(u) or "",
         )
         for i, u in writes.invitations_of(org.id)
     ]
@@ -52,7 +53,7 @@ def invite(
         status=i.status,
         expires_at=i.expires_at,
         created_at=i.created_at,
-        inviter=caller.user.name,
+        inviter=people.label(caller.user) or "",
     )
 
 

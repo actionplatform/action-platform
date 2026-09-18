@@ -93,7 +93,7 @@ export function DeploymentsTable({ page, registryId, canDeploy, newHref }: { pag
           { key: "type", label: "Type", width: 9, hide: "sm", render: (job) => <Cell muted>{type(job)}</Cell> },
           { key: "version", label: "Version", width: 15, render: (job) => <Cell mono>{versionOf(job) ?? "—"}</Cell> },
           { key: "duration", label: "Duration", width: 10, hide: "sm", render: (job) => <span className="block truncate font-mono text-[13px] text-secondary" suppressHydrationWarning>{duration(job, now)}</span> },
-          { key: "by", label: "Triggered by", width: 20, hide: "md", render: (job) => <Cell muted title={job.by ?? undefined}>{job.by ?? "—"}</Cell> },
+          { key: "by", label: "By", width: 20, hide: "md", render: (job) => <Cell muted title={job.by ?? undefined}>{job.by ?? "—"}</Cell> },
           { key: "started", label: "Started", width: 18, hide: "sm", render: (job) => <span className="block truncate text-secondary" suppressHydrationWarning>{when(job.created_at)}</span> },
           { key: "actions", label: "", width: 5, align: "right", render: (job) => <Menu label="Run actions" items={actions(job)} trigger={({ toggle, open, id }) => <Button size="icon" variant="ghost" aria-label="More actions" aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle}><MoreHorizontal className="size-4" strokeWidth={1.75} /></Button>} /> },
         ]}
@@ -107,7 +107,7 @@ export function DeploymentsTable({ page, registryId, canDeploy, newHref }: { pag
               <Item k="Run id" v={details.id} />
               <Item k="Version" v={versionOf(details) ?? "—"} />
               <Item k="Attempts" v={String(details.attempts)} />
-              <Item k="Triggered by" v={details.by ?? "—"} />
+              <Item k="By" v={details.by ?? "—"} />
               <Item k="Started" v={when(details.started_at ?? details.created_at)} />
               <Item k="Finished" v={when(details.finished_at)} />
             </dl>
