@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.20.23 — 2026-09-17
+
+### Bug Fixes
+- **api:** clone and fetch with the organization's credentials on GET routes
+
 ## v0.20.22 — 2026-09-16
 
 ## v0.20.21 — 2026-09-15
