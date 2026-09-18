@@ -189,11 +189,12 @@ class CiTest(GateCase):
 
         with mock.patch(
             "action_platform.providers.ci.github_actions.CIGithubActions.runs",
-            return_value=[Run(number=1, status="success")],
+            return_value=[Run(number=17_640_312_055, status="success")],
         ) as runs:
             res = self.client.post(
                 "/api/v1/projects/p1/apps/a1/ci/sync", headers=self.h()
             )
 
         self.assertEqual(res.json()["runs"][0]["source"], "github_actions")
+        self.assertEqual(res.json()["runs"][0]["number"], 17_640_312_055)
         self.assertEqual(runs.call_args.args[0], "")

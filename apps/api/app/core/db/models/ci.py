@@ -3,7 +3,15 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Text, UniqueConstraint, func
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db.models.base import KEY, SHORT, Base, now
@@ -38,7 +46,7 @@ class CiRun(Base):
         KEY, ForeignKey("app.id", ondelete="CASCADE"), nullable=False
     )
     source: Mapped[str] = mapped_column(SHORT, nullable=False)
-    number: Mapped[int] = mapped_column(Integer, nullable=False)
+    number: Mapped[int] = mapped_column(BigInteger, nullable=False)
     status: Mapped[str] = mapped_column(SHORT, nullable=False)
     name: Mapped[Optional[str]] = mapped_column(Text)
     url: Mapped[Optional[str]] = mapped_column(Text)

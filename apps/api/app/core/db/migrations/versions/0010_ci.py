@@ -36,7 +36,7 @@ def upgrade() -> None:
         sa.Column("id", sa.String(length=36), nullable=False),
         sa.Column("app_id", sa.String(length=36), nullable=False),
         sa.Column("source", sa.String(length=255), nullable=False),
-        sa.Column("number", sa.Integer(), nullable=False),
+        sa.Column("number", sa.BigInteger(), nullable=False),
         sa.Column("status", sa.String(length=255), nullable=False),
         sa.Column("name", sa.Text(), nullable=True),
         sa.Column("url", sa.Text(), nullable=True),
