@@ -33,6 +33,7 @@ Alembic, shipped with the API — one revision per change:
 | `0013` | `release` becomes the platform's table: `component` and `version` per tag, one row per `(app, tag)`, `source` naming who first knew it (`platform`, a host, `git`); `deployment.release_id` references it |
 | `0014` | indexes on every per-app listing (`release`, `pull_request`, `ci_run`, `deployment`, `job`) and on the queue's claim, hosts and members by organization |
 | `0015` | `app_snapshot`: what the app pages read, one JSON row per app, taken from the clone after every change — reads never touch git |
+| `0016` | `source_host.webhook_secret_encrypted`: the secret the host signs deliveries with |
 
 A database the web app created has no `alembic_version` table but does have `user`; the API recognises that, stamps it at `0001` and applies only what follows. Nothing is recreated, nothing is copied: pointing the API at the web app's database is the whole data migration.
 

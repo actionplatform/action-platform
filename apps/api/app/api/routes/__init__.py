@@ -21,6 +21,7 @@ from app.api.routes.integrations import (
     oauth_flow,
     plugins,
     template_sources,
+    webhooks,
 )
 from app.api.routes.organization import identity as org_identity
 from app.api.routes.organization import (
@@ -46,6 +47,7 @@ routers = [
     settings,
     template_sources,
     hosts,
+    webhooks,
     ci_hosts,
     oauth_apps,
     oauth_flow,
