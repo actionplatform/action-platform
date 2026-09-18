@@ -12,6 +12,7 @@ from app.schemas import projects
 from app.schemas.common import page_bounds
 from app.services.access.caller import Caller
 from app.repositories.projects import ProjectsRepository
+from app.repositories.releases import ReadinessStore
 
 
 def org_dict(organization: Organization) -> dict:
@@ -47,9 +48,21 @@ def releases_page(
         select(func.count()).select_from(Release).where(Release.app_id == app_id)
     )
 
+    readiness = ReadinessStore(db).summary([r.id for r in rows])
+
     return projects.ReleasePage(
         items=[
-            projects.ReleaseRow.model_validate(r, from_attributes=True) for r in rows
+            projects.ReleaseRow.model_validate(
+                {
+                    **{
+                        k: getattr(r, k)
+                        for k in projects.ReleaseRow.model_fields
+                        if k != "readiness"
+                    },
+                    "readiness": readiness.get(r.id, {}),
+                }
+            )
+            for r in rows
         ],
         total=int(total or 0),
         page=page,

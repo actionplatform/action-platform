@@ -10,9 +10,10 @@ import { Cell, DataTable, Inline } from "@/components/ui/data-table";
 import { Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
 import type { Paged } from "@/lib/page";
-import type { StoredRelease } from "@/lib/releases";
+import type { StoredRelease, Verdict } from "@/lib/releases";
+import { ReadinessBadges } from "@/features/readiness";
 
-type Row = { tag: string; version: string; name: string | null; body: string | null; url: string | null; author: string | null; sha: string | null; prerelease: boolean; draft: boolean; date: string | null; source: string };
+type Row = { tag: string; version: string; name: string | null; body: string | null; url: string | null; author: string | null; sha: string | null; prerelease: boolean; draft: boolean; date: string | null; source: string; readiness: Record<string, Verdict> };
 
 function formatDate(d: string | null): string {
   if (!d) return "—";
@@ -23,7 +24,7 @@ function formatDate(d: string | null): string {
 const SOURCE: Record<string, string> = { github: "GitHub", gitlab: "GitLab", bitbucket: "Bitbucket", git: "Git tags", platform: "Platform" };
 
 export function toRows(stored: StoredRelease[], repositoryUrl: string | null): Row[] {
-  return stored.map((r) => ({ tag: r.tag, version: r.version || r.tag.split("/").pop()!.replace(/^v/, ""), name: r.name, body: r.body, url: r.url ?? (repositoryUrl ? `${repositoryUrl}/releases/tag/${r.tag}` : null), author: r.author, sha: r.sha, prerelease: r.prerelease, draft: r.draft, date: r.publishedAt ? r.publishedAt.toISOString() : null, source: r.source }));
+  return stored.map((r) => ({ tag: r.tag, version: r.version || r.tag.split("/").pop()!.replace(/^v/, ""), name: r.name, body: r.body, url: r.url ?? (repositoryUrl ? `${repositoryUrl}/releases/tag/${r.tag}` : null), author: r.author, sha: r.sha, prerelease: r.prerelease, draft: r.draft, date: r.publishedAt ? r.publishedAt.toISOString() : null, source: r.source, readiness: r.readiness }));
 }
 
 export function ReleasesTable({ page, repositoryUrl, newHref, base }: { page: Paged<StoredRelease>; repositoryUrl: string | null; newHref?: string | null; base?: string }) {
@@ -33,7 +34,7 @@ export function ReleasesTable({ page, repositoryUrl, newHref, base }: { page: Pa
   const [changelog, setChangelog] = useState<Row | null>(null);
   const copy = (text: string) => { navigator.clipboard.writeText(text).catch(() => undefined); };
   const actions = (r: Row) => [
-    ...(base ? [{ label: "Timeline", onSelect: () => router.push(`${base}/releases/${encodeURIComponent(r.tag)}`) }] : []),
+    ...(base ? [{ label: "Timeline & readiness", onSelect: () => router.push(`${base}/releases/${encodeURIComponent(r.tag)}`) }] : []),
     ...(r.url ? [{ label: `View on ${SOURCE[r.source] ?? "the code host"}`, onSelect: () => window.open(r.url!, "_blank", "noopener") }] : []),
     { label: "Copy tag", onSelect: () => copy(r.tag) },
     ...(r.sha ? [{ label: "Copy commit SHA", onSelect: () => copy(r.sha!) }] : []),
@@ -60,11 +61,11 @@ export function ReleasesTable({ page, repositoryUrl, newHref, base }: { page: Pa
         minWidth={800}
         columns={[
           { key: "version", label: "Version", width: 28, render: (r, i) => <Inline>{base ? <Link href={`${base}/releases/${encodeURIComponent(r.tag)}`} className="font-mono font-medium hover:underline underline-offset-4">{r.version}</Link> : r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" className="font-mono font-medium hover:underline underline-offset-4">{r.version}</a> : <span className="font-mono font-medium">{r.version}</span>}{i === 0 && !r.draft && <Badge tone="ok" className="shrink-0">Latest</Badge>}{r.prerelease && <Badge className="shrink-0">Pre-release</Badge>}{r.draft && <Badge className="shrink-0">Draft</Badge>}</Inline> },
-          { key: "tag", label: "Tag", width: 16, hide: "sm", render: tagChip },
-          { key: "name", label: "Name", width: 12, hide: "md", render: (r) => <Cell muted title={r.name ?? r.body ?? undefined}>{r.name ?? r.body ?? r.tag}</Cell> },
-          { key: "author", label: "By", width: 17, hide: "md", render: (r) => <Cell muted title={r.author ?? undefined}>{r.author ?? "—"}</Cell> },
+          { key: "tag", label: "Tag", width: 14, hide: "sm", render: tagChip },
+          { key: "readiness", label: "Ready", width: 16, render: (r) => <ReadinessBadges readiness={r.readiness} compact /> },
+          { key: "author", label: "By", width: 14, hide: "md", render: (r) => <Cell muted title={r.author ?? undefined}>{r.author ?? "—"}</Cell> },
           { key: "sha", label: "Commit", width: 10, hide: "md", render: (r) => r.sha ? <span className="inline-flex h-6 items-center rounded border border-border bg-background px-1.5 font-mono text-xs">{r.sha.slice(0, 7)}</span> : <Cell muted>—</Cell> },
-          { key: "date", label: "Published", width: 13, hide: "sm", render: (r) => <Cell muted>{formatDate(r.date)}</Cell> },
+          { key: "date", label: "Published", width: 14, hide: "sm", render: (r) => <Cell muted>{formatDate(r.date)}</Cell> },
           { key: "actions", label: "", width: 4, align: "right", render: (r) => <Menu label={`Actions for ${r.tag}`} items={actions(r)} trigger={({ toggle, open, id }) => <Button size="icon" variant="ghost" aria-label={`Actions for ${r.tag}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle}><MoreHorizontal className="size-4" strokeWidth={1.75} /></Button>} /> },
         ]}
       />

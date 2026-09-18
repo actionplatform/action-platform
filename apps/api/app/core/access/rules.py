@@ -41,6 +41,7 @@ RULES = [
         imports=True,
     ),
     Rule("POST", re.compile(r"^apps/[^/]+/deploy$"), "app.release"),
+    Rule("POST", re.compile(r"^apps/[^/]+/readiness$"), None),
     Rule(
         "POST",
         re.compile(r"^apps/[^/]+/(push|branches|checkout|pull-request)$"),

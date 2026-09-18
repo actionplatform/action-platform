@@ -2,7 +2,8 @@
 
 Slots: `gitflow_rules` (branch kinds, protected branches, commit format),
 `gitflow` (audit, branches, pull requests, hooks), `releaser` (plan and apply
-a release), `deployer` (deploy, rollback, diagnose, destroy), `installer`
+a release), `deployer` (deploy, rollback, diagnose, destroy), `readiness`
+(can a release reach a stage), `installer`
 (bring a repository onto the platform), `scaffolder` (generate a project,
 apply clouds and services, push). Deploy targets, CI runners, source hosts,
 release strategies and changelog renderers are not slots: they are named
@@ -21,6 +22,7 @@ HOMES = {
     "gitflow": "action_platform.core.flow.workflow",
     "releaser": "action_platform.core.release.release",
     "deployer": "action_platform.core.release.deploy",
+    "readiness": "action_platform.core.release.readiness",
     "installer": "action_platform.core.scaffold.install",
     "scaffolder": "action_platform.core.scaffold.generate",
 }

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -15,6 +16,9 @@ from app.services.access.enrich import credentials_for, enrich
 from app.services.access.target import Authorizer, Target
 from app.services.access.directory import AccessDirectory
 from app.services.jobs import JobQueue
+from app.services.releases import ReadinessRequests
+
+DEPLOY_PATH = re.compile(r"^apps/[^/]+/deploy$")
 
 
 @dataclass
@@ -61,6 +65,21 @@ class Planner:
             if method == "GET" and path == "matrix" and target.organization is not None:
                 new_method = "POST"
                 parsed = {"sources": directory.source_specs_of(target.organization.id)}
+
+            if (
+                method == "POST"
+                and DEPLOY_PATH.match(path)
+                and target.app is not None
+                and parsed is not None
+            ):
+                ReadinessRequests(
+                    self.state.db, JobQueue(self.state.db)
+                ).assert_deployable(
+                    target.app,
+                    parsed.get("version"),
+                    parsed.get("stage") or "dev",
+                    bool(parsed.get("force")),
+                )
 
             job_id = Dispatcher(JobQueue(self.state.db)).async_job(
                 target.organization, target.app, caller, path, method, headers, parsed

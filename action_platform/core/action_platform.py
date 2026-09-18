@@ -7,10 +7,11 @@ from typing import Callable
 
 from action_platform.core.wiring import wired
 from action_platform.core.config import Config
-from action_platform.core.context import Context, DeployResult, Diagnosis
+from action_platform.core.context import Check, Context, DeployResult, Diagnosis
 from action_platform.core.flow.repository import Repository
 from action_platform.core.flow.workflow import GitFlow
 from action_platform.core.release.deploy import Deployer
+from action_platform.core.release.readiness import Readiness
 from action_platform.core.release.release import ReleasePlan, Releaser
 from action_platform.core import extensions
 
@@ -61,6 +62,10 @@ class ActionPlatform:
         return wired.deployer(
             self.config, self.repo, identity=self.identity, env=self.env
         )
+
+    @property
+    def readiness(self) -> Readiness:
+        return wired.readiness(self.config, self.repo.path, self.deployer)
 
     @property
     def flow(self) -> GitFlow:
@@ -114,6 +119,14 @@ class ActionPlatform:
             extensions.current().after_deploy(results)
 
         return results
+
+    def check_readiness(
+        self,
+        stage: str,
+        version: str | None = None,
+        target: str | None = None,
+    ) -> list[Check]:
+        return self.readiness.check(stage, version=version, target=target)
 
     def rollback(
         self,

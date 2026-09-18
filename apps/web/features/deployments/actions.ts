@@ -6,11 +6,11 @@ import { api, ApiError, type DeployResult, type ReleasePreview } from "@/lib/api
 import { requireOrg } from "@/lib/session";
 import { v1 } from "@/lib/v1";
 
-export async function startDeploy(registryId: string, stage: string, dryRun: boolean, version: string): Promise<Result<{ job: string }>> {
+export async function startDeploy(registryId: string, stage: string, dryRun: boolean, version: string, force = false): Promise<Result<{ job: string }>> {
   await requireOrg();
   if (!version) return { ok: false, error: "A deploy ships a release: pick one." };
   try {
-    const data = await api.apps.deployAsync(registryId, stage, dryRun, version);
+    const data = await api.apps.deployAsync(registryId, stage, dryRun, version, force);
     return { ok: true, data: { job: data.job } };
   } catch (e) {
     return failed(e);

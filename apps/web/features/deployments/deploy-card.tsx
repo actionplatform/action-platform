@@ -1,17 +1,21 @@
 "use client";
 
-import { Cloud, ExternalLink, ListChecks, Rocket, Tag } from "lucide-react";
+import { Cloud, ExternalLink, ListChecks, Rocket, ShieldCheck, Tag } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActionField, ActionFields, ActionForm, ActionSummary, Running } from "@/components/ui/action-form";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Hint } from "@/components/ui/hint";
 import { Select } from "@/components/ui/select";
 import type { DeployResult } from "@/lib/api";
+import type { ReadinessRow } from "@/lib/releases";
+import { relativeTime } from "@/lib/time";
 import { useAction } from "@/lib/use-action";
 import { deployJob, startDeploy } from "@/features/deployments/actions";
 import type { AppView } from "@/features/projects";
+import { readiness as fetchReadiness } from "@/features/readiness/actions";
 import { RunAlert, summarize } from "./run-alert";
 
 const STAGES = [
@@ -30,7 +34,24 @@ export function DeployCard({ view, liveStages = [] }: { view: AppView; liveStage
   const [stage, setStage] = useState("dev");
   const [tag, setTag] = useState(releases[0] ?? "");
   const [dryRun, setDryRun] = useState(false);
+  const [force, setForce] = useState(false);
+  const [readiness, setReadiness] = useState<ReadinessRow[] | null>(null);
   const dry = useRef(false);
+
+  useEffect(() => {
+    if (!tag) { setReadiness(null); return; }
+    let alive = true;
+    setReadiness(null);
+    fetchReadiness(view.projectId, view.appId, tag).then((r) => { if (alive) setReadiness(r.ok ? r.data : []); });
+    return () => { alive = false; };
+  }, [tag, view.projectId, view.appId]);
+
+  useEffect(() => { setForce(false); }, [tag, stage]);
+
+  const ready = readiness?.find((r) => r.stage === stage) ?? null;
+  const blocked = ready?.verdict === "blocked";
+  const blockers = ready ? ready.checks.filter((c) => !c.ok && c.severity !== "warning") : [];
+  const warnings = ready ? ready.checks.filter((c) => !c.ok && c.severity === "warning") : [];
 
   const poll = useCallback(
     async (job: string) => {
@@ -43,14 +64,15 @@ export function DeployCard({ view, liveStages = [] }: { view: AppView; liveStage
   );
 
   const action = useAction<never, Outcome>({
-    run: () => startDeploy(view.registryId, stage, dry.current, versionOf(tag)),
+    run: () => startDeploy(view.registryId, stage, dry.current, versionOf(tag), force),
     poll,
     onDone: () => router.refresh(),
   });
 
   const live = liveStages.includes(stage);
-  const canDeploy = !!target && view.can["app.release"] && !!view.repositoryUrl && !!tag && !live;
-  const blocker = !target ? "Pick a deploy target in Configuration first." : !view.can["app.release"] ? "Your role cannot deploy." : !view.repositoryUrl ? "This app has no remote." : releases.length === 0 ? "A deploy ships a release: create one in Releases first." : live ? `A deploy to ${stage} is running — one at a time per environment.` : null;
+  const canDeploy = !!target && view.can["app.release"] && !!view.repositoryUrl && !!tag && !live && (!blocked || force);
+  const blocker = !target ? "Pick a deploy target in Configuration first." : !view.can["app.release"] ? "Your role cannot deploy." : !view.repositoryUrl ? "This app has no remote." : releases.length === 0 ? "A deploy ships a release: create one in Releases first." : live ? `A deploy to ${stage} is running — one at a time per environment.` : blocked && !force ? `${tag} is not deployable to ${stage}: fix the checks below, re-check on the release page, or deploy anyway.` : null;
+  const timelineHref = `/projects/${view.projectId}/apps/${view.appId}/releases/${encodeURIComponent(tag)}`;
 
   const launch = (asDryRun: boolean) => {
     dry.current = asDryRun;
@@ -71,6 +93,34 @@ export function DeployCard({ view, liveStages = [] }: { view: AppView; liveStage
       summary={[{ label: "Target", value: target ?? "—" }, { label: "Release", value: tag || "—" }, { label: "Environment", value: stage }, { label: "Version", value: tag ? versionOf(tag) : "—" }]}
       alerts={
         <>
+          {tag && readiness !== null && (
+            <div className={`rounded-lg border px-3 py-2 text-[13px] ${blocked ? "border-status-bad/30 bg-status-bad/5" : ready?.verdict === "ok" ? "border-status-ok/30 bg-status-ok/5" : "border-border bg-surface"}`}>
+              <div className="flex flex-wrap items-center gap-2">
+                <ShieldCheck className={`size-4 ${blocked ? "text-status-bad" : ready?.verdict === "ok" ? "text-status-ok" : "text-secondary"}`} strokeWidth={1.75} />
+                <span className="font-medium">
+                  {!ready ? `${tag} was not checked for ${stage} yet.` : ready.verdict === "pending" ? `Checking ${tag} for ${stage}…` : blocked ? `${tag} is blocked for ${stage}.` : `${tag} is ready for ${stage}.`}
+                </span>
+                {ready?.checked_at && <span className="text-secondary">checked {relativeTime(ready.checked_at)}</span>}
+                <Link href={timelineHref} className="ml-auto text-secondary underline-offset-4 hover:text-foreground hover:underline">Details</Link>
+              </div>
+              {blockers.length > 0 && (
+                <ul className="mt-2 space-y-1 text-status-bad">
+                  {blockers.slice(0, 4).map((c, i) => <li key={`${c.id}-${i}`}><span className="font-mono text-xs">{c.id}</span> — {c.detail}{c.fix && <span className="text-secondary"> · {c.fix}</span>}</li>)}
+                </ul>
+              )}
+              {warnings.length > 0 && !blocked && (
+                <ul className="mt-2 space-y-1 text-status-warn">
+                  {warnings.slice(0, 3).map((c, i) => <li key={`${c.id}-${i}`}><span className="font-mono text-xs">{c.id}</span> — {c.detail}</li>)}
+                </ul>
+              )}
+              {blocked && (
+                <label className="mt-2 flex items-center gap-2 text-[13px]">
+                  <input type="checkbox" className="size-4 accent-foreground" checked={force} onChange={(e) => setForce(e.target.checked)} />
+                  Deploy anyway — I understand the checks failed.
+                </label>
+              )}
+            </div>
+          )}
           {action.busy && action.step === "polling" && <Running label={dryRun ? "Preflight running" : "Deploying"} detail={`${versionOf(tag)} → ${stage}`} />}
           {action.error && <RunAlert tone="danger" title={`${kind} failed`} summary={summarize(action.error)} log={action.error} />}
           {okRows.map((row) => <RunAlert key={row.target} tone="success" title={action.result?.dryRun ? "Preflight passed" : "Deployed"} summary={`${row.target} · ${row.version}${row.url ? ` · ${row.url}` : ""}`} />)}

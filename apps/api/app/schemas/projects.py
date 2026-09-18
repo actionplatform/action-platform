@@ -142,6 +142,37 @@ class ReleaseRow(BaseModel):
     published_at: Optional[datetime] = None
     source: str
     synced_at: datetime
+    readiness: dict[str, str] = {}
+
+
+class ReadinessCheck(BaseModel):
+    id: str
+    ok: bool
+    detail: str = ""
+    level: str = "target"
+    severity: str = "error"
+    fix: Optional[str] = None
+    target: Optional[str] = None
+
+
+class ReadinessRow(BaseModel):
+    stage: str
+    status: str
+    verdict: str
+    ok: Optional[bool] = None
+    checks: list[ReadinessCheck] = []
+    job_id: Optional[str] = None
+    checked_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class ReadinessRequest(BaseModel):
+    stage: Optional[str] = None
+
+
+class ReadinessQueued(BaseModel):
+    jobs: list[str]
+    readiness: list[ReadinessRow]
 
 
 class PullRequestRow(BaseModel):

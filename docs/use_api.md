@@ -12,7 +12,7 @@
 | `GET /api/apps/{id}`, `/gitflow`, `/commits`, `/branches` (each with `protected` and `stable`), `/tags`, `/releases`, `/changes`, `/next-version?level=&branch=`, `/branches/plan?kind=&code=&slug=` | state of the workspace, plus the two previews the pages show before acting: the version a release would produce and the name and base a branch would get; a clone that lost `platform.toml` gets it back on the spot |
 | `GET/PUT /api/apps/{id}/manifest` (the platform's copy; `POST …/manifest/export` writes it into the clone), `POST /cloud`, `/services`, `/install`, `/discard`, `/commit {message, branch, push, pull_request}` | configuration: edit platform.toml, apply overlays, reinstall, drop or commit the changes (on a new git-flow branch with a pull request when the branch is protected) |
 | `POST /api/apps/{id}/branches`, `/checkout`, `GET/POST /pull-request` | git-flow: start a branch, switch, propose and open a pull request |
-| `POST /api/apps/{id}/release {level, branch, dry_run, name, notes, latest}`, `/deploy {stage, version, dry_run}`, `GET /diagnose` | release (fast-forwarded first; a refused push undoes commit and tag), deploy, diagnose; `dry_run` defaults to true |
+| `POST /api/apps/{id}/release {level, branch, dry_run, name, notes, latest}`, `/deploy {stage, version, dry_run, force}`, `GET /diagnose` | release (fast-forwarded first; a refused push undoes commit and tag), deploy, diagnose; `dry_run` defaults to true; a deploy of a release whose [readiness](#readiness) for the stage is blocked answers `409` unless `force` is true |
 
 ## Auth
 
@@ -57,6 +57,7 @@ Routes that are not workspaces live directly under `/api/v1` and are what the we
 | `POST projects`, `DELETE projects/{id}` (removes the workspaces too; `?repositories=true` deletes the repositories on the host, `?cloud=true` answers `202` with a `destroy_project` job that tears every app's stacks down first), `POST projects/{id}/apps {url, install}`, `POST projects/{id}/apps/init {…InitRequest, source_host_id, template_source}`, `DELETE projects/{id}/apps/{id}` (`?repository=true`, `?cloud=true` → `202` with a `destroy` job), `POST projects/team` | `project.manage` |
 | `PUT projects/{id}/apps/{id}/host` | `app.flow` |
 | `POST projects/{id}/apps/{id}/imports` (copy releases and pull requests now) | `app.sync` |
+| `GET projects/{id}/apps/{id}/releases/{tag}/readiness` (the checks per stage), `POST … {stage?}` (queue a check for one stage or for `dev` and `prod`; answers the jobs and the rows, now *pending*) | read: reach; `POST`: `app.release` |
 | `POST teams`, `PUT/DELETE teams/{id}`, `POST teams/members`, `DELETE teams/{id}/members/{user}`, `POST members/role`, `DELETE members/{user}` (never the last owner), `GET/POST invitations`, `DELETE invitations/{id}`, `POST hosts`, `DELETE hosts/{id}`, `PUT hosts/{id}/token`, `PUT hosts/{id}/owner`, `PUT/DELETE oauth/apps/{provider}`, `POST oauth/{provider}/start`, `POST oauth/{provider}/callback`, `DELETE oauth/{provider}/hosts/{login}`, `POST oauth/github/manifest`, `POST oauth/github/manifest/callback`, `POST oauth/github/install`, `PUT settings/git-author`, `POST template-sources`, `DELETE template-sources/{id}` | `org.manage` |
 
 `GET plugins` lists the plugins the image carries — name, version, the options each declares (`key`, `label`, `kind`, `help`, `required`) and a load error when there is one; `GET/PUT plugins/{slug}/options` read and replace the organization's values for them (`org.manage`) — every deploy job carries them to the target as `AP_<SLUG>_<KEY>`. Nothing installs, removes or restarts at runtime: a plugin joins the platform as a dependency of the image.
@@ -91,6 +92,10 @@ Lists that grow are paged on the API: `GET /api/v1/projects/{p}/apps/{a}/release
 
 `POST /api/webhooks/{host_id}` (the web app forwards it to `POST /api/v1/webhooks/{host_id}`) takes the code host's deliveries. No session: the request is verified against the host's secret — GitHub `X-Hub-Signature-256`, Bitbucket `X-Hub-Signature` (HMAC-SHA256 of the body), GitLab `X-Gitlab-Token`. A delivery whose repository matches an app of the host's organization queues one `sync` job for it (deduplicated while one is live); other events and repositories answer `202` with nothing queued. `GET`/`POST /api/v1/hosts/{id}/webhook` read the URL and rotate the secret (`org.manage`).
 
+
+## Readiness
+
+A release carries, per stage, whether it can be deployed there. `GET projects/{p}/apps/{a}/releases/{tag}/readiness` answers one row per stage — `stage`, `status` (`queued`, `running`, `done`), `verdict` (`ok`, `blocked`, `pending`), `ok`, `checks[]`, `job_id`, `checked_at` — each check with `id`, `ok`, `level` (`static`, `target`), `severity` (`error` blocks, `warning` does not), `detail`, `fix` and the `target` it came from. `POST` the same path with `{stage}` (or `{}` for both stages) queues a `readiness` job per stage — deduplicated per release and stage while one is live — and answers `{jobs, readiness}`. The releases page (`GET …/releases`) carries `readiness: {dev: "ok", prod: "blocked"}` on every row. The worker queues the checks itself after `POST apps/{id}/release`. The model and the checks: [deployments › readiness](concept_deployments.md#readiness).
 
 ## Insights
 

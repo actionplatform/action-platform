@@ -82,6 +82,48 @@ def diagnose(target: str | None = TARGET, stage: str | None = STAGE) -> None:
             console.print(f"  {k}: {v}")
 
 
+def readiness(
+    target: str | None = TARGET,
+    stage: str | None = STAGE,
+    version: str | None = typer.Option(
+        None,
+        "--version",
+        help="Release to check (tag v<version>); default: the tag HEAD sits on",
+    ),
+) -> None:
+    """Whether a release can reach a stage: configuration, manifests, credentials, permissions, the destination's state. Nothing is built or changed."""
+    tool = _tool()
+    chosen = stage or tool.releaser.context().stage
+    checks = tool.check_readiness(chosen, version=version, target=target)
+
+    for c in checks:
+        mark = (
+            "[green]ok[/green]"
+            if c.ok
+            else "[yellow]warn[/yellow]"
+            if c.severity == "warning"
+            else "[red]fail[/red]"
+        )
+        where = f" [dim]{c.target}[/dim]" if c.target else ""
+        console.print(f"{mark} [bold]{c.id}[/bold]{where} {c.detail}")
+
+        if c.fix and not c.ok:
+            console.print(f"     fix: {c.fix}")
+
+    blocking = [c for c in checks if c.blocking]
+    console.print(
+        f"[bold]{chosen}[/bold]: "
+        + (
+            "[green]deployable[/green]"
+            if not blocking
+            else f"[red]not deployable[/red] ({len(blocking)} blocking)"
+        )
+    )
+
+    if blocking:
+        raise typer.Exit(1)
+
+
 def destroy(
     target: str | None = TARGET,
     stage: str | None = STAGE,

@@ -62,6 +62,10 @@ A deploy names a version — `action-platform deploy --version X.Y.Z`, the `vers
 
 One deploy at a time per environment: while a deploy (or preflight) to a stage is queued or running, the API refuses another for the same stage with `409` — the stack and the clone are touched by one job at a time; another stage goes ahead. On the platform a deploy never carries a cloud key: the worker signs a token about the app and the target exchanges it for credentials — see [identity](concept_identity.md).
 
+## Readiness
+
+A release carries, per stage, whether it can be deployed there: checked by the worker right after the release is cut, again on request, and stored on the release. Configuration, manifests, credentials, permissions and the destination's state are looked at; nothing is built. A blocked release is refused by the deploy unless forced. The checks, the levels and the gate are in [deployments › readiness](concept_deployments.md#readiness).
+
 ## The release table
 
 The platform keeps one row per tag of an app in `release`, whoever named it first: `platform` when the release was cut here, the code host (`github`, `gitlab`, `bitbucket`, or any other importer) when it published one, `git` when the tag simply exists in the clone. The three merge by tag — a host or the platform enriches what git alone knew (name, notes, url, author), git never overrides a host — so a tag always has a row, on GitHub or on a plain git server. Each row carries its `component` and `version` (`web/v1.2.3` → `web`, `1.2.3`), and every [deployment](concept_deployments.md) references the row of the release it shipped.

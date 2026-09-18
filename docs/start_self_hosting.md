@@ -93,7 +93,7 @@ The setup wizard's first step only checks that the API has its database and secr
 
 ## Backups
 
-One volume holds state: `pgdata` (accounts, organizations, projects, apps, encrypted tokens, OAuth apps, the registry, pending edits, jobs). Back up `pgdata`; keep `BETTER_AUTH_SECRET` with it or the tokens cannot be decrypted. Clones live under the API's and worker's temp dir (`AP_WORKSPACES` to move them, `AP_WORKSPACE_TTL` seconds between fetches, default 15) and can be deleted at any moment. Capacity: `AP_API_WORKERS` uvicorn processes for the API (default 2 in the compose files; each keeps its own clone cache). Two worker services share the queue: `worker` takes sync, release, push and the imports (`AP_WORKER_CONCURRENCY` at once, default 2) and `worker-deploy` takes deploy and tear-down (`AP_DEPLOY_CONCURRENCY`, default 1) so a ten-minute deploy never holds a sync. The `api` image carries Python and git only; the `worker` image adds Go, Node, JDK and Ruby for the deploy targets — both published from the `api/vX.Y.Z` tag. `docker compose --profile pooler up -d` with `AP_DB_HOST=pgbouncer` puts PgBouncer (transaction pooling, 500 clients) in front of Postgres when the replicas outgrow its connections. Every per-app listing and the queue's claim are indexed (migration 0014).
+One volume holds state: `pgdata` (accounts, organizations, projects, apps, encrypted tokens, OAuth apps, the registry, pending edits, jobs). Back up `pgdata`; keep `BETTER_AUTH_SECRET` with it or the tokens cannot be decrypted. Clones live under the API's and worker's temp dir (`AP_WORKSPACES` to move them, `AP_WORKSPACE_TTL` seconds between fetches, default 15) and can be deleted at any moment. Capacity: `AP_API_WORKERS` uvicorn processes for the API (default 2 in the compose files; each keeps its own clone cache). Two worker services share the queue: `worker` takes sync, release, push and the imports (`AP_WORKER_CONCURRENCY` at once, default 2) and `worker-deploy` takes deploy, readiness and tear-down (`AP_DEPLOY_CONCURRENCY`, default 1) so a ten-minute deploy never holds a sync. The `api` image carries Python and git only; the `worker` image adds Go, Node, JDK and Ruby for the deploy targets — both published from the `api/vX.Y.Z` tag. `docker compose --profile pooler up -d` with `AP_DB_HOST=pgbouncer` puts PgBouncer (transaction pooling, 500 clients) in front of Postgres when the replicas outgrow its connections. Every per-app listing and the queue's claim are indexed (migration 0014).
 
 ```bash
 docker compose exec postgres pg_dump -U action_platform action_platform > backup.sql
@@ -111,7 +111,7 @@ AP_IMAGE_API=action-platform-api:local AP_IMAGE_WEB=action-platform-web:local do
 
 - The API image carries git, `sam`, the AWS CLI and the toolchains of every web language (Go, Node, JDK + Maven, Ruby) — 2.3 GB; the host needs room for it and for the build artifacts of deploys.
 - Domains are set in `.env` (or in Dokploy), not from the app's Settings.
-- Sync, release, deploy, destroy and import run as jobs on the worker; the rest of the calls run inline. Queued work is in [database](concept_database.md#jobs).
+- Sync, release, readiness, deploy, destroy and import run as jobs on the worker; the rest of the calls run inline. Queued work is in [database](concept_database.md#jobs).
 
 ## Upgrading
 

@@ -6,7 +6,7 @@ import urllib.error
 import urllib.request
 
 from action_platform.abc.deploy_target import DeployTarget
-from action_platform.core.context import Context, DeployResult
+from action_platform.core.context import Check, Context, DeployResult
 from action_platform.core.exception import DeployError, ProviderError
 
 
@@ -22,6 +22,37 @@ class ObservedTarget(DeployTarget):
         raise DeployError(
             f"{self.name} is published by a pipeline outside the platform; the platform only verifies it"
         )
+
+    def readiness(self, ctx: Context) -> list[Check]:
+        version = ctx.next_version
+
+        try:
+            published = self.verify(version, ctx.stage)
+        except ProviderError as e:
+            return [
+                Check(
+                    "destination.reachable",
+                    False,
+                    str(e),
+                    severity="warning",
+                    fix="the registry did not answer; check the network or the package name",
+                )
+            ]
+
+        where = self.url(version, ctx.stage) or self.name
+
+        return [
+            Check(
+                "destination.version",
+                not published,
+                f"{version} is already at {where}"
+                if published
+                else f"{version} is not yet at {self.name}",
+                fix="publishing the same version twice fails; cut a new release"
+                if published
+                else None,
+            )
+        ]
 
     @staticmethod
     def _exists(url: str, headers: dict[str, str] | None = None) -> bool:

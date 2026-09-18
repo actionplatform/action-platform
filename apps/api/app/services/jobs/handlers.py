@@ -11,7 +11,7 @@ from action_platform.core.exception import ActionPlatformError
 from action_platform.settings import settings
 from app.core.auth.crypto import Sealer
 from app.core.db.database import Database
-from app.core.db.models import App, Organization, Project
+from app.core.db.models import App, Organization, Project, Release
 from app.core.shared.clock import now
 from app.core.shared.urls import GitUrl
 from app.repositories.configuration.config_store import ConfigStore
@@ -36,7 +36,15 @@ from app.repositories.projects import ProjectsRepository
 from app.services.projects import ProjectService
 from app.services.projects.organization_import import OrganizationImport
 from app.services.deployments import DeploymentsService
-from app.services.releases import ReleaseStore, ReleasesService, tag_of
+from app.services.releases import (
+    ReadinessRequests,
+    ReadinessService,
+    ReleaseStore,
+    ReleasesService,
+    tag_of,
+)
+from app.repositories.releases import ReadinessStore
+from app.services.jobs.queue import JobQueue
 from app.services.workspace.snapshot import SnapshotService
 from app.services.workspace.state import GitStateService
 
@@ -108,7 +116,7 @@ class JobHandlers:
     ) -> None:
         with self.database.session() as db:
             store = ReleaseStore(db)
-            store.ensure(
+            release = store.ensure(
                 ctx.app.id,
                 tag_of(request.component or "", result["next"]),
                 "platform",
@@ -118,6 +126,62 @@ class JobHandlers:
                 prerelease=bool(result.get("prerelease")),
                 published_at=now(),
             )
+            db.flush()
+            release_id, tag = release.id, release.tag
+
+        ReadinessRequests(self.database, JobQueue(self.database)).request(
+            ctx.organization.id,
+            ctx.app,
+            release_id,
+            tag,
+            user_id=user_id,
+            manages=bool(ctx.payload.get("manages")),
+        )
+
+    def readiness(self, payload: dict[str, Any]) -> Any:
+        ctx = self.context(payload)
+        tag = str(ctx.body.get("tag") or "")
+        stage = str(ctx.body.get("stage") or "dev")
+
+        with self.database.session() as db:
+            release = ReleaseStore(db).get(ctx.app.id, tag)
+
+            if release is None:
+                raise ActionPlatformError(f"no release {tag} for this app")
+
+            ReadinessStore(db).running(release.id, stage)
+            release_id = release.id
+
+        identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
+        service = ReadinessService(
+            self.registry,
+            identity=identity.minter(
+                ctx.organization, ctx.app, stage, manages=bool(payload.get("manages"))
+            ),
+            env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
+        )
+
+        try:
+            checks = service.check(ctx.registry_id, tag, stage)
+        except Exception as e:
+            with self.database.session() as db:
+                ReadinessStore(db).failed(
+                    db.get(Release, release_id), stage, str(e), payload.get("job_id")
+                )
+
+            raise
+
+        with self.database.session() as db:
+            row = ReadinessStore(db).done(
+                db.get(Release, release_id), stage, checks, payload.get("job_id")
+            )
+
+            return {
+                "tag": tag,
+                "stage": stage,
+                "ok": row.ok,
+                "checks": ReadinessStore.checks_of(row),
+            }
 
     def deploy(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
@@ -337,6 +401,7 @@ class JobHandlers:
 
 
 register("sync", lambda s: JobHandlers.of(s).sync)
+register("readiness", lambda s: JobHandlers.of(s).readiness)
 register("release", lambda s: JobHandlers.of(s).release)
 register("deploy", lambda s: JobHandlers.of(s).deploy)
 register("push", lambda s: JobHandlers.of(s).push)

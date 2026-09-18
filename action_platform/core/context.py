@@ -69,6 +69,27 @@ class DeployResult:
     error: str | None = None
 
 
+CHECK_LEVELS = ("static", "target", "plan", "proof")
+CHECK_SEVERITIES = ("error", "warning")
+
+
+@dataclass
+class Check:
+    """One answer to "can this release reach this stage?": what was looked at, whether it holds, and what to do when it does not."""
+
+    id: str
+    ok: bool
+    detail: str = ""
+    level: str = "target"
+    severity: str = "error"
+    fix: str | None = None
+    target: str | None = None
+
+    @property
+    def blocking(self) -> bool:
+        return not self.ok and self.severity == "error"
+
+
 @dataclass
 class Diagnosis:
     ok: bool

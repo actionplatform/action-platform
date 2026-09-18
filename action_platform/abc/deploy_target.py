@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from action_platform.core.context import Context, DeployResult, Diagnosis
+    from action_platform.core.context import Check, Context, DeployResult, Diagnosis
 
 
 class DeployTarget(ABC):
@@ -45,6 +45,10 @@ class DeployTarget(ABC):
     def delete(self, ctx: "Context") -> None:
         """Tear the target down."""
         raise NotImplementedError(f"{self.name} cannot delete")
+
+    def readiness(self, ctx: "Context") -> "list[Check]":
+        """What can be verified about a deploy of `ctx.next_version` to `ctx.stage` without building or changing anything: credentials, permissions, the destination's state. Each finding is a Check; an empty list means the target has nothing to say."""
+        return []
 
     def verify(self, version: str, stage: str | None = None) -> bool:
         """Whether `version` is really at the destination — asked after any executor reported success."""
