@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.25.0 — 2026-09-18
+
+### Features
+- **web:** readiness on Releases, the release timeline and the deploy form
+
 ## v0.24.1 — 2026-09-18
 
 ### Bug Fixes
