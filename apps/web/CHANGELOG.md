@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.22.1 — 2026-09-18
+
+### Bug Fixes
+- **web:** row menus open above the table, and every column shows from 1024px up
+
 ## v0.22.0 — 2026-09-18
 
 ### Features
