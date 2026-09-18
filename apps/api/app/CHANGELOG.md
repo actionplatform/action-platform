@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.26.2 — 2026-09-18
+
+### Bug Fixes
+- one label for a person — the display name, the email only when there is none
+
 ## v0.26.1 — 2026-09-18
 
 ## v0.26.0 — 2026-09-18
