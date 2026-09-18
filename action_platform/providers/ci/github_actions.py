@@ -9,7 +9,7 @@ from datetime import datetime
 from urllib.parse import quote
 
 from action_platform.abc.ci_runner import CIRunner
-from action_platform.core.context import Run
+from action_platform.core.context import Run, RunRef
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import rest
 
@@ -109,4 +109,22 @@ class CIGithubActions(CIRunner):
             started_at=started,
             duration_ms=duration,
             name=item.get("name"),
+        )
+
+    def start(self, job: str, ref: str, params: dict | None = None) -> RunRef:
+        if not job:
+            raise ProviderError(
+                "GitHub Actions starts one workflow: name the file, e.g. ci.yml"
+            )
+
+        rest.call(
+            "POST",
+            f"{self.api}/repos/{self.repo}/actions/workflows/{quote(job, safe='')}/dispatches",
+            self._headers(),
+            {"ref": ref, "inputs": params or {}},
+        )
+
+        return RunRef(
+            id=f"{job}@{ref}",
+            url=f"https://github.com/{self.repo}/actions/workflows/{job}",
         )

@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import base64
 from datetime import datetime, timezone
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from action_platform.abc.ci_runner import CIRunner
-from action_platform.core.context import Run
+from action_platform.core.context import Run, RunRef
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import rest
 
@@ -121,3 +121,28 @@ class CIJenkins(CIRunner):
             duration_ms=build.get("duration") or None,
             name=build.get("displayName"),
         )
+
+    def start(self, job: str, ref: str, params: dict | None = None) -> RunRef:
+        url = self._job_url(job)
+        query = {"REF": ref, **(params or {})} if params or ref else {}
+        headers = self._headers()
+
+        try:
+            crumb = (
+                rest.call("GET", f"{self.base_url}/crumbIssuer/api/json", headers) or {}
+            )
+            headers[crumb.get("crumbRequestField", "Jenkins-Crumb")] = crumb.get(
+                "crumb", ""
+            )
+        except ProviderError:
+            pass
+
+        path = "/buildWithParameters" if query else "/build"
+        rest.call(
+            "POST",
+            url + path + ("?" + urlencode(query) if query else ""),
+            headers,
+            ok=(200, 201, 202),
+        )
+
+        return RunRef(id=f"{job}@{ref}", url=url)

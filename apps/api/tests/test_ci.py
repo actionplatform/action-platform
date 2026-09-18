@@ -198,3 +198,56 @@ class CiTest(GateCase):
         self.assertEqual(res.json()["runs"][0]["source"], "github_actions")
         self.assertEqual(res.json()["runs"][0]["number"], 17_640_312_055)
         self.assertEqual(runs.call_args.args[0], "")
+
+
+@unittest.skipUnless(TestClient, "fastapi is not installed")
+class CiStartTest(GateCase):
+    def test_run_starts_the_job_and_imports(self):
+        from action_platform.core.context import RunRef
+        from app.core.db.models import App, SourceHost
+
+        self.register()
+        with self.app.state.db.session() as s:
+            s.add(
+                SourceHost(
+                    id="h1",
+                    organization_id=self.org["id"],
+                    kind="gitlab",
+                    name="GitLab",
+                    auth_kind="token",
+                    token_encrypted=self.app.state.sealer.seal("glpat"),
+                )
+            )
+            s.get(App, "a1").source_host_id = "h1"
+
+        with (
+            mock.patch(
+                "action_platform.providers.ci.gitlab_ci.CIGitlab.start",
+                return_value=RunRef(id="77", url="https://gl/p/77"),
+            ) as start,
+            mock.patch(
+                "action_platform.providers.ci.gitlab_ci.CIGitlab.runs",
+                return_value=[Run(number=77, status="queued", branch="main")],
+            ),
+        ):
+            res = self.client.post(
+                "/api/v1/projects/p1/apps/a1/ci/run",
+                json={"ref": "main"},
+                headers=self.h(),
+            )
+
+        self.assertEqual(res.status_code, 202, res.text)
+        self.assertEqual(
+            res.json(), {"id": "77", "url": "https://gl/p/77", "ref": "main"}
+        )
+        self.assertEqual(start.call_args.args[1], "main")
+        runs = self.client.get(
+            "/api/v1/projects/p1/apps/a1/ci", headers=self.h()
+        ).json()
+        self.assertEqual(runs["link"]["kind"], "gitlab_ci")
+        self.assertEqual(runs["runs"][0]["number"], 77)
+
+        empty = self.client.post(
+            "/api/v1/projects/p1/apps/a1/ci/run", json={"ref": " "}, headers=self.h()
+        )
+        self.assertEqual(empty.status_code, 400)
