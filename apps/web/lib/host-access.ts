@@ -1,6 +1,6 @@
 import { v1 } from "./v1";
 
-export type Owner = { account: string; kind: "user" | "org"; repositories: "all" | "selected"; administration: string; contents: string; canCreateRepos: boolean; selected?: string[] | null; configureUrl?: string | null };
+export type Owner = { account: string; kind: "user" | "org"; repositories: "all" | "selected"; administration: string; contents: string; actions: string; canCreateRepos: boolean; selected?: string[] | null; configureUrl?: string | null };
 export type HostAccess =
   | { ok: true; kind: "github" | "gitlab" | "bitbucket"; login: string; installations: Owner[]; installUrl: string | null; problems: string[] }
   | { ok: false; error: string };

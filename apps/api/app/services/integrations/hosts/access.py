@@ -19,6 +19,7 @@ class Owner:
     repositories: str
     administration: str
     contents: str
+    actions: str = "none"
     selected: Optional[list[str]] = None
     configure_url: Optional[str] = None
 
@@ -33,6 +34,7 @@ class Owner:
             "repositories": self.repositories,
             "administration": self.administration,
             "contents": self.contents,
+            "actions": self.actions,
             "canCreateRepos": self.can_create_repos,
             "selected": self.selected,
             "configureUrl": self.configure_url,

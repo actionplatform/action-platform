@@ -18,6 +18,7 @@ MANIFEST_PERMISSIONS = {
     "administration": "write",
     "contents": "write",
     "workflows": "write",
+    "actions": "read",
     "pull_requests": "write",
     "metadata": "read",
     "members": "read",
@@ -205,6 +206,7 @@ class GithubProvider(HostProvider):
             else "selected",
             administration=(i.get("permissions") or {}).get("administration", "none"),
             contents=(i.get("permissions") or {}).get("contents", "none"),
+            actions=(i.get("permissions") or {}).get("actions", "none"),
             selected=selected,
             configure_url=(
                 f"https://github.com/organizations/{login}/settings/installations/{i['id']}"
@@ -229,6 +231,11 @@ class GithubProvider(HostProvider):
             if i.contents != "write":
                 report.problems.append(
                     f'{i.account}: repository permission "Contents" is {i.contents}; it must be "Read and write" to push.'
+                )
+
+            if i.actions == "none":
+                report.problems.append(
+                    f'{i.account}: repository permission "Actions" is not granted; the CI tab needs "Read-only" to list workflow runs.'
                 )
 
             if i.repositories != "all":
