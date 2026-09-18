@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.20.0 — 2026-09-17
+
+### Features
+- **web:** targets on the Deployments tab — live version per stage, deliveries by any executor, verified badge
+
+### Bug Fixes
+- **api:** the GitHub App asks to read Actions, and the access check says when it cannot
+
 ## v0.19.0 — 2026-09-17
 
 ### Features
