@@ -17,6 +17,7 @@ from app.api.dependencies.services import (
     get_projects_repository,
     get_flow,
     get_git_state,
+    get_snapshot,
     get_deployments,
     get_ci,
     get_deployment_records,
@@ -45,6 +46,7 @@ from app.services.activity.flow import FlowService
 from app.services.ci import CiService
 from app.services.deployments import DeploymentRecords, DeploymentsService
 from app.services.releases import ReleasesService
+from app.services.workspace.snapshot import SnapshotService
 from app.services.workspace.state import GitStateService
 
 CallerDep = Annotated[Caller, Depends(get_caller)]
@@ -61,6 +63,7 @@ SignerDep = Annotated[OAuthState, Depends(get_state_signer)]
 AppsDep = Annotated[AppService, Depends(get_app_service)]
 ProjectsDep = Annotated[ProjectService, Depends(get_projects)]
 ImportsDep = Annotated[ImportGateway, Depends(get_import_gateway)]
+SnapshotDep = Annotated[SnapshotService, Depends(get_snapshot)]
 GitStateDep = Annotated[GitStateService, Depends(get_git_state)]
 ReleasesDep = Annotated[ReleasesService, Depends(get_releases)]
 DeploymentsDep = Annotated[DeploymentsService, Depends(get_deployments)]

@@ -16,3 +16,13 @@ class AppConfig(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=now, onupdate=now
     )
+
+
+class AppSnapshot(Base):
+    __tablename__ = "app_snapshot"
+
+    registry_id: Mapped[str] = mapped_column(KEY, primary_key=True)
+    data: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    taken_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, onupdate=now
+    )

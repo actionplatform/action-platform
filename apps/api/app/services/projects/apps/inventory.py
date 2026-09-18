@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
@@ -17,6 +18,8 @@ from app.services.projects.apps.base import AppsBase
 from app.services.workspace.checkout import Workspaces
 from app.services.workspace.manifest import AppManifest
 from app.core.errors import Invalid, NeedsInstall
+
+log = logging.getLogger(__name__)
 
 
 class AppInventory(AppsBase):
@@ -96,10 +99,23 @@ class AppInventory(AppsBase):
         with auth.git_auth(credentials):
             entry, _ = Workspaces(self.registry).refresh(id)
 
+        self._snapshot(id)
+
         return asdict(entry)
 
+    def _snapshot(self, id: str) -> None:
+        from app.services.workspace.snapshot import SnapshotService
+
+        try:
+            SnapshotService(self.registry, self.configs).take(id)
+        except Exception:
+            log.warning("snapshot of %s failed", id, exc_info=True)
+
     def remove(self, id: str) -> None:
+        from app.services.workspace.snapshot import SnapshotService
+
         entry = self.registry.get(id)
+        SnapshotService(self.registry, self.configs).forget(id)
         self.registry.remove(id)
         Workspaces(self.registry).drop(id, Path(entry.path))
 

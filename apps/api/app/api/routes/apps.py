@@ -21,7 +21,7 @@ from app.schemas.apps import (
 )
 from app.api.dependencies import (
     AppsDep,
-    GitStateDep,
+    SnapshotDep,
 )
 
 router = APIRouter(prefix="/api/apps", tags=["apps"])
@@ -55,9 +55,9 @@ def init_app(
 @router.get("/{id}")
 def app_detail(
     id: str,
-    apps: AppsDep,
+    snapshot: SnapshotDep,
 ) -> AppDetail:
-    return apps.detail(id)
+    return snapshot.detail(id)
 
 
 @router.delete("/{id}", status_code=204)
@@ -91,39 +91,39 @@ def push_app(
 @router.get("/{id}/gitflow")
 def app_gitflow(
     id: str,
-    state: GitStateDep,
+    snapshot: SnapshotDep,
 ) -> GitflowReport:
-    return state.gitflow(id)
+    return snapshot.gitflow(id)
 
 
 @router.get("/{id}/commits")
 def app_commits(
     id: str,
-    state: GitStateDep,
+    snapshot: SnapshotDep,
     limit: int = 20,
 ) -> list[Commit]:
-    return state.commits(id, limit)
+    return snapshot.commits(id, limit)
 
 
 @router.get("/{id}/tags")
 def app_tags(
     id: str,
-    state: GitStateDep,
+    snapshot: SnapshotDep,
 ) -> list[str]:
-    return state.tags(id)
+    return snapshot.tags(id)
 
 
 @router.get("/{id}/releases")
 def app_releases(
     id: str,
-    state: GitStateDep,
+    snapshot: SnapshotDep,
 ) -> list[Release]:
-    return state.releases(id)
+    return snapshot.releases(id)
 
 
 @router.get("/{id}/branches")
 def app_branches(
     id: str,
-    state: GitStateDep,
+    snapshot: SnapshotDep,
 ) -> list[Branch]:
-    return state.branches(id)
+    return snapshot.branches(id)
