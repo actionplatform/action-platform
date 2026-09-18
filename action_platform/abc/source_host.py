@@ -45,6 +45,14 @@ class SourceHost(ABC):
     ) -> "ReleaseRef":
         """Publish release on remote host. `name` titles it (the tag otherwise); `latest` says whether the host should mark it as the latest one."""
 
+    def releases(self, repo: str) -> list[dict]:
+        """The releases the host publishes for `repo`, newest first: tag, name, body, url, author, sha, prerelease, draft, published_at, source."""
+        raise NotImplementedError(f"{self.name} does not publish releases")
+
+    def pull_requests(self, repo: str) -> list[dict]:
+        """The pull (merge) requests of `repo`: number, title, url, author, head, base, state (open|merged|closed), draft, created_at, updated_at, merged_at, source."""
+        raise NotImplementedError(f"{self.name} does not know pull requests")
+
     @abstractmethod
     def open_pr(
         self,

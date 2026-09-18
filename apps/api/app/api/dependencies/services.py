@@ -22,7 +22,9 @@ from app.services.projects.service import ProjectService
 from app.services.configuration.commit import CommitService
 from app.services.configuration.service import ConfigurationService
 from app.services.activity.flow import FlowService
-from app.services.deployments import DeploymentsService
+from app.services.ci import CiService
+from app.services.deployments import DeploymentRecords, DeploymentsService
+from app.services.workspace.app_context import AppContext
 from app.services.releases import ReleasesService
 from app.services.workspace.state import GitStateService
 
@@ -111,6 +113,29 @@ def get_deployments(
     configs: ConfigStore = Depends(get_config_store),
 ) -> DeploymentsService:
     return DeploymentsService(registry, configs=configs)
+
+
+def get_app_context(
+    registry: Registry = Depends(get_registry),
+    configs: ConfigStore = Depends(get_config_store),
+) -> AppContext:
+    return AppContext(registry, configs)
+
+
+def get_ci(
+    request: Request,
+    db: DbSession = Depends(get_db),
+    context: AppContext = Depends(get_app_context),
+) -> CiService:
+    return CiService(db, request.app.state.sealer, context)
+
+
+def get_deployment_records(
+    request: Request,
+    db: DbSession = Depends(get_db),
+    context: AppContext = Depends(get_app_context),
+) -> DeploymentRecords:
+    return DeploymentRecords(db, request.app.state.sealer, context)
 
 
 def get_flow(

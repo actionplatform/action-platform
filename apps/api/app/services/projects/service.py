@@ -7,14 +7,10 @@ from action_platform.core.exception import ActionPlatformError
 from app.core.db.models import App, Organization, Project
 from app.core.shared.urls import GitUrl
 from app.schemas import InitRequest, InstallSpec, SourceCredentials
-from app.schemas import ci as ci_schemas
-from app.schemas import deployments as deploy_schemas
 from app.services.access.enrich import credentials_for
 from app.services.activity import ActivityService
-from app.services.ci import CiService
-from app.services.deployments import DeploymentRecords
 from app.services.projects.apps import AppService
-from app.services.workspace.state import GitStateService
+from app.services.workspace.app_context import AppContext
 from app.services.projects.organization_import.directory import ImportDirectory
 from app.core.errors import Invalid
 
@@ -24,8 +20,7 @@ class ProjectService:
         self.writes = writes
         self.apps = apps
         self.activity = ActivityService(writes.db)
-        self.ci = CiService(writes.db, writes.sealer)
-        self.deployments = DeploymentRecords(writes.db, writes.sealer)
+        self.context = AppContext(apps.registry, apps.configs)
 
     def add_app(
         self,
@@ -149,83 +144,8 @@ class ProjectService:
             app.id,
             self.writes.credentials_for(org.id, app.source_host_id),
             repo,
-            tags=self._tags_of(app),
+            tags=self.context.tags_of(app),
         )
-
-    def _tags_of(self, app: App) -> list[dict]:
-        try:
-            return GitStateService(self.apps.registry).releases(app.registry_id)
-        except ActionPlatformError:
-            return []
-
-    def _repo_of(self, app: App) -> str:
-        detail = self.apps.detail(app.registry_id)
-
-        return (
-            detail.get("source_host", {}).get("repo")
-            or GitUrl(detail.get("url", "")).repo
-        )
-
-    def sync_ci(self, org: Organization, app: App) -> int:
-        return self.ci.sync_runs(org.id, app, self._repo_of(app))
-
-    def ci_link(self, org: Organization, app: App) -> ci_schemas.CiLink:
-        return ci_schemas.CiLink(
-            kind=self.ci.kind_of(org.id, app),
-            ci_host_id=app.ci_host_id,
-            job=app.ci_job or "",
-        )
-
-    def ci_runs(self, app: App, limit: int = 50, offset: int = 0) -> list:
-        return self.ci.runs(app.id, limit, offset)
-
-    def ci_run_count(self, app: App) -> int:
-        return self.ci.count(app.id)
-
-    def _config_of(self, app: App):
-        return self.apps.configs.config_of(app.registry_id)
-
-    def deployment_targets(self, app: App) -> list[deploy_schemas.TargetRow]:
-        return [
-            deploy_schemas.TargetRow(
-                name=t.name,
-                kind=t.kind,
-                run_by=t.run_by,
-                stages=list(t.stages),
-                workflow=t.workflow or None,
-                job=t.job or None,
-            )
-            for t in self._config_of(app).targets
-        ]
-
-    def deployment_rows(self, app: App) -> list:
-        return self.deployments.list(app.id)
-
-    def sync_deployments(self, org: Organization, app: App) -> dict[str, Optional[str]]:
-        return self.deployments.sync_observed(
-            org.id, app, self._config_of(app), self._repo_of(app)
-        )
-
-    def record_deployment(
-        self,
-        app: App,
-        body: deploy_schemas.RecordDeploymentRequest,
-        actor: Optional[str],
-    ):
-        row = self.deployments.record_manual(
-            app,
-            self._config_of(app),
-            body.target,
-            body.version,
-            body.stage,
-            body.url,
-            body.sha,
-            body.ok,
-            actor,
-        )
-        self.deployments.verify(app, self._config_of(app))
-
-        return row
 
     def _forget(self, registry_id: str) -> None:
         try:

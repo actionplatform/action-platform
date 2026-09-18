@@ -33,6 +33,15 @@ modules =
     app.services.deployments
     app.services.templates
 
+[importlinter:contract:projects-thin]
+name = api: the projects context does not reach into ci or deployments
+type = forbidden
+source_modules =
+    app.services.projects
+forbidden_modules =
+    app.services.ci
+    app.services.deployments
+
 [importlinter:contract:services-no-fastapi]
 name = api: services and repositories raise domain errors, not HTTPException
 type = forbidden

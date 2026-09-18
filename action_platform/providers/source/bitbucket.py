@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import base64
 from pathlib import Path
 
@@ -125,3 +127,58 @@ class SourceBitbucket(SourceHost):
         )
 
         return PRRef(number=data["id"], url=data["links"]["html"]["href"])
+
+    def releases(self, repo: str) -> list[dict]:
+        return [
+            {
+                "tag": r["name"],
+                "name": r["name"],
+                "body": r.get("message"),
+                "url": ((r.get("links") or {}).get("html") or {}).get("href")
+                or f"{self.web}/{repo}/src/{r['name']}/",
+                "author": (
+                    ((r.get("target") or {}).get("author") or {}).get("user") or {}
+                ).get("display_name"),
+                "sha": ((r.get("target") or {}).get("hash") or "")[:7] or None,
+                "prerelease": bool(RC.search(r["name"])),
+                "draft": False,
+                "published_at": rest.parse_utc((r.get("target") or {}).get("date")),
+                "source": "bitbucket",
+            }
+            for r in rest.get_values(
+                f"{self.api}/repositories/{repo}/refs/tags?sort=-target.date&pagelen=100",
+                self._headers(),
+            )
+        ]
+
+    def pull_requests(self, repo: str) -> list[dict]:
+        return [
+            {
+                "number": r["id"],
+                "title": r["title"],
+                "url": ((r.get("links") or {}).get("html") or {}).get("href")
+                or f"{self.web}/{repo}/pull-requests/{r['id']}",
+                "author": (r.get("author") or {}).get("display_name"),
+                "head": r["source"]["branch"]["name"],
+                "base": r["destination"]["branch"]["name"],
+                "state": "merged"
+                if r.get("state") == "MERGED"
+                else "open"
+                if r.get("state") == "OPEN"
+                else "closed",
+                "draft": False,
+                "created_at": rest.parse_utc(r["created_on"]),
+                "updated_at": rest.parse_utc(r["updated_on"]),
+                "merged_at": rest.parse_utc(r["updated_on"])
+                if r.get("state") == "MERGED"
+                else None,
+                "source": "bitbucket",
+            }
+            for r in rest.get_values(
+                f"{self.api}/repositories/{repo}/pullrequests?state=OPEN&state=MERGED&state=DECLINED&sort=-updated_on&pagelen=50",
+                self._headers(),
+            )
+        ]
+
+
+RC = re.compile(r"-rc\.")

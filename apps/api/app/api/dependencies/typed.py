@@ -18,6 +18,8 @@ from app.api.dependencies.services import (
     get_flow,
     get_git_state,
     get_deployments,
+    get_ci,
+    get_deployment_records,
     get_releases,
     get_import_gateway,
     get_projects,
@@ -40,7 +42,8 @@ from app.services.projects.service import ProjectService
 from app.services.configuration.commit import CommitService
 from app.services.configuration.service import ConfigurationService
 from app.services.activity.flow import FlowService
-from app.services.deployments import DeploymentsService
+from app.services.ci import CiService
+from app.services.deployments import DeploymentRecords, DeploymentsService
 from app.services.releases import ReleasesService
 from app.services.workspace.state import GitStateService
 
@@ -61,6 +64,8 @@ ImportsDep = Annotated[ImportGateway, Depends(get_import_gateway)]
 GitStateDep = Annotated[GitStateService, Depends(get_git_state)]
 ReleasesDep = Annotated[ReleasesService, Depends(get_releases)]
 DeploymentsDep = Annotated[DeploymentsService, Depends(get_deployments)]
+CiDep = Annotated[CiService, Depends(get_ci)]
+DeploymentRecordsDep = Annotated[DeploymentRecords, Depends(get_deployment_records)]
 FlowDep = Annotated[FlowService, Depends(get_flow)]
 ConfigurationDep = Annotated[ConfigurationService, Depends(get_configuration)]
 CommitsDep = Annotated[CommitService, Depends(get_commits)]

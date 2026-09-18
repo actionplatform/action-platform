@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import urllib.error
 import urllib.request
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 from action_platform.core.exception import ProviderError
@@ -55,3 +56,49 @@ def call(
         raise ProviderError(f"{method} {url} → {e.code}: {detail}") from e
     except urllib.error.URLError as e:
         raise ProviderError(f"cannot reach {url}: {e.reason}") from e
+
+
+def get_pages(url: str, headers: dict[str, str], limit: int = 20) -> list[Any]:
+    """Every row of a `per_page`/`page` paginated listing (GitHub, GitLab), up to `limit` pages."""
+    out: list[Any] = []
+    separator = "&" if "?" in url else "?"
+
+    for page in range(1, limit + 1):
+        rows = call("GET", f"{url}{separator}per_page=100&page={page}", headers)
+
+        if not isinstance(rows, list):
+            break
+
+        out.extend(rows)
+
+        if len(rows) < 100:
+            break
+
+    return out
+
+
+def get_values(url: str, headers: dict[str, str]) -> list[Any]:
+    """Every row of a `values`/`next` paginated listing (Bitbucket)."""
+    out: list[Any] = []
+    next_url: Optional[str] = url
+
+    while next_url:
+        data = call("GET", next_url, headers) or {}
+        out.extend(data.get("values", []))
+        next_url = data.get("next")
+
+    return out
+
+
+def parse_utc(value: Optional[str]) -> Optional[datetime]:
+    """An ISO timestamp from a provider, as naive UTC."""
+    if not value:
+        return None
+
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+    return (
+        parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        if parsed.tzinfo
+        else parsed
+    )

@@ -1,4 +1,4 @@
-"""Code hosts connected to an organization, written: add, connect through OAuth, remove, rotate the token, set the owner."""
+"""Code hosts connected to an organization, read: the hosts, the one for a url, the stored credentials. Refreshing an expired token is the service's job (`services.integrations.hosts.credentials`)."""
 
 from __future__ import annotations
 
@@ -7,20 +7,29 @@ from typing import Optional
 
 from sqlalchemy import select
 
-from app.core.db.models import (
-    SourceHost,
-)
+from app.core.db.models import SourceHost
+from app.core.shared.credentials import Credentials
+from app.core.shared.urls import GitUrl
 from app.core.shared.clock import now
 from app.core.shared.ids import new_id
 from app.repositories.base import (
     HOST_KINDS,
     HOST_LABELS,
+    DirectoryBase,
     DirectoryError,
 )
-from app.services.integrations.hosts.directory_reads import HostsReads
 
 
-class HostsWrites(HostsReads):
+class HostsReads(DirectoryBase):
+    def hosts_of(self, organization_id: str) -> list[SourceHost]:
+        return list(
+            self.db.scalars(
+                select(SourceHost)
+                .where(SourceHost.organization_id == organization_id)
+                .order_by(SourceHost.created_at)
+            )
+        )
+
     def host(self, organization_id: str, host_id: str) -> Optional[SourceHost]:
         return self.db.scalar(
             select(SourceHost).where(
@@ -28,6 +37,35 @@ class HostsWrites(HostsReads):
             )
         )
 
+    def host_id_for_url(self, organization_id: str, url: str) -> Optional[str]:
+        kind = GitUrl(url).kind
+
+        if kind is None:
+            return None
+
+        return next(
+            (h.id for h in self.hosts_of(organization_id) if h.kind == kind), None
+        )
+
+    def credentials_for(
+        self, organization_id: str, host_id: Optional[str]
+    ) -> Optional[Credentials]:
+        if not host_id or self.sealer is None:
+            return None
+
+        host = self.host(organization_id, host_id)
+
+        if host is None:
+            return None
+
+        token = self.sealer.open(host.token_encrypted)
+
+        return Credentials(
+            host.kind, token, host.username, host.base_url, host.default_owner
+        )
+
+
+class HostsWrites(HostsReads):
     def add_host(
         self,
         organization_id: str,
