@@ -1,14 +1,13 @@
 "use client";
 
-import { ArrowRight, FileText, GitBranch, Rocket, ShieldCheck } from "lucide-react";
+import { FileText, GitBranch, Layers, Rocket } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ActionField, ActionForm, ActionSteps, ActionSummary } from "@/components/ui/action-form";
+import { ActionField, ActionFields, ActionForm, ActionSteps, ActionSummary } from "@/components/ui/action-form";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Hint } from "@/components/ui/hint";
 import { Input, Textarea } from "@/components/ui/input";
-import { SegmentedControl } from "@/components/ui/segmented";
 import { Select } from "@/components/ui/select";
 import type { ReleasePreview } from "@/lib/api";
 import { useAction } from "@/lib/use-action";
@@ -83,7 +82,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
   const canRelease = view.can["app.release"] && view.workingTree === "clean" && (switching || view.health.ok) && !!view.repositoryUrl && !tagExists && !branchMissing;
   const blocker = !view.can["app.release"] ? "Your role cannot create releases." : !view.repositoryUrl ? "This app has no remote." : branchMissing ? `Branch ${branch} is not on the remote.` : tagExists ? `Tag v${next} already exists.` : view.workingTree !== "clean" ? (switching ? "Commit or discard the pending changes before switching branches." : "Commit or discard the pending changes first.") : !switching && !view.health.ok ? "Fix the branch policy problems first." : null;
 
-  const change = <T,>(set: (v: T) => void) => (v: T) => { set(v); action.clearOutcome(); };
+  const change = (set: (v: string) => void) => (v: string) => { set(v); action.clearOutcome(); };
   const creating = action.step === "running";
 
   return (
@@ -93,6 +92,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
       primary={{ label: `Create ${next}`, icon: Rocket, onClick: action.confirm, disabled: !canRelease, busy: creating, busyLabel: "Creating…" }}
       secondary={{ label: "Preview changelog", icon: FileText, onClick: action.preview, disabled: !view.repositoryUrl || !view.can["app.release"], busy: action.step === "previewing", busyLabel: "Loading…" }}
       blocker={action.error ? null : blocker}
+      summary={[{ label: "Current", value: current }, { label: "Next", value: next }, { label: "Tag", value: `v${next}` }, { label: "Kind", value: stable ? "stable" : "pre-release (rc)" }]}
       alerts={
         <>
           {action.result && !action.result.dry_run && <RunAlert tone="success" title={`Released ${action.result.next}`} summary={`Tag v${action.result.next} pushed and published from ${action.result.branch}.`} />}
@@ -133,38 +133,20 @@ export function ReleaseCard({ view }: { view: AppView }) {
         </>
       }
     >
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-0">
-        <div className="space-y-5 border-b border-border-subtle pb-6 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-6">
-          <ActionField label="Branch">
-            <div className="flex flex-wrap items-center gap-3">
-              <Select size="lg" mono className="w-full sm:w-64" icon={<GitBranch className="size-4" strokeWidth={1.75} />} value={branch} onChange={change(setBranch)} options={options.map((b) => ({ value: b, label: b, hint: view.stableBranches.includes(b) ? "stable" : "rc" }))} />
-              <Hint text="Releases are cut from this branch.">
-                <Badge tone={selected?.protected ? "ok" : "neutral"} className="gap-1"><ShieldCheck className="size-3" strokeWidth={2} />{selected?.protected ? "Protected" : selected?.kind ? `${selected.kind} branch` : "Branch"}</Badge>
-              </Hint>
-            </div>
-          </ActionField>
-          <ActionField label="Version">
-            <div className="flex flex-wrap items-center gap-4">
-              <SegmentedControl label="Version increment" value={level} options={LEVELS} onChange={change(setLevel)} />
-              <div className="flex items-center gap-2 font-mono">
-                <span className="text-sm text-secondary">{current}</span>
-                <ArrowRight className="size-4 text-muted-foreground" strokeWidth={1.75} />
-                <span className="text-lg font-semibold">{next}</span>
-              </div>
-            </div>
-          </ActionField>
-        </div>
-        <div className="space-y-5 lg:pl-6">
-          <label className="block space-y-2">
-            <span className="block text-xs text-secondary">Name</span>
-            <Input value={name} onChange={(e) => { setName(e.target.value); setNameTouched(true); }} onBlur={() => { if (!name.trim()) { setNameTouched(false); setName(`Release ${next}`); } }} disabled={!view.can["app.release"]} />
-          </label>
-          <label className="block space-y-2">
-            <span className="flex items-center gap-1.5 text-xs text-secondary">Notes <span className="text-muted-foreground">(optional)</span> <Hint text="Markdown. Goes under the version heading in CHANGELOG.md and on the code host, above the generated commit list." /></span>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What changed, in your words…" rows={3} className="font-mono text-[13px]" disabled={!view.can["app.release"]} />
-          </label>
-        </div>
-      </div>
+      <ActionFields>
+        <ActionField label="Branch" hint={<Hint text={`Releases are cut from this branch. ${selected?.protected ? "Protected." : selected?.kind ? `A ${selected.kind} branch.` : ""}`} />}>
+          <Select size="lg" mono icon={<GitBranch className="size-4" strokeWidth={1.75} />} value={branch} onChange={change(setBranch)} options={options.map((b) => ({ value: b, label: b, hint: view.stableBranches.includes(b) ? "stable" : "rc" }))} />
+        </ActionField>
+        <ActionField label="Version" hint={<Hint text="Patch fixes, minor adds, major breaks. The next version comes from the tags on the branch." />}>
+          <Select size="lg" mono icon={<Layers className="size-4" strokeWidth={1.75} />} value={level} onChange={change((v) => setLevel(v as Increment))} options={LEVELS.map((l) => ({ value: l.id, label: `${l.label} · ${bump(current, l.id)}`, hint: l.id === level ? next : undefined }))} />
+        </ActionField>
+        <ActionField label="Name">
+          <Input className="h-[42px] rounded-[7px]" value={name} onChange={(e) => { setName(e.target.value); setNameTouched(true); }} onBlur={() => { if (!name.trim()) { setNameTouched(false); setName(`Release ${next}`); } }} disabled={!view.can["app.release"]} />
+        </ActionField>
+        <ActionField label="Notes" hint={<><span className="text-muted-foreground">(optional)</span> <Hint text="Markdown. Goes under the version heading in CHANGELOG.md and on the code host, above the generated commit list." /></>}>
+          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What changed, in your words…" rows={2} className="min-h-[42px] rounded-[7px] font-mono text-[13px]" disabled={!view.can["app.release"]} />
+        </ActionField>
+      </ActionFields>
     </ActionForm>
   );
 }

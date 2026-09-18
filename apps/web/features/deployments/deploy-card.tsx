@@ -68,6 +68,7 @@ export function DeployCard({ view, liveStages = [] }: { view: AppView; liveStage
       primary={{ label: `Deploy to ${stage}`, icon: Rocket, onClick: () => launch(false), disabled: !canDeploy, busy: action.busy && !dryRun, busyLabel: "Deploying…" }}
       secondary={{ label: "Run preflight", icon: ListChecks, onClick: () => launch(true), disabled: !canDeploy, busy: action.busy && dryRun, busyLabel: "Checking…" }}
       blocker={action.error ? null : blocker}
+      summary={[{ label: "Target", value: target ?? "—" }, { label: "Release", value: tag || "—" }, { label: "Environment", value: stage }, { label: "Version", value: tag ? versionOf(tag) : "—" }]}
       alerts={
         <>
           {action.busy && action.step === "polling" && <Running label={dryRun ? "Preflight running" : "Deploying"} detail={`${versionOf(tag)} → ${stage}`} />}

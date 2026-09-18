@@ -17,6 +17,7 @@ type Props = {
   secondary?: ActionButton;
   blocker?: string | null;
   dialogs?: ReactNode;
+  summary?: { label: string; value: string }[];
 };
 
 function Spinner({ light }: { light?: boolean }) {
@@ -32,12 +33,13 @@ function Action({ button, variant }: { button: ActionButton; variant: "default" 
   );
 }
 
-export function ActionForm({ title, aside, children, alerts, primary, secondary, blocker, dialogs }: Props) {
+export function ActionForm({ title, aside, children, alerts, primary, secondary, blocker, dialogs, summary }: Props) {
   return (
     <Panel>
       <PanelHeader title={title} aside={aside} />
       <PanelBody className="space-y-5">
         {children}
+        {summary && <ActionSummary columns={4} items={summary} className="rounded-md border border-border-subtle bg-background px-4 py-3" />}
         {alerts}
         <div className="flex flex-col gap-2 border-t border-border-subtle pt-4 sm:flex-row sm:items-center">
           <Action button={primary} variant="default" />
