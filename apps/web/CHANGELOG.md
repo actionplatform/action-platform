@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.24.0 — 2026-09-18
+
+### Features
+- **web:** phones get cards instead of tables, stacked toolbars and footers, wrapping rows
+
+### Bug Fixes
+- **web:** a release runs as a job and the form polls it
+- **web:** one click, one action — no button fires twice
+
 ## v0.23.0 — 2026-09-18
 
 ### Features
