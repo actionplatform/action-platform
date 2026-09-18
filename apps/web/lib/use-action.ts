@@ -35,8 +35,10 @@ export function useAction<P, R>({ preview, run, poll, whileAway, onDone }: Optio
     return () => clearInterval(timer);
   }, [job, poll, onDone]);
 
+  const busy = step === "previewing" || step === "running" || step === "polling";
+
   const doPreview = () => {
-    if (!preview) return;
+    if (!preview || busy) return;
     start(async () => {
       setError(null);
       setStep("previewing");
@@ -45,7 +47,8 @@ export function useAction<P, R>({ preview, run, poll, whileAway, onDone }: Optio
     });
   };
 
-  const execute = () =>
+  const execute = () => {
+    if (busy) return;
     start(async () => {
       setError(null);
       setResult(null);
@@ -57,9 +60,9 @@ export function useAction<P, R>({ preview, run, poll, whileAway, onDone }: Optio
       setStep("done");
       onDone?.(r.data as R);
     });
+  };
 
   const reset = () => { setStep("idle"); setPreviewed(null); setResult(null); setError(null); setJob(null); };
-  const busy = step === "previewing" || step === "running" || step === "polling";
 
   return { step, busy, previewed, result, error, preview: doPreview, confirm: () => setStep("confirming"), cancel: () => setStep(previewed ? "previewed" : "idle"), execute, reset, clearOutcome: () => { setResult(null); setError(null); if (step === "done" || step === "failed") setStep("idle"); } };
 }
