@@ -16,6 +16,9 @@ describe("ciState", () => {
       link: { kind: "jenkins", ci_host_id: "h1", job: "team/app" },
       runs: [{ id: "r1", source: "jenkins", number: 7, status: "success", synced_at: "2026-09-17T10:00:00" }],
       error: null,
+      total: 1,
+      page: 1,
+      per: 10,
     });
     expect(state.link).toEqual({ kind: "jenkins", ciHostId: "h1", job: "team/app" });
     expect(state.runs[0]).toMatchObject({ number: 7, status: "success", branch: null, durationMs: null });

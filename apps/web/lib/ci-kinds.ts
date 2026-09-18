@@ -20,7 +20,7 @@ export type CiRun = { id: string; source: string; number: number; status: CiRunS
 
 export type CiLink = { kind: string; ciHostId: string | null; job: string };
 
-export type CiState = { link: CiLink; runs: CiRun[]; error: string | null };
+export type CiState = { link: CiLink; runs: CiRun[]; error: string | null; total: number; page: number; per: number };
 
 export function ciHost(row: CiHostRow): CiHost {
   return { id: row.id, kind: row.kind as CiHostKind, name: row.name, baseUrl: row.base_url, username: row.username ?? null, createdAt: new Date(row.created_at) };
@@ -31,7 +31,7 @@ export function ciRun(r: CiRunRow): CiRun {
 }
 
 export function ciState(row: CiRunsRow): CiState {
-  return { link: { kind: row.link.kind, ciHostId: row.link.ci_host_id ?? null, job: row.link.job ?? "" }, runs: row.runs.map(ciRun), error: row.error ?? null };
+  return { link: { kind: row.link.kind, ciHostId: row.link.ci_host_id ?? null, job: row.link.job ?? "" }, runs: row.runs.map(ciRun), error: row.error ?? null, total: row.total ?? row.runs.length, page: row.page ?? 1, per: row.per ?? 10 };
 }
 
 export function duration(ms: number | null): string {

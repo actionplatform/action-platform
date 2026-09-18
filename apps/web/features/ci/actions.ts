@@ -53,10 +53,10 @@ export async function linkCi(projectId: string, appId: string, ciHostId: string 
   }
 }
 
-export async function syncCi(projectId: string, appId: string): Promise<Result<CiState>> {
+export async function syncCi(projectId: string, appId: string, page = 1, per = 10): Promise<Result<CiState>> {
   await requireOrg();
   try {
-    const data = ciState(await v1.syncCi(projectId, appId));
+    const data = ciState(await v1.syncCi(projectId, appId, page, per));
     refreshProject(projectId);
     return { ok: true, data };
   } catch (e) {

@@ -164,3 +164,17 @@ class Imports(BaseModel):
     releases: list[ReleaseRow]
     pull_requests: list[PullRequestRow]
     errors: dict[str, Optional[str]] = {}
+
+
+class ReleasePage(BaseModel):
+    items: list[ReleaseRow]
+    total: int
+    page: int
+    per: int
+
+
+class PullRequestPage(BaseModel):
+    items: list[PullRequestRow]
+    total: int
+    page: int
+    per: int

@@ -176,8 +176,11 @@ class ProjectService:
             job=app.ci_job or "",
         )
 
-    def ci_runs(self, app: App) -> list:
-        return self.ci.runs(app.id)
+    def ci_runs(self, app: App, limit: int = 50, offset: int = 0) -> list:
+        return self.ci.runs(app.id, limit, offset)
+
+    def ci_run_count(self, app: App) -> int:
+        return self.ci.count(app.id)
 
     def _config_of(self, app: App):
         return self.apps.configs.config_of(app.registry_id)

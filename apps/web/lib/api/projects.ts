@@ -14,16 +14,20 @@ export const projects = {
     unwrap(await client.DELETE("/api/v1/projects/{project_id}/apps/{app_id}", { params: { path: { project_id: projectId, app_id: appId }, query: { repository, cloud } } })),
   setAppHost: async (projectId: string, appId: string, sourceHostId: string | null) =>
     unwrap(await client.PUT("/api/v1/projects/{project_id}/apps/{app_id}/host", { params: { path: { project_id: projectId, app_id: appId } }, body: { source_host_id: sourceHostId } })),
+  releasesPage: async (projectId: string, appId: string, page: number, per: number) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/releases", { params: { path: { project_id: projectId, app_id: appId }, query: { page, per } } })),
+  pullRequestsPage: async (projectId: string, appId: string, page: number, per: number) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/pull-requests", { params: { path: { project_id: projectId, app_id: appId }, query: { page, per } } })),
+  ci: async (projectId: string, appId: string, page = 1, per = 10) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/ci", { params: { path: { project_id: projectId, app_id: appId }, query: { page, per } } })),
+  syncCi: async (projectId: string, appId: string, page = 1, per = 10) =>
+    unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/ci/sync", { params: { path: { project_id: projectId, app_id: appId }, query: { page, per } } })),
   imports: async (projectId: string, appId: string) =>
     unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/imports", { params: { path: { project_id: projectId, app_id: appId } } })),
   syncImports: async (projectId: string, appId: string) =>
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/imports", { params: { path: { project_id: projectId, app_id: appId } } })),
-  ci: async (projectId: string, appId: string) =>
-    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/ci", { params: { path: { project_id: projectId, app_id: appId } } })),
   linkCi: async (projectId: string, appId: string, ciHostId: string | null, job: string) =>
     unwrap(await client.PUT("/api/v1/projects/{project_id}/apps/{app_id}/ci", { params: { path: { project_id: projectId, app_id: appId } }, body: { ci_host_id: ciHostId, job } })),
-  syncCi: async (projectId: string, appId: string) =>
-    unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/ci/sync", { params: { path: { project_id: projectId, app_id: appId } } })),
   deployments: async (projectId: string, appId: string) =>
     unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/deployments", { params: { path: { project_id: projectId, app_id: appId } } })),
   syncDeployments: async (projectId: string, appId: string) =>

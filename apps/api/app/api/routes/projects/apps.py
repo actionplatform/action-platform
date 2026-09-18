@@ -12,6 +12,8 @@ from app.api.dependencies import (
     allowed,
     app_of,
     imports_of,
+    pull_requests_page,
+    releases_page,
     project_of,
 )
 from app.schemas import common
@@ -133,6 +135,38 @@ def imports(
     app = app_of(writes, caller, project, app_id)
 
     return imports_of(writes.db, app.id)
+
+
+@router.get("/projects/{project_id}/apps/{app_id}/releases")
+def releases(
+    project_id: str,
+    app_id: str,
+    org: OrgDep,
+    caller: CallerDep,
+    writes: ProjectsRepoDep,
+    page: int = 1,
+    per: int = 10,
+) -> schemas.ReleasePage:
+    project = project_of(writes, org, project_id)
+    app = app_of(writes, caller, project, app_id)
+
+    return releases_page(writes.db, app.id, page, per)
+
+
+@router.get("/projects/{project_id}/apps/{app_id}/pull-requests")
+def pull_requests(
+    project_id: str,
+    app_id: str,
+    org: OrgDep,
+    caller: CallerDep,
+    writes: ProjectsRepoDep,
+    page: int = 1,
+    per: int = 10,
+) -> schemas.PullRequestPage:
+    project = project_of(writes, org, project_id)
+    app = app_of(writes, caller, project, app_id)
+
+    return pull_requests_page(writes.db, app.id, page, per)
 
 
 @router.post("/projects/{project_id}/apps/{app_id}/imports")

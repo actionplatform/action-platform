@@ -53,3 +53,6 @@ class CiRuns(BaseModel):
     link: CiLink
     runs: list[CiRunRow]
     error: Optional[str] = None
+    total: int = 0
+    page: int = 1
+    per: int = 10

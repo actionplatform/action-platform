@@ -80,3 +80,8 @@ The registry — id, name, url, default branch of every app — is the `registry
 ## Identity
 
 `GET /.well-known/openid-configuration` and `GET /.well-known/jwks.json` are open; `POST /api/v1/identity/token` (`audience`, optional `project_id`, `app_id`) answers a five-minute RS256 token for a caller with `app.release` — see [identity](concept_identity.md).
+
+
+## Pages
+
+Lists that grow are paged on the API: `GET /api/v1/projects/{p}/apps/{a}/releases`, `…/pull-requests`, `…/ci` and `GET /api/v1/jobs/page?app=<registry id>&kinds=deploy,destroy` take `page` (from 1) and `per` (1–100, default 10) and answer with `items` (or `runs`), `total`, `page` and `per`. The web tables keep the page and size in the URL (`?page=2&per=25`) and ask the API for that slice; nothing is paged in the browser.

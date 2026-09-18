@@ -33,7 +33,6 @@ export function TemplateSources({ sources, canManage }: { sources: SourceRow[]; 
         rows={sources}
         rowKey={(s) => s.name}
         noun={["repository", "repositories"]}
-        pageKey="sources"
         action={canManage ? <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus className="size-3.5" strokeWidth={2} /> Add repository</Button> : undefined}
         empty={{ icon: BookMarked, title: "No template repository", text: "Add a git repository; new apps start as a copy of it." }}
         columns={[

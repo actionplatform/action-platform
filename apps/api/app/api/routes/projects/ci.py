@@ -14,15 +14,23 @@ from app.api.dependencies import (
     project_of,
 )
 from app.schemas import ci as schemas
+from app.schemas.common import page_bounds
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
 
-def ci_runs_of(projects, org, app, error=None) -> schemas.CiRuns:
+def ci_runs_of(
+    projects, org, app, error=None, page: int = 1, per: int = 10
+) -> schemas.CiRuns:
+    page, per, offset = page_bounds(page, per)
+
     return schemas.CiRuns(
         link=projects.ci_link(org, app),
-        runs=[run_row(r) for r in projects.ci_runs(app)],
+        runs=[run_row(r) for r in projects.ci_runs(app, per, offset)],
         error=error,
+        total=projects.ci_run_count(app),
+        page=page,
+        per=per,
     )
 
 
@@ -51,11 +59,13 @@ def ci_runs(
     caller: CallerDep,
     writes: ProjectsRepoDep,
     projects: ProjectsDep,
+    page: int = 1,
+    per: int = 10,
 ) -> schemas.CiRuns:
     project = project_of(writes, org, project_id)
     app = app_of(writes, caller, project, app_id)
 
-    return ci_runs_of(projects, org, app)
+    return ci_runs_of(projects, org, app, page=page, per=per)
 
 
 @router.put("/projects/{project_id}/apps/{app_id}/ci")
@@ -89,6 +99,8 @@ def sync_ci(
     caller: CallerDep,
     writes: ProjectsRepoDep,
     projects: ProjectsDep,
+    page: int = 1,
+    per: int = 10,
 ) -> schemas.CiRuns:
     allowed(caller, org, "app.sync", whole_org=False)
     project = project_of(writes, org, project_id)
@@ -100,4 +112,4 @@ def sync_ci(
     except ActionPlatformError as e:
         error = str(e)
 
-    return ci_runs_of(projects, org, app, error)
+    return ci_runs_of(projects, org, app, error, page=page, per=per)

@@ -23,3 +23,8 @@ export function storedPullRequest(r: PullRequestRow, appId: string): StoredPullR
 export async function pullRequestsOf(projectId: string, appId: string): Promise<StoredPullRequest[]> {
   return (await v1.imports(projectId, appId)).pull_requests.map((r) => storedPullRequest(r, appId));
 }
+
+export async function pullRequestsPage(projectId: string, appId: string, page: number, per: number): Promise<{ items: StoredPullRequest[]; total: number; page: number; per: number }> {
+  const r = await v1.pullRequestsPage(projectId, appId, page, per);
+  return { items: r.items.map((x) => storedPullRequest(x, appId)), total: r.total, page: r.page, per: r.per };
+}
