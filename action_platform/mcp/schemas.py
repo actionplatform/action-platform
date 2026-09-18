@@ -141,6 +141,37 @@ class RolledBack(BaseModel):
     rolled_back_to: str
 
 
+class DeployTargetRow(Open):
+    name: str
+    kind: str
+    run_by: str
+    stages: list[str] = []
+    workflow: Optional[str] = None
+    job: Optional[str] = None
+
+
+class DeploymentRow(Open):
+    id: str
+    target: str
+    kind: str
+    stage: Optional[str] = None
+    version: str
+    status: str
+    executor: str
+    url: Optional[str] = None
+    actor: Optional[str] = None
+    error: Optional[str] = None
+    started_at: Optional[str] = None
+    finished_at: Optional[str] = None
+    verified_at: Optional[str] = None
+
+
+class Deployments(Open):
+    targets: list[DeployTargetRow]
+    deployments: list[DeploymentRow]
+    error: Optional[str] = None
+
+
 class Diagnosis(BaseModel):
     target: str
     ok: bool

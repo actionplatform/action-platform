@@ -506,6 +506,48 @@ def register(mcp: Any, remote: Remote) -> None:
         return remote.diagnose(id, stage)
 
     @tool(mcp, annotations=READ_ONLY)
+    def list_deployments(
+        id: AppId,
+        sync: Annotated[
+            bool,
+            Field(
+                description="true asks the observed pipelines (GitHub Actions, Jenkins) for new runs and verifies versions at their destinations first"
+            ),
+        ] = False,
+    ) -> schemas.Deployments:
+        """The app's deploy targets — where releases go and who ships them — and what arrived at each, whoever executed it: the platform's worker, a workflow, a Jenkins job or a person. `verified` means the version was found at the destination."""
+        project, app = _app_in_project(remote, id)
+
+        if sync:
+            return remote.sync_deployments(project["id"], app["id"])
+
+        return remote.deployments(project["id"], app["id"])
+
+    @tool(mcp, annotations=REACHES_OUT)
+    def record_deployment(
+        id: AppId,
+        target: Annotated[
+            str, Field(description="A target name from list_deployments")
+        ],
+        version: Annotated[
+            str, Field(description="The release that was shipped: 1.4.0 or v1.4.0")
+        ],
+        stage: Optional[str] = None,
+        url: Annotated[
+            Optional[str], Field(description="Where it can be seen, if anywhere")
+        ] = None,
+        ok: Annotated[
+            bool, Field(description="false records a failed delivery")
+        ] = True,
+    ) -> schemas.DeploymentRow:
+        """Record a deployment someone made outside the platform — a release that reached a target by hand or by a pipeline the platform does not observe. A deployment always references a release: `version` must be a tag."""
+        project, app = _app_in_project(remote, id)
+
+        return remote.record_deployment(
+            project["id"], app["id"], target, version, stage, url, None, ok
+        )
+
+    @tool(mcp, annotations=READ_ONLY)
     def list_matrix() -> schemas.Matrix:
         """Project types, stacks, templates, clouds and services the platform can generate.
 

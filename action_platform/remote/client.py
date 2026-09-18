@@ -295,6 +295,36 @@ class Remote:
     def diagnose(self, id: str, stage: Optional[str] = None) -> list[dict]:
         return self._call("GET", f"apps/{id}/diagnose", stage=stage)
 
+    def deployments(self, project: str, app: str) -> dict:
+        return self._call("GET", f"projects/{project}/apps/{app}/deployments")
+
+    def sync_deployments(self, project: str, app: str) -> dict:
+        return self._call("POST", f"projects/{project}/apps/{app}/deployments/sync")
+
+    def record_deployment(
+        self,
+        project: str,
+        app: str,
+        target: str,
+        version: str,
+        stage: Optional[str] = None,
+        url: Optional[str] = None,
+        sha: Optional[str] = None,
+        ok: bool = True,
+    ) -> dict:
+        return self._call(
+            "POST",
+            f"projects/{project}/apps/{app}/deployments",
+            {
+                "target": target,
+                "version": version,
+                "stage": stage,
+                "url": url,
+                "sha": sha,
+                "ok": ok,
+            },
+        )
+
     def matrix(self) -> dict:
         return self._call("GET", "matrix")
 

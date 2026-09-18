@@ -9,7 +9,8 @@ from rich.console import Console
 
 from action_platform.core.action_platform import ActionPlatform
 from action_platform.core.config import Config
-from action_platform.core.exception import DeployError
+from action_platform.core.exception import ActionPlatformError, DeployError
+from action_platform.remote.client import Remote
 from action_platform.logging import logger
 from action_platform.settings import settings
 
@@ -95,3 +96,75 @@ def destroy(
     except NotImplementedError as e:
         raise DeployError(str(e)) from e
     logger.info("destroy done")
+
+
+def _remote_app(app: str | None) -> tuple[Remote, dict, dict]:
+    remote = Remote.from_credentials()
+    wanted = app or Config.from_toml(Path.cwd() / settings.CONFIG_FILE).project_name
+
+    for project in remote.projects():
+        for row in project.get("apps") or []:
+            if wanted in (row.get("registry_id"), row.get("id"), row.get("name")):
+                return remote, project, row
+
+    raise ActionPlatformError(
+        f"no app {wanted!r} on the platform: `action-platform login` and check the name"
+    )
+
+
+def deployments(
+    app: str | None = typer.Option(
+        None,
+        "--app",
+        help="App id or name on the platform; default: this repository's project name",
+    ),
+    sync: bool = typer.Option(
+        False,
+        "--sync",
+        help="Ask the observed pipelines for new runs and verify versions first",
+    ),
+) -> None:
+    """What arrived at each of the app's targets on the platform, whoever shipped it."""
+    remote, project, row = _remote_app(app)
+    body = (
+        remote.sync_deployments(project["id"], row["id"])
+        if sync
+        else remote.deployments(project["id"], row["id"])
+    )
+
+    for target in body["targets"]:
+        source = target.get("workflow") or target.get("job") or ""
+        console.print(
+            f"[bold]{target['name']}[/bold] {target['kind']} · {target['run_by']}{' · ' + source if source else ''}"
+        )
+
+        for d in [d for d in body["deployments"] if d["target"] == target["name"]][:10]:
+            stage = f" {d['stage']}" if d.get("stage") else ""
+            console.print(
+                f"  {d['version']}{stage}  {d['status']}  {d['executor']}  {d.get('finished_at') or d.get('started_at') or ''}"
+            )
+
+    if body.get("error"):
+        console.print(f"[yellow]{body['error']}[/yellow]")
+
+
+def record(
+    target: str = typer.Argument(
+        ..., help="A target name of [deploy] in platform.toml"
+    ),
+    version: str = typer.Argument(..., help="The release shipped: 1.4.0 or v1.4.0"),
+    stage: str | None = STAGE,
+    url: str | None = typer.Option(None, "--url", help="Where it can be seen"),
+    failed: bool = typer.Option(False, "--failed", help="Record a failed delivery"),
+    app: str | None = typer.Option(
+        None,
+        "--app",
+        help="App id or name on the platform; default: this repository's project name",
+    ),
+) -> None:
+    """Record on the platform a deployment made outside it. A deployment always references a release."""
+    remote, project, row = _remote_app(app)
+    d = remote.record_deployment(
+        project["id"], row["id"], target, version, stage, url, None, not failed
+    )
+    console.print(f"recorded {d['target']} {d['version']} {d['status']}")
