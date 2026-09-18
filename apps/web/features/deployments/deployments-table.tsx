@@ -1,12 +1,14 @@
 "use client";
 
-import { ChevronDown, Cloud, ExternalLink, MoreHorizontal, RotateCcw } from "lucide-react";
+import { ChevronDown, Cloud, ExternalLink, MoreHorizontal, Plus, RotateCcw } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
+import { Pagination, usePagination } from "@/components/ui/pagination";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import type { DeployResult } from "@/lib/api";
 import type { JobRow } from "@/lib/v1";
@@ -47,13 +49,15 @@ function duration(job: JobRow, now: number): string {
 
 const versionOf = (job: JobRow): string | null => rowsOf(job)[0]?.version || job.version || null;
 
-export function DeploymentsTable({ jobs, registryId, canDeploy }: { jobs: JobRow[]; registryId: string; canDeploy: boolean }) {
+export function DeploymentsTable({ jobs: all, registryId, canDeploy, newHref }: { jobs: JobRow[]; registryId: string; canDeploy: boolean; newHref?: string | null }) {
   const router = useRouter();
+  const paging = usePagination(all, "runs");
+  const jobs = paging.rows;
   const [open, setOpen] = useState<string | null>(null);
   const [details, setDetails] = useState<JobRow | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [pending, start] = useTransition();
-  const live = jobs.some((j) => j.status === "running" || j.status === "queued");
+  const live = all.some((j) => j.status === "running" || j.status === "queued");
 
   useEffect(() => {
     if (!live) return;
@@ -74,12 +78,20 @@ export function DeploymentsTable({ jobs, registryId, canDeploy }: { jobs: JobRow
 
   return (
     <Panel>
-      <PanelHeader title="Deployment history" aside={<span className="text-[13px] text-secondary">{jobs.length} {jobs.length === 1 ? "run" : "runs"} · last 20</span>} />
-      {jobs.length === 0 ? (
+      <PanelHeader
+        title="Deployments"
+        aside={
+          <div className="flex items-center gap-3">
+            <span className="hidden text-[13px] text-secondary sm:block">{all.length} {all.length === 1 ? "run" : "runs"}</span>
+            {newHref && canDeploy && <Link href={newHref} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium hover:border-border-hover hover:bg-surface-hover"><Plus className="size-3.5" strokeWidth={2} /> New deployment</Link>}
+          </div>
+        }
+      />
+      {all.length === 0 ? (
         <div className="flex flex-col items-center px-4 py-10 text-center">
           <Cloud className="size-5 text-secondary" strokeWidth={1.5} />
           <div className="mt-3 text-sm font-medium">No deployments yet</div>
-          <div className="text-[13px] text-secondary">Run a preflight or deploy above; every run lands here.</div>
+          <div className="text-[13px] text-secondary">Run a preflight or deploy from New deployment; every run lands here.</div>
         </div>
       ) : (
         <>
@@ -139,6 +151,7 @@ export function DeploymentsTable({ jobs, registryId, canDeploy }: { jobs: JobRow
               );
             })}
           </ul>
+          <Pagination page={paging.page} pages={paging.pages} per={paging.per} total={paging.total} onPage={paging.setPage} onPer={paging.setPer} noun={["run", "runs"]} />
         </>
       )}
 

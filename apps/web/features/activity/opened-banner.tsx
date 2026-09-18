@@ -8,7 +8,7 @@ export function OpenedBanner({ number, url, branch, base }: { number: number; ur
   const router = useRouter();
   const pathname = usePathname();
   return (
-    <div className="flex flex-col gap-3 rounded-[9px] border border-foreground bg-surface px-4 py-3 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-3 rounded-lg border border-foreground bg-surface px-4 py-3 sm:flex-row sm:items-center">
       <GitPullRequest className="size-5 shrink-0" strokeWidth={1.75} />
       <div className="min-w-0 flex-1 text-sm">
         <div className="font-medium">Pull request #{number} opened from <span className="font-mono">{branch}</span> into <span className="font-mono">{base}</span></div>

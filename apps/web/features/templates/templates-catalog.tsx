@@ -98,7 +98,7 @@ export function TemplatesCatalog({ matrix, targets, canCreate, sources }: { matr
               {visible.map((it) => <TemplateCard key={it.id} item={canCreate ? it : { ...it, href: null }} targets={targets} />)}
             </div>
           ) : (
-            <div className="overflow-hidden rounded-[9px] border border-border bg-surface">
+            <div className="overflow-hidden rounded-lg border border-border bg-surface">
               <div className="hidden h-10 items-center gap-4 border-b border-border px-4 text-xs font-medium text-muted-foreground md:flex">
                 <span className="w-10" /><span className="flex-1">Template</span><span className="w-40">Category</span><span className="w-32">Language</span><span className="w-20" /><span className="w-[17px]" />
               </div>

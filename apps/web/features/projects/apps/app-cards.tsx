@@ -9,7 +9,7 @@ type Item = { id: string; name: string; registryId: string; tearing?: boolean };
 
 export function AppCards({ projectId, apps, rows, manage }: { projectId: string; apps: Item[]; rows: Map<string, AppRow>; manage: boolean }) {
   if (apps.length === 0) {
-    return <div className="rounded-[9px] border border-dashed border-border px-5 py-10 text-center text-sm text-muted-foreground">No apps yet. Create one from a template or add a repository.</div>;
+    return <div className="rounded-lg border border-dashed border-border px-5 py-10 text-center text-sm text-muted-foreground">No apps yet. Create one from a template or add a repository.</div>;
   }
   return (
     <ul className="space-y-3">

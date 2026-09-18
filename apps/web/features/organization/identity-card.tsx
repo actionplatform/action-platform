@@ -3,7 +3,7 @@
 import { Check, GitCommitHorizontal } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Panel, PanelHeader } from "@/components/ui/panel";
 import { Field, Input } from "@/components/ui/input";
 import { saveGitAuthor } from "./actions";
 
@@ -16,14 +16,9 @@ export function IdentityCard({ author, canManage }: { author: { name: string; em
   const dirty = name !== author.name || email !== author.email;
 
   return (
-    <Card className="rounded-[11px]">
-      <header className="flex items-start justify-between gap-3 border-b border-border px-6 py-5">
-        <div>
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold"><GitCommitHorizontal className="size-4 text-secondary" strokeWidth={1.75} /> Commit identity</h2>
-          <p className="mt-1 text-[13px] text-secondary">Releases and configuration commits the platform makes for this workspace are signed with this name and email.</p>
-        </div>
-      </header>
-      <div className="px-6 py-5">
+    <Panel>
+      <PanelHeader title={<><GitCommitHorizontal className="size-4 text-secondary" strokeWidth={1.75} /> Commit identity</>} description="Releases and configuration commits the platform makes for this workspace are signed with this name and email." />
+      <div className="p-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Name"><Input value={name} onChange={(e) => setName(e.target.value)} disabled={!canManage} /></Field>
           <Field label="Email"><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="font-mono" disabled={!canManage} /></Field>
@@ -34,6 +29,6 @@ export function IdentityCard({ author, canManage }: { author: { name: string; em
         </div>
         {error && <div className="mt-3 rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
       </div>
-    </Card>
+    </Panel>
   );
 }

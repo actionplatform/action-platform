@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Panel, PanelHeader } from "@/components/ui/panel";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { describeAgent } from "@/lib/user-agent";
 import { relativeTime } from "@/lib/time";
@@ -20,12 +20,8 @@ export function SessionsCard({ sessions, now }: { sessions: Row[]; now: number }
   const [pending, start] = useTransition();
 
   return (
-    <Card className="rounded-[11px]">
-      <header className="border-b border-border px-4 py-4 md:px-6 md:py-5">
-        <h2 className="text-[15px] font-semibold">Browser sessions</h2>
-        <p className="mt-1 text-[13px] text-secondary md:hidden">Devices currently signed in.</p>
-        <p className="mt-1 hidden text-[13px] text-secondary md:block">Where this account is signed in. Signing out a session logs that browser out immediately.</p>
-      </header>
+    <Panel>
+      <PanelHeader title="Browser sessions" description="Where this account is signed in. Signing out a session logs that browser out immediately." />
       <ul className="divide-y divide-border-subtle">
         {sessions.map((s) => {
           const agent = describeAgent(s.userAgent);
@@ -61,6 +57,6 @@ export function SessionsCard({ sessions, now }: { sessions: Row[]; now: number }
         pending={pending}
         onConfirm={() => start(async () => { if (!revoking) return; const r = await revokeBrowserSession(revoking.id); setRevoking(null); if (r.ok) router.refresh(); else setError(r.error); })}
       />
-    </Card>
+    </Panel>
   );
 }

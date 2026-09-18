@@ -42,7 +42,7 @@ export function CardGridSkeleton({ count = 6, height = "h-[180px]", cols = "md:g
   return (
     <div aria-hidden className={cn("grid grid-cols-1 gap-4", cols)}>
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className={cn("flex flex-col rounded-[9px] border border-border bg-surface px-6 py-[22px]", height)}>
+        <div key={i} className={cn("flex flex-col rounded-lg border border-border bg-surface px-6 py-[22px]", height)}>
           <div className="size-12 animate-pulse rounded-lg bg-surface-hover" />
           <div className="mt-4 h-5 w-2/3 animate-pulse rounded bg-surface-hover" />
           <div className="mt-2 h-3.5 w-1/3 animate-pulse rounded bg-surface-hover" />

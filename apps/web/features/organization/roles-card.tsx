@@ -3,7 +3,7 @@
 import { Check, Info } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Panel, PanelHeader } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
 import type { AccessCatalog } from "@/lib/permissions";
 
@@ -12,14 +12,8 @@ export function RolesCard({ access }: { access: AccessCatalog }) {
   const [viewing, setViewing] = useState(roles[0]?.id ?? "");
   const role = roles.find((r) => r.id === viewing) ?? roles[0];
   return (
-    <Card className="rounded-[11px]">
-      <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-4 md:px-6 md:py-5">
-        <div className="min-w-0">
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold">Roles and permissions <Info className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-label="Roles are assigned per member under Members" /></h2>
-          <p className="mt-1 text-[13px] text-secondary">Define what each role can do within this workspace.</p>
-        </div>
-        <Badge className="h-6 shrink-0 px-2.5">{roles.length} roles</Badge>
-      </header>
+    <Panel>
+      <PanelHeader title={<>Roles and permissions <Info className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-label="Roles are assigned per member under Members" /></>} description="Define what each role can do within this workspace." aside={<Badge className="h-6 shrink-0 px-2.5">{roles.length} roles</Badge>} />
       <div className="md:hidden">
         <div className="border-b border-border-subtle px-4 py-3">
           <label className="block">
@@ -68,6 +62,6 @@ export function RolesCard({ access }: { access: AccessCatalog }) {
           </tbody>
         </table>
       </div>
-    </Card>
+    </Panel>
   );
 }

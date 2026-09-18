@@ -1,8 +1,6 @@
 import { pullRequestsOf } from "@/lib/pull-requests";
-import { FlowPanel } from "@/features/activity";
+import { OpenedBanner, PullRequestsTable } from "@/features/activity";
 import { loadApp } from "@/features/projects/load";
-import { PullRequestsCard } from "@/features/activity";
-import { OpenedBanner } from "@/features/activity";
 
 export default async function ActivityPage({ params, searchParams }: { params: Promise<{ project: string; app: string }>; searchParams: Promise<{ opened?: string }> }) {
   const { project, app } = await params;
@@ -12,11 +10,11 @@ export default async function ActivityPage({ params, searchParams }: { params: P
   const { view, currentHost } = loaded;
   const pulls = await pullRequestsOf(view.projectId, view.appId);
   const highlighted = opened ? pulls.find((p) => String(p.number) === opened) : null;
+  const canFlow = !!view.can["app.flow"] && !!view.repositoryUrl;
   return (
     <div className="space-y-4">
       {opened && <OpenedBanner number={Number(opened)} url={highlighted?.url ?? null} branch={highlighted?.head ?? view.branch} base={highlighted?.base ?? "main"} />}
-      <FlowPanel view={view} />
-      <PullRequestsCard rows={pulls} hasHost={!!currentHost && !!view.repository} currentBranch={view.branch} branches={view.branches.map((b) => b.name)} repositoryUrl={view.repositoryUrl} />
+      <PullRequestsTable rows={pulls} currentBranch={view.branch} repositoryUrl={view.repositoryUrl} hasHost={!!currentHost && !!view.repository} newHref={canFlow ? `/projects/${view.projectId}/apps/${view.appId}/activity/new` : null} />
     </div>
   );
 }

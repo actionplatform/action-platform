@@ -1,7 +1,7 @@
 import { Download } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { Card } from "@/components/ui/card";
+import { Panel, PanelHeader } from "@/components/ui/panel";
 import { api } from "@/lib/api";
 import { hostAccess } from "@/lib/host-access";
 import { oauthApps } from "@/lib/oauth";
@@ -33,19 +33,19 @@ export default async function GeneralSettingsPage({ searchParams }: { searchPara
 
   return (
     <div className="space-y-5">
-      <Card className="rounded-[11px]">
-        <header className="border-b border-border px-6 py-4"><h2 className="text-[18px] font-semibold">Organization</h2></header>
-        <dl className="grid grid-cols-1 gap-4 px-6 py-4 text-sm sm:grid-cols-2">
+      <Panel>
+        <PanelHeader title="Organization" />
+        <dl className="grid grid-cols-1 gap-4 p-4 text-sm sm:grid-cols-2">
           <div><dt className="text-xs text-secondary">Name</dt><dd className="mt-0.5 font-medium">{org.name}</dd></div>
           <div><dt className="text-xs text-secondary">Slug</dt><dd className="mt-0.5 font-mono">{org.slug}</dd></div>
           <div><dt className="text-xs text-secondary">Your role</dt><dd className="mt-0.5">{session.role}</dd></div>
         </dl>
-      </Card>
+      </Panel>
       <IdentityCard author={author} canManage={canManage} />
       <GitflowCard rules={rules} />
-      <Card className="rounded-[11px]">
-        <header className="border-b border-border px-6 py-4"><h2 className="text-[18px] font-semibold">Git</h2><p className="mt-0.5 text-sm text-secondary">GitHub, GitLab, Bitbucket — the accounts the organization pushes and releases with.</p></header>
-        <div className="space-y-3 px-4 py-4 sm:px-6">
+      <Panel>
+        <PanelHeader title="Git" description="GitHub, GitLab, Bitbucket — the accounts the organization pushes and releases with." />
+        <div className="space-y-3 p-4">
           {query.connected && <div className="text-sm text-secondary">Connected {query.connected}.</div>}
           {query.github_app && <div className="text-sm text-secondary">GitHub App <code className="font-mono">{query.github_app}</code> created. Install it, then connect.</div>}
           <ConnectHosts
@@ -58,11 +58,11 @@ export default async function GeneralSettingsPage({ searchParams }: { searchPara
             error={query.oauth_error ?? null}
           />
         </div>
-      </Card>
+      </Panel>
       <SourceHosts hosts={hosts} access={access} canManage={canManage} />
       <CiHosts hosts={ciHosts} canManage={canManage} />
       {canManage && connected.github.length > 0 && (
-        <Link href="/import" className="flex items-center gap-3 rounded-[11px] border border-border px-6 py-4 text-sm transition-colors hover:border-border-hover hover:bg-surface-hover">
+        <Link href="/import" className="flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-sm transition-colors hover:border-border-hover hover:bg-surface-hover">
           <Download className="size-4 text-secondary" strokeWidth={1.75} />
           <span><span className="font-medium">Import from GitHub</span> <span className="text-secondary">— bring the repositories, teams, people and projects in.</span></span>
         </Link>

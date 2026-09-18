@@ -66,6 +66,7 @@ def jobs(
     directory: ProjectsRepoDep,
     queue: QueueDep,
     kind: Optional[str] = None,
+    limit: int = 20,
 ) -> list[JobOut]:
     found = directory.app_by_registry_id(app)
 
@@ -77,5 +78,6 @@ def jobs(
         raise HTTPException(404, "app not found")
 
     return [
-        _out(directory, JobQueue.view(j)) for j in queue.for_app(found[0].id, kind=kind)
+        _out(directory, JobQueue.view(j))
+        for j in queue.for_app(found[0].id, limit=max(1, min(limit, 500)), kind=kind)
     ]

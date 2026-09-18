@@ -102,7 +102,7 @@ export function TemplateCard({ item, targets }: { item: TemplateItem; targets: O
     </>
   );
 
-  const className = "group flex flex-col rounded-[9px] border border-border bg-surface p-4 md:min-h-[164px] transition-[background-color,border-color,transform] duration-150 ease-out hover:-translate-y-px hover:border-border-hover hover:bg-[#141414] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/[0.18]";
+  const className = "group flex flex-col rounded-lg border border-border bg-surface p-4 md:min-h-[164px] transition-[background-color,border-color,transform] duration-150 ease-out hover:-translate-y-px hover:border-border-hover hover:bg-[#141414] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/[0.18]";
 
   if (item.href) return <Link href={item.href} aria-label={`Use the ${item.name} template`} className={className}>{body}</Link>;
   if (item.type !== "cloud" || targets.length === 0) return <article aria-label={item.name} className={className}>{body}</article>;
