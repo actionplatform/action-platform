@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.24.0 — 2026-09-18
+
+### Features
+- **web:** one DataTable for Activity, CI, Releases and Deployments, paged on the API
+
 ## v0.23.0 — 2026-09-18
 
 ### Features
