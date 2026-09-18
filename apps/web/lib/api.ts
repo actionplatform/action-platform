@@ -119,6 +119,8 @@ export const api = {
       unwrap(await client.GET("/api/apps/{id}/next-version", { params: { path: { id }, query: { level, branch: branch ?? undefined } } })),
     release: async (id: string, level: string, dry_run: boolean, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean } = {}) =>
       unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run, branch, latest: true, ...extra } })),
+    releaseAsync: async (id: string, level: string, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean } = {}) =>
+      unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run: false, branch, latest: true, ...extra }, headers: { "X-Async": "1" } })) as unknown as { job: string; status: string; poll: string },
     deploy: async (id: string, stage: string | null, dry_run: boolean) =>
       unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run } })),
     deployAsync: async (id: string, stage: string | null, dry_run: boolean, version: string | null = null) =>

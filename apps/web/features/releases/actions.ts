@@ -29,12 +29,24 @@ export async function previewRelease(registryId: string, level: string, branch: 
 export type ReleaseExtra = { name?: string | null; notes?: string | null; latest?: boolean };
 
 
-export async function runRelease(projectId: string, _appId: string, registryId: string, level: string, branch: string | null = null, extra: ReleaseExtra = {}): Promise<Result<ReleasePreview>> {
+export async function runRelease(projectId: string, _appId: string, registryId: string, level: string, branch: string | null = null, extra: ReleaseExtra = {}): Promise<Result<{ job: string }>> {
   await requireOrg();
   try {
-    const data = await api.apps.release(registryId, level, false, branch, extra);
-    refreshProject(projectId);
-    return { ok: true, data };
+    const data = await api.apps.releaseAsync(registryId, level, branch, extra);
+    return { ok: true, data: { job: data.job } };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
+
+export async function releaseJob(projectId: string, id: string): Promise<Result<{ status: string; error: string | null; result: ReleasePreview | null }>> {
+  await requireOrg();
+  try {
+    const job = await v1.job(id);
+    if (job.status === "done") refreshProject(projectId);
+    const result = job.result && typeof job.result === "object" && "next" in (job.result as object) ? (job.result as ReleasePreview) : null;
+    return { ok: true, data: { status: job.status, error: job.error ?? null, result } };
   } catch (e) {
     return failed(e);
   }

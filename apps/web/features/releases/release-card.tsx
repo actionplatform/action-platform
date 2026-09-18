@@ -2,8 +2,8 @@
 
 import { FileText, GitBranch, Rocket } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { ActionField, ActionFields, ActionForm, ActionSteps, ActionSummary } from "@/components/ui/action-form";
+import { useCallback, useEffect, useState } from "react";
+import { ActionField, ActionFields, ActionForm, ActionSteps, ActionSummary, Running } from "@/components/ui/action-form";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Hint } from "@/components/ui/hint";
@@ -12,7 +12,7 @@ import { SegmentedControl } from "@/components/ui/segmented";
 import { Select } from "@/components/ui/select";
 import type { ReleasePreview } from "@/lib/api";
 import { useAction } from "@/lib/use-action";
-import { nextVersion, previewRelease, runRelease } from "@/features/releases/actions";
+import { nextVersion, previewRelease, releaseJob, runRelease } from "@/features/releases/actions";
 import type { AppView } from "@/features/projects";
 import { RunAlert, summarize } from "@/features/deployments";
 
@@ -71,10 +71,20 @@ export function ReleaseCard({ view }: { view: AppView }) {
   const [notes, setNotes] = useState("");
   useEffect(() => { if (!nameTouched) setName(`Release ${next}`); }, [next, nameTouched]);
 
+  const poll = useCallback(
+    async (job: string) => {
+      const r = await releaseJob(view.projectId, job);
+      if (!r.ok) return r;
+      return { ok: true as const, data: { status: r.data.status, outcome: r.data.result, error: r.data.error } };
+    },
+    [view.projectId],
+  );
+
   const action = useAction<ReleasePreview, ReleasePreview>({
     preview: () => previewRelease(view.registryId, level, switching ? branch : null),
     run: () => runRelease(view.projectId, view.appId, view.registryId, level, switching ? branch : null, { name: name.trim() || null, notes: notes.trim() || null }),
-    whileAway: "The release may have been cut anyway: check the tags before trying again.",
+    poll,
+    whileAway: "The release runs on the platform: check the Releases list in a moment.",
     onDone: () => { setNotes(""); setNameTouched(false); router.refresh(); },
   });
 
@@ -84,7 +94,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
   const blocker = !view.can["app.release"] ? "Your role cannot create releases." : !view.repositoryUrl ? "This app has no remote." : branchMissing ? `Branch ${branch} is not on the remote.` : tagExists ? `Tag v${next} already exists.` : view.workingTree !== "clean" ? (switching ? "Commit or discard the pending changes before switching branches." : "Commit or discard the pending changes first.") : !switching && !view.health.ok ? "Fix the branch policy problems first." : null;
 
   const change = (set: (v: string) => void) => (v: string) => { set(v); action.clearOutcome(); };
-  const creating = action.step === "running";
+  const creating = action.step === "running" || action.step === "polling";
 
   return (
     <ActionForm
@@ -96,6 +106,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
       summary={[{ label: "Current", value: current }, { label: "Next", value: next }, { label: "Tag", value: `v${next}` }, { label: "Kind", value: stable ? "stable" : "pre-release (rc)" }]}
       alerts={
         <>
+          {action.step === "polling" && <Running label="Cutting the release" detail={`${next} from ${branch}`} />}
           {action.result && !action.result.dry_run && <RunAlert tone="success" title={`Released ${action.result.next}`} summary={`Tag v${action.result.next} pushed and published from ${action.result.branch}.`} />}
           {action.error && <RunAlert tone="danger" title="Release failed" summary={summarize(action.error)} log={action.error} />}
         </>
