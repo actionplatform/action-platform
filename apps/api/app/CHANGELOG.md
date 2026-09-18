@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.23.0 — 2026-09-18
+
+### Features
+- **web:** Releases and Deployments list only, paginated; New release and New deployment pages
+- **api:** release as the platform's table — one row per tag, any source, referenced by deployments
+
+### Refactoring
+- **api:** ReleaseStore lives in repositories — the releases and deployments contexts stay independent
+
+### Chores
+- merge master
+
 ## v0.22.0 — 2026-09-17
 
 ### Features
