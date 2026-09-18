@@ -37,6 +37,28 @@ services:
       timeout: 5s
       retries: 5
 
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    restart: unless-stopped
+    profiles: ["pooler"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_USER: action_platform
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: action_platform
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "500"
+      DEFAULT_POOL_SIZE: "20"
+      AUTH_TYPE: scram-sha-256
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U action_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   migrate:
     image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
     pull_policy: always
@@ -46,7 +68,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@postgres:5432/action_platform
+      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-postgres}:5432/action_platform
 
   api:
     image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
@@ -64,7 +86,7 @@ services:
     environment:
       AP_API_TOKEN: ${AP_API_TOKEN:-}
       AP_API_WORKERS: ${AP_API_WORKERS:-2}
-      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@postgres:5432/action_platform
+      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-postgres}:5432/action_platform
       AP_DATABASE_AUTO_MIGRATE: "0"
       AP_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       AP_PUBLIC_URL: ${PUBLIC_URL}
@@ -81,10 +103,9 @@ services:
       AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
 
   worker:
-    image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
+    image: ${AP_IMAGE_WORKER:-actionplatformio/action-platform-worker:latest}
     pull_policy: always
     restart: unless-stopped
-    command: ["action-platform-api", "worker", "--concurrency", "${AP_WORKER_CONCURRENCY:-2}"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,9 +113,40 @@ services:
         condition: service_completed_successfully
       api:
         condition: service_started
+    command: ["action-platform-api", "worker", "--concurrency", "${AP_WORKER_CONCURRENCY:-2}", "--kinds", "sync,release,push,import,import_github"]
     environment:
       AP_API_TOKEN: ${AP_API_TOKEN:-}
-      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@postgres:5432/action_platform
+      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-postgres}:5432/action_platform
+      AP_DATABASE_AUTO_MIGRATE: "0"
+      AP_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      AP_PUBLIC_URL: ${PUBLIC_URL}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITHUB_BASE_URL: ${GITHUB_BASE_URL:-}
+      GITLAB_CLIENT_ID: ${GITLAB_CLIENT_ID:-}
+      GITLAB_CLIENT_SECRET: ${GITLAB_CLIENT_SECRET:-}
+      GITLAB_BASE_URL: ${GITLAB_BASE_URL:-}
+      BITBUCKET_CLIENT_ID: ${BITBUCKET_CLIENT_ID:-}
+      BITBUCKET_CLIENT_SECRET: ${BITBUCKET_CLIENT_SECRET:-}
+      ACTION_PLATFORM_TEMPLATES_REPO: ${ACTION_PLATFORM_TEMPLATES_REPO:-https://github.com/actionplatform/templates.git}
+      ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
+      AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
+
+  worker-deploy:
+    image: ${AP_IMAGE_WORKER:-actionplatformio/action-platform-worker:latest}
+    pull_policy: always
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      api:
+        condition: service_started
+    command: ["action-platform-api", "worker", "--concurrency", "${AP_DEPLOY_CONCURRENCY:-1}", "--kinds", "deploy,destroy,destroy_project", "--name", "deploy"]
+    environment:
+      AP_API_TOKEN: ${AP_API_TOKEN:-}
+      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-postgres}:5432/action_platform
       AP_DATABASE_AUTO_MIGRATE: "0"
       AP_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       AP_PUBLIC_URL: ${PUBLIC_URL}
