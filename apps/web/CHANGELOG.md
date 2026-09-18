@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.26.0 — 2026-09-18
+
+### Features
+- **logs:** every line a job writes is stored as it happens and can be followed live
+
 ## v0.25.0 — 2026-09-18
 
 ### Features
