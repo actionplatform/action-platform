@@ -3,12 +3,13 @@
 from typing import Optional
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
 from app.core.db.models import Organization, PullRequest, Release
 from app.schemas import integrations as hosts
 from app.schemas import projects
+from app.schemas.common import page_bounds
 from app.services.access.caller import Caller
 from app.repositories.projects import ProjectsRepository
 
@@ -28,6 +29,59 @@ def host_row(host) -> hosts.HostRow:
         auth_kind=host.auth_kind,
         login=host.login,
         created_at=host.created_at,
+    )
+
+
+def releases_page(
+    db: DbSession, app_id: str, page: int, per: int
+) -> projects.ReleasePage:
+    page, per, offset = page_bounds(page, per)
+    rows = db.scalars(
+        select(Release)
+        .where(Release.app_id == app_id)
+        .order_by(Release.published_at.desc().nullslast(), Release.synced_at.desc())
+        .offset(offset)
+        .limit(per)
+    ).all()
+    total = db.scalar(
+        select(func.count()).select_from(Release).where(Release.app_id == app_id)
+    )
+
+    return projects.ReleasePage(
+        items=[
+            projects.ReleaseRow.model_validate(r, from_attributes=True) for r in rows
+        ],
+        total=int(total or 0),
+        page=page,
+        per=per,
+    )
+
+
+def pull_requests_page(
+    db: DbSession, app_id: str, page: int, per: int
+) -> projects.PullRequestPage:
+    page, per, offset = page_bounds(page, per)
+    rows = db.scalars(
+        select(PullRequest)
+        .where(PullRequest.app_id == app_id)
+        .order_by(PullRequest.updated_at.desc())
+        .offset(offset)
+        .limit(per)
+    ).all()
+    total = db.scalar(
+        select(func.count())
+        .select_from(PullRequest)
+        .where(PullRequest.app_id == app_id)
+    )
+
+    return projects.PullRequestPage(
+        items=[
+            projects.PullRequestRow.model_validate(p, from_attributes=True)
+            for p in rows
+        ],
+        total=int(total or 0),
+        page=page,
+        per=per,
     )
 
 

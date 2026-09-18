@@ -959,6 +959,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/apps/{app_id}/releases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["releases_api_v1_projects__project_id__apps__app_id__releases_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/pull-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pull_requests_api_v1_projects__project_id__apps__app_id__pull_requests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/apps/{app_id}/ci": {
         parameters: {
             query?: never;
@@ -1519,6 +1551,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/jobs/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["jobs_page_api_v1_jobs_page_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/jobs/{id}": {
         parameters: {
             query?: never;
@@ -1830,6 +1878,9 @@ export interface components {
             link: components["schemas"]["CiLink"];
             runs: components["schemas"]["CiRunRow"][];
             error?: string | null;
+            total: number;
+            page: number;
+            per: number;
         };
         CloudRequest: {
             target: string;
@@ -2224,6 +2275,12 @@ export interface components {
             updated_at: string;
             finished_at?: string | null;
         };
+        JobPage: {
+            items: components["schemas"]["JobOut"][];
+            total: number;
+            page: number;
+            per: number;
+        };
         Manifest: {
             target: string;
             state: string;
@@ -2444,6 +2501,12 @@ export interface components {
             project_id: string;
             team_id?: string | null;
         };
+        PullRequestPage: {
+            items: components["schemas"]["PullRequestRow"][];
+            total: number;
+            page: number;
+            per: number;
+        };
         PullRequestProposal: {
             head: string;
             base: string;
@@ -2501,6 +2564,12 @@ export interface components {
             subject: string;
             prerelease: boolean;
             latest: boolean;
+        };
+        ReleasePage: {
+            items: components["schemas"]["ReleaseRow"][];
+            total: number;
+            page: number;
+            per: number;
         };
         ReleasePreview: {
             current: string;
@@ -4923,9 +4992,82 @@ export interface operations {
             };
         };
     };
+    releases_api_v1_projects__project_id__apps__app_id__releases_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                per?: number;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReleasePage"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pull_requests_api_v1_projects__project_id__apps__app_id__pull_requests_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                per?: number;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PullRequestPage"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     ci_runs_api_v1_projects__project_id__apps__app_id__ci_get: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                per?: number;
+            };
             header?: {
                 "X-Organization"?: string | null;
             };
@@ -4993,7 +5135,10 @@ export interface operations {
     };
     sync_ci_api_v1_projects__project_id__apps__app_id__ci_sync_post: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                per?: number;
+            };
             header?: {
                 "X-Organization"?: string | null;
             };
@@ -6235,6 +6380,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GitflowRules"];
+                };
+            };
+        };
+    };
+    jobs_page_api_v1_jobs_page_get: {
+        parameters: {
+            query: {
+                app: string;
+                kinds?: string;
+                page?: number;
+                per?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobPage"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

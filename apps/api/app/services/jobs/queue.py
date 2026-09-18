@@ -3,7 +3,7 @@ import uuid
 from datetime import timedelta
 from typing import Any, Optional
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 
 from app.core.db.database import Database
 from app.core.db.models import Job
@@ -72,20 +72,43 @@ class JobQueue:
             return s.get(Job, id)
 
     def for_app(
-        self, app_id: str, limit: int = 20, kind: Optional[str] = None
+        self,
+        app_id: str,
+        limit: int = 20,
+        kind: Optional[str] = None,
+        kinds: Optional[list[str]] = None,
+        offset: int = 0,
     ) -> list[Job]:
         with self.database.session() as s:
             query = (
                 select(Job)
                 .where(Job.app_id == app_id)
                 .order_by(Job.created_at.desc())
+                .offset(offset)
                 .limit(limit)
             )
 
             if kind:
                 query = query.where(Job.kind == kind)
 
+            if kinds:
+                query = query.where(Job.kind.in_(kinds))
+
             return list(s.scalars(query))
+
+    def count_for_app(
+        self, app_id: str, kind: Optional[str] = None, kinds: Optional[list[str]] = None
+    ) -> int:
+        with self.database.session() as s:
+            query = select(func.count()).select_from(Job).where(Job.app_id == app_id)
+
+            if kind:
+                query = query.where(Job.kind == kind)
+
+            if kinds:
+                query = query.where(Job.kind.in_(kinds))
+
+            return int(s.scalar(query) or 0)
 
     def live_deploy(self, app_id: str, stage: str) -> Optional[Job]:
         """The deploy (or preflight) of the app still queued or running for `stage` — one at a time per environment."""

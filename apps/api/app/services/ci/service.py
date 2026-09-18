@@ -6,7 +6,7 @@ import uuid
 from dataclasses import asdict
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
 from action_platform.abc.ci_runner import CIRunner
@@ -89,12 +89,21 @@ class CiService:
 
         return len(remote)
 
-    def runs(self, app_id: str, limit: int = LIMIT) -> list[CiRun]:
+    def runs(self, app_id: str, limit: int = LIMIT, offset: int = 0) -> list[CiRun]:
         return list(
             self.db.scalars(
                 select(CiRun)
                 .where(CiRun.app_id == app_id)
                 .order_by(CiRun.number.desc())
+                .offset(offset)
                 .limit(limit)
             )
+        )
+
+    def count(self, app_id: str) -> int:
+        return int(
+            self.db.scalar(
+                select(func.count()).select_from(CiRun).where(CiRun.app_id == app_id)
+            )
+            or 0
         )

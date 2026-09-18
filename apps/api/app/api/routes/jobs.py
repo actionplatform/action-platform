@@ -12,6 +12,7 @@ from app.api.dependencies import (
     QueueDep,
 )
 from app.core.db.models.auth import User
+from app.schemas.common import page_bounds
 from app.services.jobs import JobQueue
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
@@ -33,6 +34,46 @@ class JobOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     finished_at: Optional[datetime] = None
+
+
+class JobPage(BaseModel):
+    items: list[JobOut]
+    total: int
+    page: int
+    per: int
+
+
+@router.get("/jobs/page")
+def jobs_page(
+    app: str,
+    caller: CallerDep,
+    directory: ProjectsRepoDep,
+    queue: QueueDep,
+    kinds: str = "deploy,destroy",
+    page: int = 1,
+    per: int = 10,
+) -> JobPage:
+    found = directory.app_by_registry_id(app)
+
+    if (
+        found is None
+        or caller.member_of(found[1].organization_id) is None
+        or not caller.within_reach(found[0].id, found[1].id)
+    ):
+        raise HTTPException(404, "app not found")
+
+    wanted = [k.strip() for k in kinds.split(",") if k.strip()]
+    page, per, offset = page_bounds(page, per)
+
+    return JobPage(
+        items=[
+            _out(directory, JobQueue.view(j))
+            for j in queue.for_app(found[0].id, limit=per, kinds=wanted, offset=offset)
+        ],
+        total=queue.count_for_app(found[0].id, kinds=wanted),
+        page=page,
+        per=per,
+    )
 
 
 @router.get("/jobs/{id}")

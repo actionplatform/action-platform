@@ -12,6 +12,8 @@ from app.api.dependencies.lookups import (
     app_of,
     host_row,
     imports_of,
+    pull_requests_page,
+    releases_page,
     org_dict,
     project_of,
 )
@@ -102,6 +104,8 @@ __all__ = [
     "get_state_signer",
     "host_row",
     "imports_of",
+    "pull_requests_page",
+    "releases_page",
     "manageable",
     "org_dict",
     "org_of",

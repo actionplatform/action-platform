@@ -48,3 +48,21 @@ class SourceSpec(BaseModel):
     url: str
     ref: str = "main"
     credentials: Optional[SourceCredentials] = None
+
+
+class PageMeta(BaseModel):
+    total: int
+    page: int
+    per: int
+
+    @property
+    def pages(self) -> int:
+        return max(1, -(-self.total // self.per))
+
+
+def page_bounds(page: int, per: int) -> tuple[int, int, int]:
+    """(page, per, offset) with page ≥ 1 and 1 ≤ per ≤ 100."""
+    per = max(1, min(int(per), 100))
+    page = max(1, int(page))
+
+    return page, per, (page - 1) * per
