@@ -1,8 +1,9 @@
 """DeployTarget ABC — the lifecycle every deploy target answers to.
 
 Vocabulary mirrors what a deployment scope needs over its life: provision the
-target once, ship versions, move traffic, undo, inspect, tear down. A target
-that cannot do one of them raises NotImplementedError and the CLI says so.
+target once, ship versions, move traffic, undo, inspect, tear down, and — for
+every target, whoever executed the deploy — verify that a version is there. A
+target that cannot do one of them raises NotImplementedError and the CLI says so.
 """
 
 from abc import ABC, abstractmethod
@@ -44,3 +45,11 @@ class DeployTarget(ABC):
     def delete(self, ctx: "Context") -> None:
         """Tear the target down."""
         raise NotImplementedError(f"{self.name} cannot delete")
+
+    def verify(self, version: str, stage: str | None = None) -> bool:
+        """Whether `version` is really at the destination — asked after any executor reported success."""
+        raise NotImplementedError(f"{self.name} cannot verify")
+
+    def url(self, version: str, stage: str | None = None) -> str | None:
+        """Where `version` can be seen at the destination, when the target knows."""
+        return None

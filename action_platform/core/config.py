@@ -8,6 +8,7 @@ from pathlib import Path
 from action_platform.abc.changelog_renderer import ChangelogRenderer
 from action_platform.abc.ci_runner import CIRunner
 from action_platform.abc.deploy_target import DeployTarget
+from action_platform.core.targets import TargetSpec, parse_targets
 from action_platform.abc.release_strategy import ReleaseStrategy
 from action_platform.abc.source_host import SourceHost
 from action_platform.core.exception import ConfigError
@@ -60,12 +61,26 @@ class Config:
         return parse_components(self._components_spec)
 
     @property
+    def targets(self) -> list[TargetSpec]:
+        """Every deploy target platform.toml declares, whoever runs it."""
+        return parse_targets(self._deploy_spec)
+
+    @property
     def deploy(self) -> list[DeployTarget]:
-        """Targets resolve lazily: loading platform.toml never needs a provider installed."""
+        """The targets the platform runs itself, resolved lazily: loading platform.toml never needs a provider installed."""
         if self._deploy is None:
             self._deploy = _build_deploy_targets(self._deploy_spec)
 
         return self._deploy
+
+    def target(self, name: str) -> DeployTarget:
+        """A provider for target `name`, whoever runs it — for verify and url."""
+        spec = next((t for t in self.targets if t.name == name), None)
+
+        if spec is None:
+            raise ConfigError(f"no deploy target named {name!r}")
+
+        return _build_target(spec)
 
     @property
     def release_strategy(self) -> ReleaseStrategy:
@@ -112,22 +127,29 @@ def _build_source_host(cfg: dict) -> SourceHost | None:
     return build_source_host(kind, cfg.get("repo", ""), cfg.get("base_url"))
 
 
-def _build_deploy_targets(cfg: dict) -> list[DeployTarget]:
-    """`[deploy] target = "<name>"` resolved through the `action_platform.deploy_target`
-    entry-point group; remaining keys of the table are passed to the provider."""
-    target = cfg.get("target")
+def _providers() -> dict[str, type]:
+    from action_platform.providers.deploy import BUILTIN_DEPLOY_TARGETS
 
-    if not target:
-        return []
+    return {**BUILTIN_DEPLOY_TARGETS, **module.load_deploy_targets()}
 
-    providers = module.load_deploy_targets()
 
-    if target not in providers:
+def _build_target(spec: TargetSpec) -> DeployTarget:
+    providers = _providers()
+
+    if spec.kind not in providers:
         installed = ", ".join(sorted(providers)) or "none"
         raise ConfigError(
-            f"no provider installed for deploy target {target!r} (installed: {installed})"
+            f"no provider installed for deploy target {spec.kind!r} (installed: {installed})"
         )
 
-    kwargs = {k: v for k, v in cfg.items() if k != "target"}
+    target = providers[spec.kind](**spec.options)
 
-    return [providers[target](**kwargs)]
+    if spec.name != spec.kind:
+        target.name = spec.name
+
+    return target
+
+
+def _build_deploy_targets(cfg: dict) -> list[DeployTarget]:
+    """The `run_by = "platform"` targets of `[deploy]`, each resolved through the built-in kinds and the `action_platform.deploy_target` entry-point group; the other keys of a target go to its provider."""
+    return [_build_target(spec) for spec in parse_targets(cfg) if spec.platform]
