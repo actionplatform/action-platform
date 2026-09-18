@@ -11,7 +11,7 @@ from app.services.auth.service import AuthService
 from app.core.errors import Refused
 from app.services.access.caller import Caller, resolve_caller
 from app.services.access.dispatch import Dispatcher
-from app.services.access.enrich import enrich
+from app.services.access.enrich import credentials_for, enrich
 from app.services.access.target import Authorizer, Target
 from app.services.access.directory import AccessDirectory
 from app.services.jobs import JobQueue
@@ -23,6 +23,7 @@ class Plan:
     body: bytes
     method: str
     allowed_registry_ids: Optional[set[str]] = None
+    credentials: Optional[dict[str, Any]] = None
 
 
 class Queued(Exception):
@@ -78,6 +79,12 @@ class Planner:
                     target.rule,
                 )
 
+            credentials = (
+                credentials_for(directory, target.organization, target.app, {})
+                if target.app is not None and target.organization is not None
+                else None
+            )
+
             if target.rule.imports and target.app is not None:
                 directory.mark_synced(target.app)
 
@@ -88,7 +95,7 @@ class Planner:
             )
             new_body = json.dumps(parsed).encode() if parsed is not None else b""
 
-            return caller, Plan(target, new_body, new_method, allowed)
+            return caller, Plan(target, new_body, new_method, allowed, credentials)
 
     @staticmethod
     def _parse(method: str, body: bytes) -> Optional[dict]:
