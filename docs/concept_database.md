@@ -29,6 +29,7 @@ Alembic, shipped with the API — one revision per change:
 | `0007` | `signing_key`: the RSA pair behind the platform's OIDC issuer, private half sealed |
 | `0008` | `app_config`: the app's `platform.toml` as the platform keeps it — the database is the source of truth, the file in the repository a mirror |
 | `0010`, `0011` | `ci_host`, `ci_run`, `app.ci_host_id` and `app.ci_job`: the CI servers an organization connected (token sealed), the runner and job each app reads, and the runs imported from it (`number` a big integer: GitHub run ids) |
+| `0012` | `deployment`: a release arriving at one of the app's targets — target, stage, version, status up to `verified`, executor (platform, GitHub Actions, Jenkins, manual), the job or CI run that did it |
 
 A database the web app created has no `alembic_version` table but does have `user`; the API recognises that, stamps it at `0001` and applies only what follows. Nothing is recreated, nothing is copied: pointing the API at the web app's database is the whole data migration.
 

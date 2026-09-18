@@ -73,7 +73,7 @@ class Worker:
             done += 1
 
     def handle(self, job: Job) -> None:
-        payload = json.loads(job.payload or "{}")
+        payload = {**json.loads(job.payload or "{}"), "job_id": job.id}
         handler = self.handlers.get(job.kind)
 
         if handler is None:

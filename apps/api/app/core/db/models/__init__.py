@@ -5,6 +5,7 @@ from app.core.db.models.auth import Account, DeviceCode, Session, User, Verifica
 from app.core.db.models.base import KEY, SHORT, Base, now
 from app.core.db.models.ci import CiHost, CiRun
 from app.core.db.models.configuration import AppConfig
+from app.core.db.models.deployments import Deployment
 from app.core.db.models.integrations import (
     OAuthApp,
     PluginOption,
@@ -33,6 +34,7 @@ __all__ = [
     "AppConfig",
     "CiHost",
     "CiRun",
+    "Deployment",
     "Base",
     "DeviceCode",
     "Draft",
