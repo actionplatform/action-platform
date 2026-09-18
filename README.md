@@ -20,9 +20,9 @@ Three doors, one core:
 
 | | |
 |---|---|
-| **Web app** | Organizations › teams › projects › apps, with roles (`owner`, `admin`, `deployer`, `developer`, `viewer`). Create an app from a template or import any repository, connect GitHub / GitLab / Bitbucket, edit `platform.toml`, open pull requests, cut releases — from a browser. One command to self-host. |
-| **CLI** | `pipx install action-platform` and the same verbs on your machine: `init`, `branch`, `pr`, `release`, `deploy`, `rollback`, `diagnose`. |
-| **MCP server** | The same operations as tools for Claude Code, Codex, Cursor — locally, or against your hosted platform after `action-platform login`: 36 remote tools that know who you are, which app the current directory is, what your token may do, and can manage projects, teams and members. |
+| **Web app** | Organizations › teams › projects › apps, with roles (`owner`, `admin`, `deployer`, `developer`, `viewer`). Create an app from a template or import any repository, connect GitHub / GitLab / Bitbucket, edit `platform.toml`, open pull requests, cut releases, see whether each one can reach `dev` and `prod`, deploy it, follow the CI runs and every deployment — wherever it ran — from a dashboard, a release timeline and paged tables. One command to self-host. |
+| **CLI** | `pipx install action-platform` and the same verbs on your machine: `init`, `branch`, `pr`, `release`, `readiness`, `deploy`, `rollback`, `diagnose`, `deployments`. |
+| **MCP server** | The same operations as tools for Claude Code, Codex, Cursor — locally, or against your hosted platform after `action-platform login`: 38 remote tools that know who you are, which app the current directory is, what your token may do, and can manage projects, teams and members. |
 
 ## Self-host in one command
 
@@ -50,10 +50,11 @@ Thirty seconds later you have a FastAPI service with tests, lint, CI wired, a SA
 
 | | |
 |---|---|
-| **One command, whole lifecycle** | `init` → `release` → `deploy` → `rollback` → `diagnose` → `destroy`. Same verbs for a Python API on Lambda, a Go service in Docker, a React app on Amplify. |
+| **One command, whole lifecycle** | `init` → `release` → `readiness` → `deploy` → `rollback` → `diagnose` → `destroy`. Same verbs for a Python API on Lambda, a Go service in Docker, a React app on Amplify. |
+| **A deploy is always a release — and it knows if it will make it** | Every deployment references a tag. Right after a release is cut, the platform checks whether it can reach each stage — configuration, manifests, credentials, permissions, the destination's state — without building anything, stores the verdict, and refuses a blocked deploy unless you say so. Deployments are recorded whoever ran them (the platform, GitHub Actions, Jenkins, a person) and verified at the destination — PyPI, npm, a registry, a stack. |
 | **Templates from production, not tutorials** | Every project template is extracted from a real shipping product. Real layout, real CI, real gotchas already fixed. |
 | **Cloud is a layer, not a fork** | Projects stay cloud-agnostic. `--cloud aws/lambda` overlays deploy files; swap to `docker` tomorrow with one command. |
-| **Your CI, your account, your git** | Runs on GitHub Actions, GitLab CI, Jenkins or Bitbucket Pipelines you already have. Repositories on GitHub, GitLab, Bitbucket or any git server, connected with OAuth. Infra lands in **your** AWS account through OIDC — no long-lived keys, no vendor in the loop. |
+| **Your CI, your account, your git** | Runs on GitHub Actions, GitLab CI, Jenkins or Bitbucket Pipelines you already have — connected to the platform, their runs show next to your releases and a click starts one. Repositories on GitHub, GitLab, Bitbucket or any git server, connected with OAuth; webhooks keep the platform level with them. Infra lands in **your** AWS account through OIDC — no long-lived keys, no vendor in the loop. |
 | **Governance that ships with the code** | Git-flow and Conventional Commits enforced by git hooks before a commit exists and by CI on every PR; changelog generated; `AGENTS.md` for humans and AI agents; Trivy scans; least-privilege IAM in `requirements/`. |
 | **Fix once, everywhere** | CI logic lives in versioned shared repos (`ci-scripts`, `ci-github`, `ci-gitlab`, `ci-jenkins`, `ci-bitbucket`). Bump `v1`, every project picks it up. |
 | **Roles, scoped tokens** | Members join by invitation or are added with an account; `viewer` reads, `developer` branches and commits, `deployer` releases, `admin` and `owner` run the organization. `action-platform login` mints a token with a scope (`read`, `write`, `release`, `admin`) and a reach (one organization or all, a project, an app) that never exceeds your role. **Connected apps** shows every token, which program uses it — Claude Code, Codex, Cursor, the CLI — and every browser session, all revocable. Source-host credentials stay on the platform. |
@@ -80,11 +81,14 @@ Branches are `<kind>/<code>`, commits are Conventional Commits, `main`/`develop`
 flowchart LR
     T[Templates<br/>official + your repositories] --> A[App<br/>clone on the platform]
     R[Existing repository] -->|install platform.toml, CI, hooks| A
-    A --> C[Configuration<br/>deploy target · services · platform.toml]
+    A --> C[Configuration<br/>deploy targets · services · platform.toml]
     C -->|commit on chore/&lt;code&gt;| P[Pull request]
     A --> B[Activity<br/>branches · pull requests]
+    A --> W[CI<br/>runs · start one]
     A --> V[Releases<br/>stable from main · rc elsewhere]
-    V --> I[(images · PyPI · GitHub release)]
+    V --> K{Readiness<br/>dev · prod}
+    K -->|deployable| D[Deployments<br/>platform · Actions · Jenkins · manual]
+    D --> I[(verified at PyPI · npm · registry · stack)]
 ```
 
 ## Documentation
@@ -96,13 +100,13 @@ flowchart LR
 | Start | [Getting started](docs/start_getting_started.md) · [Self-hosting](docs/start_self_hosting.md) · [Troubleshooting](docs/start_troubleshooting.md) |
 | Use | [Web](docs/use_web.md) · [CLI](docs/use_cli.md) · [MCP](docs/use_mcp.md) · [API](docs/use_api.md) · [Plugins](docs/use_plugins.md) |
 | Concept | [Access control](docs/concept_access_control.md) · [Git-flow](docs/concept_git_flow.md) · [Manifest](docs/concept_manifest.md) · [Templates](docs/concept_templates.md) · [Releases](docs/concept_releases.md) · [Deployments](docs/concept_deployments.md) · [Identity](docs/concept_identity.md) · [Observability](docs/concept_observability.md) · [Database](docs/concept_database.md) |
-| Contribute | [Architecture](docs/contribute_architecture.md) · [Development](docs/contribute_development.md) · [Writing a plugin](docs/contribute_plugins.md) |
+| Contribute | [Architecture](docs/contribute_architecture.md) · [Development](docs/contribute_development.md) · [Writing a plugin](docs/contribute_plugins.md) · [Decisions](docs/adr/README.md) |
 
 Versions and history: [`LAST_VERSION`](LAST_VERSION) / [`CHANGELOG.md`](CHANGELOG.md) for the library and CLI, [`apps/web`](apps/web/CHANGELOG.md) and [`apps/api`](apps/api/app/CHANGELOG.md) for the web app and the API.
 
 ## Extend it
 
-Everything is a plugin. Deploy targets, CI runners, release strategies and changelog formats are named providers behind entry-point groups; git-flow rules, the releaser, the deployer, the installer and the scaffolder are slots a plugin replaces with a subclass; MCP tools, CLI commands and cloud overlays ride along. `action-platform plugin install aws-lambda` — see [plugins](docs/use_plugins.md).
+Everything is a plugin. Deploy targets (`preflight`, `deploy`, `verify`, `readiness`), CI runners, source hosts, release strategies and changelog formats are named providers behind entry-point groups; git-flow rules, the releaser, the deployer, the readiness checks, the installer and the scaffolder are slots a plugin replaces with a subclass; MCP tools, CLI commands and cloud overlays ride along. `action-platform plugin install aws-lambda` — see [plugins](docs/use_plugins.md).
 
 ```python
 from action_platform import ActionPlatform, Config
