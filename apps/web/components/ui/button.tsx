@@ -19,8 +19,13 @@ const button = cva(
   },
 );
 
-export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof button>;
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof button> & { loading?: boolean };
 
-export function Button({ className, variant, size, ...props }: ButtonProps) {
-  return <button className={cn(button({ variant, size }), className)} {...props} />;
+export function Button({ className, variant, size, loading, disabled, children, ...props }: ButtonProps) {
+  return (
+    <button className={cn(button({ variant, size }), className)} disabled={disabled || loading} aria-busy={loading || undefined} {...props}>
+      {loading && <span aria-hidden className="size-3.5 shrink-0 animate-spin rounded-full border-2 border-current/30 border-t-current" />}
+      {children}
+    </button>
+  );
 }

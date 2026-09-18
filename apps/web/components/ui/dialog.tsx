@@ -167,7 +167,12 @@ export function ConfirmDialog({
   children?: ReactNode;
 }) {
   const formId = useId();
-  const blocked = !!pending || !!disabled;
+  const [fired, setFired] = useState(false);
+  useEffect(() => {
+    if (!open) setFired(false);
+  }, [open]);
+  const busy = !!pending || fired;
+  const blocked = busy || !!disabled;
 
   return (
     <Dialog
@@ -183,7 +188,7 @@ export function ConfirmDialog({
             variant="outline"
             className="min-h-12 w-full sm:h-9 sm:min-h-0 sm:w-auto sm:border-0 sm:bg-transparent sm:text-secondary sm:hover:bg-surface-hover sm:hover:text-foreground"
             onClick={onClose}
-            disabled={pending}
+            disabled={busy}
           >
             {cancelLabel}
           </Button>
@@ -195,14 +200,14 @@ export function ConfirmDialog({
             }
             className="min-h-12 w-full sm:h-9 sm:min-h-0 sm:w-auto"
             disabled={blocked}
-            aria-busy={pending || undefined}
+            aria-busy={busy || undefined}
           >
-            {pending ? (
+            {busy ? (
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             ) : (
               confirmIcon
             )}
-            {pending ? "Working…" : confirmLabel}
+            {busy ? "Working…" : confirmLabel}
           </Button>
         </>
       }
@@ -211,7 +216,9 @@ export function ConfirmDialog({
         id={formId}
         onSubmit={(e) => {
           e.preventDefault();
-          if (!blocked) onConfirm();
+          if (blocked) return;
+          setFired(true);
+          onConfirm();
         }}
       >
         {children}

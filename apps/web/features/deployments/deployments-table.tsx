@@ -61,11 +61,13 @@ export function DeploymentsTable({ page, registryId, canDeploy, newHref }: { pag
     return () => clearInterval(timer);
   }, [live, router]);
 
-  const redeploy = (job: JobRow) =>
+  const redeploy = (job: JobRow) => {
+    if (pending) return;
     start(async () => {
       const r = await startDeploy(registryId, job.stage ?? "dev", !!job.dry_run, job.version ?? versionOf(job) ?? "");
       if (r.ok) router.refresh();
     });
+  };
 
   const actions = (job: JobRow) => [
     { label: "View details", onSelect: () => setDetails(job) },

@@ -17,7 +17,7 @@ function Step({ icon: Icon, title, count, children }: { icon: typeof Tag; title:
   );
 }
 
-const Row = ({ children }: { children: ReactNode }) => <li className="flex items-center gap-3 px-4 text-sm" style={{ height: 44 }}>{children}</li>;
+const Row = ({ children }: { children: ReactNode }) => <li className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-sm sm:flex-nowrap sm:py-0">{children}</li>;
 const List = ({ children }: { children: ReactNode }) => <ul className="divide-y divide-border-subtle rounded-lg border border-border bg-surface">{children}</ul>;
 const Note = ({ children }: { children: ReactNode }) => <div className="text-[13px] text-secondary">{children}</div>;
 
