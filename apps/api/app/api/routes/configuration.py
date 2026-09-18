@@ -14,6 +14,7 @@ from app.schemas.projects import InstallSpec, Installed
 from app.api.dependencies import (
     CommitsDep,
     ConfigurationDep,
+    SnapshotDep,
 )
 
 router = APIRouter(prefix="/api/apps", tags=["configuration"])
@@ -22,9 +23,9 @@ router = APIRouter(prefix="/api/apps", tags=["configuration"])
 @router.get("/{id}/manifest")
 def read_manifest(
     id: str,
-    config: ConfigurationDep,
+    snapshot: SnapshotDep,
 ) -> AppConfigBody:
-    return config.manifest(id)
+    return snapshot.manifest(id)
 
 
 @router.put("/{id}/manifest")
@@ -32,16 +33,24 @@ def write_manifest(
     id: str,
     body: AppConfigBody,
     config: ConfigurationDep,
+    snapshot: SnapshotDep,
 ) -> AppConfigBody:
-    return config.write_manifest(id, body.content)
+    result = config.write_manifest(id, body.content)
+    snapshot.take(id)
+
+    return result
 
 
 @router.post("/{id}/manifest/export")
 def export_manifest(
     id: str,
     config: ConfigurationDep,
+    snapshot: SnapshotDep,
 ) -> AppConfigBody:
-    return config.export_manifest(id)
+    result = config.export_manifest(id)
+    snapshot.take(id)
+
+    return result
 
 
 @router.post("/{id}/cloud")
@@ -49,8 +58,12 @@ def set_cloud(
     id: str,
     body: CloudRequest,
     config: ConfigurationDep,
+    snapshot: SnapshotDep,
 ) -> dict:
-    return config.set_cloud(id, body.target, body.source)
+    result = config.set_cloud(id, body.target, body.source)
+    snapshot.take(id)
+
+    return result
 
 
 @router.post("/{id}/services", status_code=201)
@@ -58,8 +71,12 @@ def add_service(
     id: str,
     body: ServiceRequest,
     config: ConfigurationDep,
+    snapshot: SnapshotDep,
 ) -> dict:
-    return config.add_service(id, body.name, body.provider, body.source)
+    result = config.add_service(id, body.name, body.provider, body.source)
+    snapshot.take(id)
+
+    return result
 
 
 @router.get("/{id}/changes")
@@ -74,19 +91,27 @@ def changes(
 def install_platform(
     id: str,
     config: ConfigurationDep,
+    snapshot: SnapshotDep,
     body: Optional[InstallSpec] = None,
 ) -> Installed:
     spec = body or InstallSpec()
 
-    return config.install_platform(id, spec.type, spec.language, spec.ci)
+    result = config.install_platform(id, spec.type, spec.language, spec.ci)
+    snapshot.take(id)
+
+    return result
 
 
 @router.post("/{id}/discard")
 def discard(
     id: str,
     config: ConfigurationDep,
+    snapshot: SnapshotDep,
 ) -> Changes:
-    return config.discard(id)
+    result = config.discard(id)
+    snapshot.take(id)
+
+    return result
 
 
 @router.post("/{id}/commit", status_code=201)

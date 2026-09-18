@@ -31,8 +31,14 @@ class FlowService:
             )
 
         self.registry.set_branch(id, branch.name)
+        self._snapshot(id)
 
         return {"branch": branch.name, "base": branch.base, "pushed": True}
+
+    def _snapshot(self, id: str) -> None:
+        from app.services.workspace.snapshot import SnapshotService
+
+        SnapshotService(self.registry, self.configs).take(id)
 
     def plan_branch(self, id: str, kind: str, code: str, slug: Optional[str]) -> dict:
         branch = wired.gitflow(self._repo(id)).plan_branch(kind, code or "code", slug)
@@ -56,6 +62,7 @@ class FlowService:
 
         self.registry.set_branch(id, branch)
         _, root = Workspaces(self.registry).refresh(id)
+        self._snapshot(id)
 
         return {"branch": Repository(root).branch}
 

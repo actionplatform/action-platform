@@ -62,6 +62,10 @@ class CommitService:
                 ref = wired.gitflow(repo).open_pr(config=config)
                 result["pull_request"] = {"number": ref.number, "url": ref.url}
 
+        from app.services.workspace.snapshot import SnapshotService
+
+        SnapshotService(self.registry, self.configs).take(id)
+
         return result
 
     def _branch_with_changes(self, repo: Repository, body: CommitRequest) -> str:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
@@ -47,6 +48,7 @@ class AppDetail(BaseModel):
     branch: str
     latest_tag: Optional[str] = None
     clean: bool
+    snapshot_at: Optional[datetime] = None
 
 
 class GitflowReport(BaseModel):

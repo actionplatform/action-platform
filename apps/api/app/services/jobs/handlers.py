@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from typing import Any, Optional
 
 from action_platform.core.context import DeployResult
@@ -29,7 +31,10 @@ from app.services.projects import ProjectService
 from app.services.projects.organization_import import OrganizationImport
 from app.services.deployments import DeploymentsService
 from app.services.releases import ReleaseStore, ReleasesService, tag_of
+from app.services.workspace.snapshot import SnapshotService
 from app.services.workspace.state import GitStateService
+
+log = logging.getLogger(__name__)
 
 
 class JobHandlers:
@@ -66,9 +71,18 @@ class JobHandlers:
         if not request.dry_run and ctx.app is not None:
             self._record_release(ctx, request, result, payload.get("user_id"))
 
+        if not request.dry_run:
+            self._snapshot(ctx.registry_id)
+
         self.import_activity(payload)
 
         return result
+
+    def _snapshot(self, registry_id: str) -> None:
+        try:
+            SnapshotService(self.registry, self.configs).take(registry_id)
+        except Exception:
+            log.warning("snapshot of %s failed", registry_id, exc_info=True)
 
     def _record_release(
         self, ctx: JobContext, request: ReleaseRequest, result: dict, user_id: Any
@@ -221,6 +235,8 @@ class JobHandlers:
             ctx.registry_id, PushRequest(**ctx.body)
         )
         self.import_activity(payload)
+
+        self._snapshot(ctx.registry_id)
 
         return result
 
