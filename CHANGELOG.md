@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.20.0 — 2026-09-18
+
+### Features
+- **web:** one DataTable for Activity, CI, Releases and Deployments, paged on the API
+- **web:** one design for lists, forms and cards — Activity and CI as paginated lists with their own pages
+- **web:** skeletons match the pages; Deployments lists the platform's runs only
+- **web:** Releases and Deployments list only, paginated; New release and New deployment pages
+- **api:** release as the platform's table — one row per tag, any source, referenced by deployments
+
+### Refactoring
+- releases and pull requests are read by the library's SourceHost providers
+- **api:** ProjectService keeps to projects and apps; CI and deployments answer their own routes
+- **api:** ReleaseStore lives in repositories — the releases and deployments contexts stay independent
+
+### Chores
+- merge master
+
 ## v0.19.0 — 2026-09-17
 
 ### Features
