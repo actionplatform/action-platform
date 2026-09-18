@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.25.0 — 2026-09-18
+
+### Performance
+- **api:** indexes on every listing, a worker that runs jobs side by side, an API with several processes
+
 ## v0.24.1 — 2026-09-18
 
 ### Refactoring
