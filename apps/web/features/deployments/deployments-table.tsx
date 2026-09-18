@@ -79,7 +79,7 @@ export function DeploymentsTable({ jobs: all, registryId, canDeploy, newHref }: 
   return (
     <Panel>
       <PanelHeader
-        title="Platform runs"
+        title="Deployments"
         aside={
           <div className="flex items-center gap-3">
             <span className="hidden text-[13px] text-secondary sm:block">{all.length} {all.length === 1 ? "run" : "runs"}</span>

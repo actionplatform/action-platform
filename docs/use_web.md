@@ -89,7 +89,7 @@ Refused when the tag exists, the branch is not on the remote, the tree is dirty 
 
 ### Deployments
 
-The tab lists. **Targets** shows one block per target the manifest declares — kind, who runs it (the platform, GitHub Actions with its workflow, Jenkins with its job, or a person), the live version per stage and the last deliveries with status up to *Verified*, meaning the version was found at the destination; **Sync** imports what the observed pipelines shipped, a manual target takes *Record*. **Platform runs** lists the platform's own deploys, preflights and tear-downs — status, stage, type, version, duration, who, when — paginated with the page size to choose; a row expands into logs, timestamps, *View details* and *Redeploy*.
+The tab lists the platform's deploys, preflights and tear-downs — status, stage, type, version, duration, who, when — paginated with the page size to choose; a row expands into logs, timestamps, *View details* and *Redeploy*. What arrived at every target of the app, whoever shipped it, is in `GET /api/v1/projects/{p}/apps/{a}/deployments`, `action-platform deployments` and the `list_deployments` tool.
 
 **New deployment** opens its own page: a release, an environment `dev` or `prod` → **Run preflight** (checks only) → **Deploy to <env>**. The job runs on the worker and the row lands in the list at once. One deploy at a time per environment: the button waits while one is live. A failure shows a compact alert with *View logs* and *Copy error*. **Target** beside it summarizes `[deploy]` from `platform.toml`. Every deployment ships a release — a tag, never a branch. The model: [deployments](concept_deployments.md).
 

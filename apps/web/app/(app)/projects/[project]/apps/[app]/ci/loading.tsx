@@ -1,9 +1,5 @@
-import { PanelSkeleton, SkeletonStage } from "@/components/ui/skeleton";
+import { PanelSkeleton, SkeletonStage, TableSkeleton } from "@/components/ui/skeleton";
 
 export default function Loading() {
-  return (
-    <SkeletonStage>
-      <div className="space-y-4"><PanelSkeleton rows={2} /><PanelSkeleton rows={6} /></div>
-    </SkeletonStage>
-  );
+  return <SkeletonStage><div className="space-y-4"><PanelSkeleton rows={2} /><TableSkeleton rows={8} columns={4} /></div></SkeletonStage>;
 }
