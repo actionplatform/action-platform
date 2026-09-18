@@ -51,6 +51,11 @@ class AccessGate:
         path = scope["path"][len(PREFIX) :].strip("/")
         method = scope["method"]
 
+        if path.startswith("webhooks/"):
+            await self.app(scope, self._replay(body), send)
+
+            return
+
         try:
             caller, plan = await run_in_threadpool(
                 self.planner.decide, headers, method, path, body

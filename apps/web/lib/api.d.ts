@@ -655,6 +655,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/webhooks/{host_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["receive_api_v1_webhooks__host_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hosts/{host_id}/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["webhook_api_v1_hosts__host_id__webhook_get"];
+        put?: never;
+        post: operations["rotate_webhook_api_v1_hosts__host_id__webhook_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ci-hosts": {
         parameters: {
             query?: never;
@@ -1760,6 +1792,7 @@ export interface components {
             branch: string;
             latest_tag?: string | null;
             clean: boolean;
+            snapshot_at?: string | null;
         };
         AppEntry: {
             id: string;
@@ -2787,6 +2820,21 @@ export interface components {
             api: string;
             ready: boolean;
             database?: string | null;
+        };
+        WebhookInfo: {
+            url: string;
+            configured: boolean;
+            kind: string;
+        };
+        WebhookReceived: {
+            event: string;
+            repo?: string | null;
+            queued: string[];
+        };
+        WebhookSecret: {
+            url: string;
+            secret: string;
+            kind: string;
         };
     };
     responses: never;
@@ -4244,6 +4292,97 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    receive_api_v1_webhooks__host_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                host_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookReceived"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    webhook_api_v1_hosts__host_id__webhook_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                host_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookInfo"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rotate_webhook_api_v1_hosts__host_id__webhook_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                host_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookSecret"];
                 };
             };
             422: {

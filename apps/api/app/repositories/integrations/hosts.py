@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import secrets
+
 from datetime import datetime
 from typing import Optional
 
@@ -197,3 +199,29 @@ class HostsWrites(HostsReads):
 
         host.default_owner = owner.strip() or None
         self.db.flush()
+
+    def webhook_secret(self, organization_id: str, host_id: str) -> Optional[str]:
+        host = self.host(organization_id, host_id)
+
+        if host is None or not host.webhook_secret_encrypted or self.sealer is None:
+            return None
+
+        return self.sealer.open(host.webhook_secret_encrypted)
+
+    def rotate_webhook_secret(self, organization_id: str, host_id: str) -> str:
+        if self.sealer is None:
+            raise DirectoryError("auth secret is not configured")
+
+        host = self.host(organization_id, host_id)
+
+        if host is None:
+            raise DirectoryError("host not found")
+
+        secret = secrets.token_urlsafe(32)
+        host.webhook_secret_encrypted = self.sealer.seal(secret)
+        self.db.flush()
+
+        return secret
+
+    def host_by_id(self, host_id: str) -> Optional[SourceHost]:
+        return self.db.get(SourceHost, host_id)

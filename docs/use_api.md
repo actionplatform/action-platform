@@ -85,3 +85,8 @@ The registry — id, name, url, default branch of every app — is the `registry
 ## Pages
 
 Lists that grow are paged on the API: `GET /api/v1/projects/{p}/apps/{a}/releases`, `…/pull-requests`, `…/ci` and `GET /api/v1/jobs/page?app=<registry id>&kinds=deploy,destroy` take `page` (from 1) and `per` (1–100, default 10) and answer with `items` (or `runs`), `total`, `page` and `per`. The web tables keep the page and size in the URL (`?page=2&per=25`) and ask the API for that slice; nothing is paged in the browser.
+
+
+## Webhooks
+
+`POST /api/webhooks/{host_id}` (the web app forwards it to `POST /api/v1/webhooks/{host_id}`) takes the code host's deliveries. No session: the request is verified against the host's secret — GitHub `X-Hub-Signature-256`, Bitbucket `X-Hub-Signature` (HMAC-SHA256 of the body), GitLab `X-Gitlab-Token`. A delivery whose repository matches an app of the host's organization queues one `sync` job for it (deduplicated while one is live); other events and repositories answer `202` with nothing queued. `GET`/`POST /api/v1/hosts/{id}/webhook` read the URL and rotate the secret (`org.manage`).

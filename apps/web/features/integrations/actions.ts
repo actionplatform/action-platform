@@ -64,3 +64,23 @@ export async function changeHostOwner(id: string, owner: string): Promise<Result
     return failed(e);
   }
 }
+
+
+export async function hostWebhook(id: string): Promise<Result<{ url: string; configured: boolean; kind: string }>> {
+  await requireOrg();
+  try {
+    return { ok: true, data: await v1.hostWebhook(id) };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
+
+export async function rotateHostWebhook(id: string): Promise<Result<{ url: string; secret: string; kind: string }>> {
+  await requireOrg();
+  try {
+    return { ok: true, data: await v1.rotateHostWebhook(id) };
+  } catch (e) {
+    return failed(e);
+  }
+}
