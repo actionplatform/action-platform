@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.21.2 — 2026-09-17
+
+### Bug Fixes
+- **api:** ci_run.number as a big integer — GitHub Actions run ids overflow int32
+
 ## v0.21.1 — 2026-09-17
 
 ### Bug Fixes
