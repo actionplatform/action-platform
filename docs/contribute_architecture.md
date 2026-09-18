@@ -41,10 +41,10 @@ action_platform/
     manifest/     Manifest: platform.toml as an object (project, source_host, services; set_source_host, set_deploy_target, set_service)
     scaffold/     store (TemplateSource, TemplateStore: checkouts), templates (Matrix, Leaf, Cloud, Service), detect (LanguageDetector), install (Installer: plan/apply), generate (cookiecutter, overlays, push)
     flow/         repository (Repository: every git command on one clone, follow_remote, stashed), workflow (GitFlow: audit, start, propose, open_pr, install_hooks), gitflow (the rules as pure functions), git (ref/url policy, per-request credentials)
-    release/      versioning (Version, VersionFiles), changelog, components, release (Releaser: plan → apply), deploy (Deployer)
+    release/      versioning (Version, VersionFiles), changelog, components, release (Releaser: plan → apply), deploy (Deployer), readiness (Readiness: can a release reach a stage)
     config.py     Config.from_toml → source host, deploy targets, components
     context.py    Context, DeployResult, Diagnosis, PRRef, ReleaseRef
-    action_platform.py   ActionPlatform: the facade the CLI, MCP and API call (releaser, deployer, flow)
+    action_platform.py   ActionPlatform: the facade the CLI, MCP and API call (releaser, deployer, readiness, flow)
   providers/
     source/       rest (urllib helper), github, gitlab, bitbucket, generic; build_source_host(kind, …)
   abc/            SourceHost, CIRunner, DeployTarget, WorkingCopy, TemplateStore contracts
@@ -81,13 +81,14 @@ Every operation starts from a `Repository` — one clone, every git command as a
 | `GitFlow(repo)` | `audit()`, `start(kind, code)`, `propose()`, `open_pr()`, `install_hooks()` | CLI `branch`/`pr`/`gitflow`, MCP, API flow |
 | `Releaser(config, repo)` | `plan(level)` → `ReleasePlan` (dry run), `apply(plan)`; a refused push undoes commit and tag | CLI/MCP/API release |
 | `Deployer(config, repo)` | deploy, rollback, diagnose, destroy through the `[deploy]` targets | CLI/MCP/API deploy |
+| `Readiness(config, root, deployer)` | `check(stage, version)` → `list[Check]`: static checks at the release tag plus each target's `readiness(ctx)`; builds nothing | CLI `readiness`, API `readiness` job |
 | `Installer(root, …)` | `plan()` / `apply()`: platform.toml, LAST_VERSION, AGENTS.md, quality config, CI files, hooks | CLI `install`, API import |
 | `TemplateStore()` | `official()` and `checkout(source)` clones of template repositories | matrix loading |
 | `Version` / `VersionFiles` | semver value object; the files a project declares its version in | releaser |
 
-Rules that need no repository — branch names, commit messages, merge targets — are the `Rules` object in `flow/gitflow.py`, mirrored by `gitflow.sh` in the [ci-scripts](https://github.com/actionplatform/ci-scripts) repository for CI. `ActionPlatform` is the facade the CLI, MCP and API call; it exposes `releaser`, `deployer` and `flow` for one project.
+Rules that need no repository — branch names, commit messages, merge targets — are the `Rules` object in `flow/gitflow.py`, mirrored by `gitflow.sh` in the [ci-scripts](https://github.com/actionplatform/ci-scripts) repository for CI. `ActionPlatform` is the facade the CLI, MCP and API call; it exposes `releaser`, `deployer`, `readiness` and `flow` for one project.
 
-Every process is a class in a slot of `core/wiring.py` (`gitflow_rules`, `gitflow`, `releaser`, `deployer`, `installer`, `scaffolder`); callers write `wired.releaser(config, repo)` and a plugin may put a subclass in the slot. Named providers — deploy targets, CI runners, source hosts, release strategies, changelog renderers — come from entry-point groups (`core/module.py`) and platform.toml picks one by name; the core's own (`semver`, `conventional`) live in `core/release/strategies.py`. `plugins/` discovers the `action_platform.plugins` group, keeps the on/off state, registers tools and commands and calls the lifecycle hooks — see [plugins](use_plugins.md) and [writing a plugin](contribute_plugins.md).
+Every process is a class in a slot of `core/wiring.py` (`gitflow_rules`, `gitflow`, `releaser`, `deployer`, `readiness`, `installer`, `scaffolder`); callers write `wired.releaser(config, repo)` and a plugin may put a subclass in the slot. Named providers — deploy targets, CI runners, source hosts, release strategies, changelog renderers — come from entry-point groups (`core/module.py`) and platform.toml picks one by name; the core's own (`semver`, `conventional`) live in `core/release/strategies.py`. `plugins/` discovers the `action_platform.plugins` group, keeps the on/off state, registers tools and commands and calls the lifecycle hooks — see [plugins](use_plugins.md) and [writing a plugin](contribute_plugins.md).
 
 ## Contexts
 
@@ -138,6 +139,7 @@ The Planner (`services/access/planner.py`) is the one place the gate reads the d
 | `sync` | `POST apps/{id}/sync` (async) | fetch and rebuild the clone, then import the host's activity |
 | `release` | `POST apps/{id}/release` (async) | `Releaser.plan → apply` on the clone, push, publish on the host |
 | `deploy` | `POST apps/{id}/deploy` (async) | `Deployer` on the tagged release with the app's identity token and the plugin options as env |
+| `readiness` | after a `release` cut here, one per stage; `POST projects/{p}/apps/{a}/releases/{tag}/readiness` | `Readiness.check` at the tag with the app's identity token and env, the verdict and checks stored in `release_readiness`; `POST apps/{id}/deploy` refuses a blocked stage unless `force` |
 | `push` | `POST apps/{id}/push` (async) | push the clone's branch, then import activity |
 | `import` | after a sync, release or push | releases and pull requests copied into the platform's tables |
 | `import_github` | the organization import wizard | repositories, teams, people and projects from a GitHub organization |
@@ -253,7 +255,7 @@ erDiagram
     app ||--o{ draft : "pending edits"
     organization ||--o{ plugin_option : "plugin settings"
     job {
-        string kind "sync release deploy push import import_github destroy destroy_project"
+        string kind "sync release readiness deploy push import import_github destroy destroy_project"
         string status "queued running done failed"
         text payload
         text result

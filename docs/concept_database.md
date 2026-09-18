@@ -34,6 +34,7 @@ Alembic, shipped with the API — one revision per change:
 | `0014` | indexes on every per-app listing (`release`, `pull_request`, `ci_run`, `deployment`, `job`) and on the queue's claim, hosts and members by organization |
 | `0015` | `app_snapshot`: what the app pages read, one JSON row per app, taken from the clone after every change — reads never touch git |
 | `0016` | `source_host.webhook_secret_encrypted`: the secret the host signs deliveries with |
+| `0017` | `release_readiness`: whether a release can reach a stage — one row per `(release, stage)` with `status`, `ok`, the checks as JSON, the job that ran them and when |
 
 A database the web app created has no `alembic_version` table but does have `user`; the API recognises that, stamps it at `0001` and applies only what follows. Nothing is recreated, nothing is copied: pointing the API at the web app's database is the whole data migration.
 
@@ -47,7 +48,7 @@ Both read `AP_DATABASE_URL` unless `--url` is given.
 
 ## Tables
 
-`user`, `session`, `account`, `verification`, `device_code` — accounts and sign-ins. `organization`, `member`, `invitation`, `team`, `team_member` — who belongs where. `project`, `app`, `source_host`, `template_source`, `organization_setting` — what each organization runs. `release`, `pull_request` — imported from the source host. `api_token`, `api_token_client` — tokens from `action-platform login` and the clients seen using them. `registry` — the apps the API manages. `job` — queued work with `kind`, `status` (`queued` → `running` → `done` | `failed`), `attempts`, `run_after`, `locked_at` / `locked_by` and a `dedupe_key` unique per app and kind so the same sync is never queued twice.
+`user`, `session`, `account`, `verification`, `device_code` — accounts and sign-ins. `organization`, `member`, `invitation`, `team`, `team_member` — who belongs where. `project`, `app`, `source_host`, `template_source`, `organization_setting` — what each organization runs. `release`, `pull_request` — the platform's releases (any source) and pull requests imported from the source host; `release_readiness` — per release and stage, whether it can be deployed there, as the worker last checked. `api_token`, `api_token_client` — tokens from `action-platform login` and the clients seen using them. `registry` — the apps the API manages. `job` — queued work with `kind`, `status` (`queued` → `running` → `done` | `failed`), `attempts`, `run_after`, `locked_at` / `locked_by` and a `dedupe_key` unique per app and kind so the same sync is never queued twice.
 
 ## Jobs
 

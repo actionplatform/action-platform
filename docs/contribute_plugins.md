@@ -82,13 +82,15 @@ class AwsLambdaPlugin(Plugin):
 
 | ABC | Entry-point group | Picked by |
 |---|---|---|
-| `abc.DeployTarget` — `preflight`, `create`, `deploy`, `switch_traffic`, `rollback`, `diagnose`, `delete` for a target the platform runs; `verify(version)`, `url(version)` for every kind | `action_platform.deploy_target` | `[deploy] target`, `[[deploy.targets]] kind` |
+| `abc.DeployTarget` — `preflight`, `create`, `deploy`, `switch_traffic`, `rollback`, `diagnose`, `delete` for a target the platform runs; `verify(version)`, `url(version)` for every kind; `readiness(ctx) -> list[Check]` for what the target can verify about a deploy of `ctx.next_version` to `ctx.stage` without building or changing anything — credentials, permissions, the destination's state — each a `Check(id, ok, detail, level, severity, fix)`; an `error` severity blocks the deploy, a `warning` informs, a raised `DeployError` becomes one failed check | `action_platform.deploy_target` | `[deploy] target`, `[[deploy.targets]] kind` |
 | `abc.CIRunner` — `test`, `runs(job, limit)`, `run`, `start(job, ref)`, and `trigger`, `wait`, `logs` where the system allows it | `action_platform.ci_runner` | `[ci]`; a CI host's `kind` on the hosted platform |
 | `abc.SourceHost` | `action_platform.source_host` | `[source_host] kind` |
 | `abc.ReleaseStrategy` — `next(current, level, prerelease, taken)`, `is_prerelease` | `action_platform.release_strategy` | `[release] strategy` |
 | `abc.ChangelogRenderer` — `render(version, commits)` | `action_platform.changelog` | `[release] changelog` |
 
 A disabled plugin's providers disappear from every lookup.
+
+`readiness` is optional — the default answers nothing and the release is checked statically only. Keep it read-only and cheap: it runs on the worker right after every release, for every stage, and again whenever someone asks. Name checks `<area>.<what>` (`aws.permissions`, `stack.state`, `destination.version`), put the way out in `fix`, and never let it build — that is what `deploy` is for. `apx-aws-lambda`'s `LambdaTarget.readiness` is the reference: tooling, template present, stack name, credentials, stack state, `iam:SimulatePrincipalPolicy` for the actions the template needs, `sam validate --lint`.
 
 ## Rules for the official index
 
