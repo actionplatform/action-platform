@@ -32,6 +32,7 @@ jobs:
       version: ${{ steps.which.outputs.version }}
       latest: ${{ steps.which.outputs.latest }}
       prerelease: ${{ steps.which.outputs.prerelease }}
+      images: ${{ steps.which.outputs.images }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,11 +50,17 @@ jobs:
             *-rc.*) latest=false; prerelease=true ;;
             *) latest=true; prerelease=false ;;
           esac
+          if [ "$comp" = api ]; then
+            images='[{"image":"api","target":"api"},{"image":"worker","target":"worker"}]'
+          else
+            images="[{\"image\":\"$comp\",\"target\":\"\"}]"
+          fi
           {
             echo "component=$comp"
             echo "version=$version"
             echo "latest=$latest"
             echo "prerelease=$prerelease"
+            echo "images=$images"
           } >> "$GITHUB_OUTPUT"
 
       - name: Summary
@@ -66,12 +73,16 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   build:
-    name: Build and push ${{ needs.resolve.outputs.component }} ${{ needs.resolve.outputs.version }}
+    name: Build and push ${{ matrix.image }} ${{ needs.resolve.outputs.version }}
     needs: resolve
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.resolve.outputs.images) }}
     environment:
       name: images
-      url: https://hub.docker.com/r/${{ vars.DOCKERHUB_NAMESPACE || 'actionplatformio' }}/action-platform-${{ needs.resolve.outputs.component }}
+      url: https://hub.docker.com/r/${{ vars.DOCKERHUB_NAMESPACE || 'actionplatformio' }}/action-platform-${{ matrix.image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -97,14 +108,14 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            docker.io/${{ vars.DOCKERHUB_NAMESPACE || 'actionplatformio' }}/action-platform-${{ needs.resolve.outputs.component }}
-            ghcr.io/${{ github.repository_owner }}/action-platform-${{ needs.resolve.outputs.component }}
+            docker.io/${{ vars.DOCKERHUB_NAMESPACE || 'actionplatformio' }}/action-platform-${{ matrix.image }}
+            ghcr.io/${{ github.repository_owner }}/action-platform-${{ matrix.image }}
           tags: |
             type=raw,value=${{ needs.resolve.outputs.version }}
             type=raw,value=latest,enable=${{ needs.resolve.outputs.latest }}
           labels: |
-            org.opencontainers.image.title=action-platform-${{ needs.resolve.outputs.component }}
-            org.opencontainers.image.description=Action Platform ${{ needs.resolve.outputs.component }}
+            org.opencontainers.image.title=action-platform-${{ matrix.image }}
+            org.opencontainers.image.description=Action Platform ${{ matrix.image }}
             org.opencontainers.image.vendor=Action Platform
             org.opencontainers.image.version=${{ needs.resolve.outputs.version }}
 
@@ -113,18 +124,17 @@ jobs:
         with:
           context: .
           file: deploy/Dockerfile.${{ needs.resolve.outputs.component }}
+          target: ${{ matrix.target }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ needs.resolve.outputs.component }}
-          cache-to: type=gha,mode=max,scope=${{ needs.resolve.outputs.component }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 
       - name: Summary
         run: |
           {
             echo "### Pushed"
             echo
-            echo '```'
-            echo "${{ steps.meta.outputs.tags }}"
-            echo '```'
+            echo '${{ steps.meta.outputs.tags }}' | sed 's/^/- `/; s/$/`/'
           } >> "$GITHUB_STEP_SUMMARY"
