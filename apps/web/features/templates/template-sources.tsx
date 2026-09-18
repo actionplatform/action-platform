@@ -1,7 +1,7 @@
 "use client";
 
 import { BookMarked, ExternalLink, Plus, Trash2 } from "lucide-react";
-import { DataList } from "@/components/ui/data-list";
+import { Cell, DataTable, Inline } from "@/components/ui/data-table";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,31 +23,25 @@ export function TemplateSources({ sources, canManage }: { sources: SourceRow[]; 
   const [pending, start] = useTransition();
   const remove = (s: SourceRow) => canManage && !s.official ? <button type="button" title="Remove repository" aria-label={`Remove ${s.name}`} disabled={pending} onClick={() => setRemoving(s)} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><Trash2 className="size-4" strokeWidth={1.75} /></button> : null;
   const kind = (s: SourceRow) => (s.official ? <Badge tone="inverse">Official</Badge> : <Badge>{s.projects === 1 && s.clouds === 0 && s.services === 0 ? "Repository" : "Catalog"}</Badge>);
-  const where = (s: SourceRow) => { const link = webUrl(s.url); const shown = s.url.replace(/^https?:\/\//, "").replace(/\.git$/, ""); return <span className="inline-flex min-w-0 items-center gap-1 font-mono text-xs text-secondary">{link ? <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 items-center gap-1 hover:text-foreground"><span className="truncate">{shown}</span> <ExternalLink className="size-3 shrink-0" strokeWidth={1.75} /></a> : <span className="truncate">{s.url}</span>}<span aria-hidden>@</span>{s.ref}</span>; };
+  const where = (s: SourceRow) => { const link = webUrl(s.url); const shown = s.url.replace(/^https?:\/\//, "").replace(/\.git$/, ""); return <Inline className="font-mono text-xs text-secondary">{link ? <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 items-center gap-1 hover:text-foreground"><span className="truncate">{shown}</span> <ExternalLink className="size-3 shrink-0" strokeWidth={1.75} /></a> : <span className="truncate">{s.url}</span>}<span aria-hidden>@</span><span className="shrink-0">{s.ref}</span></Inline>; };
 
   return (
     <div className="mb-4 space-y-3 md:mb-6">
       {error && <div className="rounded-md border border-border px-3 py-2 text-[13px] text-secondary">{error}</div>}
-      <DataList
+      <DataTable
         title="Template repositories"
         rows={sources}
         rowKey={(s) => s.name}
         noun={["repository", "repositories"]}
+        minWidth={720}
         action={canManage ? <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus className="size-3.5" strokeWidth={2} /> Add repository</Button> : undefined}
         empty={{ icon: BookMarked, title: "No template repository", text: "Add a git repository; new apps start as a copy of it." }}
         columns={[
-          { key: "name", label: "Name", render: (s) => <span className="flex items-center gap-2"><span className="font-mono">{s.name}</span>{kind(s)}{!s.ok && <Badge tone="bad">Unavailable</Badge>}</span> },
-          { key: "url", label: "Repository", className: "max-w-0 w-full", render: where },
-          { key: "contents", label: "Contents", render: (s) => <span className="whitespace-nowrap text-xs text-secondary">{s.ok ? `${s.projects} projects · ${s.clouds} clouds · ${s.services} services` : s.error}</span> },
-          { key: "actions", label: "", className: "text-right", render: remove },
+          { key: "name", label: "Name", width: 28, render: (s) => <Inline><span className="truncate font-mono">{s.name}</span>{kind(s)}{!s.ok && <Badge tone="bad">Unavailable</Badge>}</Inline> },
+          { key: "url", label: "Repository", width: 38, hide: "sm", render: where },
+          { key: "contents", label: "Contents", width: 28, hide: "md", render: (s) => <Cell muted title={s.ok ? undefined : s.error ?? undefined}>{s.ok ? `${s.projects} projects · ${s.clouds} clouds · ${s.services} services` : s.error}</Cell> },
+          { key: "actions", label: "", width: 6, align: "right", render: remove },
         ]}
-        card={(s) => (
-          <>
-            <div className="flex flex-wrap items-center gap-2"><span className="font-mono">{s.name}</span>{kind(s)}{!s.ok && <Badge tone="bad">Unavailable</Badge>}<span className="ml-auto">{remove(s)}</span></div>
-            <div className="mt-1">{where(s)}</div>
-            <div className="mt-1 text-xs text-secondary">{s.ok ? `${s.projects} projects · ${s.clouds} clouds · ${s.services} services` : s.error}</div>
-          </>
-        )}
       />
       <AddSourceDialog open={adding} onClose={() => setAdding(false)} />
       <ConfirmDialog

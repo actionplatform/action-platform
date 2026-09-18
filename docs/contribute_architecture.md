@@ -67,6 +67,10 @@ apps/api/app/  (package `app`, depends on the library, never the other way round
 
 The library has the same shape: `core` reaches plugins only through `core/extensions.py` (a `Protocol` — hooks after release, deploy and pull request; disabled packages; overlay roots) that `action_platform/__init__.py`, the composition root, wires to the plugin registry. Rule of the layers: `api/routes → services → repositories → schemas → core` — enforced by `.importlinter` (`lint-imports` in the code-quality workflow), which also keeps `fastapi` out of services and repositories, `schemas` and `core` free of services, the app contexts `releases`, `deployments` and `templates` independent of one another (a context reaches another only through its package `__init__`; `configuration` uses `templates` that way), `projects` off `ci` and `deployments`, the library out of `app`, and `core` off `plugins`/`mcp`/`cli`/`remote`. A service never imports FastAPI: it refuses with a domain error from `core/errors.py` (`Invalid`, `Forbidden`, `NotFound`, `Conflict`, `Gone`, `NeedsInstall`, `Upstream` — every one an `ActionPlatformError` with a `status`), and one exception handler in `api/app.py` (and the gate) turns it into the HTTP answer. The worker runs the same services and sees plain exceptions.
 
+### Decisions
+
+The choices that shaped the platform and what they cost are in [docs/adr](adr/README.md), one file per decision.
+
 ### Objects in the core
 
 Every operation starts from a `Repository` — one clone, every git command as a method, credentials and identity taken from the request context — and layers on top of it:
