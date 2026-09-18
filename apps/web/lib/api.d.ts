@@ -655,6 +655,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ci-hosts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ci_hosts_api_v1_ci_hosts_get"];
+        put?: never;
+        post: operations["add_ci_host_api_v1_ci_hosts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ci-hosts/{host_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["remove_ci_host_api_v1_ci_hosts__host_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ci-hosts/{host_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["test_ci_host_api_v1_ci_hosts__host_id__test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/oauth/apps": {
         parameters: {
             query?: never;
@@ -905,6 +953,38 @@ export interface paths {
         get: operations["imports_api_v1_projects__project_id__apps__app_id__imports_get"];
         put?: never;
         post: operations["sync_imports_api_v1_projects__project_id__apps__app_id__imports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/ci": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ci_runs_api_v1_projects__project_id__apps__app_id__ci_get"];
+        put: operations["link_ci_api_v1_projects__project_id__apps__app_id__ci_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/ci/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["sync_ci_api_v1_projects__project_id__apps__app_id__ci_sync_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1542,6 +1622,13 @@ export interface components {
             url: string;
             install?: components["schemas"]["InstallSpec"] | null;
         };
+        AddCiHostRequest: {
+            kind: string;
+            name: string | null;
+            base_url: string;
+            token: string;
+            username: string | null;
+        };
         AddHostRequest: {
             kind: string;
             name: string | null;
@@ -1675,6 +1762,42 @@ export interface components {
         };
         CheckoutRequest: {
             branch: string;
+        };
+        CiHostRow: {
+            id: string;
+            kind: string;
+            name: string;
+            base_url: string;
+            username?: string | null;
+            created_at: string;
+        };
+        CiLink: {
+            kind: string;
+            ci_host_id?: string | null;
+            job: string;
+        };
+        CiLinkRequest: {
+            ci_host_id?: string | null;
+            job: string;
+        };
+        CiRunRow: {
+            id: string;
+            source: string;
+            number: number;
+            status: string;
+            name?: string | null;
+            url?: string | null;
+            branch?: string | null;
+            sha?: string | null;
+            trigger?: string | null;
+            started_at?: string | null;
+            duration_ms?: number | null;
+            synced_at: string;
+        };
+        CiRuns: {
+            link: components["schemas"]["CiLink"];
+            runs: components["schemas"]["CiRunRow"][];
+            error?: string | null;
         };
         CloudRequest: {
             target: string;
@@ -3989,6 +4112,130 @@ export interface operations {
             };
         };
     };
+    ci_hosts_api_v1_ci_hosts_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CiHostRow"][];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_ci_host_api_v1_ci_hosts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddCiHostRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CiHostRow"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_ci_host_api_v1_ci_hosts__host_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                host_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_ci_host_api_v1_ci_hosts__host_id__test_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                host_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     oauth_apps_api_v1_oauth_apps_get: {
         parameters: {
             query?: never;
@@ -4589,6 +4836,106 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Imports"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ci_runs_api_v1_projects__project_id__apps__app_id__ci_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CiRuns"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_ci_api_v1_projects__project_id__apps__app_id__ci_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CiLinkRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CiLink"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_ci_api_v1_projects__project_id__apps__app_id__ci_sync_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CiRuns"];
                 };
             };
             422: {
