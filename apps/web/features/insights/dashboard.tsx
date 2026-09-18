@@ -23,7 +23,7 @@ const TAB: Record<string, string> = { deployment: "deployments", release: "relea
 function EventRow({ e }: { e: DashboardEvent }) {
   const Icon = ICON[e.kind] ?? Activity;
   return (
-    <li className="flex items-center gap-3 px-4" style={{ height: 52 }}>
+    <li className="flex min-h-[52px] items-center gap-3 px-4 py-2">
       <Icon className="size-4 shrink-0 text-secondary" strokeWidth={1.75} />
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2 whitespace-nowrap">
@@ -44,7 +44,7 @@ export function DashboardView({ data }: { data: Dashboard }) {
   const ciTotal = Object.values(data.ci_today).reduce((a, b) => a + b, 0);
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Stat label="Apps" value={data.apps} />
         <Stat label="Deployments today" value={deployed} hint={`${data.deployments_today.verified ?? 0} verified`} tone={deployed > 0 ? "ok" : undefined} />
         <Stat label="Deploys failed today" value={deployFailed} tone={deployFailed > 0 ? "bad" : undefined} />
@@ -63,7 +63,7 @@ export function DashboardView({ data }: { data: Dashboard }) {
           ) : (
             <ul className="divide-y divide-border-subtle">
               {data.without_ci.map((a) => (
-                <li key={a.app_id} className="flex items-center gap-3 px-4" style={{ height: 52 }}>
+                <li key={a.app_id} className="flex min-h-[52px] items-center gap-3 px-4 py-2">
                   <TriangleAlert className="size-4 shrink-0 text-status-warn" strokeWidth={1.75} />
                   <div className="min-w-0 flex-1"><Link href={`/projects/${a.project_id}/apps/${a.app_id}/ci/connect`} className="block truncate text-sm font-medium hover:underline underline-offset-4">{a.app}</Link><div className="truncate text-xs text-secondary">{a.project}</div></div>
                   <Rocket className="size-3.5 shrink-0 text-secondary" strokeWidth={1.75} />

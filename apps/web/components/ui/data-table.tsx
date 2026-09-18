@@ -77,21 +77,56 @@ export function DataTable<T>({ title, rows, paging: paged, rowKey, columns, noun
 
   return (
     <section className="overflow-hidden border border-border bg-surface" style={{ borderRadius: TABLE.radius }}>
-      <header className="flex items-center justify-between gap-4 border-b border-border px-4" style={{ minHeight: TABLE.toolbar }}>
-        <div className="min-w-0 py-2">
+      <header className="flex flex-col gap-2 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-0" style={{ minHeight: TABLE.toolbar }}>
+        <div className="min-w-0 sm:py-2">
           <div className="flex min-w-0 items-baseline gap-3">
             <h2 className="truncate text-sm font-semibold">{title}</h2>
-            <span className="hidden truncate text-[13px] text-secondary sm:block">{paging.total} {paging.total === 1 ? noun[0] : noun[1]}{meta && <> · {meta}</>}</span>
+            <span className="truncate text-[13px] text-secondary">{paging.total} {paging.total === 1 ? noun[0] : noun[1]}{meta && <span className="hidden sm:inline"> · {meta}</span>}</span>
           </div>
           {description && <p className="mt-0.5 truncate text-[13px] text-secondary">{description}</p>}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {action}
-          {newHref && <NewLink href={newHref} label={newLabel} />}
-        </div>
+        {(action || newHref) && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2 [&>*]:h-9 [&>*]:flex-1 sm:[&>*]:h-8 sm:[&>*]:flex-none">
+            {action}
+            {newHref && <NewLink href={newHref} label={newLabel} />}
+          </div>
+        )}
       </header>
 
-      <div className="overflow-x-auto">
+      <ul className="divide-y divide-border-subtle md:hidden">
+        {paging.total === 0 && (
+          <li className="px-4 py-10 text-center">
+            <Icon className="mx-auto size-5 text-secondary" strokeWidth={1.5} />
+            <div className="mt-3 text-sm font-medium">{empty.title}</div>
+            {empty.text && <div className="mx-auto mt-0.5 max-w-md text-[13px] text-secondary">{empty.text}</div>}
+          </li>
+        )}
+        {rows.map((row, i) => {
+          const [head, ...rest] = columns;
+          const trailing = rest.filter((c) => c.align === "right" && !c.label);
+          const fields = rest.filter((c) => !(c.align === "right" && !c.label));
+          return (
+            <li key={rowKey(row)} className={cn("px-4 py-3", rowClassName?.(row))}>
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1 text-sm">{head.render(row, offset + i)}</div>
+                {trailing.length > 0 && <div className="flex shrink-0 items-center gap-1">{trailing.map((c) => <span key={c.key}>{c.render(row, offset + i)}</span>)}</div>}
+              </div>
+              {fields.length > 0 && (
+                <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[13px]">
+                  {fields.map((c) => (
+                    <div key={c.key} className="min-w-0">
+                      <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{c.label}</dt>
+                      <dd className="min-w-0 truncate">{c.render(row, offset + i)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full table-fixed text-sm" style={{ minWidth }}>
           <colgroup>{columns.map((c) => <col key={c.key} className={c.hide ? HIDE[c.hide].replace("table-cell", "table-column") : undefined} style={{ width: `${c.width}%` }} />)}</colgroup>
           <thead>
@@ -121,7 +156,7 @@ export function DataTable<T>({ title, rows, paging: paged, rowKey, columns, noun
         </table>
       </div>
 
-      {paged && <footer className="flex items-center justify-between gap-4 border-t border-border px-4 text-[13px] text-secondary" style={{ height: TABLE.footer }}>
+      {paged && <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-2 text-[13px] text-secondary sm:flex-nowrap sm:gap-4 sm:py-0" style={{ minHeight: TABLE.footer }}>
         <span className="truncate">{from}–{to} of {paging.total} {paging.total === 1 ? noun[0] : noun[1]}</span>
         <div className="flex shrink-0 items-center gap-2">
           <Select size="sm" value={String(paging.per)} onChange={(v) => nav({ per: Number(v) })} aria-label="Items per page" options={PER_PAGE.map((n) => ({ value: String(n), label: `${n} per page` }))} className="w-32" />
