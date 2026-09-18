@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.21.0 — 2026-09-17
+
+### Features
+- **api:** CI servers, the app's job and its imported runs
+
 ## v0.20.23 — 2026-09-17
 
 ### Bug Fixes
