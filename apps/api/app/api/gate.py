@@ -8,7 +8,9 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from action_platform.core.exception import ActionPlatformError
 from app.core.errors import Refused, ServiceError
+from app.schemas.common import SourceCredentials
 from app.services.access.planner import Plan, Planner, Queued
+from app.services.workspace.git_auth import git_auth
 
 PREFIX = "/api/v1/"
 MAX_BODY = 2 * 1024 * 1024
@@ -83,7 +85,10 @@ class AccessGate:
             return
 
         self._rewrite(scope, path, plan)
-        status = await self._pass(scope, plan.body, send)
+        creds = SourceCredentials(**plan.credentials) if plan.credentials else None
+
+        with git_auth(creds):
+            status = await self._pass(scope, plan.body, send)
 
         if plan.target.rule.imports and 200 <= status < 300:
             await run_in_threadpool(

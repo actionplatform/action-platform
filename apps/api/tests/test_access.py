@@ -247,6 +247,51 @@ class AppsTest(GateCase):
         listed = self.client.get("/api/v1/projects", headers=self.h()).json()
         self.assertIsNotNone(listed[0]["apps"][0]["last_synced_at"])
 
+    def test_get_routes_clone_with_the_organizations_credentials(self):
+        import shutil
+
+        from action_platform.core.flow import git as core_git
+        from action_platform.core.flow.repository import Repository
+        from app.core.db.models import App, OrganizationSetting, SourceHost
+
+        registry_id = self.register()
+        with self.app.state.db.session() as s:
+            s.add(
+                OrganizationSetting(
+                    organization_id=self.org["id"],
+                    git_author_name="Bot",
+                    git_author_email="bot@acme.io",
+                )
+            )
+            s.add(
+                SourceHost(
+                    id="h1",
+                    organization_id=self.org["id"],
+                    kind="github",
+                    name="GitHub",
+                    auth_kind="token",
+                    token_encrypted=self.app.state.sealer.seal("ghp_secret"),
+                )
+            )
+            s.get(App, "a1").source_host_id = "h1"
+
+        seen = {}
+        original = Repository.clone
+
+        def spy(url, path, *args, **kwargs):
+            seen["env"] = dict(core_git.AUTH_ENV.get() or {})
+            return original(url, path, *args, **kwargs)
+
+        self.patch(Repository, "clone", staticmethod(spy))
+        shutil.rmtree(settings.WORKSPACES / registry_id, ignore_errors=True)
+
+        res = self.client.get(f"/api/v1/apps/{registry_id}", headers=self.h())
+
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual(seen["env"]["AP_GIT_TOKEN"], "ghp_secret")
+        self.assertEqual(seen["env"]["AP_GIT_USER"], "x-access-token")
+        self.assertEqual(seen["env"]["GIT_AUTHOR_NAME"], "Bot")
+
     def test_source_host_token_is_decrypted_from_the_web_apps_ciphertext(self):
         from app.core.auth.crypto import Sealer
         from app.core.db.models import SourceHost
