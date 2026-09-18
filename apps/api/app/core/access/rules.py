@@ -75,6 +75,7 @@ DIRECTORY = {
     "projects/team",
     "members/role",
     "jobs",
+    "dashboard",
 }
 
 

@@ -90,3 +90,8 @@ Lists that grow are paged on the API: `GET /api/v1/projects/{p}/apps/{a}/release
 ## Webhooks
 
 `POST /api/webhooks/{host_id}` (the web app forwards it to `POST /api/v1/webhooks/{host_id}`) takes the code host's deliveries. No session: the request is verified against the host's secret — GitHub `X-Hub-Signature-256`, Bitbucket `X-Hub-Signature` (HMAC-SHA256 of the body), GitLab `X-Gitlab-Token`. A delivery whose repository matches an app of the host's organization queues one `sync` job for it (deduplicated while one is live); other events and repositories answer `202` with nothing queued. `GET`/`POST /api/v1/hosts/{id}/webhook` read the URL and rotate the secret (`org.manage`).
+
+
+## Insights
+
+`GET /api/v1/dashboard` — the organization's day (deployments and CI runs by status today, releases this week, apps without CI, the latest events across apps), narrowed to the token's project or app, cached thirty seconds; `?fresh=true` recomputes. `GET /api/v1/projects/{p}/apps/{a}/releases/{tag}/timeline` — one release with the pull requests merged since the previous tag of the same component, the CI runs on the tag (by ref or sha) and the deployments that reference it.

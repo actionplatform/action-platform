@@ -11,5 +11,5 @@ export default async function ReleasesPage({ params, searchParams }: { params: P
   const { view } = loaded;
   const releases = await releasesPage(view.projectId, view.appId, page, per);
   const canRelease = !!view.can["app.release"] && !!view.repositoryUrl;
-  return <ReleasesTable page={releases} repositoryUrl={view.repositoryUrl} newHref={canRelease ? `/projects/${view.projectId}/apps/${view.appId}/releases/new` : null} />;
+  return <ReleasesTable page={releases} repositoryUrl={view.repositoryUrl} base={`/projects/${view.projectId}/apps/${view.appId}`} newHref={canRelease ? `/projects/${view.projectId}/apps/${view.appId}/releases/new` : null} />;
 }

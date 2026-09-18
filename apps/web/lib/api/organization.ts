@@ -1,6 +1,7 @@
 import { client, unwrap } from "@/lib/api";
 
 export const organization = {
+  dashboard: async () => unwrap(await client.GET("/api/v1/dashboard")),
   me: async () => unwrap(await client.GET("/api/v1/me")),
   access: async () => unwrap(await client.GET("/api/v1/access")),
   organizations: async () => unwrap(await client.GET("/api/v1/organizations")),

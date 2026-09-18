@@ -8,6 +8,7 @@ from app.api.routes import (
     configuration,
     deployments,
     identity,
+    insights,
     jobs,
     releases,
     templates,
@@ -66,6 +67,7 @@ routers = [
     jobs,
     plugins,
     identity,
+    insights,
 ]
 
 router = APIRouter()
