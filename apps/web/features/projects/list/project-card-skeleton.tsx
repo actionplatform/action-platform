@@ -1,6 +1,6 @@
 export function ProjectCardSkeleton() {
   return (
-    <div aria-hidden className="flex h-[180px] flex-col rounded-[9px] border border-border bg-surface px-6 py-[22px]">
+    <div aria-hidden className="flex h-[180px] flex-col rounded-lg border border-border bg-surface px-6 py-[22px]">
       <div className="flex items-start justify-between">
         <div className="size-12 animate-pulse rounded-lg bg-surface-hover" />
         <div className="flex gap-2"><div className="size-8 animate-pulse rounded-md bg-surface-hover" /><div className="size-8 animate-pulse rounded-md bg-surface-hover" /></div>

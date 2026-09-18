@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 function Shell({ icon, title, text, children }: { icon: React.ReactNode; title: string; text: string; children?: React.ReactNode }) {
   return (
-    <div className="flex min-h-[360px] flex-col items-center justify-center rounded-[9px] border border-dashed border-border px-6 text-center">
+    <div className="flex min-h-[360px] flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 text-center">
       {icon}
       <h2 className="mt-4 text-[17px] font-semibold">{title}</h2>
       <p className="mt-1 max-w-sm text-sm text-secondary">{text}</p>

@@ -1,6 +1,6 @@
 export function TemplateCardSkeleton() {
   return (
-    <div aria-hidden className="flex min-h-[164px] flex-col rounded-[9px] border border-border bg-surface p-4">
+    <div aria-hidden className="flex min-h-[164px] flex-col rounded-lg border border-border bg-surface p-4">
       <div className="flex items-start gap-3">
         <div className="size-[42px] animate-pulse rounded-lg bg-surface-hover" />
         <div className="flex-1 space-y-2 pt-1">

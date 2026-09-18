@@ -25,7 +25,7 @@ export function BottomNav() {
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={cn("mx-1.5 my-1.5 flex h-[64px] flex-col items-center justify-center gap-1.5 rounded-[9px] text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground", active ? "bg-surface-selected text-foreground" : "text-secondary hover:text-foreground")}
+                className={cn("mx-1.5 my-1.5 flex h-[64px] flex-col items-center justify-center gap-1.5 rounded-lg text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground", active ? "bg-surface-selected text-foreground" : "text-secondary hover:text-foreground")}
               >
                 <Icon className="size-5" strokeWidth={1.75} />
                 <span className="truncate">{label}</span>

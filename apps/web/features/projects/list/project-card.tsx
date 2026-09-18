@@ -22,7 +22,7 @@ export function ProjectCard({ project, teams, canManage }: { project: ProjectIte
       aria-label={`Open ${project.name}`}
       onClick={() => router.push(href)}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(href); } }}
-      className="group flex cursor-pointer flex-col rounded-xl border border-border bg-surface p-4 md:h-[180px] md:rounded-[9px] md:px-6 md:py-[22px] transition-[border-color,background-color,transform] duration-150 ease-out hover:-translate-y-px hover:border-border-hover hover:bg-[#131313] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground"
+      className="group flex cursor-pointer flex-col rounded-xl border border-border bg-surface p-4 md:h-[180px] md:rounded-lg md:px-6 md:py-[22px] transition-[border-color,background-color,transform] duration-150 ease-out hover:-translate-y-px hover:border-border-hover hover:bg-[#131313] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground"
     >
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 md:items-start">
         <div className="flex size-11 items-center justify-center rounded-lg border border-[#303030] md:size-12">

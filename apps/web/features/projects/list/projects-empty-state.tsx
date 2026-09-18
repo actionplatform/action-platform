@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export function ProjectsEmptyState({ onCreate }: { onCreate?: () => void }) {
   return (
-    <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[9px] border border-dashed border-border px-6 text-center">
+    <div className="flex min-h-[420px] flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 text-center">
       <FolderGit2 className="size-6 text-secondary" strokeWidth={1.5} />
       <h2 className="mt-4 text-[17px] font-semibold">No projects yet</h2>
       <p className="mt-1 max-w-sm text-sm text-secondary">Create your first project to start deploying applications.</p>
@@ -18,7 +18,7 @@ export function ProjectsEmptyState({ onCreate }: { onCreate?: () => void }) {
 
 export function ProjectsNoResults({ query, onClear }: { query: string; onClear: () => void }) {
   return (
-    <div className="flex min-h-[320px] flex-col items-center justify-center rounded-[9px] border border-dashed border-border px-6 text-center">
+    <div className="flex min-h-[320px] flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 text-center">
       <SearchX className="size-6 text-secondary" strokeWidth={1.5} />
       <h2 className="mt-4 text-[17px] font-semibold">No projects found</h2>
       <p className="mt-1 text-sm text-secondary">No projects match &ldquo;{query}&rdquo;.</p>

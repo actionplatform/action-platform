@@ -1,16 +1,16 @@
 "use client";
 
 import { siBitbucket, siGithub, siGitlab } from "simple-icons";
-import { Check, ChevronDown, ExternalLink, GitBranch, KeyRound, MoreHorizontal, Plus, Trash2, TriangleAlert, UserCog, X } from "lucide-react";
+import { Check, ChevronDown, ExternalLink, GitBranch, KeyRound, MoreHorizontal, Trash2, TriangleAlert, UserCog } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { ConfirmDialog, Dialog, PromptDialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
+import { RegistryCard } from "@/components/ui/registry-card";
 import { Select } from "@/components/ui/select";
 import type { HostAccess, Owner } from "@/lib/host-access";
 import { HOST_KINDS, type HostKind, type SourceHost } from "@/lib/source-host-kinds";
@@ -36,17 +36,17 @@ export function SourceHosts({ hosts, access = {}, canManage }: Props) {
   }, [state, router]);
 
   return (
-    <Card className="rounded-[11px]">
-      <header className="flex flex-col gap-3 border-b border-border px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-[15px] font-semibold">Source hosts</h2>
-          <p className="mt-1 text-[13px] text-secondary">Accounts this workspace pushes, releases and opens pull requests with.</p>
-        </div>
-        {canManage && <Button size="sm" variant="outline" className="h-11 w-full shrink-0 sm:h-8 sm:w-auto sm:border-transparent sm:bg-transparent sm:text-secondary sm:hover:border-transparent sm:hover:text-foreground" onClick={() => setOpen((v) => !v)}>{open ? <X className="size-3.5" strokeWidth={2} /> : <Plus className="size-3.5" strokeWidth={2} />} {open ? "Close" : "Add with a token"}</Button>}
-      </header>
-
-      {open && (
-        <form method="post" action={action} className="space-y-3 border-b border-border px-6 py-5">
+    <RegistryCard
+      title="Source hosts"
+      description="Accounts this workspace pushes, releases and opens pull requests with."
+      addLabel="Add with a token"
+      canAdd={canManage}
+      open={open}
+      onToggle={() => setOpen((v) => !v)}
+      count={hosts.length}
+      empty={{ icon: GitBranch, title: "No source host yet", text: "Connect a provider above. Apps cannot be pushed, released or imported from a private repository until then." }}
+      form={
+        <form method="post" action={action} className="space-y-3">
           <input type="hidden" name="kind" value={kind} />
           <div className="flex gap-1 rounded-[8px] bg-surface-hover p-1 text-[13px]">
             {HOST_KINDS.map((k) => (
@@ -61,23 +61,12 @@ export function SourceHosts({ hosts, access = {}, canManage }: Props) {
             <Field label={meta.tokenLabel} hint={`${meta.tokenHint} Stored encrypted; never shown again.`} className={meta.needsUsername ? "" : "sm:col-span-2"}><Input name="token" type="password" className="font-mono" required /></Field>
           </div>
           {state?.error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{state.error}</div>}
-          <div className="flex justify-end"><Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save host"}</Button></div>
+          <div className="flex justify-end"><Button type="submit" size="sm" disabled={pending}>{pending ? "Saving…" : "Save host"}</Button></div>
         </form>
-      )}
-
-      {hosts.length === 0 ? (
-        <div className="flex flex-col items-center px-6 py-12 text-center">
-          <div className="flex size-11 items-center justify-center rounded-[9px] border border-border"><GitBranch className="size-5 text-secondary" strokeWidth={1.5} /></div>
-          <div className="mt-3 text-sm font-medium">No source host yet</div>
-          <div className="mt-1 max-w-sm text-[13px] text-secondary">Connect a provider above. Apps cannot be pushed, released or imported from a private repository until then.</div>
-        </div>
-      ) : (
-        <ul className="divide-y divide-border-subtle">
-          {hosts.map((h) => <HostRow key={h.id} host={h} access={access[h.id]} canManage={canManage} />)}
-        </ul>
-      )}
-
-    </Card>
+      }
+    >
+      {hosts.map((h) => <HostRow key={h.id} host={h} access={access[h.id]} canManage={canManage} />)}
+    </RegistryCard>
   );
 }
 
@@ -127,7 +116,7 @@ function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostA
   );
 
   return (
-    <li className="px-4 py-4 md:px-6">
+    <li className="px-4 py-3">
       <div className="rounded-[10px] border border-border bg-background p-4 md:hidden">
         <div className="flex items-start gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-[8px] border border-border bg-surface">
@@ -223,7 +212,7 @@ function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostA
 
 function HostDetails({ host, access, mobile = false }: { host: SourceHost; access?: HostAccess; mobile?: boolean }) {
   return (
-    <div className={cn("rounded-[9px] border border-border-subtle bg-background text-[13px]", mobile ? "mt-3 border-border bg-surface px-3 py-3" : "mt-4 px-4 py-3")}>
+    <div className={cn("rounded-lg border border-border-subtle bg-background text-[13px]", mobile ? "mt-3 border-border bg-surface px-3 py-3" : "mt-4 px-4 py-3")}>
           {!access ? (
             <div className="text-secondary">Permissions are checked for GitHub, GitLab and Bitbucket hosts.</div>
           ) : !access.ok ? (

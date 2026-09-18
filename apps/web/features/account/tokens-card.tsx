@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Panel, PanelHeader } from "@/components/ui/panel";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import type { UserToken } from "@/lib/api-tokens";
 import type { ScopeInfo } from "@/lib/permissions";
@@ -20,15 +20,11 @@ export function TokensCard({ tokens, now, scopes }: { tokens: UserToken[]; now: 
   const [pending, start] = useTransition();
 
   return (
-    <Card className="rounded-[11px]">
-      <header className="border-b border-border px-4 py-4 md:px-6 md:py-5">
-        <h2 className="text-[15px] font-semibold">API tokens<span className="hidden md:inline"> and the apps using them</span></h2>
-        <p className="mt-1 text-[13px] text-secondary md:hidden">Tokens used by CLI and connected apps.</p>
-        <p className="mt-1 hidden text-[13px] text-secondary md:block">Bearer tokens issued by <code className="font-mono">action-platform login</code>. Each token shows which programs have used it — Claude Code, Codex, Cursor, the CLI — and carries a scope on top of your role. Revoke what you no longer recognise.</p>
-      </header>
+    <Panel>
+      <PanelHeader title="API tokens" description={<>Bearer tokens issued by <code className="font-mono">action-platform login</code>. Each token shows which programs have used it — Claude Code, Codex, Cursor, the CLI — and carries a scope on top of your role. Revoke what you no longer recognise.</>} />
       {tokens.length === 0 ? (
         <div className="flex flex-col items-center px-6 py-10 text-center">
-          <div className="flex size-11 items-center justify-center rounded-[9px] border border-border"><KeyRound className="size-5 text-secondary" strokeWidth={1.5} /></div>
+          <div className="flex size-11 items-center justify-center rounded-lg border border-border"><KeyRound className="size-5 text-secondary" strokeWidth={1.5} /></div>
           <div className="mt-3 text-sm font-medium">No tokens yet</div>
           <div className="mt-1 max-w-sm text-[13px] text-secondary">Run <code className="font-mono">action-platform login &lt;server&gt; --scope read,write</code> and approve the code here.</div>
         </div>
@@ -75,6 +71,6 @@ export function TokensCard({ tokens, now, scopes }: { tokens: UserToken[]; now: 
         pending={pending}
         onConfirm={() => start(async () => { if (!revoking) return; const r = await revokeApiToken(revoking.id); setRevoking(null); if (r.ok) router.refresh(); else setError(r.error); })}
       />
-    </Card>
+    </Panel>
   );
 }

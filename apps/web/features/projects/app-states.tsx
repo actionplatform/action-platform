@@ -10,7 +10,7 @@ export function AppErrorState({ name, projectId, reason }: { name: string; proje
   const router = useRouter();
   const [pending, start] = useTransition();
   return (
-    <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[9px] border border-dashed border-border px-6 text-center">
+    <div className="flex min-h-[420px] flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 text-center">
       <TriangleAlert className="size-6 text-secondary" strokeWidth={1.5} />
       <h1 className="mt-4 text-[17px] font-semibold">Couldn’t load project</h1>
       <p className="mt-1 max-w-md text-sm text-secondary">Something went wrong while loading {name}.</p>
