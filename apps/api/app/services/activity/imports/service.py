@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session as DbSession
 from action_platform.core.exception import ProviderError
 from app.core.abc import ImportSource
 from app.core.db.models import PullRequest
-from app.services.releases.store import ReleaseStore
+from app.repositories.releases.store import ReleaseStore
 from app.core.shared.credentials import Credentials
 from app.services.activity.imports.bitbucket import BitbucketActivity
 from app.services.activity.imports.github import GithubActivity

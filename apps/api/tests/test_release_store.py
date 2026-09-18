@@ -21,12 +21,12 @@ class ReleaseStoreTest(GateCase):
         self.registry_id = self.register()
 
     def store(self, db):
-        from app.services.releases import ReleaseStore
+        from app.repositories.releases import ReleaseStore
 
         return ReleaseStore(db)
 
     def test_split_and_tag(self):
-        from app.services.releases import split_tag, tag_of
+        from app.repositories.releases import split_tag, tag_of
 
         self.assertEqual(split_tag("v1.2.3"), ("", "1.2.3"))
         self.assertEqual(split_tag("web/v1.2.3"), ("web", "1.2.3"))

@@ -18,7 +18,7 @@ from app.core.auth.crypto import Sealer
 from app.core.db.models import App, CiRun, Deployment, User
 from app.core.shared.clock import now
 from app.services.integrations.hosts.directory import IntegrationsDirectory
-from app.services.releases.store import ReleaseStore
+from app.repositories.releases.store import ReleaseStore
 
 LIMIT = 50
 
