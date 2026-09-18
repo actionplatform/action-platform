@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.22.0 — 2026-09-18
+
+### Features
+- **readiness:** a release knows whether it can reach a stage before anyone deploys it
+- **web:** phones get cards instead of tables, stacked toolbars and footers, wrapping rows
+
+### Bug Fixes
+- one label for a person — the display name, the email only when there is none
+- **deploy:** the worker image builds native gems and wheels
+
+### Docs
+- release readiness — the concept, the API, the CLI, the web, the plugin contract and ADR 0008
+
+### Build
+- **api:** apx-aws-lambda>=0.3.9 — a ROLLBACK_COMPLETE stack no longer blocks the deploy
+
 ## v0.21.0 — 2026-09-18
 
 ### Features
