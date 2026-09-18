@@ -1711,6 +1711,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["dashboard_api_v1_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/releases/{tag}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["timeline_api_v1_projects__project_id__apps__app_id__releases__tag__timeline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1825,11 +1857,6 @@ export interface components {
             template?: string | null;
             language?: string | null;
             ci?: string | null;
-        };
-        AppRef: {
-            id: string;
-            name: string;
-            registry_id: string;
         };
         AppRow: {
             id: string;
@@ -1966,6 +1993,18 @@ export interface components {
             name: string;
             slug: string;
         };
+        Dashboard: {
+            apps: number;
+            deployments_today: {
+                [key: string]: number;
+            };
+            ci_today: {
+                [key: string]: number;
+            };
+            releases_week: number;
+            without_ci: components["schemas"]["app__schemas__insights__AppRef"][];
+            events: components["schemas"]["Event"][];
+        };
         DeployRequest: {
             stage?: string | null;
             dry_run: boolean;
@@ -2049,6 +2088,18 @@ export interface components {
             details: {
                 [key: string]: string;
             };
+        };
+        Event: {
+            app_id: string;
+            app: string;
+            project_id: string;
+            project: string;
+            kind: string;
+            at?: string | null;
+            title: string;
+            status?: string | null;
+            detail?: string | null;
+            url?: string | null;
         };
         GitAuthor: {
             name: string;
@@ -2289,7 +2340,7 @@ export interface components {
                 [key: string]: unknown;
             }[] | null;
             project?: components["schemas"]["Named"] | null;
-            app?: components["schemas"]["AppRef"] | null;
+            app?: components["schemas"]["app__schemas__common__AppRef"] | null;
         };
         JobOut: {
             id: string;
@@ -2393,7 +2444,7 @@ export interface components {
             };
             token?: string | null;
             project?: components["schemas"]["Named"] | null;
-            app?: components["schemas"]["AppRef"] | null;
+            app?: components["schemas"]["app__schemas__common__AppRef"] | null;
         };
         MemberAdded: {
             user_id: string;
@@ -2764,6 +2815,13 @@ export interface components {
             source_host_id?: string | null;
             created_at: string;
         };
+        Timeline: {
+            release: components["schemas"]["ReleaseRow"];
+            previous?: components["schemas"]["ReleaseRow"] | null;
+            pull_requests: components["schemas"]["PullRequestRow"][];
+            ci_runs: components["schemas"]["CiRunRow"][];
+            deployments: components["schemas"]["DeploymentRow"][];
+        };
         TokenClaimsOut: {
             id: string;
             user: components["schemas"]["UserOut"];
@@ -2835,6 +2893,17 @@ export interface components {
             url: string;
             secret: string;
             kind: string;
+        };
+        app__schemas__common__AppRef: {
+            id: string;
+            name: string;
+            registry_id: string;
+        };
+        app__schemas__insights__AppRef: {
+            app_id: string;
+            app: string;
+            project_id: string;
+            project: string;
         };
     };
     responses: never;
@@ -6773,6 +6842,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IdentityToken"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dashboard_api_v1_dashboard_get: {
+        parameters: {
+            query?: {
+                fresh?: boolean;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Dashboard"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    timeline_api_v1_projects__project_id__apps__app_id__releases__tag__timeline_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                tag: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Timeline"];
                 };
             };
             422: {

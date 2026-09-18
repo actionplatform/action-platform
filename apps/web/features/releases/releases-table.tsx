@@ -1,6 +1,8 @@
 "use client";
 
 import { MoreHorizontal, Tag } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,12 +26,14 @@ export function toRows(stored: StoredRelease[], repositoryUrl: string | null): R
   return stored.map((r) => ({ tag: r.tag, version: r.version || r.tag.split("/").pop()!.replace(/^v/, ""), name: r.name, body: r.body, url: r.url ?? (repositoryUrl ? `${repositoryUrl}/releases/tag/${r.tag}` : null), author: r.author, sha: r.sha, prerelease: r.prerelease, draft: r.draft, date: r.publishedAt ? r.publishedAt.toISOString() : null, source: r.source }));
 }
 
-export function ReleasesTable({ page, repositoryUrl, newHref }: { page: Paged<StoredRelease>; repositoryUrl: string | null; newHref?: string | null }) {
+export function ReleasesTable({ page, repositoryUrl, newHref, base }: { page: Paged<StoredRelease>; repositoryUrl: string | null; newHref?: string | null; base?: string }) {
+  const router = useRouter();
   const rows = toRows(page.items, repositoryUrl);
   const source = rows[0]?.source ?? "git";
   const [changelog, setChangelog] = useState<Row | null>(null);
   const copy = (text: string) => { navigator.clipboard.writeText(text).catch(() => undefined); };
   const actions = (r: Row) => [
+    ...(base ? [{ label: "Timeline", onSelect: () => router.push(`${base}/releases/${encodeURIComponent(r.tag)}`) }] : []),
     ...(r.url ? [{ label: `View on ${SOURCE[r.source] ?? "the code host"}`, onSelect: () => window.open(r.url!, "_blank", "noopener") }] : []),
     { label: "Copy tag", onSelect: () => copy(r.tag) },
     ...(r.sha ? [{ label: "Copy commit SHA", onSelect: () => copy(r.sha!) }] : []),
@@ -55,7 +59,7 @@ export function ReleasesTable({ page, repositoryUrl, newHref }: { page: Paged<St
         empty={{ icon: Tag, title: "No releases yet", text: "Create the first one with New release, or Sync to import releases from the code host." }}
         minWidth={800}
         columns={[
-          { key: "version", label: "Version", width: 28, render: (r, i) => <Inline>{r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" className="font-mono font-medium hover:underline underline-offset-4">{r.version}</a> : <span className="font-mono font-medium">{r.version}</span>}{i === 0 && !r.draft && <Badge tone="ok" className="shrink-0">Latest</Badge>}{r.prerelease && <Badge className="shrink-0">Pre-release</Badge>}{r.draft && <Badge className="shrink-0">Draft</Badge>}</Inline> },
+          { key: "version", label: "Version", width: 28, render: (r, i) => <Inline>{base ? <Link href={`${base}/releases/${encodeURIComponent(r.tag)}`} className="font-mono font-medium hover:underline underline-offset-4">{r.version}</Link> : r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" className="font-mono font-medium hover:underline underline-offset-4">{r.version}</a> : <span className="font-mono font-medium">{r.version}</span>}{i === 0 && !r.draft && <Badge tone="ok" className="shrink-0">Latest</Badge>}{r.prerelease && <Badge className="shrink-0">Pre-release</Badge>}{r.draft && <Badge className="shrink-0">Draft</Badge>}</Inline> },
           { key: "tag", label: "Tag", width: 16, hide: "sm", render: tagChip },
           { key: "name", label: "Name", width: 12, hide: "md", render: (r) => <Cell muted title={r.name ?? r.body ?? undefined}>{r.name ?? r.body ?? r.tag}</Cell> },
           { key: "author", label: "Author", width: 17, hide: "md", render: (r) => <Cell muted title={r.author ?? undefined}>{r.author ?? "—"}</Cell> },

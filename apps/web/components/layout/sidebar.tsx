@@ -13,6 +13,7 @@ import { useScope } from "./scope";
 import { UserMenu } from "./user-menu";
 
 const items: { href: string; label: string; icon: typeof FolderGit2; children?: SubPage[] }[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: FolderGit2 },
   { href: "/templates", label: "Templates", icon: LayoutTemplate },
   { href: "/organization", label: "Organization", icon: Building2, children: ORGANIZATION_PAGES },
