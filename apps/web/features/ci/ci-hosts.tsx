@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
-import { CI_HOST_KINDS, CI_LABELS, type CiHost, type CiHostKind } from "@/lib/ci";
+import { CI_HOST_KINDS, CI_LABELS, type CiHost, type CiHostKind } from "@/lib/ci-kinds";
 import { cn } from "@/lib/utils";
 import { createCiHost, deleteCiHost, testCiHost } from "./actions";
 

@@ -4,7 +4,7 @@ import { ExternalLink, Workflow } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
-import { CI_LABELS, type CiRun, duration } from "@/lib/ci";
+import { CI_LABELS, type CiRun, duration } from "@/lib/ci-kinds";
 import { relativeTime } from "@/lib/time";
 import { RunIcon } from "./run-badge";
 

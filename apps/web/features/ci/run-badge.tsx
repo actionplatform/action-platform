@@ -1,6 +1,6 @@
 import { Ban, Check, CircleDashed, Clock, HelpCircle, LoaderCircle, TriangleAlert, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { CiRunStatus } from "@/lib/ci";
+import type { CiRunStatus } from "@/lib/ci-kinds";
 
 const META: Record<CiRunStatus, { label: string; tone: "success" | "danger" | "warning" | "neutral"; icon: typeof Check; spin?: boolean }> = {
   success: { label: "Passed", tone: "success", icon: Check },

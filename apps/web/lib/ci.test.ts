@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ciState, duration } from "./ci";
+import { ciState, duration } from "./ci-kinds";
 
 describe("duration", () => {
   it("says it the way a person would", () => {

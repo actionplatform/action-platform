@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
-import { CI_HOST_KINDS, CI_LABELS, type CiHost, type CiState } from "@/lib/ci";
+import { CI_HOST_KINDS, CI_LABELS, type CiHost, type CiState } from "@/lib/ci-kinds";
 import { call } from "@/lib/call";
 import { linkCi, syncCi } from "./actions";
 import { RunBadge } from "./run-badge";
