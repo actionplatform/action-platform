@@ -1,15 +1,65 @@
 import json
+import logging
 import uuid
 from datetime import timedelta
 from typing import Any, Optional
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, text, update
+from sqlalchemy.orm import Session as DbSession
 
 from app.core.db.database import Database
 from app.core.db.models import Job
 from app.core.shared.clock import now
 
 MAX_ATTEMPTS = 3
+CHANNEL = "ap_jobs"
+log = logging.getLogger(__name__)
+
+
+class Listener:
+    """A raw psycopg connection on LISTEN; `wait(timeout)` returns True when a notification arrived, False on timeout, and reconnects on the next call after an error."""
+
+    def __init__(self, database: Any) -> None:
+        self.database = database
+        self.connection: Any = None
+
+    def _connect(self) -> Any:
+        connection = self.database.engine.raw_connection()
+        driver = connection.driver_connection
+        driver.autocommit = True
+        driver.execute(f"LISTEN {CHANNEL}")
+
+        return connection
+
+    def wait(self, timeout: float) -> bool:
+        try:
+            if self.connection is None:
+                self.connection = self._connect()
+
+            driver = self.connection.driver_connection
+            generator = driver.notifies(timeout=timeout)
+
+            for _ in generator:
+                generator.close()
+                return True
+
+            return False
+        except Exception:
+            log.debug("listener reconnects", exc_info=True)
+            self.close()
+
+            return False
+
+    def close(self) -> None:
+        if self.connection is not None:
+            try:
+                self.connection.close()
+            except Exception:
+                pass
+
+            self.connection = None
+
+
 STALE_AFTER = timedelta(minutes=30)
 BACKOFF = timedelta(seconds=30)
 LIVE = ("queued", "running")
@@ -64,8 +114,26 @@ class JobQueue:
             )
             s.add(job)
             s.flush()
+            self._notify(s)
 
             return job
+
+    def _notify(self, s: DbSession) -> None:
+        """Wake listening workers; PostgreSQL only, a no-op elsewhere, and never a reason for the enqueue to fail."""
+        if self.database.dialect != "postgresql":
+            return
+
+        try:
+            s.execute(text(f"NOTIFY {CHANNEL}"))
+        except Exception:
+            log.debug("NOTIFY %s failed", CHANNEL, exc_info=True)
+
+    def listener(self) -> Optional["Listener"]:
+        """A connection that waits for enqueues, or None where the database cannot push."""
+        if self.database.dialect != "postgresql":
+            return None
+
+        return Listener(self.database)
 
     def get(self, id: str) -> Optional[Job]:
         with self.database.session() as s:
