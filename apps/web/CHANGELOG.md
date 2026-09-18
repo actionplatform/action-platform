@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.23.0 — 2026-09-18
+
+### Features
+- a timeline per release and a dashboard for the organization
+- **ci:** GitLab CI and Bitbucket Pipelines as embedded runners; Run from the CI tab
+- webhooks from the code host trigger the sync
+
+### Refactoring
+- **web:** members, teams and template repositories on DataTable; Deploy target and Services on ActionForm
+
+### Chores
+- merge master
+- merge master
+
 ## v0.22.1 — 2026-09-18
 
 ### Bug Fixes
