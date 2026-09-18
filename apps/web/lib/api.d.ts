@@ -1900,6 +1900,7 @@ export interface components {
             kind: string;
             stage?: string | null;
             version: string;
+            release_id?: string | null;
             sha?: string | null;
             status: string;
             executor: string;
@@ -2522,6 +2523,8 @@ export interface components {
         ReleaseRow: {
             id: string;
             tag: string;
+            component: string;
+            version: string;
             name?: string | null;
             body?: string | null;
             url?: string | null;

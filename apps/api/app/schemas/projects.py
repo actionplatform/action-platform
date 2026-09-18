@@ -130,6 +130,8 @@ class AppHostRequest(BaseModel):
 class ReleaseRow(BaseModel):
     id: str
     tag: str
+    component: str = ""
+    version: str = ""
     name: Optional[str] = None
     body: Optional[str] = None
     url: Optional[str] = None
