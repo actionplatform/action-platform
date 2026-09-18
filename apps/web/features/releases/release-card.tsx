@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, GitBranch, Layers, Rocket } from "lucide-react";
+import { FileText, GitBranch, Rocket } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ActionField, ActionFields, ActionForm, ActionSteps, ActionSummary } from "@/components/ui/action-form";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Hint } from "@/components/ui/hint";
 import { Input, Textarea } from "@/components/ui/input";
+import { SegmentedControl } from "@/components/ui/segmented";
 import { Select } from "@/components/ui/select";
 import type { ReleasePreview } from "@/lib/api";
 import { useAction } from "@/lib/use-action";
@@ -138,7 +139,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
           <Select size="lg" mono icon={<GitBranch className="size-4" strokeWidth={1.75} />} value={branch} onChange={change(setBranch)} options={options.map((b) => ({ value: b, label: b, hint: view.stableBranches.includes(b) ? "stable" : "rc" }))} />
         </ActionField>
         <ActionField label="Version" hint={<Hint text="Patch fixes, minor adds, major breaks. The next version comes from the tags on the branch." />}>
-          <Select size="lg" mono icon={<Layers className="size-4" strokeWidth={1.75} />} value={level} onChange={change((v) => setLevel(v as Increment))} options={LEVELS.map((l) => ({ value: l.id, label: `${l.label} · ${bump(current, l.id)}`, hint: l.id === level ? next : undefined }))} />
+          <SegmentedControl label="Version increment" value={level} onChange={(v) => { setLevel(v); action.clearOutcome(); }} options={LEVELS.map((l) => ({ id: l.id, label: l.label, hint: bump(current, l.id) }))} />
         </ActionField>
         <ActionField label="Name">
           <Input className="h-[42px] rounded-[7px]" value={name} onChange={(e) => { setName(e.target.value); setNameTouched(true); }} onBlur={() => { if (!name.trim()) { setNameTouched(false); setName(`Release ${next}`); } }} disabled={!view.can["app.release"]} />
