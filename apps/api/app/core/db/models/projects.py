@@ -5,6 +5,7 @@ from typing import Optional
 
 from sqlalchemy import (
     DateTime,
+    Index,
     ForeignKey,
     Text,
     func,
@@ -34,6 +35,7 @@ class Project(Base):
 
 class App(Base):
     __tablename__ = "app"
+    __table_args__ = (Index("ix_app_project", "project_id"),)
 
     id: Mapped[str] = mapped_column(KEY, primary_key=True)
     project_id: Mapped[str] = mapped_column(

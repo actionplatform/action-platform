@@ -7,6 +7,7 @@ from sqlalchemy import (
     BigInteger,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     Text,
     UniqueConstraint,
@@ -21,6 +22,7 @@ from app.core.db.models.projects import App
 
 class CiHost(Base):
     __tablename__ = "ci_host"
+    __table_args__ = (Index("ix_ci_host_org", "organization_id"),)
 
     id: Mapped[str] = mapped_column(KEY, primary_key=True)
     organization_id: Mapped[str] = mapped_column(
@@ -39,7 +41,10 @@ class CiHost(Base):
 
 class CiRun(Base):
     __tablename__ = "ci_run"
-    __table_args__ = (UniqueConstraint("app_id", "source", "number"),)
+    __table_args__ = (
+        UniqueConstraint("app_id", "source", "number"),
+        Index("ix_ci_run_app_number", "app_id", "number"),
+    )
 
     id: Mapped[str] = mapped_column(KEY, primary_key=True)
     app_id: Mapped[str] = mapped_column(

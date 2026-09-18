@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import typer
 
+from action_platform.settings import settings
 from app.api import app as server
 
 
@@ -18,8 +19,15 @@ def run(
     reload: bool = typer.Option(
         False, "--reload", help="Restart on code changes (development)"
     ),
+    workers: int = typer.Option(
+        1, "--workers", min=1, max=64, help="Uvicorn worker processes (AP_API_WORKERS)"
+    ),
 ) -> None:
     """Serve the JSON API the web app talks to: apps registry, git-flow, releases, deploys."""
     origins = [o.strip() for o in cors.split(",") if o.strip()]
-    typer.echo(f"action-platform api on http://{host}:{port}")
-    server.serve(host, port, origins, reload=reload)
+    count = workers if workers > 1 else int(settings.env("AP_API_WORKERS") or 1)
+    typer.echo(
+        f"action-platform api on http://{host}:{port}"
+        + (f" · {count} workers" if count > 1 else "")
+    )
+    server.serve(host, port, origins, reload=reload, workers=count)

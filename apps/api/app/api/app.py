@@ -167,7 +167,9 @@ def serve(
     port: int,
     cors_origins: Optional[list[str]] = None,
     reload: bool = False,
+    workers: int = 1,
 ) -> None:
+    """One uvicorn process by default; `workers` > 1 forks that many, each with its own pool — the clone cache is per process, so a request may fetch what another process already has."""
     if reload:
         os.environ["AP_CORS"] = ",".join(cors_origins or [])
         uvicorn.run(
@@ -178,6 +180,20 @@ def serve(
             reload=True,
             reload_dirs=[str(Path(__file__).resolve().parents[1])],
             log_level="info",
+        )
+        return
+
+    if workers > 1:
+        os.environ["AP_CORS"] = ",".join(cors_origins or [])
+        uvicorn.run(
+            "app.api.app:create_app",
+            factory=True,
+            host=host,
+            port=port,
+            workers=workers,
+            log_level="warning",
+            proxy_headers=True,
+            forwarded_allow_ips=settings.FORWARDED_ALLOW_IPS,
         )
         return
 

@@ -93,7 +93,7 @@ The setup wizard's first step only checks that the API has its database and secr
 
 ## Backups
 
-One volume holds state: `pgdata` (accounts, organizations, projects, apps, encrypted tokens, OAuth apps, the registry, pending edits, jobs). Back up `pgdata`; keep `BETTER_AUTH_SECRET` with it or the tokens cannot be decrypted. Clones live under the API's and worker's temp dir (`AP_WORKSPACES` to move them, `AP_WORKSPACE_TTL` seconds between fetches, default 15) and can be deleted at any moment.
+One volume holds state: `pgdata` (accounts, organizations, projects, apps, encrypted tokens, OAuth apps, the registry, pending edits, jobs). Back up `pgdata`; keep `BETTER_AUTH_SECRET` with it or the tokens cannot be decrypted. Clones live under the API's and worker's temp dir (`AP_WORKSPACES` to move them, `AP_WORKSPACE_TTL` seconds between fetches, default 15) and can be deleted at any moment. Capacity: `AP_API_WORKERS` uvicorn processes for the API (default 2 in the compose files; each keeps its own clone cache) and `AP_WORKER_CONCURRENCY` jobs the worker runs at once (default 2); `action-platform-api worker --kinds deploy,destroy` dedicates a worker to the heavy jobs, another without the flag takes the rest. Every per-app listing and the queue's claim are indexed (migration 0014).
 
 ```bash
 docker compose exec postgres pg_dump -U action_platform action_platform > backup.sql

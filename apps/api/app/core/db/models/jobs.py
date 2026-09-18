@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import (
+    Index,
     DateTime,
     Integer,
     Text,
@@ -19,6 +20,8 @@ class Job(Base):
     __tablename__ = "job"
     __table_args__ = (
         UniqueConstraint("kind", "app_id", "dedupe_key", name="uq_job_dedupe"),
+        Index("ix_job_app_created", "app_id", "created_at"),
+        Index("ix_job_status_run_after", "status", "run_after"),
     )
 
     id: Mapped[str] = mapped_column(KEY, primary_key=True)

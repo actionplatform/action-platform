@@ -382,3 +382,50 @@ class RegistryAdoptionTest(GateCase):
         with self.app.state.db.session() as s:
             self.assertIsNone(s.get(App, "a1"))
             self.assertIsNone(s.get(Project, "p1"))
+
+
+class ConcurrentWorkerTest(GateCase):
+    def test_several_jobs_run_at_once_and_kinds_filter_what_is_taken(self):
+        import threading
+        import time
+
+        from app.services.jobs import JobQueue
+        from app.services.jobs.worker import Worker
+
+        self.register()
+        queue = JobQueue(self.app.state.db)
+        for _ in range(4):
+            queue.enqueue("slow", {}, organization_id=self.org["id"], app_id="a1")
+        queue.enqueue("other", {}, organization_id=self.org["id"], app_id="a1")
+
+        peak = {"now": 0, "max": 0}
+        lock = threading.Lock()
+
+        def slow(payload):
+            with lock:
+                peak["now"] += 1
+                peak["max"] = max(peak["max"], peak["now"])
+            time.sleep(0.3)
+            with lock:
+                peak["now"] -= 1
+            return {"ok": True}
+
+        worker = Worker(self.app.state.db, self.app.state.secrets, "test")
+        worker.handlers = {"slow": slow, "other": lambda payload: {"ok": True}}
+
+        started = time.monotonic()
+        done = worker.run(once=True, concurrency=4, kinds=["slow"])
+        elapsed = time.monotonic() - started
+
+        self.assertEqual(done, 4)
+        self.assertGreaterEqual(peak["max"], 2)
+        self.assertLess(elapsed, 1.0)
+        with self.app.state.db.session() as s:
+            from app.core.db.models import Job
+
+            self.assertEqual(
+                {j.status for j in s.query(Job).filter_by(kind="slow")}, {"done"}
+            )
+            self.assertEqual(
+                s.query(Job).filter_by(kind="other").one().status, "queued"
+            )
