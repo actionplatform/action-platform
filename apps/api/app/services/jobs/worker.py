@@ -53,6 +53,7 @@ class Worker:
             registry = get_registry()
 
         self.registry = registry
+        self.listener = self.queue.listener()
         self.handlers = handlers(JobServices(database, self.sealer, registry))
         plugin_registry.use_options(lambda slug: plugins.DbOptions(database, slug))
 
@@ -71,6 +72,12 @@ class Worker:
 
         return self._run_pool(interval, once, concurrency, wanted)
 
+    def _idle(self, interval: float) -> None:
+        """Sleep until something is enqueued or `interval` passes — whichever the database allows."""
+        if self.listener is None or not self.listener.wait(interval):
+            if self.listener is None:
+                time.sleep(interval)
+
     def _run_serial(self, interval: float, once: bool, kinds: list[str]) -> int:
         done = 0
 
@@ -82,7 +89,7 @@ class Worker:
                 if once:
                     return done
 
-                time.sleep(interval)
+                self._idle(interval)
                 continue
 
             self.handle(job)
@@ -114,7 +121,7 @@ class Worker:
                         wait(live, return_when=FIRST_COMPLETED)
                         continue
 
-                    time.sleep(interval if not live else min(interval, 0.5))
+                    self._idle(interval if not live else min(interval, 0.5))
                     continue
 
                 live.add(pool.submit(self.handle, job))
