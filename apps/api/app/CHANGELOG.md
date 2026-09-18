@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.26.0 — 2026-09-18
+
+### Features
+- a timeline per release and a dashboard for the organization
+- **ci:** GitLab CI and Bitbucket Pipelines as embedded runners; Run from the CI tab
+- webhooks from the code host trigger the sync
+
+### Performance
+- **api:** reads come from a snapshot; GET routes never touch git
+- **api:** the queue wakes workers with LISTEN/NOTIFY
+
+### Chores
+- merge master
+- merge master
+
 ## v0.25.0 — 2026-09-18
 
 ### Performance
