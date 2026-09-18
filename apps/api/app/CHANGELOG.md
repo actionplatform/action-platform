@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.21.1 — 2026-09-17
+
+### Bug Fixes
+- **api:** the GitHub App asks to read Actions, and the access check says when it cannot
+
 ## v0.21.0 — 2026-09-17
 
 ### Features
