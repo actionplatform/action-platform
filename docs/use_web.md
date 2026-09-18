@@ -71,7 +71,7 @@ A git URL. With a `platform.toml` the app is registered as it is. Without one, t
 
 ## The app page
 
-The header carries the name, the branch, **Last synced** and **Sync** (or **Push to remote** while there is none). Tabs: Overview, Releases, Deployments, Activity, Configuration, Settings.
+The header carries the name, the branch, **Last synced** and **Sync** (or **Push to remote** while there is none). Tabs: Overview, Activity, CI, Releases, Deployments, Configuration, Settings.
 
 ### Overview
 
@@ -96,6 +96,10 @@ Refused when the tag exists, the branch is not on the remote, the tree is dirty 
 ### Activity
 
 Git-flow — start a `<kind>/<code>` branch, check out, propose and open a pull request — and the app's pull requests (state, merged date, head → base).
+
+### CI
+
+Where the app's builds run and what they did. Pick the runner — a **CI server** the organization connected under Settings (Jenkins), or the one embedded in the source host (GitHub Actions, with the host's own token) — and the **job**: the path in the Jenkins URL (`team/app`, `team/app/main` for a multibranch branch) or a workflow file such as `ci.yml` (empty means every workflow). **Sync** imports the latest runs; the import that follows a sync of the app brings them too. On top: the last run on the default branch and the pass rate of the last twenty; below, each run with status, branch, sha, trigger, when and how long, linked to the server, filterable by branch. Nothing is triggered from here.
 
 ### Configuration
 
@@ -176,6 +180,10 @@ Otherwise register an OAuth app once (*Set up OAuth app* shows the callback URL 
 Then **Connect with …** signs the organization in with your account; the wizard offers your user plus every group (GitLab) or workspace (Bitbucket) you can create in. *Add with a token* is the manual path (kind, base URL for self-hosted instances, token, default owner); *Other* is any git server over HTTPS — push and tag only.
 
 Tokens are encrypted by the API and never leave it; expiring tokens are refreshed before use. The list shows each account, where the app is installed and the default owner the wizard pre-selects; apps remember which host they use. *Remove host* disconnects an account.
+
+### CI servers
+
+Build servers of their own, per organization: name, base URL, username and API token (Jenkins → your user → Security → API Token). *Test* reaches the server with the sealed token. GitHub Actions needs nothing here. Apps pick a server and a job from their CI tab; removing a server leaves the imported runs and disconnects the apps that pointed at it.
 
 ## CLI and MCP against a hosted instance
 
