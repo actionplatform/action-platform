@@ -173,3 +173,8 @@ class ProjectsWrites(ProjectsReads):
     def set_app_host(self, app: App, source_host_id: Optional[str]) -> None:
         app.source_host_id = source_host_id
         self.db.flush()
+
+    def set_app_ci(self, app: App, ci_host_id: Optional[str], job: str) -> None:
+        app.ci_host_id = ci_host_id
+        app.ci_job = job.strip()
+        self.db.flush()

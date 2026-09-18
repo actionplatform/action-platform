@@ -83,7 +83,7 @@ class AwsLambdaPlugin(Plugin):
 | ABC | Entry-point group | Picked by |
 |---|---|---|
 | `abc.DeployTarget` — `preflight`, `create`, `deploy`, `switch_traffic`, `rollback`, `diagnose`, `delete` | `action_platform.deploy_target` | `[deploy] target` |
-| `abc.CIRunner` | `action_platform.ci_runner` | `[ci]` |
+| `abc.CIRunner` — `test`, `runs(job, limit)`, `run`, and `trigger`, `wait`, `logs` where the system allows it | `action_platform.ci_runner` | `[ci]`; a CI host's `kind` on the hosted platform |
 | `abc.SourceHost` | `action_platform.source_host` | `[source_host] kind` |
 | `abc.ReleaseStrategy` — `next(current, level, prerelease, taken)`, `is_prerelease` | `action_platform.release_strategy` | `[release] strategy` |
 | `abc.ChangelogRenderer` — `render(version, commits)` | `action_platform.changelog` | `[release] changelog` |

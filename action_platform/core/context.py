@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -31,6 +32,32 @@ class RunResult:
     ok: bool
     duration: float
     output: str = ""
+
+
+RUN_STATUSES = (
+    "queued",
+    "running",
+    "success",
+    "failure",
+    "unstable",
+    "aborted",
+    "unknown",
+)
+
+
+@dataclass
+class Run:
+    """One CI run (a Jenkins build, an Actions workflow run, a GitLab pipeline) in the platform's shape."""
+
+    number: int
+    status: str
+    url: str | None = None
+    branch: str | None = None
+    sha: str | None = None
+    trigger: str | None = None
+    started_at: Optional[datetime] = None
+    duration_ms: int | None = None
+    name: str | None = None
 
 
 @dataclass

@@ -18,6 +18,8 @@ EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 GIT_URL = re.compile(r"^(https?://|git@|ssh://|file://)")
 PROVIDERS = ("github", "gitlab", "bitbucket")
 HOST_KINDS = ("github", "gitlab", "bitbucket", "generic")
+CI_HOST_KINDS = ("jenkins",)
+CI_HOST_LABELS = {"jenkins": "Jenkins"}
 HOST_LABELS = {
     "github": "GitHub",
     "gitlab": "GitLab",

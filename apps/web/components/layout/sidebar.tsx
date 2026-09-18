@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, ArrowLeft, Building2, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Puzzle, Rocket, Settings, SlidersHorizontal, X } from "lucide-react";
+import { Activity, ArrowLeft, Building2, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Puzzle, Rocket, Settings, SlidersHorizontal, Workflow, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -23,6 +23,7 @@ const items: { href: string; label: string; icon: typeof FolderGit2; children?: 
 const appItems = [
   { tab: "", label: "Overview", icon: LayoutDashboard },
   { tab: "activity", label: "Activity", icon: Activity },
+  { tab: "ci", label: "CI", icon: Workflow },
   { tab: "releases", label: "Releases", icon: Rocket },
   { tab: "deployments", label: "Deployments", icon: Cloud },
   { tab: "configuration", label: "Configuration", icon: SlidersHorizontal },

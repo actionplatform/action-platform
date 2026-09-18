@@ -15,5 +15,8 @@ export type ImportsRow = Schemas["Imports"];
 export type ReleaseRow = Schemas["ReleaseRow"];
 export type PullRequestRow = Schemas["PullRequestRow"];
 export type JobRow = Schemas["JobOut"];
+export type CiHostRow = Schemas["CiHostRow"];
+export type CiRunRow = Schemas["CiRunRow"];
+export type CiRunsRow = Schemas["CiRuns"];
 
 export const v1 = { ...organization, ...projects, ...integrations, ...jobs };

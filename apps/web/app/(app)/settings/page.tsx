@@ -9,6 +9,8 @@ import { gitAuthorOf } from "@/lib/org-settings";
 import { publicOrigin } from "@/lib/origin";
 import { requireOrg } from "@/lib/session";
 import { hostsOf } from "@/lib/source-hosts";
+import { ciHostsOf } from "@/lib/ci";
+import { CiHosts } from "@/features/ci";
 import { ConnectHosts, SourceHosts } from "@/features/integrations";
 import { GitflowCard } from "@/features/organization";
 import { IdentityCard } from "@/features/organization";
@@ -18,7 +20,7 @@ export const dynamic = "force-dynamic";
 export default async function GeneralSettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
   const { session, org } = await requireOrg();
   const canManage = !!session.grants["org.manage"];
-  const [author, hosts, query, apps] = await Promise.all([gitAuthorOf(), hostsOf(org.id), searchParams, oauthApps()]);
+  const [author, hosts, query, apps, ciHosts] = await Promise.all([gitAuthorOf(), hostsOf(org.id), searchParams, oauthApps(), ciHostsOf()]);
   const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind !== "generic").map(async (h) => [h.id, await hostAccess(org.id, h.id)] as const)));
   const origin = publicOrigin(await headers());
   const connected = { github: [] as string[], gitlab: [] as string[], bitbucket: [] as string[] };
@@ -58,6 +60,7 @@ export default async function GeneralSettingsPage({ searchParams }: { searchPara
         </div>
       </Card>
       <SourceHosts hosts={hosts} access={access} canManage={canManage} />
+      <CiHosts hosts={ciHosts} canManage={canManage} />
       {canManage && connected.github.length > 0 && (
         <Link href="/import" className="flex items-center gap-3 rounded-[11px] border border-border px-6 py-4 text-sm transition-colors hover:border-border-hover hover:bg-surface-hover">
           <Download className="size-4 text-secondary" strokeWidth={1.75} />
