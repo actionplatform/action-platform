@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
-import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
-import { Table, Td, Th } from "@/components/ui/table";
+import { Cell, DataTable, Inline } from "@/components/ui/data-table";
 import { type Role, type RoleInfo } from "@/lib/permissions";
 import { addMember, changeRole, inviteMember, kickMember, revokeInvitation } from "./actions";
 
@@ -29,67 +28,49 @@ export function MembersPanel({ org, members, invitations, me, canManage, origin,
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
+  const role = (m: Member) =>
+    canManage ? (
+      <Select size="sm" className="w-36" aria-label={`Role of ${m.name}`} value={m.role === "member" ? "developer" : m.role} disabled={pending} options={ROLE_OPTIONS} onChange={(v) => start(async () => { setError(null); const r = await changeRole(m.id, v as Role); if (!r.ok) setError(r.error); })} />
+    ) : (
+      <Badge>{m.role}</Badge>
+    );
+
   return (
-    <Panel>
-      <PanelHeader
+    <div className="space-y-3">
+      {error && <div className="rounded-md border border-border px-3 py-2 text-[13px] text-secondary">{error}</div>}
+      <DataTable
         title="Members"
-        className="md:flex-nowrap"
-        aside={
-          <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
-            <Badge className="hidden font-mono md:inline-flex">{org.slug}</Badge>
-            <Badge className="md:hidden">{members.length} {members.length === 1 ? "member" : "members"}</Badge>
-            {canManage && (
-              <div className="grid w-full grid-cols-1 gap-2 min-[380px]:grid-cols-2 md:flex md:w-auto">
-                <Button variant="outline" className="min-h-11 w-full md:h-8 md:min-h-0 md:w-auto" onClick={() => setInviting(true)}><Link2 className="size-3.5" strokeWidth={2} /> Copy invite link</Button>
-                <Button className="min-h-11 w-full md:h-8 md:min-h-0 md:w-auto" onClick={() => setAdding(true)}><UserPlus className="size-3.5" strokeWidth={2} /> Add member</Button>
-              </div>
-            )}
-          </div>
-        }
+        rows={members}
+        rowKey={(m) => m.id}
+        noun={["member", "members"]}
+        meta={<span className="font-mono">{org.slug}</span>}
+        minWidth={640}
+        action={canManage ? <><Button size="sm" variant="outline" onClick={() => setInviting(true)}><Link2 className="size-3.5" strokeWidth={2} /> Copy invite link</Button><Button size="sm" onClick={() => setAdding(true)}><UserPlus className="size-3.5" strokeWidth={2} /> Add member</Button></> : undefined}
+        empty={{ icon: UserPlus, title: "No members yet", text: "Add a member or share the invite link." }}
+        columns={[
+          { key: "member", label: "Member", width: 34, render: (m) => <Inline><span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-background text-[11px] font-semibold">{initials(m.name || m.email)}</span><span className="truncate font-medium">{m.name}</span>{m.userId === me && <Badge className="h-5 shrink-0 px-1.5 text-[11px]">You</Badge>}</Inline> },
+          { key: "email", label: "Email", width: 36, hide: "md", render: (m) => <Cell muted title={m.email}>{m.email}</Cell> },
+          { key: "role", label: "Role", width: 22, render: role },
+          { key: "actions", label: "", width: 8, align: "right", render: (m) => canManage ? <button type="button" title="Remove member" aria-label={`Remove ${m.name}`} disabled={pending || m.userId === me} onClick={() => setRemoving(m)} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground disabled:opacity-40"><UserMinus className="size-4" strokeWidth={1.75} /></button> : null },
+        ]}
       />
-      <ul className="divide-y divide-border-subtle md:hidden">
-        {members.map((m) => (
-          <li key={m.id} className="flex items-center gap-3 px-4 py-3">
-            <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-background text-sm font-semibold">{initials(m.name || m.email)}</span>
-            <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 items-center gap-2"><span className="truncate text-sm font-medium">{m.name}</span>{m.userId === me && <Badge className="h-5 shrink-0 px-1.5 text-[11px]">You</Badge>}</div>
-              <div className="truncate text-xs text-secondary" title={m.email}>{m.email}</div>
-            </div>
-            {canManage ? (
-              <Select size="md" className="w-[7.5rem] shrink-0" aria-label={`Role of ${m.name}`} value={m.role === "member" ? "developer" : m.role} disabled={pending} options={ROLE_OPTIONS} onChange={(v) => start(async () => { setError(null); const r = await changeRole(m.id, v as Role); if (!r.ok) setError(r.error); })} />
-            ) : <Badge className="shrink-0">{m.role}</Badge>}
-            {canManage && <button type="button" title="Remove member" aria-label={`Remove ${m.name}`} disabled={pending || m.userId === me} onClick={() => setRemoving(m)} className="flex size-11 shrink-0 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground disabled:opacity-40"><UserMinus className="size-4" strokeWidth={1.75} /></button>}
-          </li>
-        ))}
-      </ul>
-      <div className="hidden md:block">
-      <Table>
-        <thead><tr><Th>member</Th><Th>email</Th><Th>role</Th>{canManage && <Th className="w-12"> </Th>}</tr></thead>
-        <tbody>
-          {members.map((m) => (
-            <tr key={m.id}>
-              <Td>{m.name}{m.userId === me && <span className="ml-2 text-xs text-muted-foreground">you</span>}</Td>
-              <Td className="text-secondary">{m.email}</Td>
-              <Td>
-                {canManage ? (
-                  <Select size="sm" className="w-36" aria-label={`Role of ${m.name}`} value={m.role === "member" ? "developer" : m.role} disabled={pending} options={ROLE_OPTIONS} onChange={(v) => start(async () => { setError(null); const r = await changeRole(m.id, v as Role); if (!r.ok) setError(r.error); })} />
-                ) : <Badge>{m.role}</Badge>}
-              </Td>
-              {canManage && <Td><button type="button" title="Remove member" aria-label={`Remove ${m.name}`} disabled={pending || m.userId === me} onClick={() => setRemoving(m)} className="flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground disabled:opacity-40"><UserMinus className="size-4" strokeWidth={1.75} /></button></Td>}
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-      </div>
       {invitations.length > 0 && (
-        <PanelBody className="border-t border-border">
-          <div className="mb-2 text-xs text-secondary">Pending invitations</div>
-          <ul className="space-y-1">
-            {invitations.map((i) => <InvitationRow key={i.id} invitation={i} origin={origin} canManage={canManage} onError={setError} />)}
-          </ul>
-        </PanelBody>
+        <DataTable
+          title="Pending invitations"
+          rows={invitations}
+          rowKey={(i) => i.id}
+          noun={["invitation", "invitations"]}
+          minWidth={640}
+          empty={{ icon: Mail, title: "No invitations" }}
+          columns={[
+            { key: "email", label: "Email", width: 34, render: (i) => <Inline><Mail className="size-4 shrink-0 text-secondary" strokeWidth={1.75} /><span className="truncate">{i.email}</span></Inline> },
+            { key: "role", label: "Role", width: 14, render: (i) => <Cell muted>{i.role ?? "member"}</Cell> },
+            { key: "by", label: "Invited by", width: 20, hide: "md", render: (i) => <Cell muted title={i.inviter}>{i.inviter}</Cell> },
+            { key: "expires", label: "Expires", width: 14, hide: "sm", render: (i) => <Cell muted>{new Date(i.expiresAt).toLocaleDateString()}</Cell> },
+            { key: "actions", label: "", width: 18, align: "right", render: (i) => <InvitationActions invitation={i} origin={origin} canManage={canManage} onError={setError} /> },
+          ]}
+        />
       )}
-      {error && <PanelBody><div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div></PanelBody>}
       <InviteDialog open={inviting} onClose={() => setInviting(false)} origin={origin} org={org} roles={roles} />
       <AddMemberDialog open={adding} onClose={() => setAdding(false)} org={org} roles={roles} />
       <ConfirmDialog
@@ -102,7 +83,7 @@ export function MembersPanel({ org, members, invitations, me, canManage, origin,
         pending={pending}
         onConfirm={() => { const m = removing; if (m) start(async () => { setError(null); const r = await kickMember(m.id); setRemoving(null); if (!r.ok) setError(r.error); }); }}
       />
-    </Panel>
+    </div>
   );
 }
 
@@ -119,15 +100,13 @@ function CopyLink({ url }: { url: string }) {
   );
 }
 
-function InvitationRow({ invitation, origin, canManage, onError }: { invitation: Pending; origin: string; canManage: boolean; onError: (e: string | null) => void }) {
+function InvitationActions({ invitation, origin, canManage, onError }: { invitation: Pending; origin: string; canManage: boolean; onError: (e: string | null) => void }) {
   const [pending, start] = useTransition();
   return (
-    <li className="flex flex-wrap items-center gap-3 rounded-md px-2 py-2 hover:bg-surface-hover">
-      <Mail className="size-4 text-secondary" strokeWidth={1.75} />
-      <div className="min-w-0 flex-1"><div className="truncate text-sm">{invitation.email}</div><div className="text-xs text-secondary">{invitation.role ?? "member"} · invited by {invitation.inviter} · expires {new Date(invitation.expiresAt).toLocaleDateString()}</div></div>
+    <span className="inline-flex items-center gap-1">
       <CopyLink url={inviteUrl(origin, invitation.id)} />
-      {canManage && <button type="button" title="Revoke invitation" aria-label={`Revoke invitation for ${invitation.email}`} disabled={pending} onClick={() => start(async () => { onError(null); const r = await revokeInvitation(invitation.id); if (!r.ok) onError(r.error); })} className="flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><Trash2 className="size-4" strokeWidth={1.75} /></button>}
-    </li>
+      {canManage && <button type="button" title="Revoke invitation" aria-label={`Revoke invitation for ${invitation.email}`} disabled={pending} onClick={() => start(async () => { onError(null); const r = await revokeInvitation(invitation.id); if (!r.ok) onError(r.error); })} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><Trash2 className="size-4" strokeWidth={1.75} /></button>}
+    </span>
   );
 }
 

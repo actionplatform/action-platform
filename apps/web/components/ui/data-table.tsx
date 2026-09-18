@@ -23,7 +23,7 @@ export type PageState = { total: number; page: number; per: number };
 type Props<T> = {
   title: string;
   rows: T[];
-  paging: PageState;
+  paging?: PageState;
   rowKey: (row: T) => string;
   columns: Column<T>[];
   noun: [string, string];
@@ -35,6 +35,7 @@ type Props<T> = {
   pageKey?: string;
   minWidth?: number;
   rowClassName?: (row: T) => string | undefined;
+  description?: ReactNode;
 };
 
 export function NewLink({ href, label }: { href: string; label: string }) {
@@ -63,11 +64,12 @@ function usePageNav(key = "") {
   };
 }
 
-export function DataTable<T>({ title, rows, paging, rowKey, columns, noun, meta, action, newHref, newLabel = "New", empty, pageKey, minWidth = 720, rowClassName }: Props<T>) {
+export function DataTable<T>({ title, rows, paging: paged, rowKey, columns, noun, meta, action, newHref, newLabel = "New", empty, pageKey, minWidth = 720, rowClassName, description }: Props<T>) {
   const nav = usePageNav(pageKey);
-  const pages = Math.max(1, Math.ceil(paging.total / paging.per));
+  const paging = paged ?? { total: rows.length, page: 1, per: rows.length };
+  const pages = Math.max(1, Math.ceil(paging.total / Math.max(1, paging.per)));
   const offset = (paging.page - 1) * paging.per;
-  const slots = Math.max(0, paging.per - rows.length);
+  const slots = paged ? Math.max(0, paging.per - rows.length) : 0;
   const from = paging.total === 0 ? 0 : offset + 1;
   const to = Math.min(paging.total, offset + rows.length);
   const cell = "px-2 first:pl-4 last:pr-4";
@@ -75,10 +77,13 @@ export function DataTable<T>({ title, rows, paging, rowKey, columns, noun, meta,
 
   return (
     <section className="overflow-hidden border border-border bg-surface" style={{ borderRadius: TABLE.radius }}>
-      <header className="flex items-center justify-between gap-4 border-b border-border px-4" style={{ height: TABLE.toolbar }}>
-        <div className="flex min-w-0 items-baseline gap-3">
-          <h2 className="truncate text-sm font-semibold">{title}</h2>
-          <span className="hidden truncate text-[13px] text-secondary sm:block">{paging.total} {paging.total === 1 ? noun[0] : noun[1]}{meta && <> · {meta}</>}</span>
+      <header className="flex items-center justify-between gap-4 border-b border-border px-4" style={{ minHeight: TABLE.toolbar }}>
+        <div className="min-w-0 py-2">
+          <div className="flex min-w-0 items-baseline gap-3">
+            <h2 className="truncate text-sm font-semibold">{title}</h2>
+            <span className="hidden truncate text-[13px] text-secondary sm:block">{paging.total} {paging.total === 1 ? noun[0] : noun[1]}{meta && <> · {meta}</>}</span>
+          </div>
+          {description && <p className="mt-0.5 truncate text-[13px] text-secondary">{description}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {action}
@@ -116,7 +121,7 @@ export function DataTable<T>({ title, rows, paging, rowKey, columns, noun, meta,
         </table>
       </div>
 
-      <footer className="flex items-center justify-between gap-4 border-t border-border px-4 text-[13px] text-secondary" style={{ height: TABLE.footer }}>
+      {paged && <footer className="flex items-center justify-between gap-4 border-t border-border px-4 text-[13px] text-secondary" style={{ height: TABLE.footer }}>
         <span className="truncate">{from}–{to} of {paging.total} {paging.total === 1 ? noun[0] : noun[1]}</span>
         <div className="flex shrink-0 items-center gap-2">
           <Select size="sm" value={String(paging.per)} onChange={(v) => nav({ per: Number(v) })} aria-label="Items per page" options={PER_PAGE.map((n) => ({ value: String(n), label: `${n} per page` }))} className="w-32" />
@@ -124,7 +129,7 @@ export function DataTable<T>({ title, rows, paging, rowKey, columns, noun, meta,
           <span className="tabular-nums">{paging.page} / {pages}</span>
           <Button size="icon" variant="ghost" aria-label="Next page" disabled={paging.page >= pages} onClick={() => nav({ page: paging.page + 1 })}><ChevronRight className="size-4" strokeWidth={1.75} /></Button>
         </div>
-      </footer>
+      </footer>}
     </section>
   );
 }

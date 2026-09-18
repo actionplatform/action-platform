@@ -1,14 +1,16 @@
 "use client";
 
-import { Check, Cloud, ExternalLink, GitCommitHorizontal, Save, Upload } from "lucide-react";
+import { Check, Cloud, ExternalLink, GitCommitHorizontal, Save, Upload, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Hint } from "@/components/ui/hint";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { CheckIndicator } from "@/components/ui/check-indicator";
+import { ActionField, ActionFields, ActionForm, ActionSummary } from "@/components/ui/action-form";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
+import { useAction } from "@/lib/use-action";
+import { RunAlert, summarize } from "@/features/deployments";
 import { Field, Input } from "@/components/ui/input";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
@@ -144,86 +146,82 @@ function CommitBar({ view }: { view: AppView }) {
 function DeployTargetPanel({ view, clouds }: { view: AppView; clouds: CloudOption[] }) {
   const router = useRouter();
   const current = typeof view.deploy.target === "string" ? String(view.deploy.target) : null;
-  const [picked, setPicked] = useState<CloudOption | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, start] = useTransition();
+  const [name, setName] = useState(current ?? clouds[0]?.name ?? "");
+  const chosen = clouds.find((c) => c.name === name) ?? null;
+  const can = view.can["app.configure"];
+  const action = useAction<never, { target: string }>({
+    run: () => setCloudTarget(view.projectId, view.registryId, chosen!.name, chosen!.source),
+    onDone: () => router.refresh(),
+  });
+  const blocker = !can ? "Your role cannot change the configuration." : clouds.length === 0 ? `No overlay supports ${view.type ?? "this type"} / ${view.language ?? "this language"}.` : chosen && chosen.name === current ? "Already the target." : null;
 
   return (
-    <Panel>
-      <PanelHeader title="Deploy target" aside={current ? <Badge className="font-mono">{current}</Badge> : <Badge>Not configured</Badge>} />
-      <PanelBody className="space-y-3">
-        <p className="text-sm text-secondary">Adds the cloud overlay&apos;s files as pending changes and records <span className="font-mono">[deploy] target</span> in <span className="font-mono">platform.toml</span>. Replaces the previous target.</p>
-        {clouds.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No overlay supports {view.type ?? "this type"} / {view.language ?? "this language"}.</p>
-        ) : (
-          <div className="grid gap-2 sm:grid-cols-2">
-            {clouds.map((c) => {
-              const active = c.name === current;
-              return (
-                <button key={`${c.source}:${c.name}`} type="button" disabled={pending || active || !view.can["app.configure"]} onClick={() => setPicked(c)} className={cn("flex items-start gap-3 rounded-md border p-3 text-left transition-colors", active ? "border-foreground" : "border-border hover:border-border-hover")}>
-                  <Cloud className="mt-0.5 size-4 shrink-0 text-secondary" strokeWidth={1.75} />
-                  <span className="min-w-0 flex-1"><span className="flex items-center gap-2 font-mono text-sm">{c.name}{c.source !== "official" && <Badge className="font-mono">{c.source}</Badge>}</span><span className="block text-xs text-muted-foreground">{c.description}</span></span>
-                  <CheckIndicator selected={active} />
-                </button>
-              );
-            })}
-          </div>
-        )}
-        {error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
-      </PanelBody>
-      <ConfirmDialog
-        open={picked !== null}
-        onClose={() => setPicked(null)}
-        title={`Set deploy target to ${picked?.name}?`}
-        description={current ? `Replaces ${current}. Overlay files become pending changes; commit them afterwards.` : "Overlay files become pending changes; commit them afterwards."}
-        confirmLabel="Apply overlay"
-        pending={pending}
-        onConfirm={() => { const t = picked; if (t) start(async () => { setError(null); const r = await setCloudTarget(view.projectId, view.registryId, t.name, t.source); setPicked(null); if (r.ok) router.refresh(); else setError(r.error); }); }}
-      />
-    </Panel>
+    <ActionForm
+      title="Deploy target"
+      aside={current ? <Badge className="font-mono">{current}</Badge> : <Badge>Not configured</Badge>}
+      primary={{ label: current && chosen && chosen.name !== current ? "Replace target" : "Apply overlay", icon: Cloud, onClick: action.confirm, disabled: !!blocker || !chosen, busy: action.busy, busyLabel: "Applying…" }}
+      blocker={action.error ? null : blocker}
+      summary={[{ label: "Current", value: current ?? "—" }, { label: "Chosen", value: chosen?.name ?? "—" }, { label: "Source", value: chosen?.source ?? "—" }, { label: "Result", value: "pending changes" }]}
+      alerts={action.error ? <RunAlert tone="danger" title="Could not apply" summary={summarize(action.error)} log={action.error} /> : null}
+      dialogs={
+        <ConfirmDialog open={action.step === "confirming"} onClose={action.cancel} title={`Set deploy target to ${chosen?.name}?`} confirmLabel="Apply overlay" pending={action.busy} onConfirm={action.execute}>
+          <ActionSummary items={[{ label: "Target", value: chosen?.name ?? "—" }, { label: "Replaces", value: current ?? "nothing" }, { label: "Source", value: chosen?.source ?? "—" }, { label: "Then", value: "commit the changes" }]} />
+          <p className="mt-4 text-sm text-secondary">Adds the cloud overlay&apos;s files as pending changes and records <span className="font-mono">[deploy] target</span> in <span className="font-mono">platform.toml</span>. Nothing reaches the repository until you commit.</p>
+        </ConfirmDialog>
+      }
+    >
+      <ActionFields>
+        <ActionField label="Cloud" hint={<Hint text="The overlay brings the deploy template, a workflow, a health route and an adapter per language." />}>
+          <Select size="lg" mono icon={<Cloud className="size-4" strokeWidth={1.75} />} value={name} onChange={(v) => { setName(v); action.clearOutcome(); }} disabled={!can || clouds.length === 0} options={clouds.map((c) => ({ value: c.name, label: c.name, hint: c.name === current ? "current" : c.source !== "official" ? c.source : undefined }))} />
+        </ActionField>
+        <ActionField label="About">
+          <div className="flex h-[42px] items-center truncate rounded-[7px] border border-dashed border-border px-3 text-sm text-secondary" title={chosen?.description}>{chosen?.description ?? "Pick a cloud"}</div>
+        </ActionField>
+      </ActionFields>
+    </ActionForm>
   );
 }
 
 function ServicesPanel({ view, services }: { view: AppView; services: ServiceOption[] }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [name, setName] = useState(services[0]?.name ?? "");
   const [provider, setProvider] = useState<string>(services[0]?.providers[0] ?? "");
-  const [error, setError] = useState<string | null>(null);
-  const [pending, start] = useTransition();
   const chosen = services.find((s) => s.name === name);
+  const can = view.can["app.configure"];
+  const action = useAction<never, { name: string }>({
+    run: () => addService(view.projectId, view.registryId, name, provider || null, chosen?.source ?? null),
+    onDone: () => router.refresh(),
+  });
+  const blocker = !can ? "Your role cannot change the configuration." : services.length === 0 ? "The templates matrix offers no service." : view.services.includes(name) ? `${name} is already added.` : null;
 
   return (
-    <Panel>
-      <PanelHeader title="Services" aside={<Button size="sm" variant="outline" disabled={services.length === 0 || !view.can["app.configure"]} onClick={() => setOpen(true)}>Add service</Button>} />
-      <PanelBody className="space-y-2 text-sm">
-        {view.services.length === 0 ? <p className="text-secondary">No services. Databases, caches and storage come as <span className="font-mono">services/&lt;name&gt;/</span> with up and link scripts.</p> : (
-          <ul className="space-y-1.5">
-            {view.services.map((s) => <li key={s} className="flex items-center gap-2"><Check className="size-3.5" strokeWidth={2.5} /><span className="font-mono text-[13px]">{s}</span></li>)}
-          </ul>
-        )}
-        {error && <div className="rounded-md border border-foreground px-3 py-2">{error}</div>}
-      </PanelBody>
-      <Dialog
-        open={open}
-        onClose={() => !pending && setOpen(false)}
-        title="Add service"
-        description="Adds services/<name>/ as pending changes and records it under [services]."
-        footer={<><Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>Cancel</Button><Button disabled={pending || !name} onClick={() => start(async () => { setError(null); const r = await addService(view.projectId, view.registryId, name, provider || null, chosen?.source ?? null); if (r.ok) { setOpen(false); router.refresh(); } else setError(r.error); })}>{pending ? "Adding…" : "Add service"}</Button></>}
-      >
-        <div className="space-y-3">
-          <label className="block text-sm"><span className="mb-1 block text-xs text-secondary">Service</span>
-            <Select mono value={name} onChange={(v) => { setName(v); setProvider(services.find((s) => s.name === v)?.providers[0] ?? ""); }} options={services.map((s) => ({ value: s.name, label: s.name, hint: s.source !== "official" ? s.source : undefined }))} />
-          </label>
-          {chosen && chosen.providers.length > 0 && (
-            <label className="block text-sm"><span className="mb-1 block text-xs text-secondary">Provider</span>
-              <Select mono value={provider} onChange={setProvider} options={chosen.providers.map((p) => ({ value: p, label: p }))} />
-            </label>
+    <ActionForm
+      title="Services"
+      aside={<Badge>{view.services.length} {view.services.length === 1 ? "service" : "services"}</Badge>}
+      primary={{ label: "Add service", icon: Plus, onClick: action.confirm, disabled: !!blocker || !name, busy: action.busy, busyLabel: "Adding…" }}
+      blocker={action.error ? null : blocker}
+      summary={[{ label: "Installed", value: view.services.join(", ") || "none" }, { label: "Chosen", value: name || "—" }, { label: "Provider", value: provider || "—" }, { label: "Result", value: "pending changes" }]}
+      alerts={action.error ? <RunAlert tone="danger" title="Could not add" summary={summarize(action.error)} log={action.error} /> : null}
+      dialogs={
+        <ConfirmDialog open={action.step === "confirming"} onClose={action.cancel} title={`Add ${name}?`} confirmLabel="Add service" pending={action.busy} onConfirm={action.execute}>
+          <ActionSummary items={[{ label: "Service", value: name }, { label: "Provider", value: provider || "—" }, { label: "Files", value: `services/${name}/` }, { label: "Then", value: "commit the changes" }]} />
+          <p className="mt-4 text-sm text-secondary">Adds <span className="font-mono">services/{name}/</span> with up and link scripts as pending changes and records it under <span className="font-mono">[services]</span>.</p>
+        </ConfirmDialog>
+      }
+    >
+      <ActionFields>
+        <ActionField label="Service" hint={<Hint text="Databases, caches and storage come as services/<name>/ with up and link scripts." />}>
+          <Select size="lg" mono value={name} onChange={(v) => { setName(v); setProvider(services.find((s) => s.name === v)?.providers[0] ?? ""); action.clearOutcome(); }} disabled={!can || services.length === 0} options={services.map((s) => ({ value: s.name, label: s.name, hint: view.services.includes(s.name) ? "installed" : s.source !== "official" ? s.source : undefined }))} />
+        </ActionField>
+        <ActionField label="Provider">
+          {chosen && chosen.providers.length > 0 ? (
+            <Select size="lg" mono value={provider} onChange={(v) => { setProvider(v); action.clearOutcome(); }} disabled={!can} options={chosen.providers.map((p) => ({ value: p, label: p }))} />
+          ) : (
+            <div className="flex h-[42px] items-center rounded-[7px] border border-dashed border-border px-3 font-mono text-sm text-muted-foreground">{chosen ? "single provider" : "—"}</div>
           )}
-          {chosen && <p className="text-xs text-muted-foreground">{chosen.description}</p>}
-        </div>
-      </Dialog>
-    </Panel>
+        </ActionField>
+      </ActionFields>
+    </ActionForm>
   );
 }
 

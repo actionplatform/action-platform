@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
+import { Cell, DataTable, Inline } from "@/components/ui/data-table";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { addMemberToTeam, editTeam, removeMemberFromTeam, removeTeam, setProjectTeam } from "./teams-actions";
 
@@ -34,19 +35,22 @@ function MembersPanel({ team, members, candidates, canManage }: { team: { id: st
   const [pending, start] = useTransition();
 
   return (
-    <Panel>
-      <PanelHeader title="Members" aside={canManage && <Button size="sm" variant="outline" disabled={candidates.length === 0} onClick={() => { setUserId(candidates[0]?.userId ?? ""); setAdding(true); }}><Plus className="size-3.5" strokeWidth={2} /> Add member</Button>} />
-      <PanelBody className="space-y-1">
-        {members.length === 0 && <p className="text-sm text-secondary">Nobody here yet. Members must belong to the organization first.</p>}
-        {members.map((m) => (
-          <div key={m.id} className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-surface-hover">
-            <div className="flex size-8 items-center justify-center rounded-full border border-border text-xs font-semibold uppercase">{m.name.slice(0, 2)}</div>
-            <div className="min-w-0 flex-1"><div className="truncate text-sm">{m.name}</div><div className="truncate text-xs text-secondary">{m.email}</div></div>
-            {canManage && <button type="button" title="Remove from team" aria-label={`Remove ${m.name} from team`} disabled={pending} onClick={() => start(async () => { setError(null); const r = await removeMemberFromTeam(team.id, m.id); if (!r.ok) setError(r.error); })} className="flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><UserMinus className="size-4" strokeWidth={1.75} /></button>}
-          </div>
-        ))}
-        {error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
-      </PanelBody>
+    <div className="space-y-3">
+      {error && <div className="rounded-md border border-border px-3 py-2 text-[13px] text-secondary">{error}</div>}
+      <DataTable
+        title="Members"
+        rows={members}
+        rowKey={(m) => m.id}
+        noun={["member", "members"]}
+        minWidth={480}
+        action={canManage ? <Button size="sm" variant="outline" disabled={candidates.length === 0} onClick={() => { setUserId(candidates[0]?.userId ?? ""); setAdding(true); }}><Plus className="size-3.5" strokeWidth={2} /> Add member</Button> : undefined}
+        empty={{ icon: Users, title: "Nobody here yet", text: "Members must belong to the organization first." }}
+        columns={[
+          { key: "name", label: "Member", width: 45, render: (m) => <Inline><span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border text-[11px] font-semibold uppercase">{m.name.slice(0, 2)}</span><span className="truncate font-medium">{m.name}</span></Inline> },
+          { key: "email", label: "Email", width: 45, hide: "sm", render: (m) => <Cell muted title={m.email}>{m.email}</Cell> },
+          { key: "actions", label: "", width: 10, align: "right", render: (m) => canManage ? <button type="button" title="Remove from team" aria-label={`Remove ${m.name} from team`} disabled={pending} onClick={() => start(async () => { setError(null); const r = await removeMemberFromTeam(team.id, m.id); if (!r.ok) setError(r.error); })} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><UserMinus className="size-4" strokeWidth={1.75} /></button> : null },
+        ]}
+      />
       <Dialog
         open={adding}
         onClose={() => !pending && setAdding(false)}
@@ -58,7 +62,7 @@ function MembersPanel({ team, members, candidates, canManage }: { team: { id: st
           <Select autoFocus value={userId} onChange={setUserId} options={candidates.map((c) => ({ value: c.userId, label: c.name, hint: c.email }))} />
         </label>
       </Dialog>
-    </Panel>
+    </div>
   );
 }
 
@@ -70,20 +74,22 @@ function ProjectsPanel({ team, projects, candidates, canManage }: { team: { id: 
   const chosen = candidates.find((c) => c.id === projectId);
 
   return (
-    <Panel>
-      <PanelHeader title="Projects" aside={canManage && <Button size="sm" variant="outline" disabled={candidates.length === 0} onClick={() => { setProjectId(candidates[0]?.id ?? ""); setAdding(true); }}><Plus className="size-3.5" strokeWidth={2} /> Assign project</Button>} />
-      <PanelBody className="space-y-1">
-        {projects.length === 0 && <p className="text-sm text-secondary">No projects assigned. A project belongs to one team at a time.</p>}
-        {projects.map((p) => (
-          <div key={p.id} className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-surface-hover">
-            <div className="flex size-8 items-center justify-center rounded-md border border-border"><FolderGit2 className="size-4 text-secondary" strokeWidth={1.75} /></div>
-            <div className="min-w-0 flex-1"><div className="truncate text-sm">{p.name}</div><div className="truncate font-mono text-xs text-secondary">{p.slug}</div></div>
-            <Link href={`/projects/${p.id}`} title="Open project" aria-label={`Open ${p.name}`} className="flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><ArrowUpRight className="size-4" strokeWidth={1.75} /></Link>
-            {canManage && <button type="button" title="Unassign" aria-label={`Unassign ${p.name}`} disabled={pending} onClick={() => start(async () => { setError(null); const r = await setProjectTeam(team.id, p.id, false); if (!r.ok) setError(r.error); })} className="flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><X className="size-4" strokeWidth={1.75} /></button>}
-          </div>
-        ))}
-        {error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
-      </PanelBody>
+    <div className="space-y-3">
+      {error && <div className="rounded-md border border-border px-3 py-2 text-[13px] text-secondary">{error}</div>}
+      <DataTable
+        title="Projects"
+        rows={projects}
+        rowKey={(p) => p.id}
+        noun={["project", "projects"]}
+        minWidth={480}
+        action={canManage ? <Button size="sm" variant="outline" disabled={candidates.length === 0} onClick={() => { setProjectId(candidates[0]?.id ?? ""); setAdding(true); }}><Plus className="size-3.5" strokeWidth={2} /> Assign project</Button> : undefined}
+        empty={{ icon: FolderGit2, title: "No projects assigned", text: "A project belongs to one team at a time." }}
+        columns={[
+          { key: "name", label: "Project", width: 45, render: (p) => <Inline><FolderGit2 className="size-4 shrink-0 text-secondary" strokeWidth={1.75} /><Link href={`/projects/${p.id}`} className="truncate font-medium hover:underline underline-offset-4">{p.name}</Link></Inline> },
+          { key: "slug", label: "Slug", width: 40, hide: "sm", render: (p) => <Cell mono muted>{p.slug}</Cell> },
+          { key: "actions", label: "", width: 15, align: "right", render: (p) => <span className="inline-flex items-center gap-1"><Link href={`/projects/${p.id}`} title="Open project" aria-label={`Open ${p.name}`} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><ArrowUpRight className="size-4" strokeWidth={1.75} /></Link>{canManage && <button type="button" title="Unassign" aria-label={`Unassign ${p.name}`} disabled={pending} onClick={() => start(async () => { setError(null); const r = await setProjectTeam(team.id, p.id, false); if (!r.ok) setError(r.error); })} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><X className="size-4" strokeWidth={1.75} /></button>}</span> },
+        ]}
+      />
       <Dialog
         open={adding}
         onClose={() => !pending && setAdding(false)}
@@ -98,7 +104,7 @@ function ProjectsPanel({ team, projects, candidates, canManage }: { team: { id: 
           {chosen?.teamName && <p className="text-xs text-muted-foreground">Currently under {chosen.teamName}; it moves here.</p>}
         </div>
       </Dialog>
-    </Panel>
+    </div>
   );
 }
 
