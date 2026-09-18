@@ -47,6 +47,26 @@ class CiService:
 
         return self.sync_runs(organization_id, app, self.context.repo_of(app))
 
+    def start(self, organization_id: str, app: App, ref: str) -> dict:
+        """Start a run of the app's job on `ref` and import the runs right after, so the new one shows."""
+        if self.context is None:
+            raise ProviderError("CI start needs the app's workspace")
+
+        repo = self.context.repo_of(app)
+        runner = self.runner_for(organization_id, app, repo)
+
+        try:
+            started = runner.start(app.ci_job, ref)
+        except NotImplementedError as e:
+            raise ProviderError(str(e)) from e
+
+        try:
+            self.sync_runs(organization_id, app, repo)
+        except ProviderError:
+            pass
+
+        return {"id": started.id, "url": started.url, "ref": ref}
+
     def page(
         self,
         organization_id: str,

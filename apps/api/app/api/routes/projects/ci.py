@@ -2,6 +2,8 @@
 
 from fastapi import APIRouter, HTTPException
 
+from app.core.errors import Invalid
+
 from action_platform.core.exception import ActionPlatformError
 from app.api.dependencies import (
     CallerDep,
@@ -80,3 +82,26 @@ def sync_ci(
         error = str(e)
 
     return ci.page(org.id, app, page, per, error)
+
+
+@router.post("/projects/{project_id}/apps/{app_id}/ci/run", status_code=202)
+def start_ci(
+    project_id: str,
+    app_id: str,
+    body: schemas.CiStartRequest,
+    org: OrgDep,
+    caller: CallerDep,
+    writes: ProjectsRepoDep,
+    ci: CiDep,
+) -> schemas.CiStarted:
+    allowed(caller, org, "app.flow", whole_org=False)
+    project = project_of(writes, org, project_id)
+    app = app_of(writes, caller, project, app_id)
+
+    if not body.ref.strip():
+        raise Invalid("a run starts on a branch or tag: ref is required")
+
+    try:
+        return schemas.CiStarted(**ci.start(org.id, app, body.ref.strip()))
+    except ActionPlatformError as e:
+        raise Invalid(str(e)) from e

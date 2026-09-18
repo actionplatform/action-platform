@@ -10,5 +10,5 @@ export default async function CiPage({ params, searchParams }: { params: Promise
   if (!loaded.ok) return null;
   const { view } = loaded;
   const state = await ciOf(view.projectId, view.appId, page, per);
-  return <RunsTable projectId={view.projectId} appId={view.appId} state={state} canSync={!!view.can["app.sync"]} connectHref={view.can["app.configure"] ? `/projects/${view.projectId}/apps/${view.appId}/ci/connect` : null} />;
+  return <RunsTable projectId={view.projectId} appId={view.appId} state={state} canSync={!!view.can["app.sync"]} connectHref={view.can["app.configure"] ? `/projects/${view.projectId}/apps/${view.appId}/ci/connect` : null} canRun={!!view.can["app.flow"]} defaultRef={view.branch} />;
 }

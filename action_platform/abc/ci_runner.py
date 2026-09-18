@@ -32,6 +32,10 @@ class CIRunner(ABC):
         """Enqueue pipeline run."""
         raise NotImplementedError(f"{self.name} cannot trigger runs")
 
+    def start(self, job: str, ref: str, params: dict | None = None) -> "RunRef":
+        """Start a run of `job` on `ref` (a branch or tag) from outside a release — what the CI tab's Run button does."""
+        raise NotImplementedError(f"{self.name} cannot start runs")
+
     def wait(self, ctx: "Context", run: "RunRef", timeout: int = 1800) -> "RunResult":
         """Block until pipeline finishes or timeout."""
         raise NotImplementedError(f"{self.name} cannot wait for runs")

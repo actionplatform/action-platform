@@ -11,6 +11,7 @@ export const CI_HOST_KINDS = [
 export type CiHostKind = (typeof CI_HOST_KINDS)[number]["id"];
 
 export const CI_LABELS: Record<string, string> = { jenkins: "Jenkins", github_actions: "GitHub Actions", gitlab_ci: "GitLab CI", bitbucket_pipelines: "Bitbucket Pipelines", none: "None" };
+export const EMBEDDED_CI: Record<string, string> = { github: "GitHub Actions", gitlab: "GitLab CI", bitbucket: "Bitbucket Pipelines" };
 
 export type CiRunStatus = "queued" | "running" | "success" | "failure" | "unstable" | "aborted" | "unknown";
 
