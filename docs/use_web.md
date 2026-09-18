@@ -83,15 +83,15 @@ Fetches the remote and rebuilds the clone on the branch the app is on — the re
 
 ### Releases
 
-**Create release** — left: the release branch and the increment Patch / Minor / Major with current → next; right: the release name and Markdown notes (they go into `CHANGELOG.md` and the release on the code host). **Preview changelog** is the dry run; **Create release X.Y.Z** asks to confirm (a Major asks twice).
+The tab lists the app's releases — version, tag, name, author, commit, published — paginated, with the page size to choose (10, 25, 50, 100); a row's menu opens the release on the host, copies the tag or the SHA, shows the changelog. **New release** opens its own page: left, the release branch and the increment Patch / Minor / Major with current → next; right, the release name and Markdown notes (they go into `CHANGELOG.md` and the release on the code host). **Preview changelog** is the dry run; **Create release X.Y.Z** asks to confirm (a Major asks twice).
 
-Refused when the tag exists, the branch is not on the remote, the tree is dirty or the branch policy fails. Off `main`/`master` it is an `-rc.N` pre-release. **Release history** lists them with a menu: open on the host, copy tag or SHA, view changelog. The model: [releases](concept_releases.md).
+Refused when the tag exists, the branch is not on the remote, the tree is dirty or the branch policy fails. Off `main`/`master` it is an `-rc.N` pre-release. The model: [releases](concept_releases.md).
 
 ### Deployments
 
-**Deploy**: a release, an environment `dev` or `prod` → **Run preflight** (checks only) → **Deploy to <env>**. The job runs on the worker and the row lands in the history at once. One deploy at a time per environment: the button waits while one is live. A failure shows a compact alert with *View logs* and *Copy error*.
+The tab lists. **Targets** shows one block per target the manifest declares — kind, who runs it (the platform, GitHub Actions with its workflow, Jenkins with its job, or a person), the live version per stage and the last deliveries with status up to *Verified*, meaning the version was found at the destination; **Sync** imports what the observed pipelines shipped, a manual target takes *Record*. **Platform runs** lists the platform's own deploys, preflights and tear-downs — status, stage, type, version, duration, who, when — paginated with the page size to choose; a row expands into logs, timestamps, *View details* and *Redeploy*.
 
-**Target** summarizes `[deploy]` from `platform.toml`. **Targets** shows one block per target the manifest declares — kind, who runs it (the platform, GitHub Actions with its workflow, Jenkins with its job, or a person), the live version per stage and the last deliveries with status up to *Verified*, meaning the version was found at the destination. **Sync** imports what the observed pipelines shipped; a manual target takes *Record*. **Deployment history** lists the platform's own runs: status, stage, type (Deploy, Preflight, Tear down), version, duration, who, when; a row expands into logs, timestamps, *View details* and *Redeploy*. Every deployment ships a release — a tag, never a branch. The model: [deployments](concept_deployments.md).
+**New deployment** opens its own page: a release, an environment `dev` or `prod` → **Run preflight** (checks only) → **Deploy to <env>**. The job runs on the worker and the row lands in the list at once. One deploy at a time per environment: the button waits while one is live. A failure shows a compact alert with *View logs* and *Copy error*. **Target** beside it summarizes `[deploy]` from `platform.toml`. Every deployment ships a release — a tag, never a branch. The model: [deployments](concept_deployments.md).
 
 ### Activity
 

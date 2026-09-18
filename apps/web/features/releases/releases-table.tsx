@@ -1,11 +1,13 @@
 "use client";
 
-import { MoreHorizontal, Tag } from "lucide-react";
+import { MoreHorizontal, Plus, Tag } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
+import { Pagination, usePagination } from "@/components/ui/pagination";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import type { Release } from "@/lib/api";
 import type { StoredRelease } from "@/lib/releases";
@@ -27,9 +29,12 @@ export function toRows(stored: StoredRelease[], fromGit: Release[], repositoryUr
   return fromGit.map((r) => ({ tag: r.tag, version: r.version, name: null, body: r.subject, url: repositoryUrl ? `${repositoryUrl}/releases/tag/${r.tag}` : null, author: null, sha: r.sha, prerelease: r.prerelease, draft: false, date: r.date, source: "git" }));
 }
 
-export function ReleasesTable({ stored, fromGit, repositoryUrl }: { stored: StoredRelease[]; fromGit: Release[]; repositoryUrl: string | null }) {
-  const rows = toRows(stored, fromGit, repositoryUrl);
-  const source = rows[0]?.source ?? "git";
+export function ReleasesTable({ stored, fromGit, repositoryUrl, newHref }: { stored: StoredRelease[]; fromGit: Release[]; repositoryUrl: string | null; newHref?: string | null }) {
+  const all = toRows(stored, fromGit, repositoryUrl);
+  const paging = usePagination(all);
+  const rows = paging.rows;
+  const offset = (paging.page - 1) * paging.per;
+  const source = all[0]?.source ?? "git";
   const [changelog, setChangelog] = useState<Row | null>(null);
   const copy = (text: string) => { navigator.clipboard.writeText(text).catch(() => undefined); };
   const actions = (r: Row) => [
@@ -42,12 +47,20 @@ export function ReleasesTable({ stored, fromGit, repositoryUrl }: { stored: Stor
 
   return (
     <Panel>
-      <PanelHeader title="Release history" aside={<span className="text-[13px] text-secondary">{rows.length} {rows.length === 1 ? "release" : "releases"} · {SOURCE[source] ?? source}</span>} />
-      {rows.length === 0 ? (
+      <PanelHeader
+        title="Releases"
+        aside={
+          <div className="flex items-center gap-3">
+            <span className="hidden text-[13px] text-secondary sm:block">{all.length} {all.length === 1 ? "release" : "releases"} · {SOURCE[source] ?? source}</span>
+            {newHref && <Link href={newHref} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium hover:border-border-hover hover:bg-surface-hover"><Plus className="size-3.5" strokeWidth={2} /> New release</Link>}
+          </div>
+        }
+      />
+      {all.length === 0 ? (
         <div className="flex flex-col items-center px-4 py-10 text-center">
           <Tag className="size-5 text-secondary" strokeWidth={1.5} />
           <div className="mt-3 text-sm font-medium">No releases yet</div>
-          <div className="text-[13px] text-secondary">Create the first one above, or Sync to import releases from the code host.</div>
+          <div className="text-[13px] text-secondary">Create the first one with New release, or Sync to import releases from the code host.</div>
         </div>
       ) : (
         <>
@@ -59,7 +72,7 @@ export function ReleasesTable({ stored, fromGit, repositoryUrl }: { stored: Stor
                   <td className="px-4 py-2.5">
                     <span className="flex flex-wrap items-center gap-2">
                       {r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" className="font-mono font-medium hover:underline underline-offset-4">{r.version}</a> : <span className="font-mono font-medium">{r.version}</span>}
-                      {i === 0 && !r.draft && <Badge tone="ok">Latest</Badge>}
+                      {offset + i === 0 && !r.draft && <Badge tone="ok">Latest</Badge>}
                       {r.prerelease && <Badge>Pre-release</Badge>}
                       {r.draft && <Badge>Draft</Badge>}
                     </span>
@@ -79,7 +92,7 @@ export function ReleasesTable({ stored, fromGit, repositoryUrl }: { stored: Stor
               <li key={r.tag} className="px-4 py-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono font-medium">{r.version}</span>
-                  {i === 0 && !r.draft && <Badge tone="ok">Latest</Badge>}
+                  {offset + i === 0 && !r.draft && <Badge tone="ok">Latest</Badge>}
                   {r.prerelease && <Badge>Pre-release</Badge>}
                   <span className="ml-auto text-xs text-secondary">{formatDate(r.date)}</span>
                   {menu(r)}
@@ -89,6 +102,7 @@ export function ReleasesTable({ stored, fromGit, repositoryUrl }: { stored: Stor
               </li>
             ))}
           </ul>
+          <Pagination page={paging.page} pages={paging.pages} per={paging.per} total={paging.total} onPage={paging.setPage} onPer={paging.setPer} noun={["release", "releases"]} />
         </>
       )}
       <Dialog open={changelog !== null} onClose={() => setChangelog(null)} title={changelog ? `${changelog.name ?? changelog.tag}` : ""} description={changelog ? `${changelog.tag}${changelog.sha ? ` · ${changelog.sha}` : ""}${changelog.date ? ` · ${formatDate(changelog.date)}` : ""}` : undefined} className="max-w-2xl">

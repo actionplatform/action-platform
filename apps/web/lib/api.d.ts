@@ -6270,6 +6270,7 @@ export interface operations {
             query: {
                 app: string;
                 kind?: string | null;
+                limit?: number;
             };
             header?: never;
             path?: never;
