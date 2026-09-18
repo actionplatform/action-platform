@@ -14,6 +14,7 @@ from app.services.activity import ActivityService
 from app.services.ci import CiService
 from app.services.deployments import DeploymentRecords
 from app.services.projects.apps import AppService
+from app.services.workspace.state import GitStateService
 from app.services.projects.organization_import.directory import ImportDirectory
 from app.core.errors import Invalid
 
@@ -145,8 +146,17 @@ class ProjectService:
                 self.writes.set_app_host(app, host_id)
 
         return self.activity.sync_all(
-            app.id, self.writes.credentials_for(org.id, app.source_host_id), repo
+            app.id,
+            self.writes.credentials_for(org.id, app.source_host_id),
+            repo,
+            tags=self._tags_of(app),
         )
+
+    def _tags_of(self, app: App) -> list[dict]:
+        try:
+            return GitStateService(self.apps.registry).releases(app.registry_id)
+        except ActionPlatformError:
+            return []
 
     def _repo_of(self, app: App) -> str:
         detail = self.apps.detail(app.registry_id)

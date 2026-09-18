@@ -1,4 +1,4 @@
-"""Releases and pull requests of an app, imported from its code host into the `release` and `pull_request` tables."""
+"""Releases and pull requests of an app, imported from its code host into the `release` and `pull_request` tables; the clone's tags land in `release` too, so every tag has a row."""
 
 import uuid
 from typing import Any, Optional
@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session as DbSession
 
 from action_platform.core.exception import ProviderError
 from app.core.abc import ImportSource
-from app.core.db.models import PullRequest, Release
-from app.core.shared.clock import now
+from app.core.db.models import PullRequest
+from app.services.releases.store import ReleaseStore
 from app.core.shared.credentials import Credentials
 from app.services.activity.imports.bitbucket import BitbucketActivity
 from app.services.activity.imports.github import GithubActivity
@@ -49,27 +49,21 @@ class ActivityService:
             raise ProviderError("no source host")
 
         remote = self.remote_releases(creds, repo)
-        by_tag = {
-            r.tag: r
-            for r in self.db.scalars(select(Release).where(Release.app_id == app_id))
-        }
-        moment = now()
+        store = ReleaseStore(self.db)
 
         for item in remote:
-            row = by_tag.get(item["tag"])
-
-            if row is None:
-                row = Release(id=str(uuid.uuid4()), app_id=app_id)
-                self.db.add(row)
-
-            for key, value in item.items():
-                setattr(row, key, value)
-
-            row.synced_at = moment
-
-        self.db.flush()
+            fields = {
+                k: v for k, v in item.items() if k not in ("tag", "sha", "source")
+            }
+            store.ensure(
+                app_id, item["tag"], item["source"], sha=item.get("sha"), **fields
+            )
 
         return len(remote)
+
+    def sync_tags(self, app_id: str, tags: list[dict[str, Any]]) -> int:
+        """Every tag of the clone as a release row — what no host names still exists."""
+        return ReleaseStore(self.db).from_tags(app_id, tags)
 
     def sync_pull_requests(
         self, app_id: str, creds: Optional[Credentials], repo: Optional[str]
@@ -100,9 +94,16 @@ class ActivityService:
         return len(remote)
 
     def sync_all(
-        self, app_id: str, creds: Optional[Credentials], repo: Optional[str]
+        self,
+        app_id: str,
+        creds: Optional[Credentials],
+        repo: Optional[str],
+        tags: Optional[list[dict[str, Any]]] = None,
     ) -> dict[str, Optional[str]]:
         errors: dict[str, Optional[str]] = {}
+
+        if tags is not None:
+            self.sync_tags(app_id, tags)
 
         for name, fn in (
             ("releases", self.sync_releases),

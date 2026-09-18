@@ -25,6 +25,9 @@ class Deployment(Base):
     kind: Mapped[str] = mapped_column(SHORT, nullable=False)
     stage: Mapped[Optional[str]] = mapped_column(SHORT)
     version: Mapped[str] = mapped_column(SHORT, nullable=False)
+    release_id: Mapped[Optional[str]] = mapped_column(
+        KEY, ForeignKey("release.id", ondelete="SET NULL")
+    )
     sha: Mapped[Optional[str]] = mapped_column(Text)
     status: Mapped[str] = mapped_column(SHORT, nullable=False)
     executor: Mapped[str] = mapped_column(SHORT, nullable=False)

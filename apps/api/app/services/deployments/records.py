@@ -18,6 +18,7 @@ from app.core.auth.crypto import Sealer
 from app.core.db.models import App, CiRun, Deployment, User
 from app.core.shared.clock import now
 from app.services.integrations.hosts.directory import IntegrationsDirectory
+from app.services.releases.store import ReleaseStore
 
 LIMIT = 50
 
@@ -36,6 +37,7 @@ class DeploymentRecords:
     def __init__(self, db: DbSession, sealer: Optional[Sealer]) -> None:
         self.db = db
         self.directory = IntegrationsDirectory(db, sealer)
+        self.releases = ReleaseStore(db)
 
     def list(self, app_id: str, limit: int = 200) -> list[Deployment]:
         return list(
@@ -80,6 +82,11 @@ class DeploymentRecords:
 
         for key, value in fields.items():
             setattr(row, key, value)
+
+        if row.version:
+            row.release_id = self.releases.for_version(
+                app.id, spec.component, row.version, row.sha
+            ).id
 
         row.synced_at = now()
         self.db.flush()

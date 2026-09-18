@@ -1,4 +1,4 @@
-"""Releases and pull requests imported from the code host."""
+"""Releases — the platform's own table, one row per tag whatever source named it — and pull requests imported from the code host."""
 
 from datetime import datetime
 from typing import Optional
@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -19,12 +20,19 @@ from app.core.db.models.projects import App
 
 class Release(Base):
     __tablename__ = "release"
+    __table_args__ = (UniqueConstraint("app_id", "tag"),)
 
     id: Mapped[str] = mapped_column(KEY, primary_key=True)
     app_id: Mapped[str] = mapped_column(
         KEY, ForeignKey("app.id", ondelete="CASCADE"), nullable=False
     )
     tag: Mapped[str] = mapped_column(SHORT, nullable=False)
+    component: Mapped[str] = mapped_column(
+        SHORT, nullable=False, default="", server_default=""
+    )
+    version: Mapped[str] = mapped_column(
+        SHORT, nullable=False, default="", server_default=""
+    )
     name: Mapped[Optional[str]] = mapped_column(Text)
     body: Mapped[Optional[str]] = mapped_column(Text)
     url: Mapped[Optional[str]] = mapped_column(Text)

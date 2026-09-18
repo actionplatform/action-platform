@@ -61,3 +61,8 @@ The web app's API client is generated from the API's OpenAPI schema. Ship `api` 
 A deploy names a version — `action-platform deploy --version X.Y.Z`, the `version` field of `POST /api/v1/apps/{id}/deploy`, the release picked in the web — or takes the tag HEAD sits on; anything else is refused. The tag is checked out for the build and the deploy, so what runs in the cloud is always a commit the release process produced, reproducible from the tag alone.
 
 One deploy at a time per environment: while a deploy (or preflight) to a stage is queued or running, the API refuses another for the same stage with `409` — the stack and the clone are touched by one job at a time; another stage goes ahead. On the platform a deploy never carries a cloud key: the worker signs a token about the app and the target exchanges it for credentials — see [identity](concept_identity.md).
+
+## The release table
+
+The platform keeps one row per tag of an app in `release`, whoever named it first: `platform` when the release was cut here, the code host (`github`, `gitlab`, `bitbucket`, or any other importer) when it published one, `git` when the tag simply exists in the clone. The three merge by tag — a host or the platform enriches what git alone knew (name, notes, url, author), git never overrides a host — so a tag always has a row, on GitHub or on a plain git server. Each row carries its `component` and `version` (`web/v1.2.3` → `web`, `1.2.3`), and every [deployment](concept_deployments.md) references the row of the release it shipped.
+
