@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.23.0 — 2026-09-18
+
+### Features
+- **logs:** every line a job writes is stored as it happens and can be followed live
+
+### Docs
+- **readme:** readiness, tracked deployments, CI and the dashboard in the front door
+
+### Build
+- **api:** apx-aws-lambda 0.3.11 — the aws/lambda readiness checks
+
 ## v0.22.0 — 2026-09-18
 
 ### Features
