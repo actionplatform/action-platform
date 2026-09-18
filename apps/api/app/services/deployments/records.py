@@ -17,7 +17,14 @@ from action_platform.providers.ci import build_ci_runner
 from app.core.auth.crypto import Sealer
 from app.core.db.models import App, CiRun, Deployment, User
 from app.core.shared.clock import now
+from app.schemas.deployments import (
+    DeploymentRow,
+    Deployments,
+    RecordDeploymentRequest,
+    TargetRow,
+)
 from app.services.integrations.hosts.directory import IntegrationsDirectory
+from app.services.workspace.app_context import AppContext
 from app.repositories.releases.store import ReleaseStore
 
 LIMIT = 50
@@ -34,10 +41,71 @@ RUN_STATUS = {
 
 
 class DeploymentRecords:
-    def __init__(self, db: DbSession, sealer: Optional[Sealer]) -> None:
+    def __init__(
+        self,
+        db: DbSession,
+        sealer: Optional[Sealer],
+        context: Optional[AppContext] = None,
+    ) -> None:
         self.db = db
         self.directory = IntegrationsDirectory(db, sealer)
         self.releases = ReleaseStore(db)
+        self.context = context
+
+    def _context(self) -> AppContext:
+        if self.context is None:
+            raise ProviderError("deployments need the app's workspace")
+
+        return self.context
+
+    def targets(self, app: App) -> list[TargetRow]:
+        return [
+            TargetRow(
+                name=t.name,
+                kind=t.kind,
+                run_by=t.run_by,
+                stages=list(t.stages),
+                workflow=t.workflow or None,
+                job=t.job or None,
+            )
+            for t in self._context().config_of(app).targets
+        ]
+
+    def page(self, app: App, error: Optional[str] = None) -> Deployments:
+        return Deployments(
+            targets=self.targets(app),
+            deployments=[
+                DeploymentRow.model_validate(r, from_attributes=True)
+                for r in self.list(app.id)
+            ],
+            error=error,
+        )
+
+    def sync(self, organization_id: str, app: App) -> dict[str, Optional[str]]:
+        ctx = self._context()
+
+        return self.sync_observed(
+            organization_id, app, ctx.config_of(app), ctx.repo_of(app)
+        )
+
+    def record(
+        self, app: App, body: RecordDeploymentRequest, actor: Optional[str]
+    ) -> Deployment:
+        config = self._context().config_of(app)
+        row = self.record_manual(
+            app,
+            config,
+            body.target,
+            body.version,
+            body.stage,
+            body.url,
+            body.sha,
+            body.ok,
+            actor,
+        )
+        self.verify(app, config)
+
+        return row
 
     def list(self, app_id: str, limit: int = 200) -> list[Deployment]:
         return list(
