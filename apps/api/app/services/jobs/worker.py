@@ -4,6 +4,7 @@ import json
 import logging
 import socket
 import time
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 import uuid
 from typing import Optional
 
@@ -55,12 +56,27 @@ class Worker:
         self.handlers = handlers(JobServices(database, self.sealer, registry))
         plugin_registry.use_options(lambda slug: plugins.DbOptions(database, slug))
 
-    def run(self, interval: float = 2.0, once: bool = False) -> int:
+    def run(
+        self,
+        interval: float = 2.0,
+        once: bool = False,
+        concurrency: int = 1,
+        kinds: Optional[list[str]] = None,
+    ) -> int:
+        """Claim and run jobs until the queue is empty (`once`) or forever; `concurrency` jobs at a time, each on its own thread, `kinds` to take only some."""
+        wanted = [k for k in (kinds or list(self.handlers)) if k in self.handlers]
+
+        if concurrency <= 1:
+            return self._run_serial(interval, once, wanted)
+
+        return self._run_pool(interval, once, concurrency, wanted)
+
+    def _run_serial(self, interval: float, once: bool, kinds: list[str]) -> int:
         done = 0
 
         while True:
             self.queue.reap()
-            job = self.queue.claim(self.name, list(self.handlers))
+            job = self.queue.claim(self.name, kinds)
 
             if job is None:
                 if once:
@@ -71,6 +87,38 @@ class Worker:
 
             self.handle(job)
             done += 1
+
+    def _run_pool(
+        self, interval: float, once: bool, concurrency: int, kinds: list[str]
+    ) -> int:
+        done = 0
+        live: set[Future] = set()
+
+        with ThreadPoolExecutor(
+            max_workers=concurrency, thread_name_prefix=self.name
+        ) as pool:
+            while True:
+                live = {f for f in live if not f.done()}
+                self.queue.reap()
+                job = (
+                    self.queue.claim(self.name, kinds)
+                    if len(live) < concurrency
+                    else None
+                )
+
+                if job is None:
+                    if once and not live:
+                        return done
+
+                    if once:
+                        wait(live, return_when=FIRST_COMPLETED)
+                        continue
+
+                    time.sleep(interval if not live else min(interval, 0.5))
+                    continue
+
+                live.add(pool.submit(self.handle, job))
+                done += 1
 
     def handle(self, job: Job) -> None:
         payload = {**json.loads(job.payload or "{}"), "job_id": job.id}

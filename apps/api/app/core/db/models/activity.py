@@ -7,6 +7,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     Text,
     UniqueConstraint,
@@ -20,7 +21,10 @@ from app.core.db.models.projects import App
 
 class Release(Base):
     __tablename__ = "release"
-    __table_args__ = (UniqueConstraint("app_id", "tag"),)
+    __table_args__ = (
+        UniqueConstraint("app_id", "tag"),
+        Index("ix_release_app_published", "app_id", "published_at"),
+    )
 
     id: Mapped[str] = mapped_column(KEY, primary_key=True)
     app_id: Mapped[str] = mapped_column(
@@ -50,6 +54,7 @@ class Release(Base):
 
 class PullRequest(Base):
     __tablename__ = "pull_request"
+    __table_args__ = (Index("ix_pull_request_app_updated", "app_id", "updated_at"),)
 
     id: Mapped[str] = mapped_column(KEY, primary_key=True)
     app_id: Mapped[str] = mapped_column(

@@ -19,6 +19,14 @@ def run(
     name: str = typer.Option(
         "", "--name", help="How this worker signs the jobs it takes"
     ),
+    concurrency: int = typer.Option(
+        1, "--concurrency", min=1, max=32, help="Jobs run at the same time"
+    ),
+    kinds: str = typer.Option(
+        "",
+        "--kinds",
+        help="Only these job kinds, comma-separated (e.g. deploy,destroy); default every kind",
+    ),
 ) -> None:
     """Run queued jobs — sync, release, deploy, push, imports — against the API's database and workspaces."""
 
@@ -38,8 +46,13 @@ def run(
         Secrets(settings.AUTH_SECRET) if settings.AUTH_SECRET else None,
         name or None,
     )
-    typer.echo(f"worker {worker.name} on {database.dialect}")
-    done = worker.run(interval=interval, once=once)
+    only = [k.strip() for k in kinds.split(",") if k.strip()] or None
+    typer.echo(
+        f"worker {worker.name} on {database.dialect}"
+        + (f" · {concurrency} at a time" if concurrency > 1 else "")
+        + (f" · {', '.join(only)}" if only else "")
+    )
+    done = worker.run(interval=interval, once=once, concurrency=concurrency, kinds=only)
 
     if once:
         typer.echo(f"{done} job(s) done")

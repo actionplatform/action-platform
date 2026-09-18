@@ -63,6 +63,7 @@ services:
         condition: service_completed_successfully
     environment:
       AP_API_TOKEN: ${AP_API_TOKEN:-}
+      AP_API_WORKERS: ${AP_API_WORKERS:-2}
       AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@postgres:5432/action_platform
       AP_DATABASE_AUTO_MIGRATE: "0"
       AP_AUTH_SECRET: ${BETTER_AUTH_SECRET}
@@ -83,7 +84,7 @@ services:
     image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
     pull_policy: always
     restart: unless-stopped
-    command: ["action-platform-api", "worker"]
+    command: ["action-platform-api", "worker", "--concurrency", "${AP_WORKER_CONCURRENCY:-2}"]
     depends_on:
       postgres:
         condition: service_healthy

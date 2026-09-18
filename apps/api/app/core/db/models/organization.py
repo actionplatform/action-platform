@@ -6,6 +6,7 @@ from typing import Optional
 from sqlalchemy import (
     DateTime,
     ForeignKey,
+    Index,
     Text,
     func,
 )
@@ -30,6 +31,10 @@ class Organization(Base):
 
 class Member(Base):
     __tablename__ = "member"
+    __table_args__ = (
+        Index("ix_member_user", "user_id"),
+        Index("ix_member_org", "organization_id"),
+    )
 
     id: Mapped[str] = mapped_column(KEY, primary_key=True)
     organization_id: Mapped[str] = mapped_column(

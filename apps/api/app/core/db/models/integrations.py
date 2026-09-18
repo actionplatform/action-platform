@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db.models.base import KEY, SHORT, Base, now
@@ -12,6 +12,7 @@ from app.core.db.models.organization import Organization
 
 class SourceHost(Base):
     __tablename__ = "source_host"
+    __table_args__ = (Index("ix_source_host_org", "organization_id"),)
 
     id: Mapped[str] = mapped_column(KEY, primary_key=True)
     organization_id: Mapped[str] = mapped_column(

@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Text, UniqueConstraint, func
+from sqlalchemy import DateTime, ForeignKey, Index, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db.models.base import KEY, SHORT, Base, now
@@ -15,7 +15,11 @@ EXECUTORS = ("platform", "github_actions", "jenkins", "manual")
 
 class Deployment(Base):
     __tablename__ = "deployment"
-    __table_args__ = (UniqueConstraint("app_id", "target", "executor", "external_ref"),)
+    __table_args__ = (
+        UniqueConstraint("app_id", "target", "executor", "external_ref"),
+        Index("ix_deployment_app_started", "app_id", "started_at"),
+        Index("ix_deployment_release", "release_id"),
+    )
 
     id: Mapped[str] = mapped_column(KEY, primary_key=True)
     app_id: Mapped[str] = mapped_column(
