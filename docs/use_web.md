@@ -91,7 +91,7 @@ Refused when the tag exists, the branch is not on the remote, the tree is dirty 
 
 **Deploy**: a release, an environment `dev` or `prod` → **Run preflight** (checks only) → **Deploy to <env>**. The job runs on the worker and the row lands in the history at once. One deploy at a time per environment: the button waits while one is live. A failure shows a compact alert with *View logs* and *Copy error*.
 
-**Target** summarizes `[deploy]` from `platform.toml`. **Deployment history** lists the runs: status, stage, type (Deploy, Preflight, Tear down), version, duration, who, when; a row expands into logs, timestamps, *View details* and *Redeploy*. Stages, jobs, rollback and teardown: [deployments](concept_deployments.md).
+**Target** summarizes `[deploy]` from `platform.toml`. **Deployment history** lists the runs: status, stage, type (Deploy, Preflight, Tear down), version, duration, who, when; a row expands into logs, timestamps, *View details* and *Redeploy*. Every deployment ships a release — a tag, never a branch. Stages, jobs, rollback, teardown, and the model where an app has several targets (Lambda, PyPI, a registry) each run by the platform, GitHub Actions or Jenkins and verified at the destination: [deployments](concept_deployments.md).
 
 ### Activity
 
