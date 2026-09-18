@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.19.0 — 2026-09-17
+
+### Features
+- **cli:** deployments and deploy-record against the hosted platform
+- **web:** targets on the Deployments tab — live version per stage, deliveries by any executor, verified badge
+- **api:** deployment records from the worker, observed pipelines and people; verified at the destination
+- **deploy:** targets with an executor, and registries the platform verifies
+
+### Bug Fixes
+- **api:** ci_run.number as a big integer — GitHub Actions run ids overflow int32
+- **api:** the GitHub App asks to read Actions, and the access check says when it cannot
+
+### Docs
+- **deployments:** targets and executors, the deployment record, verification at the destination
+
 ## v0.18.0 — 2026-09-17
 
 ### Features
