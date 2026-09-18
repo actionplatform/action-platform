@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.19.0 — 2026-09-17
+
+### Features
+- **web:** CI tab on the app and CI servers under Settings
+
+### Bug Fixes
+- **web:** keep the CI client components off the server-only api client
+
 ## v0.18.26 — 2026-09-16
 
 ### Features
