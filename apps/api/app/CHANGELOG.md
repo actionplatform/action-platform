@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.27.0 — 2026-09-18
+
+### Features
+- **readiness:** a release knows whether it can reach a stage before anyone deploys it
+
 ## v0.26.2 — 2026-09-18
 
 ### Bug Fixes
