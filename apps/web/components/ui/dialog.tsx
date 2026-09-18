@@ -28,6 +28,8 @@ export function Dialog({
   const id = useId();
   const descriptionId = useId();
   const box = useRef<HTMLDivElement>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -47,7 +49,7 @@ export function Dialog({
     (wanted ?? first ?? box.current)?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        close.current();
         return;
       }
       if (e.key !== "Tab" || !box.current) return;
@@ -74,7 +76,7 @@ export function Dialog({
       document.body.style.overflow = previous;
       opener?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
