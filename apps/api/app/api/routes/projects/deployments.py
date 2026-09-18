@@ -13,6 +13,7 @@ from app.api.dependencies import (
     project_of,
 )
 from app.core.errors import Invalid
+from app.core.shared import people
 from app.schemas import deployments as schemas
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
@@ -73,7 +74,7 @@ def record_deployment(
         raise Invalid("a deployment ships a release: version is required")
 
     try:
-        row = records.record(app, body, caller.user.name)
+        row = records.record(app, body, people.label(caller.user))
     except ActionPlatformError as e:
         raise Invalid(str(e)) from e
 

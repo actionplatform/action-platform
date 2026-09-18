@@ -16,6 +16,7 @@ from action_platform.core.targets import TargetSpec, version_from_ref
 from action_platform.providers.ci import build_ci_runner
 from app.core.auth.crypto import Sealer
 from app.core.db.models import App, CiRun, Deployment, User
+from app.core.shared import people
 from app.core.shared.clock import now
 from app.schemas.deployments import (
     DeploymentRow,
@@ -411,6 +412,4 @@ class DeploymentRecords:
         if not user_id:
             return None
 
-        user = self.db.get(User, user_id)
-
-        return user.name if user else None
+        return people.label(self.db.get(User, user_id))

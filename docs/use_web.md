@@ -39,6 +39,10 @@ flowchart LR
 
 Running by hand instead of the compose files: the wizard prints the values the API must start with. Migrations and readiness are in [self-hosting](start_self_hosting.md).
 
+## People
+
+A person of the platform shows as their display name wherever they acted — who deployed, who cut a release, who invited; the email only when the account has none (Members lists both on purpose). An account on a code host — the author of a pull request or of a release published there — shows as its login on that host.
+
 ## Dashboard
 
 The home of an organization: apps, deployments today (and how many verified), deploys and CI runs failed today, releases this week; the latest events across every app — releases, deployments, CI runs, pull requests — each linking to its tab; and the apps that read no CI yet, linking to *Connect CI*. Read from the database, cached thirty seconds on the API.
