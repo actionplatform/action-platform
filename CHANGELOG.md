@@ -1,5 +1,34 @@
 # Changelog
 
+## v0.21.0 — 2026-09-18
+
+### Features
+- a timeline per release and a dashboard for the organization
+- **ci:** GitLab CI and Bitbucket Pipelines as embedded runners; Run from the CI tab
+- webhooks from the code host trigger the sync
+
+### Performance
+- **api:** reads come from a snapshot; GET routes never touch git
+- **api:** the queue wakes workers with LISTEN/NOTIFY
+- **api:** indexes on every listing, a worker that runs jobs side by side, an API with several processes
+
+### Refactoring
+- **web:** members, teams and template repositories on DataTable; Deploy target and Services on ActionForm
+- **remote:** the answer models live with the remote client and are checked against the API's OpenAPI
+
+### Docs
+- **adr:** the decisions of this week — release table, targets and executors, snapshot reads, server pages, DataTable, providers in the library, the queue on Postgres
+
+### Build
+- **deploy:** dokploy template repacked with the capacity defaults
+
+### CI
+- **deploy:** a slim api image and a worker image with the toolchains, light and heavy workers, PgBouncer on a profile
+
+### Chores
+- merge master
+- merge master
+
 ## v0.20.0 — 2026-09-18
 
 ### Features
