@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.24.1 — 2026-09-18
+
+### Refactoring
+- releases and pull requests are read by the library's SourceHost providers
+- **api:** code hosts are a repository; the token refresh is a service
+- **api:** ProjectService keeps to projects and apps; CI and deployments answer their own routes
+
 ## v0.24.0 — 2026-09-18
 
 ### Features
