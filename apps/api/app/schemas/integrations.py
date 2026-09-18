@@ -119,3 +119,21 @@ class Plugins(BaseModel):
 
 class PluginOptions(BaseModel):
     options: dict[str, Any]
+
+
+class WebhookInfo(BaseModel):
+    url: str
+    configured: bool
+    kind: str
+
+
+class WebhookSecret(BaseModel):
+    url: str
+    secret: str
+    kind: str
+
+
+class WebhookReceived(BaseModel):
+    event: str
+    repo: Optional[str] = None
+    queued: list[str] = []

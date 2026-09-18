@@ -30,6 +30,7 @@ class SourceHost(Base):
     login: Mapped[Optional[str]] = mapped_column(Text)
     refresh_token_encrypted: Mapped[Optional[str]] = mapped_column(Text)
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    webhook_secret_encrypted: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=now, server_default=func.now()
     )

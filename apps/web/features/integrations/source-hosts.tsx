@@ -1,7 +1,7 @@
 "use client";
 
 import { siBitbucket, siGithub, siGitlab } from "simple-icons";
-import { Check, ChevronDown, ExternalLink, GitBranch, KeyRound, MoreHorizontal, Trash2, TriangleAlert, UserCog } from "lucide-react";
+import { Check, ChevronDown, ExternalLink, GitBranch, KeyRound, MoreHorizontal, Trash2, TriangleAlert, UserCog, Webhook } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ import type { HostAccess, Owner } from "@/lib/host-access";
 import { HOST_KINDS, type HostKind, type SourceHost } from "@/lib/source-host-kinds";
 import { cn } from "@/lib/utils";
 import { changeHostOwner, createHost, deleteHost, rotateHostToken } from "./actions";
+import { WebhookDialog } from "./webhook-dialog";
 
 const BRANDS = { github: siGithub, gitlab: siGitlab, bitbucket: siBitbucket } as const;
 
@@ -82,6 +83,7 @@ function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostA
   const [removing, setRemoving] = useState(false);
   const [rotating, setRotating] = useState(false);
   const [owner, setOwner] = useState(false);
+  const [webhook, setWebhook] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const meta = HOST_KINDS.find((k) => k.id === host.kind);
@@ -97,6 +99,7 @@ function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostA
       items={[
         ...(chips.length ? [{ label: "Change default owner", icon: <UserCog className="size-4" strokeWidth={1.75} />, onSelect: () => setOwner(true) }] : []),
         ...(host.authKind === "token" ? [{ label: "Update token", icon: <KeyRound className="size-4" strokeWidth={1.75} />, onSelect: () => { setError(null); setRotating(true); } }] : []),
+        ...(host.kind !== "generic" ? [{ label: "Webhook…", icon: <Webhook className="size-4" strokeWidth={1.75} />, onSelect: () => setWebhook(true) }] : []),
         "separator" as const,
         { label: "Remove host", icon: <Trash2 className="size-4" strokeWidth={1.75} />, danger: true, onSelect: () => setRemoving(true) },
       ]}
@@ -184,6 +187,7 @@ function HostRow({ host, access, canManage }: { host: SourceHost; access?: HostA
         pending={pending}
         onConfirm={() => start(async () => { await deleteHost(host.id); setRemoving(false); router.refresh(); })}
       />
+      <WebhookDialog hostId={host.id} hostName={host.name} kind={host.kind} open={webhook} onClose={() => setWebhook(false)} />
       <PromptDialog
         open={rotating}
         onClose={() => setRotating(false)}

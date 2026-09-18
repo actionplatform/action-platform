@@ -16,7 +16,13 @@ from app.core.shared.clock import now
 from app.core.shared.urls import GitUrl
 from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.workspace.registry import Registry
-from app.schemas import DeployRequest, PushRequest, ReleaseRequest, SyncRequest
+from app.schemas import (
+    DeployRequest,
+    PushRequest,
+    ReleaseRequest,
+    SourceCredentials,
+    SyncRequest,
+)
 from app.services.activity import ActivityService
 from app.services.ci import CiService
 from app.services.projects.apps import AppService
@@ -56,12 +62,25 @@ class JobHandlers:
     def sync(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
         request = SyncRequest(**ctx.body)
+        credentials = request.credentials or self._host_credentials(ctx)
         result = AppService(self.registry).sync(
-            ctx.registry_id, request.credentials, reset=request.reset
+            ctx.registry_id, credentials, reset=request.reset
         )
         self.import_activity(payload)
 
         return result
+
+    def _host_credentials(self, ctx: JobContext) -> Optional[SourceCredentials]:
+        """The app's source host token, for jobs nobody signed — a webhook's sync."""
+        if ctx.app is None or ctx.organization is None or not ctx.app.source_host_id:
+            return None
+
+        with self.database.session() as db:
+            creds = IntegrationsDirectory(db, self.sealer).credentials_for(
+                ctx.organization.id, ctx.app.source_host_id
+            )
+
+        return SourceCredentials(**creds.as_dict()) if creds else None
 
     def release(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
