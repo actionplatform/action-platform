@@ -24,6 +24,12 @@ export const projects = {
     unwrap(await client.PUT("/api/v1/projects/{project_id}/apps/{app_id}/ci", { params: { path: { project_id: projectId, app_id: appId } }, body: { ci_host_id: ciHostId, job } })),
   syncCi: async (projectId: string, appId: string) =>
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/ci/sync", { params: { path: { project_id: projectId, app_id: appId } } })),
+  deployments: async (projectId: string, appId: string) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/deployments", { params: { path: { project_id: projectId, app_id: appId } } })),
+  syncDeployments: async (projectId: string, appId: string) =>
+    unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/deployments/sync", { params: { path: { project_id: projectId, app_id: appId } } })),
+  recordDeployment: async (projectId: string, appId: string, body: Schemas["RecordDeploymentRequest"]) =>
+    unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/deployments", { params: { path: { project_id: projectId, app_id: appId } }, body })),
   githubOrganizations: async (host: string) => unwrap(await client.GET("/api/v1/import/github/organizations", { params: { query: { host } } })),
   githubOrganization: async (host: string, login: string) =>
     unwrap(await client.GET("/api/v1/import/github/organizations/{login}", { params: { path: { login }, query: { host } } })),

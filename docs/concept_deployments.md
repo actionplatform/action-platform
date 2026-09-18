@@ -52,8 +52,6 @@ image = "ghcr.io/actionplatform/api"
 
 `run_by = "platform"` is the target the worker deploys itself through a plugin (below). Any other executor is *observed*: the platform reads the runs of the workflow or job named on the target, turns each one that shipped a tag into a deployment record, and verifies the version at the destination. The single `[deploy] target = "aws/lambda"` form is still read as one target named after its kind, run by the platform.
 
-> Where we are: today the platform records only what its own worker deploys, and the manifest takes one `[deploy]`. The tables and importers behind the other executors are the phases of [#226](https://github.com/actionplatform/action-platform/issues/226); the tab keeps its shape while they land.
-
 ## The record
 
 Every delivery is a row in `deployment`, whoever executed it:
