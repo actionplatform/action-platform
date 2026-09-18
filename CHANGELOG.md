@@ -1,5 +1,53 @@
 # Changelog
 
+## v0.18.0 — 2026-09-17
+
+### Features
+- **api:** CI servers, the app's job and its imported runs
+- **ci:** CIRunner reads runs; Jenkins and GitHub Actions providers
+
+### Bug Fixes
+- **api:** clone and fetch with the organization's credentials on GET routes
+
+### Docs
+- the CI tab, CI servers and the ci tables
+- drop source file paths from user-facing guides
+- **web:** shorter guide — no file paths, tables or routes; details linked
+- the web app never reaches the database — diagrams and text corrected
+- index.json listing the guides for the website
+- web guide restructured one section per screen
+- deployments concept, troubleshooting guide, richer glossary
+- paths after the layered layout, getting started through deploy, no AP_PLUGINS_DIR
+- the platform as it ships — deploy proxy flow, jobs and deploy sequence, contexts, aws/lambda for every web language, /health, one deploy per environment, cloud cleanup on delete
+- **web:** one deploy per environment
+- **web:** deleting a project with cloud cleanup
+- **web:** releases and deletion dialogs
+- **web:** deleting an app with cloud cleanup
+- **web:** first deploy registers the app on the proxy; Target card rows
+- **web:** Configure dialog
+- **web:** the form on the plugin card
+- **web:** Plugins page and Git on Settings
+- **web:** Integrations as one page with the plugins
+
+### Tests
+- **api:** a deploy to a busy stage is refused; another stage is not
+- **api:** project deletion with cloud cleanup
+- **api:** deletion with cloud cleanup tears the stacks down on the worker, then removes the app
+- **api:** the manages flag reaches the deploy token's scopes
+
+### Build
+- **deploy:** the API image carries Go 1.23, Node 22, JDK 21 + Maven and Ruby 3.3 — the worker builds every web language for aws/lambda
+- **api:** apx-aws-lambda>=0.3.8 — aws/lambda for every web language
+- **api:** lock apx-aws-lambda 0.3.7
+- **api:** apx-aws-lambda>=0.3.7 — delete deregisters the app on the proxy
+- **api:** apx-aws-lambda>=0.3.6 — the stack is named from the proxy's prefix
+- **api:** apx-aws-lambda>=0.3.5 — the first deploy registers the app on the proxy
+- **api:** apx-aws-lambda>=0.3.4 — the plugin declares its options
+
+### Chores
+- merge master
+- merge master
+
 ## v0.17.9 — 2026-09-15
 
 ### Features
