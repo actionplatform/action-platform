@@ -1,14 +1,5 @@
-"""Releases and pull requests of an app, read from its code host (one ImportSource per host) into the `release` and `pull_request` tables."""
+"""Releases and pull requests of an app, read from its code host through the library's SourceHost providers into the `release` and `pull_request` tables."""
 
-from app.services.activity.imports.bitbucket import BitbucketActivity
-from app.services.activity.imports.github import GithubActivity
-from app.services.activity.imports.gitlab import GitlabActivity
-from app.services.activity.imports.service import SOURCES, ActivityService
+from app.services.activity.imports.service import ActivityService
 
-__all__ = [
-    "SOURCES",
-    "ActivityService",
-    "BitbucketActivity",
-    "GithubActivity",
-    "GitlabActivity",
-]
+__all__ = ["ActivityService"]

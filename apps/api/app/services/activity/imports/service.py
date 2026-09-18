@@ -6,18 +6,12 @@ from typing import Any, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
-from action_platform.core.exception import ProviderError
-from app.core.abc import ImportSource
+from action_platform.abc.source_host import SourceHost
+from action_platform.core.exception import ConfigError, ProviderError
+from action_platform.providers.source import build_source_host
 from app.core.db.models import PullRequest
 from app.repositories.releases.store import ReleaseStore
 from app.core.shared.credentials import Credentials
-from app.services.activity.imports.bitbucket import BitbucketActivity
-from app.services.activity.imports.github import GithubActivity
-from app.services.activity.imports.gitlab import GitlabActivity
-
-SOURCES: dict[str, ImportSource] = {
-    s.kind: s for s in (GithubActivity(), GitlabActivity(), BitbucketActivity())
-}
 
 
 class ActivityService:
@@ -27,20 +21,36 @@ class ActivityService:
         self.db = db
 
     @staticmethod
-    def source_for(creds: Credentials) -> Optional[ImportSource]:
-        return SOURCES.get(creds.kind)
+    def source_for(creds: Credentials, repo: str) -> Optional[SourceHost]:
+        """The library's provider for the host, carrying the request's token — the same class the CLI releases and opens pull requests with."""
+        try:
+            return build_source_host(
+                creds.kind,
+                repo,
+                base_url=creds.base_url,
+                token=creds.token,
+                username=creds.username,
+            )
+        except ConfigError:
+            return None
 
     def remote_releases(self, creds: Credentials, repo: str) -> list[dict[str, Any]]:
-        source = self.source_for(creds)
+        source = self.source_for(creds, repo)
 
-        return source.releases(creds, repo) if source else []
+        try:
+            return source.releases(repo) if source else []
+        except NotImplementedError:
+            return []
 
     def remote_pull_requests(
         self, creds: Credentials, repo: str
     ) -> list[dict[str, Any]]:
-        source = self.source_for(creds)
+        source = self.source_for(creds, repo)
 
-        return source.pull_requests(creds, repo) if source else []
+        try:
+            return source.pull_requests(repo) if source else []
+        except NotImplementedError:
+            return []
 
     def sync_releases(
         self, app_id: str, creds: Optional[Credentials], repo: Optional[str]

@@ -250,3 +250,59 @@ class SourceGithub(SourceHost):
         data = json.loads(view)
 
         return PRRef(number=data["number"], url=url)
+
+    def _read_headers(self) -> dict[str, str]:
+        headers = {"x-github-api-version": "2022-11-28"}
+
+        if self.token:
+            headers["authorization"] = f"Bearer {self.token}"
+
+        return headers
+
+    def releases(self, repo: str) -> list[dict]:
+        return [
+            {
+                "tag": r["tag_name"],
+                "name": r.get("name"),
+                "body": r.get("body"),
+                "url": r.get("html_url"),
+                "author": (r.get("author") or {}).get("login"),
+                "sha": None,
+                "prerelease": bool(r.get("prerelease")),
+                "draft": bool(r.get("draft")),
+                "published_at": rest.parse_utc(
+                    r.get("published_at") or r.get("created_at")
+                ),
+                "source": "github",
+            }
+            for r in rest.get_pages(
+                f"{self.api}/repos/{repo}/releases", self._read_headers()
+            )
+        ]
+
+    def pull_requests(self, repo: str) -> list[dict]:
+        return [
+            {
+                "number": r["number"],
+                "title": r["title"],
+                "url": r["html_url"],
+                "author": (r.get("user") or {}).get("login"),
+                "head": r["head"]["ref"],
+                "base": r["base"]["ref"],
+                "state": "merged"
+                if r.get("merged_at")
+                else "open"
+                if r.get("state") == "open"
+                else "closed",
+                "draft": bool(r.get("draft")),
+                "created_at": rest.parse_utc(r["created_at"]),
+                "updated_at": rest.parse_utc(r["updated_at"]),
+                "merged_at": rest.parse_utc(r.get("merged_at")),
+                "source": "github",
+            }
+            for r in rest.get_pages(
+                f"{self.api}/repos/{repo}/pulls?state=all&sort=updated&direction=desc",
+                self._read_headers(),
+                10,
+            )
+        ]
