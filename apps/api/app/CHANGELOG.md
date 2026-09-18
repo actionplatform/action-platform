@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.22.0 — 2026-09-17
+
+### Features
+- **api:** deployment records from the worker, observed pipelines and people; verified at the destination
+
 ## v0.21.2 — 2026-09-17
 
 ### Bug Fixes
