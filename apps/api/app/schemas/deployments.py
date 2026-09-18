@@ -10,6 +10,7 @@ class DeployRequest(BaseModel):
     stage: Optional[str] = None
     dry_run: bool = True
     version: Optional[str] = None
+    force: bool = False
 
 
 class DeployResult(BaseModel):

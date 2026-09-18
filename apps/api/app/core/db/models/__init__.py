@@ -1,6 +1,6 @@
 """Every table the API owns, one module per context; `TABLES` is the creation order."""
 
-from app.core.db.models.activity import PullRequest, Release
+from app.core.db.models.activity import PullRequest, Release, ReleaseReadiness
 from app.core.db.models.auth import Account, DeviceCode, Session, User, Verification
 from app.core.db.models.base import KEY, SHORT, Base, now
 from app.core.db.models.ci import CiHost, CiRun
@@ -51,6 +51,7 @@ __all__ = [
     "PullRequest",
     "RegistryEntry",
     "Release",
+    "ReleaseReadiness",
     "SHORT",
     "Session",
     "SigningKey",

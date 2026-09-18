@@ -1,4 +1,4 @@
-"""Releases — the platform's own table, one row per tag whatever source named it — and pull requests imported from the code host."""
+"""Releases — the platform's own table, one row per tag whatever source named it — their readiness per stage, and pull requests imported from the code host."""
 
 from datetime import datetime
 from typing import Optional
@@ -50,6 +50,30 @@ class Release(Base):
         DateTime, nullable=False, default=now, server_default=func.now()
     )
     app: Mapped[App] = relationship(foreign_keys=[app_id])
+
+
+class ReleaseReadiness(Base):
+    """Whether a release can reach a stage, as the worker last checked: the checks as JSON, the verdict, and the job that produced them."""
+
+    __tablename__ = "release_readiness"
+    __table_args__ = (
+        UniqueConstraint("release_id", "stage", name="uq_release_readiness_stage"),
+    )
+
+    id: Mapped[str] = mapped_column(KEY, primary_key=True)
+    release_id: Mapped[str] = mapped_column(
+        KEY, ForeignKey("release.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    stage: Mapped[str] = mapped_column(SHORT, nullable=False)
+    status: Mapped[str] = mapped_column(SHORT, nullable=False, default="queued")
+    ok: Mapped[Optional[bool]] = mapped_column(Boolean)
+    checks: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    job_id: Mapped[Optional[str]] = mapped_column(KEY)
+    checked_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, onupdate=now, server_default=func.now()
+    )
+    release: Mapped[Release] = relationship(foreign_keys=[release_id])
 
 
 class PullRequest(Base):

@@ -29,6 +29,20 @@ class PypiTest(unittest.TestCase):
             target.url("0.18.0"), "https://pypi.org/project/action-platform/0.18.0/"
         )
 
+    def test_readiness_refuses_a_version_already_published(self):
+        target = DeployPypi(package="action-platform")
+        ctx = mock.Mock(spec=Context, next_version="0.18.0", stage="prod")
+
+        with mock.patch.object(DeployPypi, "_exists", return_value=True):
+            taken = target.readiness(ctx)
+
+        with mock.patch.object(DeployPypi, "_exists", return_value=False):
+            free = target.readiness(ctx)
+
+        self.assertFalse(taken[0].ok)
+        self.assertIn("already at", taken[0].detail)
+        self.assertTrue(free[0].ok)
+
     def test_never_deploys(self):
         with self.assertRaises(DeployError):
             DeployPypi(package="x").deploy(mock.Mock(spec=Context))
