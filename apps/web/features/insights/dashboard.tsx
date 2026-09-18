@@ -32,7 +32,7 @@ function EventRow({ e }: { e: DashboardEvent }) {
         </div>
         <div className="truncate text-xs text-secondary">{e.project} / {e.app}{e.detail && <> · <span className="font-mono">{e.detail}</span></>}</div>
       </div>
-      <span className="shrink-0 text-xs text-secondary">{e.at ? relativeTime(e.at) : ""}</span>
+      <span className="shrink-0 text-xs text-secondary" suppressHydrationWarning>{e.at ? relativeTime(e.at) : ""}</span>
     </li>
   );
 }

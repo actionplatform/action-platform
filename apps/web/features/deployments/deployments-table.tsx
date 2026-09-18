@@ -1,20 +1,17 @@
 "use client";
 
-import { Cloud, ExternalLink, MoreHorizontal, RotateCcw } from "lucide-react";
+import { Cloud, MoreHorizontal, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
 import { Cell, DataTable } from "@/components/ui/data-table";
 import type { DeployResult } from "@/lib/api";
 import type { Paged } from "@/lib/page";
 import type { JobRow } from "@/lib/v1";
 import { startDeploy } from "@/features/deployments/actions";
-import { CopyButton, LogBox, summarize } from "./run-alert";
-
-type Status = { tone: "danger" | "warning" | "success" | "neutral"; label: string };
+import { RunDialog, type Status } from "./run-dialog";
 
 function rowsOf(job: JobRow): DeployResult[] {
   return Array.isArray(job.result) ? (job.result as DeployResult[]) : [];
@@ -61,11 +58,11 @@ export function DeploymentsTable({ page, registryId, canDeploy, newHref }: { pag
     return () => clearInterval(timer);
   }, [live, router]);
 
-  const redeploy = (job: JobRow) => {
+  const redeploy = (job: JobRow, close = false) => {
     if (pending) return;
     start(async () => {
       const r = await startDeploy(registryId, job.stage ?? "dev", !!job.dry_run, job.version ?? versionOf(job) ?? "");
-      if (r.ok) router.refresh();
+      if (r.ok) { if (close) setDetails(null); router.refresh(); }
     });
   };
 
@@ -99,67 +96,18 @@ export function DeploymentsTable({ page, registryId, canDeploy, newHref }: { pag
         ]}
       />
 
-      <Dialog open={details !== null} onClose={() => setDetails(null)} title={details ? `Run ${details.id.slice(0, 8)}` : "Run"} description={details ? `${type(details)} · ${details.stage ?? "dev"} · ${statusOf(details).label}` : undefined} className="max-w-2xl">
-        {details && (
-          <div className="space-y-4 text-sm">
-            <RunDetails job={details} status={statusOf(details)} error={errorOf(details)} first={rowsOf(details)[0] ?? null} canDeploy={canDeploy} pending={pending} onRedeploy={() => { redeploy(details); setDetails(null); }} />
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
-              <Item k="Run id" v={details.id} />
-              <Item k="Version" v={versionOf(details) ?? "—"} />
-              <Item k="Attempts" v={String(details.attempts)} />
-              <Item k="By" v={details.by ?? "—"} />
-              <Item k="Started" v={when(details.started_at ?? details.created_at)} />
-              <Item k="Finished" v={when(details.finished_at)} />
-            </dl>
-            {rowsOf(details).length > 0 && <LogBox text={JSON.stringify(rowsOf(details), null, 2)} />}
-          </div>
-        )}
-      </Dialog>
+      <RunDialog
+        job={details}
+        status={details ? statusOf(details) : null}
+        error={details ? errorOf(details) : null}
+        rows={details ? rowsOf(details) : []}
+        kindLabel={details ? type(details) : ""}
+        canRedeploy={!!details && canDeploy && details.kind !== "destroy" && !!(details.version || versionOf(details))}
+        redeploying={pending}
+        onRedeploy={() => { if (details) redeploy(details, true); }}
+        onClose={() => setDetails(null)}
+      />
     </>
   );
 }
 
-function RunDetails({ job, status, error, first, canDeploy, pending, onRedeploy }: { job: JobRow; status: Status; error: string | null; first: DeployResult | null; canDeploy: boolean; pending: boolean; onRedeploy: () => void }) {
-  const [logs, setLogs] = useState(false);
-  const title = job.kind === "destroy" ? (error ? "Tear down failed" : status.label) : error ? (job.dry_run ? "Preflight failed" : "Deploy failed") : job.dry_run ? "Preflight passed" : status.label;
-  const redeployable = canDeploy && job.kind !== "destroy" && !!(job.version || first?.version);
-  return (
-    <div className="min-w-0 space-y-3 rounded-md border border-border bg-surface p-3">
-      <div className="min-w-0">
-        <div className="text-sm font-medium">{title}</div>
-        {error ? (
-          <div className="break-words text-[13px] text-secondary">{summarize(error)}</div>
-        ) : first ? (
-          <div className="text-[13px]"><span className="font-medium">{first.target}</span>{first.version && <span className="text-secondary"> · {first.version}</span>}</div>
-        ) : null}
-      </div>
-      {first?.url && !error && (
-        <div className="min-w-0">
-          <div className="mb-1 text-xs text-secondary">Endpoint</div>
-          <div className="flex min-w-0 items-center gap-1 rounded-md border border-border bg-background pl-3 pr-1">
-            <a href={first.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 py-2 font-mono text-[13px] leading-5 [overflow-wrap:anywhere] line-clamp-2 hover:text-foreground">{first.url}</a>
-            <CopyButton text={first.url} label="Copy endpoint" size="icon" />
-            <a href={first.url} target="_blank" rel="noopener noreferrer" aria-label="Open endpoint" className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-secondary hover:text-foreground md:size-8"><ExternalLink className="size-4" strokeWidth={1.75} /></a>
-          </div>
-        </div>
-      )}
-      {error && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Button size="sm" variant="ghost" onClick={() => setLogs((v) => !v)} aria-expanded={logs}>{logs ? "Hide logs" : "View logs"}</Button>
-          <CopyButton text={error} label="Copy error" />
-        </div>
-      )}
-      {error && logs && <LogBox text={error} />}
-      {redeployable && <div className="flex justify-end"><Button variant="outline" size="sm" disabled={pending} onClick={onRedeploy}><RotateCcw className="size-3.5" strokeWidth={1.75} /> {job.dry_run ? "Run again" : "Redeploy"}</Button></div>}
-    </div>
-  );
-}
-
-function Item({ k, v }: { k: string; v: string }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-xs text-secondary">{k}</dt>
-      <dd className="truncate font-mono text-[13px]" title={v} suppressHydrationWarning>{v}</dd>
-    </div>
-  );
-}

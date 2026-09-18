@@ -43,7 +43,7 @@ export function NewLink({ href, label }: { href: string; label: string }) {
 }
 
 export function Cell({ children, className, mono, muted, title }: { children: ReactNode; className?: string; mono?: boolean; muted?: boolean; title?: string }) {
-  return <span title={title} className={cn("block min-w-0 truncate", mono && "font-mono text-[13px]", muted && "text-secondary", className)}>{children}</span>;
+  return <span title={title} suppressHydrationWarning className={cn("block min-w-0 truncate", mono && "font-mono text-[13px]", muted && "text-secondary", className)}>{children}</span>;
 }
 
 export function Inline({ children, className }: { children: ReactNode; className?: string }) {

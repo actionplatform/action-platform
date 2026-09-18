@@ -1647,6 +1647,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/jobs/{id}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["job_logs_api_v1_jobs__id__logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/jobs": {
         parameters: {
             query?: never;
@@ -2383,6 +2399,12 @@ export interface components {
             project?: components["schemas"]["Named"] | null;
             app?: components["schemas"]["app__schemas__common__AppRef"] | null;
         };
+        JobLogsOut: {
+            lines: components["schemas"]["LogLine"][];
+            next: number;
+            status: string;
+            finished: boolean;
+        };
         JobOut: {
             id: string;
             kind: string;
@@ -2405,6 +2427,11 @@ export interface components {
             total: number;
             page: number;
             per: number;
+        };
+        LogLine: {
+            seq: number;
+            at: string;
+            line: string;
         };
         Manifest: {
             target: string;
@@ -6817,6 +6844,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    job_logs_api_v1_jobs__id__logs_get: {
+        parameters: {
+            query?: {
+                after?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobLogsOut"];
                 };
             };
             422: {

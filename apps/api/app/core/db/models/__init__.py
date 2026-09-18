@@ -13,7 +13,7 @@ from app.core.db.models.integrations import (
     SourceHost,
     TemplateSource,
 )
-from app.core.db.models.jobs import Job
+from app.core.db.models.jobs import Job, JobLog
 from app.core.db.models.organization import (
     ApiToken,
     ApiTokenClient,
@@ -41,6 +41,7 @@ __all__ = [
     "Draft",
     "Invitation",
     "Job",
+    "JobLog",
     "KEY",
     "Member",
     "OAuthApp",

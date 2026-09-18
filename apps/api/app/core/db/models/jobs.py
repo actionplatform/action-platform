@@ -1,9 +1,10 @@
-"""Queued work for the worker."""
+"""Queued work for the worker, and every line it wrote while doing it."""
 
 from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import (
+    BigInteger,
     Index,
     DateTime,
     Integer,
@@ -50,5 +51,24 @@ class Job(Base):
         DateTime, nullable=False, default=now, server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, server_default=func.now()
+    )
+
+
+class JobLog(Base):
+    """One line a job wrote, in order: the core's log records, a plugin's command output."""
+
+    __tablename__ = "job_log"
+    __table_args__ = (Index("ix_job_log_job_seq", "job_id", "seq"),)
+
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
+    job_id: Mapped[str] = mapped_column(KEY, nullable=False)
+    seq: Mapped[int] = mapped_column(Integer, nullable=False)
+    line: Mapped[str] = mapped_column(Text, nullable=False)
+    at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=now, server_default=func.now()
     )

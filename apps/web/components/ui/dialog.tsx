@@ -5,6 +5,7 @@ import { Loader2, X } from "lucide-react";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { Button } from "./button";
 import { Field, Input } from "./input";
+import { cn } from "@/lib/utils";
 
 export function Dialog({
   open,
@@ -18,7 +19,7 @@ export function Dialog({
 }: {
   open: boolean;
   onClose: () => void;
-  title: string;
+  title: ReactNode;
   description?: ReactNode;
   icon?: ReactNode;
   children?: ReactNode;
@@ -94,7 +95,7 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={id}
         aria-describedby={description ? descriptionId : undefined}
-        className={`flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md flex-col rounded-[14px] border border-border bg-surface focus:outline-none sm:w-full sm:rounded-lg ${className ?? ""}`}
+        className={cn("flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md flex-col rounded-[14px] border border-border bg-surface focus:outline-none sm:w-full sm:rounded-lg", className)}
       >
         <div className="flex shrink-0 items-start justify-between gap-3 px-6 pt-5 sm:px-4 sm:pt-4">
           <div className="flex min-w-0 items-start gap-3">

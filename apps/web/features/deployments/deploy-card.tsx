@@ -16,6 +16,7 @@ import { useAction } from "@/lib/use-action";
 import { deployJob, startDeploy } from "@/features/deployments/actions";
 import type { AppView } from "@/features/projects";
 import { readiness as fetchReadiness } from "@/features/readiness/actions";
+import { LiveLog } from "@/features/jobs";
 import { RunAlert, summarize } from "./run-alert";
 
 const STAGES = [
@@ -122,6 +123,7 @@ export function DeployCard({ view, liveStages = [] }: { view: AppView; liveStage
             </div>
           )}
           {action.busy && action.step === "polling" && <Running label={dryRun ? "Preflight running" : "Deploying"} detail={`${versionOf(tag)} → ${stage}`} />}
+          {action.job && <LiveLog jobId={action.job} live={action.step === "polling"} title={dryRun ? "Preflight log" : "Deploy log"} />}
           {action.error && <RunAlert tone="danger" title={`${kind} failed`} summary={summarize(action.error)} log={action.error} />}
           {okRows.map((row) => <RunAlert key={row.target} tone="success" title={action.result?.dryRun ? "Preflight passed" : "Deployed"} summary={`${row.target} · ${row.version}${row.url ? ` · ${row.url}` : ""}`} />)}
           {okRows.some((r) => r.url) && (

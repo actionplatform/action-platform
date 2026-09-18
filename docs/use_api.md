@@ -74,6 +74,10 @@ The registry — id, name, url, default branch of every app — is the `registry
 
 `POST /api/v1/apps/{id}/sync|release|deploy|push` with `Prefer: respond-async` (or `X-Async: 1`) does not run the action: it answers `202 {job, status, poll}` — a `deploy` to a stage that already has one queued or running is refused with `409` (one deploy per environment) and a worker (`action-platform-api worker`) runs it with the same services, filling in credentials and identity the same way and copying releases and pull requests afterwards. `GET /api/v1/jobs/{id}` answers `status` (`queued` → `running` → `done` | `failed`), `attempts`, `result` (what the inline call would have answered) and `error`; `GET /api/v1/jobs?app=<registry id>` lists an app's last twenty. A second async `sync` for the same app while one is live returns the live job. Failures retry three times with backoff; a job whose worker vanished goes back to the queue after thirty minutes. Without the header everything runs inline as before.
 
+## Job logs
+
+`GET /api/v1/jobs/{id}/logs?after=<seq>&limit=<n>` answers what the worker wrote for a job — the core's log records, a plugin's `sam build` / `sam deploy` output line by line — as `{lines: [{seq, at, line}], next, status, finished}`. Lines are stored as they happen (flushed every half second or fifty lines); poll with `after=next` until `finished` is true. Same visibility as `GET jobs/{id}`: a member of the job's organization. A job keeps at most twenty thousand lines; a longer output ends with a truncation notice.
+
 ## Errors
 
 `ActionPlatformError` and its subclasses (`ReleaseError`, `BranchError`, `PullRequestError`, `SyncError`, `TemplateError`, `InstallError`) answer `400 {"detail": "…"}` with a message meant for the user; `HTTPException` carries `404`, `409`, `410` and `422` (`{"code": "needs_install"}` when a repository has no `platform.toml`). Anything else is a `500` and reaches Sentry when `AP_SENTRY_DSN` is set ([observability](concept_observability.md)).

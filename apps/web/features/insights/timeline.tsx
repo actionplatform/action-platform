@@ -27,7 +27,7 @@ export function TimelineView({ data, repositoryUrl }: { data: Timeline; reposito
     <Panel>
       <PanelHeader
         title={<><Tag className="size-4 text-secondary" strokeWidth={1.75} /> {r.tag}</>}
-        description={<>{r.name ?? "Release"}{r.author && <> · {r.author}</>}{r.published_at && <> · {relativeTime(r.published_at)}</>}{data.previous && <> · since <span className="font-mono">{data.previous.tag}</span></>}</>}
+        description={<>{r.name ?? "Release"}{r.author && <> · {r.author}</>}{r.published_at && <> · <span suppressHydrationWarning>{relativeTime(r.published_at)}</span></>}{data.previous && <> · since <span className="font-mono">{data.previous.tag}</span></>}</>}
         aside={<div className="flex items-center gap-2">{r.prerelease && <Badge>Pre-release</Badge>}<Badge className="font-mono">{r.source}</Badge>{r.url && <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-[13px] text-secondary hover:text-foreground">Open on the host</a>}</div>}
       />
       <ol className="relative space-y-6 p-4 pl-6">
@@ -38,18 +38,18 @@ export function TimelineView({ data, repositoryUrl }: { data: Timeline; reposito
         </Step>
         <Step icon={Tag} title="Release" count={1}>
           <List>
-            <Row><span className="font-mono font-medium">{r.version}</span><span className="font-mono text-xs text-secondary">{r.tag}</span>{r.sha && <span className="inline-flex h-6 items-center rounded border border-border bg-background px-1.5 font-mono text-xs">{r.sha.slice(0, 7)}</span>}<span className="ml-auto text-xs text-secondary">{r.published_at ? relativeTime(r.published_at) : ""}</span></Row>
+            <Row><span className="font-mono font-medium">{r.version}</span><span className="font-mono text-xs text-secondary">{r.tag}</span>{r.sha && <span className="inline-flex h-6 items-center rounded border border-border bg-background px-1.5 font-mono text-xs">{r.sha.slice(0, 7)}</span>}<span className="ml-auto text-xs text-secondary" suppressHydrationWarning>{r.published_at ? relativeTime(r.published_at) : ""}</span></Row>
           </List>
           {r.body && <pre className="mt-2 max-h-56 overflow-auto rounded-lg border border-border bg-background p-3 font-mono text-xs whitespace-pre-wrap">{r.body}</pre>}
         </Step>
         <Step icon={Workflow} title="CI runs on the tag" count={data.ci_runs.length}>
           {data.ci_runs.length === 0 ? <Note>No run on {r.tag} imported yet.</Note> : (
-            <List>{data.ci_runs.map((c) => <Row key={c.id}><Badge tone={TONE[c.status] ?? "neutral"} className="h-5 px-2 text-[11px]">{c.status}</Badge>{c.url ? <a href={c.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 truncate font-medium hover:underline underline-offset-4">{c.name ?? `#${c.number}`}</a> : <span className="min-w-0 flex-1 truncate font-medium">{c.name ?? `#${c.number}`}</span>}<span className="shrink-0 font-mono text-xs text-secondary">{c.source}</span><span className="shrink-0 text-xs text-secondary">{c.started_at ? relativeTime(c.started_at) : ""}</span></Row>)}</List>
+            <List>{data.ci_runs.map((c) => <Row key={c.id}><Badge tone={TONE[c.status] ?? "neutral"} className="h-5 px-2 text-[11px]">{c.status}</Badge>{c.url ? <a href={c.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 truncate font-medium hover:underline underline-offset-4">{c.name ?? `#${c.number}`}</a> : <span className="min-w-0 flex-1 truncate font-medium">{c.name ?? `#${c.number}`}</span>}<span className="shrink-0 font-mono text-xs text-secondary">{c.source}</span><span className="shrink-0 text-xs text-secondary" suppressHydrationWarning>{c.started_at ? relativeTime(c.started_at) : ""}</span></Row>)}</List>
           )}
         </Step>
         <Step icon={Cloud} title="Deployments" count={data.deployments.length}>
           {data.deployments.length === 0 ? <Note>{r.version} has not reached a target yet.</Note> : (
-            <List>{data.deployments.map((d) => <Row key={d.id}><Badge tone={TONE[d.status] ?? "neutral"} className="h-5 px-2 text-[11px]">{d.status}</Badge><span className="font-medium">{d.target}</span>{d.stage && <span className="font-mono text-xs text-secondary">{d.stage}</span>}<span className="text-xs text-secondary">{d.executor}</span>{d.url && <a href={d.url} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate text-xs text-secondary hover:text-foreground">{d.url}</a>}<span className="ml-auto shrink-0 text-xs text-secondary">{(d.finished_at ?? d.started_at) ? relativeTime((d.finished_at ?? d.started_at)!) : ""}</span></Row>)}</List>
+            <List>{data.deployments.map((d) => <Row key={d.id}><Badge tone={TONE[d.status] ?? "neutral"} className="h-5 px-2 text-[11px]">{d.status}</Badge><span className="font-medium">{d.target}</span>{d.stage && <span className="font-mono text-xs text-secondary">{d.stage}</span>}<span className="text-xs text-secondary">{d.executor}</span>{d.url && <a href={d.url} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate text-xs text-secondary hover:text-foreground">{d.url}</a>}<span className="ml-auto shrink-0 text-xs text-secondary" suppressHydrationWarning>{(d.finished_at ?? d.started_at) ? relativeTime((d.finished_at ?? d.started_at)!) : ""}</span></Row>)}</List>
           )}
         </Step>
       </ol>

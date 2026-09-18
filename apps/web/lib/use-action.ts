@@ -22,6 +22,7 @@ export function useAction<P, R>({ preview, run, poll, whileAway, onDone }: Optio
   const [result, setResult] = useState<R | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<string | null>(null);
+  const [lastJob, setLastJob] = useState<string | null>(null);
   const [, start] = useTransition();
 
   useEffect(() => {
@@ -55,14 +56,14 @@ export function useAction<P, R>({ preview, run, poll, whileAway, onDone }: Optio
       setStep("running");
       const r = await call(run, (e) => ({ ok: false as const, error: e }), whileAway);
       if (!r.ok) { setError(r.error); setStep("failed"); return; }
-      if (poll && r.data && typeof r.data === "object" && "job" in r.data) { setJob((r.data as { job: string }).job); setStep("polling"); return; }
+      if (poll && r.data && typeof r.data === "object" && "job" in r.data) { const id = (r.data as { job: string }).job; setJob(id); setLastJob(id); setStep("polling"); return; }
       setResult(r.data as R);
       setStep("done");
       onDone?.(r.data as R);
     });
   };
 
-  const reset = () => { setStep("idle"); setPreviewed(null); setResult(null); setError(null); setJob(null); };
+  const reset = () => { setStep("idle"); setPreviewed(null); setResult(null); setError(null); setJob(null); setLastJob(null); };
 
-  return { step, busy, previewed, result, error, preview: doPreview, confirm: () => setStep("confirming"), cancel: () => setStep(previewed ? "previewed" : "idle"), execute, reset, clearOutcome: () => { setResult(null); setError(null); if (step === "done" || step === "failed") setStep("idle"); } };
+  return { step, busy, previewed, result, error, job: lastJob, preview: doPreview, confirm: () => setStep("confirming"), cancel: () => setStep(previewed ? "previewed" : "idle"), execute, reset, clearOutcome: () => { setResult(null); setError(null); setLastJob(null); if (step === "done" || step === "failed") setStep("idle"); } };
 }
