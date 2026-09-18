@@ -25,6 +25,7 @@ def deployment_row(row) -> schemas.DeploymentRow:
         kind=row.kind,
         stage=row.stage,
         version=row.version,
+        release_id=row.release_id,
         sha=row.sha,
         status=row.status,
         executor=row.executor,

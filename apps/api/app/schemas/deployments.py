@@ -44,6 +44,7 @@ class DeploymentRow(BaseModel):
     kind: str
     stage: Optional[str] = None
     version: str
+    release_id: Optional[str] = None
     sha: Optional[str] = None
     status: str
     executor: str

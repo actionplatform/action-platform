@@ -28,7 +28,8 @@ from app.repositories.projects import ProjectsRepository
 from app.services.projects import ProjectService
 from app.services.projects.organization_import import OrganizationImport
 from app.services.deployments import DeploymentsService
-from app.services.releases import ReleasesService
+from app.services.releases import ReleaseStore, ReleasesService, tag_of
+from app.services.workspace.state import GitStateService
 
 
 class JobHandlers:
@@ -59,12 +60,31 @@ class JobHandlers:
 
     def release(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
-        result = ReleasesService(self.registry).release(
-            ctx.registry_id, ReleaseRequest(**ctx.body)
-        )
+        request = ReleaseRequest(**ctx.body)
+        result = ReleasesService(self.registry).release(ctx.registry_id, request)
+
+        if not request.dry_run and ctx.app is not None:
+            self._record_release(ctx, request, result, payload.get("user_id"))
+
         self.import_activity(payload)
 
         return result
+
+    def _record_release(
+        self, ctx: JobContext, request: ReleaseRequest, result: dict, user_id: Any
+    ) -> None:
+        with self.database.session() as db:
+            store = ReleaseStore(db)
+            store.ensure(
+                ctx.app.id,
+                tag_of(request.component or "", result["next"]),
+                "platform",
+                name=request.name or None,
+                body=result.get("changelog") or None,
+                author=DeploymentRecords(db, self.sealer).actor_name(user_id),
+                prerelease=bool(result.get("prerelease")),
+                published_at=now(),
+            )
 
     def deploy(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
@@ -220,8 +240,13 @@ class JobHandlers:
             creds = directory.credentials_for(
                 payload["organization_id"], app.source_host_id
             )
+            try:
+                tags = GitStateService(self.registry).releases(payload["registry_id"])
+            except ActionPlatformError:
+                tags = []
+
             errors = ActivityService(db).sync_all(
-                payload["app_id"], creds, GitUrl(url).repo
+                payload["app_id"], creds, GitUrl(url).repo, tags=tags
             )
 
             try:
