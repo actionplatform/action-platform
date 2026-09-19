@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.28.0 — 2026-09-19
+
+### Features
+- **deploy:** CI-run targets are dispatched — the deploy starts the workflow on the tag and follows the run
+
+### Tests
+- **dispatched:** drop an unused import
+
+### Chores
+- **quality:** drop the mypy config nothing ever ran
+
 ## v0.27.1 — 2026-09-19
 
 ### Bug Fixes
