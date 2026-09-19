@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.30.0 — 2026-09-19
+
+### Bug Fixes
+- **config:** sync imports platform.toml when the file changed in the repository
+
+### Tests
+- **db:** head revision is 0021
+
 ## v0.29.0 — 2026-09-19
 
 ### Features
