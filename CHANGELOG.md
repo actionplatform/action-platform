@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.25.0 — 2026-09-18
+
+### Features
+- **web:** scopes — the app's scopes, New scope, and a deploy that lands on a scope
+- **api:** scopes — where an app's releases are deployed, and what each accepts
+- **scopes:** scopes in the core — where a release is deployed, with a kind and a criticality
+- **organization:** an owner can delete the organization
+
+### Bug Fixes
+- **api:** the app list reads the snapshot, not the clone
+
+### Docs
+- **scopes:** no latest left in prose or diagram
+- **scopes:** any stable release serves any scope — no latest rule
+- **scopes:** test accepts any release
+- **scopes:** a stable release serves any scope
+- architecture decisions move to the strategy repository
+- **scopes:** mermaid labels quoted, fence closed
+- **scopes:** mermaid diagrams — the model, what each criticality accepts, the gate, the data model, the rollout
+- **adr:** the criticality table in ADR 0009
+- **scopes:** a hotfix release may be deployed to any scope
+- **scopes:** only the rules asked for — release shape and latest by criticality; no approvals, no promotion ladder
+- **scopes:** an app has any number of scopes, each with its own kind and criticality
+- **scopes:** the strategy — a deploy lands on a scope whose criticality decides which releases it takes
+
 ## v0.24.0 — 2026-09-18
 
 ### Features
