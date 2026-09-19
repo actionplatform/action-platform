@@ -8,6 +8,7 @@ from pathlib import Path
 from action_platform.abc.changelog_renderer import ChangelogRenderer
 from action_platform.abc.ci_runner import CIRunner
 from action_platform.abc.deploy_target import DeployTarget
+from action_platform.core.scopes import ScopeSpec, parse_scopes
 from action_platform.core.targets import TargetSpec, parse_targets
 from action_platform.abc.release_strategy import ReleaseStrategy
 from action_platform.abc.source_host import SourceHost
@@ -55,6 +56,7 @@ class Config:
         self._deploy_spec: dict = {}
         self._components_spec: dict = {}
         self._release_spec: dict = {}
+        self._scopes_spec: list = []
 
     @property
     def components(self):
@@ -65,6 +67,21 @@ class Config:
     def targets(self) -> list[TargetSpec]:
         """Every deploy target platform.toml declares, whoever runs it."""
         return parse_targets(self._deploy_spec)
+
+    @property
+    def scopes(self) -> list[ScopeSpec]:
+        """Where releases are deployed: `[[scopes]]`, else the `[deploy]` targets read as scopes."""
+        return parse_scopes({"scopes": self._scopes_spec, "deploy": self._deploy_spec})
+
+    def scope(self, name: str) -> ScopeSpec:
+        spec = next((s for s in self.scopes if s.name == name), None)
+
+        if spec is None:
+            raise ConfigError(
+                f"no scope named {name!r} (scopes: {', '.join(s.name for s in self.scopes) or 'none'})"
+            )
+
+        return spec
 
     @property
     def deploy(self) -> list[DeployTarget]:
@@ -115,6 +132,7 @@ class Config:
         config._deploy_spec = data.get("deploy", {})
         config._components_spec = data.get("components", {})
         config._release_spec = data.get("release", {})
+        config._scopes_spec = data.get("scopes", [])
 
         return config
 

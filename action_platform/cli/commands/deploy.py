@@ -21,7 +21,10 @@ TARGET = typer.Option(
     None, "--target", help="Filter by target name (aws/lambda, docker, ...)"
 )
 STAGE = typer.Option(
-    None, "--stage", help="dev | prod (default: prod on main/master, else dev)"
+    None,
+    "--stage",
+    "--scope",
+    help="The scope to deploy to (default: prod on main/master, else dev)",
 )
 
 
@@ -81,6 +84,16 @@ def diagnose(target: str | None = TARGET, stage: str | None = STAGE) -> None:
 
         for k, v in d.details.items():
             console.print(f"  {k}: {v}")
+
+
+def scopes() -> None:
+    """Where this repository's releases are deployed: `[[scopes]]`, or the `[deploy]` targets read as scopes."""
+    config = Config.from_toml(Path.cwd() / settings.CONFIG_FILE)
+
+    for scope in config.scopes:
+        console.print(
+            f"[bold]{scope.name}[/bold] {scope.kind} [dim]{scope.criticality}[/dim] {scope.target or '-'} [dim]{scope.run_by}[/dim]"
+        )
 
 
 def readiness(

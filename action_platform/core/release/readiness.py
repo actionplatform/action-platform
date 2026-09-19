@@ -12,6 +12,7 @@ from action_platform.core.config import Config
 from action_platform.core.context import Check, Context
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.release.versioning import VERSION_PATTERNS
+from action_platform.core.scopes import ScopeSpec, shape_check, shape_of
 from action_platform.core.targets import VERSION
 from action_platform.core.wiring import slot, wired
 from action_platform.logging import logger
@@ -39,9 +40,11 @@ class Readiness:
         stage: str,
         version: str | None = None,
         target: str | None = None,
+        shape: str | None = None,
     ) -> list[Check]:
         checks: list[Check] = []
-        checks.append(self._stage(stage))
+        scope = self._scope(stage)
+        checks.append(self._stage(stage, scope))
 
         try:
             tag, shipped = self.deployer.release_tag(version)
@@ -59,6 +62,9 @@ class Readiness:
             return checks
 
         checks.append(self._tag(tag))
+
+        if scope is not None:
+            checks.append(shape_check(scope, shipped, shape or shape_of(shipped)))
 
         try:
             targets = self.deployer.targets(target)
@@ -95,16 +101,37 @@ class Readiness:
 
         return checks
 
-    def _stage(self, stage: str) -> Check:
+    def _scope(self, stage: str) -> ScopeSpec | None:
+        try:
+            return next((s for s in self.config.scopes if s.name == stage), None)
+        except ActionPlatformError:
+            return None
+
+    def _stage(self, stage: str, scope: ScopeSpec | None) -> Check:
+        if scope is not None:
+            return Check(
+                "deploy.stage",
+                True,
+                f"{scope.name} · {scope.kind} · {scope.criticality}",
+                level="static",
+            )
+
+        names = [s.name for s in self._scopes()] or list(STAGES)
+        ok = stage in names
+
         return Check(
             "deploy.stage",
-            stage in STAGES,
-            stage
-            if stage in STAGES
-            else f"{stage!r} is not one of {', '.join(STAGES)}",
+            ok,
+            stage if ok else f"{stage!r} is not one of {', '.join(names)}",
             level="static",
-            fix=None if stage in STAGES else f"deploy to one of {', '.join(STAGES)}",
+            fix=None if ok else f"deploy to one of {', '.join(names)}",
         )
+
+    def _scopes(self) -> list[ScopeSpec]:
+        try:
+            return self.config.scopes
+        except ActionPlatformError:
+            return []
 
     def _tag(self, tag: str) -> Check:
         ok = VERSION.match(tag) is not None
