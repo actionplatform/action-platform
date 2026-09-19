@@ -40,7 +40,9 @@ class AppManifest:
             {
                 "name": name,
                 "path": str(spec.get("path") or ""),
-                "last_version": self.last_version(self.root / str(spec.get("path") or "")),
+                "last_version": self.last_version(
+                    self.root / str(spec.get("path") or "")
+                ),
             }
             for name, spec in table.items()
             if isinstance(spec, dict)
