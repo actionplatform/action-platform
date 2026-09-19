@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.27.1 — 2026-09-19
+
+### Bug Fixes
+- **release:** version constants inside cookiecutter template directories stay untouched
+
 ## v0.27.0 — 2026-09-19
 
 ### Features
