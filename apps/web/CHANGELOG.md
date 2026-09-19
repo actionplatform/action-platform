@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.29.4 — 2026-09-19
+
+### Bug Fixes
+- **web:** a per-request CSP nonce instead of 'unsafe-inline' for scripts
+
+### Build
+- **images:** base images pinned by digest, dependencies installed with hashes
+
 ## v0.29.3 — 2026-09-19
 
 ### Bug Fixes
