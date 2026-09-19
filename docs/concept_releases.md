@@ -38,6 +38,8 @@ flowchart LR
 4. Writes `LAST_VERSION`, prepends `CHANGELOG.md`, syncs `package.json` / `pyproject.toml` / `__version__` under `path`.
 5. Commits `chore(release): [<name> ]X.Y.Z`, tags, pushes both, publishes the release on the source host (pre-release when rc). A refused push (the branch moved on the remote meanwhile) deletes the tag and the commit again, so nothing half-published stays in the workspace.
 
+In the web app the release card offers a **Component** field when `platform.toml` declares components — the repository itself or one of them, each with its own current version, tag prefix (`api/v…`) and changelog; the releases list badges every component release with its name and marks the latest of each. The CLI takes `--component`, the API `component`.
+
 The hosted API syncs the workspace before step 1 (fetch, fast-forward, and a move to the remote when the branch had a leftover local commit), so the push in step 5 is never behind.
 
 `--dry-run` stops after step 3 and prints the version and changelog.

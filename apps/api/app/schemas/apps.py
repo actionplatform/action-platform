@@ -36,6 +36,12 @@ class AppMeta(BaseModel):
     ci: Optional[str] = None
 
 
+class AppComponent(BaseModel):
+    name: str
+    path: str
+    last_version: Optional[str] = None
+
+
 class AppDetail(BaseModel):
     id: str
     url: str
@@ -46,6 +52,7 @@ class AppDetail(BaseModel):
     release: dict[str, str]
     services: dict
     last_version: Optional[str] = None
+    components: list[AppComponent] = []
     branch: str
     latest_tag: Optional[str] = None
     clean: bool

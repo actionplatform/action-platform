@@ -1895,6 +1895,11 @@ export interface components {
             name: string;
             installed?: string[] | null;
         };
+        AppComponent: {
+            name: string;
+            path: string;
+            last_version?: string | null;
+        };
         AppConfigBody: {
             content: string;
             mirrored?: boolean | null;
@@ -1917,6 +1922,7 @@ export interface components {
                 [key: string]: unknown;
             };
             last_version?: string | null;
+            components: components["schemas"]["AppComponent"][];
             branch: string;
             latest_tag?: string | null;
             clean: boolean;

@@ -31,11 +31,24 @@ class AppManifest:
             "release": data.get("release", {}),
             "services": data.get("services", {}),
             "last_version": self.last_version(),
+            "components": self.components(data.get("components", {})),
         }
 
-    def last_version(self) -> str | None:
+    def components(self, table: dict) -> list[dict]:
+        """`[components.<name>] path = …` of platform.toml, each with what its own LAST_VERSION says."""
+        return [
+            {
+                "name": name,
+                "path": str(spec.get("path") or ""),
+                "last_version": self.last_version(self.root / str(spec.get("path") or "")),
+            }
+            for name, spec in table.items()
+            if isinstance(spec, dict)
+        ]
+
+    def last_version(self, root: Path | None = None) -> str | None:
         """What LAST_VERSION says — 0.0.0 while the repository has no version tag."""
-        last = self.root / settings.LAST_VERSION_FILE
+        last = (root or self.root) / settings.LAST_VERSION_FILE
 
         if not last.exists():
             return None
