@@ -1961,6 +1961,7 @@ export interface components {
             exists: boolean;
             language?: string | null;
             type?: string | null;
+            deploy_target?: string | null;
             last_version?: string | null;
             branch?: string | null;
         };
