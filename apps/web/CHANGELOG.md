@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.28.0 — 2026-09-18
+
+### Features
+- **web:** scopes — the app's scopes, New scope, and a deploy that lands on a scope
+
 ## v0.27.0 — 2026-09-18
 
 ### Features
