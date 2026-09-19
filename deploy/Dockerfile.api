@@ -49,7 +49,9 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
  && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
  && ldconfig
 
-RUN chown -R app:app /usr/local/bundle
+RUN pip install --no-cache-dir "poetry>=1.8" poetry-plugin-export \
+      "ap-build @ git+https://github.com/actionplatform/images-base@v0.1.0" \
+ && chown -R app:app /usr/local/bundle
 
 ENV PATH=/usr/local/go/bin:/home/app/go/bin:$PATH \
     GOPATH=/home/app/go \
