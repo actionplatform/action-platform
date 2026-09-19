@@ -12,7 +12,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/api/v1/") || pathname.startsWith("/api/auth/") || pathname.startsWith("/.well-known/")) {
-    const api = (process.env.AP_API ?? "http://127.0.0.1:7788").replace(/\/$/, "");
+    const api = apiBase();
     return NextResponse.rewrite(new URL(`${api}${pathname}${search}`));
   }
 
@@ -31,4 +31,11 @@ function sameHost(source: string, host: string): boolean {
   } catch {
     return false;
   }
+}
+
+function apiBase(): string {
+  const configured = process.env.AP_API;
+  if (configured) return configured.replace(/\/$/, "");
+  if (process.env.NODE_ENV === "production") throw new Error("AP_API must be set: the web tier does not guess where the API is");
+  return "http://127.0.0.1:7788";
 }

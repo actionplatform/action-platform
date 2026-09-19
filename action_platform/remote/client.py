@@ -145,7 +145,7 @@ class Remote:
         )
 
     def apps(self, organization: Optional[str] = None) -> list[dict]:
-        return self._call("GET", "apps", organization, organization=organization)
+        return self._call("GET", "apps", None, organization=organization)
 
     def add_app(self, project: str, url: str, install: Optional[dict] = None) -> dict:
         return self._call(

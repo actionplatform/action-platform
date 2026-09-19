@@ -16,6 +16,20 @@ CHANNEL = "ap_jobs"
 log = logging.getLogger(__name__)
 
 
+def loads(raw: Optional[str]) -> dict[str, Any]:
+    if not raw:
+        return {}
+
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        log.warning("corrupt job json ignored", exc_info=True)
+
+        return {}
+
+    return data if isinstance(data, dict) else {}
+
+
 class Listener:
     """A raw psycopg connection on LISTEN; `wait(timeout)` returns True when a notification arrived, False on timeout, and reconnects on the next call after an error."""
 
@@ -188,7 +202,7 @@ class JobQueue:
                     Job.status.in_(LIVE),
                 )
             ):
-                body = json.loads(job.payload).get("body") or {}
+                body = loads(job.payload).get("body") or {}
 
                 if (body.get("stage") or "dev") == stage:
                     return job
@@ -206,9 +220,7 @@ class JobQueue:
                 )
             )
 
-            return {
-                str(json.loads(j.payload).get("project_id") or "") for j in rows
-            } - {""}
+            return {str(loads(j.payload).get("project_id") or "") for j in rows} - {""}
 
     def claim(self, worker: str, kinds: Optional[list[str]] = None) -> Optional[Job]:
         moment = now()
@@ -307,7 +319,7 @@ class JobQueue:
 
     @staticmethod
     def view(job: Job) -> dict[str, Any]:
-        payload = json.loads(job.payload) if job.payload else {}
+        payload = loads(job.payload)
         body = payload.get("body") if isinstance(payload.get("body"), dict) else {}
 
         return {
@@ -321,9 +333,19 @@ class JobQueue:
             "version": body.get("version"),
             "started_at": job.locked_at,
             "user_id": payload.get("user_id") or payload.get("by"),
-            "result": json.loads(job.result) if job.result else None,
+            "result": _result(job.result),
             "error": job.error,
             "created_at": job.created_at,
             "updated_at": job.updated_at,
             "finished_at": job.finished_at,
         }
+
+
+def _result(raw: Optional[str]) -> Any:
+    if not raw:
+        return None
+
+    try:
+        return json.loads(raw)
+    except ValueError:
+        return None

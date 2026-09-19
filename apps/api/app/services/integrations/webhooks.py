@@ -99,6 +99,9 @@ class Webhooks:
 
     @staticmethod
     def _verify(kind: str, secret: str, headers: dict[str, str], body: bytes) -> None:
+        if not secret:
+            raise Forbidden("this host has no webhook secret; set one in Settings")
+
         if kind == "github":
             given = headers.get("x-hub-signature-256", "")
             expected = (

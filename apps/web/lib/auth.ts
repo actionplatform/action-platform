@@ -11,7 +11,7 @@ function secure(): boolean {
 
 export async function sessionCookie(): Promise<string | null> {
   const jar = await cookies();
-  return jar.get(SECURE_COOKIE)?.value ?? jar.get(COOKIE)?.value ?? null;
+  return secure() ? (jar.get(SECURE_COOKIE)?.value ?? null) : (jar.get(COOKIE)?.value ?? null);
 }
 
 export async function setSessionCookie(cookie: string, expiresAt: string): Promise<void> {
