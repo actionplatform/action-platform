@@ -36,6 +36,7 @@ from app.api.routes.projects import ci as project_ci
 from app.api.routes.projects import deployments as project_deployments
 from app.api.routes.projects import organization_import, projects
 from app.api.routes.projects import readiness as project_readiness
+from app.api.routes.projects import scopes as project_scopes
 
 routers = [
     sessions,
@@ -59,6 +60,7 @@ routers = [
     project_ci,
     project_deployments,
     project_readiness,
+    project_scopes,
     organization_import,
     apps,
     releases,

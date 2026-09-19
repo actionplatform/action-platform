@@ -111,6 +111,14 @@ class ParseTest(unittest.TestCase):
         )
         self.assertEqual(scopes[0].options, {"region": "us-east-1"})
 
+    def test_no_target_still_gives_dev_and_prod(self):
+        scopes = derived_scopes({})
+
+        self.assertEqual(
+            [(s.name, s.criticality, s.target) for s in scopes],
+            [("dev", "test", ""), ("prod", "high", "")],
+        )
+
     def test_observed_targets_derive_library_scopes(self):
         scopes = derived_scopes(
             {

@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 class DeployRequest(BaseModel):
     stage: Optional[str] = None
+    scope: Optional[str] = None
     dry_run: bool = True
     version: Optional[str] = None
     force: bool = False

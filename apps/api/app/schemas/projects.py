@@ -1,7 +1,7 @@
 """Projects and the apps registered in them, with what was imported for each."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -143,6 +143,36 @@ class ReleaseRow(BaseModel):
     source: str
     synced_at: datetime
     readiness: dict[str, str] = {}
+
+
+class ScopeRow(BaseModel):
+    id: str
+    name: str
+    kind: str
+    criticality: str
+    target: Optional[str] = None
+    options: dict[str, Any] = {}
+    run_by: str
+    url: Optional[str] = None
+    derived: bool
+    created_at: datetime
+
+
+class ScopeRequest(BaseModel):
+    name: Optional[str] = None
+    kind: str = "web"
+    criticality: str = "low"
+    target: Optional[str] = None
+    options: dict[str, Any] = {}
+    run_by: str = "platform"
+    url: Optional[str] = None
+
+
+class Scopes(BaseModel):
+    items: list[ScopeRow]
+    kinds: list[str]
+    criticalities: list[str]
+    executors: list[str]
 
 
 class ReadinessCheck(BaseModel):

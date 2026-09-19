@@ -112,9 +112,17 @@ def parse_scopes(data: dict) -> list[ScopeSpec]:
 
 
 def derived_scopes(deploy: dict) -> list[ScopeSpec]:
+    """The `[deploy]` targets as scopes; an app with no target at all still has `dev` and `prod`, with no target to run."""
     specs: list[ScopeSpec] = []
+    targets = parse_targets(deploy)
 
-    for target in parse_targets(deploy):
+    if not targets:
+        return [
+            ScopeSpec(name=stage, criticality=DEFAULT_CRITICALITY[stage])
+            for stage in DEFAULT_CRITICALITY
+        ]
+
+    for target in targets:
         stages = target.stages or ("dev", "prod")
 
         for stage in stages:
