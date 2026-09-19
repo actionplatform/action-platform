@@ -24,7 +24,7 @@ export async function GET(req: Request) {
 <noscript><button>Continue to GitHub</button></noscript>
 </form>
 <p>Taking you to GitHub…</p>
-<script>document.getElementById("f").submit()</script></body>`;
+<script src="/manifest-submit.js"></script></body>`;
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
 }

@@ -27,7 +27,7 @@ export async function clearSessionCookie(): Promise<void> {
 
 export async function requestClient(): Promise<{ ip: string | null; userAgent: string | null }> {
   const h = await headers();
-  const forwarded = h.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+  const forwarded = h.get("x-forwarded-for")?.split(",").pop()?.trim() || null;
   return { ip: forwarded ?? h.get("x-real-ip"), userAgent: h.get("user-agent") };
 }
 

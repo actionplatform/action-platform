@@ -349,7 +349,7 @@ class Repository(WorkingCopy):
         name = check_ref(branch)
 
         if create:
-            self.run(["checkout", "-b", name, *([start] if start else [])])
+            self.run(["checkout", "-b", name, *([check_ref(start)] if start else [])])
         else:
             self.run(["checkout", "--end-of-options", name])
 
