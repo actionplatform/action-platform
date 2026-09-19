@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.30.0 — 2026-09-18
+
+### Features
+- **api:** scopes — where an app's releases are deployed, and what each accepts
+
 ## v0.29.0 — 2026-09-18
 
 ### Features
