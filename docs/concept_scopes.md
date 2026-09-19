@@ -65,7 +65,6 @@ flowchart LR
     subgraph shapes[Release shape]
         C["candidate<br/>1.4.0-rc.2"]
         ST["stable<br/>1.4.0"]
-        L["latest stable<br/>newest 1.x"]
         H["hotfix<br/>from hotfix/*"]
     end
     subgraph levels[Criticality]
@@ -77,30 +76,26 @@ flowchart LR
     end
     C --> T
     C --> LO
-    ST --> T & LO
-    L --> M
-    L --> HI
-    L --> CR
+    ST --> T & LO & M & HI & CR
     H --> T & LO & M & HI & CR
 ```
 
 
-Releases come in three shapes: **candidates** (`1.4.0-rc.2`, cut off `main`), **stable** (`1.4.0`, cut on `main`) and **hotfixes** (a release cut from a `hotfix/<code>` branch, which git-flow starts from `main`). Among stable releases of a component, one is the **latest**. The default policy:
+Releases come in three shapes: **candidates** (`1.4.0-rc.2`, cut off `main`), **stable** (`1.4.0`, cut on `main`) and **hotfixes** (a release cut from a `hotfix/<code>` branch, which git-flow starts from `main`). The default policy:
 
-| Criticality | Candidates | Stable | Must be latest | Hotfix |
-|---|---|---|---|---|
-| `test` | yes | yes | no | yes |
-| `low` | yes | yes | no | yes |
-| `medium` | no | yes | yes | yes |
-| `high` | no | yes | yes | yes |
-| `critical` | no | yes | yes | yes |
+| Criticality | Candidates | Stable | Hotfix |
+|---|---|---|---|
+| `test` | yes | yes | yes |
+| `low` | yes | yes | yes |
+| `medium` | no | yes | yes |
+| `high` | no | yes | yes |
+| `critical` | no | yes | yes |
 
 In words:
 
 - **`test` accepts any release** — candidate, stable or hotfix.
 - **A candidate is tried on `test` and `low`**; it never reaches `medium` or above.
-- **A stable release serves any scope**, `test` included.
-- **From `medium` up only the latest stable release is deployed**: no rolling a `medium` scope forward to a version already superseded. Rollback is the exception — it names an older release and says so.
+- **A stable release serves any scope**, any version of it.
 - **A hotfix goes anywhere**: production and every other level, whatever its shape and whether or not it is the latest — that is what a hotfix is for.
 
 The policy is a table, not code. An organization may loosen or tighten it per criticality in Settings (or `[scopes.policy]` in `platform.toml` for one app). The defaults above are what a new organization gets.
@@ -133,7 +128,6 @@ The gate that refuses a deploy already exists — [readiness](concept_deployment
 | Check | Blocks when |
 |---|---|
 | `scope.release-shape` | a candidate aims at `medium`+; never for a stable release or a hotfix |
-| `scope.latest` | `medium`+ and a newer stable release of the component exists; never for a hotfix |
 
 They show on the release page like every other check, per scope instead of per stage, and the deploy form refuses the same way (`409`, `force` for `org.manage`).
 
@@ -263,7 +257,7 @@ region = "us-east-1"
 
 ```mermaid
 flowchart LR
-    S1["1 · model + policy<br/>scope table · release.shape<br/>stage → scope mapping"] --> S2["2 · checks + gate<br/>scope.release-shape · scope.latest"]
+    S1["1 · model + policy<br/>scope table · release.shape<br/>stage → scope mapping"] --> S2["2 · checks + gate<br/>scope.release-shape"]
     S2 --> S3["3 · web<br/>Scopes table · New scope · deploy form"]
     S3 --> S4["4 · kinds<br/>verify/diagnose per kind"]
     S4 --> S5["5 · CLI · MCP · platform.toml scopes"]
