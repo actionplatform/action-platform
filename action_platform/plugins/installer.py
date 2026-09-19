@@ -104,7 +104,7 @@ class PipInstaller:
 
     def _remove_from_target(self, package: str) -> str:
         """pip cannot uninstall from a --target directory; take the dist-info's RECORD as the list of what to delete."""
-        root = Path(self.target or "")
+        root = Path(self.target or "").resolve()
         name = package.replace("-", "_").lower()
         removed = 0
 
@@ -118,12 +118,30 @@ class PipInstaller:
                 rel = line.split(",", 1)[0]
                 file = root / rel
 
-                if file.is_file():
+                if not _inside(file, root):
+                    continue
+
+                if file.is_symlink() or file.is_file():
                     file.unlink()
                     removed += 1
 
             for leftover in sorted(root.rglob("*"), reverse=True):
-                if leftover.is_dir() and not any(leftover.iterdir()):
+                if (
+                    leftover.is_dir()
+                    and not leftover.is_symlink()
+                    and not any(leftover.iterdir())
+                ):
                     leftover.rmdir()
 
         return f"removed {removed} file(s)"
+
+
+def _inside(path: Path, root: Path) -> bool:
+    """Whether `path` — its parent resolved, the leaf as named so a symlink is judged by where it sits, not where it points — stays under `root`."""
+    try:
+        parent = path.parent.resolve(strict=False)
+        parent.relative_to(root)
+    except (ValueError, OSError):
+        return False
+
+    return ".." not in path.parts

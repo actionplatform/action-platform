@@ -1,5 +1,7 @@
 """GitHub Apps: created from a manifest, installed on an account."""
 
+import re
+
 from fastapi import APIRouter, HTTPException, Request
 
 from app.api.dependencies import (
@@ -11,6 +13,8 @@ from app.api.dependencies import (
 )
 from app.schemas import integrations as schemas
 from app.services.integrations.hosts import PROVIDERS, HostConnector
+
+GITHUB_LOGIN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$")
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -54,6 +58,10 @@ def github_manifest(
     return_to = body.return_to or "/settings"
     state = get_state_signer(request).sign(org.id, return_to, caller.user.id)
     github_org = (body.github_org or "").strip()
+
+    if github_org and not GITHUB_LOGIN.match(github_org):
+        raise HTTPException(400, "github_org must be a GitHub organization login")
+
     target = (
         f"https://github.com/organizations/{github_org}/settings/apps/new"
         if github_org
