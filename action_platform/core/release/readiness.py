@@ -66,7 +66,7 @@ class Readiness:
             checks.append(shape_check(scope, shipped, shape or shape_of(shipped)))
 
         try:
-            targets = self.deployer.targets(target)
+            targets = self.deployer.targets(target, stage)
         except ActionPlatformError as e:
             checks.append(
                 Check(
@@ -94,6 +94,7 @@ class Readiness:
             checks.extend(self._lockfiles())
             ctx = self.deployer._context(stage=stage)
             ctx.current_version = ctx.next_version = shipped
+            ctx.tag = tag
 
             for t in targets:
                 checks.extend(self._target(t, ctx))

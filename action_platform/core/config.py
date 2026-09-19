@@ -2,21 +2,24 @@
 
 from __future__ import annotations
 
-import tomllib
 from pathlib import Path
+
+import tomllib
 
 from action_platform.abc.changelog_renderer import ChangelogRenderer
 from action_platform.abc.ci_runner import CIRunner
 from action_platform.abc.deploy_target import DeployTarget
-from action_platform.core.scopes import ScopeSpec, parse_scopes
-from action_platform.core.targets import TargetSpec, parse_targets
 from action_platform.abc.release_strategy import ReleaseStrategy
 from action_platform.abc.source_host import SourceHost
-from action_platform.core.exception import ConfigError
 from action_platform.core import module
+from action_platform.core.exception import ConfigError
 from action_platform.core.release import strategies
 from action_platform.core.release.components import parse as parse_components
+from action_platform.core.scopes import ScopeSpec, parse_scopes
+from action_platform.core.targets import TargetSpec, parse_targets
+from action_platform.providers.ci.factory import build_ci_runner
 from action_platform.providers.deploy import BUILTIN_DEPLOY_TARGETS
+from action_platform.providers.deploy.dispatched import DispatchedTarget
 from action_platform.providers.source import build_source_host
 
 
@@ -90,6 +93,35 @@ class Config:
             self._deploy = _build_deploy_targets(self._deploy_spec)
 
         return self._deploy
+
+    def dispatched(self) -> list[DeployTarget]:
+        """The targets a CI of the source host runs for the platform — `run_by = "github_actions"` and the like — each wrapped so a deploy starts the workflow and follows the run."""
+        specs = [t for t in self.targets if t.dispatched]
+
+        if not specs:
+            return []
+
+        if self.source_host is None:
+            raise ConfigError(
+                f"{specs[0].name} is run by {specs[0].run_by}, but platform.toml names no source host"
+            )
+
+        return [
+            DispatchedTarget(
+                _build_target(spec),
+                build_ci_runner(
+                    spec.run_by,
+                    repo=self.source_host.repo,
+                    token=self.source_host.token,
+                    base_url=getattr(self.source_host, "api", None)
+                    if spec.run_by == "github_actions"
+                    else getattr(self.source_host, "web", None),
+                    username=getattr(self.source_host, "username", None),
+                ),
+                spec.workflow,
+            )
+            for spec in specs
+        ]
 
     def target(self, name: str) -> DeployTarget:
         """A provider for target `name`, whoever runs it — for verify and url."""

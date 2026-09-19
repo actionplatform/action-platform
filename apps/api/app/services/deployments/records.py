@@ -214,7 +214,7 @@ class DeploymentRecords:
             return
 
         for spec in config.targets:
-            if spec.platform:
+            if spec.platform or spec.dispatched:
                 self._upsert(
                     app,
                     spec,
@@ -319,7 +319,7 @@ class DeploymentRecords:
     def sync_observed(
         self, organization_id: str, app: App, config: Config, repo: str
     ) -> dict[str, Optional[str]]:
-        """Each observed target's runs that shipped a release become deployments; then every success not yet verified is asked at the destination."""
+        """Each observed target's runs that shipped a release become deployments — except the runs a platform deploy started, which that deploy recorded; then every success not yet verified is asked at the destination."""
         errors: dict[str, Optional[str]] = {}
 
         for spec in config.targets:
@@ -347,7 +347,7 @@ class DeploymentRecords:
     ) -> Optional[Deployment]:
         version = version_from_ref(run.branch, spec.component)
 
-        if version is None:
+        if version is None or (spec.dispatched and self._shipped(app, spec, version)):
             return None
 
         finished = (
@@ -369,6 +369,19 @@ class DeploymentRecords:
             actor=run.trigger,
             started_at=run.started_at,
             finished_at=finished,
+        )
+
+    def _shipped(self, app: App, spec: TargetSpec, version: str) -> bool:
+        return (
+            self.db.scalar(
+                select(Deployment.id).where(
+                    Deployment.app_id == app.id,
+                    Deployment.target == spec.name,
+                    Deployment.executor == "platform",
+                    Deployment.version == version,
+                )
+            )
+            is not None
         )
 
     def verify(self, app: App, config: Config) -> None:

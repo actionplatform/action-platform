@@ -11,8 +11,11 @@
     workflow = "python-publish-pypi.yml"
     package = "action-platform"
 
-The platform executes only `run_by = "platform"` targets; the others are
-observed — their runs become deployment records — and verified.
+The platform executes `run_by = "platform"` targets itself and dispatches the
+CI-run ones (`github_actions`, `gitlab_ci`, `bitbucket_pipelines`): it starts
+the workflow on the release tag and follows the run. `jenkins` and `manual`
+targets are observed — their runs become deployment records — and verified.
+`stages` limits a target to some scopes.
 """
 
 from __future__ import annotations
@@ -23,7 +26,14 @@ from typing import Any
 
 from action_platform.core.exception import ConfigError
 
-EXECUTORS = ("platform", "github_actions", "jenkins", "manual")
+EXECUTORS = (
+    "platform",
+    "github_actions",
+    "gitlab_ci",
+    "bitbucket_pipelines",
+    "jenkins",
+    "manual",
+)
 RESERVED = {"name", "kind", "run_by", "stages", "target", "targets"}
 VERSION = re.compile(
     r"^(?:refs/)?(?:tags/)?(?:(?P<component>[A-Za-z0-9_.-]+)/)?v?(?P<version>\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)$"
@@ -41,6 +51,14 @@ class TargetSpec:
     @property
     def platform(self) -> bool:
         return self.run_by == "platform"
+
+    @property
+    def dispatched(self) -> bool:
+        """Run by a CI the platform can start and follow: the deploy is a run of the repository's own pipeline."""
+        return self.run_by in ("github_actions", "gitlab_ci", "bitbucket_pipelines")
+
+    def serves(self, stage: str) -> bool:
+        return not self.stages or stage in self.stages
 
     @property
     def workflow(self) -> str:
