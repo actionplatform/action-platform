@@ -80,6 +80,8 @@ A green pipeline says the job finished, not that the version is there. Every tar
 
 ## Stages
 
+> Stages are on their way to becoming **scopes** — named destinations with a kind and a criticality that decides which releases they accept. The strategy is in [scopes](concept_scopes.md); until it ships, `dev` and `prod` are the two stages below.
+
 An app has two environments, `dev` and `prod`. Each one is a separate deployment of the same repository — on `aws/lambda`, a separate CloudFormation stack named `ap-<org>-<project>-<app>-<stage>` — with its own history, its own URL and its own last deployed version. A stage receives whatever release you pick: `dev` may run `1.4.0` while `prod` is still on `1.3.2`, and nothing forces an order between them.
 
 One deploy at a time per stage. While a deploy or a preflight to a stage is queued or running, the API refuses another for the same stage with `409` (`a deploy to prod is already running; wait for it to finish`), the web disables the button and says why, and the CLI prints the same message. The other stage is free. The rule exists because the stack and the platform's clone are touched by one job at a time; two `sam deploy` on the same stack would corrupt its state.

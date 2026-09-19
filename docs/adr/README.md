@@ -12,3 +12,4 @@ One file per decision, numbered, never edited after acceptance — a later decis
 | [0006](0006-ci-providers-in-the-library.md) | CI runners and host readers live in the library, not the API | accepted |
 | [0007](0007-queue-on-postgres.md) | The job queue is a Postgres table, woken by NOTIFY, split light/heavy | accepted |
 | [0008](0008-release-readiness.md) | A release knows whether it can reach a stage before anyone deploys it — checks per stage, stored, gating the deploy | accepted |
+| [0009](0009-scopes.md) | A deploy lands on a scope; the scope's criticality decides which releases it takes | proposed |

@@ -29,6 +29,7 @@
         { "slug": "concept_templates", "title": "Templates" },
         { "slug": "concept_releases", "title": "Releases" },
         { "slug": "concept_deployments", "title": "Deployments" },
+        { "slug": "concept_scopes", "title": "Scopes" },
         { "slug": "concept_identity", "title": "Identity" },
         { "slug": "concept_observability", "title": "Observability" },
         { "slug": "concept_database", "title": "Database" }

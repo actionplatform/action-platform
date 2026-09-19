@@ -10,6 +10,7 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 | run the platform for my team | [Self-hosting](start_self_hosting.md) |
 | understand what happens when I deploy | [Deployments](concept_deployments.md) · [Identity](concept_identity.md) |
 | know before deploying whether a release will make it | [Deployments › readiness](concept_deployments.md#readiness) |
+| decide which releases may reach production | [Scopes](concept_scopes.md) |
 | fix something that was refused | [Troubleshooting](start_troubleshooting.md) |
 | know what a screen, command or tool does | [Web](use_web.md) · [CLI](use_cli.md) · [MCP](use_mcp.md) · [API](use_api.md) · [Plugins](use_plugins.md) |
 | understand who may do what | [Access control](concept_access_control.md) |
@@ -46,6 +47,7 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 | [Templates](concept_templates.md) | project types, stacks, cloud overlays, services; adding your own repositories |
 | [Releases](concept_releases.md) | versions per component, tags, what each one publishes |
 | [Deployments](concept_deployments.md) | stages, targets, readiness, preflight, the deploy job, history, redeploy, tearing down |
+| [Scopes](concept_scopes.md) | where a release is deployed: kind, criticality, which releases each scope accepts — the strategy that replaces stages |
 | [Observability](concept_observability.md) | Sentry per component: variables, what is sent, what is not |
 | [Database](concept_database.md) | the one database web and API share: connecting the API, migrations, adopting an existing schema, the tables |
 
