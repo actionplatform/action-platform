@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.29.2 — 2026-09-19
+
+### Build
+- **web:** package-lock.json level with package.json so npm ci installs
+
 ## v0.29.1 — 2026-09-19
 
 ### Bug Fixes
