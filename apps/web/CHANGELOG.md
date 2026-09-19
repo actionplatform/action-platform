@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.29.0 — 2026-09-19
+
+### Features
+- **scopes:** a scope is a name, a kind and a criticality — and no scope, no deploy
+
 ## v0.28.0 — 2026-09-18
 
 ### Features
