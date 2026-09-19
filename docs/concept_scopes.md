@@ -96,7 +96,7 @@ In words:
 - **`test` accepts any release** — candidate, stable or hotfix.
 - **A candidate is tried on `test` and `low`**; it never reaches `medium` or above.
 - **A stable release serves any scope**, any version of it.
-- **A hotfix goes anywhere**: production and every other level, whatever its shape and whether or not it is the latest — that is what a hotfix is for.
+- **A hotfix goes anywhere**: production and every other level — that is what a hotfix is for.
 
 The policy is a table, not code. An organization may loosen or tighten it per criticality in Settings (or `[scopes.policy]` in `platform.toml` for one app). The defaults above are what a new organization gets.
 
@@ -117,7 +117,7 @@ sequenceDiagram
     U->>W: deploy 1.4.0 → prod-br
     W->>A: POST apps/{id}/deploy {scope, version}
     A->>R: checks for (release, scope)
-    R-->>A: shape ✓ · latest ✓ · aws.* ✓
+    R-->>A: shape ✓ · aws.* ✓
     A->>K: job deploy (ctx.stage = "prod-br")
     K-->>W: run log · deployment row (release × scope)
 ```
