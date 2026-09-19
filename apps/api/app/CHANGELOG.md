@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.31.3 — 2026-09-19
+
+### Bug Fixes
+- **web:** deleting an app from the project page offers the cloud tear-down too
+
 ## v0.31.2 — 2026-09-19
 
 ### Bug Fixes
