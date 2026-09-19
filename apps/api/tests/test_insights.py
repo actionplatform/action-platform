@@ -18,9 +18,11 @@ class InsightsTest(GateCase):
     def seed(self):
         from app.core.db.models import CiRun, Deployment, PullRequest
         from app.core.shared.clock import now
+        from app.repositories import insights
         from app.repositories.releases import ReleaseStore
 
-        moment = now()
+        moment = now().replace(hour=12, minute=0, second=0, microsecond=0)
+        self.patch(insights, "now", lambda: moment)
         with self.app.state.db.session() as s:
             store = ReleaseStore(s)
             old = store.ensure(
