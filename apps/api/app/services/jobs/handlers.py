@@ -50,6 +50,7 @@ from app.repositories.releases import ReadinessStore
 from app.repositories.scopes import ScopeStore
 from app.services.jobs.queue import JobQueue
 from app.services.workspace.snapshot import SnapshotService
+from app.services.workspace import git_auth as auth
 from app.services.workspace.state import GitStateService
 
 log = logging.getLogger(__name__)
@@ -83,13 +84,18 @@ class JobHandlers:
         return result
 
     def _host_credentials(self, ctx: JobContext) -> Optional[SourceCredentials]:
-        """The app's source host token, for jobs nobody signed — a webhook's sync."""
-        if ctx.app is None or ctx.organization is None or not ctx.app.source_host_id:
+        """The app's source host token, for jobs nobody signed — a webhook's sync, a deploy or a tear-down whose clone is gone."""
+        return self._app_credentials(ctx.organization, ctx.app)
+
+    def _app_credentials(
+        self, organization: Optional[Organization], app: Optional[App]
+    ) -> Optional[SourceCredentials]:
+        if app is None or organization is None or not app.source_host_id:
             return None
 
         with self.database.session() as db:
             creds = IntegrationsDirectory(db, self.sealer).credentials_for(
-                ctx.organization.id, ctx.app.source_host_id
+                organization.id, app.source_host_id
             )
 
         return SourceCredentials(**creds.as_dict()) if creds else None
@@ -178,9 +184,10 @@ class JobHandlers:
         )
 
         try:
-            checks = service.check(
-                ctx.registry_id, tag, stage, shape=shape, scopes=scopes
-            )
+            with auth.git_auth(self._host_credentials(ctx)):
+                checks = service.check(
+                    ctx.registry_id, tag, stage, shape=shape, scopes=scopes
+                )
         except Exception as e:
             with self.database.session() as db:
                 ReadinessStore(db).failed(
@@ -218,7 +225,8 @@ class JobHandlers:
         started = now()
 
         try:
-            results = service.deploy(ctx.registry_id, request)
+            with auth.git_auth(self._host_credentials(ctx)):
+                results = service.deploy(ctx.registry_id, request)
         except ActionPlatformError as e:
             if not request.dry_run:
                 self._record_deploy_failure(ctx, payload, request, started, str(e))
@@ -291,13 +299,14 @@ class JobHandlers:
         """Every stage's stack down, then the app off the platform — the job the web queues for a deletion with cloud cleanup."""
         ctx = self.context(payload)
         identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
-        DeploymentsService(
-            self.registry,
-            identity=identity.minter(
-                ctx.organization, ctx.app, manages=bool(payload.get("manages"))
-            ),
-            env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
-        ).destroy(ctx.registry_id)
+        with auth.git_auth(self._host_credentials(ctx)):
+            DeploymentsService(
+                self.registry,
+                identity=identity.minter(
+                    ctx.organization, ctx.app, manages=bool(payload.get("manages"))
+                ),
+                env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
+            ).destroy(ctx.registry_id)
 
         with self.database.session() as db:
             project = db.get(Project, ctx.app.project_id)
@@ -327,11 +336,12 @@ class JobHandlers:
 
         for app in apps:
             try:
-                DeploymentsService(
-                    self.registry,
-                    identity=identity.minter(organization, app, manages=True),
-                    env=env.for_app(organization, app),
-                ).destroy(app.registry_id)
+                with auth.git_auth(self._app_credentials(organization, app)):
+                    DeploymentsService(
+                        self.registry,
+                        identity=identity.minter(organization, app, manages=True),
+                        env=env.for_app(organization, app),
+                    ).destroy(app.registry_id)
             except ActionPlatformError as e:
                 log.warning("tear down of %s skipped: %s", app.name, e)
 
@@ -355,11 +365,12 @@ class JobHandlers:
             apps = list(ProjectsRepository(db, self.sealer).apps_of(project.id))
 
         for app in apps:
-            DeploymentsService(
-                self.registry,
-                identity=identity.minter(organization, app, manages=manages),
-                env=env.for_app(organization, app),
-            ).destroy(app.registry_id)
+            with auth.git_auth(self._app_credentials(organization, app)):
+                DeploymentsService(
+                    self.registry,
+                    identity=identity.minter(organization, app, manages=manages),
+                    env=env.for_app(organization, app),
+                ).destroy(app.registry_id)
 
         with self.database.session() as db:
             projects = ProjectService(
