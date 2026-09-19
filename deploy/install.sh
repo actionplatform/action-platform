@@ -43,10 +43,19 @@ set_env() {
   mv .env.tmp .env
 }
 
+umask 077
+mkdir -p secrets
+chmod 700 secrets
+for name in postgres_password better_auth_secret api_token; do
+  if [ ! -s "secrets/$name" ]; then
+    openssl rand -hex 32 > "secrets/$name"
+  fi
+  chmod 644 "secrets/$name"
+done
+
 if [ -f .env ]; then
   say "keeping existing .env"
 else
-  umask 077
   cp .env.example .env
   if [ -n "$DOMAIN" ]; then
     URL="https://$DOMAIN"
@@ -58,9 +67,6 @@ else
   set_env PUBLIC_URL "$URL"
   set_env DOMAIN "$DOMAIN"
   set_env ACME_EMAIL "$EMAIL"
-  set_env POSTGRES_PASSWORD "$(openssl rand -hex 24)"
-  set_env BETTER_AUTH_SECRET "$(openssl rand -hex 32)"
-  set_env AP_API_TOKEN "$(openssl rand -hex 32)"
   chmod 600 .env
 fi
 
@@ -77,4 +83,4 @@ URL="$(sed -n 's/^PUBLIC_URL=//p' .env)"
 echo
 say "Action Platform is up: $URL"
 echo "  Open it, create the first account and organization — that's the whole setup."
-echo "  Files: $DIR   (.env holds the secrets; docker compose logs -f to watch)"
+echo "  Files: $DIR   (secrets/ holds the secrets, .env the settings; docker compose logs -f to watch)"

@@ -11,7 +11,7 @@ curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/mast
 ```
 
 - installs Docker when missing
-- writes `/opt/action-platform/.env` with fresh `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` and `AP_API_TOKEN`
+- writes `/opt/action-platform/.env` with the settings and `/opt/action-platform/secrets/{postgres_password,better_auth_secret,api_token}` with fresh values (`openssl rand -hex 32`); the containers read them from `/run/secrets/*`, never from the environment
 - `PUBLIC_URL=http://<public ip>:3000`
 - `docker compose up -d`, prints the URL
 
@@ -21,7 +21,7 @@ With a domain (DNS `A` record already pointing at the host) Traefik is added and
 curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/master/deploy/install.sh | sudo sh -s -- platform.example.com you@example.com
 ```
 
-Running the script again keeps the existing `.env` and only pulls and restarts — that is the upgrade path.
+Running the script again keeps the existing `.env` and `secrets/` and only pulls and restarts — that is the upgrade path.
 
 ## Dokploy
 
@@ -74,15 +74,15 @@ Images are published for every `api/vX.Y.Z` and `web/vX.Y.Z` tag to Docker Hub a
 | Variable | Required | Meaning |
 |---|---|---|
 | `PUBLIC_URL` | yes | where browsers reach the app; also the OAuth callback origin |
-| `POSTGRES_PASSWORD` | yes | Postgres password; the compose file derives `AP_DATABASE_URL` from it for the API, the worker and the `migrate` service — the web app has no database connection |
+| `POSTGRES_PASSWORD` | yes | Postgres password. `docker-compose.yml` mounts it as the `postgres_password` secret (`POSTGRES_PASSWORD_FILE` for Postgres, `AP_DB_PASSWORD_FILE` + `AP_DB_HOST` for the API, the workers and `migrate`, which assemble the URL themselves); Dokploy hands it through the environment. Only the optional PgBouncer needs it as a variable. The web app has no database connection |
 | `ACTION_PLATFORM_GIT_HOSTS` | no | comma-separated hosts the API may clone from (`github.com,gitlab.example.com`; subdomains included). Empty allows any `https://` host. `ssh://`, `git@` and `file://` are always refused for user-supplied URLs; `AP_ALLOW_INSECURE_HTTP=1` admits `http://` for an internal GitLab. |
 | `AP_GIT_AUTHOR_NAME`, `AP_GIT_AUTHOR_EMAIL` | no | fallback identity for commits when a request carries none (defaults `Action Platform <cloud@actionplatform.io>`). Each organization sets its own commit identity in Setup and Settings → Commit identity; the web app sends it with every call. |
-| `AP_API_TOKEN` | yes | shared secret between web and API: the API refuses every request without `Authorization: Bearer <token>` (except `/api/version`), so a neighbour on the Docker network cannot drive it. Set the same value on both services; unset, the API trusts the network (local development). |
+| `AP_API_TOKEN` | yes | shared secret between web and API (`AP_API_TOKEN_FILE` points to a file with the value instead — the compose file uses `/run/secrets/api_token`): the API refuses every request without `Authorization: Bearer <token>` (except `/api/version`), so a neighbour on the Docker network cannot drive it. Set the same value on both services; unset, the API trusts the network (local development). |
 | — | — | A `.env` in the working directory is read on start for every variable the shell did not set (the CLI, the API and the worker alike). |
-| `AP_DATABASE_URL` | yes | the API's connection to the same Postgres (`postgres://…`, `mysql://…` or `sqlite:///…`). Set, the API runs its migrations on boot and adopts the tables the web app created — see [database](concept_database.md). The compose file derives it from `POSTGRES_PASSWORD`; `AP_DATABASE_POOL_SIZE` (default 10) and `AP_DATABASE_MAX_OVERFLOW` (default 20) size its pool — every request holds one connection and some hold two, so keep the sum, across API and worker replicas, below the Postgres `max_connections`. |
+| `AP_DATABASE_URL` | yes | the API's connection to the same Postgres (`postgres://…`, `mysql://…` or `sqlite:///…`); `AP_DATABASE_URL_FILE` reads it from a file, and without either the API assembles it from `AP_DB_HOST`, `AP_DB_PORT` (5432), `AP_DB_USER`, `AP_DB_NAME` (both `action_platform`) and `AP_DB_PASSWORD` or `AP_DB_PASSWORD_FILE`. Set, the API runs its migrations on boot and adopts the tables the web app created — see [database](concept_database.md). The compose file derives it from `POSTGRES_PASSWORD`; `AP_DATABASE_POOL_SIZE` (default 10) and `AP_DATABASE_MAX_OVERFLOW` (default 20) size its pool — every request holds one connection and some hold two, so keep the sum, across API and worker replicas, below the Postgres `max_connections`. |
 | `AP_ALLOW_UNAUTHENTICATED` | no | `1` lets the API start without `AP_API_TOKEN` — local development only |
 | `AP_SENTRY_DSN_API`, `AP_SENTRY_DSN_WEB` | no | Sentry DSNs, one project per component; empty keeps reporting off. Reaches the containers as `AP_SENTRY_DSN` (API) and `SENTRY_DSN` (web); `AP_SENTRY_ENVIRONMENT` / `SENTRY_ENVIRONMENT` and `*_TRACES_SAMPLE_RATE` (default 0.1) tune them. See [observability](concept_observability.md). |
-| `BETTER_AUTH_SECRET` | yes | signs sessions, API tokens and encrypts stored tokens — rotating it invalidates all three. The compose files hand it to the API as `AP_AUTH_SECRET`, with `PUBLIC_URL` as `AP_PUBLIC_URL` (the device-flow verification address, and the OIDC issuer: clouds read `<url>/.well-known/jwks.json` to trust deploy tokens — [identity](concept_identity.md)). |
+| `BETTER_AUTH_SECRET` | yes | signs sessions, API tokens and encrypts stored tokens — rotating it invalidates all three. The compose files hand it to the API as `AP_AUTH_SECRET` (`docker-compose.yml` as the file `AP_AUTH_SECRET_FILE=/run/secrets/better_auth_secret`), with `PUBLIC_URL` as `AP_PUBLIC_URL` (the device-flow verification address, and the OIDC issuer: clouds read `<url>/.well-known/jwks.json` to trust deploy tokens — [identity](concept_identity.md)). |
 | `DOMAIN`, `ACME_EMAIL` | with TLS | Traefik host rule and Let's Encrypt account |
 | `WEB_PORT` | no | published port (default 3000) |
 | `AP_DATABASE_AUTO_MIGRATE` | no | `0` keeps the API and the worker from migrating on boot — the compose files set it and run `db migrate` once in the `migrate` service |
@@ -93,7 +93,7 @@ The setup wizard's first step only checks that the API has its database and secr
 
 ## Backups
 
-One volume holds state: `pgdata` (accounts, organizations, projects, apps, encrypted tokens, OAuth apps, the registry, pending edits, jobs). Back up `pgdata`; keep `BETTER_AUTH_SECRET` with it or the tokens cannot be decrypted. Clones live under the API's and worker's temp dir (`AP_WORKSPACES` to move them, `AP_WORKSPACE_TTL` seconds between fetches, default 15) and can be deleted at any moment. Capacity: `AP_API_WORKERS` uvicorn processes for the API (default 2 in the compose files; each keeps its own clone cache). Two worker services share the queue: `worker` takes sync, release, push and the imports (`AP_WORKER_CONCURRENCY` at once, default 2) and `worker-deploy` takes deploy, readiness and tear-down (`AP_DEPLOY_CONCURRENCY`, default 1) so a ten-minute deploy never holds a sync. The `api` image carries Python and git only; the `worker` image adds Go, Node, JDK and Ruby for the deploy targets plus `ap-build`, the one build entrypoint the cloud overlays call (`ap-build package` assembles a Lambda Web Adapter artifact for every language) — both published from the `api/vX.Y.Z` tag. `docker compose --profile pooler up -d` with `AP_DB_HOST=pgbouncer` puts PgBouncer (transaction pooling, 500 clients) in front of Postgres when the replicas outgrow its connections. Every per-app listing and the queue's claim are indexed (migration 0014).
+One volume holds state: `pgdata` (accounts, organizations, projects, apps, encrypted tokens, OAuth apps, the registry, pending edits, jobs). Back up `pgdata`; keep `BETTER_AUTH_SECRET` (`secrets/better_auth_secret`) with it or the tokens cannot be decrypted. Clones live under the API's and worker's temp dir (`AP_WORKSPACES` to move them, `AP_WORKSPACE_TTL` seconds between fetches, default 15) and can be deleted at any moment. Capacity: `AP_API_WORKERS` uvicorn processes for the API (default 2 in the compose files; each keeps its own clone cache). Two worker services share the queue: `worker` takes sync, release, push and the imports (`AP_WORKER_CONCURRENCY` at once, default 2) and `worker-deploy` takes deploy, readiness and tear-down (`AP_DEPLOY_CONCURRENCY`, default 1) so a ten-minute deploy never holds a sync. The `api` image carries Python and git only; the `worker` image adds Go, Node, JDK and Ruby for the deploy targets plus `ap-build`, the one build entrypoint the cloud overlays call (`ap-build package` assembles a Lambda Web Adapter artifact for every language) — both published from the `api/vX.Y.Z` tag. `docker compose --profile pooler up -d` with `AP_DB_HOST=pgbouncer` puts PgBouncer (transaction pooling, 500 clients) in front of Postgres when the replicas outgrow its connections. Every per-app listing and the queue's claim are indexed (migration 0014).
 
 ```bash
 docker compose exec postgres pg_dump -U action_platform action_platform > backup.sql

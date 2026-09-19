@@ -3,10 +3,45 @@
 import os
 import tempfile
 from pathlib import Path
+from urllib.parse import quote
 
 from action_platform.env import load
 
 load()
+
+
+def secret(*names: str) -> str:
+    """The first of `names` set in the environment — `<NAME>_FILE` first, a path whose content is the value (Docker and Kubernetes secrets), then `<NAME>` itself."""
+    for name in names:
+        path = os.getenv(f"{name}_FILE")
+
+        if path:
+            try:
+                return Path(path).read_text().strip()
+            except OSError:
+                pass
+
+        value = os.getenv(name)
+
+        if value:
+            return value
+
+    return ""
+
+
+def database_url_from_parts() -> str:
+    """`AP_DB_HOST`, `AP_DB_PORT`, `AP_DB_NAME`, `AP_DB_USER` and `AP_DB_PASSWORD` (or `_FILE`) assembled into a URL, for a deployment that keeps the password out of the environment."""
+    host = os.getenv("AP_DB_HOST")
+
+    if not host:
+        return ""
+
+    user = os.getenv("AP_DB_USER", "action_platform")
+    name = os.getenv("AP_DB_NAME", "action_platform")
+    port = os.getenv("AP_DB_PORT", "5432")
+    password = secret("AP_DB_PASSWORD")
+
+    return f"postgres://{user}:{quote(password, safe='')}@{host}:{port}/{name}"
 
 
 class Settings:
@@ -48,10 +83,12 @@ class Settings:
     ]
 
     GITHUB_TOKEN = os.getenv("ACTION_PLATFORM_GITHUB_TOKEN") or os.getenv("GH_TOKEN")
-    API_TOKEN = os.getenv("AP_API_TOKEN", "")
+    API_TOKEN = secret("AP_API_TOKEN")
     ALLOW_UNAUTHENTICATED_API = os.getenv("AP_ALLOW_UNAUTHENTICATED", "") == "1"
     FORWARDED_ALLOW_IPS = os.getenv("AP_FORWARDED_ALLOW_IPS", "*")
-    DATABASE_URL = os.getenv("AP_DATABASE_URL") or os.getenv("DATABASE_URL", "")
+    DATABASE_URL = (
+        secret("AP_DATABASE_URL", "DATABASE_URL") or database_url_from_parts()
+    )
     DATABASE_POOL_SIZE = int(os.getenv("AP_DATABASE_POOL_SIZE", "10"))
     DATABASE_AUTO_MIGRATE = os.getenv("AP_DATABASE_AUTO_MIGRATE", "1") not in (
         "0",
@@ -59,7 +96,7 @@ class Settings:
         "no",
     )
     DATABASE_MAX_OVERFLOW = int(os.getenv("AP_DATABASE_MAX_OVERFLOW", "20"))
-    AUTH_SECRET = os.getenv("AP_AUTH_SECRET") or os.getenv("BETTER_AUTH_SECRET", "")
+    AUTH_SECRET = secret("AP_AUTH_SECRET", "BETTER_AUTH_SECRET")
     PUBLIC_URL = os.getenv("AP_PUBLIC_URL") or os.getenv("PUBLIC_URL", "")
     TRUSTED_PROXIES = os.getenv(
         "AP_TRUSTED_PROXIES",

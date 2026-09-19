@@ -48,7 +48,8 @@ services:
     environment:
       POSTGRES_DB: action_platform
       POSTGRES_USER: action_platform
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -67,7 +68,7 @@ services:
     environment:
       DB_HOST: postgres
       DB_USER: action_platform
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-}
       DB_NAME: action_platform
       POOL_MODE: transaction
       MAX_CLIENT_CONN: "500"
@@ -88,7 +89,9 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-postgres}:5432/action_platform
+      AP_DB_HOST: ${AP_DB_HOST:-postgres}
+      AP_DB_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
 
   api:
     image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
@@ -107,11 +110,12 @@ services:
       migrate:
         condition: service_completed_successfully
     environment:
-      AP_API_TOKEN: ${AP_API_TOKEN:-}
+      AP_API_TOKEN_FILE: /run/secrets/api_token
       AP_API_WORKERS: ${AP_API_WORKERS:-2}
-      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-postgres}:5432/action_platform
+      AP_DB_HOST: ${AP_DB_HOST:-postgres}
+      AP_DB_PASSWORD_FILE: /run/secrets/postgres_password
       AP_DATABASE_AUTO_MIGRATE: "0"
-      AP_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      AP_AUTH_SECRET_FILE: /run/secrets/better_auth_secret
       AP_PUBLIC_URL: ${PUBLIC_URL}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
@@ -124,6 +128,7 @@ services:
       ACTION_PLATFORM_TEMPLATES_REPO: ${ACTION_PLATFORM_TEMPLATES_REPO:-https://github.com/actionplatform/templates.git}
       ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
       AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
+    secrets: [postgres_password, better_auth_secret, api_token]
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://127.0.0.1:7788/api/version || exit 1"]
       interval: 30s
@@ -146,10 +151,11 @@ services:
         condition: service_started
     command: ["action-platform-api", "worker", "--concurrency", "${AP_WORKER_CONCURRENCY:-2}", "--kinds", "sync,release,push,import,import_github"]
     environment:
-      AP_API_TOKEN: ${AP_API_TOKEN:-}
-      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-postgres}:5432/action_platform
+      AP_API_TOKEN_FILE: /run/secrets/api_token
+      AP_DB_HOST: ${AP_DB_HOST:-postgres}
+      AP_DB_PASSWORD_FILE: /run/secrets/postgres_password
       AP_DATABASE_AUTO_MIGRATE: "0"
-      AP_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      AP_AUTH_SECRET_FILE: /run/secrets/better_auth_secret
       AP_PUBLIC_URL: ${PUBLIC_URL}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
@@ -162,6 +168,7 @@ services:
       ACTION_PLATFORM_TEMPLATES_REPO: ${ACTION_PLATFORM_TEMPLATES_REPO:-https://github.com/actionplatform/templates.git}
       ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
       AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
+    secrets: [postgres_password, better_auth_secret, api_token]
 
   worker-deploy:
     image: ${AP_IMAGE_WORKER:-actionplatformio/action-platform-worker:latest}
@@ -179,10 +186,11 @@ services:
         condition: service_started
     command: ["action-platform-api", "worker", "--concurrency", "${AP_DEPLOY_CONCURRENCY:-1}", "--kinds", "deploy,readiness,destroy,destroy_project,destroy_organization", "--name", "deploy"]
     environment:
-      AP_API_TOKEN: ${AP_API_TOKEN:-}
-      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-postgres}:5432/action_platform
+      AP_API_TOKEN_FILE: /run/secrets/api_token
+      AP_DB_HOST: ${AP_DB_HOST:-postgres}
+      AP_DB_PASSWORD_FILE: /run/secrets/postgres_password
       AP_DATABASE_AUTO_MIGRATE: "0"
-      AP_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      AP_AUTH_SECRET_FILE: /run/secrets/better_auth_secret
       AP_PUBLIC_URL: ${PUBLIC_URL}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
@@ -195,6 +203,7 @@ services:
       ACTION_PLATFORM_TEMPLATES_REPO: ${ACTION_PLATFORM_TEMPLATES_REPO:-https://github.com/actionplatform/templates.git}
       ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
       AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
+    secrets: [postgres_password, better_auth_secret, api_token]
 
   web:
     image: ${AP_IMAGE_WEB:-actionplatformio/action-platform-web:latest}
@@ -234,3 +243,11 @@ volumes:
 networks:
   edge:
     internal: true
+
+secrets:
+  postgres_password:
+    file: ${AP_SECRETS_DIR:-./secrets}/postgres_password
+  better_auth_secret:
+    file: ${AP_SECRETS_DIR:-./secrets}/better_auth_secret
+  api_token:
+    file: ${AP_SECRETS_DIR:-./secrets}/api_token
