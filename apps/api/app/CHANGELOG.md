@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.28.2 — 2026-09-18
+
+### Features
+- **plugins:** every plugin's logger reaches the job log
+
 ## v0.28.1 — 2026-09-18
 
 ## v0.28.0 — 2026-09-18
