@@ -80,3 +80,11 @@ class SyncFilesTest(TempCase):
         self.assertIn(
             "<version>5.0.0</version>", (self.tmp_path / "pom.xml").read_text()
         )
+
+    def test_version_constants_inside_templates_are_left_alone(self):
+        path = self.tmp_path / "projects" / "{{cookiecutter.project_slug}}" / "app.go"
+        path.parent.mkdir(parents=True)
+        path.write_text('package app\n\nconst Version = "0.0.0"\n')
+
+        self.assertEqual(versioning.sync_files(self.tmp_path, "0.2.0"), [])
+        self.assertIn('"0.0.0"', path.read_text())

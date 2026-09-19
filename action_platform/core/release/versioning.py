@@ -126,6 +126,7 @@ class VersionFiles:
                     path.is_dir()
                     or "node_modules" in path.parts
                     or "vendor" in path.parts
+                    or any("{{" in part for part in path.parts)
                 ):
                     continue
 
