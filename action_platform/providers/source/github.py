@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import re
 import subprocess
 from pathlib import Path
 
@@ -17,6 +18,9 @@ from action_platform.core.context import Context, PRRef, ReleaseRef
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import rest
 from action_platform.settings import settings
+
+
+REPO_NAME = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._-]*)/[A-Za-z0-9._-]+$")
 
 
 class SourceGithub(SourceHost):
@@ -121,10 +125,15 @@ class SourceGithub(SourceHost):
 
             return f"{self.web}/{repo}.git"
 
-        args = ["gh", "repo", "create", repo, "--private" if private else "--public"]
+        if not REPO_NAME.match(repo):
+            raise ProviderError(f"repository name {repo!r} is not owner/name")
+
+        args = ["gh", "repo", "create", "--private" if private else "--public"]
 
         if description:
             args += ["--description", description]
+
+        args += ["--", repo]
 
         result = subprocess.run(args, check=False, capture_output=True, text=True)
 

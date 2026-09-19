@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import urllib.error
@@ -68,6 +69,11 @@ def lookup(state: PluginState, slug: str) -> tuple[str, IndexEntry]:
     )
 
 
+SPEC = re.compile(
+    r"^[A-Za-z0-9][A-Za-z0-9._-]*(\[[A-Za-z0-9._,-]+\])?((==|>=|<=|~=|!=|>|<)[A-Za-z0-9.*+!-]+(,(==|>=|<=|~=|!=|>|<)[A-Za-z0-9.*+!-]+)*)?$"
+)
+
+
 class PipInstaller:
     """pip on the running interpreter; `target` set installs into that directory instead of site-packages."""
 
@@ -89,12 +95,15 @@ class PipInstaller:
         return result.stdout
 
     def install(self, spec: str) -> str:
+        if not SPEC.match(spec):
+            raise PluginError(f"{spec!r} is not a package requirement")
+
         args = ["install", "--quiet", "--upgrade"]
 
         if self.target:
             args += ["--target", self.target]
 
-        return self.run(*args, spec)
+        return self.run(*args, "--", spec)
 
     def uninstall(self, package: str) -> str:
         if self.target:

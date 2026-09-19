@@ -2,6 +2,9 @@
 
 from typing import Optional
 
+import ipaddress
+
+from action_platform.settings import settings
 from fastapi import Depends, Header, HTTPException, Request
 from sqlalchemy import select
 
@@ -34,13 +37,36 @@ LIMITS = {
 }
 
 
+def _trusted(peer: str) -> bool:
+    try:
+        address = ipaddress.ip_address(peer)
+    except ValueError:
+        return False
+
+    for cidr in settings.TRUSTED_PROXIES.split(","):
+        cidr = cidr.strip()
+
+        if not cidr:
+            continue
+
+        try:
+            if address in ipaddress.ip_network(cidr, strict=False):
+                return True
+        except ValueError:
+            continue
+
+    return False
+
+
 def client_ip(request: Request) -> str:
+    """The peer's address — or, when the peer is one of the trusted proxies, the address that proxy appended to X-Forwarded-For; what the client itself put in the header never counts."""
+    peer = request.client.host if request.client else "unknown"
     forwarded = request.headers.get("x-forwarded-for", "")
 
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    if forwarded and _trusted(peer):
+        return forwarded.rsplit(",", 1)[-1].strip() or peer
 
-    return request.client.host if request.client else "unknown"
+    return peer
 
 
 def limited(name: str):

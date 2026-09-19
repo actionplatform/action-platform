@@ -6,9 +6,9 @@ export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   if (pathname.startsWith("/api/v1/") && MUTATING.has(request.method) && !request.headers.get("authorization")) {
-    const origin = request.headers.get("origin");
+    const source = request.headers.get("origin") ?? request.headers.get("referer");
     const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-    if (origin && host && new URL(origin).host !== host) return NextResponse.json({ detail: "cross-origin request refused" }, { status: 403 });
+    if (source && host && !sameHost(source, host)) return NextResponse.json({ detail: "cross-origin request refused" }, { status: 403 });
   }
 
   if (pathname.startsWith("/api/v1/") || pathname.startsWith("/api/auth/") || pathname.startsWith("/.well-known/")) {
@@ -24,3 +24,11 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = { matcher: ["/((?!_next|.*\\..*).*)", "/.well-known/:path*"] };
+
+function sameHost(source: string, host: string): boolean {
+  try {
+    return new URL(source).host === host;
+  } catch {
+    return false;
+  }
+}

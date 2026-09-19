@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { type Provider, PROVIDERS } from "@/lib/oauth";
 import { publicOrigin } from "@/lib/origin";
+import { safePath } from "@/lib/safe-path";
 import { getSession } from "@/lib/session";
 import { v1 } from "@/lib/v1";
 
@@ -26,7 +27,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
     return Response.json({ detail: (e as Error).message }, { status: 400 });
   }
 
-  const target = new URL(finished.return_to, publicOrigin(req.headers));
+  const target = new URL(safePath(finished.return_to, "/settings"), publicOrigin(req.headers));
   for (const [k, v] of Object.entries(finished.query)) target.searchParams.set(k, v);
   redirect(target.pathname + target.search);
 }

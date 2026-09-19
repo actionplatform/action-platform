@@ -61,6 +61,10 @@ class Settings:
     DATABASE_MAX_OVERFLOW = int(os.getenv("AP_DATABASE_MAX_OVERFLOW", "20"))
     AUTH_SECRET = os.getenv("AP_AUTH_SECRET") or os.getenv("BETTER_AUTH_SECRET", "")
     PUBLIC_URL = os.getenv("AP_PUBLIC_URL") or os.getenv("PUBLIC_URL", "")
+    TRUSTED_PROXIES = os.getenv(
+        "AP_TRUSTED_PROXIES",
+        "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fc00::/7",
+    )
     SENTRY_DSN = os.getenv("AP_SENTRY_DSN", "")
     SENTRY_ENVIRONMENT = os.getenv("AP_SENTRY_ENVIRONMENT", "production")
     SENTRY_TRACES_SAMPLE_RATE = float(os.getenv("AP_SENTRY_TRACES_SAMPLE_RATE", "0.1"))

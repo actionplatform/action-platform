@@ -506,11 +506,24 @@ class LimitsTest(AuthCase):
             headers={"X-Forwarded-For": "10.0.0.9"},
         )
         self.assertEqual(blocked.status_code, 429)
-        other = self.client.post(
+        spoofed = self.client.post(
             "/api/auth/sign-in",
             json={"email": "ana@example.com", "password": "password1"},
             headers={"X-Forwarded-For": "10.0.0.10"},
         )
+        self.assertEqual(spoofed.status_code, 429)
+
+        from unittest import mock
+
+        from app.api.routes.auth import support
+
+        with mock.patch.object(support, "_trusted", return_value=True):
+            other = self.client.post(
+                "/api/auth/sign-in",
+                json={"email": "ana@example.com", "password": "password1"},
+                headers={"X-Forwarded-For": "1.2.3.4, 10.0.0.10"},
+            )
+
         self.assertEqual(other.status_code, 200)
 
     def test_without_secret_auth_is_503(self):
