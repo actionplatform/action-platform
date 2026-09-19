@@ -22,13 +22,15 @@ The levels are ordered `test < low < medium < high < critical`.
 
 ```mermaid
 flowchart LR
-    R[Release<br/>candidate · stable · hotfix] -->|deploy| S[Scope<br/>name · kind · criticality · target]
-    S --> D[(deployment)]
-    C[candidate] --> T[test] & LO[low]
-    ST[stable] --> LO
-    L[latest stable] --> M[medium] & HI[high] & CR[critical]
-    H[hotfix] --> T & LO & M & HI & CR
-``` Scopes belong to the app; the organization keeps presets and the policy. A release is cut without any scope in mind; a deployment always names one.
+    R["Release<br/>candidate · stable · hotfix"] -->|deploy| S["Scope<br/>name · kind · criticality · target"]
+    S --> D[("deployment")]
+    C["candidate"] --> T["test"] & LO["low"]
+    ST["stable"] --> LO
+    L["latest stable"] --> M["medium"] & HI["high"] & CR["critical"]
+    H["hotfix"] --> T & LO & M & HI & CR
+```
+
+Scopes belong to the app; the organization keeps presets and the policy. A release is cut without any scope in mind; a deployment always names one.
 
 Criticality selects the rule. By default a candidate release is tried on `test` and `low` only; a stable release goes to `low` and above, never to `test`; from `medium` up only the latest stable release is deployed; a hotfix — a release cut from a `hotfix/*` branch — goes to any scope. The policy is a table the organization may change per criticality; the order of levels is fixed.
 

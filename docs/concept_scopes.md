@@ -12,13 +12,13 @@ Scopes replace the fixed `dev` / `prod` stages. Those two become the first two s
 
 ```mermaid
 flowchart LR
-    B[branch] -->|release| R[Release<br/>tag · shape: candidate · stable · hotfix]
-    R -->|deploy| S1[Scope dev<br/>web · test]
-    R -->|deploy| S2[Scope staging<br/>web · low]
-    R -->|deploy| S3[Scope prod-br<br/>web · high]
-    R -->|deploy| S4[Scope prod-eu<br/>web · critical]
-    R -->|deploy| S5[Scope nightly<br/>job · low]
-    S1 & S2 & S3 & S4 & S5 --> D[(deployment<br/>release × scope)]
+    B["branch"] -->|release| R["Release<br/>tag · shape: candidate · stable · hotfix"]
+    R -->|deploy| S1["Scope dev<br/>web · test"]
+    R -->|deploy| S2["Scope staging<br/>web · low"]
+    R -->|deploy| S3["Scope prod-br<br/>web · high"]
+    R -->|deploy| S4["Scope prod-eu<br/>web · critical"]
+    R -->|deploy| S5["Scope nightly<br/>job · low"]
+    S1 & S2 & S3 & S4 & S5 --> D[("deployment<br/>release × scope")]
 ```
 
 ## Definition
@@ -63,17 +63,17 @@ Criticality is ordered: `test < low < medium < high < critical`. Rules are writt
 ```mermaid
 flowchart LR
     subgraph shapes[Release shape]
-        C[candidate<br/>1.4.0-rc.2]
-        ST[stable<br/>1.4.0]
-        L[latest stable<br/>newest 1.x]
-        H[hotfix<br/>from hotfix/*]
+        C["candidate<br/>1.4.0-rc.2"]
+        ST["stable<br/>1.4.0"]
+        L["latest stable<br/>newest 1.x"]
+        H["hotfix<br/>from hotfix/*"]
     end
     subgraph levels[Criticality]
-        T[test]
-        LO[low]
-        M[medium]
-        HI[high]
-        CR[critical]
+        T["test"]
+        LO["low"]
+        M["medium"]
+        HI["high"]
+        CR["critical"]
     end
     C --> T
     C --> LO
@@ -262,10 +262,10 @@ region = "us-east-1"
 
 ```mermaid
 flowchart LR
-    S1[1 · model + policy<br/>scope table · release.shape<br/>stage → scope mapping] --> S2[2 · checks + gate<br/>scope.release-shape · scope.latest]
-    S2 --> S3[3 · web<br/>Scopes table · New scope · deploy form]
-    S3 --> S4[4 · kinds<br/>verify/diagnose per kind]
-    S4 --> S5[5 · CLI · MCP · platform.toml scopes]
+    S1["1 · model + policy<br/>scope table · release.shape<br/>stage → scope mapping"] --> S2["2 · checks + gate<br/>scope.release-shape · scope.latest"]
+    S2 --> S3["3 · web<br/>Scopes table · New scope · deploy form"]
+    S3 --> S4["4 · kinds<br/>verify/diagnose per kind"]
+    S4 --> S5["5 · CLI · MCP · platform.toml scopes"]
 ```
 
 
