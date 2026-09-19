@@ -97,7 +97,7 @@ Refused when the tag exists, the branch is not on the remote, the tree is dirty 
 
 ### Scopes
 
-A deploy always lands on a **scope**: a named destination of the app with a kind (`web`, `job`, `worker`, `static`, `library`), a criticality (`test`, `low`, `medium`, `high`, `critical`) and a target. The tab lists the app's scopes — name, kind, criticality, what each accepts, target, who runs deploys there; the first look at an app derives them from its configuration (`dev` as `test`, `prod` as `high`, marked *from config*). **New scope** opens its own page: Name, Kind, Criticality (a switch with the definition of each level), Target, Region, Run by, URL. A scope's menu edits or deletes it (refused while a deploy to it is running). Criticality decides which releases a scope takes: `test` and `low` take candidates, stable and hotfix releases; `medium` and above take stable and hotfix. The model: [scopes](concept_scopes.md).
+A deploy always lands on a **scope**: a named destination of the app with a kind (`web`, `job`, `worker`, `static`, `library`) and a criticality (`test`, `low`, `medium`, `high`, `critical`). No scope, no deploy — an app starts with none. The tab lists the app's scopes — name, kind, criticality, what each accepts; **New scope** opens its own page: Name, Kind, Criticality (a switch with the definition of each level). A scope's menu edits or deletes it (refused while a deploy to it is running). Criticality decides which releases a scope takes: `test` and `low` take candidates, stable and hotfix releases; `medium` and above take stable and hotfix. Where the release goes — target, region, credentials — stays in Configuration. The model: [scopes](concept_scopes.md).
 
 ### Deployments
 

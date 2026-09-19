@@ -203,6 +203,8 @@ class AsyncRouteTest(GateCase):
         from app.services.jobs.context import JobContext
 
         registry_id = self.register()
+
+        self.scopes("dev", "prod")
         res = self.client.post(
             f"/api/v1/apps/{registry_id}/deploy",
             json={"stage": "dev", "dry_run": True},
@@ -255,6 +257,7 @@ class AsyncRouteTest(GateCase):
 
     def test_a_queued_deploy_lists_with_its_stage_and_who_asked(self):
         registry_id = self.register()
+        self.scopes("dev", "prod")
         res = self.client.post(
             f"/api/v1/apps/{registry_id}/deploy",
             json={"stage": "prod", "dry_run": True},
@@ -376,6 +379,7 @@ class RegistryAdoptionTest(GateCase):
 
     def test_one_deploy_at_a_time_per_environment(self):
         registry_id = self.register()
+        self.scopes("dev", "prod")
         headers = {**self.h(), "Prefer": "respond-async"}
         first = self.client.post(
             f"/api/v1/apps/{registry_id}/deploy",

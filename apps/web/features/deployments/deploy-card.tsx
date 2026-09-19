@@ -30,7 +30,7 @@ export function DeployCard({ view, liveStages = [], scopes = [] }: { view: AppVi
   const releases = view.tags.filter((t) => /^v?\d/.test(t));
   const [stage, setStage] = useState(scopes[0]?.name ?? "dev");
   const scope = scopes.find((s) => s.name === stage) ?? null;
-  const target = scope?.target ?? (typeof view.deploy.target === "string" ? String(view.deploy.target) : null);
+  const target = typeof view.deploy.target === "string" ? String(view.deploy.target) : null;
   const [tag, setTag] = useState(releases[0] ?? "");
   const [dryRun, setDryRun] = useState(false);
   const [force, setForce] = useState(false);
@@ -72,7 +72,7 @@ export function DeployCard({ view, liveStages = [], scopes = [] }: { view: AppVi
   const shape = tag ? shapeOf(tag) : null;
   const refused = !!scope && !!shape && !ACCEPTS[scope.criticality as Criticality]?.includes(shape);
   const canDeploy = !!target && !!scope && view.can["app.release"] && !!view.repositoryUrl && !!tag && !live && !refused && (!blocked || force);
-  const blocker = scopes.length === 0 ? "Create a scope first: a deploy always lands on a scope." : !target ? "Pick a deploy target in Configuration or on the scope first." : !view.can["app.release"] ? "Your role cannot deploy." : !view.repositoryUrl ? "This app has no remote." : releases.length === 0 ? "A deploy ships a release: create one in Releases first." : live ? `A deploy to ${stage} is running — one at a time per scope.` : refused ? `${tag} is a ${shape} release; ${stage} is ${scope!.criticality} and takes ${ACCEPTS[scope!.criticality as Criticality].join(", ")} only.` : blocked && !force ? `${tag} is not deployable to ${stage}: fix the checks below, re-check on the release page, or deploy anyway.` : null;
+  const blocker = scopes.length === 0 ? "No scope, no deploy: create one under Scopes." : !target ? "Pick a deploy target in Configuration first." : !view.can["app.release"] ? "Your role cannot deploy." : !view.repositoryUrl ? "This app has no remote." : releases.length === 0 ? "A deploy ships a release: create one in Releases first." : live ? `A deploy to ${stage} is running — one at a time per scope.` : refused ? `${tag} is a ${shape} release; ${stage} is ${scope!.criticality} and takes ${ACCEPTS[scope!.criticality as Criticality].join(", ")} only.` : blocked && !force ? `${tag} is not deployable to ${stage}: fix the checks below, re-check on the release page, or deploy anyway.` : null;
   const timelineHref = `/projects/${view.projectId}/apps/${view.appId}/releases/${encodeURIComponent(tag)}`;
 
   const launch = (asDryRun: boolean) => {

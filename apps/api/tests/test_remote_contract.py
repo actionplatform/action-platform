@@ -37,6 +37,8 @@ SHARED = {
     "PullRequestPlan": "PullRequestProposal",
     "ReleasePreview": "ReleasePreview",
     "ReleaseRow": "Release",
+    "ScopeRow": "ScopeRow",
+    "Scopes": "Scopes",
     "TeamRow": "TeamRow",
 }
 

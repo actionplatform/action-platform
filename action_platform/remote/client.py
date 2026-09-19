@@ -301,6 +301,12 @@ class Remote:
     def job_logs(self, id: str, after: int = 0, limit: int = 1000) -> dict:
         return self._call("GET", f"jobs/{id}/logs", after=after, limit=limit)
 
+    def scopes(self, project: str, app: str) -> dict:
+        return self._call("GET", f"projects/{project}/apps/{app}/scopes")
+
+    def create_scope(self, project: str, app: str, body: dict) -> dict:
+        return self._call("POST", f"projects/{project}/apps/{app}/scopes", body)
+
     def deployments(self, project: str, app: str) -> dict:
         return self._call("GET", f"projects/{project}/apps/{app}/deployments")
 

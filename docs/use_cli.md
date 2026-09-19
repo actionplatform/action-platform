@@ -40,7 +40,7 @@ See [git-flow](concept_git_flow.md).
 
 ```bash
 action-platform release [patch|minor|major|X.Y.Z] [--dry-run] [--rc|--stable] [--component web]
-action-platform scopes                                    # the repository's scopes: [[scopes]], or the [deploy] targets read as scopes
+action-platform scopes                                    # the repository's [[scopes]]; none means it does not deploy
 action-platform readiness [--version X.Y.Z] [--target name] [--scope name]
 action-platform deploy [--version X.Y.Z] [--target name] [--scope name] [--dry-run]
 action-platform rollback [--target name] [--to X.Y.Z] [--stage …]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -165,6 +166,21 @@ class DeploymentRow(Open):
     started_at: Optional[str] = None
     finished_at: Optional[str] = None
     verified_at: Optional[str] = None
+
+
+class ScopeRow(Open):
+    id: str
+    name: str
+    kind: str
+    criticality: str
+    derived: bool
+    created_at: datetime
+
+
+class Scopes(Open):
+    items: list[ScopeRow]
+    kinds: list[str]
+    criticalities: list[str]
 
 
 class Deployments(Open):
@@ -392,6 +408,8 @@ __all__ = [
     "DeployTargetRow",
     "DeploymentRow",
     "Deployments",
+    "ScopeRow",
+    "Scopes",
     "Diagnosis",
     "WhoAmI",
     "OrganizationRow",

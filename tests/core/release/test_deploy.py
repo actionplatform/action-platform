@@ -5,7 +5,7 @@ from pathlib import Path
 from action_platform.abc import DeployTarget
 from action_platform.core.config import Config
 from action_platform.core.context import Context, DeployResult, Diagnosis
-from action_platform.core.exception import DeployError
+from action_platform.core.exception import ConfigError, DeployError
 from action_platform.core.release.deploy import Deployer
 from action_platform.testing.fixtures import TempCase, git, platform_repo
 
@@ -51,7 +51,14 @@ class DeployShipsAReleaseTest(TempCase):
         super().setUp()
         self.repo = platform_repo(Path(self.tmp_path))
         self.target = Recording()
-        config = Config()
+        config = Config.from_dict(
+            {
+                "scopes": [
+                    {"name": "dev", "criticality": "test"},
+                    {"name": "prod", "criticality": "high"},
+                ]
+            }
+        )
         config._deploy = [self.target]
         self.deployer = Deployer(config, self.repo)
 
@@ -85,3 +92,13 @@ class DeployShipsAReleaseTest(TempCase):
             self.deployer.deploy(version="9.9.9")
 
         self.assertIn("v1.2.3", str(caught.exception))
+
+    def test_no_scope_no_deploy(self):
+        config = Config()
+        config._deploy = [self.target]
+
+        with self.assertRaises(ConfigError) as caught:
+            Deployer(config, self.repo).deploy(version="1.2.3", stage="prod")
+
+        self.assertIn("no scope named 'prod'", str(caught.exception))
+        self.assertEqual(self.target.seen, [])

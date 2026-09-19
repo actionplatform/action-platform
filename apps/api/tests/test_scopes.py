@@ -27,34 +27,26 @@ class ScopesTest(GateCase):
         )
         self.base = "/api/v1/projects/p1/apps/a1/scopes"
 
-    def test_the_configuration_derives_dev_and_prod_on_first_sight(self):
+    def test_an_app_starts_with_no_scopes(self):
         body = self.client.get(self.base, headers=self.h()).json()
 
-        self.assertEqual(
-            [
-                (s["name"], s["kind"], s["criticality"], s["target"], s["derived"])
-                for s in body["items"]
-            ],
-            [
-                ("dev", "web", "test", "aws/lambda", True),
-                ("prod", "web", "high", "aws/lambda", True),
-            ],
-        )
-        self.assertEqual(body["items"][0]["options"], {"region": "us-east-1"})
+        self.assertEqual(body["items"], [])
         self.assertEqual(
             body["criticalities"], ["test", "low", "medium", "high", "critical"]
         )
 
+    def scope(self, name: str, criticality: str) -> None:
+        res = self.client.post(
+            self.base, json={"name": name, "criticality": criticality}, headers=self.h()
+        )
+        assert res.status_code == 201, res.text
+
     def test_create_update_delete(self):
+        self.scope("dev", "test")
+        self.scope("prod", "high")
         created = self.client.post(
             self.base,
-            json={
-                "name": "staging",
-                "kind": "web",
-                "criticality": "low",
-                "target": "aws/lambda",
-                "options": {"region": "eu-west-1"},
-            },
+            json={"name": "staging", "kind": "web", "criticality": "low"},
             headers=self.h(),
         )
         self.assertEqual(created.status_code, 201, created.text)
@@ -77,17 +69,23 @@ class ScopesTest(GateCase):
             headers=self.h(),
         )
         row = next(s for s in updated.json()["items"] if s["name"] == "staging")
-        self.assertEqual(
-            (row["kind"], row["criticality"], row["derived"]), ("job", "medium", False)
-        )
+        self.assertEqual((row["kind"], row["criticality"]), ("job", "medium"))
 
         gone = self.client.delete(f"{self.base}/staging", headers=self.h())
         self.assertEqual([s["name"] for s in gone.json()["items"]], ["dev", "prod"])
+
+        self.client.delete(f"{self.base}/dev", headers=self.h())
+        none_left = self.client.delete(f"{self.base}/prod", headers=self.h())
+        self.assertEqual(none_left.json()["items"], [])
+        self.assertEqual(
+            self.client.get(self.base, headers=self.h()).json()["items"], []
+        )
 
         missing = self.client.delete(f"{self.base}/staging", headers=self.h())
         self.assertEqual(missing.status_code, 404)
 
     def test_a_deploy_needs_an_existing_scope_and_scope_is_an_alias_of_stage(self):
+        self.scope("prod", "high")
         headers = {**self.h(), "Prefer": "respond-async"}
 
         unknown = self.client.post(
@@ -122,9 +120,9 @@ class ScopesTest(GateCase):
         from app.services.jobs.handlers import JobHandlers
         from app.services.releases import ReleasesService
 
-        self.client.post(
-            self.base, json={"name": "staging", "criticality": "low"}, headers=self.h()
-        )
+        self.scope("dev", "test")
+        self.scope("prod", "high")
+        self.scope("staging", "low")
         handlers = JobHandlers(self.app.state.db, self.app.state.sealer, get_registry())
         payload = {
             "path": f"apps/{self.registry_id}/release",
@@ -178,6 +176,7 @@ class ScopesTest(GateCase):
         self.client.post(
             f"/api/v1/apps/{self.registry_id}/sync", json={}, headers=self.h()
         )
+        self.scope("prod", "high")
 
         with self.app.state.db.session() as s:
             ReleaseStore(s).ensure("a1", "v1.3.0-rc.1", "git")

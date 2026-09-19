@@ -5,7 +5,6 @@ from action_platform.core.exception import ConfigError
 from action_platform.core.scopes import (
     CRITICALITIES,
     accepts,
-    derived_scopes,
     parse_scopes,
     shape_check,
     shape_of,
@@ -65,84 +64,36 @@ class ParseTest(unittest.TestCase):
         scopes = parse_scopes(
             {
                 "scopes": [
-                    {
-                        "name": "dev",
-                        "kind": "web",
-                        "criticality": "test",
-                        "target": "aws/lambda",
-                        "region": "us-east-1",
-                    },
-                    {
-                        "name": "nightly",
-                        "kind": "job",
-                        "criticality": "low",
-                        "target": "aws/lambda",
-                        "run_by": "jenkins",
-                    },
+                    {"name": "dev", "kind": "web", "criticality": "test"},
+                    {"name": "nightly", "kind": "job", "criticality": "low"},
                 ]
             }
         )
 
         self.assertEqual([s.name for s in scopes], ["dev", "nightly"])
-        self.assertEqual(scopes[0].options, {"region": "us-east-1"})
-        self.assertEqual(
-            (scopes[1].kind, scopes[1].run_by, scopes[1].level), ("job", "jenkins", 1)
-        )
+        self.assertEqual((scopes[1].kind, scopes[1].level), ("job", 1))
 
     def test_bad_values_are_refused(self):
         for item in (
             {"kind": "web"},
             {"name": "x", "kind": "cron"},
             {"name": "x", "criticality": "urgent"},
-            {"name": "x", "run_by": "me"},
         ):
             with self.assertRaises(ConfigError):
                 parse_scopes({"scopes": [item]})
 
-    def test_targets_derive_dev_and_prod(self):
-        scopes = derived_scopes({"target": "aws/lambda", "region": "us-east-1"})
+    def test_no_scopes_table_means_no_scopes(self):
+        self.assertEqual(parse_scopes({"deploy": {"target": "aws/lambda"}}), [])
 
-        self.assertEqual(
-            [(s.name, s.kind, s.criticality, s.target) for s in scopes],
-            [
-                ("dev", "web", "test", "aws/lambda"),
-                ("prod", "web", "high", "aws/lambda"),
-            ],
-        )
-        self.assertEqual(scopes[0].options, {"region": "us-east-1"})
-
-    def test_no_target_still_gives_dev_and_prod(self):
-        scopes = derived_scopes({})
-
-        self.assertEqual(
-            [(s.name, s.criticality, s.target) for s in scopes],
-            [("dev", "test", ""), ("prod", "high", "")],
-        )
-
-    def test_observed_targets_derive_library_scopes(self):
-        scopes = derived_scopes(
+    def test_config_exposes_scopes(self):
+        config = Config.from_dict(
             {
-                "targets": [
-                    {
-                        "name": "pypi",
-                        "kind": "pypi",
-                        "run_by": "github_actions",
-                        "package": "x",
-                        "stages": ["release"],
-                    }
-                ]
+                "deploy": {"target": "aws/lambda"},
+                "scopes": [{"name": "prod", "criticality": "high"}],
             }
         )
 
-        self.assertEqual(
-            [(s.name, s.kind, s.criticality, s.run_by) for s in scopes],
-            [("pypi", "library", "low", "github_actions")],
-        )
-
-    def test_config_exposes_scopes(self):
-        config = Config.from_dict({"deploy": {"target": "aws/lambda"}})
-
-        self.assertEqual([s.name for s in config.scopes], ["dev", "prod"])
+        self.assertEqual([s.name for s in config.scopes], ["prod"])
         self.assertEqual(config.scope("prod").criticality, "high")
 
         with self.assertRaises(ConfigError):

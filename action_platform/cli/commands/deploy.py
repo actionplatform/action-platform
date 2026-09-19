@@ -92,7 +92,7 @@ def scopes() -> None:
 
     for scope in config.scopes:
         console.print(
-            f"[bold]{scope.name}[/bold] {scope.kind} [dim]{scope.criticality}[/dim] {scope.target or '-'} [dim]{scope.run_by}[/dim]"
+            f"[bold]{scope.name}[/bold] {scope.kind} [dim]{scope.criticality}[/dim]"
         )
 
 
