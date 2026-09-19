@@ -1,6 +1,7 @@
 """`/api/v1/*`: the ASGI gate — reads the body, asks the planner (off the event loop) who calls and what the call becomes, rewrites the scope for `/api/*`, and queues the code-host import after a successful call."""
 
 import json
+import re
 from typing import Any, Callable, Optional
 
 from starlette.concurrency import run_in_threadpool
@@ -12,6 +13,7 @@ from app.schemas.common import SourceCredentials
 from app.services.access.planner import Plan, Planner, Queued
 from app.services.workspace.git_auth import git_auth
 
+WEBHOOK = re.compile(r"^webhooks/[A-Za-z0-9_-]{1,64}$")
 PREFIX = "/api/v1/"
 MAX_BODY = 2 * 1024 * 1024
 
@@ -51,7 +53,7 @@ class AccessGate:
         path = scope["path"][len(PREFIX) :].strip("/")
         method = scope["method"]
 
-        if path.startswith("webhooks/"):
+        if method == "POST" and WEBHOOK.match(path):
             await self.app(scope, self._replay(body), send)
 
             return

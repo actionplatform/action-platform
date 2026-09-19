@@ -42,6 +42,9 @@ class SourceGithub(SourceHost):
     def __init__(
         self, repo: str, token: str | None = None, base_url: str | None = None
     ) -> None:
+        if repo and not REPO_NAME.match(repo):
+            raise ProviderError(f"repository {repo!r} is not owner/name")
+
         self.repo = repo
         self.token = token or settings.GITHUB_TOKEN
         self.api = (base_url or "https://api.github.com").rstrip("/")

@@ -41,10 +41,16 @@ def decode(token: str, key: bytes, issuer: str, audience: str) -> dict[str, Any]
     except (ValueError, TypeError):
         return None
 
+    if header.get("typ") not in (None, "JWT"):
+        return None
+
     if header.get("alg") != "HS256":
         return None
 
     if claims.get("iss") != issuer or claims.get("aud") != audience:
+        return None
+
+    if isinstance(claims.get("nbf"), (int, float)) and claims["nbf"] > time.time() + 10:
         return None
 
     if not isinstance(claims.get("exp"), (int, float)) or claims["exp"] <= time.time():
