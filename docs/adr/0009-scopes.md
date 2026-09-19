@@ -8,7 +8,17 @@ Deploys name a stage, `dev` or `prod`. Two values cannot say how much a destinat
 
 ## Decision
 
-A **scope** is the unit a release is deployed to: a name, a kind (`web`, `job`, `worker`, `static`, `library`), a criticality (`test < low < medium < high < critical`), a target and who runs deploys to it. Scopes belong to the app; the organization keeps presets and the policy. A release is cut without any scope in mind; a deployment always names one.
+A **scope** is the unit a release is deployed to: a name, a kind (`web`, `job`, `worker`, `static`, `library`), a criticality, a target and who runs deploys to it.
+
+| Value | Name | Definition |
+|---|---|---|
+| `test` | Test | No production use. |
+| `low` | Low | Little impact; downtime is tolerable. |
+| `medium` | Medium | Affects processes, but a manual alternative exists. |
+| `high` | High | Affects important operations and many users. |
+| `critical` | Critical | Essential to the business: stops operations, causes financial loss or legal risk. |
+
+The levels are ordered `test < low < medium < high < critical`. Scopes belong to the app; the organization keeps presets and the policy. A release is cut without any scope in mind; a deployment always names one.
 
 Criticality selects the rule. By default a candidate release is tried on `test` and `low` only; a stable release goes to `low` and above, never to `test`; from `medium` up only the latest stable release is deployed; a hotfix — a release cut from a `hotfix/*` branch — goes to any scope. The policy is a table the organization may change per criticality; the order of levels is fixed.
 
