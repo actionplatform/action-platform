@@ -14,6 +14,7 @@ export type AppView = {
   sourceKind: string | null;
   branch: string;
   version: string | null;
+  components: { name: string; path: string; version: string | null }[];
   latestTag: string | null;
   workingTree: "clean" | "dirty" | "unknown";
   tags: string[];
@@ -69,6 +70,7 @@ export function toView(input: { projectId: string; projectName: string; projectS
     sourceKind: kind,
     branch: detail.branch,
     version: detail.last_version ?? null,
+    components: (detail.components ?? []).map((c) => ({ name: c.name, path: c.path, version: c.last_version ?? null })),
     latestTag: detail.latest_tag ?? null,
     workingTree: detail.branch ? (detail.clean ? "clean" : "dirty") : "unknown",
     tags: input.tags,

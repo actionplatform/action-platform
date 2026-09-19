@@ -45,7 +45,10 @@ export function withNotes(entry: string, notes: string): string {
 export function ReleaseCard({ view }: { view: AppView }) {
   const router = useRouter();
   const [level, setLevel] = useState<Increment>("patch");
+  const [component, setComponent] = useState<string>("");
   const [branch, setBranch] = useState(view.branch);
+  const componentOptions = [{ value: "", label: view.name, hint: "root" }, ...view.components.map((c) => ({ value: c.name, label: c.name, hint: c.path }))];
+  const tagPrefix = component ? `${component}/v` : "v";
   const [showPreview, setShowPreview] = useState(false);
   const branches = view.branches.map((b) => b.name);
   const options = branches.includes(view.branch) ? branches : [view.branch, ...branches];
@@ -53,24 +56,25 @@ export function ReleaseCard({ view }: { view: AppView }) {
   const selected = view.branches.find((b) => b.name === branch);
   const branchMissing = switching && !branches.includes(branch);
 
-  const current = view.version ?? "0.0.0";
+  const current = (component ? view.components.find((c) => c.name === component)?.version : view.version) ?? "0.0.0";
   const [computed, setComputed] = useState<{ next: string; prerelease: boolean } | null>(null);
   const stable = computed ? !computed.prerelease : view.stableBranches.includes(branch);
   useEffect(() => {
     let live = true;
     setComputed(null);
-    nextVersion(view.registryId, level, switching ? branch : null).then((r) => {
+    nextVersion(view.registryId, level, switching ? branch : null, component || null).then((r) => {
       if (live && r.ok) setComputed({ next: r.data.next, prerelease: r.data.prerelease });
     });
     return () => { live = false; };
-  }, [view.registryId, view.version, level, branch, switching]);
+  }, [view.registryId, view.version, level, branch, switching, component]);
   const next = computed?.next ?? bump(current, level);
-  const tagExists = view.tags.includes(`v${next}`);
+  const tagExists = view.tags.includes(`${tagPrefix}${next}`);
 
-  const [name, setName] = useState(`Release ${next}`);
+  const defaultName = component ? `${component} ${next}` : `Release ${next}`;
+  const [name, setName] = useState(defaultName);
   const [nameTouched, setNameTouched] = useState(false);
   const [notes, setNotes] = useState("");
-  useEffect(() => { if (!nameTouched) setName(`Release ${next}`); }, [next, nameTouched]);
+  useEffect(() => { if (!nameTouched) setName(defaultName); }, [defaultName, nameTouched]);
 
   const poll = useCallback(
     async (job: string) => {
@@ -82,8 +86,8 @@ export function ReleaseCard({ view }: { view: AppView }) {
   );
 
   const action = useAction<ReleasePreview, ReleasePreview>({
-    preview: () => previewRelease(view.registryId, level, switching ? branch : null),
-    run: () => runRelease(view.projectId, view.appId, view.registryId, level, switching ? branch : null, { name: name.trim() || null, notes: notes.trim() || null }),
+    preview: () => previewRelease(view.registryId, level, switching ? branch : null, component || null),
+    run: () => runRelease(view.projectId, view.appId, view.registryId, level, switching ? branch : null, { name: name.trim() || null, notes: notes.trim() || null, component: component || null }),
     poll,
     whileAway: "The release runs on the platform: check the Releases list in a moment.",
     onDone: () => { setNotes(""); setNameTouched(false); router.refresh(); },
@@ -92,7 +96,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
   useEffect(() => { if (action.step === "previewed") setShowPreview(true); }, [action.step]);
 
   const canRelease = view.can["app.release"] && view.workingTree === "clean" && (switching || view.health.ok) && !!view.repositoryUrl && !tagExists && !branchMissing;
-  const blocker = !view.can["app.release"] ? "Your role cannot create releases." : !view.repositoryUrl ? "This app has no remote." : branchMissing ? `Branch ${branch} is not on the remote.` : tagExists ? `Tag v${next} already exists.` : view.workingTree !== "clean" ? (switching ? "Commit or discard the pending changes before switching branches." : "Commit or discard the pending changes first.") : !switching && !view.health.ok ? "Fix the branch policy problems first." : null;
+  const blocker = !view.can["app.release"] ? "Your role cannot create releases." : !view.repositoryUrl ? "This app has no remote." : branchMissing ? `Branch ${branch} is not on the remote.` : tagExists ? `Tag ${tagPrefix}${next} already exists.` : view.workingTree !== "clean" ? (switching ? "Commit or discard the pending changes before switching branches." : "Commit or discard the pending changes first.") : !switching && !view.health.ok ? "Fix the branch policy problems first." : null;
 
   const change = (set: (v: string) => void) => (v: string) => { set(v); action.clearOutcome(); };
   const creating = action.step === "running" || action.step === "polling";
@@ -104,12 +108,12 @@ export function ReleaseCard({ view }: { view: AppView }) {
       primary={{ label: `Create ${next}`, icon: Rocket, onClick: action.confirm, disabled: !canRelease, busy: creating, busyLabel: "Creating…" }}
       secondary={{ label: "Preview changelog", icon: FileText, onClick: action.preview, disabled: !view.repositoryUrl || !view.can["app.release"], busy: action.step === "previewing", busyLabel: "Loading…" }}
       blocker={action.error ? null : blocker}
-      summary={[{ label: "Current", value: current }, { label: "Next", value: next }, { label: "Tag", value: `v${next}` }, { label: "Kind", value: stable ? "stable" : "pre-release (rc)" }]}
+      summary={[{ label: "Current", value: current }, { label: "Next", value: next }, { label: "Tag", value: `${tagPrefix}${next}` }, { label: "Kind", value: stable ? "stable" : "pre-release (rc)" }]}
       alerts={
         <>
           {action.step === "polling" && <Running label="Cutting the release" detail={`${next} from ${branch}`} />}
           {action.job && <LiveLog jobId={action.job} live={action.step === "polling"} title="Release log" />}
-          {action.result && !action.result.dry_run && <RunAlert tone="success" title={`Released ${action.result.next}`} summary={`Tag v${action.result.next} pushed and published from ${action.result.branch}.`} />}
+          {action.result && !action.result.dry_run && <RunAlert tone="success" title={`Released ${action.result.next}`} summary={`Tag ${tagPrefix}${action.result.next} pushed and published from ${action.result.branch}.`} />}
           {action.error && <RunAlert tone="danger" title="Release failed" summary={summarize(action.error)} log={action.error} />}
         </>
       }
@@ -118,7 +122,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
           <Dialog open={showPreview && !!action.previewed} onClose={() => setShowPreview(false)} title={`Preview ${action.previewed?.next ?? ""}`} description="Nothing is written until you create the release." className="max-w-2xl">
             {action.previewed && (
               <div className="space-y-4 text-sm">
-                <ActionSummary columns={4} items={[{ label: "Current", value: action.previewed.current }, { label: "Next", value: action.previewed.next }, { label: "Branch", value: action.previewed.branch }, { label: "Tag", value: `v${action.previewed.next}` }]} />
+                <ActionSummary columns={4} items={[{ label: "Current", value: action.previewed.current }, { label: "Next", value: action.previewed.next }, { label: "Branch", value: action.previewed.branch }, { label: "Tag", value: `${tagPrefix}${action.previewed.next}` }]} />
                 <div>
                   <div className="mb-1 text-xs text-secondary">Changelog</div>
                   <pre className="max-h-72 overflow-auto rounded-md border border-border bg-background p-3 font-mono text-xs whitespace-pre-wrap">{withNotes(action.previewed.changelog || "No conventional commits since the last tag.", notes)}</pre>
@@ -135,7 +139,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
               </div>
             )}
             <ActionSummary items={[{ label: "Repository", value: view.repository ?? "—" }]} className="grid-cols-1" />
-            <ActionSummary className="mt-3 border-t border-border-subtle pt-3" items={[{ label: "Branch", value: branch }, { label: "Tag", value: `v${next}` }, { label: "Name", value: name.trim() || `Release ${next}` }, { label: "Kind", value: stable ? "stable" : "pre-release (rc)" }]} />
+            <ActionSummary className="mt-3 border-t border-border-subtle pt-3" items={[{ label: "Branch", value: branch }, { label: "Tag", value: `${tagPrefix}${next}` }, { label: "Name", value: name.trim() || `Release ${next}` }, { label: "Kind", value: stable ? "stable" : "pre-release (rc)" }]} />
             <ActionSteps
               steps={[
                 <>Bump LAST_VERSION and prepend CHANGELOG.md{notes.trim() ? " with your notes" : ""}</>,
@@ -148,6 +152,11 @@ export function ReleaseCard({ view }: { view: AppView }) {
       }
     >
       <ActionFields>
+        {view.components.length > 0 && (
+          <ActionField label="Component" hint={<Hint text="What this release versions: the repository itself, or one of the components platform.toml declares — each with its own tag prefix, LAST_VERSION and changelog." />}>
+            <Select size="lg" mono value={component} onChange={change(setComponent)} options={componentOptions} />
+          </ActionField>
+        )}
         <ActionField label="Branch" hint={<Hint text={`Releases are cut from this branch. ${selected?.protected ? "Protected." : selected?.kind ? `A ${selected.kind} branch.` : ""}`} />}>
           <Select size="lg" mono icon={<GitBranch className="size-4" strokeWidth={1.75} />} value={branch} onChange={change(setBranch)} options={options.map((b) => ({ value: b, label: b, hint: view.stableBranches.includes(b) ? "stable" : "rc" }))} />
         </ActionField>

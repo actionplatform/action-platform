@@ -115,11 +115,11 @@ export const api = {
       unwrap(await client.GET("/api/apps/{id}/releases", { params: { path: { id } } })),
     branches: async (id: string) =>
       unwrap(await client.GET("/api/apps/{id}/branches", { params: { path: { id } } })),
-    nextVersion: async (id: string, level: string, branch: string | null = null) =>
-      unwrap(await client.GET("/api/apps/{id}/next-version", { params: { path: { id }, query: { level, branch: branch ?? undefined } } })),
-    release: async (id: string, level: string, dry_run: boolean, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean } = {}) =>
+    nextVersion: async (id: string, level: string, branch: string | null = null, component: string | null = null) =>
+      unwrap(await client.GET("/api/apps/{id}/next-version", { params: { path: { id }, query: { level, branch: branch ?? undefined, component: component ?? undefined } } })),
+    release: async (id: string, level: string, dry_run: boolean, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean; component?: string | null } = {}) =>
       unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run, branch, latest: true, ...extra } })),
-    releaseAsync: async (id: string, level: string, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean } = {}) =>
+    releaseAsync: async (id: string, level: string, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean; component?: string | null } = {}) =>
       unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run: false, branch, latest: true, ...extra }, headers: { "X-Async": "1" } })) as unknown as { job: string; status: string; poll: string },
     deploy: async (id: string, stage: string | null, dry_run: boolean) =>
       unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run, force: false } })),
