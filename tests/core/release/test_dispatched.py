@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 
 from action_platform.abc.ci_runner import CIRunner
 from action_platform.core.config import Config
