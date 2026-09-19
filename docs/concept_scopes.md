@@ -77,7 +77,7 @@ flowchart LR
     end
     C --> T
     C --> LO
-    ST --> LO
+    ST --> T & LO
     L --> M
     L --> HI
     L --> CR
@@ -89,7 +89,7 @@ Releases come in three shapes: **candidates** (`1.4.0-rc.2`, cut off `main`), **
 
 | Criticality | Candidates | Stable | Must be latest | Hotfix |
 |---|---|---|---|---|
-| `test` | yes | no | — | yes |
+| `test` | yes | yes | no | yes |
 | `low` | yes | yes | no | yes |
 | `medium` | no | yes | yes | yes |
 | `high` | no | yes | yes | yes |
@@ -98,11 +98,11 @@ Releases come in three shapes: **candidates** (`1.4.0-rc.2`, cut off `main`), **
 In words:
 
 - **A candidate is tried on `test` and `low`**; it never reaches `medium` or above.
-- **A stable release goes to `low` and above**, never to `test` — `test` is where candidates are burned, and a stable release that needs a test run gets a candidate cut first.
+- **A stable release serves any scope**, `test` included.
 - **From `medium` up only the latest stable release is deployed**: no rolling a `medium` scope forward to a version already superseded. Rollback is the exception — it names an older release and says so.
 - **A hotfix goes anywhere**: production and every other level, whatever its shape and whether or not it is the latest — that is what a hotfix is for.
 
-The policy is a table, not code. An organization may loosen or tighten it per criticality in Settings (or `[scopes.policy]` in `platform.toml` for one app) — for instance allow stable on `test`. The defaults above are what a new organization gets.
+The policy is a table, not code. An organization may loosen or tighten it per criticality in Settings (or `[scopes.policy]` in `platform.toml` for one app). The defaults above are what a new organization gets.
 
 ## Where the rules run
 
@@ -131,7 +131,7 @@ The gate that refuses a deploy already exists — [readiness](concept_deployment
 
 | Check | Blocks when |
 |---|---|
-| `scope.release-shape` | a candidate aims at `medium`+, or a stable release aims at `test`; never for a hotfix |
+| `scope.release-shape` | a candidate aims at `medium`+; never for a stable release or a hotfix |
 | `scope.latest` | `medium`+ and a newer stable release of the component exists; never for a hotfix |
 
 They show on the release page like every other check, per scope instead of per stage, and the deploy form refuses the same way (`409`, `force` for `org.manage`).
