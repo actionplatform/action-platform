@@ -67,6 +67,7 @@ class ReadinessTest(GateCase):
         self.assertEqual(rows[0]["checks"][0]["severity"], "warning")
 
     def test_a_blocked_release_refuses_the_deploy_unless_forced(self):
+        self.scopes("dev", "prod")
         self.stored(
             "prod", [Check("aws.permissions", False, "may not lambda:GetLayerVersion")]
         )
@@ -165,6 +166,7 @@ class ReadinessTest(GateCase):
         self.assertEqual(rows[0]["checks"][0]["id"], "deploy.targets")
 
     def test_a_release_cut_here_queues_its_readiness(self):
+        self.scopes("dev", "prod")
         from app.core.db.models import Job
         from app.repositories.workspace.source import get_registry
         from app.services.jobs.handlers import JobHandlers

@@ -3,7 +3,6 @@
 import { MoreHorizontal, Target } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Cell, DataTable } from "@/components/ui/data-table";
 import { ConfirmDialog } from "@/components/ui/dialog";
@@ -33,15 +32,13 @@ export function ScopesTable({ scopes, projectId, appId, canEdit, newHref }: { sc
         noun={["scope", "scopes"]}
         newHref={canEdit ? newHref : null}
         newLabel="New scope"
-        empty={{ icon: Target, title: "No scopes yet", text: "Create one with New scope; a deploy always lands on a scope." }}
-        minWidth={820}
+        empty={{ icon: Target, title: "No scopes yet", text: "No scope, no deploy: create one with New scope." }}
+        minWidth={640}
         columns={[
-          { key: "name", label: "Scope", width: 20, render: (s) => <span className="flex items-center gap-2"><span className="font-mono font-medium">{s.name}</span>{s.derived && <Badge className="h-5 px-1.5 text-[11px]">from config</Badge>}</span> },
-          { key: "kind", label: "Kind", width: 10, render: (s) => <Cell mono>{s.kind}</Cell> },
-          { key: "criticality", label: "Criticality", width: 14, render: (s) => <CriticalityBadge value={s.criticality} /> },
-          { key: "accepts", label: "Accepts", width: 20, hide: "md", render: (s) => <Cell muted>{(ACCEPTS[s.criticality as Criticality] ?? []).join(" · ")}</Cell> },
-          { key: "target", label: "Target", width: 16, hide: "sm", render: (s) => <Cell mono muted>{s.target ?? "—"}</Cell> },
-          { key: "run_by", label: "Run by", width: 14, hide: "md", render: (s) => <Cell muted>{s.run_by}</Cell> },
+          { key: "name", label: "Scope", width: 30, render: (s) => <span className="font-mono font-medium">{s.name}</span> },
+          { key: "kind", label: "Kind", width: 16, render: (s) => <Cell mono>{s.kind}</Cell> },
+          { key: "criticality", label: "Criticality", width: 18, render: (s) => <CriticalityBadge value={s.criticality} /> },
+          { key: "accepts", label: "Accepts", width: 30, hide: "sm", render: (s) => <Cell muted>{(ACCEPTS[s.criticality as Criticality] ?? []).join(" · ")}</Cell> },
           { key: "actions", label: "", width: 6, align: "right", render: (s) => actions(s).length > 0 ? <Menu label={`Actions for ${s.name}`} items={actions(s)} trigger={({ toggle, open, id }) => <Button size="icon" variant="ghost" aria-label={`Actions for ${s.name}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle}><MoreHorizontal className="size-4" strokeWidth={1.75} /></Button>} /> : null },
         ]}
       />

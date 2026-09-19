@@ -103,6 +103,7 @@ class Deployer:
         version: str | None = None,
     ) -> list[DeployResult]:
         ctx = self._context(dry_run=dry_run, stage=stage)
+        self.config.scope(ctx.stage)
         tag, shipped = self.release_tag(version)
         ctx.current_version = ctx.next_version = shipped
         results: list[DeployResult] = []

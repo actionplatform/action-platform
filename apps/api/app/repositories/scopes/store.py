@@ -1,8 +1,7 @@
-"""One row per scope of an app; the derived ones are written the first time the app is looked at, so every scope has an id from then on."""
+"""One row per scope of an app."""
 
 from __future__ import annotations
 
-import json
 import uuid
 from typing import Any, Optional
 
@@ -33,11 +32,7 @@ class ScopeStore:
         )
 
     def create(
-        self,
-        app_id: str,
-        spec: ScopeSpec,
-        created_by: Optional[str] = None,
-        derived: bool = False,
+        self, app_id: str, spec: ScopeSpec, created_by: Optional[str] = None
     ) -> Scope:
         row = Scope(
             id=str(uuid.uuid4()),
@@ -45,11 +40,6 @@ class ScopeStore:
             name=spec.name,
             kind=spec.kind,
             criticality=spec.criticality,
-            target_kind=spec.target or None,
-            target_options=json.dumps(spec.options),
-            run_by=spec.run_by,
-            url=spec.url,
-            derived=derived,
             created_by=created_by,
             created_at=now(),
         )
@@ -61,11 +51,6 @@ class ScopeStore:
     def update(self, row: Scope, spec: ScopeSpec) -> Scope:
         row.kind = spec.kind
         row.criticality = spec.criticality
-        row.target_kind = spec.target or None
-        row.target_options = json.dumps(spec.options)
-        row.run_by = spec.run_by
-        row.url = spec.url
-        row.derived = False
         self.db.flush()
 
         return row
@@ -76,35 +61,8 @@ class ScopeStore:
 
     @staticmethod
     def spec_of(row: Scope) -> ScopeSpec:
-        try:
-            options: dict[str, Any] = json.loads(row.target_options or "{}")
-        except ValueError:
-            options = {}
-
-        return ScopeSpec(
-            name=row.name,
-            kind=row.kind,
-            criticality=row.criticality,
-            target=row.target_kind or "",
-            run_by=row.run_by,
-            url=row.url,
-            options=options,
-        )
+        return ScopeSpec(name=row.name, kind=row.kind, criticality=row.criticality)
 
     @staticmethod
     def as_toml(spec: ScopeSpec) -> dict[str, Any]:
-        item: dict[str, Any] = {
-            "name": spec.name,
-            "kind": spec.kind,
-            "criticality": spec.criticality,
-            "run_by": spec.run_by,
-            **spec.options,
-        }
-
-        if spec.target:
-            item["target"] = spec.target
-
-        if spec.url:
-            item["url"] = spec.url
-
-        return item
+        return {"name": spec.name, "kind": spec.kind, "criticality": spec.criticality}

@@ -2857,32 +2857,18 @@ export interface components {
             name?: string | null;
             kind: string;
             criticality: string;
-            target?: string | null;
-            options: {
-                [key: string]: unknown;
-            };
-            run_by: string;
-            url?: string | null;
         };
         ScopeRow: {
             id: string;
             name: string;
             kind: string;
             criticality: string;
-            target?: string | null;
-            options: {
-                [key: string]: unknown;
-            };
-            run_by: string;
-            url?: string | null;
-            derived: boolean;
             created_at: string;
         };
         Scopes: {
             items: components["schemas"]["ScopeRow"][];
             kinds: string[];
             criticalities: string[];
-            executors: string[];
         };
         ServiceRequest: {
             name: string;

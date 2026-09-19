@@ -3,7 +3,12 @@
 from dataclasses import asdict
 from typing import Callable, Optional
 
+from sqlalchemy import select
+
 from action_platform.core.action_platform import ActionPlatform
+from app.core.db.models import App
+from app.repositories.scopes import ScopeStore
+from app.services.scopes import ScopesService
 from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.workspace.registry import Registry
 from app.schemas import DeployRequest
@@ -23,11 +28,26 @@ class DeploymentsService:
         self.env = env
         self.configs = configs or ConfigStore(registry.store.database)
 
+    def _scopes(self, id: str) -> list[dict]:
+        """The app's scopes as the platform keeps them, in place of whatever platform.toml says; an app the platform does not know keeps the file's."""
+        with self.registry.store.database.session() as db:
+            app = db.scalar(select(App).where(App.registry_id == id))
+
+            if app is None:
+                return []
+
+            return [
+                ScopeStore.as_toml(spec)
+                for spec in ScopesService(db, self.configs).specs(app)
+            ]
+
     def _tool(self, id: str) -> ActionPlatform:
         _, root = Workspaces(self.registry).checkout(id)
+        config = self.configs.config(id, root)
+        config._scopes_spec = self._scopes(id)
 
         return ActionPlatform(
-            config=self.configs.config(id, root),
+            config=config,
             repo_root=root,
             identity=self.identity,
             env=self.env,

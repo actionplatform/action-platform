@@ -1,6 +1,6 @@
 "use client";
 
-import { Cloud, Save, Target } from "lucide-react";
+import { Save, Target } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ActionField, ActionFields, ActionForm } from "@/components/ui/action-form";
@@ -14,12 +14,11 @@ import { createScope, updateScope } from "./actions";
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,62}$/;
 
-export function ScopeForm({ projectId, appId, base, vocabulary, targets, scope = null, canEdit }: {
+export function ScopeForm({ projectId, appId, base, vocabulary, scope = null, canEdit }: {
   projectId: string;
   appId: string;
   base: string;
-  vocabulary: Pick<Scopes, "kinds" | "criticalities" | "executors">;
-  targets: { name: string; description: string }[];
+  vocabulary: Pick<Scopes, "kinds" | "criticalities">;
   scope?: Scope | null;
   canEdit: boolean;
 }) {
@@ -28,10 +27,6 @@ export function ScopeForm({ projectId, appId, base, vocabulary, targets, scope =
   const [name, setName] = useState(scope?.name ?? "");
   const [kind, setKind] = useState(scope?.kind ?? "web");
   const [criticality, setCriticality] = useState<Criticality>((scope?.criticality as Criticality) ?? "low");
-  const [target, setTarget] = useState(scope?.target ?? targets[0]?.name ?? "");
-  const [runBy, setRunBy] = useState(scope?.run_by ?? "platform");
-  const [url, setUrl] = useState(scope?.url ?? "");
-  const [region, setRegion] = useState(String(scope?.options?.region ?? ""));
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -41,7 +36,7 @@ export function ScopeForm({ projectId, appId, base, vocabulary, targets, scope =
 
   const save = () => start(async () => {
     setError(null);
-    const body = { name: name.trim(), kind, criticality, target: target || null, run_by: runBy, url: url.trim() || null, options: region.trim() ? { region: region.trim() } : {} };
+    const body = { name: name.trim(), kind, criticality };
     const r = editing ? await updateScope(projectId, appId, scope!.name, body) : await createScope(projectId, appId, body);
     if (!r.ok) { setError(r.error); return; }
     router.push(`${base}/scopes`);
@@ -53,7 +48,7 @@ export function ScopeForm({ projectId, appId, base, vocabulary, targets, scope =
       title={editing ? `Edit scope ${scope!.name}` : "New scope"}
       primary={{ label: editing ? "Save scope" : "Create scope", icon: editing ? Save : Target, onClick: save, disabled: !!blocker, busy: pending, busyLabel: "Saving…" }}
       blocker={error ? null : blocker}
-      summary={[{ label: "Name", value: name || "—" }, { label: "Kind", value: kind }, { label: "Criticality", value: meta.label }, { label: "Accepts", value: ACCEPTS[criticality].join(", ") }, { label: "Target", value: target || "—" }]}
+      summary={[{ label: "Name", value: name || "—" }, { label: "Kind", value: kind }, { label: "Criticality", value: meta.label }, { label: "Accepts", value: ACCEPTS[criticality].join(", ") }]}
       alerts={error ? <RunAlert tone="danger" title="Could not save the scope" summary={summarize(error)} log={error} /> : undefined}
     >
       <ActionFields>
@@ -65,18 +60,6 @@ export function ScopeForm({ projectId, appId, base, vocabulary, targets, scope =
         </ActionField>
         <ActionField label="Criticality" hint={<Hint text={meta.hint} />}>
           <SegmentedControl label="Criticality" value={criticality} onChange={setCriticality} options={vocabulary.criticalities.map((c) => ({ id: c as Criticality, label: CRITICALITY[c as Criticality]?.label ?? c }))} />
-        </ActionField>
-        <ActionField label="Target" hint={<Hint text="The deploy target that puts a release there; the plugin options (region…) go with it." />}>
-          <Select size="lg" mono icon={<Cloud className="size-4" strokeWidth={1.75} />} value={target} onChange={setTarget} options={[{ value: "", label: "— app's configured target —" }, ...targets.map((t) => ({ value: t.name, label: t.name, hint: t.description }))]} disabled={!canEdit} />
-        </ActionField>
-        <ActionField label="Region" hint={<Hint text="Passed to the target as its region option; leave empty to use the target's default." />}>
-          <Input className="h-[42px] rounded-[7px] font-mono" value={region} onChange={(e) => setRegion(e.target.value)} placeholder="us-east-1" disabled={!canEdit} />
-        </ActionField>
-        <ActionField label="Run by" hint={<Hint text="Who executes deploys to this scope: the platform, or a pipeline the platform observes." />}>
-          <Select size="lg" mono value={runBy} onChange={setRunBy} options={vocabulary.executors.map((e) => ({ value: e, label: e }))} disabled={!canEdit} />
-        </ActionField>
-        <ActionField label="URL" hint={<Hint text="Where the scope can be seen, when it has an address." />}>
-          <Input className="h-[42px] rounded-[7px] font-mono" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" disabled={!canEdit} />
         </ActionField>
       </ActionFields>
     </ActionForm>

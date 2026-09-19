@@ -1,4 +1,4 @@
-"""App › Scopes: the app's scopes as the platform keeps them — derived from the configuration on first sight, created and edited from then on — and the configuration the core sees with them."""
+"""App › Scopes: the app's scopes as the platform keeps them, and the configuration the core sees with them. No scope, no deploy."""
 
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session as DbSession
 from action_platform.core.config import Config
 from action_platform.core.exception import ConfigError
 from action_platform.core.scopes import CRITICALITIES, KINDS, ScopeSpec, parse_scopes
-from action_platform.core.targets import EXECUTORS
 from app.core.db.models import App, Scope
 from app.core.errors import Conflict, Invalid, NotFound
 from app.repositories.configuration.config_store import ConfigStore
@@ -23,18 +22,7 @@ class ScopesService:
         self.store = ScopeStore(db)
 
     def of(self, app: App) -> list[Scope]:
-        """The app's scopes; an app never looked at gets the ones its configuration implies, stored as derived."""
-        rows = self.store.for_app(app.id)
-
-        if rows:
-            return rows
-
-        try:
-            specs = self.configs.config_of(app.registry_id).scopes
-        except ConfigError:
-            specs = []
-
-        return [self.store.create(app.id, spec, derived=True) for spec in specs]
+        return self.store.for_app(app.id)
 
     def specs(self, app: App) -> list[ScopeSpec]:
         return [ScopeStore.spec_of(row) for row in self.of(app)]
@@ -53,7 +41,6 @@ class ScopesService:
         return row
 
     def create(self, app: App, body: dict[str, Any], user_id: Optional[str]) -> Scope:
-        self.of(app)
         spec = self._spec(body)
 
         if self.store.get(app.id, spec.name) is not None:
@@ -87,19 +74,11 @@ class ScopesService:
         if not name:
             raise Invalid("name is required")
 
-        item: dict[str, Any] = {
+        item = {
             "name": name,
             "kind": body.get("kind") or "web",
             "criticality": body.get("criticality") or "low",
-            "run_by": body.get("run_by") or "platform",
-            **{k: v for k, v in (body.get("options") or {}).items()},
         }
-
-        if body.get("target"):
-            item["target"] = body["target"]
-
-        if body.get("url"):
-            item["url"] = body["url"]
 
         try:
             return parse_scopes({"scopes": [item]})[0]
@@ -108,8 +87,4 @@ class ScopesService:
 
     @staticmethod
     def vocabulary() -> dict[str, list[str]]:
-        return {
-            "kinds": list(KINDS),
-            "criticalities": list(CRITICALITIES),
-            "executors": list(EXECUTORS),
-        }
+        return {"kinds": list(KINDS), "criticalities": list(CRITICALITIES)}

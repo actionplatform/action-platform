@@ -38,7 +38,14 @@ class ReadinessTest(TempCase):
         self.repo = platform_repo(Path(self.tmp_path))
 
     def readiness(self, target: DeployTarget) -> Readiness:
-        config = Config()
+        config = Config.from_dict(
+            {
+                "scopes": [
+                    {"name": "dev", "criticality": "test"},
+                    {"name": "prod", "criticality": "high"},
+                ]
+            }
+        )
         config._deploy = [target]
         deployer = Deployer(config, self.repo)
 
@@ -110,7 +117,14 @@ class ReadinessTest(TempCase):
 
     def test_a_candidate_is_refused_by_a_high_scope_and_taken_by_a_test_scope(self):
         git(self.repo, "tag", "v1.3.0-rc.1")
-        config = Config.from_dict({"deploy": {"target": "aws/lambda"}})
+        config = Config.from_dict(
+            {
+                "scopes": [
+                    {"name": "dev", "criticality": "test"},
+                    {"name": "prod", "criticality": "high"},
+                ]
+            }
+        )
         config._deploy = [Speaking()]
         readiness = Readiness(config, self.repo, Deployer(config, self.repo))
 

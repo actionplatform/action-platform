@@ -137,7 +137,10 @@ class JobHandlers:
         with self.database.session() as db:
             stages = tuple(
                 ScopesService(db, self.configs).names(db.get(App, ctx.app.id))
-            ) or ("dev", "prod")
+            )
+
+        if not stages:
+            return
 
         ReadinessRequests(self.database, JobQueue(self.database)).request(
             ctx.organization.id,
@@ -162,12 +165,8 @@ class JobHandlers:
 
             ReadinessStore(db).running(release.id, stage)
             release_id, shape = release.id, release.shape
-            scopes = [
-                ScopeStore.as_toml(spec)
-                for spec in ScopesService(db, self.configs).specs(
-                    db.get(App, ctx.app.id)
-                )
-            ]
+
+        scopes = self._scopes(ctx.app)
 
         identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
         service = ReadinessService(
@@ -230,6 +229,16 @@ class JobHandlers:
             self._record_deploy(ctx, payload, request, started, results)
 
         return results
+
+    def _scopes(self, app: Optional[App]) -> list[dict]:
+        if app is None:
+            return []
+
+        with self.database.session() as db:
+            return [
+                ScopeStore.as_toml(spec)
+                for spec in ScopesService(db, self.configs).specs(db.get(App, app.id))
+            ]
 
     def _record_deploy(
         self,

@@ -73,6 +73,21 @@ class GateCase(TempCase):
             s.add(App(id="a1", project_id="p1", registry_id=registry_id, name="demo"))
         return registry_id
 
+    def scopes(self, *names: str) -> None:
+        from app.core.db.models import Scope
+
+        with self.app.state.db.session() as s:
+            for name in names:
+                s.add(
+                    Scope(
+                        id=f"scope-{name}",
+                        app_id="a1",
+                        name=name,
+                        kind="web",
+                        criticality="test" if name == "dev" else "high",
+                    )
+                )
+
     def token(self, scope: str) -> str:
         res = self.client.post(
             "/api/v1/tokens", json={"scope": scope, "name": "t"}, headers=self.h()

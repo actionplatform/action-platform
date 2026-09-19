@@ -1,9 +1,9 @@
-"""Where an app's releases are deployed: one row per scope, with its kind, its criticality and its target."""
+"""Where an app's releases are deployed: one row per scope, with its kind and its criticality."""
 
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Text, UniqueConstraint, func
+from sqlalchemy import DateTime, ForeignKey, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db.models.base import KEY, SHORT, Base, now
@@ -21,11 +21,6 @@ class Scope(Base):
     name: Mapped[str] = mapped_column(SHORT, nullable=False)
     kind: Mapped[str] = mapped_column(SHORT, nullable=False, default="web")
     criticality: Mapped[str] = mapped_column(SHORT, nullable=False, default="low")
-    target_kind: Mapped[Optional[str]] = mapped_column(SHORT)
-    target_options: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
-    run_by: Mapped[str] = mapped_column(SHORT, nullable=False, default="platform")
-    url: Mapped[Optional[str]] = mapped_column(Text)
-    derived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_by: Mapped[Optional[str]] = mapped_column(KEY)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=now, server_default=func.now()

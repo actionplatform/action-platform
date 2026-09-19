@@ -1,6 +1,5 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { api } from "@/lib/api";
 import { scopesOf } from "@/lib/scopes";
 import { loadApp } from "@/features/projects/load";
 import { ScopeForm } from "@/features/scopes";
@@ -11,12 +10,11 @@ export default async function NewScopePage({ params }: { params: Promise<{ proje
   if (!loaded.ok) return null;
   const { view } = loaded;
   const base = `/projects/${view.projectId}/apps/${view.appId}`;
-  const [scopes, matrix] = await Promise.all([scopesOf(view.projectId, view.appId), api.matrix()]);
-  const targets = matrix.clouds.map((c) => ({ name: c.name, description: c.description }));
+  const scopes = await scopesOf(view.projectId, view.appId);
   return (
     <div className="space-y-4">
       <Link href={`${base}/scopes`} className="inline-flex items-center gap-1.5 text-[13px] text-secondary hover:text-foreground"><ArrowLeft className="size-3.5" strokeWidth={1.75} /> Scopes</Link>
-      <ScopeForm projectId={view.projectId} appId={view.appId} base={base} vocabulary={scopes} targets={targets} canEdit={!!view.can["app.configure"]} />
+      <ScopeForm projectId={view.projectId} appId={view.appId} base={base} vocabulary={scopes} canEdit={!!view.can["app.configure"]} />
     </div>
   );
 }

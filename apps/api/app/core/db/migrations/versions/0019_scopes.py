@@ -32,15 +32,6 @@ def upgrade() -> None:
                 nullable=False,
                 server_default="low",
             ),
-            sa.Column("target_kind", sa.String(length=255), nullable=True),
-            sa.Column("target_options", sa.Text(), nullable=False, server_default="{}"),
-            sa.Column(
-                "run_by",
-                sa.String(length=255),
-                nullable=False,
-                server_default="platform",
-            ),
-            sa.Column("url", sa.Text(), nullable=True),
             sa.Column(
                 "derived", sa.Boolean(), nullable=False, server_default=sa.false()
             ),
@@ -57,9 +48,7 @@ def upgrade() -> None:
         )
         op.create_index("ix_scope_app_id", "scope", ["app_id"])
 
-    columns = {c["name"] for c in inspector.get_columns("release")}
-
-    if "shape" not in columns:
+    if "shape" not in {c["name"] for c in inspector.get_columns("release")}:
         with op.batch_alter_table("release") as batch:
             batch.add_column(
                 sa.Column(
@@ -71,6 +60,17 @@ def upgrade() -> None:
             )
 
         op.execute("UPDATE release SET shape = 'candidate' WHERE version LIKE '%-%'")
+
+    if "scopes_seeded" not in {c["name"] for c in inspector.get_columns("app")}:
+        with op.batch_alter_table("app") as batch:
+            batch.add_column(
+                sa.Column(
+                    "scopes_seeded",
+                    sa.Boolean(),
+                    nullable=False,
+                    server_default=sa.false(),
+                )
+            )
 
 
 def downgrade() -> None:

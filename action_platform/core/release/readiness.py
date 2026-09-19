@@ -25,7 +25,6 @@ LOCKFILES = {
     "composer.json": ("composer.lock",),
     "go.mod": ("go.sum",),
 }
-STAGES = ("dev", "prod")
 
 
 @slot("readiness")
@@ -116,15 +115,17 @@ class Readiness:
                 level="static",
             )
 
-        names = [s.name for s in self._scopes()] or list(STAGES)
-        ok = stage in names
+        names = [s.name for s in self._scopes()]
 
         return Check(
             "deploy.stage",
-            ok,
-            stage if ok else f"{stage!r} is not one of {', '.join(names)}",
+            False,
+            f"no scope {stage!r}"
+            + (
+                f" (scopes: {', '.join(names)})" if names else "; the app has no scopes"
+            ),
             level="static",
-            fix=None if ok else f"deploy to one of {', '.join(names)}",
+            fix="create the scope first — no scope, no deploy",
         )
 
     def _scopes(self) -> list[ScopeSpec]:

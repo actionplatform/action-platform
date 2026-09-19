@@ -4,26 +4,21 @@
     name = "prod"
     kind = "web"
     criticality = "high"
-    target = "aws/lambda"
-    region = "us-east-1"
 
-Without `[[scopes]]`, the `[deploy]` targets read as scopes: one per stage a target names, else `dev` (test) and `prod` (high)."""
+No scope, no deploy: a repository without `[[scopes]]` releases but does not deploy."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Optional
 
 from action_platform.core.context import Check
 from action_platform.core.exception import ConfigError
-from action_platform.core.targets import EXECUTORS, parse_targets
 
 CRITICALITIES = ("test", "low", "medium", "high", "critical")
 KINDS = ("web", "job", "worker", "static", "library")
 SHAPES = ("candidate", "stable", "hotfix")
-RESERVED = {"name", "kind", "criticality", "target", "run_by", "url"}
 
-DEFAULT_CRITICALITY = {"dev": "test", "prod": "high"}
 DEFAULT_POLICY: dict[str, frozenset[str]] = {
     "test": frozenset(SHAPES),
     "low": frozenset(SHAPES),
@@ -38,10 +33,6 @@ class ScopeSpec:
     name: str
     kind: str = "web"
     criticality: str = "low"
-    target: str = ""
-    run_by: str = "platform"
-    url: Optional[str] = None
-    options: dict[str, Any] = field(default_factory=dict)
 
     @property
     def level(self) -> int:
@@ -102,49 +93,8 @@ def shape_check(
 
 
 def parse_scopes(data: dict) -> list[ScopeSpec]:
-    """Every scope of platform.toml: `[[scopes]]` when present, else the `[deploy]` targets as scopes."""
-    raw = data.get("scopes")
-
-    if raw:
-        return [_scope(item) for item in raw]
-
-    return derived_scopes(data.get("deploy") or {})
-
-
-def derived_scopes(deploy: dict) -> list[ScopeSpec]:
-    """The `[deploy]` targets as scopes; an app with no target at all still has `dev` and `prod`, with no target to run."""
-    specs: list[ScopeSpec] = []
-    targets = parse_targets(deploy)
-
-    if not targets:
-        return [
-            ScopeSpec(name=stage, criticality=DEFAULT_CRITICALITY[stage])
-            for stage in DEFAULT_CRITICALITY
-        ]
-
-    for target in targets:
-        stages = target.stages or ("dev", "prod")
-
-        for stage in stages:
-            specs.append(
-                ScopeSpec(
-                    name=stage
-                    if len(stages) > 1 or stage in DEFAULT_CRITICALITY
-                    else target.name,
-                    kind="library" if target.kind in ("pypi", "npm") else "web",
-                    criticality=DEFAULT_CRITICALITY.get(stage, "low"),
-                    target=target.kind,
-                    run_by=target.run_by,
-                    options=dict(target.options),
-                )
-            )
-
-    seen: dict[str, ScopeSpec] = {}
-
-    for spec in specs:
-        seen.setdefault(spec.name, spec)
-
-    return list(seen.values())
+    """Every `[[scopes]]` entry of platform.toml; none when the table is absent."""
+    return [_scope(item) for item in data.get("scopes") or []]
 
 
 def _scope(item: Any) -> ScopeSpec:
@@ -153,7 +103,6 @@ def _scope(item: Any) -> ScopeSpec:
 
     kind = str(item.get("kind") or "web")
     criticality = str(item.get("criticality") or "low")
-    run_by = str(item.get("run_by") or "platform")
 
     if kind not in KINDS:
         raise ConfigError(
@@ -162,17 +111,4 @@ def _scope(item: Any) -> ScopeSpec:
 
     rank(criticality)
 
-    if run_by not in EXECUTORS:
-        raise ConfigError(
-            f"scope {item['name']!r}: run_by {run_by!r} is not one of {', '.join(EXECUTORS)}"
-        )
-
-    return ScopeSpec(
-        name=str(item["name"]),
-        kind=kind,
-        criticality=criticality,
-        target=str(item.get("target") or ""),
-        run_by=run_by,
-        url=item.get("url") or None,
-        options={k: v for k, v in item.items() if k not in RESERVED},
-    )
+    return ScopeSpec(name=str(item["name"]), kind=kind, criticality=criticality)

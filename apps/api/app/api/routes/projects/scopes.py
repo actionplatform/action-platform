@@ -1,7 +1,5 @@
 """The scopes of an app: where its releases are deployed, each with a kind and a criticality."""
 
-import json
-
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import (
@@ -24,21 +22,11 @@ router = APIRouter(prefix="/api/v1", tags=["management"])
 
 
 def _row(scope: Scope) -> schemas.ScopeRow:
-    try:
-        options = json.loads(scope.target_options or "{}")
-    except ValueError:
-        options = {}
-
     return schemas.ScopeRow(
         id=scope.id,
         name=scope.name,
         kind=scope.kind,
         criticality=scope.criticality,
-        target=scope.target_kind,
-        options=options,
-        run_by=scope.run_by,
-        url=scope.url,
-        derived=scope.derived,
         created_at=scope.created_at,
     )
 

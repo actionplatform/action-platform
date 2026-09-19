@@ -70,8 +70,8 @@ class Config:
 
     @property
     def scopes(self) -> list[ScopeSpec]:
-        """Where releases are deployed: `[[scopes]]`, else the `[deploy]` targets read as scopes."""
-        return parse_scopes({"scopes": self._scopes_spec, "deploy": self._deploy_spec})
+        """Where releases are deployed: `[[scopes]]`; none means the repository does not deploy."""
+        return parse_scopes({"scopes": self._scopes_spec})
 
     def scope(self, name: str) -> ScopeSpec:
         spec = next((s for s in self.scopes if s.name == name), None)

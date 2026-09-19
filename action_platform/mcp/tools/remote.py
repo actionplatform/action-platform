@@ -483,11 +483,44 @@ def register(mcp: Any, remote: Remote) -> None:
             _org_of(row),
         )
 
+    @tool(mcp, annotations=READ_ONLY)
+    def list_scopes(id: AppId) -> schemas.Scopes:
+        """Where the app's releases are deployed: each scope with its kind and its criticality (test, low, medium, high, critical). Criticality decides what a scope takes: test and low take candidates, stable and hotfix releases; medium and above take stable and hotfix only. A deploy always names a scope; an app without scopes does not deploy."""
+        project, app = _app_in_project(remote, id)
+
+        return remote.scopes(project["id"], app["id"])
+
+    @tool(mcp, annotations=REACHES_OUT)
+    def create_scope(
+        id: AppId,
+        name: Annotated[
+            str,
+            Field(description="Unique within the app: staging, prod-eu, nightly-jobs"),
+        ],
+        criticality: Annotated[
+            str, Field(description="test | low | medium | high | critical")
+        ] = "low",
+        kind: Annotated[
+            str, Field(description="web | job | worker | static | library")
+        ] = "web",
+    ) -> schemas.Scopes:
+        """Create a scope for the app. Show the user what will exist before calling."""
+        project, app = _app_in_project(remote, id)
+
+        return remote.create_scope(
+            project["id"],
+            app["id"],
+            {"name": name, "kind": kind, "criticality": criticality},
+        )
+
     @tool(mcp, annotations=REACHES_OUT)
     def deploy(
         id: AppId,
         stage: Annotated[
-            Optional[str], Field(description="dev or prod; default from the branch")
+            Optional[str],
+            Field(
+                description="The scope to deploy to (list_scopes); default from the branch: prod on main, dev elsewhere"
+            ),
         ] = None,
         dry_run: Annotated[bool, Field(description="true runs preflight only")] = True,
         version: Annotated[
@@ -497,7 +530,7 @@ def register(mcp: Any, remote: Remote) -> None:
             ),
         ] = None,
     ) -> list[schemas.DeployResult]:
-        """Ship a release to the app's [deploy] target. Defaults to preflight; call again with dry_run=false to deploy. Cut the release first (`release`) when none exists."""
+        """Ship a release to one of the app's scopes. Defaults to preflight; call again with dry_run=false to deploy. Cut the release first (`release`) when none exists; the scope's criticality decides whether the release may go there."""
         return remote.deploy(id, stage, dry_run, version)
 
     @tool(mcp, annotations=READ_ONLY)
