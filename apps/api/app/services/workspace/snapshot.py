@@ -10,6 +10,7 @@ from app.core.errors import NotFound
 from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.workspace.registry import Registry
 from app.repositories.workspace.snapshots import SnapshotStore
+from app.services.workspace.facts import AppFacts
 from app.services.workspace.state import GitStateService
 
 COMMITS = 50
@@ -24,11 +25,9 @@ class SnapshotService:
 
     def take(self, id: str) -> dict:
         """Read everything from the clone once and keep it."""
-        from app.services.configuration.service import ConfigurationService
-        from app.services.projects.apps import AppService
-
-        detail = AppService(self.registry, self.configs).detail(id)
-        manifest = ConfigurationService(self.registry, self.configs).manifest(id)
+        facts = AppFacts(self.registry, self.configs)
+        detail = facts.detail(id)
+        manifest = facts.manifest(id)
         data = {
             "detail": detail,
             "gitflow": self.state.gitflow(id),

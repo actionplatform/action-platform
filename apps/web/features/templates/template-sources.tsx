@@ -39,7 +39,7 @@ export function TemplateSources({ sources, canManage }: { sources: SourceRow[]; 
         columns={[
           { key: "name", label: "Name", width: 28, render: (s) => <Inline><span className="truncate font-mono">{s.name}</span>{kind(s)}{!s.ok && <Badge tone="bad">Unavailable</Badge>}</Inline> },
           { key: "url", label: "Repository", width: 38, hide: "sm", render: where },
-          { key: "contents", label: "Contents", width: 28, hide: "md", render: (s) => <Cell muted title={s.ok ? undefined : s.error ?? undefined}>{s.ok ? `${s.projects} projects · ${s.clouds} clouds · ${s.services} services` : s.error}</Cell> },
+          { key: "contents", label: "Contents", width: 28, hide: "md", render: (s) => <Cell muted title={s.ok ? undefined : s.error ?? undefined}>{s.ok ? `${s.projects} projects · ${s.clouds} clouds` : s.error}</Cell> },
           { key: "actions", label: "", width: 6, align: "right", render: remove },
         ]}
       />

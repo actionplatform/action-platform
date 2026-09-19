@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Cloud, ExternalLink, GitCommitHorizontal, Save, Upload, Plus } from "lucide-react";
+import { Check, Cloud, ExternalLink, GitCommitHorizontal, Save, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -15,19 +15,17 @@ import { Field, Input } from "@/components/ui/input";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
 import { planBranch } from "@/features/activity/actions";
-import { addService, commitChanges, discardChanges, exportManifest, saveManifest, setCloudTarget } from "@/features/configuration/actions";
+import { commitChanges, discardChanges, exportManifest, saveManifest, setCloudTarget } from "@/features/configuration/actions";
 import type { AppView } from "@/features/projects";
 
 type CloudOption = { name: string; description: string; source: string };
-type ServiceOption = { name: string; providers: string[]; description: string; source: string };
 
-export function ConfigurationPanels({ view, clouds, services }: { view: AppView; clouds: CloudOption[]; services: ServiceOption[] }) {
+export function ConfigurationPanels({ view, clouds }: { view: AppView; clouds: CloudOption[] }) {
   return (
     <div className="space-y-4">
       {!view.can["app.configure"] && <div className="rounded-lg border border-border bg-surface px-4 py-3 text-[13px] text-secondary">Your role can view the configuration but not change it.</div>}
       {view.workingTree === "dirty" && view.can["app.configure"] && <CommitBar view={view} />}
       <DeployTargetPanel view={view} clouds={clouds} />
-      <ServicesPanel view={view} services={services} />
       <ManifestPanel view={view} />
     </div>
   );
@@ -176,49 +174,6 @@ function DeployTargetPanel({ view, clouds }: { view: AppView; clouds: CloudOptio
         </ActionField>
         <ActionField label="About">
           <div className="flex h-[42px] items-center truncate rounded-[7px] border border-dashed border-border px-3 text-sm text-secondary" title={chosen?.description}>{chosen?.description ?? "Pick a cloud"}</div>
-        </ActionField>
-      </ActionFields>
-    </ActionForm>
-  );
-}
-
-function ServicesPanel({ view, services }: { view: AppView; services: ServiceOption[] }) {
-  const router = useRouter();
-  const [name, setName] = useState(services[0]?.name ?? "");
-  const [provider, setProvider] = useState<string>(services[0]?.providers[0] ?? "");
-  const chosen = services.find((s) => s.name === name);
-  const can = view.can["app.configure"];
-  const action = useAction<never, { name: string }>({
-    run: () => addService(view.projectId, view.registryId, name, provider || null, chosen?.source ?? null),
-    onDone: () => router.refresh(),
-  });
-  const blocker = !can ? "Your role cannot change the configuration." : services.length === 0 ? "The templates matrix offers no service." : view.services.includes(name) ? `${name} is already added.` : null;
-
-  return (
-    <ActionForm
-      title="Services"
-      aside={<Badge>{view.services.length} {view.services.length === 1 ? "service" : "services"}</Badge>}
-      primary={{ label: "Add service", icon: Plus, onClick: action.confirm, disabled: !!blocker || !name, busy: action.busy, busyLabel: "Adding…" }}
-      blocker={action.error ? null : blocker}
-      summary={[{ label: "Installed", value: view.services.join(", ") || "none" }, { label: "Chosen", value: name || "—" }, { label: "Provider", value: provider || "—" }, { label: "Result", value: "pending changes" }]}
-      alerts={action.error ? <RunAlert tone="danger" title="Could not add" summary={summarize(action.error)} log={action.error} /> : null}
-      dialogs={
-        <ConfirmDialog open={action.step === "confirming"} onClose={action.cancel} title={`Add ${name}?`} confirmLabel="Add service" pending={action.busy} onConfirm={action.execute}>
-          <ActionSummary items={[{ label: "Service", value: name }, { label: "Provider", value: provider || "—" }, { label: "Files", value: `services/${name}/` }, { label: "Then", value: "commit the changes" }]} />
-          <p className="mt-4 text-sm text-secondary">Adds <span className="font-mono">services/{name}/</span> with up and link scripts as pending changes and records it under <span className="font-mono">[services]</span>.</p>
-        </ConfirmDialog>
-      }
-    >
-      <ActionFields>
-        <ActionField label="Service" hint={<Hint text="Databases, caches and storage come as services/<name>/ with up and link scripts." />}>
-          <Select size="lg" mono value={name} onChange={(v) => { setName(v); setProvider(services.find((s) => s.name === v)?.providers[0] ?? ""); action.clearOutcome(); }} disabled={!can || services.length === 0} options={services.map((s) => ({ value: s.name, label: s.name, hint: view.services.includes(s.name) ? "installed" : s.source !== "official" ? s.source : undefined }))} />
-        </ActionField>
-        <ActionField label="Provider">
-          {chosen && chosen.providers.length > 0 ? (
-            <Select size="lg" mono value={provider} onChange={(v) => { setProvider(v); action.clearOutcome(); }} disabled={!can} options={chosen.providers.map((p) => ({ value: p, label: p }))} />
-          ) : (
-            <div className="flex h-[42px] items-center rounded-[7px] border border-dashed border-border px-3 font-mono text-sm text-muted-foreground">{chosen ? "single provider" : "—"}</div>
-          )}
         </ActionField>
       </ActionFields>
     </ActionForm>

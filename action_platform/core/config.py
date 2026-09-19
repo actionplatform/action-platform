@@ -15,6 +15,7 @@ from action_platform.core.exception import ConfigError
 from action_platform.core import module
 from action_platform.core.release import strategies
 from action_platform.core.release.components import parse as parse_components
+from action_platform.providers.deploy import BUILTIN_DEPLOY_TARGETS
 from action_platform.providers.source import build_source_host
 
 
@@ -128,8 +129,6 @@ def _build_source_host(cfg: dict) -> SourceHost | None:
 
 
 def _providers() -> dict[str, type]:
-    from action_platform.providers.deploy import BUILTIN_DEPLOY_TARGETS
-
     return {**BUILTIN_DEPLOY_TARGETS, **module.load_deploy_targets()}
 
 

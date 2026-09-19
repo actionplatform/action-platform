@@ -16,7 +16,7 @@ export default async function ConfigurationPage({ params }: { params: Promise<{ 
 
   return (
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-      <ConfigurationPanels view={view} clouds={clouds.map((c) => ({ name: c.name, description: c.description, source: c.source }))} services={matrix.services} />
+      <ConfigurationPanels view={view} clouds={clouds.map((c) => ({ name: c.name, description: c.description, source: c.source }))} />
       <SourceCard view={view} base={base} />
     </div>
   );

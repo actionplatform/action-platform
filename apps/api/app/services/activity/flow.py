@@ -11,6 +11,7 @@ from app.repositories.workspace.registry import Registry
 from app.schemas import PullRequestRequest, StartBranchRequest
 from app.services.workspace import Workspaces
 from app.core.errors import Conflict, Invalid, NotFound
+from app.services.workspace.snapshot import SnapshotService
 
 
 class FlowService:
@@ -36,8 +37,6 @@ class FlowService:
         return {"branch": branch.name, "base": branch.base, "pushed": True}
 
     def _snapshot(self, id: str) -> None:
-        from app.services.workspace.snapshot import SnapshotService
-
         SnapshotService(self.registry, self.configs).take(id)
 
     def plan_branch(self, id: str, kind: str, code: str, slug: Optional[str]) -> dict:

@@ -8,14 +8,16 @@ from pathlib import Path
 from typing import Optional
 
 
-from action_platform.core.flow.repository import Repository
 from action_platform.core.scaffold.install import InstallError, install
 from action_platform.settings import settings
 from app.services.workspace import git_auth as auth
 from app.repositories.workspace.registry import Entry, MissingManifest
+from app.repositories.workspace.snapshots import SnapshotStore
 from app.schemas import InstallSpec, SourceCredentials
 from app.services.projects.apps.base import AppsBase
 from app.services.workspace.checkout import Workspaces
+from app.services.workspace.facts import AppFacts
+from app.services.workspace.snapshot import SnapshotService
 from app.services.workspace.manifest import AppManifest
 from app.core.errors import Invalid, NeedsInstall
 
@@ -27,27 +29,46 @@ class AppInventory(AppsBase):
         return Workspaces(self.registry).checkout(id)
 
     def list(self, only: set[str] | None = None) -> list[dict]:
-        """Every app — or the ones in `only` — with what the manifest says about it. Listing clones nothing: an app not checked out on this instance answers with its registry row only."""
+        """Every app — or the ones in `only` — with what the platform knows about it: the snapshot taken after the last change, the clone when this instance has one and no snapshot exists yet. Listing clones nothing."""
+        snapshots = SnapshotStore(self.registry.store.database)
         rows = []
 
         for entry in self.registry.list():
             if only is not None and entry.id not in only:
                 continue
 
-            root = Path(entry.path)
             row = asdict(entry)
             row["exists"] = bool(entry.url)
             row["branch"] = entry.checked_out
-
-            if root.is_dir() and (root / settings.CONFIG_FILE).exists():
-                info = AppManifest(root, self.configs.resolve(entry.id, root)).as_dict()
-                row["language"] = info["project"].get("language")
-                row["type"] = info["project"].get("type")
-                row["last_version"] = info["last_version"]
-
+            row.update(self._summary(entry, snapshots.get(entry.id)))
             rows.append(row)
 
         return rows
+
+    def _summary(self, entry: Entry, snapshot: Optional[tuple[dict, object]]) -> dict:
+        if snapshot is not None:
+            detail = snapshot[0].get("detail") or {}
+            project = detail.get("project") or {}
+
+            return {
+                "language": project.get("language"),
+                "type": project.get("type"),
+                "last_version": detail.get("last_version"),
+                "branch": detail.get("branch") or entry.checked_out,
+            }
+
+        root = Path(entry.path)
+
+        if not (root.is_dir() and (root / settings.CONFIG_FILE).exists()):
+            return {}
+
+        info = AppManifest(root, self.configs.resolve(entry.id, root)).as_dict()
+
+        return {
+            "language": info["project"].get("language"),
+            "type": info["project"].get("type"),
+            "last_version": info["last_version"],
+        }
 
     def add(
         self,
@@ -104,31 +125,16 @@ class AppInventory(AppsBase):
         return asdict(entry)
 
     def _snapshot(self, id: str) -> None:
-        from app.services.workspace.snapshot import SnapshotService
-
         try:
             SnapshotService(self.registry, self.configs).take(id)
         except Exception:
             log.warning("snapshot of %s failed", id, exc_info=True)
 
     def remove(self, id: str) -> None:
-        from app.services.workspace.snapshot import SnapshotService
-
         entry = self.registry.get(id)
         SnapshotService(self.registry, self.configs).forget(id)
         self.registry.remove(id)
         Workspaces(self.registry).drop(id, Path(entry.path))
 
     def detail(self, id: str) -> dict:
-        entry, root = self.workspace(id)
-        info = AppManifest(root, self.configs.resolve(id, root) or None).as_dict()
-        info["id"] = id
-        info["url"] = entry.url
-        info["default_branch"] = entry.default_branch
-
-        repo = Repository(root)
-        info["branch"] = repo.branch if repo.exists() else entry.checked_out
-        info["latest_tag"] = repo.latest_tag() if repo.exists() else None
-        info["clean"] = not self.registry.drafts.paths(id)
-
-        return info
+        return AppFacts(self.registry, self.configs).detail(id)

@@ -12,6 +12,7 @@ from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.workspace.registry import Registry
 from app.schemas import CommitRequest
 from app.services.workspace.checkout import Workspaces
+from app.services.workspace.snapshot import SnapshotService
 
 
 class CommitService:
@@ -61,9 +62,6 @@ class CommitService:
                 auth.apply(config, body.credentials)
                 ref = wired.gitflow(repo).open_pr(config=config)
                 result["pull_request"] = {"number": ref.number, "url": ref.url}
-
-        from app.services.workspace.snapshot import SnapshotService
-
         SnapshotService(self.registry, self.configs).take(id)
 
         return result

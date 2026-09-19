@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import typer
@@ -197,8 +198,6 @@ def logs(
     ),
 ) -> None:
     """What the worker wrote while running a job — a deploy, a release, a readiness check — on the hosted platform."""
-    import time
-
     remote = Remote.from_credentials()
     after = 0
 
