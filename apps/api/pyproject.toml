@@ -16,7 +16,7 @@ dependencies = [
   "cryptography>=50",
   "sentry-sdk[fastapi]>=2.0",
   "typer>=0.15",
-  "apx-aws-lambda>=0.3.11",
+  "apx-aws-lambda>=0.4.0",
 ]
 
 [project.scripts]
