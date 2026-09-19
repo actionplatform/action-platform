@@ -173,7 +173,6 @@ class ScopeRow(Open):
     name: str
     kind: str
     criticality: str
-    derived: bool
     created_at: datetime
 
 
