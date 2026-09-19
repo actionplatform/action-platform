@@ -97,6 +97,7 @@ Releases come in three shapes: **candidates** (`1.4.0-rc.2`, cut off `main`), **
 
 In words:
 
+- **`test` accepts any release** — candidate, stable or hotfix.
 - **A candidate is tried on `test` and `low`**; it never reaches `medium` or above.
 - **A stable release serves any scope**, `test` included.
 - **From `medium` up only the latest stable release is deployed**: no rolling a `medium` scope forward to a version already superseded. Rollback is the exception — it names an older release and says so.
