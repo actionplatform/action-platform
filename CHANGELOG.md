@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.29.0 — 2026-09-19
+
+### Features
+- **releases:** release a component from the web
+- **release:** the library publishes through the platform — pypi target, dispatched publish.yml
+
 ## v0.28.1 — 2026-09-19
 
 ### Bug Fixes
