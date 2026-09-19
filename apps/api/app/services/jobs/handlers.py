@@ -35,6 +35,7 @@ from app.services.jobs.registry import JobServices, register
 from app.repositories.projects import ProjectsRepository
 from app.services.projects import ProjectService
 from app.services.projects.organization_import import OrganizationImport
+from app.services.organization.removal import OrganizationRemoval
 from app.services.deployments import DeploymentsService
 from app.services.releases import (
     ReadinessRequests,
@@ -282,6 +283,39 @@ class JobHandlers:
 
         return {"removed": removed, "repositories": repositories}
 
+    def destroy_organization(self, payload: dict[str, Any]) -> Any:
+        """Every app's stacks down, then the organization and everything it owned off the platform."""
+        identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
+        env = DeployEnv(self.database)
+        body = payload.get("body") or {}
+
+        with self.database.session() as db:
+            organization = db.get(Organization, payload["organization_id"])
+            repo = ProjectsRepository(db, self.sealer)
+            apps = [
+                app
+                for project in repo.projects_of(organization.id)
+                for app in repo.apps_of(project.id)
+            ]
+
+        for app in apps:
+            try:
+                DeploymentsService(
+                    self.registry,
+                    identity=identity.minter(organization, app, manages=True),
+                    env=env.for_app(organization, app),
+                ).destroy(app.registry_id)
+            except ActionPlatformError as e:
+                log.warning("tear down of %s skipped: %s", app.name, e)
+
+        with self.database.session() as db:
+            return OrganizationRemoval(db, self.sealer, self.registry).delete(
+                db.get(Organization, organization.id),
+                str(payload.get("user_id")),
+                str(body.get("confirm") or ""),
+                bool(body.get("repository")),
+            )
+
     def destroy_project(self, payload: dict[str, Any]) -> Any:
         """Each app's stacks down, then the project off the platform."""
         identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
@@ -401,6 +435,7 @@ class JobHandlers:
 
 
 register("sync", lambda s: JobHandlers.of(s).sync)
+register("destroy_organization", lambda s: JobHandlers.of(s).destroy_organization)
 register("readiness", lambda s: JobHandlers.of(s).readiness)
 register("release", lambda s: JobHandlers.of(s).release)
 register("deploy", lambda s: JobHandlers.of(s).deploy)

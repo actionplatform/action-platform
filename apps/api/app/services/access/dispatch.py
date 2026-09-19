@@ -139,6 +139,27 @@ class Dispatcher:
 
         return job.id
 
+    def destroy_organization(
+        self, organization: Organization, caller: Caller, repository: bool, confirm: str
+    ) -> str:
+        """Every app's stacks down on the worker, then the organization and everything it owned off the platform."""
+        job = self.queue.enqueue(
+            "destroy_organization",
+            {
+                "path": f"organizations/{organization.id}/destroy",
+                "method": "DELETE",
+                "body": {"repository": repository, "confirm": confirm},
+                "registry_id": "",
+                "organization_id": organization.id,
+                "user_id": caller.user.id,
+                "manages": True,
+            },
+            organization_id=organization.id,
+            dedupe_key=f"destroy_organization:{organization.id}",
+        )
+
+        return job.id
+
     def import_later(
         self,
         organization: Organization,

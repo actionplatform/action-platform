@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import { api } from "@/lib/api";
+import { v1 } from "@/lib/v1";
 import { hostAccess } from "@/lib/host-access";
 import { oauthApps } from "@/lib/oauth";
 import { gitAuthorOf } from "@/lib/org-settings";
@@ -12,15 +13,14 @@ import { hostsOf } from "@/lib/source-hosts";
 import { ciHostsOf } from "@/lib/ci";
 import { CiHosts } from "@/features/ci";
 import { ConnectHosts, SourceHosts } from "@/features/integrations";
-import { GitflowCard } from "@/features/organization";
-import { IdentityCard } from "@/features/organization";
+import { DeleteOrganizationCard, GitflowCard, IdentityCard } from "@/features/organization";
 
 export const dynamic = "force-dynamic";
 
 export default async function GeneralSettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
   const { session, org } = await requireOrg();
   const canManage = !!session.grants["org.manage"];
-  const [author, hosts, query, apps, ciHosts] = await Promise.all([gitAuthorOf(), hostsOf(org.id), searchParams, oauthApps(), ciHostsOf()]);
+  const [author, hosts, query, apps, ciHosts, projects] = await Promise.all([gitAuthorOf(), hostsOf(org.id), searchParams, oauthApps(), ciHostsOf(), v1.projects(org.id).catch(() => [])]);
   const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind !== "generic").map(async (h) => [h.id, await hostAccess(org.id, h.id)] as const)));
   const origin = publicOrigin(await headers());
   const connected = { github: [] as string[], gitlab: [] as string[], bitbucket: [] as string[] };
@@ -67,6 +67,7 @@ export default async function GeneralSettingsPage({ searchParams }: { searchPara
           <span><span className="font-medium">Import from GitHub</span> <span className="text-secondary">— bring the repositories, teams, people and projects in.</span></span>
         </Link>
       )}
+      <DeleteOrganizationCard slug={org.slug} name={org.name} isOwner={session.role === "owner"} projects={projects.length} apps={projects.reduce((n, p) => n + (p.apps?.length ?? 0), 0)} />
     </div>
   );
 }
