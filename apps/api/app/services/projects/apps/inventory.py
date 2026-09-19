@@ -128,7 +128,10 @@ class AppInventory(AppsBase):
             self.registry.drafts.clear(id)
 
         with auth.git_auth(credentials):
-            entry, _ = Workspaces(self.registry).refresh(id)
+            entry, root = Workspaces(self.registry).refresh(id)
+
+        if self.configs.adopt(id, root):
+            log.info("configuration of %s taken from platform.toml", id)
 
         self._snapshot(id)
 
