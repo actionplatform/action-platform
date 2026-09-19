@@ -49,21 +49,22 @@ Criticality is ordered: `test < low < medium < high < critical`. Rules are writt
 
 ## What a scope accepts
 
-Releases come in two shapes: **candidates** (`1.4.0-rc.2`, cut off `main`) and **stable** (`1.4.0`, cut on `main`). Among stable releases of a component, one is the **latest**. The default policy:
+Releases come in three shapes: **candidates** (`1.4.0-rc.2`, cut off `main`), **stable** (`1.4.0`, cut on `main`) and **hotfixes** (a release cut from a `hotfix/<code>` branch, which git-flow starts from `main`). Among stable releases of a component, one is the **latest**. The default policy:
 
-| Criticality | Candidates | Stable | Must be latest |
-|---|---|---|---|
-| `test` | yes | no | — |
-| `low` | yes | yes | no |
-| `medium` | no | yes | yes |
-| `high` | no | yes | yes |
-| `critical` | no | yes | yes |
+| Criticality | Candidates | Stable | Must be latest | Hotfix |
+|---|---|---|---|---|
+| `test` | yes | no | — | yes |
+| `low` | yes | yes | no | yes |
+| `medium` | no | yes | yes | yes |
+| `high` | no | yes | yes | yes |
+| `critical` | no | yes | yes | yes |
 
 In words:
 
 - **A candidate is tried on `test` and `low`**; it never reaches `medium` or above.
 - **A stable release goes to `low` and above**, never to `test` — `test` is where candidates are burned, and a stable release that needs a test run gets a candidate cut first.
 - **From `medium` up only the latest stable release is deployed**: no rolling a `medium` scope forward to a version already superseded. Rollback is the exception — it names an older release and says so.
+- **A hotfix goes anywhere**: production and every other level, whatever its shape and whether or not it is the latest — that is what a hotfix is for.
 
 The policy is a table, not code. An organization may loosen or tighten it per criticality in Settings (or `[scopes.policy]` in `platform.toml` for one app) — for instance allow stable on `test`. The defaults above are what a new organization gets.
 
@@ -73,8 +74,8 @@ The gate that refuses a deploy already exists — [readiness](concept_deployment
 
 | Check | Blocks when |
 |---|---|
-| `scope.release-shape` | a candidate aims at `medium`+, or a stable release aims at `test` |
-| `scope.latest` | `medium`+ and a newer stable release of the component exists |
+| `scope.release-shape` | a candidate aims at `medium`+, or a stable release aims at `test`; never for a hotfix |
+| `scope.latest` | `medium`+ and a newer stable release of the component exists; never for a hotfix |
 
 They show on the release page like every other check, per scope instead of per stage, and the deploy form refuses the same way (`409`, `force` for `org.manage`).
 
@@ -89,7 +90,9 @@ They show on the release page like every other check, per scope instead of per s
 | `live_deploy(app, stage)` — one deploy at a time per stage | one at a time per scope |
 | `AppIdentity` token carries `stage` | carries `scope` and `criticality`; the deploy proxy may grant by criticality (a `critical` scope gets a different boundary) |
 
-A release stays what it is: a tag on the repository, one row in `release`, cut with no scope in mind.
+A release stays what it is: a tag on the repository, one row in `release`, cut with no scope in mind. The row gains a `shape` — `candidate`, `stable` or `hotfix` — set when the platform cuts it: `hotfix` when the branch is `hotfix/*`, `candidate` for an `-rc.N` version, `stable` otherwise.
+
+Open question: a release imported from the code host (not cut here) has no branch to read; its shape comes from the version alone (`candidate` or `stable`), so an imported hotfix is a `stable` until someone marks it.
 
 ## Kinds
 
@@ -111,6 +114,7 @@ The kind changes how the platform **verifies** and **diagnoses**, not how it dep
 scope(id, app_id, name, kind, criticality, target_kind, target_options JSON,
       run_by, url, created_by, created_at)
       unique (app_id, name)
+release.shape                  candidate | stable | hotfix
 deployment.scope_id            (replaces stage; stage kept as scope_name for old rows)
 release_readiness.scope_id     (replaces stage)
 organization_setting scopes.policy     the policy table, when the organization changed it
