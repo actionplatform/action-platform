@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.33.2 — 2026-09-19
+
+### Features
+- **releases:** release a component from the web
+
 ## v0.33.1 — 2026-09-19
 
 ## v0.33.0 — 2026-09-19
