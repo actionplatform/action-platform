@@ -7,11 +7,12 @@
     workflow = "publish.yml"
     package = "my-lib"
 
-`deploy` starts `workflow` on the release tag with `version` and `registry` (the scope) as inputs, follows the run to its end and asks the registry whether the version arrived. No credential of the registry reaches the platform: the pipeline holds them (trusted publishing, OIDC)."""
+`deploy` starts `workflow` on the release tag with `version` and `registry` as inputs — the registry the kind pairs with the scope's criticality (`testpypi` for a `test` scope, `pypi` otherwise), or the target's `registry` option — follows the run to its end and asks the registry whether the version arrived. No credential of the registry reaches the platform: the pipeline holds them (trusted publishing, OIDC)."""
 
 from __future__ import annotations
 
 import time
+from dataclasses import replace
 from datetime import datetime, timezone
 
 from action_platform.abc.ci_runner import CIRunner
@@ -33,11 +34,14 @@ TIMEOUT_SECONDS = 1800
 
 
 class DispatchedTarget(DeployTarget):
-    def __init__(self, inner: DeployTarget, runner: CIRunner, job: str) -> None:
+    def __init__(
+        self, inner: DeployTarget, runner: CIRunner, job: str, registry: str = ""
+    ) -> None:
         self.inner = inner
         self.runner = runner
         self.job = job
         self.name = inner.name
+        self.fixed_registry = registry
 
     def preflight(self, ctx: Context) -> None:
         if not self.job:
@@ -50,15 +54,26 @@ class DispatchedTarget(DeployTarget):
         except ProviderError as e:
             raise DeployError(f"{self.name}: {self.runner.name} refused: {e}") from e
 
+    def registry(self, ctx: Context) -> str:
+        if self.fixed_registry:
+            return self.fixed_registry
+
+        if hasattr(self.inner, "registry_for"):
+            return self.inner.registry_for(ctx.criticality)
+
+        return self.name
+
     def deploy(self, ctx: Context) -> DeployResult:
         ref = ctx.tag or f"v{ctx.next_version}"
-        params = {"version": ctx.next_version, "registry": ctx.stage}
+        registry = self.registry(ctx)
+        params = {"version": ctx.next_version, "registry": registry}
         logger.info(
-            "dispatch %s on %s (%s) version=%s registry=%s",
+            "dispatch %s on %s (%s) version=%s registry=%s scope=%s",
             self.job,
             ref,
             self.runner.name,
             ctx.next_version,
+            registry,
             ctx.stage,
         )
         started = datetime.now(timezone.utc)
@@ -85,13 +100,13 @@ class DispatchedTarget(DeployTarget):
                 error=f"{self.runner.name} run ended {run.status}",
             )
 
-        published = self._verify(ctx.next_version, ctx.stage)
+        published = self._verify(ctx.next_version, registry)
 
         return DeployResult(
             ok=published is not False,
             target=self.name,
             version=ctx.next_version,
-            url=self.inner.url(ctx.next_version, ctx.stage) or run.url,
+            url=self.inner.url(ctx.next_version, registry) or run.url,
             error=None
             if published is not False
             else f"the run succeeded but {ctx.next_version} is not at {self.name}",
@@ -185,14 +200,15 @@ class DispatchedTarget(DeployTarget):
                 )
             )
 
-        for check in self.inner.readiness(ctx):
+        for check in self.inner.readiness(replace(ctx, stage=self.registry(ctx))):
             check.target = check.target or self.name
             checks.append(check)
 
         return checks
 
     def diagnose(self, ctx: Context) -> Diagnosis:
-        published = self._verify(ctx.current_version, ctx.stage)
+        registry = self.registry(ctx)
+        published = self._verify(ctx.current_version, registry)
 
         return Diagnosis(
             ok=published is not False,
@@ -203,7 +219,7 @@ class DispatchedTarget(DeployTarget):
             if published is False
             else "unknown",
             version=ctx.current_version,
-            url=self.inner.url(ctx.current_version, ctx.stage),
+            url=self.inner.url(ctx.current_version, registry),
         )
 
     def verify(self, version: str, stage: str | None = None) -> bool:

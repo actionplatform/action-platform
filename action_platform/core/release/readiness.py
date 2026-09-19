@@ -95,6 +95,7 @@ class Readiness:
             ctx = self.deployer._context(stage=stage)
             ctx.current_version = ctx.next_version = shipped
             ctx.tag = tag
+            ctx.criticality = scope.criticality if scope else ""
 
             for t in targets:
                 checks.extend(self._target(t, ctx))

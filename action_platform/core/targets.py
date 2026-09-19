@@ -15,7 +15,9 @@ The platform executes `run_by = "platform"` targets itself and dispatches the
 CI-run ones (`github_actions`, `gitlab_ci`, `bitbucket_pipelines`): it starts
 the workflow on the release tag and follows the run. `jenkins` and `manual`
 targets are observed — their runs become deployment records — and verified.
-`stages` limits a target to some scopes.
+`stages` limits a target to some scopes. A dispatched workflow receives the
+registry the kind pairs with the scope's criticality — a `test` scope publishes
+to TestPyPI or the npm `next` tag — unless the target fixes one with `registry`.
 """
 
 from __future__ import annotations

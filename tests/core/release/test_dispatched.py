@@ -35,8 +35,14 @@ class FakeRunner(CIRunner):
         ]
 
 
-def context(tmp_path):
-    return Context(repo_root=tmp_path, next_version="1.2.0", stage="pypi", tag="v1.2.0")
+def context(tmp_path, criticality="high"):
+    return Context(
+        repo_root=tmp_path,
+        next_version="1.2.0",
+        stage="prod",
+        criticality=criticality,
+        tag="v1.2.0",
+    )
 
 
 def test_deploy_dispatches_the_workflow_on_the_tag_and_follows_the_run(
@@ -105,3 +111,43 @@ def test_config_wraps_ci_run_targets_and_keeps_stages(tmp_path):
     assert dispatched[0].runner.name == "github_actions"
     assert config.deploy == []
     assert [t.name for t in config.targets if t.serves("pypi")] == ["pypi"]
+
+
+def test_a_test_scope_publishes_to_the_test_registry(tmp_path, monkeypatch):
+    monkeypatch.setattr("action_platform.providers.deploy.dispatched.POLL_SECONDS", 0)
+    inner = DeployPypi(package="my-lib")
+    asked = []
+    monkeypatch.setattr(
+        inner, "_exists", lambda url, headers=None: asked.append(url) or True
+    )
+    runner = FakeRunner(["success"])
+    target = DispatchedTarget(inner, runner, "publish.yml")
+
+    result = target.deploy(context(tmp_path, criticality="test"))
+
+    assert runner.started[0][2] == {"version": "1.2.0", "registry": "testpypi"}
+    assert asked == ["https://test.pypi.org/pypi/my-lib/1.2.0/json"]
+    assert result.url == "https://test.pypi.org/project/my-lib/1.2.0/"
+
+
+def test_the_target_may_fix_its_registry(tmp_path):
+    config = Config.from_dict(
+        {
+            "project": {"name": "lib"},
+            "source_host": {"kind": "github", "repo": "o/r"},
+            "deploy": {
+                "targets": [
+                    {
+                        "name": "pypi",
+                        "kind": "pypi",
+                        "run_by": "github_actions",
+                        "workflow": "publish.yml",
+                        "package": "lib",
+                        "registry": "internal",
+                    },
+                ]
+            },
+        }
+    )
+
+    assert config.dispatched()[0].registry(context(tmp_path, "test")) == "internal"

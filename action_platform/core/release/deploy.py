@@ -108,7 +108,7 @@ class Deployer:
         version: str | None = None,
     ) -> list[DeployResult]:
         ctx = self._context(dry_run=dry_run, stage=stage)
-        self.config.scope(ctx.stage)
+        ctx.criticality = self.config.scope(ctx.stage).criticality
         tag, shipped = self.release_tag(version)
         ctx.current_version = ctx.next_version = shipped
         ctx.tag = tag
