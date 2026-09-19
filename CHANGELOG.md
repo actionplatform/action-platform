@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.24.0 — 2026-09-18
+
+### Features
+- **plugins:** every plugin's logger reaches the job log
+
+### Tests
+- **insights:** pin the clock at noon so the day's counts do not straddle midnight UTC
+
+### Build
+- **api:** apx-aws-lambda 0.4.0 — sam output streams to the job log
+
 ## v0.23.0 — 2026-09-18
 
 ### Features
