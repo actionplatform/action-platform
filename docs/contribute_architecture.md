@@ -71,7 +71,7 @@ The library has the same shape: `core` reaches plugins only through `core/extens
 
 ### Decisions
 
-The choices that shaped the platform and what they cost are in [docs/adr](adr/README.md), one file per decision.
+The choices that shaped the platform and what they cost are in [docs/adr](https://github.com/actionplatform/strategy/blob/main/adr/README.md), one file per decision.
 
 ### Objects in the core
 

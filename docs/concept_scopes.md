@@ -7,7 +7,7 @@ Scopes replace the fixed `dev` / `prod` stages. Those two become the first two s
 ## Why
 
 - `dev` and `prod` say *where*, never *how much it matters*. A staging that a customer demos from and a scratch environment nobody depends on are both "dev" today, and get the same rules.
-- The rule "a deploy ships a release" ([ADR 0002](adr/0002-targets-and-executors.md)) needs a second half: *which* release may reach *which* place. That half lives on the scope, as its criticality.
+- The rule "a deploy ships a release" ([ADR 0002](https://github.com/actionplatform/strategy/blob/main/adr/0002-targets-and-executors.md)) needs a second half: *which* release may reach *which* place. That half lives on the scope, as its criticality.
 - Apps of different kinds deploy the same way but are operated differently: a web API, a scheduled job, a queue worker, a static site. The scope carries the kind so the platform can verify and diagnose each the right way.
 
 ```mermaid
@@ -285,4 +285,4 @@ Each step ships on its own; after step 1 the platform behaves as today.
 - Rules run as readiness checks: one gate, one place the user reads why a deploy is refused.
 - `stage` survives as the plugin's view of a scope (`ctx.stage = scope.name`): no plugin changes for step 1, and stacks keep their names.
 
-Related: [Deployments](concept_deployments.md) · [Releases](concept_releases.md) · [ADR 0002](adr/0002-targets-and-executors.md) · [ADR 0008](adr/0008-release-readiness.md) · [ADR 0009](adr/0009-scopes.md)
+Related: [Deployments](concept_deployments.md) · [Releases](concept_releases.md) · [ADR 0002](https://github.com/actionplatform/strategy/blob/main/adr/0002-targets-and-executors.md) · [ADR 0008](https://github.com/actionplatform/strategy/blob/main/adr/0008-release-readiness.md) · [ADR 0009](https://github.com/actionplatform/strategy/blob/main/adr/0009-scopes.md)
