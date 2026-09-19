@@ -22,6 +22,18 @@ Scopes replace the fixed `dev` / `prod` stages. Those two become the first two s
 | `url` | where the scope can be seen, when it has one |
 | `protected` | whether a deploy needs an approval (default: `true` for `high` and `critical`) |
 
+An app has as many scopes as it needs, each with its own kind and criticality — nothing ties them to a ladder of names:
+
+| App `orders-api` | kind | criticality | target |
+|---|---|---|---|
+| `dev` | web | test | aws/lambda us-east-1 |
+| `staging` | web | low | aws/lambda us-east-1 |
+| `prod-br` | web | high | aws/lambda sa-east-1 |
+| `prod-eu` | web | critical | aws/lambda eu-west-1 |
+| `nightly-reconcile` | job | low | aws/lambda us-east-1 |
+
+Two scopes may share a criticality (`prod-br` and `prod-eu` could both be `critical`) and a criticality may be absent (an app with only `dev` and `prod`). The rules below read the app's scopes as they are.
+
 A scope belongs to an app. Two apps never share a scope; an organization may define **scope presets** (name, kind, criticality) so every app creates the same `dev` / `staging` / `prod` with the same rules.
 
 ## Criticality
