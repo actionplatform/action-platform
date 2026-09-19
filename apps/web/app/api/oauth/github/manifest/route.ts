@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 <p>Taking you to GitHub…</p>
 <script src="/manifest-submit.js"></script></body>`;
 
-  return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
+  return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "content-security-policy": "default-src 'self'; script-src 'self'; style-src 'unsafe-inline'; form-action https://github.com; frame-ancestors 'none'" } });
 }
 
 function escapeAttribute(value: string): string {

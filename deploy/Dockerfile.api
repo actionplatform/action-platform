@@ -1,10 +1,10 @@
 # Two images from one file: `api` (target api) serves HTTP with Python and git only;
 # `worker` (target worker) adds the toolchains the deploy targets build with.
-FROM golang:1.23-bookworm AS go
-FROM node:22-bookworm-slim AS node
-FROM ruby:3.3-slim-bookworm AS ruby
+FROM golang:1.23-bookworm@sha256:167053a2bb901972bf2c1611f8f52c44d5fe7e762e5cab213708d82c421614db AS go
+FROM node:22-bookworm-slim@sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9 AS node
+FROM ruby:3.3-slim-bookworm@sha256:c7ea4b75f15a694054ce0ca7a42e9ce511115f7099d7c2f4381fccaa36c64c46 AS ruby
 
-FROM python:3.12-slim AS base
+FROM python:3.12-slim@sha256:b699c2a51f4f834fa1a5f7f7cba0356e71d82fae37d4628223b11d93b71e9ebe AS base
 
 RUN apt-get update -qq \
  && apt-get install -y --no-install-recommends git curl ca-certificates openssh-client \
@@ -14,9 +14,14 @@ RUN apt-get update -qq \
 WORKDIR /src
 COPY pyproject.toml poetry.lock README.md LICENSE ./
 COPY action_platform ./action_platform
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir --no-deps .
+COPY apps/api/pyproject.toml apps/api/poetry.lock ./apps/api/
+RUN pip install --no-cache-dir "poetry>=1.8" poetry-plugin-export \
+ && cd apps/api && poetry export --only main -f requirements.txt -o /tmp/requirements.txt \
+ && grep -Ev "^(-e )?(action-platform|file://)" /tmp/requirements.txt > /tmp/requirements.pinned.txt \
+ && pip install --no-cache-dir --require-hashes -r /tmp/requirements.pinned.txt
 COPY apps/api ./apps/api
-RUN pip install --no-cache-dir ./apps/api
+RUN pip install --no-cache-dir --no-deps ./apps/api
 
 WORKDIR /srv
 RUN chown app:app /srv
