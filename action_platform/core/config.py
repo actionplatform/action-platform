@@ -119,6 +119,7 @@ class Config:
                     username=getattr(self.source_host, "username", None),
                 ),
                 spec.workflow,
+                str(spec.options.get("registry") or ""),
             )
             for spec in specs
         ]

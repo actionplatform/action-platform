@@ -112,6 +112,7 @@ class Context:
     env: dict[str, str] = field(default_factory=dict)
     dry_run: bool = False
     stage: str = "dev"
+    criticality: str = ""
     tag: str = ""
     identity: Optional[Callable[[str], str]] = None
 

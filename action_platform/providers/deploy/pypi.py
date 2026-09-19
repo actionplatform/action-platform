@@ -6,11 +6,14 @@ from action_platform.core.exception import ConfigError
 from action_platform.providers.deploy.observed import ObservedTarget
 
 
+TEST_INDEX = "https://test.pypi.org"
+
+
 class DeployPypi(ObservedTarget):
     """
     Args:
         package (str): the distribution name on the index.
-        index_url (str | None): another index, e.g. https://test.pypi.org; default pypi.org.
+        index_url (str | None): another index; default pypi.org. A `test` scope always goes to test.pypi.org.
     """
 
     name = "pypi"
@@ -24,8 +27,14 @@ class DeployPypi(ObservedTarget):
         self.package = package
         self.index = (index_url or "https://pypi.org").rstrip("/")
 
+    def registry_for(self, criticality: str) -> str:
+        return "testpypi" if criticality == "test" else "pypi"
+
+    def _index(self, stage: str | None) -> str:
+        return TEST_INDEX if stage == "testpypi" else self.index
+
     def verify(self, version: str, stage: str | None = None) -> bool:
-        return self._exists(f"{self.index}/pypi/{self.package}/{version}/json")
+        return self._exists(f"{self._index(stage)}/pypi/{self.package}/{version}/json")
 
     def url(self, version: str, stage: str | None = None) -> str | None:
-        return f"{self.index}/project/{self.package}/{version}/"
+        return f"{self._index(stage)}/project/{self.package}/{version}/"

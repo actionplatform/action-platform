@@ -13,6 +13,10 @@ from action_platform.core.exception import DeployError, ProviderError
 class ObservedTarget(DeployTarget):
     name: str
 
+    def registry_for(self, criticality: str) -> str:
+        """Where a scope of `criticality` publishes: the registry itself, or its test counterpart for a `test` scope, when the kind has one."""
+        return self.name
+
     def preflight(self, ctx: Context) -> None:
         raise DeployError(
             f"{self.name} is published by a pipeline outside the platform; the platform only verifies it"

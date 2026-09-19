@@ -26,6 +26,9 @@ class DeployNpm(ObservedTarget):
         self.package = package
         self.registry = (registry or "https://registry.npmjs.org").rstrip("/")
 
+    def registry_for(self, criticality: str) -> str:
+        return "npm-next" if criticality == "test" else "npm"
+
     def verify(self, version: str, stage: str | None = None) -> bool:
         return self._exists(
             f"{self.registry}/{quote(self.package, safe='@')}/{version}"
