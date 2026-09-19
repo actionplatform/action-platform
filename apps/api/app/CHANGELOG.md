@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.31.2 — 2026-09-19
+
+### Bug Fixes
+- **security:** the medium findings of the audit
+- **security:** the high findings of the audit
+- **security:** the critical findings of the audit
+
 ## v0.31.1 — 2026-09-19
 
 ### Chores
