@@ -18,9 +18,31 @@ export function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/api/")) return NextResponse.next();
 
+  const nonce = crypto.randomUUID().replace(/-/g, "");
+  const csp = contentSecurityPolicy(nonce);
   const headers = new Headers(request.headers);
   headers.set("x-request-path", `${pathname}${search}`);
-  return NextResponse.next({ request: { headers } });
+  headers.set("x-nonce", nonce);
+  headers.set("content-security-policy", csp);
+  const response = NextResponse.next({ request: { headers } });
+  response.headers.set("Content-Security-Policy", csp);
+  return response;
+}
+
+function contentSecurityPolicy(nonce: string): string {
+  const dev = process.env.NODE_ENV !== "production";
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
+    "worker-src 'self' blob:",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self' https://github.com",
+  ].join("; ");
 }
 
 export const config = { matcher: ["/((?!_next|.*\\..*).*)", "/.well-known/:path*"] };
