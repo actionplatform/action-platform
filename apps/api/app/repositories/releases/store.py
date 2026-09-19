@@ -10,6 +10,7 @@ from typing import Any, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
+from action_platform.core.scopes import shape_of
 from app.core.db.models import Release
 from app.core.shared.clock import now
 
@@ -52,6 +53,7 @@ class ReleaseStore:
         """The row for `tag`, created when missing. A host or the platform overrides what git alone knew; git never overrides a host."""
         row = self.get(app_id, tag)
         component, version = split_tag(tag)
+        shape = fields.pop("shape", None)
 
         if row is None:
             row = Release(
@@ -63,11 +65,15 @@ class ReleaseStore:
                 source=source,
                 prerelease="-" in version,
                 draft=False,
+                shape=shape or shape_of(version),
             )
             self.db.add(row)
 
         row.component = component
         row.version = version
+
+        if shape:
+            row.shape = shape
 
         if sha and (not row.sha or source != "git"):
             row.sha = sha

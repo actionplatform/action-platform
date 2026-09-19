@@ -125,8 +125,9 @@ class ActionPlatform:
         stage: str,
         version: str | None = None,
         target: str | None = None,
+        shape: str | None = None,
     ) -> list[Check]:
-        return self.readiness.check(stage, version=version, target=target)
+        return self.readiness.check(stage, version=version, target=target, shape=shape)
 
     def rollback(
         self,

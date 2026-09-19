@@ -46,6 +46,9 @@ class Release(Base):
     draft: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     source: Mapped[str] = mapped_column(SHORT, nullable=False)
+    shape: Mapped[str] = mapped_column(
+        SHORT, nullable=False, default="stable", server_default="stable"
+    )
     synced_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=now, server_default=func.now()
     )

@@ -107,3 +107,20 @@ class ReadinessTest(TempCase):
         checks = self.by_id(self.readiness(Speaking()).check("qa", version="1.2.3"))
 
         self.assertFalse(checks["deploy.stage"].ok)
+
+    def test_a_candidate_is_refused_by_a_high_scope_and_taken_by_a_test_scope(self):
+        git(self.repo, "tag", "v1.3.0-rc.1")
+        config = Config.from_dict({"deploy": {"target": "aws/lambda"}})
+        config._deploy = [Speaking()]
+        readiness = Readiness(config, self.repo, Deployer(config, self.repo))
+
+        prod = self.by_id(readiness.check("prod", version="1.3.0-rc.1"))
+        dev = self.by_id(readiness.check("dev", version="1.3.0-rc.1"))
+        hotfix = self.by_id(
+            readiness.check("prod", version="1.3.0-rc.1", shape="hotfix")
+        )
+
+        self.assertFalse(prod["scope.release-shape"].ok)
+        self.assertTrue(dev["scope.release-shape"].ok)
+        self.assertTrue(hotfix["scope.release-shape"].ok)
+        self.assertEqual(prod["deploy.stage"].detail, "prod · web · high")

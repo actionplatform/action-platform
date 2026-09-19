@@ -9,7 +9,9 @@ from typing import Any, Optional
 
 from app.core.access.rules import DIRECTORY, WORKSPACE_ROOTS
 from app.services.auth.service import AuthService
-from app.core.errors import Refused
+from app.core.errors import Invalid, Refused
+from app.repositories.configuration.config_store import ConfigStore
+from app.services.scopes import ScopesService
 from app.services.access.caller import Caller, resolve_caller
 from app.services.access.dispatch import Dispatcher
 from app.services.access.enrich import credentials_for, enrich
@@ -72,12 +74,20 @@ class Planner:
                 and target.app is not None
                 and parsed is not None
             ):
+                parsed["stage"] = parsed.get("scope") or parsed.get("stage") or "dev"
+                parsed.pop("scope", None)
+
+                if parsed["stage"] not in self._scope_names(target.app):
+                    raise Invalid(
+                        f"no scope {parsed['stage']!r}: create it under Deployments › Scopes"
+                    )
+
                 ReadinessRequests(
                     self.state.db, JobQueue(self.state.db)
                 ).assert_deployable(
                     target.app,
                     parsed.get("version"),
-                    parsed.get("stage") or "dev",
+                    parsed["stage"],
                     bool(parsed.get("force")),
                 )
 
@@ -115,6 +125,10 @@ class Planner:
             new_body = json.dumps(parsed).encode() if parsed is not None else b""
 
             return caller, Plan(target, new_body, new_method, allowed, credentials)
+
+    def _scope_names(self, app: Any) -> list[str]:
+        with self.state.db.session() as db:
+            return ScopesService(db, ConfigStore(self.state.db)).names(app)
 
     @staticmethod
     def _parse(method: str, body: bytes) -> Optional[dict]:

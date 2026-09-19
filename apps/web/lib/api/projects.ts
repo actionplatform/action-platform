@@ -36,6 +36,14 @@ export const projects = {
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/deployments/sync", { params: { path: { project_id: projectId, app_id: appId } } })),
   recordDeployment: async (projectId: string, appId: string, body: Schemas["RecordDeploymentRequest"]) =>
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/deployments", { params: { path: { project_id: projectId, app_id: appId } }, body })),
+  scopes: async (projectId: string, appId: string) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/scopes", { params: { path: { project_id: projectId, app_id: appId } } })),
+  createScope: async (projectId: string, appId: string, body: Schemas["ScopeRequest"]) =>
+    unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/scopes", { params: { path: { project_id: projectId, app_id: appId } }, body })),
+  updateScope: async (projectId: string, appId: string, name: string, body: Schemas["ScopeRequest"]) =>
+    unwrap(await client.PUT("/api/v1/projects/{project_id}/apps/{app_id}/scopes/{name}", { params: { path: { project_id: projectId, app_id: appId, name } }, body })),
+  deleteScope: async (projectId: string, appId: string, name: string) =>
+    unwrap(await client.DELETE("/api/v1/projects/{project_id}/apps/{app_id}/scopes/{name}", { params: { path: { project_id: projectId, app_id: appId, name } } })),
   readiness: async (projectId: string, appId: string, tag: string) =>
     unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/releases/{tag}/readiness", { params: { path: { project_id: projectId, app_id: appId, tag } } })),
   checkReadiness: async (projectId: string, appId: string, tag: string, stage: string | null = null) =>

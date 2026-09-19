@@ -14,6 +14,7 @@ from app.core.db.models.integrations import (
     TemplateSource,
 )
 from app.core.db.models.jobs import Job, JobLog
+from app.core.db.models.scopes import Scope
 from app.core.db.models.organization import (
     ApiToken,
     ApiTokenClient,
@@ -52,6 +53,7 @@ __all__ = [
     "PullRequest",
     "RegistryEntry",
     "Release",
+    "Scope",
     "ReleaseReadiness",
     "SHORT",
     "Session",

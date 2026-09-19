@@ -31,16 +31,28 @@ class ReadinessService:
         self.env = env
         self.configs = configs or ConfigStore(registry.store.database)
 
-    def check(self, id: str, tag: str, stage: str) -> list[Check]:
+    def check(
+        self,
+        id: str,
+        tag: str,
+        stage: str,
+        shape: Optional[str] = None,
+        scopes: Optional[list[dict[str, Any]]] = None,
+    ) -> list[Check]:
         _, root = Workspaces(self.registry).checkout(id)
+        config = self.configs.config(id, root)
+
+        if scopes:
+            config._scopes_spec = scopes
+
         tool = ActionPlatform(
-            config=self.configs.config(id, root),
+            config=config,
             repo_root=root,
             identity=self.identity,
             env=self.env,
         )
 
-        return tool.check_readiness(stage, version=tag)
+        return tool.check_readiness(stage, version=tag, shape=shape)
 
 
 class ReadinessRequests:

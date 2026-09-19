@@ -8,6 +8,7 @@ from typing import Any, Optional
 
 from action_platform.core.context import DeployResult
 from action_platform.core.exception import ActionPlatformError
+from action_platform.core.scopes import shape_of
 from action_platform.settings import settings
 from app.core.auth.crypto import Sealer
 from app.core.db.database import Database
@@ -36,6 +37,7 @@ from app.repositories.projects import ProjectsRepository
 from app.services.projects import ProjectService
 from app.services.projects.organization_import import OrganizationImport
 from app.services.organization.removal import OrganizationRemoval
+from app.services.scopes import ScopesService
 from app.services.deployments import DeploymentsService
 from app.services.releases import (
     ReadinessRequests,
@@ -45,6 +47,7 @@ from app.services.releases import (
     tag_of,
 )
 from app.repositories.releases import ReadinessStore
+from app.repositories.scopes import ScopeStore
 from app.services.jobs.queue import JobQueue
 from app.services.workspace.snapshot import SnapshotService
 from app.services.workspace.state import GitStateService
@@ -121,6 +124,7 @@ class JobHandlers:
                 ctx.app.id,
                 tag_of(request.component or "", result["next"]),
                 "platform",
+                shape=shape_of(result["next"], request.branch),
                 name=request.name or None,
                 body=result.get("changelog") or None,
                 author=DeploymentRecords(db, self.sealer).actor_name(user_id),
@@ -130,11 +134,17 @@ class JobHandlers:
             db.flush()
             release_id, tag = release.id, release.tag
 
+        with self.database.session() as db:
+            stages = tuple(
+                ScopesService(db, self.configs).names(db.get(App, ctx.app.id))
+            ) or ("dev", "prod")
+
         ReadinessRequests(self.database, JobQueue(self.database)).request(
             ctx.organization.id,
             ctx.app,
             release_id,
             tag,
+            stages=stages,
             user_id=user_id,
             manages=bool(ctx.payload.get("manages")),
         )
@@ -151,7 +161,13 @@ class JobHandlers:
                 raise ActionPlatformError(f"no release {tag} for this app")
 
             ReadinessStore(db).running(release.id, stage)
-            release_id = release.id
+            release_id, shape = release.id, release.shape
+            scopes = [
+                ScopeStore.as_toml(spec)
+                for spec in ScopesService(db, self.configs).specs(
+                    db.get(App, ctx.app.id)
+                )
+            ]
 
         identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
         service = ReadinessService(
@@ -163,7 +179,9 @@ class JobHandlers:
         )
 
         try:
-            checks = service.check(ctx.registry_id, tag, stage)
+            checks = service.check(
+                ctx.registry_id, tag, stage, shape=shape, scopes=scopes
+            )
         except Exception as e:
             with self.database.session() as db:
                 ReadinessStore(db).failed(

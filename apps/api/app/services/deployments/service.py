@@ -35,7 +35,7 @@ class DeploymentsService:
 
     def deploy(self, id: str, body: DeployRequest) -> list[dict]:
         results = self._tool(id).deploy(
-            stage=body.stage, dry_run=body.dry_run, version=body.version
+            stage=body.scope or body.stage, dry_run=body.dry_run, version=body.version
         )
 
         return [
