@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.26.1 — 2026-09-19
+
+### Bug Fixes
+- **security:** the medium findings of the audit
+- **security:** the high findings of the audit
+- **security:** the critical findings of the audit
+
+### Tests
+- **auth:** a spoofed X-Forwarded-For no longer escapes the sign-in limiter
+
+### Chores
+- **scopes:** the columns an earlier build wrote leave the scope table
+
 ## v0.26.0 — 2026-09-19
 
 ### Features
