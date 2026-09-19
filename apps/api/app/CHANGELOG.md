@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.33.3 — 2026-09-19
+
+### Style
+- **api:** format manifest.py
+
 ## v0.33.2 — 2026-09-19
 
 ### Features
