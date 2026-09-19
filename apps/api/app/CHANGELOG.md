@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.31.1 — 2026-09-19
+
+### Chores
+- **scopes:** the columns an earlier build wrote leave the scope table
+
 ## v0.31.0 — 2026-09-19
 
 ### Features
