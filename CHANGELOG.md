@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.27.0 — 2026-09-19
+
+### Features
+- **deploy:** read secrets from files
+
+### Build
+- **images:** base images pinned by digest, dependencies installed with hashes
+- **worker:** ap-build in the worker image; apx-aws-lambda 0.5.0
+
 ## v0.26.1 — 2026-09-19
 
 ### Bug Fixes
