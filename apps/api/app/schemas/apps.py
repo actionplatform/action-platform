@@ -13,6 +13,7 @@ class AppRow(BaseModel):
     exists: bool
     language: Optional[str] = None
     type: Optional[str] = None
+    deploy_target: Optional[str] = None
     last_version: Optional[str] = None
     branch: Optional[str] = None
 

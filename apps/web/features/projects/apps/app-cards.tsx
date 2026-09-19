@@ -27,7 +27,7 @@ export function AppCards({ projectId, apps, rows, manage }: { projectId: string;
                   {!r && <Badge>not on API</Badge>}
                 </div>
               </div>
-              {manage && !a.tearing && <RemoveButton projectId={projectId} appId={a.id} name={a.name} repositoryUrl={r?.url || null} />}
+              {manage && !a.tearing && <RemoveButton projectId={projectId} appId={a.id} name={a.name} repositoryUrl={r?.url || null} deployTarget={r?.deploy_target ?? null} />}
             </div>
             <dl className="mt-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
               <Meta icon={<Layers className="size-3.5" strokeWidth={1.75} />} label="Type" value={r?.type ?? "—"} />

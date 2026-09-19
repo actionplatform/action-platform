@@ -50,11 +50,16 @@ class AppInventory(AppsBase):
             detail = snapshot[0].get("detail") or {}
             project = detail.get("project") or {}
 
+            deploy = detail.get("deploy") or {}
+
             return {
                 "language": project.get("language"),
                 "type": project.get("type"),
                 "last_version": detail.get("last_version"),
                 "branch": detail.get("branch") or entry.checked_out,
+                "deploy_target": deploy.get("target")
+                if isinstance(deploy.get("target"), str)
+                else None,
             }
 
         root = Path(entry.path)
@@ -64,10 +69,15 @@ class AppInventory(AppsBase):
 
         info = AppManifest(root, self.configs.resolve(entry.id, root)).as_dict()
 
+        deploy = info.get("deploy") or {}
+
         return {
             "language": info["project"].get("language"),
             "type": info["project"].get("type"),
             "last_version": info["last_version"],
+            "deploy_target": deploy.get("target")
+            if isinstance(deploy.get("target"), str)
+            else None,
         }
 
     def add(
