@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.33.4 — 2026-09-19
+
+### Bug Fixes
+- **config:** sync imports platform.toml when the file changed in the repository
+
 ## v0.33.3 — 2026-09-19
 
 ### Style
