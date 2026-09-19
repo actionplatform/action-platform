@@ -17,14 +17,20 @@ export async function GET(req: Request) {
     return Response.json({ detail: (e as Error).message }, { status });
   }
 
+  if (!/^https:\/\/github\.com\//.test(page.target)) return Response.json({ detail: "unexpected manifest target" }, { status: 502 });
+
   const html = `<!doctype html><meta charset="utf-8"><title>Creating the GitHub App…</title>
 <body style="font:14px system-ui;background:#080808;color:#f5f5f5;display:grid;place-items:center;height:100vh;margin:0">
-<form id="f" method="post" action="${page.target}">
-<input type="hidden" name="manifest" value='${JSON.stringify(page.manifest).replace(/'/g, "&#39;")}'>
+<form id="f" method="post" action="${escapeAttribute(page.target)}">
+<input type="hidden" name="manifest" value="${escapeAttribute(JSON.stringify(page.manifest))}">
 <noscript><button>Continue to GitHub</button></noscript>
 </form>
 <p>Taking you to GitHub…</p>
 <script>document.getElementById("f").submit()</script></body>`;
 
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
+}
+
+function escapeAttribute(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

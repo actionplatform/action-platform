@@ -13,6 +13,7 @@ from app.api.dependencies import (
     manageable,
     required_org,
 )
+from app.core.errors import Forbidden
 from app.schemas import common
 from app.schemas import organization as schemas
 
@@ -105,6 +106,13 @@ def set_member_role(
 ) -> common.Ok:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "members/role")
+    current = directory.role_in(body.user_id, org.id)
+
+    if (body.role == "owner" or current == "owner") and directory.role_in(
+        caller.user.id, org.id
+    ) != "owner":
+        raise Forbidden("only an owner may give or take the owner role")
+
     directory.set_member_role(org.id, body.user_id, body.role)
 
     return common.Ok()
@@ -155,4 +163,11 @@ def remove_member(
     writes: OrganizationRepoDep,
 ) -> None:
     allowed(caller, org, "org.manage")
+
+    if (
+        writes.role_in(user_id, org.id) == "owner"
+        and writes.role_in(caller.user.id, org.id) != "owner"
+    ):
+        raise Forbidden("only an owner may remove an owner")
+
     writes.remove_member(org.id, user_id)

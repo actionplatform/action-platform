@@ -277,6 +277,29 @@ class TeamsAndMembersTest(GateCase):
             ).status_code,
             400,
         )
+        promoted = self.client.post(
+            "/api/v1/members/role",
+            json={"user_id": bob["user"]["id"], "role": "admin"},
+            headers=self.h(),
+        )
+        self.assertEqual(promoted.status_code, 200, promoted.text)
+        bob_h = {"Authorization": f"Bearer {bob['session']['token']}"}
+        self_promotion = self.client.post(
+            "/api/v1/members/role",
+            json={"user_id": bob["user"]["id"], "role": "owner"},
+            headers=bob_h,
+        )
+        self.assertEqual(self_promotion.status_code, 403, self_promotion.text)
+        demote_owner = self.client.post(
+            "/api/v1/members/role",
+            json={"user_id": self.user_id, "role": "viewer"},
+            headers=bob_h,
+        )
+        self.assertEqual(demote_owner.status_code, 403)
+        remove_owner = self.client.delete(
+            f"/api/v1/members/{self.user_id}", headers=bob_h
+        )
+        self.assertEqual(remove_owner.status_code, 403)
         self.assertEqual(
             self.client.delete(
                 f"/api/v1/members/{bob['user']['id']}", headers=self.h()

@@ -1,12 +1,30 @@
 name: action-platform
 
 services:
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:0.3.0
+    profiles: ["tls"]
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      NETWORKS: 1
+      SERVICES: 1
+      TASKS: 1
+      POST: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - edge
+
   traefik:
     image: traefik:v3.3
     profiles: ["tls"]
     restart: unless-stopped
+    depends_on:
+      - docker-proxy
     command:
       - --providers.docker=true
+      - --providers.docker.endpoint=tcp://docker-proxy:2375
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
@@ -19,8 +37,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - letsencrypt:/letsencrypt
+    networks:
+      - edge
+      - default
 
   postgres:
     image: postgres:16-alpine
@@ -188,3 +208,7 @@ services:
 volumes:
   letsencrypt:
   pgdata:
+
+networks:
+  edge:
+    internal: true
