@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 from action_platform.abc.plugin import Plugin, Surface
 from action_platform.core.wiring import wired
 from action_platform.core.exception import ActionPlatformError
-from action_platform.logging import logger
+from action_platform.logging import attach, logger
 from action_platform.plugins.options import FileOptions, Options
 from action_platform.plugins.state import PluginState
 
@@ -36,6 +36,10 @@ class Loaded:
     @property
     def slug(self) -> str:
         return self.plugin.slug
+
+    @property
+    def module(self) -> str:
+        return type(self.plugin).__module__.split(".")[0]
 
 
 class PluginTools:
@@ -148,13 +152,13 @@ class Plugins:
             FAILURES.pop(ep.name, None)
 
             dist = getattr(ep, "dist", None)
-            found.append(
-                Loaded(
-                    plugin,
-                    getattr(dist, "name", "") or "",
-                    getattr(dist, "version", "") or "",
-                )
+            entry = Loaded(
+                plugin,
+                getattr(dist, "name", "") or "",
+                getattr(dist, "version", "") or "",
             )
+            attach(entry.module)
+            found.append(entry)
 
         return found
 

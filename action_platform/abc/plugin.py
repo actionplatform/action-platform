@@ -7,10 +7,13 @@ in-process on the machine that installed it; there is no sandbox, and the
 hosted platform never loads one.
 """
 
+import logging
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional
+
+from action_platform.logging import attach
 
 if TYPE_CHECKING:
     from action_platform.core.context import Context, DeployResult, PRRef
@@ -61,6 +64,14 @@ class Plugin(ABC):
     @property
     def title(self) -> str:
         return self.name or self.slug
+
+    @property
+    def logger(self) -> logging.Logger:
+        """The plugin's own logger, routed to whoever follows the job on the platform — `self.logger.info(...)` inside a deploy shows up in the run log."""
+        name = type(self).__module__.split(".")[0]
+        attach(name)
+
+        return logging.getLogger(name)
 
     @property
     def overlays(self) -> Optional[Path]:
