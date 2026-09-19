@@ -4,7 +4,7 @@ import { failed, type Result } from "@/lib/result";
 import { revalidatePath } from "next/cache";
 import { sessionCookie } from "@/lib/auth";
 import { authApi } from "@/lib/auth-api";
-import { type Role, ROLES } from "@/lib/orgs";
+import { type Role, ROLES, setActiveOrg } from "@/lib/orgs";
 import { requireOrg } from "@/lib/session";
 import { HOST_KINDS, type HostKind } from "@/lib/source-hosts";
 import { v1 } from "@/lib/v1";
@@ -87,3 +87,17 @@ export async function saveGitAuthor(author: { name: string; email: string }): Pr
   }
 }
 
+
+
+export async function deleteOrganization(confirm: string, repositories: boolean, cloud: boolean): Promise<Result<{ job: string | null }>> {
+  const { session, org } = await requireOrg();
+  try {
+    const data = await v1.deleteOrganization(org.id, confirm, repositories, cloud);
+    const next = session.organizations.find((o) => o.id !== org.id);
+    if (next) await setActiveOrg(next.id);
+    revalidatePath("/", "layout");
+    return { ok: true, data: { job: data.job ?? null } };
+  } catch (e) {
+    return failed(e);
+  }
+}

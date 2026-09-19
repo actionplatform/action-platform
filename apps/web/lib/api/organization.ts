@@ -20,4 +20,6 @@ export const organization = {
   cancelInvitation: async (id: string) => unwrap(await client.DELETE("/api/v1/invitations/{id}", { params: { path: { id } } })),
   gitAuthor: async () => unwrap(await client.GET("/api/v1/settings/git-author")),
   setGitAuthor: async (name: string, email: string) => unwrap(await client.PUT("/api/v1/settings/git-author", { body: { name, email } })),
+  deleteOrganization: async (id: string, confirm: string, repositories = false, cloud = false) =>
+    unwrap(await client.DELETE("/api/v1/organizations/{organization_id}", { params: { path: { organization_id: id }, query: { confirm, repositories, cloud } } })),
 };

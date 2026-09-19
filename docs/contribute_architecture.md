@@ -147,6 +147,7 @@ The Planner (`services/access/planner.py`) is the one place the gate reads the d
 | `import_github` | the organization import wizard | repositories, teams, people and projects from a GitHub organization |
 | `destroy` | `DELETE projects/{p}/apps/{a}?cloud=true` | every stage's stack down through the target, then the app off the platform |
 | `destroy_project` | `DELETE projects/{id}?cloud=true` | the same for each app, then the project |
+| `destroy_organization` | `DELETE organizations/{id}?cloud=true` | every app's stacks down, then the organization and everything it owned |
 
 While a job runs, the worker captures the library's log records and every line a plugin emits (`action_platform.logging.capture`) into `job_log`, flushed every half second; `GET jobs/{id}/logs?after=` serves them and the web follows a live run by polling.
 
@@ -259,7 +260,7 @@ erDiagram
     app ||--o{ draft : "pending edits"
     organization ||--o{ plugin_option : "plugin settings"
     job {
-        string kind "sync release readiness deploy push import import_github destroy destroy_project"
+        string kind "sync release readiness deploy push import import_github destroy destroy_project destroy_organization"
         string status "queued running done failed"
         text payload
         text result

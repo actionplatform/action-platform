@@ -54,6 +54,7 @@ Routes that are not workspaces live directly under `/api/v1` and are what the we
 |---|---|
 | `GET me`, `access` (the whole rule table: roles with labels, descriptions, permissions and grantable scopes; permissions; scopes; default scopes — what the pages display), `organizations`, `projects` (with apps; across organizations for a token that spans them, or `X-Organization` for another one the caller belongs to), `teams`, `members`, `hosts`, `template-sources`, `settings/git-author`, `oauth/apps`, `jobs`, `projects/{id}/apps/{id}/imports` | any member (`read`) |
 | `POST tokens {scope, name}` | a session (never a token) |
+| `DELETE organizations/{id}?confirm=<slug>&repositories&cloud` (the organization and everything it owned; `cloud` answers `202` with a `destroy_organization` job that tears every app's stacks down first) | `org.manage` and the `owner` role |
 | `POST projects`, `DELETE projects/{id}` (removes the workspaces too; `?repositories=true` deletes the repositories on the host, `?cloud=true` answers `202` with a `destroy_project` job that tears every app's stacks down first), `POST projects/{id}/apps {url, install}`, `POST projects/{id}/apps/init {…InitRequest, source_host_id, template_source}`, `DELETE projects/{id}/apps/{id}` (`?repository=true`, `?cloud=true` → `202` with a `destroy` job), `POST projects/team` | `project.manage` |
 | `PUT projects/{id}/apps/{id}/host` | `app.flow` |
 | `POST projects/{id}/apps/{id}/imports` (copy releases and pull requests now) | `app.sync` |

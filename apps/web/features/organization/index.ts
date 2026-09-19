@@ -5,3 +5,4 @@ export { MembersPanel } from "./members-panel";
 export { RolesCard } from "./roles-card";
 export { TeamDetail } from "./team-detail";
 export { NewTeamButton, TeamsView } from "./teams-view";
+export { DeleteOrganizationCard } from "./delete-organization-card";
