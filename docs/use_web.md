@@ -111,7 +111,7 @@ The tab lists the runs imported from the app's CI — status, run, branch, commi
 
 ### Configuration
 
-**Deploy target** picks a cloud overlay for the app's type and language and applies it — the files become pending changes and `[deploy] target` is recorded. **Services** adds `services/<name>/` with up and link scripts under `[services]`. Both are forms with a summary strip and a confirmation. **Manifest** edits `platform.toml` as the platform keeps it; **Export** writes the mirror into the repository. Pending changes are committed from the bar on top to a `chore/<code>` branch with a pull request, or discarded.
+**Deploy target** picks a cloud overlay for the app's type and language and applies it — the files become pending changes and `[deploy] target` is recorded. Services (`action-platform service add`) stay on the CLI until the web has something real to show for them. Both are forms with a summary strip and a confirmation. **Manifest** edits `platform.toml` as the platform keeps it; **Export** writes the mirror into the repository. Pending changes are committed from the bar on top to a `chore/<code>` branch with a pull request, or discarded.
 
 ### Deleting
 

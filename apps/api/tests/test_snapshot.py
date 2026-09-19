@@ -51,6 +51,18 @@ class SnapshotTest(GateCase):
         self.assertIsNotNone(again["snapshot_at"])
         self.assertEqual(again["branch"], detail["branch"])
 
+    def test_the_app_list_reads_the_snapshot_when_the_clone_is_gone(self):
+        registry_id = self.register()
+        self.client.get(f"/api/v1/apps/{registry_id}", headers=self.h())
+        shutil.rmtree(settings.WORKSPACES / registry_id, ignore_errors=True)
+
+        rows = self.client.get("/api/v1/apps", headers=self.h()).json()
+        row = next(r for r in rows if r["id"] == registry_id)
+
+        self.assertEqual((row["type"], row["language"]), ("web", "python"))
+        self.assertEqual(row["last_version"], "1.2.3")
+        self.assertEqual(row["branch"], "main")
+
     def test_sync_retakes_the_snapshot(self):
         from app.repositories.workspace.snapshots import SnapshotStore
 

@@ -24,7 +24,7 @@ export default async function TemplatesPage() {
   if (!matrix) {
     return (
       <>
-        <PageHeader title="Templates" description="Start faster with production-ready foundations for apps, libraries, documentation, plugins, and cloud services." />
+        <PageHeader title="Templates" description="Start faster with production-ready foundations for apps, libraries, documentation and plugins, with a cloud overlay when they deploy." />
         <TemplatesErrorState />
       </>
     );

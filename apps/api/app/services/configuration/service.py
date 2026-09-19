@@ -11,14 +11,8 @@ from app.repositories.workspace.registry import Registry
 from app.schemas import SourceSpec
 from app.services.templates import TemplateRepos
 from app.services.workspace import Workspaces
+from app.services.workspace.facts import AppFacts
 from app.core.errors import Invalid
-
-
-def _same(a: str, b: str) -> bool:
-    try:
-        return tomllib.loads(a) == tomllib.loads(b)
-    except tomllib.TOMLDecodeError:
-        return False
 
 
 class ConfigurationService:
@@ -34,12 +28,7 @@ class ConfigurationService:
 
     def manifest(self, id: str) -> dict:
         """The configuration the platform keeps, rendered as platform.toml; whether the clone's file matches it."""
-        root = self._root(id)
-        content = self.configs.render(id, root)
-        file = root / settings.CONFIG_FILE
-        mirrored = file.exists() and _same(file.read_text(), content)
-
-        return {"content": content, "mirrored": mirrored}
+        return AppFacts(self.registry, self.configs).manifest(id)
 
     def write_manifest(self, id: str, content: str) -> dict:
         """Save to the platform — nothing in the repository changes until the mirror is exported."""
