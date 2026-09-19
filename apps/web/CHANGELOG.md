@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.30.0 — 2026-09-19
+
+### Features
+- **releases:** release a component from the web
+
 ## v0.29.4 — 2026-09-19
 
 ### Bug Fixes
