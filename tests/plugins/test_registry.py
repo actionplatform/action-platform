@@ -62,6 +62,42 @@ class PluginsTest(TempCase):
         self.addCleanup(registry.reset)
         self.addCleanup(wired.restore, "gitflow_rules")
 
+    def test_a_plugins_logger_reaches_the_job_sink(self):
+        import logging
+
+        from action_platform.logging import capture
+
+        seen: list[str] = []
+        loaded = Loaded(self.example, "apx-example", "1.0.0")
+
+        self.assertEqual(loaded.module, "tests")
+
+        with capture(seen.append):
+            self.example.logger.info("pushing %s", "image")
+            logging.getLogger("tests.plugins.deep").info("nested too")
+
+        self.assertEqual(seen, ["pushing image", "nested too"])
+
+    def test_discovery_attaches_every_plugin_found(self):
+        import logging
+
+        from action_platform.logging import capture
+
+        ep = mock.Mock()
+        ep.name = "example"
+        ep.load.return_value = Example
+        ep.dist = None
+        seen: list[str] = []
+
+        with mock.patch.object(registry, "entry_points", return_value=[ep]):
+            found = registry.Plugins.find()
+
+        with capture(seen.append):
+            logging.getLogger("tests.anything").info("hello")
+
+        self.assertEqual([f.slug for f in found], [self.example.slug])
+        self.assertEqual(seen, ["hello"])
+
     def test_rows_and_flags_persist(self):
         self.assertEqual(self.plugins.rows()[0]["enabled"], True)
 

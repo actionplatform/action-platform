@@ -90,7 +90,7 @@ class AwsLambdaPlugin(Plugin):
 
 A disabled plugin's providers disappear from every lookup.
 
-Long commands should stream: run them through `action_platform.core.process.stream(args, cwd, env)` — every line reaches whoever follows the job (the web's run log, `action-platform logs -f`) as it appears, and the tail comes back for the error — or `emit(line)` from `action_platform.logging` for lines of your own. Output the platform never sees is output nobody can debug.
+Log through `self.logger` (the plugin's own logger, wired at load to the platform's job log) or `action_platform.logging.logger`; a logger of your own named after your package works too — every plugin's package is attached when it is discovered. Long commands should stream: run them through `action_platform.core.process.stream(args, cwd, env)` — every line reaches whoever follows the job (the web's run log, `action-platform logs -f`) as it appears, and the tail comes back for the error — or `emit(line)` from `action_platform.logging` for lines of your own. Output the platform never sees is output nobody can debug.
 
 `readiness` is optional — the default answers nothing and the release is checked statically only. Keep it read-only and cheap: it runs on the worker right after every release, for every stage, and again whenever someone asks. Name checks `<area>.<what>` (`aws.permissions`, `stack.state`, `destination.version`), put the way out in `fix`, and never let it build — that is what `deploy` is for. `apx-aws-lambda`'s `LambdaTarget.readiness` is the reference: tooling, template present, stack name, credentials, stack state, `iam:SimulatePrincipalPolicy` for the actions the template needs, `sam validate --lint`.
 

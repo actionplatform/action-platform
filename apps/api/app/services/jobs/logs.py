@@ -21,7 +21,6 @@ MAX_LINE = 4000
 PAGE = 1000
 
 attach("app")
-attach("apx_aws_lambda")
 
 
 class Recorder:
