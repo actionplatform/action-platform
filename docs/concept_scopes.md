@@ -10,6 +10,17 @@ Scopes replace the fixed `dev` / `prod` stages. Those two become the first two s
 - The rule "a deploy ships a release" ([ADR 0002](adr/0002-targets-and-executors.md)) needs a second half: *which* release may reach *which* place. That half lives on the scope, as its criticality.
 - Apps of different kinds deploy the same way but are operated differently: a web API, a scheduled job, a queue worker, a static site. The scope carries the kind so the platform can verify and diagnose each the right way.
 
+```mermaid
+flowchart LR
+    B[branch] -->|release| R[Release<br/>tag · shape: candidate · stable · hotfix]
+    R -->|deploy| S1[Scope dev<br/>web · test]
+    R -->|deploy| S2[Scope staging<br/>web · low]
+    R -->|deploy| S3[Scope prod-br<br/>web · high]
+    R -->|deploy| S4[Scope prod-eu<br/>web · critical]
+    R -->|deploy| S5[Scope nightly<br/>job · low]
+    S1 & S2 & S3 & S4 & S5 --> D[(deployment<br/>release × scope)]
+```
+
 ## Definition
 
 | Field | Meaning |
@@ -49,6 +60,31 @@ Criticality is ordered: `test < low < medium < high < critical`. Rules are writt
 
 ## What a scope accepts
 
+```mermaid
+flowchart LR
+    subgraph shapes[Release shape]
+        C[candidate<br/>1.4.0-rc.2]
+        ST[stable<br/>1.4.0]
+        L[latest stable<br/>newest 1.x]
+        H[hotfix<br/>from hotfix/*]
+    end
+    subgraph levels[Criticality]
+        T[test]
+        LO[low]
+        M[medium]
+        HI[high]
+        CR[critical]
+    end
+    C --> T
+    C --> LO
+    ST --> LO
+    L --> M
+    L --> HI
+    L --> CR
+    H --> T & LO & M & HI & CR
+```
+
+
 Releases come in three shapes: **candidates** (`1.4.0-rc.2`, cut off `main`), **stable** (`1.4.0`, cut on `main`) and **hotfixes** (a release cut from a `hotfix/<code>` branch, which git-flow starts from `main`). Among stable releases of a component, one is the **latest**. The default policy:
 
 | Criticality | Candidates | Stable | Must be latest | Hotfix |
@@ -69,6 +105,27 @@ In words:
 The policy is a table, not code. An organization may loosen or tighten it per criticality in Settings (or `[scopes.policy]` in `platform.toml` for one app) — for instance allow stable on `test`. The defaults above are what a new organization gets.
 
 ## Where the rules run
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant W as Web / CLI
+    participant A as API gate
+    participant R as Readiness
+    participant K as Worker
+    U->>W: deploy 1.4.0-rc.2 → prod-br (high)
+    W->>A: POST apps/{id}/deploy {scope, version}
+    A->>R: checks for (release, scope)
+    R-->>A: scope.release-shape ✗ candidate at high
+    A-->>W: 409 not deployable to prod-br
+    U->>W: deploy 1.4.0 → prod-br
+    W->>A: POST apps/{id}/deploy {scope, version}
+    A->>R: checks for (release, scope)
+    R-->>A: shape ✓ · latest ✓ · aws.* ✓
+    A->>K: job deploy (ctx.stage = "prod-br")
+    K-->>W: run log · deployment row (release × scope)
+```
+
 
 The gate that refuses a deploy already exists — [readiness](concept_deployments.md#readiness) blocks a release the checks failed. Scope policy adds **static checks** to the same list, computed from what the platform already knows (the release row, the deployment rows, the scope):
 
@@ -109,6 +166,34 @@ The kind changes how the platform **verifies** and **diagnoses**, not how it dep
 `DeployTarget.verify(version, scope)` and `diagnose(ctx)` receive the scope, kind included; a target that does not know a kind says so and the scope refuses to be created with it.
 
 ## Data model
+
+```mermaid
+erDiagram
+    app ||--o{ scope : "has"
+    app ||--o{ release : "cuts"
+    release ||--o{ deployment : "shipped as"
+    scope ||--o{ deployment : "receives"
+    release ||--o{ release_readiness : "checked for"
+    scope ||--o{ release_readiness : "per scope"
+    scope {
+        string name
+        string kind "web job worker static library"
+        string criticality "test low medium high critical"
+        string target_kind
+        json target_options
+        string run_by
+        string url
+    }
+    release {
+        string tag
+        string version
+        string shape "candidate stable hotfix"
+    }
+    deployment {
+        string status
+        string executor
+    }
+```
 
 ```
 scope(id, app_id, name, kind, criticality, target_kind, target_options JSON,
@@ -174,6 +259,15 @@ region = "us-east-1"
 `[[deploy.targets]]` keeps working and reads as scopes named after the target (or its `stages`), criticality `test` for `dev` and `high` for `prod`, `low` for anything else.
 
 ## Rollout
+
+```mermaid
+flowchart LR
+    S1[1 · model + policy<br/>scope table · release.shape<br/>stage → scope mapping] --> S2[2 · checks + gate<br/>scope.release-shape · scope.latest]
+    S2 --> S3[3 · web<br/>Scopes table · New scope · deploy form]
+    S3 --> S4[4 · kinds<br/>verify/diagnose per kind]
+    S4 --> S5[5 · CLI · MCP · platform.toml scopes]
+```
+
 
 1. **Model and policy** — `scope`, migration from stages, `ScopePolicy` in the library (`core/scopes.py`: criticality order, the default table, `eligible(release, scope, history) -> list[Check]`), tests. Deploy, readiness and deployment rows take `scope`; `stage` accepted and mapped. Nothing visible changes yet.
 2. **Checks and gate** — the `scope.*` checks join readiness; the deploy gate reads them.
