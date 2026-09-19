@@ -17,3 +17,12 @@ path = "apps/web"
 
 [components.api]
 path = "apps/api/app"
+
+# The root component on PyPI: the platform deploys a release to a scope by
+# dispatching publish.yml on its tag; a `test` scope publishes to TestPyPI.
+[[deploy.targets]]
+name = "pypi"
+kind = "pypi"
+run_by = "github_actions"
+workflow = "publish.yml"
+package = "action-platform"

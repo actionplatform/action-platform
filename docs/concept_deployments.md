@@ -39,7 +39,7 @@ run_by = "platform"
 name = "pypi"
 kind = "pypi"
 run_by = "github_actions"
-workflow = "python-publish-pypi.yml"
+workflow = "publish.yml"
 package = "action-platform"
 
 [[deploy.targets]]
