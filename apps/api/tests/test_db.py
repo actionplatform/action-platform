@@ -61,7 +61,7 @@ class DatabaseTest(TempCase):
             }
             <= set(inspect(db.engine).get_table_names())
         )
-        self.assertEqual(db.migrate(), "0020")
+        self.assertEqual(db.migrate(), "0021")
 
     def test_web_created_schema_is_adopted_not_recreated(self):
         from app.core.db import Base, Database
@@ -96,7 +96,7 @@ class DatabaseTest(TempCase):
             tables=[t for t in Base.metadata.sorted_tables if t.name not in ours],
         )
         self.assertTrue(db.adopted_from_web())
-        self.assertEqual(db.migrate(), "0020")
+        self.assertEqual(db.migrate(), "0021")
         self.assertIn("job", inspect(db.engine).get_table_names())
         self.assertFalse(db.adopted_from_web())
 
