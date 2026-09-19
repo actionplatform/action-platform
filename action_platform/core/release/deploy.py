@@ -33,16 +33,21 @@ class Deployer:
         self.identity = identity
         self.env = dict(env or {})
 
-    def targets(self, name: str | None = None) -> list[DeployTarget]:
-        targets = (
-            self.config.deploy
-            if name is None
-            else [t for t in self.config.deploy if t.name == name]
-        )
+    def targets(
+        self, name: str | None = None, stage: str | None = None
+    ) -> list[DeployTarget]:
+        """The targets a deploy runs: the platform's own and the dispatched ones, those serving `stage` when a target lists stages, `name` alone when given."""
+        stages = {t.name: t.stages for t in self.config.targets}
+        targets = [
+            t
+            for t in self.config.deploy + self.config.dispatched()
+            if (name is None or t.name == name)
+            and (stage is None or not stages.get(t.name) or stage in stages[t.name])
+        ]
 
         if not targets:
             raise DeployError(
-                f"no deploy target configured (filter={name!r}) — "
+                f"no deploy target configured (filter={name!r}, stage={stage!r}) — "
                 "run `action-platform cloud set <cloud>`"
             )
 
@@ -106,10 +111,11 @@ class Deployer:
         self.config.scope(ctx.stage)
         tag, shipped = self.release_tag(version)
         ctx.current_version = ctx.next_version = shipped
+        ctx.tag = tag
         results: list[DeployResult] = []
 
         with self.at_release(tag):
-            for t in self.targets(target):
+            for t in self.targets(target, ctx.stage):
                 logger.info(
                     "deploy target=%s stage=%s version=%s tag=%s",
                     t.name,
@@ -137,7 +143,7 @@ class Deployer:
     ) -> None:
         ctx = self._context(stage=stage)
 
-        for t in self.targets(target):
+        for t in self.targets(target, ctx.stage):
             logger.info(
                 "rollback target=%s stage=%s to=%s", t.name, ctx.stage, to_version
             )
@@ -149,12 +155,12 @@ class Deployer:
     ) -> list[Diagnosis]:
         ctx = self._context(stage=stage)
 
-        return [t.diagnose(ctx) for t in self.targets(target)]
+        return [t.diagnose(ctx) for t in self.targets(target, ctx.stage)]
 
     def destroy(self, target: str | None = None, stage: str | None = None) -> None:
         ctx = self._context(stage=stage)
 
-        for t in self.targets(target):
+        for t in self.targets(target, ctx.stage):
             logger.info("delete target=%s stage=%s", t.name, ctx.stage)
             t.preflight(ctx)
             t.delete(ctx)

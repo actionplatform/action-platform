@@ -112,6 +112,7 @@ class Context:
     env: dict[str, str] = field(default_factory=dict)
     dry_run: bool = False
     stage: str = "dev"
+    tag: str = ""
     identity: Optional[Callable[[str], str]] = None
 
     def identity_token(self, audience: str) -> Optional[str]:

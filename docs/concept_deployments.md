@@ -50,7 +50,7 @@ job = "team/app/publish"
 image = "ghcr.io/actionplatform/api"
 ```
 
-`run_by = "platform"` is the target the worker deploys itself through a plugin (below). Any other executor is *observed*: the platform reads the runs of the workflow or job named on the target, turns each one that shipped a tag into a deployment record, and verifies the version at the destination. The single `[deploy] target = "aws/lambda"` form is still read as one target named after its kind, run by the platform.
+`run_by = "platform"` is the target the worker deploys itself through a plugin (below). `github_actions`, `gitlab_ci` and `bitbucket_pipelines` are *dispatched*: the deploy starts the target's `workflow` on the release tag with two inputs, `version` and `registry` (the scope's name), follows the run in the job log until it ends, then asks the destination whether the version arrived — the pipeline publishes with its own credentials (trusted publishing, OIDC), the platform decides when and to which scope, and no registry token reaches it (strategy: [ADR 0010](https://github.com/actionplatform/strategy/blob/main/adr/0010-library-publishing.md)). `jenkins` is *observed*: the platform reads the builds of the job named on the target, turns each one that shipped a tag into a deployment record, and verifies the version at the destination. `stages` limits a target to some scopes — `testpypi` for the candidates, `pypi` for the rest. The single `[deploy] target = "aws/lambda"` form is still read as one target named after its kind, run by the platform.
 
 ## The record
 
@@ -61,7 +61,7 @@ Every delivery is a row in `deployment`, whoever executed it:
 | `target`, `kind`, `stage` | which target of the app, and its stage when the target has stages |
 | `version`, `sha` | the release — required |
 | `status` | `queued` → `running` → `success` or `failure` → `verified` |
-| `executor` | `platform`, `github_actions`, `jenkins`, `manual` |
+| `executor` | `platform`, `github_actions`, `gitlab_ci`, `bitbucket_pipelines`, `jenkins`, `manual` |
 | `job_id` / `ci_run_id` | the worker job or the CI run that did it — the CI tab shows the pipeline, this row shows the result |
 | `url`, `actor`, `started_at`, `finished_at`, `verified_at` | where to look, who, when |
 
@@ -70,7 +70,7 @@ How a row is born depends on the executor:
 | Executor | Source |
 |---|---|
 | `platform` | the worker writes it as the `deploy` job runs |
-| `github_actions` | the runs of the target's `workflow` — version from the tag the run was triggered by; or the GitHub Deployments API when the workflow declares an `environment:` |
+| `github_actions`, `gitlab_ci`, `bitbucket_pipelines` | the worker writes it as the `deploy` job dispatches the workflow and follows the run; a run of the same workflow started outside the platform on a release tag is imported on **Sync** unless the platform already recorded that version |
 | `jenkins` | the builds of the target's `job` — version from the build's tag or parameter |
 | `manual` | `POST /api/v1/apps/{id}/deployments`, `action-platform deploy record` |
 

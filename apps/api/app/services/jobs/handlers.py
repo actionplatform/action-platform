@@ -175,16 +175,18 @@ class JobHandlers:
         scopes = self._scopes(ctx.app)
 
         identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
+        credentials = self._host_credentials(ctx)
         service = ReadinessService(
             self.registry,
             identity=identity.minter(
                 ctx.organization, ctx.app, stage, manages=bool(payload.get("manages"))
             ),
             env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
+            credentials=credentials,
         )
 
         try:
-            with auth.git_auth(self._host_credentials(ctx)):
+            with auth.git_auth(credentials):
                 checks = service.check(
                     ctx.registry_id, tag, stage, shape=shape, scopes=scopes
                 )
@@ -212,6 +214,7 @@ class JobHandlers:
         ctx = self.context(payload)
         identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
         request = DeployRequest(**ctx.body)
+        credentials = self._host_credentials(ctx)
         service = DeploymentsService(
             self.registry,
             identity=identity.minter(
@@ -221,11 +224,12 @@ class JobHandlers:
                 manages=bool(payload.get("manages")),
             ),
             env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
+            credentials=credentials,
         )
         started = now()
 
         try:
-            with auth.git_auth(self._host_credentials(ctx)):
+            with auth.git_auth(credentials):
                 results = service.deploy(ctx.registry_id, request)
         except ActionPlatformError as e:
             if not request.dry_run:

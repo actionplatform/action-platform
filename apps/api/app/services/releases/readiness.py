@@ -12,8 +12,10 @@ from app.core.errors import Conflict, NotFound
 from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.releases import ReadinessStore, ReleaseStore, tag_of, verdict
 from app.repositories.workspace.registry import Registry
+from app.schemas import SourceCredentials
 from app.services.jobs import JobQueue
 from app.services.workspace import Workspaces
+from app.services.workspace import git_auth as auth
 
 STAGES = ("dev", "prod")
 
@@ -25,11 +27,13 @@ class ReadinessService:
         identity: Callable[[str], str] | None = None,
         env: dict[str, str] | None = None,
         configs: ConfigStore | None = None,
+        credentials: SourceCredentials | None = None,
     ) -> None:
         self.registry = registry
         self.identity = identity
         self.env = env
         self.configs = configs or ConfigStore(registry.store.database)
+        self.credentials = credentials
 
     def check(
         self,
@@ -40,7 +44,7 @@ class ReadinessService:
         scopes: Optional[list[dict[str, Any]]] = None,
     ) -> list[Check]:
         _, root = Workspaces(self.registry).checkout(id)
-        config = self.configs.config(id, root)
+        config = auth.apply(self.configs.config(id, root), self.credentials)
 
         if scopes:
             config._scopes_spec = scopes
