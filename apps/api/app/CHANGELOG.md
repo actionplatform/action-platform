@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.32.1 — 2026-09-19
+
+### Bug Fixes
+- **jobs:** deploy, readiness and tear-down clone with the source host credentials
+
 ## v0.32.0 — 2026-09-19
 
 ## v0.31.3 — 2026-09-19
