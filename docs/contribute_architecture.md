@@ -41,7 +41,8 @@ action_platform/
     manifest/     Manifest: platform.toml as an object (project, source_host, services; set_source_host, set_deploy_target, set_service)
     scaffold/     store (TemplateSource, TemplateStore: checkouts), templates (Matrix, Leaf, Cloud, Service), detect (LanguageDetector), install (Installer: plan/apply), generate (cookiecutter, overlays, push)
     flow/         repository (Repository: every git command on one clone, follow_remote, stashed), workflow (GitFlow: audit, start, propose, open_pr, install_hooks), gitflow (the rules as pure functions), git (ref/url policy, per-request credentials)
-    release/      versioning (Version, VersionFiles), changelog, components, release (Releaser: plan → apply), deploy (Deployer), readiness (Readiness: can a release reach a stage)
+    release/      versioning (Version, VersionFiles), changelog, components, release (Releaser: plan → apply), deploy (Deployer), readiness (Readiness: can a release reach a scope)
+    scopes.py     ScopeSpec, criticalities, release shapes, the acceptance policy, [[scopes]] and the targets read as scopes
     config.py     Config.from_toml → source host, deploy targets, components
     context.py    Context, DeployResult, Diagnosis, PRRef, ReleaseRef
     action_platform.py   ActionPlatform: the facade the CLI, MCP and API call (releaser, deployer, readiness, flow)

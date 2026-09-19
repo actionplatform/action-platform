@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, ArrowLeft, Building2, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Puzzle, Rocket, Settings, SlidersHorizontal, Workflow, X } from "lucide-react";
+import { Activity, ArrowLeft, Building2, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Puzzle, Rocket, Settings, SlidersHorizontal, Target, Workflow, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -26,6 +26,7 @@ const appItems = [
   { tab: "activity", label: "Activity", icon: Activity },
   { tab: "ci", label: "CI", icon: Workflow },
   { tab: "releases", label: "Releases", icon: Rocket },
+  { tab: "scopes", label: "Scopes", icon: Target },
   { tab: "deployments", label: "Deployments", icon: Cloud },
   { tab: "configuration", label: "Configuration", icon: SlidersHorizontal },
   { tab: "settings", label: "Settings", icon: Settings },

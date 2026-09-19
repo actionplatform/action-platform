@@ -11,6 +11,8 @@ import { Hint } from "@/components/ui/hint";
 import { Select } from "@/components/ui/select";
 import type { DeployResult } from "@/lib/api";
 import type { ReadinessRow } from "@/lib/releases";
+import { ACCEPTS, CRITICALITY, type Criticality, type Scope, shapeOf } from "@/lib/scope-kinds";
+import { CriticalityBadge } from "@/features/scopes";
 import { relativeTime } from "@/lib/time";
 import { useAction } from "@/lib/use-action";
 import { deployJob, startDeploy } from "@/features/deployments/actions";
@@ -19,20 +21,16 @@ import { readiness as fetchReadiness } from "@/features/readiness/actions";
 import { LiveLog } from "@/features/jobs";
 import { RunAlert, summarize } from "./run-alert";
 
-const STAGES = [
-  { value: "dev", label: "dev", hint: "default" },
-  { value: "prod", label: "prod", hint: "stable" },
-];
-
 type Outcome = { dryRun: boolean; rows: DeployResult[] };
 
 const versionOf = (tag: string) => tag.replace(/^v/, "");
 
-export function DeployCard({ view, liveStages = [] }: { view: AppView; liveStages?: string[] }) {
+export function DeployCard({ view, liveStages = [], scopes = [] }: { view: AppView; liveStages?: string[]; scopes?: Scope[] }) {
   const router = useRouter();
-  const target = typeof view.deploy.target === "string" ? String(view.deploy.target) : null;
   const releases = view.tags.filter((t) => /^v?\d/.test(t));
-  const [stage, setStage] = useState("dev");
+  const [stage, setStage] = useState(scopes[0]?.name ?? "dev");
+  const scope = scopes.find((s) => s.name === stage) ?? null;
+  const target = scope?.target ?? (typeof view.deploy.target === "string" ? String(view.deploy.target) : null);
   const [tag, setTag] = useState(releases[0] ?? "");
   const [dryRun, setDryRun] = useState(false);
   const [force, setForce] = useState(false);
@@ -71,8 +69,10 @@ export function DeployCard({ view, liveStages = [] }: { view: AppView; liveStage
   });
 
   const live = liveStages.includes(stage);
-  const canDeploy = !!target && view.can["app.release"] && !!view.repositoryUrl && !!tag && !live && (!blocked || force);
-  const blocker = !target ? "Pick a deploy target in Configuration first." : !view.can["app.release"] ? "Your role cannot deploy." : !view.repositoryUrl ? "This app has no remote." : releases.length === 0 ? "A deploy ships a release: create one in Releases first." : live ? `A deploy to ${stage} is running — one at a time per environment.` : blocked && !force ? `${tag} is not deployable to ${stage}: fix the checks below, re-check on the release page, or deploy anyway.` : null;
+  const shape = tag ? shapeOf(tag) : null;
+  const refused = !!scope && !!shape && !ACCEPTS[scope.criticality as Criticality]?.includes(shape);
+  const canDeploy = !!target && !!scope && view.can["app.release"] && !!view.repositoryUrl && !!tag && !live && !refused && (!blocked || force);
+  const blocker = scopes.length === 0 ? "Create a scope first: a deploy always lands on a scope." : !target ? "Pick a deploy target in Configuration or on the scope first." : !view.can["app.release"] ? "Your role cannot deploy." : !view.repositoryUrl ? "This app has no remote." : releases.length === 0 ? "A deploy ships a release: create one in Releases first." : live ? `A deploy to ${stage} is running — one at a time per scope.` : refused ? `${tag} is a ${shape} release; ${stage} is ${scope!.criticality} and takes ${ACCEPTS[scope!.criticality as Criticality].join(", ")} only.` : blocked && !force ? `${tag} is not deployable to ${stage}: fix the checks below, re-check on the release page, or deploy anyway.` : null;
   const timelineHref = `/projects/${view.projectId}/apps/${view.appId}/releases/${encodeURIComponent(tag)}`;
 
   const launch = (asDryRun: boolean) => {
@@ -87,11 +87,11 @@ export function DeployCard({ view, liveStages = [] }: { view: AppView; liveStage
   return (
     <ActionForm
       title="Deploy"
-      aside={target ? <Badge className="font-mono">{target}</Badge> : <Badge>Not configured</Badge>}
+      aside={target ? <Badge className="font-mono">{target}</Badge> : <Badge>No target</Badge>}
       primary={{ label: `Deploy to ${stage}`, icon: Rocket, onClick: () => launch(false), disabled: !canDeploy, busy: action.busy && !dryRun, busyLabel: "Deploying…" }}
       secondary={{ label: "Run preflight", icon: ListChecks, onClick: () => launch(true), disabled: !canDeploy, busy: action.busy && dryRun, busyLabel: "Checking…" }}
       blocker={action.error ? null : blocker}
-      summary={[{ label: "Target", value: target ?? "—" }, { label: "Release", value: tag || "—" }, { label: "Environment", value: stage }, { label: "Version", value: tag ? versionOf(tag) : "—" }]}
+      summary={[{ label: "Target", value: target ?? "—" }, { label: "Release", value: tag ? `${tag} · ${shapeOf(tag)}` : "—" }, { label: "Scope", value: scope ? `${scope.name} · ${CRITICALITY[scope.criticality as Criticality]?.label ?? scope.criticality}` : "—" }, { label: "Version", value: tag ? versionOf(tag) : "—" }]}
       alerts={
         <>
           {tag && readiness !== null && (
@@ -135,7 +135,7 @@ export function DeployCard({ view, liveStages = [] }: { view: AppView; liveStage
       }
       dialogs={
         <ConfirmDialog open={action.step === "confirming"} onClose={action.cancel} title={`Deploy ${view.name} ${versionOf(tag)} to ${stage}?`} confirmLabel={`Deploy ${versionOf(tag)}`} pending={action.busy} onConfirm={action.execute}>
-          <ActionSummary items={[{ label: "Target", value: target ?? "—" }, { label: "Environment", value: stage }, { label: "Release", value: tag }, { label: "Version", value: versionOf(tag) }]} />
+          <ActionSummary items={[{ label: "Target", value: target ?? "—" }, { label: "Scope", value: stage }, { label: "Release", value: tag }, { label: "Version", value: versionOf(tag) }]} />
           <p className="mt-4 text-sm text-secondary">Checks out the tag, builds and runs the target for real on the platform&apos;s worker. Run preflight first to check credentials and the template without changing anything.</p>
         </ConfirmDialog>
       }
@@ -148,8 +148,13 @@ export function DeployCard({ view, liveStages = [] }: { view: AppView; liveStage
             <div className="flex h-[42px] items-center rounded-[7px] border border-dashed border-border px-3 font-mono text-sm text-muted-foreground">No releases yet</div>
           )}
         </ActionField>
-        <ActionField label="Environment" hint={<Hint text="The worker runs the target with a token signed for this app; credentials come from the cloud, never from the platform." />}>
-          <Select size="lg" mono icon={<Cloud className="size-4" strokeWidth={1.75} />} value={stage} onChange={(v) => { setStage(v); action.clearOutcome(); }} options={STAGES} />
+        <ActionField label="Scope" hint={<Hint text="Where the release lands. The scope's criticality decides which releases it takes: test and low take candidates, medium and above take stable and hotfix releases." />}>
+          {scopes.length > 0 ? (
+            <Select size="lg" mono icon={<Cloud className="size-4" strokeWidth={1.75} />} value={stage} onChange={(v) => { setStage(v); action.clearOutcome(); }} options={scopes.map((s) => ({ value: s.name, label: s.name, hint: `${s.kind} · ${CRITICALITY[s.criticality as Criticality]?.label ?? s.criticality}` }))} />
+          ) : (
+            <div className="flex h-[42px] items-center rounded-[7px] border border-dashed border-border px-3 font-mono text-sm text-muted-foreground">No scopes yet</div>
+          )}
+          {scope && <div className="mt-1.5 flex items-center gap-2 text-xs text-secondary"><CriticalityBadge value={scope.criticality} className="h-5 px-1.5 text-[11px]" /> accepts {ACCEPTS[scope.criticality as Criticality]?.join(" · ")}</div>}
         </ActionField>
       </ActionFields>
     </ActionForm>

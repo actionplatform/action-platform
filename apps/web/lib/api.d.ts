@@ -1135,6 +1135,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/apps/{app_id}/scopes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["scopes_api_v1_projects__project_id__apps__app_id__scopes_get"];
+        put?: never;
+        post: operations["create_scope_api_v1_projects__project_id__apps__app_id__scopes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/scopes/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_scope_api_v1_projects__project_id__apps__app_id__scopes__name__put"];
+        post?: never;
+        delete: operations["delete_scope_api_v1_projects__project_id__apps__app_id__scopes__name__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/import/github/organizations": {
         parameters: {
             query?: never;
@@ -2079,6 +2111,7 @@ export interface components {
         };
         DeployRequest: {
             stage?: string | null;
+            scope?: string | null;
             dry_run: boolean;
             version?: string | null;
             force: boolean;
@@ -2819,6 +2852,37 @@ export interface components {
             label: string;
             description: string;
             permissions: string[];
+        };
+        ScopeRequest: {
+            name?: string | null;
+            kind: string;
+            criticality: string;
+            target?: string | null;
+            options: {
+                [key: string]: unknown;
+            };
+            run_by: string;
+            url?: string | null;
+        };
+        ScopeRow: {
+            id: string;
+            name: string;
+            kind: string;
+            criticality: string;
+            target?: string | null;
+            options: {
+                [key: string]: unknown;
+            };
+            run_by: string;
+            url?: string | null;
+            derived: boolean;
+            created_at: string;
+        };
+        Scopes: {
+            items: components["schemas"]["ScopeRow"][];
+            kinds: string[];
+            criticalities: string[];
+            executors: string[];
         };
         ServiceRequest: {
             name: string;
@@ -5718,6 +5782,144 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReadinessQueued"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scopes_api_v1_projects__project_id__apps__app_id__scopes_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Scopes"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_scope_api_v1_projects__project_id__apps__app_id__scopes_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScopeRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Scopes"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_scope_api_v1_projects__project_id__apps__app_id__scopes__name__put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScopeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Scopes"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_scope_api_v1_projects__project_id__apps__app_id__scopes__name__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Scopes"];
                 };
             };
             422: {

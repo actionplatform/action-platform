@@ -270,7 +270,7 @@ flowchart LR
 4. **Kinds** — `verify`/`diagnose` receive the scope; `aws/lambda` implements `web` and `job`; observed targets are `library`.
 5. **CLI, MCP, `[[scopes]]`** in `platform.toml`; docs; `[[deploy.targets]]` documented as the short form.
 
-Each step ships on its own; after step 1 the platform behaves as today.
+Each step ships on its own; after step 1 the platform behaves as today. Steps 1–3 and the CLI/`[[scopes]]` part of step 5 shipped with [#275](https://github.com/actionplatform/action-platform/issues/275); kinds (step 4) and the MCP tools are next.
 
 ## Decisions
 

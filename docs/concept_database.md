@@ -36,6 +36,7 @@ Alembic, shipped with the API — one revision per change:
 | `0016` | `source_host.webhook_secret_encrypted`: the secret the host signs deliveries with |
 | `0017` | `release_readiness`: whether a release can reach a stage — one row per `(release, stage)` with `status`, `ok`, the checks as JSON, the job that ran them and when |
 | `0018` | `job_log`: every line a job wrote, in order (`job_id`, `seq`, `line`, `at`), appended by the worker as it runs so a page can follow |
+| `0019` | `scope`: where an app's releases are deployed — name, kind, criticality, target and options, run_by, url, derived from the configuration or created; `release.shape`: candidate, stable or hotfix |
 
 A database the web app created has no `alembic_version` table but does have `user`; the API recognises that, stamps it at `0001` and applies only what follows. Nothing is recreated, nothing is copied: pointing the API at the web app's database is the whole data migration.
 

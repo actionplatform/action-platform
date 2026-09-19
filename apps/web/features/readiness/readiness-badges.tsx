@@ -11,7 +11,7 @@ export function verdictOf(readiness: Record<string, Verdict>, stage: string): Ve
 }
 
 export function ReadinessBadges({ readiness, compact = false }: { readiness: Record<string, Verdict>; compact?: boolean }) {
-  const stages = STAGES.filter((s) => readiness[s]);
+  const stages = [...STAGES.filter((s) => readiness[s]), ...Object.keys(readiness).filter((s) => !(STAGES as readonly string[]).includes(s)).sort()];
   if (stages.length === 0) return <span className="text-secondary">—</span>;
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
