@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.28.1 — 2026-09-19
+
+### Bug Fixes
+- **deploy:** a dispatched workflow publishes where the scope's criticality says, whatever the scope is called
+
 ## v0.28.0 — 2026-09-19
 
 ### Features
