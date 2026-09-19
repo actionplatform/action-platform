@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.27.0 — 2026-09-18
+
+### Features
+- **organization:** an owner can delete the organization
+
+### Bug Fixes
+- **api:** the app list reads the snapshot, not the clone
+
 ## v0.26.0 — 2026-09-18
 
 ### Features
