@@ -152,7 +152,8 @@ class Dispatcher:
                 "registry_id": "",
                 "organization_id": organization.id,
                 "user_id": caller.user.id,
-                "manages": True,
+                "manages": caller.allows(organization.id, "org.manage")[0]
+                and not (caller.project_id or caller.app_id),
             },
             organization_id=organization.id,
             dedupe_key=f"destroy_organization:{organization.id}",

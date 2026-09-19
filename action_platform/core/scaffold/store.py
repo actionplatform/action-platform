@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import subprocess
 from dataclasses import dataclass
+import re
 from pathlib import Path
 
 from action_platform.abc.template_store import TemplateStore
@@ -20,6 +21,9 @@ from action_platform.logging import logger
 from action_platform.settings import settings
 
 
+URL = re.compile(r"^https://[A-Za-z0-9.-]+(:\d+)?/[^\s]+$")
+
+
 @dataclass(frozen=True)
 class TemplateSource:
     """A git repository laid out like actionplatform/templates: index.json plus projects/, cloud/, service/."""
@@ -33,10 +37,21 @@ class TemplateSource:
         """`url[@ref]`; a local path is accepted as well."""
         url, _, ref = spec.rpartition("@")
 
-        if not url or "/" in ref or ref.startswith("git"):
+        if (
+            not url
+            or ref.startswith("git")
+            or ":" in ref
+            or ref.startswith("/")
+            or not ref
+        ):
             url, ref = spec, "main"
 
-        return cls(url=url, ref=ref or "main", name=name)
+        if not URL.match(url) and not Path(url).exists():
+            raise TemplateError(
+                f"template source {spec!r} is not an https url or a local path"
+            )
+
+        return cls(url=url, ref=ref, name=name)
 
     @property
     def label(self) -> str:

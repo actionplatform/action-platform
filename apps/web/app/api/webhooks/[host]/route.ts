@@ -1,5 +1,6 @@
 import { API_BASE } from "@/lib/api";
 
+const RETURNED = ["content-type", "cache-control", "retry-after", "www-authenticate"];
 const FORWARDED = ["content-type", "x-github-event", "x-github-delivery", "x-hub-signature-256", "x-hub-signature", "x-gitlab-event", "x-gitlab-token", "x-event-key", "x-request-uuid", "user-agent"];
 
 export async function POST(req: Request, ctx: { params: Promise<{ host: string }> }) {
@@ -16,5 +17,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ host: string }
   const upstream = await fetch(`${API_BASE}/api/v1/webhooks/${host}`, { method: "POST", headers, body, signal: AbortSignal.timeout(15_000) }).catch(() => null);
   if (!upstream) return Response.json({ detail: "the platform did not answer" }, { status: 502 });
 
-  return new Response(await upstream.text(), { status: upstream.status, headers: { "content-type": upstream.headers.get("content-type") ?? "application/json" } });
+  const headersOut = new Headers();
+  for (const name of RETURNED) {
+    const value = upstream.headers.get(name);
+    if (value) headersOut.set(name, value);
+  }
+  if (!headersOut.has("content-type")) headersOut.set("content-type", "application/json");
+
+  return new Response(await upstream.text(), { status: upstream.status, headers: headersOut });
 }
