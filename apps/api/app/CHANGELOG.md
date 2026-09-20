@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.33.5 — 2026-09-19
+
+### Bug Fixes
+- **scopes:** nothing is called dev or prod any more
+
 ## v0.33.4 — 2026-09-19
 
 ### Bug Fixes
