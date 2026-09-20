@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.33.6 — 2026-09-19
+
+### Bug Fixes
+- **github:** the app asks for Actions write — a deploy dispatches the publish workflow
+
 ## v0.33.5 — 2026-09-19
 
 ### Bug Fixes
