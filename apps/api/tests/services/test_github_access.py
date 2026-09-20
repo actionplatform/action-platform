@@ -7,8 +7,8 @@ from app.services.integrations.hosts.github import MANIFEST_PERMISSIONS, GithubP
 
 
 class GithubAccessTest(unittest.TestCase):
-    def test_manifest_asks_to_read_actions(self):
-        self.assertEqual(MANIFEST_PERMISSIONS["actions"], "read")
+    def test_manifest_asks_to_write_actions(self):
+        self.assertEqual(MANIFEST_PERMISSIONS["actions"], "write")
 
     def test_installation_without_actions_is_reported(self):
         report = AccessReport(kind="github", login="ada")
@@ -38,7 +38,7 @@ class GithubAccessTest(unittest.TestCase):
                 repositories="all",
                 administration="write",
                 contents="write",
-                actions="read",
+                actions="write",
             )
         )
 
