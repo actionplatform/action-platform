@@ -49,6 +49,8 @@ What the platform says when it refuses something, what it means and what to do. 
 
 **`token rejected by GitHub (401); reconnect the host`** — the stored token expired or was revoked. Settings → **Git**: *Remove host* on that account, then **Connect with …** again.
 
+**A deploy fails with `403: Resource not accessible by integration`** — the GitHub App lacks *Actions: Read and write*, which dispatching `publish.yml` needs. GitHub › Settings › Developer settings › GitHub Apps › the app › Permissions & events → Repository permissions → Actions → Read and write → Save; then on the installation (organization › Settings › GitHub Apps) accept the new permissions. Settings › Integrations on the platform lists the problem until it is done.
+
 **Deleting a repository is refused** — a GitHub OAuth host connected before the `delete_repo` scope existed cannot delete; remove the host and connect it again. A GitHub App needs *Administration* (the one created by the wizard has it). Bitbucket needs the *repositories: delete* permission on the consumer. Nothing on the platform is removed when the host refuses.
 
 **The wizard offers no organization to own the repository** — the GitHub App is installed on no account, or on one without permission to create repositories. *Install on another organization* under Settings → Git; an app created as private must be made public under GitHub → Developer settings → GitHub Apps → Advanced.
