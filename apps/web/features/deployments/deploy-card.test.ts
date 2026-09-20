@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { targetsOf } from "./deploy-card";
+import { targetsOf } from "./targets";
 
 describe("targetsOf", () => {
   it("reads the single form", () => {

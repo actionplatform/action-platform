@@ -2,6 +2,7 @@ import { Boxes, Cloud, GitBranch, Package, Tag, Workflow, type LucideIcon } from
 import Link from "next/link";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import { ciLabel, sourceLabel, type AppView } from "./model";
+import { targetsOf } from "@/features/deployments";
 
 function Row({ icon: Icon, label, value, mono, muted }: { icon: LucideIcon; label: string; value: string; mono?: boolean; muted?: boolean }) {
   return (
@@ -15,7 +16,7 @@ function Row({ icon: Icon, label, value, mono, muted }: { icon: LucideIcon; labe
 
 export function SourceCard({ view, base }: { view: AppView; base: string }) {
   const release = [view.releaseStrategy === "semver" ? "SemVer" : view.releaseStrategy, view.commitConvention === "conventional" ? "Conventional Commits" : view.commitConvention].filter(Boolean).join(" · ");
-  const deploy = typeof view.deploy.target === "string" ? String(view.deploy.target) : null;
+  const deploy = targetsOf(view.deploy);
   return (
     <Panel>
       <PanelHeader title="Source & automation" aside={<Link href={`${base}/configuration`} className="text-[13px] text-secondary hover:text-foreground focus-visible:outline-none focus-visible:text-foreground">Open configuration</Link>} />

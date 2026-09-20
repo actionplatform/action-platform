@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActionField, ActionFields, ActionForm, ActionSummary, Running } from "@/components/ui/action-form";
 import { Badge } from "@/components/ui/badge";
+import { targetsOf } from "./targets";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Hint } from "@/components/ui/hint";
 import { Select } from "@/components/ui/select";
@@ -25,17 +26,6 @@ type Outcome = { dryRun: boolean; rows: DeployResult[] };
 
 const versionOf = (tag: string) => tag.replace(/^v/, "");
 
-type TargetSpec = { name?: string; kind?: string; stages?: string[] };
-
-export function targetsOf(deploy: Record<string, unknown>, stage: string): string | null {
-  const names: string[] = [];
-  if (typeof deploy.target === "string") names.push(deploy.target);
-  for (const t of Array.isArray(deploy.targets) ? (deploy.targets as TargetSpec[]) : []) {
-    const name = t.name ?? t.kind;
-    if (name && (!t.stages?.length || t.stages.includes(stage))) names.push(name);
-  }
-  return names.length ? names.join(", ") : null;
-}
 
 export function DeployCard({ view, liveStages = [], scopes = [] }: { view: AppView; liveStages?: string[]; scopes?: Scope[] }) {
   const router = useRouter();
