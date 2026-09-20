@@ -13,6 +13,7 @@ from app.schemas.common import page_bounds
 from app.services.access.caller import Caller
 from app.repositories.projects import ProjectsRepository
 from app.repositories.releases import ReadinessStore
+from app.repositories.scopes import ScopeStore
 
 
 def org_dict(organization: Organization) -> dict:
@@ -48,7 +49,13 @@ def releases_page(
         select(func.count()).select_from(Release).where(Release.app_id == app_id)
     )
 
-    readiness = ReadinessStore(db).summary([r.id for r in rows])
+    scopes = {row.name for row in ScopeStore(db).for_app(app_id)}
+    readiness = {
+        release_id: {stage: v for stage, v in verdicts.items() if stage in scopes}
+        for release_id, verdicts in ReadinessStore(db)
+        .summary([r.id for r in rows])
+        .items()
+    }
 
     return projects.ReleasePage(
         items=[

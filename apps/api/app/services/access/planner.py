@@ -74,12 +74,16 @@ class Planner:
                 and target.app is not None
                 and parsed is not None
             ):
-                parsed["stage"] = parsed.get("scope") or parsed.get("stage") or "dev"
+                parsed["stage"] = parsed.get("scope") or parsed.get("stage") or ""
                 parsed.pop("scope", None)
 
-                if parsed["stage"] not in self._scope_names(target.app):
+                if not parsed["stage"] or parsed["stage"] not in self._scope_names(
+                    target.app
+                ):
                     raise Invalid(
                         f"no scope {parsed['stage']!r}: create it under Deployments › Scopes"
+                        if parsed["stage"]
+                        else "a deploy names a scope — no scope, no deploy"
                     )
 
                 ReadinessRequests(

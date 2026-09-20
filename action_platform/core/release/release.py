@@ -52,7 +52,7 @@ class Releaser:
             branch=branch,
             current_version=self.current_version(component or Component()),
             dry_run=dry_run,
-            stage=stage or ("prod" if branch in STABLE_BRANCHES else "dev"),
+            stage=stage or "",
         )
 
     def plan(

@@ -111,7 +111,7 @@ class Context:
     artifacts: list[Path] = field(default_factory=list)
     env: dict[str, str] = field(default_factory=dict)
     dry_run: bool = False
-    stage: str = "dev"
+    stage: str = ""
     criticality: str = ""
     tag: str = ""
     identity: Optional[Callable[[str], str]] = None

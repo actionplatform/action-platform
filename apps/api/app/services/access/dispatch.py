@@ -70,7 +70,7 @@ class Dispatcher:
         kind = queued.group(2)
 
         if kind == "deploy":
-            stage = body.get("stage") or "dev"
+            stage = body.get("stage") or ""
             running = self.queue.live_deploy(app.id, stage)
 
             if running is not None:

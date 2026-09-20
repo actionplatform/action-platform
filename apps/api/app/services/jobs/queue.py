@@ -204,7 +204,7 @@ class JobQueue:
             ):
                 body = loads(job.payload).get("body") or {}
 
-                if (body.get("stage") or "dev") == stage:
+                if (body.get("stage") or "") == stage:
                     return job
 
             return None

@@ -75,7 +75,7 @@ class DeployShipsAReleaseTest(TempCase):
 
     def test_head_off_a_tag_is_refused_without_a_version(self):
         with self.assertRaises(DeployError) as caught:
-            self.deployer.deploy()
+            self.deployer.deploy(stage="prod")
 
         self.assertIn("ships a release", str(caught.exception))
         self.assertEqual(self.target.seen, [])
@@ -83,13 +83,13 @@ class DeployShipsAReleaseTest(TempCase):
     def test_head_on_a_tag_deploys_that_tag(self):
         git(self.repo, "checkout", "-q", "v1.2.3")
 
-        results = self.deployer.deploy(dry_run=True)
+        results = self.deployer.deploy(dry_run=True, stage="prod")
 
         self.assertEqual(results[0].version, "1.2.3")
 
     def test_an_unknown_version_names_the_tags_that_exist(self):
         with self.assertRaises(DeployError) as caught:
-            self.deployer.deploy(version="9.9.9")
+            self.deployer.deploy(version="9.9.9", stage="prod")
 
         self.assertIn("v1.2.3", str(caught.exception))
 

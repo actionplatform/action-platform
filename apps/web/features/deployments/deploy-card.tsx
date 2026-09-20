@@ -28,7 +28,7 @@ const versionOf = (tag: string) => tag.replace(/^v/, "");
 export function DeployCard({ view, liveStages = [], scopes = [] }: { view: AppView; liveStages?: string[]; scopes?: Scope[] }) {
   const router = useRouter();
   const releases = view.tags.filter((t) => /^v?\d/.test(t));
-  const [stage, setStage] = useState(scopes[0]?.name ?? "dev");
+  const [stage, setStage] = useState(scopes[0]?.name ?? "");
   const scope = scopes.find((s) => s.name === stage) ?? null;
   const target = typeof view.deploy.target === "string" ? String(view.deploy.target) : null;
   const [tag, setTag] = useState(releases[0] ?? "");
