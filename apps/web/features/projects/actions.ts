@@ -63,3 +63,14 @@ export async function syncApp(projectId: string, appId: string, registryId: stri
   }
 }
 
+
+export async function setAppHost(projectId: string, appId: string, sourceHostId: string | null): Promise<Result<{ sourceHostId: string | null }>> {
+  await requireOrg();
+  try {
+    const out = await v1.setAppHost(projectId, appId, sourceHostId);
+    refreshProject(projectId);
+    return { ok: true, data: { sourceHostId: out.source_host_id ?? null } };
+  } catch (e) {
+    return failed(e);
+  }
+}
