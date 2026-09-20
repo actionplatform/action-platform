@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.30.2 — 2026-09-19
+
+### Bug Fixes
+- **web:** source card and summary read every deploy target too
+- **web:** the deploy card reads [[deploy.targets]], not only the single target form
+
 ## v0.30.1 — 2026-09-19
 
 ### Bug Fixes
