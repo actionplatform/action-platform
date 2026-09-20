@@ -32,6 +32,7 @@ class ReadinessTest(GateCase):
             ReadinessStore(s).done(s.get(Release, self.release_id), stage, checks, "j1")
 
     def test_the_release_page_carries_a_verdict_per_stage(self):
+        self.scopes("dev", "prod")
         self.stored("dev", [Check("aws.credentials", True, "ok")])
         self.stored(
             "prod",
@@ -98,6 +99,8 @@ class ReadinessTest(GateCase):
     def test_asking_for_a_check_queues_one_job_per_stage(self):
         from app.core.db.models import Job
         from sqlalchemy import select
+
+        self.scopes("dev", "prod")
 
         res = self.client.post(
             f"{self.base}/releases/v1.2.3/readiness", json={}, headers=self.h()

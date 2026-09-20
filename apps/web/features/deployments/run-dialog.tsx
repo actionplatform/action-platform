@@ -106,7 +106,7 @@ export function RunDialog({ job, status, error, rows, kindLabel, canRedeploy, re
       open={job !== null}
       onClose={() => { if (!redeploying) onClose(); }}
       title={job ? <span className="inline-flex flex-wrap items-center gap-2">Run {job.id.slice(0, 8)}{status && <Badge tone={status.tone}>{status.label}</Badge>}</span> : "Run"}
-      description={job ? `${kindLabel} · ${job.stage ?? "dev"}` : undefined}
+      description={job ? `${kindLabel} · ${job.stage ?? ""}` : undefined}
       className="sm:max-w-[720px]"
       footer={
         canRedeploy ? (

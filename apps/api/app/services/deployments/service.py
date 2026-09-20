@@ -72,10 +72,11 @@ class DeploymentsService:
             for r in results
         ]
 
-    def destroy(self, id: str, stages: tuple[str, ...] = ("dev", "prod")) -> None:
+    def destroy(self, id: str, stages: tuple[str, ...] | None = None) -> None:
+        """Every scope's stack down — the app's scopes unless `stages` names them."""
         tool = self._tool(id)
 
-        for stage in stages:
+        for stage in stages or tuple(s["name"] for s in self._scopes(id)):
             tool.destroy(stage=stage)
 
     def diagnose(self, id: str, stage: Optional[str]) -> list[dict]:

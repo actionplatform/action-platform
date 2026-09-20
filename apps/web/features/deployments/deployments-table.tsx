@@ -61,7 +61,7 @@ export function DeploymentsTable({ page, registryId, canDeploy, newHref }: { pag
   const redeploy = (job: JobRow, close = false) => {
     if (pending) return;
     start(async () => {
-      const r = await startDeploy(registryId, job.stage ?? "dev", !!job.dry_run, job.version ?? versionOf(job) ?? "");
+      const r = await startDeploy(registryId, job.stage ?? "", !!job.dry_run, job.version ?? versionOf(job) ?? "");
       if (r.ok) { if (close) setDetails(null); router.refresh(); }
     });
   };
@@ -86,7 +86,7 @@ export function DeploymentsTable({ page, registryId, canDeploy, newHref }: { pag
         minWidth={880}
         columns={[
           { key: "status", label: "Status", width: 14, render: (job) => { const s = statusOf(job); return <Badge tone={s.tone}>{s.label}</Badge>; } },
-          { key: "stage", label: "Stage", width: 9, render: (job) => <Cell mono>{job.stage ?? "dev"}</Cell> },
+          { key: "stage", label: "Stage", width: 9, render: (job) => <Cell mono>{job.stage ?? "—"}</Cell> },
           { key: "type", label: "Type", width: 9, hide: "sm", render: (job) => <Cell muted>{type(job)}</Cell> },
           { key: "version", label: "Version", width: 15, render: (job) => <Cell mono>{versionOf(job) ?? "—"}</Cell> },
           { key: "duration", label: "Duration", width: 10, hide: "sm", render: (job) => <span className="block truncate font-mono text-[13px] text-secondary" suppressHydrationWarning>{duration(job, now)}</span> },

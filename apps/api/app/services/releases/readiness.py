@@ -17,8 +17,6 @@ from app.services.jobs import JobQueue
 from app.services.workspace import Workspaces
 from app.services.workspace import git_auth as auth
 
-STAGES = ("dev", "prod")
-
 
 class ReadinessService:
     def __init__(
@@ -81,7 +79,7 @@ class ReadinessRequests:
         app: App,
         release_id: str,
         tag: str,
-        stages: tuple[str, ...] = STAGES,
+        stages: tuple[str, ...],
         user_id: Any = None,
         manages: bool = False,
     ) -> list[str]:

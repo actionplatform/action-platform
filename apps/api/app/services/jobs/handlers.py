@@ -161,7 +161,10 @@ class JobHandlers:
     def readiness(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
         tag = str(ctx.body.get("tag") or "")
-        stage = str(ctx.body.get("stage") or "dev")
+        stage = str(ctx.body.get("stage") or "")
+
+        if not stage:
+            raise ActionPlatformError("readiness needs a scope")
 
         with self.database.session() as db:
             release = ReleaseStore(db).get(ctx.app.id, tag)

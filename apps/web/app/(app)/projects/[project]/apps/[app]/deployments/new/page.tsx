@@ -15,7 +15,7 @@ export default async function NewDeploymentPage({ params }: { params: Promise<{ 
   return (
     <div className="space-y-4">
       <Link href={`${base}/deployments`} className="inline-flex items-center gap-1.5 text-[13px] text-secondary hover:text-foreground"><ArrowLeft className="size-3.5" strokeWidth={1.75} /> Deployments</Link>
-      <DeployCard view={view} scopes={scopes.items} liveStages={jobs.filter((j) => j.status === "queued" || j.status === "running").map((j) => j.stage ?? "dev")} />
+      <DeployCard view={view} scopes={scopes.items} liveStages={jobs.filter((j) => j.status === "queued" || j.status === "running").map((j) => j.stage ?? "")} />
     </div>
   );
 }

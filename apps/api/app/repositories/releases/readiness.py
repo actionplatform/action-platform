@@ -14,8 +14,6 @@ from action_platform.core.context import Check
 from app.core.db.models import Release, ReleaseReadiness
 from app.core.shared.clock import now
 
-STAGES = ("dev", "prod")
-
 
 class ReadinessStore:
     def __init__(self, db: DbSession) -> None:
@@ -39,9 +37,7 @@ class ReadinessStore:
             )
         }
 
-        return [rows[s] for s in STAGES if s in rows] + [
-            r for s, r in rows.items() if s not in STAGES
-        ]
+        return [rows[s] for s in sorted(rows)]
 
     def queued(
         self, release: Release, stage: str, job_id: Optional[str]
