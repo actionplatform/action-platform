@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.30.3 — 2026-09-19
+
+### Features
+- **web:** pick the source host an app uses, in Settings
+
 ## v0.30.2 — 2026-09-19
 
 ### Bug Fixes
