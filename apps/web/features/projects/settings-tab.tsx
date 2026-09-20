@@ -4,12 +4,30 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
+import { Select } from "@/components/ui/select";
+import { setAppHost } from "./actions";
 import { DeleteAppDialog } from "./delete-app-dialog";
 import type { AppView } from "./model";
 
-export function SettingsTab({ view }: { view: AppView }) {
+export type HostOption = { id: string; name: string; kind: string };
+
+export function SettingsTab({ view, hosts = [], currentHost = null }: { view: AppView; hosts?: HostOption[]; currentHost?: string | null }) {
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
+  const [host, setHost] = useState(currentHost ?? "");
+  const [saving, setSaving] = useState(false);
+  const [hostError, setHostError] = useState<string | null>(null);
+  const stale = !!currentHost && !hosts.some((h) => h.id === currentHost);
+
+  const changeHost = async (id: string) => {
+    setHost(id);
+    setSaving(true);
+    setHostError(null);
+    const r = await setAppHost(view.projectId, view.appId, id || null);
+    setSaving(false);
+    if (!r.ok) setHostError(r.error);
+    else router.refresh();
+  };
 
   return (
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
@@ -20,6 +38,14 @@ export function SettingsTab({ view }: { view: AppView }) {
             <p className="text-secondary">Lives at <a href={view.repositoryUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-foreground hover:underline underline-offset-4">{view.repository}</a>. The platform keeps no copy of its own: every action clones it fresh from there.</p>
           ) : (
             <p className="text-secondary">No remote is registered for this app.</p>
+          )}
+          {view.can["app.flow"] && (
+            <div className="space-y-1.5">
+              <div className="text-xs text-secondary">Source host</div>
+              <Select value={host} onChange={changeHost} disabled={saving} placeholder="No host — public read only" options={[{ value: "", label: "No host" }, ...hosts.map((h) => ({ value: h.id, label: h.name, hint: h.kind }))]} aria-label="Source host" />
+              <p className="text-secondary">The connection whose token pushes, opens pull requests and dispatches workflows for this app.{stale ? " The one this app pointed at was removed — pick another." : ""}</p>
+              {hostError && <p className="text-status-bad">{hostError}</p>}
+            </div>
           )}
         </PanelBody>
       </Panel>
