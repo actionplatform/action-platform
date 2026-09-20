@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActionField, ActionFields, ActionForm, ActionSummary, Running } from "@/components/ui/action-form";
 import { Badge } from "@/components/ui/badge";
+import { targetsOf } from "./targets";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Hint } from "@/components/ui/hint";
 import { Select } from "@/components/ui/select";
@@ -25,12 +26,13 @@ type Outcome = { dryRun: boolean; rows: DeployResult[] };
 
 const versionOf = (tag: string) => tag.replace(/^v/, "");
 
+
 export function DeployCard({ view, liveStages = [], scopes = [] }: { view: AppView; liveStages?: string[]; scopes?: Scope[] }) {
   const router = useRouter();
   const releases = view.tags.filter((t) => /^v?\d/.test(t));
   const [stage, setStage] = useState(scopes[0]?.name ?? "");
   const scope = scopes.find((s) => s.name === stage) ?? null;
-  const target = typeof view.deploy.target === "string" ? String(view.deploy.target) : null;
+  const target = targetsOf(view.deploy, stage);
   const [tag, setTag] = useState(releases[0] ?? "");
   const [dryRun, setDryRun] = useState(false);
   const [force, setForce] = useState(false);

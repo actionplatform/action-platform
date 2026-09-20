@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { AppView } from "./model";
+import { targetsOf } from "@/features/deployments";
 
 function SummaryCard({ label, value, badge, icon: Icon }: { label: string; value: ReactNode; badge?: ReactNode; icon: LucideIcon }) {
   return (
@@ -20,7 +21,7 @@ function SummaryCard({ label, value, badge, icon: Icon }: { label: string; value
 }
 
 export function SummaryGrid({ view }: { view: AppView }) {
-  const target = typeof view.deploy.target === "string" ? String(view.deploy.target) : null;
+  const target = targetsOf(view.deploy);
   return (
     <div className="mt-5 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
       <SummaryCard label="Branch" value={view.branch || "—"} icon={GitBranch} />
