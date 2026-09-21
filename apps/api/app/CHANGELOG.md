@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.33.8 — 2026-09-21
+
+### Bug Fixes
+- **api:** the matrix from the published index carries the plugins' clouds
+
 ## v0.33.7 — 2026-09-21
 
 ## v0.33.6 — 2026-09-19
