@@ -7,6 +7,7 @@ from action_platform.core.scaffold.templates import (
     OFFICIAL,
     Matrix,
     load_matrix,
+    with_plugin_clouds,
 )
 from action_platform.settings import settings
 from app import api_version
@@ -23,7 +24,7 @@ class CatalogService:
         published = index.get() if settings.TEMPLATES_DIR is None else None
 
         if published:
-            official = Matrix.from_dict(published)
+            official = with_plugin_clouds(Matrix.from_dict(published))
             base = index.raw_base
         else:
             _, official = load_matrix()

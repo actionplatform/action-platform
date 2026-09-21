@@ -23,8 +23,9 @@ class TemplateRepos:
         return TemplateSource(url=spec.url, ref=spec.ref, name=spec.name)
 
     @classmethod
-    def resolve(cls, spec: SourceSpec | None):
-        if spec is None:
+    def resolve(cls, spec: SourceSpec | str | None):
+        """The repository and matrix a source names: the official catalog with the plugins' clouds when none is given, or when the web sends a source's name — the official catalog or a plugin's slug — instead of a spec."""
+        if spec is None or isinstance(spec, str):
             return load_matrix()
 
         with auth.git_auth(spec.credentials):
@@ -99,9 +100,11 @@ class MatrixView:
                     "types": c.types,
                     "languages": c.languages,
                     "description": c.description,
-                    "source": self.source,
-                    "icon": self.absolute(c.icon),
-                    "url": self.url(c.directory) if self.tree else None,
+                    "source": self.source if c.root is None else c.source,
+                    "icon": self.absolute(c.icon) if c.root is None else None,
+                    "url": self.url(c.directory)
+                    if self.tree and c.root is None
+                    else None,
                 }
                 for c in self.m.clouds
             ],

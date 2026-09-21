@@ -8,13 +8,13 @@ from app.schemas.common import SourceCredentials, SourceSpec
 
 class CloudRequest(BaseModel):
     target: str
-    source: Optional[SourceSpec] = None
+    source: Optional[SourceSpec | str] = None
 
 
 class ServiceRequest(BaseModel):
     name: str
     provider: Optional[str] = None
-    source: Optional[SourceSpec] = None
+    source: Optional[SourceSpec | str] = None
 
 
 class AppConfigBody(BaseModel):
