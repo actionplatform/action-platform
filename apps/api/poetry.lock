@@ -2,7 +2,7 @@
 
 [[package]]
 name = "action-platform"
-version = "0.26.1"
+version = "0.31.0"
 description = "Your platform team, as a CLI."
 optional = false
 python-versions = ">=3.10.0"
@@ -111,6 +111,24 @@ awscli = ">=1.34"
 
 [package.extras]
 dev = ["action-platform[mcp]", "boto3 (>=1.34)", "cryptography (>=42)", "pytest (>=8)", "ruff (>=0.6)"]
+
+[[package]]
+name = "apx-dokploy"
+version = "0.1.0"
+description = "Dokploy for Action Platform: the dokploy deploy target (a Docker image the CI publishes, pulled by Dokploy), its overlay, readiness checks, and tools to read projects, applications and deployments."
+optional = false
+python-versions = ">=3.11"
+groups = ["main"]
+files = [
+    {file = "apx_dokploy-0.1.0-py3-none-any.whl", hash = "sha256:101f1eea4a5a4baddf27c6aa881a3024c51fe759b31863286cf2aa7a55b2eb58"},
+    {file = "apx_dokploy-0.1.0.tar.gz", hash = "sha256:2477be68d77ca10ad59ecbfbc76963f1818e5034912536b678cf6089d518e060"},
+]
+
+[package.dependencies]
+action-platform = ">=0.28.1"
+
+[package.extras]
+dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
 
 [[package]]
 name = "arrow"
@@ -3512,4 +3530,4 @@ packaging = ">=24.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "7549857232848cc12abf7bc154793ca7e670f0f7c18f0648bc5d40f9be83e90a"
+content-hash = "6ee533536731a9a29c5215c61f3f61b3d2c63f8c1155151d7c0e9ab9947f15e1"
