@@ -147,6 +147,59 @@ class CatalogIndexTest(ApiCase):
             "https://example.com/templates/assets/icons/docker.svg",
         )
 
+    def test_matrix_from_the_published_index_carries_the_plugins_clouds(self):
+        import json
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        from app.services.templates import published
+        from app.services.templates import service as catalog
+
+        from action_platform.core import extensions
+        from action_platform.settings import settings
+
+        self.patch(settings, "TEMPLATES_DIR", None)
+        fake = published.TemplatesIndex("https://example.com/templates/index.json")
+        fake.cached = {
+            "types": [],
+            "stacks": [],
+            "projects": [],
+            "clouds": [{"id": "docker", "types": ["web"], "languages": ["python"]}],
+            "services": [],
+        }
+        fake.fetched_at = 10**12
+        self.patch(catalog, "index", fake)
+
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "index.json").write_text(
+                json.dumps(
+                    {
+                        "clouds": [
+                            {
+                                "id": "dokploy",
+                                "description": "Dokploy",
+                                "types": ["web"],
+                                "languages": ["python"],
+                            }
+                        ]
+                    }
+                )
+            )
+            self.patch(
+                extensions.current(), "overlay_roots", lambda: [("dokploy", root)]
+            )
+
+            matrix = self.client.get("/api/matrix").json()
+
+        clouds = {c["name"]: c for c in matrix["clouds"]}
+
+        self.assertEqual(set(clouds), {"docker", "dokploy"})
+        self.assertEqual(clouds["docker"]["source"], "official")
+        self.assertEqual(clouds["dokploy"]["source"], "dokploy")
+        self.assertIsNone(clouds["dokploy"]["url"])
+        self.assertIsNone(clouds["dokploy"]["icon"])
+
     def test_matrix_falls_back_to_the_checkout_when_the_index_is_down(self):
         from app.services.templates import published
         from app.services.templates import service as catalog

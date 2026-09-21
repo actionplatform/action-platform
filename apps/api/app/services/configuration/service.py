@@ -49,7 +49,9 @@ class ConfigurationService:
 
         return self.manifest(id)
 
-    def set_cloud(self, id: str, target: str, source: SourceSpec | None = None) -> dict:
+    def set_cloud(
+        self, id: str, target: str, source: SourceSpec | str | None = None
+    ) -> dict:
         repo, matrix = TemplateRepos.resolve(source)
 
         root = self._root(id)
@@ -77,7 +79,11 @@ class ConfigurationService:
         )
 
     def add_service(
-        self, id: str, name: str, provider: str | None, source: SourceSpec | None = None
+        self,
+        id: str,
+        name: str,
+        provider: str | None,
+        source: SourceSpec | str | None = None,
     ) -> dict:
         repo, matrix = TemplateRepos.resolve(source)
         service = next((s for s in matrix.services if s.name == name), None)
