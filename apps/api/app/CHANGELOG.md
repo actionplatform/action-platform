@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.33.9 — 2026-09-21
+
+### Bug Fixes
+- **api:** a plugin's slug as a cloud's source names the official catalog
+
 ## v0.33.8 — 2026-09-21
 
 ### Bug Fixes
