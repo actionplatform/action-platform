@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.33.10 — 2026-09-21
+
+### Bug Fixes
+- **api:** applying a deploy target records it again
+
 ## v0.33.9 — 2026-09-21
 
 ### Bug Fixes
