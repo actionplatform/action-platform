@@ -374,6 +374,29 @@ class MatrixTest(GateCase):
             with self.app.state.db.session() as s:
                 IntegrationsDirectory(s).source_spec_by_name(self.org["id"], "other")
 
+    def test_a_plugins_slug_names_the_official_catalog(self):
+        from pathlib import Path
+        from unittest import mock
+
+        from app.services.integrations.hosts.directory import IntegrationsDirectory
+
+        from action_platform.core import extensions
+
+        with mock.patch.object(
+            extensions.current(), "overlay_roots", lambda: [("dokploy", Path("."))]
+        ):
+            with self.app.state.db.session() as s:
+                directory = IntegrationsDirectory(s)
+                self.assertIsNone(
+                    directory.source_spec_by_name(self.org["id"], "dokploy")
+                )
+                self.assertIsNone(
+                    directory.source_spec_by_name(self.org["id"], "official")
+                )
+
+                with self.assertRaises(Exception):
+                    directory.source_spec_by_name(self.org["id"], "other")
+
 
 class CatalogAndPreviewTest(GateCase):
     def test_access_catalog(self):

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+from action_platform.core import extensions
 from sqlalchemy import select
 
 from app.core.db.models import (
@@ -47,7 +48,7 @@ class TemplateSourcesReads(DirectoryBase):
     def source_spec_by_name(
         self, organization_id: str, name: Optional[str]
     ) -> Optional[dict]:
-        if not name or name == "official":
+        if not name or name == "official" or name in plugin_slugs():
             return None
 
         spec = next(
@@ -59,6 +60,11 @@ class TemplateSourcesReads(DirectoryBase):
             raise DirectoryError(f"template source {name} not found")
 
         return spec
+
+
+def plugin_slugs() -> set[str]:
+    """The plugins whose overlays join the official catalog: a cloud tagged with one of these names is applied from there."""
+    return {slug for slug, _ in extensions.current().overlay_roots()}
 
 
 class TemplateSourcesWrites(TemplateSourcesReads):
