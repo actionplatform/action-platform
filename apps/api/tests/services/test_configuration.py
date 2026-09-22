@@ -248,3 +248,19 @@ class IdentityWithoutTokenTest(ApiCase):
         self.assertEqual(
             git(root, "log", "-1", "--format=%an <%ae>"), "Ada <ada@example.com>"
         )
+
+
+class CloudTest(ApiCase):
+    def test_applying_a_cloud_records_the_deploy_target(self):
+        id = self.add_app()
+
+        res = self.client.post(
+            f"/api/apps/{id}/cloud", json={"target": "docker", "source": "official"}
+        )
+
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual(res.json(), {"target": "docker"})
+        self.assertEqual(
+            self.client.get(f"/api/apps/{id}").json()["deploy"], {"target": "docker"}
+        )
+        self.assertFalse(self.client.get(f"/api/apps/{id}").json()["clean"])

@@ -47,6 +47,14 @@ class ConfigStore:
 
         return clean
 
+    def merge(self, registry_id: str, root: Path, **tables: dict) -> dict:
+        """An overlay or a service wrote tables into the clone's platform.toml: the record takes them, and the file as it is now counts as seen."""
+        data = {**self.resolve(registry_id, root), **tables}
+        file = root / settings.CONFIG_FILE
+        digest = _digest(file.read_text()) if file.exists() else None
+
+        return self.set(registry_id, data, digest)
+
     def adopt(self, registry_id: str, root: Path) -> bool:
         """On sync: when the clone's platform.toml differs from the one last imported or exported, it replaces what the platform keeps. Returns whether it did."""
         file = root / settings.CONFIG_FILE
