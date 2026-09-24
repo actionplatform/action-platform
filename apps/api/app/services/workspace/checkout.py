@@ -15,6 +15,7 @@ from action_platform.core.exception import ActionPlatformError
 from action_platform.core.flow.git import UnsafeUrl, check_remote_url
 from action_platform.core.flow.repository import Repository, SyncError, _fetch_problem
 from action_platform.core.scaffold.installer import InstallError, install
+from action_platform.core.files import CONFIG_FILE
 from action_platform.settings import settings
 from app.core.errors import Gone, Upstream
 from app.repositories.workspace.registry import (
@@ -96,11 +97,11 @@ class Workspaces:
             shutil.rmtree(path, ignore_errors=True)
             raise
 
-        if require_manifest and not (path / settings.CONFIG_FILE).exists():
+        if require_manifest and not (path / CONFIG_FILE).exists():
             shutil.rmtree(path, ignore_errors=True)
 
             raise MissingManifest(
-                f"{settings.CONFIG_FILE} not found in {url} — install the platform on it first"
+                f"{CONFIG_FILE} not found in {url} — install the platform on it first"
             )
 
         return self.registry.register(
@@ -227,7 +228,7 @@ class Workspaces:
     @staticmethod
     def ensure_platform(entry: Entry, root: Path) -> list[str]:
         """A clone that lost `platform.toml` (a branch from before the platform) gets the platform files back, uncommitted, so the app never shows an error for something the platform can fix itself."""
-        if (root / settings.CONFIG_FILE).exists() or not (root / ".git").exists():
+        if (root / CONFIG_FILE).exists() or not (root / ".git").exists():
             return []
 
         ci = (

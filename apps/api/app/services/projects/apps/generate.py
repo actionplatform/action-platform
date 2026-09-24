@@ -7,7 +7,7 @@ import shutil
 
 from action_platform.core.wiring import wired
 from action_platform.core.manifest import write_source_host
-from action_platform.settings import settings
+from action_platform.core.files import CONFIG_FILE
 from app.services.workspace import git_auth as auth
 from app.repositories.workspace.registry import Entry
 from app.schemas import InitRequest, PushRequest
@@ -55,7 +55,7 @@ class AppScaffolding(AppsBase):
             shutil.rmtree(staging, ignore_errors=True)
 
         write_source_host(
-            path / settings.CONFIG_FILE,
+            path / CONFIG_FILE,
             creds.kind,
             f"{owner or 'me'}/{slug}",
             creds.base_url,

@@ -9,7 +9,7 @@ from typing import Optional
 
 
 from action_platform.core.scaffold.installer import InstallError, install
-from action_platform.settings import settings
+from action_platform.core.files import CONFIG_FILE
 from app.services.workspace import git_auth as auth
 from app.repositories.workspace.registry import Entry, MissingManifest
 from app.repositories.workspace.snapshots import SnapshotStore
@@ -64,7 +64,7 @@ class AppInventory(AppsBase):
 
         root = Path(entry.path)
 
-        if not (root.is_dir() and (root / settings.CONFIG_FILE).exists()):
+        if not (root.is_dir() and (root / CONFIG_FILE).exists()):
             return {}
 
         info = AppManifest(root, self.configs.resolve(entry.id, root)).as_dict()
@@ -98,7 +98,7 @@ class AppInventory(AppsBase):
         result = asdict(entry)
         root = Path(entry.path)
 
-        if install_spec is not None and not (root / settings.CONFIG_FILE).exists():
+        if install_spec is not None and not (root / CONFIG_FILE).exists():
             try:
                 plan = install(
                     root,

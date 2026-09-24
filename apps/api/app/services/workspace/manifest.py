@@ -5,14 +5,14 @@ from pathlib import Path
 import tomllib
 
 from action_platform.core.flow.repository import Repository
-from action_platform.settings import settings
+from action_platform.core.files import CONFIG_FILE, LAST_VERSION_FILE
 from app.core.errors import Invalid
 
 
 class AppManifest:
     def __init__(self, root: Path, data: dict | None = None) -> None:
         self.root = root
-        self.path = root / settings.CONFIG_FILE
+        self.path = root / CONFIG_FILE
         self.data = data
 
     def as_dict(self) -> dict:
@@ -22,7 +22,7 @@ class AppManifest:
         elif self.path.exists():
             data = tomllib.loads(self.path.read_text())
         else:
-            raise Invalid(f"{settings.CONFIG_FILE} not found in {self.root}")
+            raise Invalid(f"{CONFIG_FILE} not found in {self.root}")
 
         return {
             "project": dict(data.get("project", {})),
@@ -50,7 +50,7 @@ class AppManifest:
 
     def last_version(self, root: Path | None = None) -> str | None:
         """What LAST_VERSION says — 0.0.0 while the repository has no version tag."""
-        last = (root or self.root) / settings.LAST_VERSION_FILE
+        last = (root or self.root) / LAST_VERSION_FILE
 
         if not last.exists():
             return None
