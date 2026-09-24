@@ -6,6 +6,7 @@ import subprocess
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Protocol
 
 from action_platform.abc.working_copy import WorkingCopy
 from action_platform.core.exception import ActionPlatformError
@@ -16,9 +17,41 @@ class SyncError(ActionPlatformError):
     """The clone could not be brought level with its remote."""
 
 
+class GitRunner(Protocol):
+    """Runs one git command in a directory and answers the finished process without raising."""
+
+    def __call__(
+        self, args: list[str], cwd: Path | None = None
+    ) -> subprocess.CompletedProcess: ...
+
+
+def subprocess_git(
+    args: list[str], cwd: Path | None = None
+) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        env=git_env(),
+    )
+
+
+def _checked(
+    result: subprocess.CompletedProcess, args: list[str]
+) -> subprocess.CompletedProcess:
+    if result.returncode != 0:
+        raise subprocess.CalledProcessError(
+            result.returncode, ["git", *args], result.stdout, result.stderr
+        )
+
+    return result
+
+
 class Repository(WorkingCopy):
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, runner: GitRunner = subprocess_git) -> None:
         self.path = Path(path)
+        self.runner = runner
 
     def __repr__(self) -> str:
         return f"Repository({str(self.path)!r})"
@@ -27,8 +60,10 @@ class Repository(WorkingCopy):
         return str(self.path)
 
     @classmethod
-    def init(cls, path: Path, branch: str = "main") -> "Repository":
-        repo = cls(path)
+    def init(
+        cls, path: Path, branch: str = "main", runner: GitRunner = subprocess_git
+    ) -> "Repository":
+        repo = cls(path, runner)
         repo.run(["init", "-q", "-b", branch])
 
         return repo
@@ -40,6 +75,7 @@ class Repository(WorkingCopy):
         path: Path,
         depth: int | None = None,
         branch: str | None = None,
+        runner: GitRunner = subprocess_git,
     ) -> "Repository":
         args = ["clone", "--quiet"]
 
@@ -50,33 +86,16 @@ class Repository(WorkingCopy):
             args += ["--branch", check_ref(branch)]
 
         args += ["--end-of-options", url, str(path)]
-        subprocess.run(
-            ["git", *args], check=True, capture_output=True, text=True, env=git_env()
-        )
+        _checked(runner(args), args)
 
-        return cls(path)
+        return cls(path, runner)
 
     def run(self, args: list[str]) -> str:
-        result = subprocess.run(
-            ["git", *args],
-            cwd=self.path,
-            check=True,
-            capture_output=True,
-            text=True,
-            env=git_env(),
-        )
-
-        return result.stdout.strip()
+        return _checked(self.attempt(args), args).stdout.strip()
 
     def attempt(self, args: list[str]) -> subprocess.CompletedProcess:
         """Run without raising; the caller reads returncode/stderr."""
-        return subprocess.run(
-            ["git", *args],
-            cwd=self.path,
-            capture_output=True,
-            text=True,
-            env=git_env(),
-        )
+        return self.runner(args, self.path)
 
     def exists(self) -> bool:
         return (self.path / ".git").exists()
