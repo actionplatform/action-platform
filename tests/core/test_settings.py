@@ -3,10 +3,17 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from unittest import skipUnless
+from unittest import mock, skipUnless
 
 from action_platform.settings import Settings, database_url_from_parts, secret
 from tests.support import TempCase
+
+RECORD_READS = """
+import action_platform.settings as s
+seen = []
+for key, read in list(s.FIELDS.items()):
+    s.FIELDS[key] = (lambda key, read: lambda env: (seen.append(key), read(env))[1])(key, read)
+"""
 
 
 def test_secret_prefers_file(tmp_path, monkeypatch):
@@ -78,20 +85,54 @@ class ImportIsPureTest(TempCase):
     @skipUnless(importlib.util.find_spec("mcp"), "mcp is not installed")
     def test_importing_the_entry_points_reads_no_setting(self):
         out = self.run_python(
-            "import action_platform.main, action_platform.mcp.server\n"
-            "from action_platform.settings import settings\n"
-            "print(sorted(vars(settings)))"
+            RECORD_READS
+            + "import action_platform.main, action_platform.mcp.server\nprint(seen)"
         )
 
         self.assertEqual(out, "[]")
 
 
 class LazySettingsTest(TempCase):
-    def test_the_environment_is_read_on_first_use(self):
+    def test_the_environment_is_read_when_a_setting_is_asked_for(self):
         fresh = Settings()
         self.setenv("AP_SENTRY_DSN", "https://key@example.com/1")
 
         self.assertEqual(fresh.SENTRY_DSN, "https://key@example.com/1")
+
+        self.setenv("AP_SENTRY_DSN", "https://key@example.com/2")
+
+        self.assertEqual(fresh.SENTRY_DSN, "https://key@example.com/2")
+
+    def test_from_env_answers_from_its_own_mapping(self):
+        self.setenv("AP_WORKSPACE_TTL", "99")
+
+        own = Settings.from_env(
+            {"AP_WORKSPACE_TTL": "3", "AP_DB_HOST": "db", "AP_DB_PASSWORD": "pw"}
+        )
+
+        self.assertEqual(own.WORKSPACE_TTL, 3)
+        self.assertEqual(
+            own.DATABASE_URL, "postgres://action_platform:pw@db:5432/action_platform"
+        )
+        self.assertEqual(own.env("AP_WORKSPACE_TTL"), "3")
+        self.assertEqual(Settings.from_env({}).WORKSPACE_TTL, 15)
+
+    def test_secret_reads_the_mapping_it_is_given(self):
+        self.setenv("AP_API_TOKEN", "from-process")
+
+        self.assertEqual(secret("AP_API_TOKEN", env={"AP_API_TOKEN": "given"}), "given")
+        self.assertEqual(secret("AP_API_TOKEN", env={}), "")
+
+    def test_a_patched_setting_follows_the_environment_again_once_unpatched(self):
+        fresh = Settings()
+        self.setenv("AP_WORKSPACE_TTL", "7")
+
+        with mock.patch.object(fresh, "WORKSPACE_TTL", 0):
+            self.assertEqual(fresh.WORKSPACE_TTL, 0)
+
+        self.setenv("AP_WORKSPACE_TTL", "8")
+
+        self.assertEqual(fresh.WORKSPACE_TTL, 8)
 
     def test_an_unknown_setting_is_an_attribute_error(self):
         with self.assertRaises(AttributeError):
