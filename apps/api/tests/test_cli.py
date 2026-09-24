@@ -46,10 +46,31 @@ class EntryPointTest(TempCase):
         self.delenv("AP_PROBE")
         seen = {}
         self.patch(
+            "action_platform.bootstrap.observe",
+            value=lambda component, config, version=None: seen.setdefault(
+                "component", component
+            ),
+        )
+        self.patch(
             cli, "app", lambda: seen.setdefault("probe", os.environ.get("AP_PROBE"))
         )
 
         with mock.patch("pathlib.Path.cwd", return_value=self.tmp_path):
             cli.main()
 
-        self.assertEqual(seen["probe"], "from-dotenv")
+        self.assertEqual(seen, {"component": "api", "probe": "from-dotenv"})
+
+    def test_the_uvicorn_factory_starts_like_an_entry_point(self):
+        server = importlib.import_module("app.api.app")
+        calls = []
+        self.patch(
+            server,
+            "bootstrap",
+            lambda component, version=None: calls.append(component),
+        )
+        self.patch(server, "build", lambda origins: calls.append(("build", origins)))
+        self.setenv("AP_CORS", "http://localhost:3000")
+
+        server.create_app()
+
+        self.assertEqual(calls, ["api", ("build", ["http://localhost:3000"])])

@@ -41,4 +41,4 @@ class LibraryLayeringTest(unittest.TestCase):
             if "action_platform.settings" in imported_modules(path)
         ]
 
-        self.assertEqual(importers, ["main.py"])
+        self.assertEqual(importers, ["bootstrap.py"])

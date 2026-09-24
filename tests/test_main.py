@@ -3,7 +3,7 @@
 import os
 from unittest import mock
 
-from action_platform import main
+from action_platform import bootstrap, main
 from tests.support import TempCase
 
 
@@ -12,7 +12,13 @@ class MainTest(TempCase):
         (self.tmp_path / ".env").write_text("AP_PROBE=from-dotenv\n")
         self.delenv("AP_PROBE")
         seen = {}
-        self.patch(main, "observe", lambda component, config: None)
+        self.patch(
+            bootstrap,
+            "observe",
+            lambda component, config, version=None: seen.setdefault(
+                "component", component
+            ),
+        )
         self.patch(
             main, "app", lambda: seen.setdefault("probe", os.environ.get("AP_PROBE"))
         )
@@ -20,4 +26,4 @@ class MainTest(TempCase):
         with mock.patch("pathlib.Path.cwd", return_value=self.tmp_path):
             main.main()
 
-        self.assertEqual(seen["probe"], "from-dotenv")
+        self.assertEqual(seen, {"component": "cli", "probe": "from-dotenv"})
