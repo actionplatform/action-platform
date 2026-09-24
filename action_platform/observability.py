@@ -10,27 +10,26 @@ except ImportError:
     sentry_sdk = None
 
 from action_platform import __version__
-from action_platform.settings import settings
+from action_platform.options import ObservabilityConfig
 
 
 def observe(
-    component: str, dsn: Optional[str] = None, version: Optional[str] = None
+    component: str, config: ObservabilityConfig, version: Optional[str] = None
 ) -> bool:
-    dsn = settings.observability.dsn if dsn is None else dsn
-
-    if not dsn:
+    """Start Sentry for `component` with the `config` its entry point read; an empty dsn or a missing SDK leaves it off."""
+    if not config.dsn:
         return False
 
     if sentry_sdk is None:
         return False
 
     sentry_sdk.init(
-        dsn=dsn,
+        dsn=config.dsn,
         release=f"{component}@{version or __version__}",
-        environment=settings.observability.environment,
+        environment=config.environment,
         send_default_pii=False,
         enable_logs=True,
-        traces_sample_rate=settings.observability.traces_sample_rate,
+        traces_sample_rate=config.traces_sample_rate,
     )
     sentry_sdk.set_tag("component", component)
 
