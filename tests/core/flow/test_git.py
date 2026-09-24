@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from action_platform.core.flow import git
+from action_platform.options import GitConfig
 from tests.support import TempCase
 
 
@@ -46,6 +47,16 @@ class RemoteUrlPolicyTest(TempCase):
         with self.assertRaisesRegex(git.UnsafeUrl, "not allowed"):
             git.check_remote_url("https://bitbucket.org/a/b.git")
 
+    def test_a_given_config_wins_over_the_environment(self):
+        self.setenv("AP_ALLOW_FILE_URLS", "1")
+
+        with self.assertRaisesRegex(git.UnsafeUrl, "https:// only"):
+            git.check_remote_url("file:///tmp/x", GitConfig())
+
+        git.check_remote_url(
+            "http://gitlab.internal/a/b.git", GitConfig(allow_insecure_http=True)
+        )
+
 
 class RefValidationTest(TempCase):
     def test_accepts_branches_and_tags(self):
@@ -79,3 +90,19 @@ class GitEnvTest(TempCase):
         self.assertEqual(env["GIT_TERMINAL_PROMPT"], "0")
         self.assertEqual(keys["protocol.allow"], "never")
         self.assertEqual(keys["protocol.https.allow"], "always")
+
+    def test_identity_and_policy_come_from_the_given_config(self):
+        self.delenv("GIT_AUTHOR_NAME")
+        self.delenv("GIT_COMMITTER_EMAIL")
+
+        env = git.git_env(
+            GitConfig(allow_file_urls=True, author_name="Bot", author_email="b@x")
+        )
+        keys = {
+            env[f"GIT_CONFIG_KEY_{i}"]: env[f"GIT_CONFIG_VALUE_{i}"]
+            for i in range(int(env["GIT_CONFIG_COUNT"]))
+        }
+
+        self.assertEqual(env["GIT_AUTHOR_NAME"], "Bot")
+        self.assertEqual(env["GIT_COMMITTER_EMAIL"], "b@x")
+        self.assertEqual(keys["protocol.file.allow"], "always")
