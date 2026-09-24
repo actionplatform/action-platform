@@ -14,7 +14,7 @@ from pathlib import Path
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.flow.git import UnsafeUrl, check_remote_url
 from action_platform.core.flow.repository import Repository, SyncError, _fetch_problem
-from action_platform.core.scaffold.install import InstallError, install
+from action_platform.core.scaffold.installer import InstallError, install
 from action_platform.settings import settings
 from app.core.errors import Gone, Upstream
 from app.repositories.workspace.registry import (

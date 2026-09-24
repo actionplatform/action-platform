@@ -8,7 +8,7 @@ import typer
 from rich.console import Console
 
 from action_platform.core.wiring import wired
-from action_platform.core.scaffold.templates import load_matrix
+from action_platform.core.scaffold.catalog import load_matrix
 from action_platform.logging import logger
 
 app = typer.Typer(

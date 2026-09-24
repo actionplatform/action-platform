@@ -1,11 +1,11 @@
-"""action_platform.core.scaffold.install — bringing an existing repository onto the platform."""
+"""action_platform.core.scaffold.installer — bringing an existing repository onto the platform."""
 
 from __future__ import annotations
 
 import subprocess
 
-from action_platform.core.scaffold import install
-from action_platform.core.scaffold.install import InstallError
+from action_platform.core.scaffold import installer
+from action_platform.core.scaffold.installer import InstallError
 from action_platform.settings import settings
 from tests.support import TempCase, git, install_templates
 
@@ -26,7 +26,7 @@ class InstallCase(TempCase):
 
 class InstallTest(InstallCase):
     def test_creates_missing_keeps_existing(self):
-        plan = install.install(self.repo)
+        plan = installer.install(self.repo)
 
         self.assertEqual(plan.language, "python")
         self.assertIn("platform.toml", plan.created)
@@ -47,30 +47,32 @@ class InstallTest(InstallCase):
         self.assertEqual(git(self.repo, "status", "--porcelain").count(".git/"), 0)
 
     def test_dry_run_writes_nothing(self):
-        plan = install.install(self.repo, dry_run=True)
+        plan = installer.install(self.repo, dry_run=True)
 
         self.assertIn("platform.toml", plan.created)
         self.assertFalse((self.repo / "platform.toml").exists())
 
     def test_gitlab_ci_flag_and_platform_toml_ci(self):
-        self.assertIn(".gitlab-ci.yml", install.install(self.repo, ci="gitlab").created)
+        self.assertIn(
+            ".gitlab-ci.yml", installer.install(self.repo, ci="gitlab").created
+        )
 
         (self.repo / "platform.toml").write_text(
             '[project]\nname = "x"\nci = "gitlab"\nlanguage = "python"\n'
         )
-        plan = install.install(self.repo)
+        plan = installer.install(self.repo)
         self.assertEqual(plan.ci, "gitlab")
 
     def test_not_a_git_repository(self):
         with self.assertRaisesRegex(InstallError, "not a git repository"):
-            install.install(self.tmp_path)
+            installer.install(self.tmp_path)
 
     def test_without_a_language_only_config_ci_and_hooks(self):
         bare = self.tmp_path / "nolang"
         bare.mkdir()
         git(bare, "init", "-q")
 
-        plan = install.install(bare)
+        plan = installer.install(bare)
 
         self.assertEqual(plan.language, "")
         self.assertIn("platform.toml", plan.created)
@@ -84,7 +86,7 @@ class InstallTest(InstallCase):
         bare.mkdir()
         git(bare, "init", "-q")
 
-        plan = install.install(bare, ci="none")
+        plan = installer.install(bare, ci="none")
 
         self.assertEqual(plan.ci, "none")
         self.assertFalse((bare / ".github").exists())
@@ -99,7 +101,7 @@ class InstallTest(InstallCase):
         fresh.mkdir()
         (fresh / "pyproject.toml").write_text('[project]\nname = "fresh"\n')
         git(fresh, "init", "-q")
-        install.install(fresh)
+        installer.install(fresh)
         self.assertEqual((fresh / "LAST_VERSION").read_text(), "0.0.0\n")
 
         tagged = self.tmp_path / "tagged"
@@ -108,18 +110,18 @@ class InstallTest(InstallCase):
         git(tagged, "init", "-q")
         git(tagged, "commit", "-q", "--allow-empty", "-m", "chore: first")
         git(tagged, "tag", "v2.3.4")
-        install.install(tagged)
+        installer.install(tagged)
         self.assertEqual((tagged / "LAST_VERSION").read_text(), "2.3.4\n")
 
 
 class HooksTest(InstallCase):
     def test_own_hooks_are_refreshed(self):
-        install.install(self.repo)
+        installer.install(self.repo)
         (self.repo / ".git/hooks/pre-commit").write_text(
             "# action-platform hook\nbroken"
         )
 
-        install.install(self.repo)
+        installer.install(self.repo)
 
         self.assertIn(
             "gitflow_check branch", (self.repo / ".git/hooks/pre-commit").read_text()
@@ -131,7 +133,7 @@ class HooksTest(InstallCase):
         (hooks / "pre-commit").write_text("#!/bin/sh\necho husky > .ran\n")
         (hooks / "pre-commit").chmod(0o755)
 
-        plan = install.install(self.repo)
+        plan = installer.install(self.repo)
 
         self.assertEqual(plan.hooks_preserved, ["pre-commit"])
         self.assertIn("gitflow_check branch", (hooks / "pre-commit").read_text())
@@ -145,7 +147,7 @@ class HooksTest(InstallCase):
         subprocess.run([str(hooks / "pre-commit")], cwd=self.repo, check=True)
         self.assertEqual((self.repo / ".ran").read_text().strip(), "husky")
 
-        install.install(self.repo)
+        installer.install(self.repo)
         self.assertTrue(
             (hooks / "pre-commit.pre-action-platform")
             .read_text()
@@ -159,7 +161,7 @@ class HooksTest(InstallCase):
         git(self.repo, "commit", "-q", "-m", "chore: husky")
         git(self.repo, "config", "core.hooksPath", ".husky")
 
-        plan = install.install(self.repo)
+        plan = installer.install(self.repo)
 
         self.assertFalse(plan.hooks_installed)
         self.assertIn("versioned", plan.hooks_skipped or "")
@@ -185,7 +187,7 @@ class CiFollowsTheRemoteTest(TempCase):
         git(repo, "add", "-A")
         git(repo, "commit", "-q", "-m", "chore: init")
 
-        plan = install.install(repo)
+        plan = installer.install(repo)
 
         self.assertEqual(plan.ci, "gitlab")
         self.assertIn(".gitlab-ci.yml", plan.created)
@@ -206,7 +208,7 @@ class CiFollowsTheRemoteTest(TempCase):
         git(repo, "add", "-A")
         git(repo, "commit", "-q", "-m", "chore: init")
 
-        plan = install.install(repo)
+        plan = installer.install(repo)
 
         self.assertEqual(plan.ci, "bitbucket")
         self.assertIn("bitbucket-pipelines.yml", plan.created)

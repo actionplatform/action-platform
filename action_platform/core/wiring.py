@@ -23,8 +23,8 @@ HOMES = {
     "releaser": "action_platform.core.release.release",
     "deployer": "action_platform.core.release.deploy",
     "readiness": "action_platform.core.release.readiness",
-    "installer": "action_platform.core.scaffold.install",
-    "scaffolder": "action_platform.core.scaffold.generate",
+    "installer": "action_platform.core.scaffold.installer",
+    "scaffolder": "action_platform.core.scaffold.scaffolder",
 }
 
 

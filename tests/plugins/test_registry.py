@@ -9,7 +9,7 @@ from pathlib import Path
 from action_platform.abc import Plugin
 from action_platform.core.flow import gitflow
 from action_platform.core.wiring import wired
-from action_platform.core.scaffold.templates import Matrix, with_plugin_clouds
+from action_platform.core.scaffold.catalog import Matrix, with_plugin_clouds
 from action_platform.plugins import Loaded, PluginError, PluginState, Plugins, registry
 from tests.mcp.support import HAS_MCP
 from tests.support import TempCase
@@ -222,8 +222,8 @@ class PluginsTest(TempCase):
 
 class PlainOverlayTest(TempCase):
     def test_an_overlay_without_cookiecutter_is_copied_as_is(self):
-        from action_platform.core.scaffold.generate import apply_cloud
-        from action_platform.core.scaffold.templates import Cloud
+        from action_platform.core.scaffold.scaffolder import apply_cloud
+        from action_platform.core.scaffold.catalog import Cloud
 
         root = Path(self.tmp_path) / "overlays"
         (root / "cloud" / "plain" / "deploy").mkdir(parents=True)

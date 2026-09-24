@@ -2,12 +2,8 @@
 
 from typing import Optional
 
-from action_platform.core.scaffold.templates import (
-    Matrix,
-    TemplateSource,
-    load_matrix,
-    load_source,
-)
+from action_platform.core.scaffold.catalog import Matrix, load_matrix, load_source
+from action_platform.core.scaffold.sources import TemplateSource
 from action_platform.settings import settings
 from app.services.workspace import git_auth as auth
 from app.schemas import SourceSpec

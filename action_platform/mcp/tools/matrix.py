@@ -6,7 +6,7 @@ from typing import Annotated, Any, Optional
 
 from pydantic import Field
 
-from action_platform.core.scaffold.templates import load_matrix
+from action_platform.core.scaffold.catalog import load_matrix
 from action_platform.mcp import schemas
 from action_platform.mcp.annotations import READ_ONLY, tool
 

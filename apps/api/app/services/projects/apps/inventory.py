@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 
-from action_platform.core.scaffold.install import InstallError, install
+from action_platform.core.scaffold.installer import InstallError, install
 from action_platform.settings import settings
 from app.services.workspace import git_auth as auth
 from app.repositories.workspace.registry import Entry, MissingManifest

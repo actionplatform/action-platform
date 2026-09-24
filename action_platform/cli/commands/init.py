@@ -10,7 +10,7 @@ from rich.table import Table
 
 from action_platform.core.wiring import wired
 from action_platform.core.exception import TemplateError
-from action_platform.core.scaffold.templates import Matrix, load_matrix
+from action_platform.core.scaffold.catalog import Matrix, load_matrix
 from action_platform.logging import logger
 
 CI_PROVIDERS = ["github", "gitlab", "jenkins", "bitbucket"]

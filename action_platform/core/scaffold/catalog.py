@@ -8,8 +8,8 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from action_platform.core.exception import TemplateError
-from action_platform.core.scaffold.detect import detect_language
-from action_platform.core.scaffold.store import LocalTemplateStore, TemplateSource
+from action_platform.core.scaffold.language import detect_language
+from action_platform.core.scaffold.sources import LocalTemplateStore, TemplateSource
 from action_platform.core import extensions
 from action_platform.logging import logger
 from action_platform.settings import settings
