@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import unittest
 from unittest import mock
 
-from action_platform.mcp import server
-from tests.mcp.support import McpCase
+from tests.mcp.support import HAS_MCP, McpCase
 from tests.support import TempCase, git, install_templates
+
+if HAS_MCP:
+    from action_platform.mcp import server
 
 
 PLUGIN_PREFIXES = ("example_", "aws_lambda_")
@@ -122,6 +125,7 @@ class ReadOnlyToolsTest(McpCase):
         self.assertTrue(any("not a conventional commit" in p for p in data["problems"]))
 
 
+@unittest.skipUnless(HAS_MCP, "mcp is not installed")
 class EntryPointTest(TempCase):
     def test_main_bootstraps_as_mcp_before_building_the_server(self):
         calls = []
