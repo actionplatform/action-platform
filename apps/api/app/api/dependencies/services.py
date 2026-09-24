@@ -19,6 +19,7 @@ from app.services.jobs import JobQueue
 from app.services.projects.organization_import import ImportGateway
 from app.services.integrations.plugins import PluginManager
 from app.services.projects.service import ProjectService
+from app.services.projects.view import ProjectView
 from app.services.configuration.commit import CommitService
 from app.services.configuration.service import ConfigurationService
 from app.services.activity.flow import FlowService
@@ -178,6 +179,13 @@ def get_projects(
     apps: AppService = Depends(get_app_service),
 ) -> ProjectService:
     return ProjectService(writes, apps)
+
+
+def get_project_view(
+    directory: ProjectsRepository = Depends(get_projects_repository),
+    queue: JobQueue = Depends(get_queue),
+) -> ProjectView:
+    return ProjectView(directory, queue)
 
 
 def get_import_gateway(
