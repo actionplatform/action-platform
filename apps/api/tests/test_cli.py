@@ -12,6 +12,12 @@ from unittest import mock
 from action_platform.testing.fixtures import TempCase
 
 API = Path(__file__).resolve().parents[1]
+RECORD_READS = """
+import action_platform.settings as s
+seen = []
+for key, read in list(s.FIELDS.items()):
+    s.FIELDS[key] = (lambda key, read: lambda env: (seen.append(key), read(env))[1])(key, read)
+"""
 
 
 class EntryPointTest(TempCase):
@@ -23,9 +29,7 @@ class EntryPointTest(TempCase):
             [
                 sys.executable,
                 "-c",
-                "import app.cli, app.api.app\n"
-                "from action_platform.settings import settings\n"
-                "print(sorted(vars(settings)))",
+                RECORD_READS + "import app.cli, app.api.app\nprint(seen)",
             ],
             cwd=self.tmp_path,
             env=env,
