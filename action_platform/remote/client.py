@@ -147,22 +147,46 @@ class Remote:
     def apps(self, organization: Optional[str] = None) -> list[dict]:
         return self._call("GET", "apps", None, organization=organization)
 
-    def add_app(self, project: str, url: str, install: Optional[dict] = None) -> dict:
+    def add_app(
+        self,
+        project: str,
+        url: str,
+        install: Optional[dict] = None,
+        organization: Optional[str] = None,
+    ) -> dict:
         return self._call(
-            "POST", f"projects/{project}/apps", {"url": url, "install": install}
+            "POST",
+            f"projects/{project}/apps",
+            {"url": url, "install": install},
+            organization,
         )
 
-    def remove_app(self, project: str, app: str, repository: bool = False) -> dict:
+    def remove_app(
+        self,
+        project: str,
+        app: str,
+        repository: bool = False,
+        organization: Optional[str] = None,
+    ) -> dict:
         return self._call(
             "DELETE",
             f"projects/{project}/apps/{app}",
+            None,
+            organization,
             repository="true" if repository else None,
         )
 
-    def delete_project(self, project: str, repositories: bool = False) -> dict:
+    def delete_project(
+        self,
+        project: str,
+        repositories: bool = False,
+        organization: Optional[str] = None,
+    ) -> dict:
         return self._call(
             "DELETE",
             f"projects/{project}",
+            None,
+            organization,
             repositories="true" if repositories else None,
         )
 
@@ -354,31 +378,53 @@ class Remote:
     def organizations(self) -> list[dict]:
         return self._call("GET", "organizations")
 
-    def projects(self) -> list[dict]:
-        return self._call("GET", "projects")
+    def projects(self, organization: Optional[str] = None) -> list[dict]:
+        return self._call("GET", "projects", None, organization)
 
-    def teams(self) -> list[dict]:
-        return self._call("GET", "teams")
+    def teams(self, organization: Optional[str] = None) -> list[dict]:
+        return self._call("GET", "teams", None, organization)
 
-    def members(self) -> list[dict]:
-        return self._call("GET", "members")
+    def members(self, organization: Optional[str] = None) -> list[dict]:
+        return self._call("GET", "members", None, organization)
 
-    def create_project(self, name: str, description: str = "") -> dict:
+    def create_project(
+        self, name: str, description: str = "", organization: Optional[str] = None
+    ) -> dict:
         return self._call(
-            "POST", "projects", {"name": name, "description": description}
+            "POST",
+            "projects",
+            {"name": name, "description": description},
+            organization,
         )
 
-    def create_team(self, name: str, description: str = "") -> dict:
-        return self._call("POST", "teams", {"name": name, "description": description})
-
-    def add_team_member(self, team_id: str, user_id: str) -> dict:
+    def create_team(
+        self, name: str, description: str = "", organization: Optional[str] = None
+    ) -> dict:
         return self._call(
-            "POST", "teams/members", {"team_id": team_id, "user_id": user_id}
+            "POST", "teams", {"name": name, "description": description}, organization
         )
 
-    def assign_project_team(self, project_id: str, team_id: Optional[str]) -> dict:
+    def add_team_member(
+        self, team_id: str, user_id: str, organization: Optional[str] = None
+    ) -> dict:
         return self._call(
-            "POST", "projects/team", {"project_id": project_id, "team_id": team_id}
+            "POST",
+            "teams/members",
+            {"team_id": team_id, "user_id": user_id},
+            organization,
+        )
+
+    def assign_project_team(
+        self,
+        project_id: str,
+        team_id: Optional[str],
+        organization: Optional[str] = None,
+    ) -> dict:
+        return self._call(
+            "POST",
+            "projects/team",
+            {"project_id": project_id, "team_id": team_id},
+            organization,
         )
 
     def identity_token(
@@ -394,8 +440,12 @@ class Remote:
             {"audience": audience, "project_id": project_id, "app_id": app_id},
         )
 
-    def set_member_role(self, user_id: str, role: str) -> dict:
-        return self._call("POST", "members/role", {"user_id": user_id, "role": role})
+    def set_member_role(
+        self, user_id: str, role: str, organization: Optional[str] = None
+    ) -> dict:
+        return self._call(
+            "POST", "members/role", {"user_id": user_id, "role": role}, organization
+        )
 
 
 SCOPES = ("read", "write", "release", "admin")
