@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from action_platform.core.exception import TemplateError
 from action_platform.core.flow.repository import Repository
 from action_platform.core.scaffold import publisher
+from action_platform.providers.source.generic import SourceGeneric
 from tests.support import TempCase
 
 
@@ -47,3 +49,20 @@ class PushProjectTest(TempCase):
         self.assertTrue(repo.is_clean())
         self.assertEqual(repo.remote_url(), url)
         self.assertEqual(repo.branch, "main")
+
+    def test_a_host_that_cannot_create_repositories_is_refused(self):
+        (self.tmp_path / "platform.toml").write_text(
+            '[project]\nname = "demo"\nlanguage = "python"\n[source_host]\nkind = "generic"\nrepo = "owner/demo"\n'
+        )
+        (self.tmp_path / "README.md").write_text("# demo\n")
+        host = SourceGeneric(repo="owner/demo")
+        self.patch(
+            publisher.Config,
+            "from_toml",
+            classmethod(lambda cls, p: type("C", (), {"source_host": host})()),
+        )
+
+        with self.assertRaises(TemplateError) as raised:
+            publisher.push_project(self.tmp_path, private=True)
+
+        self.assertIn("generic cannot create repositories", str(raised.exception))

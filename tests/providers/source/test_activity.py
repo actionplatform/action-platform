@@ -5,6 +5,7 @@ from __future__ import annotations
 import unittest
 from unittest import mock
 
+from action_platform.abc.source_host import ListsPullRequests, PublishesReleases
 from action_platform.providers.source.bitbucket import SourceBitbucket
 from action_platform.providers.source.generic import SourceGeneric
 from action_platform.providers.source.github import SourceGithub
@@ -146,5 +147,8 @@ class BitbucketActivityTest(unittest.TestCase):
 
 class GenericTest(unittest.TestCase):
     def test_a_plain_git_server_has_no_releases_to_read(self):
-        with self.assertRaises(NotImplementedError):
-            SourceGeneric(repo="x").releases("x")
+        host = SourceGeneric(repo="x")
+
+        self.assertNotIsInstance(host, PublishesReleases)
+        self.assertNotIsInstance(host, ListsPullRequests)
+        self.assertFalse(hasattr(host, "releases"))
