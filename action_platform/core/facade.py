@@ -8,6 +8,7 @@ from typing import Callable
 from action_platform.core.wiring import wired
 from action_platform.core.config import Config
 from action_platform.core.context import Check, Context, DeployResult, Diagnosis
+from action_platform.core.exception import ConfigError
 from action_platform.core.flow.repository import Repository
 from action_platform.core.flow.workflow import GitFlow
 from action_platform.core.release.deploy import Deployer
@@ -27,7 +28,8 @@ class ActionPlatform:
         tool.deploy()
 
     Args:
-        config (Config): configuration with injected providers.
+        config (Config): configuration with injected providers — required:
+            `Config.from_toml(root / "platform.toml")` for a project on disk.
         repo_root (Path): repository root. Defaults to cwd.
         identity: signs a short-lived OIDC token for an audience — the hosted
             platform's issuer for a deploy it runs, the platform the CLI is
@@ -39,12 +41,17 @@ class ActionPlatform:
 
     def __init__(
         self,
-        config: Config | None = None,
+        config: Config,
         repo_root: Path | None = None,
         identity: Callable[[str], str] | None = None,
         env: dict[str, str] | None = None,
     ) -> None:
-        self.config = config or Config()
+        if not isinstance(config, Config):
+            raise ConfigError(
+                "ActionPlatform needs a Config, e.g. Config.from_toml(root / 'platform.toml')"
+            )
+
+        self.config = config
         self.repo = Repository(repo_root or Path.cwd())
         self.identity = identity
         self.env = dict(env or {})
