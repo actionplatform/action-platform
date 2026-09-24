@@ -14,7 +14,7 @@ from app.repositories.organization import OrganizationRepository
 from app.repositories.projects import ProjectsRepository
 from app.services.integrations.hosts.directory import IntegrationsDirectory
 from app.services.projects.organization_import.directory import ImportDirectory
-from app.services.integrations.hosts import OAuthState
+from app.services.integrations.hosts import HostProviders, OAuthState, host_providers
 from app.services.jobs import JobQueue
 from app.services.projects.organization_import import ImportGateway
 from app.services.integrations.plugins import PluginManager
@@ -52,10 +52,16 @@ def get_projects_repository(
     return ProjectsRepository(db, request.app.state.sealer)
 
 
+def get_host_providers() -> HostProviders:
+    return host_providers()
+
+
 def get_integrations(
-    request: Request, db: DbSession = Depends(get_db)
+    request: Request,
+    db: DbSession = Depends(get_db),
+    providers: HostProviders = Depends(get_host_providers),
 ) -> IntegrationsDirectory:
-    return IntegrationsDirectory(db, request.app.state.sealer)
+    return IntegrationsDirectory(db, request.app.state.sealer, providers)
 
 
 def get_auth(

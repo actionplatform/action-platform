@@ -5,13 +5,13 @@ from fastapi import APIRouter
 from action_platform.core.exception import ActionPlatformError
 from app.api.dependencies import (
     CallerDep,
+    HostProvidersDep,
     OrgDep,
     IntegrationsDep,
     allowed,
     host_row,
 )
 from app.schemas import integrations as schemas
-from app.services.integrations.hosts import PROVIDERS
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -88,6 +88,7 @@ def host_access(
     org: OrgDep,
     caller: CallerDep,
     writes: IntegrationsDep,
+    providers: HostProvidersDep,
 ) -> dict:
     try:
         creds = writes.credentials_for(org.id, host_id)
@@ -100,7 +101,7 @@ def host_access(
     github = writes.oauth_app("github")
 
     try:
-        access = PROVIDERS.get(creds.kind).access(
+        access = providers.get(creds.kind).access(
             creds, github.slug if github else None
         )
     except ActionPlatformError as e:

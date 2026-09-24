@@ -4,13 +4,14 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.api.dependencies import (
     CallerDep,
+    HostProvidersDep,
     OrgDep,
     IntegrationsDep,
     allowed,
     get_state_signer,
 )
 from app.schemas import integrations as schemas
-from app.services.integrations.hosts import PROVIDERS, HostConnectError, HostConnector
+from app.services.integrations.hosts import HostConnectError, HostConnector
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -23,8 +24,9 @@ def oauth_start(
     org: OrgDep,
     caller: CallerDep,
     writes: IntegrationsDep,
+    providers: HostProvidersDep,
 ) -> schemas.OAuthStarted:
-    if provider not in PROVIDERS.by_kind:
+    if provider not in providers:
         raise HTTPException(404, "unknown provider")
 
     allowed(caller, org, "org.manage")
@@ -32,7 +34,7 @@ def oauth_start(
 
     if app is None:
         raise HTTPException(
-            400, f"{PROVIDERS.get(provider).label} OAuth app is not configured"
+            400, f"{providers.get(provider).label} OAuth app is not configured"
         )
 
     state = get_state_signer(request).sign(
@@ -40,7 +42,7 @@ def oauth_start(
     )
 
     return schemas.OAuthStarted(
-        url=PROVIDERS.get(provider).authorize_url(app, body.origin.rstrip("/"), state)
+        url=providers.get(provider).authorize_url(app, body.origin.rstrip("/"), state)
     )
 
 
@@ -51,8 +53,9 @@ def oauth_callback(
     request: Request,
     caller: CallerDep,
     writes: IntegrationsDep,
+    providers: HostProvidersDep,
 ) -> schemas.OAuthFinished:
-    if provider not in PROVIDERS.by_kind:
+    if provider not in providers:
         raise HTTPException(404, "unknown provider")
 
     state = get_state_signer(request).verify(body.state, caller.user.id)
@@ -87,7 +90,7 @@ def oauth_callback(
         )
 
     try:
-        HostConnector(writes).finish(
+        HostConnector(writes, providers).finish(
             org, provider, body.origin.rstrip("/"), body.code, body.installation_id
         )
     except HostConnectError as e:

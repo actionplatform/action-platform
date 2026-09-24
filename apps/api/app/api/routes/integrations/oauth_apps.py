@@ -4,12 +4,12 @@ from fastapi import APIRouter
 
 from app.api.dependencies import (
     CallerDep,
+    HostProvidersDep,
     OrgDep,
     IntegrationsDep,
     allowed,
 )
 from app.schemas import integrations as schemas
-from app.services.integrations.hosts import PROVIDERS
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -18,11 +18,12 @@ router = APIRouter(prefix="/api/v1", tags=["management"])
 def oauth_apps(
     caller: CallerDep,
     writes: IntegrationsDep,
+    providers: HostProvidersDep,
 ) -> list[schemas.OAuthAppRow]:
     rows = []
 
     for provider, app in writes.oauth_apps().items():
-        host = PROVIDERS.get(provider)
+        host = providers.get(provider)
         rows.append(
             schemas.OAuthAppRow(
                 provider=provider,

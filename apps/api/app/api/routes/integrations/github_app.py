@@ -6,13 +6,14 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.api.dependencies import (
     CallerDep,
+    HostProvidersDep,
     OrgDep,
     IntegrationsDep,
     allowed,
     get_state_signer,
 )
 from app.schemas import integrations as schemas
-from app.services.integrations.hosts import PROVIDERS, HostConnectError, HostConnector
+from app.services.integrations.hosts import HostConnectError, HostConnector
 
 GITHUB_LOGIN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$")
 
@@ -49,6 +50,7 @@ def github_manifest(
     org: OrgDep,
     caller: CallerDep,
     writes: IntegrationsDep,
+    providers: HostProvidersDep,
 ) -> schemas.Manifest:
     allowed(caller, org, "org.manage")
 
@@ -71,7 +73,7 @@ def github_manifest(
     return schemas.Manifest(
         target=f"{target}?state={state}",
         state=state,
-        manifest=PROVIDERS.github.manifest(
+        manifest=providers.github.manifest(
             body.origin.rstrip("/"), body.host, return_to
         ),
     )
@@ -83,6 +85,7 @@ def github_manifest_callback(
     request: Request,
     caller: CallerDep,
     writes: IntegrationsDep,
+    providers: HostProvidersDep,
 ) -> schemas.OAuthFinished:
     state = get_state_signer(request).verify(body.state, caller.user.id)
 
@@ -102,7 +105,7 @@ def github_manifest_callback(
         )
 
     try:
-        slug = HostConnector(writes).create_github_app(body.code)
+        slug = HostConnector(writes, providers).create_github_app(body.code)
     except HostConnectError as e:
         return schemas.OAuthFinished(
             return_to=state["returnTo"], query={"oauth_error": str(e)}
