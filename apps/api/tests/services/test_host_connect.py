@@ -7,6 +7,7 @@ from unittest import mock
 from action_platform.core.exception import ProviderError
 from app.core.shared.credentials import OAuthApp
 from app.services.integrations.hosts import (
+    BitbucketProvider,
     GithubProvider,
     GitlabProvider,
     HostConnectError,
@@ -89,3 +90,41 @@ class CreateGithubAppTest(unittest.TestCase):
                 HostConnector(writes).create_github_app("c")
 
         self.assertEqual(writes.saved, [])
+
+
+class OwnerTest(unittest.TestCase):
+    def test_github_owner_is_the_installation_account(self):
+        with mock.patch.object(
+            GithubProvider, "installation_owner", return_value="acme"
+        ) as found:
+            self.assertEqual(GithubProvider().owner("tok", "42"), "acme")
+
+        found.assert_called_once_with("tok", "42")
+
+    def test_github_without_installation_has_no_owner(self):
+        self.assertIsNone(GithubProvider().owner("tok", None))
+
+    def test_bitbucket_owner_is_the_first_workspace(self):
+        with mock.patch.object(
+            BitbucketProvider, "first_workspace", return_value="team"
+        ):
+            self.assertEqual(BitbucketProvider().owner("tok", None), "team")
+
+    def test_gitlab_has_no_owner(self):
+        self.assertIsNone(GitlabProvider().owner("tok", "42"))
+
+    def test_connector_stores_the_provider_owner(self):
+        writes = FakeWrites(OAuthApp("id", "secret", None))
+
+        with (
+            mock.patch.object(
+                BitbucketProvider, "exchange_code", return_value=("tok", None, None)
+            ),
+            mock.patch.object(
+                BitbucketProvider, "identity", return_value=("ana", "Ana")
+            ),
+            mock.patch.object(BitbucketProvider, "owner", return_value="team"),
+        ):
+            HostConnector(writes).finish(ORG, "bitbucket", "https://ap", "c", None)
+
+        self.assertEqual(writes.connected[0][-1], "team")
