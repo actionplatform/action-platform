@@ -7,6 +7,7 @@ import typer
 from action_platform.core.exception import ActionPlatformError
 from action_platform.remote import credentials
 from action_platform.remote.client import DEFAULT_SCOPE, Remote, login as device_login
+from action_platform.remote.schemas import Me
 
 
 def login(
@@ -59,12 +60,11 @@ def _name(part: object) -> str:
     )
 
 
-def _describe(creds: credentials.Credentials, who: dict) -> str:
-    email = who.get("user", {}).get("email", "?")
-    org = who.get("organization")
-    scope = " ".join(who.get("scope") or []) or creds.scope or "session"
+def _describe(creds: credentials.Credentials, who: Me) -> str:
+    email = who.user.get("email", "?")
+    scope = " ".join(who.scope or []) or creds.scope or "session"
     reach = " / ".join(
-        _name(part) for part in (org, who.get("project"), who.get("app")) if part
+        _name(part) for part in (who.organization, who.project, who.app) if part
     )
 
     return f"{email} — scope: {scope}" + (f" — on {reach}" if reach else "")

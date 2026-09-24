@@ -12,6 +12,7 @@ from action_platform.core.facade import ActionPlatform
 from action_platform.core.config import Config
 from action_platform.core.exception import ActionPlatformError, DeployError
 from action_platform.remote.client import Remote
+from action_platform.remote.schemas import AppRef, ProjectRow
 from action_platform.logging import logger
 from action_platform.settings import settings
 
@@ -154,13 +155,13 @@ def destroy(
     logger.info("destroy done")
 
 
-def _remote_app(app: str | None) -> tuple[Remote, dict, dict]:
+def _remote_app(app: str | None) -> tuple[Remote, ProjectRow, AppRef]:
     remote = Remote.from_credentials()
     wanted = app or Config.from_toml(Path.cwd() / settings.CONFIG_FILE).project_name
 
     for project in remote.projects():
-        for row in project.get("apps") or []:
-            if wanted in (row.get("registry_id"), row.get("id"), row.get("name")):
+        for row in project.apps:
+            if wanted in (row.registry_id, row.id, row.name):
                 return remote, project, row
 
     raise ActionPlatformError(
@@ -183,25 +184,25 @@ def deployments(
     """What arrived at each of the app's targets on the platform, whoever shipped it."""
     remote, project, row = _remote_app(app)
     body = (
-        remote.sync_deployments(project["id"], row["id"])
+        remote.sync_deployments(project.id, row.id)
         if sync
-        else remote.deployments(project["id"], row["id"])
+        else remote.deployments(project.id, row.id)
     )
 
-    for target in body["targets"]:
-        source = target.get("workflow") or target.get("job") or ""
+    for target in body.targets:
+        source = target.workflow or target.job or ""
         console.print(
-            f"[bold]{target['name']}[/bold] {target['kind']} · {target['run_by']}{' · ' + source if source else ''}"
+            f"[bold]{target.name}[/bold] {target.kind} · {target.run_by}{' · ' + source if source else ''}"
         )
 
-        for d in [d for d in body["deployments"] if d["target"] == target["name"]][:10]:
-            stage = f" {d['stage']}" if d.get("stage") else ""
+        for d in [d for d in body.deployments if d.target == target.name][:10]:
+            stage = f" {d.stage}" if d.stage else ""
             console.print(
-                f"  {d['version']}{stage}  {d['status']}  {d['executor']}  {d.get('finished_at') or d.get('started_at') or ''}"
+                f"  {d.version}{stage}  {d.status}  {d.executor}  {d.finished_at or d.started_at or ''}"
             )
 
-    if body.get("error"):
-        console.print(f"[yellow]{body['error']}[/yellow]")
+    if body.error:
+        console.print(f"[yellow]{body.error}[/yellow]")
 
 
 def logs(
@@ -217,14 +218,14 @@ def logs(
     while True:
         page = remote.job_logs(job, after=after)
 
-        for row in page["lines"]:
-            console.print(row["line"], highlight=False, markup=False)
+        for row in page.lines:
+            console.print(row.line, highlight=False, markup=False)
 
-        after = page["next"]
+        after = page.next
 
-        if page["finished"] or not follow:
-            if follow or page["finished"]:
-                console.print(f"[dim]job {page['status']}[/dim]")
+        if page.finished or not follow:
+            if follow or page.finished:
+                console.print(f"[dim]job {page.status}[/dim]")
 
             return
 
@@ -248,6 +249,6 @@ def record(
     """Record on the platform a deployment made outside it. A deployment always references a release."""
     remote, project, row = _remote_app(app)
     d = remote.record_deployment(
-        project["id"], row["id"], target, version, stage, url, None, not failed
+        project.id, row.id, target, version, stage, url, None, not failed
     )
-    console.print(f"recorded {d['target']} {d['version']} {d['status']}")
+    console.print(f"recorded {d.target} {d.version} {d.status}")

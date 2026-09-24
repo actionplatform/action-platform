@@ -383,6 +383,55 @@ class Initialized(Open):
     pushed: bool
 
 
+class Me(Open):
+    """Who a token acts as: `/api/v1/me`, before whoami shapes it for an agent."""
+
+    user: dict[str, Any] = Field(default_factory=dict)
+    organization: Optional[dict[str, Any]] = None
+    organizations: Optional[list[dict[str, Any]]] = None
+    role: Optional[str] = None
+    role_label: Optional[str] = None
+    scope: Optional[list[str]] = None
+    permissions: dict[str, bool] = Field(default_factory=dict)
+    project: Optional[dict[str, Any]] = None
+    app: Optional[dict[str, Any]] = None
+
+
+class Job(Open):
+    id: str
+    kind: str
+    status: str
+    attempts: int = 0
+    app_id: Optional[str] = None
+    stage: Optional[str] = None
+    version: Optional[str] = None
+    error: Optional[str] = None
+    result: Any = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    finished_at: Optional[str] = None
+
+
+class LogLine(Open):
+    seq: int
+    line: str
+    at: Optional[str] = None
+
+
+class JobLogs(Open):
+    lines: list[LogLine] = Field(default_factory=list)
+    next: int
+    status: str
+    finished: bool
+
+
+class Version(Open):
+    version: str
+    api: str
+    ready: bool = True
+    database: Optional[str] = None
+
+
 __all__ = [
     "Open",
     "MatrixProject",
@@ -433,4 +482,9 @@ __all__ = [
     "ConfigurationChanged",
     "Committed",
     "Initialized",
+    "Me",
+    "Job",
+    "LogLine",
+    "JobLogs",
+    "Version",
 ]

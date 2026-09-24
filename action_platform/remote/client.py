@@ -1,8 +1,8 @@
 """HTTP client for a hosted Action Platform (apps/web at `server`).
 
 Every call goes to `/api/v1/...` on the web app, which checks the bearer
-token and forwards to the Python API running next to it. Standard library
-only, so the CLI stays dependency-free.
+token and forwards to the Python API running next to it. Answers come back
+as the models in `remote.schemas`, the same ones the MCP tools declare.
 """
 
 from __future__ import annotations
@@ -16,11 +16,49 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import webbrowser
+from functools import lru_cache
 from typing import Any, Optional
+
+from pydantic import TypeAdapter
 
 from action_platform import __version__
 from action_platform.core.exception import ActionPlatformError
 from action_platform.remote.credentials import Credentials, load, save
+from action_platform.remote.schemas import (
+    AppAdded,
+    AppDetail,
+    AppEntry,
+    AppRow,
+    BranchRow,
+    BranchStarted,
+    Commit,
+    Committed,
+    ConfigurationChanged,
+    Created,
+    DeployResult,
+    DeploymentRow,
+    Deployments,
+    Diagnosis,
+    GitflowReport,
+    Initialized,
+    Job,
+    JobLogs,
+    ManifestText,
+    Matrix,
+    Me,
+    MemberRow,
+    Ok,
+    OrganizationRow,
+    ProjectRow,
+    PullRequestOpened,
+    PullRequestPlan,
+    ReleasePreview,
+    ReleaseRow,
+    Removed,
+    Scopes,
+    TeamRow,
+    Version,
+)
 
 CLIENT_ID = "action-platform-cli"
 DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
@@ -100,6 +138,16 @@ def _request(
         raise ActionPlatformError(f"cannot reach {url}: {e.reason}") from e
 
 
+@lru_cache(maxsize=None)
+def _adapter(kind: Any) -> TypeAdapter:
+    return TypeAdapter(kind)
+
+
+def _as(kind: Any, payload: Any) -> Any:
+    """The API's answer as the schema that describes it; a model names what is guaranteed and keeps the rest."""
+    return _adapter(kind).validate_python(payload)
+
+
 class Remote:
     """The hosted platform as seen from one client. `client` names the program driving these calls (an MCP client such as Claude Code, Codex or Cursor; the CLI otherwise) so the platform can show which apps use a token."""
 
@@ -144,8 +192,10 @@ class Remote:
             organization=organization,
         )
 
-    def apps(self, organization: Optional[str] = None) -> list[dict]:
-        return self._call("GET", "apps", None, organization=organization)
+    def apps(self, organization: Optional[str] = None) -> list[AppRow]:
+        return _as(
+            list[AppRow], self._call("GET", "apps", None, organization=organization)
+        )
 
     def add_app(
         self,
@@ -153,12 +203,15 @@ class Remote:
         url: str,
         install: Optional[dict] = None,
         organization: Optional[str] = None,
-    ) -> dict:
-        return self._call(
-            "POST",
-            f"projects/{project}/apps",
-            {"url": url, "install": install},
-            organization,
+    ) -> AppAdded:
+        return _as(
+            AppAdded,
+            self._call(
+                "POST",
+                f"projects/{project}/apps",
+                {"url": url, "install": install},
+                organization,
+            ),
         )
 
     def remove_app(
@@ -167,13 +220,16 @@ class Remote:
         app: str,
         repository: bool = False,
         organization: Optional[str] = None,
-    ) -> dict:
-        return self._call(
-            "DELETE",
-            f"projects/{project}/apps/{app}",
-            None,
-            organization,
-            repository="true" if repository else None,
+    ) -> Removed:
+        return _as(
+            Removed,
+            self._call(
+                "DELETE",
+                f"projects/{project}/apps/{app}",
+                None,
+                organization,
+                repository="true" if repository else None,
+            ),
         )
 
     def delete_project(
@@ -181,32 +237,35 @@ class Remote:
         project: str,
         repositories: bool = False,
         organization: Optional[str] = None,
-    ) -> dict:
-        return self._call(
-            "DELETE",
-            f"projects/{project}",
-            None,
-            organization,
-            repositories="true" if repositories else None,
+    ) -> Removed:
+        return _as(
+            Removed,
+            self._call(
+                "DELETE",
+                f"projects/{project}",
+                None,
+                organization,
+                repositories="true" if repositories else None,
+            ),
         )
 
-    def sync_app(self, id: str) -> dict:
-        return self._call("POST", f"apps/{id}/sync")
+    def sync_app(self, id: str) -> AppEntry:
+        return _as(AppEntry, self._call("POST", f"apps/{id}/sync"))
 
-    def app(self, id: str) -> dict:
-        return self._call("GET", f"apps/{id}")
+    def app(self, id: str) -> AppDetail:
+        return _as(AppDetail, self._call("GET", f"apps/{id}"))
 
-    def gitflow(self, id: str) -> dict:
-        return self._call("GET", f"apps/{id}/gitflow")
+    def gitflow(self, id: str) -> GitflowReport:
+        return _as(GitflowReport, self._call("GET", f"apps/{id}/gitflow"))
 
-    def commits(self, id: str, limit: int = 20) -> list[dict]:
-        return self._call("GET", f"apps/{id}/commits", limit=limit)
+    def commits(self, id: str, limit: int = 20) -> list[Commit]:
+        return _as(list[Commit], self._call("GET", f"apps/{id}/commits", limit=limit))
 
-    def branches(self, id: str) -> list[dict]:
-        return self._call("GET", f"apps/{id}/branches")
+    def branches(self, id: str) -> list[BranchRow]:
+        return _as(list[BranchRow], self._call("GET", f"apps/{id}/branches"))
 
     def tags(self, id: str) -> list[str]:
-        return self._call("GET", f"apps/{id}/tags")
+        return _as(list[str], self._call("GET", f"apps/{id}/tags"))
 
     def release(
         self,
@@ -214,32 +273,43 @@ class Remote:
         level: str = "patch",
         dry_run: bool = True,
         branch: Optional[str] = None,
-    ) -> dict:
-        return self._call(
-            "POST",
-            f"apps/{id}/release",
-            {"level": level, "dry_run": dry_run, "branch": branch},
+    ) -> ReleasePreview:
+        return _as(
+            ReleasePreview,
+            self._call(
+                "POST",
+                f"apps/{id}/release",
+                {"level": level, "dry_run": dry_run, "branch": branch},
+            ),
         )
 
-    def releases(self, id: str) -> list[dict]:
-        return self._call("GET", f"apps/{id}/releases")
+    def releases(self, id: str) -> list[ReleaseRow]:
+        return _as(list[ReleaseRow], self._call("GET", f"apps/{id}/releases"))
 
     def start_branch(
         self, id: str, kind: str, code: str, slug: Optional[str], push: bool
-    ) -> dict:
-        return self._call(
-            "POST",
-            f"apps/{id}/branches",
-            {"kind": kind, "code": code, "slug": slug, "push": push},
+    ) -> BranchStarted:
+        return _as(
+            BranchStarted,
+            self._call(
+                "POST",
+                f"apps/{id}/branches",
+                {"kind": kind, "code": code, "slug": slug, "push": push},
+            ),
         )
 
-    def checkout(self, id: str, branch: str) -> dict:
-        return self._call("POST", f"apps/{id}/checkout", {"branch": branch})
+    def checkout(self, id: str, branch: str) -> AppEntry:
+        return _as(
+            AppEntry, self._call("POST", f"apps/{id}/checkout", {"branch": branch})
+        )
 
     def propose_pr(
         self, id: str, base: Optional[str] = None, title: Optional[str] = None
-    ) -> dict:
-        return self._call("GET", f"apps/{id}/pull-request", base=base, title=title)
+    ) -> PullRequestPlan:
+        return _as(
+            PullRequestPlan,
+            self._call("GET", f"apps/{id}/pull-request", base=base, title=title),
+        )
 
     def open_pr(
         self,
@@ -248,22 +318,33 @@ class Remote:
         title: Optional[str],
         body: Optional[str],
         draft: bool,
-    ) -> dict:
-        return self._call(
-            "POST",
-            f"apps/{id}/pull-request",
-            {"base": base, "title": title, "body": body, "draft": draft},
+    ) -> PullRequestOpened:
+        return _as(
+            PullRequestOpened,
+            self._call(
+                "POST",
+                f"apps/{id}/pull-request",
+                {"base": base, "title": title, "body": body, "draft": draft},
+            ),
         )
 
-    def manifest(self, id: str) -> dict:
-        return self._call("GET", f"apps/{id}/manifest")
+    def manifest(self, id: str) -> ManifestText:
+        return _as(ManifestText, self._call("GET", f"apps/{id}/manifest"))
 
-    def write_manifest(self, id: str, content: str) -> dict:
-        return self._call("PUT", f"apps/{id}/manifest", {"content": content})
+    def write_manifest(self, id: str, content: str) -> ConfigurationChanged:
+        return _as(
+            ConfigurationChanged,
+            self._call("PUT", f"apps/{id}/manifest", {"content": content}),
+        )
 
-    def set_cloud(self, id: str, target: str, source: Optional[str] = None) -> dict:
-        return self._call(
-            "POST", f"apps/{id}/cloud", {"target": target, "source": source}
+    def set_cloud(
+        self, id: str, target: str, source: Optional[str] = None
+    ) -> ConfigurationChanged:
+        return _as(
+            ConfigurationChanged,
+            self._call(
+                "POST", f"apps/{id}/cloud", {"target": target, "source": source}
+            ),
         )
 
     def add_service(
@@ -272,11 +353,14 @@ class Remote:
         name: str,
         provider: Optional[str] = None,
         source: Optional[str] = None,
-    ) -> dict:
-        return self._call(
-            "POST",
-            f"apps/{id}/services",
-            {"name": name, "provider": provider, "source": source},
+    ) -> ConfigurationChanged:
+        return _as(
+            ConfigurationChanged,
+            self._call(
+                "POST",
+                f"apps/{id}/services",
+                {"name": name, "provider": provider, "source": source},
+            ),
         )
 
     def commit(
@@ -286,22 +370,28 @@ class Remote:
         push: bool = False,
         branch: Optional[dict] = None,
         pull_request: bool = False,
-    ) -> dict:
-        return self._call(
-            "POST",
-            f"apps/{id}/commit",
-            {
-                "message": message,
-                "push": push,
-                "branch": branch,
-                "pull_request": pull_request,
-            },
+    ) -> Committed:
+        return _as(
+            Committed,
+            self._call(
+                "POST",
+                f"apps/{id}/commit",
+                {
+                    "message": message,
+                    "push": push,
+                    "branch": branch,
+                    "pull_request": pull_request,
+                },
+            ),
         )
 
     def init(
         self, project: str, body: dict, organization: Optional[str] = None
-    ) -> dict:
-        return self._call("POST", f"projects/{project}/apps/init", body, organization)
+    ) -> Initialized:
+        return _as(
+            Initialized,
+            self._call("POST", f"projects/{project}/apps/init", body, organization),
+        )
 
     def deploy(
         self,
@@ -309,33 +399,47 @@ class Remote:
         stage: Optional[str] = None,
         dry_run: bool = True,
         version: Optional[str] = None,
-    ) -> list[dict]:
-        return self._call(
-            "POST",
-            f"apps/{id}/deploy",
-            {"stage": stage, "dry_run": dry_run, "version": version},
+    ) -> list[DeployResult]:
+        return _as(
+            list[DeployResult],
+            self._call(
+                "POST",
+                f"apps/{id}/deploy",
+                {"stage": stage, "dry_run": dry_run, "version": version},
+            ),
         )
 
-    def diagnose(self, id: str, stage: Optional[str] = None) -> list[dict]:
-        return self._call("GET", f"apps/{id}/diagnose", stage=stage)
+    def diagnose(self, id: str, stage: Optional[str] = None) -> list[Diagnosis]:
+        return _as(
+            list[Diagnosis], self._call("GET", f"apps/{id}/diagnose", stage=stage)
+        )
 
-    def job(self, id: str) -> dict:
-        return self._call("GET", f"jobs/{id}")
+    def job(self, id: str) -> Job:
+        return _as(Job, self._call("GET", f"jobs/{id}"))
 
-    def job_logs(self, id: str, after: int = 0, limit: int = 1000) -> dict:
-        return self._call("GET", f"jobs/{id}/logs", after=after, limit=limit)
+    def job_logs(self, id: str, after: int = 0, limit: int = 1000) -> JobLogs:
+        return _as(
+            JobLogs, self._call("GET", f"jobs/{id}/logs", after=after, limit=limit)
+        )
 
-    def scopes(self, project: str, app: str) -> dict:
-        return self._call("GET", f"projects/{project}/apps/{app}/scopes")
+    def scopes(self, project: str, app: str) -> Scopes:
+        return _as(Scopes, self._call("GET", f"projects/{project}/apps/{app}/scopes"))
 
-    def create_scope(self, project: str, app: str, body: dict) -> dict:
-        return self._call("POST", f"projects/{project}/apps/{app}/scopes", body)
+    def create_scope(self, project: str, app: str, body: dict) -> Scopes:
+        return _as(
+            Scopes, self._call("POST", f"projects/{project}/apps/{app}/scopes", body)
+        )
 
-    def deployments(self, project: str, app: str) -> dict:
-        return self._call("GET", f"projects/{project}/apps/{app}/deployments")
+    def deployments(self, project: str, app: str) -> Deployments:
+        return _as(
+            Deployments, self._call("GET", f"projects/{project}/apps/{app}/deployments")
+        )
 
-    def sync_deployments(self, project: str, app: str) -> dict:
-        return self._call("POST", f"projects/{project}/apps/{app}/deployments/sync")
+    def sync_deployments(self, project: str, app: str) -> Deployments:
+        return _as(
+            Deployments,
+            self._call("POST", f"projects/{project}/apps/{app}/deployments/sync"),
+        )
 
     def record_deployment(
         self,
@@ -347,71 +451,87 @@ class Remote:
         url: Optional[str] = None,
         sha: Optional[str] = None,
         ok: bool = True,
-    ) -> dict:
-        return self._call(
-            "POST",
-            f"projects/{project}/apps/{app}/deployments",
-            {
-                "target": target,
-                "version": version,
-                "stage": stage,
-                "url": url,
-                "sha": sha,
-                "ok": ok,
-            },
+    ) -> DeploymentRow:
+        return _as(
+            DeploymentRow,
+            self._call(
+                "POST",
+                f"projects/{project}/apps/{app}/deployments",
+                {
+                    "target": target,
+                    "version": version,
+                    "stage": stage,
+                    "url": url,
+                    "sha": sha,
+                    "ok": ok,
+                },
+            ),
         )
 
-    def matrix(self) -> dict:
-        return self._call("GET", "matrix")
+    def matrix(self) -> Matrix:
+        return _as(Matrix, self._call("GET", "matrix"))
 
-    def version(self) -> dict:
-        return self._call("GET", "version")
+    def version(self) -> Version:
+        return _as(Version, self._call("GET", "version"))
 
-    def whoami(self) -> dict:
-        return (
+    def whoami(self) -> Me:
+        return _as(
+            Me,
             _request(
                 "GET", f"{self.server}/api/v1/me", token=self.token, client=self.client
             )
-            or {}
+            or {},
         )
 
-    def organizations(self) -> list[dict]:
-        return self._call("GET", "organizations")
+    def organizations(self) -> list[OrganizationRow]:
+        return _as(list[OrganizationRow], self._call("GET", "organizations"))
 
-    def projects(self, organization: Optional[str] = None) -> list[dict]:
-        return self._call("GET", "projects", None, organization)
+    def projects(self, organization: Optional[str] = None) -> list[ProjectRow]:
+        return _as(list[ProjectRow], self._call("GET", "projects", None, organization))
 
-    def teams(self, organization: Optional[str] = None) -> list[dict]:
-        return self._call("GET", "teams", None, organization)
+    def teams(self, organization: Optional[str] = None) -> list[TeamRow]:
+        return _as(list[TeamRow], self._call("GET", "teams", None, organization))
 
-    def members(self, organization: Optional[str] = None) -> list[dict]:
-        return self._call("GET", "members", None, organization)
+    def members(self, organization: Optional[str] = None) -> list[MemberRow]:
+        return _as(list[MemberRow], self._call("GET", "members", None, organization))
 
     def create_project(
         self, name: str, description: str = "", organization: Optional[str] = None
-    ) -> dict:
-        return self._call(
-            "POST",
-            "projects",
-            {"name": name, "description": description},
-            organization,
+    ) -> Created:
+        return _as(
+            Created,
+            self._call(
+                "POST",
+                "projects",
+                {"name": name, "description": description},
+                organization,
+            ),
         )
 
     def create_team(
         self, name: str, description: str = "", organization: Optional[str] = None
-    ) -> dict:
-        return self._call(
-            "POST", "teams", {"name": name, "description": description}, organization
+    ) -> Created:
+        return _as(
+            Created,
+            self._call(
+                "POST",
+                "teams",
+                {"name": name, "description": description},
+                organization,
+            ),
         )
 
     def add_team_member(
         self, team_id: str, user_id: str, organization: Optional[str] = None
-    ) -> dict:
-        return self._call(
-            "POST",
-            "teams/members",
-            {"team_id": team_id, "user_id": user_id},
-            organization,
+    ) -> Ok:
+        return _as(
+            Ok,
+            self._call(
+                "POST",
+                "teams/members",
+                {"team_id": team_id, "user_id": user_id},
+                organization,
+            ),
         )
 
     def assign_project_team(
@@ -419,12 +539,15 @@ class Remote:
         project_id: str,
         team_id: Optional[str],
         organization: Optional[str] = None,
-    ) -> dict:
-        return self._call(
-            "POST",
-            "projects/team",
-            {"project_id": project_id, "team_id": team_id},
-            organization,
+    ) -> Ok:
+        return _as(
+            Ok,
+            self._call(
+                "POST",
+                "projects/team",
+                {"project_id": project_id, "team_id": team_id},
+                organization,
+            ),
         )
 
     def identity_token(
@@ -442,9 +565,12 @@ class Remote:
 
     def set_member_role(
         self, user_id: str, role: str, organization: Optional[str] = None
-    ) -> dict:
-        return self._call(
-            "POST", "members/role", {"user_id": user_id, "role": role}, organization
+    ) -> Ok:
+        return _as(
+            Ok,
+            self._call(
+                "POST", "members/role", {"user_id": user_id, "role": role}, organization
+            ),
         )
 
 
