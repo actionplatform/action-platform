@@ -25,9 +25,8 @@ class ApiTokenTest(ApiCase):
         from app.api.app import build
 
         from action_platform.core.exception import ConfigError
-        from action_platform.settings import settings
 
-        self.patch(settings, "ALLOW_UNAUTHENTICATED_API", False)
+        self.setenv("AP_ALLOW_UNAUTHENTICATED", "0")
 
         with self.assertRaisesRegex(ConfigError, "AP_API_TOKEN"):
             build(token="", database_url="sqlite://")
@@ -77,9 +76,7 @@ class CatalogIndexTest(ApiCase):
         from app.services.templates import published
         from app.services.templates import service as catalog
 
-        from action_platform.settings import settings
-
-        self.patch(settings, "TEMPLATES_DIR", None)
+        self.delenv("ACTION_PLATFORM_TEMPLATES")
         data = {
             "types": [{"id": "web", "label": "Web application", "description": "APIs"}],
             "stacks": [
@@ -156,9 +153,8 @@ class CatalogIndexTest(ApiCase):
         from app.services.templates import service as catalog
 
         from action_platform.core import extensions
-        from action_platform.settings import settings
 
-        self.patch(settings, "TEMPLATES_DIR", None)
+        self.delenv("ACTION_PLATFORM_TEMPLATES")
         fake = published.TemplatesIndex("https://example.com/templates/index.json")
         fake.cached = {
             "types": [],
@@ -204,10 +200,9 @@ class CatalogIndexTest(ApiCase):
         from app.services.templates import published
         from app.services.templates import service as catalog
 
-        from action_platform.settings import settings
         from action_platform.testing.fixtures import template_repo
 
-        self.patch(settings, "TEMPLATES_DIR", str(template_repo(self.tmp_path)))
+        self.setenv("ACTION_PLATFORM_TEMPLATES", str(template_repo(self.tmp_path)))
         dead = published.TemplatesIndex("http://127.0.0.1:9/index.json", ttl=600)
         self.patch(catalog, "index", dead)
 

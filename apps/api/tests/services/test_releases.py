@@ -32,10 +32,10 @@ class CredentialsArriveWithTheRequestTest(ApiCase):
     def test_manifest_with_a_source_host_loads_without_a_token(self):
         from unittest import mock
 
-        from action_platform.settings import settings
-
         with (
-            mock.patch.object(settings, "GITHUB_TOKEN", None),
+            mock.patch.dict(
+                "os.environ", {"ACTION_PLATFORM_GITHUB_TOKEN": "", "GH_TOKEN": ""}
+            ),
             mock.patch("shutil.which", lambda _: None),
         ):
             id = self.add_app()

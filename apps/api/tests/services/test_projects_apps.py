@@ -5,7 +5,6 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from action_platform.settings import settings
 from action_platform.testing.fixtures import git, template_repo
 from tests.support import ApiCase
 
@@ -85,7 +84,7 @@ class AppsCrudTest(ApiCase):
 
 class UrlPolicyTest(ApiCase):
     def test_only_https_urls_are_cloned(self):
-        self.patch(settings, "ALLOW_FILE_URLS", False)
+        self.setenv("AP_ALLOW_FILE_URLS", "0")
 
         for bad in [
             self.url,
@@ -97,7 +96,7 @@ class UrlPolicyTest(ApiCase):
             self.assertEqual(res.status_code, 400, bad)
             self.assertIn("https:// only", res.json()["detail"])
 
-        self.patch(settings, "GIT_HOSTS", ["github.com"])
+        self.setenv("ACTION_PLATFORM_GIT_HOSTS", "github.com")
         res = self.client.post(
             "/api/apps", json={"url": "https://gitlab.com/acme/repo.git"}
         )
@@ -111,7 +110,7 @@ class InitTest(ApiCase):
         self.templates = template_repo(
             self.tmp_path / "templates", template="mini", rendered=True
         )
-        self.patch(settings, "TEMPLATES_DIR", str(self.templates))
+        self.setenv("ACTION_PLATFORM_TEMPLATES", str(self.templates))
         self.fake_push()
 
     def test_generates_pushes_and_registers(self):
@@ -172,8 +171,8 @@ class InitTest(ApiCase):
 class LegacyImportCase(ApiCase):
     def setUp(self):
         super().setUp()
-        self.patch(
-            settings, "TEMPLATES_DIR", str(template_repo(self.tmp_path / "official"))
+        self.setenv(
+            "ACTION_PLATFORM_TEMPLATES", str(template_repo(self.tmp_path / "official"))
         )
         self.bare = self.tmp_path / "legacy"
         self.bare.mkdir()

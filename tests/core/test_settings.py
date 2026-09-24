@@ -5,14 +5,15 @@ import sys
 from pathlib import Path
 from unittest import mock, skipUnless
 
+from action_platform.options import WorkspacesConfig
 from action_platform.settings import Settings, database_url_from_parts, secret
 from tests.support import TempCase
 
 RECORD_READS = """
 import action_platform.settings as s
 seen = []
-for key, read in list(s.FIELDS.items()):
-    s.FIELDS[key] = (lambda key, read: lambda env: (seen.append(key), read(env))[1])(key, read)
+for key, read in list(s.SLICES.items()):
+    s.SLICES[key] = (lambda key, read: lambda env: (seen.append(key), read(env))[1])(key, read)
 """
 
 
@@ -97,11 +98,11 @@ class LazySettingsTest(TempCase):
         fresh = Settings()
         self.setenv("AP_SENTRY_DSN", "https://key@example.com/1")
 
-        self.assertEqual(fresh.SENTRY_DSN, "https://key@example.com/1")
+        self.assertEqual(fresh.observability.dsn, "https://key@example.com/1")
 
         self.setenv("AP_SENTRY_DSN", "https://key@example.com/2")
 
-        self.assertEqual(fresh.SENTRY_DSN, "https://key@example.com/2")
+        self.assertEqual(fresh.observability.dsn, "https://key@example.com/2")
 
     def test_from_env_answers_from_its_own_mapping(self):
         self.setenv("AP_WORKSPACE_TTL", "99")
@@ -110,12 +111,12 @@ class LazySettingsTest(TempCase):
             {"AP_WORKSPACE_TTL": "3", "AP_DB_HOST": "db", "AP_DB_PASSWORD": "pw"}
         )
 
-        self.assertEqual(own.WORKSPACE_TTL, 3)
+        self.assertEqual(own.workspaces.ttl, 3)
         self.assertEqual(
-            own.DATABASE_URL, "postgres://action_platform:pw@db:5432/action_platform"
+            own.database.url, "postgres://action_platform:pw@db:5432/action_platform"
         )
         self.assertEqual(own.env("AP_WORKSPACE_TTL"), "3")
-        self.assertEqual(Settings.from_env({}).WORKSPACE_TTL, 15)
+        self.assertEqual(Settings.from_env({}).workspaces.ttl, 15)
 
     def test_secret_reads_the_mapping_it_is_given(self):
         self.setenv("AP_API_TOKEN", "from-process")
@@ -127,12 +128,12 @@ class LazySettingsTest(TempCase):
         fresh = Settings()
         self.setenv("AP_WORKSPACE_TTL", "7")
 
-        with mock.patch.object(fresh, "WORKSPACE_TTL", 0):
-            self.assertEqual(fresh.WORKSPACE_TTL, 0)
+        with mock.patch.object(fresh, "workspaces", WorkspacesConfig(ttl=0)):
+            self.assertEqual(fresh.workspaces.ttl, 0)
 
         self.setenv("AP_WORKSPACE_TTL", "8")
 
-        self.assertEqual(fresh.WORKSPACE_TTL, 8)
+        self.assertEqual(fresh.workspaces.ttl, 8)
 
     def test_an_unknown_setting_is_an_attribute_error(self):
         with self.assertRaises(AttributeError):

@@ -5,7 +5,6 @@ from __future__ import annotations
 import unittest
 from datetime import timedelta
 
-from action_platform.settings import settings
 from action_platform.testing.fixtures import TempCase
 
 try:
@@ -24,7 +23,7 @@ class AuthCase(TempCase):
         from app.api.routes.auth.support import LIMITS
 
         self.setenv("AP_HOME", str(self.tmp_path / "home"))
-        self.patch(settings, "ALLOW_UNAUTHENTICATED_API", True)
+        self.setenv("AP_ALLOW_UNAUTHENTICATED", "1")
         for limiter in LIMITS.values():
             limiter.hits.clear()
         self.app = build(

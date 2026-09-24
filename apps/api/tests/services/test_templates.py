@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from action_platform.settings import settings
 from action_platform.testing.fixtures import git, template_repo
 from tests.support import ApiCase
 
@@ -12,8 +11,8 @@ from tests.support import ApiCase
 class CatalogCase(ApiCase):
     def setUp(self):
         super().setUp()
-        self.patch(
-            settings, "TEMPLATES_DIR", str(template_repo(self.tmp_path / "official"))
+        self.setenv(
+            "ACTION_PLATFORM_TEMPLATES", str(template_repo(self.tmp_path / "official"))
         )
 
     def committed(self, root: Path, branch: str = "v1") -> Path:

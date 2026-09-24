@@ -6,7 +6,6 @@ import asyncio
 import json
 import unittest
 
-from action_platform.settings import settings
 from tests.support import INDEX, TempCase
 
 try:
@@ -24,7 +23,7 @@ class McpCase(TempCase):
         from action_platform.mcp import build
 
         (self.tmp_path / "index.json").write_text(INDEX)
-        self.patch(settings, "TEMPLATES_DIR", str(self.tmp_path))
+        self.setenv("ACTION_PLATFORM_TEMPLATES", str(self.tmp_path))
         self.server = build()
 
     def call(self, name: str, **kwargs):

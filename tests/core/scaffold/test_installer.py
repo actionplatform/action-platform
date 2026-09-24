@@ -6,7 +6,6 @@ import subprocess
 
 from action_platform.core.scaffold import installer
 from action_platform.core.scaffold.installer import InstallError
-from action_platform.settings import settings
 from tests.support import TempCase, git, install_templates
 
 
@@ -14,7 +13,7 @@ class InstallCase(TempCase):
     def setUp(self):
         super().setUp()
         self.templates = install_templates(self.tmp_path / "templates")
-        self.patch(settings, "TEMPLATES_DIR", str(self.templates))
+        self.setenv("ACTION_PLATFORM_TEMPLATES", str(self.templates))
         self.repo = self.tmp_path / "existing"
         self.repo.mkdir()
         git(self.repo, "init", "-q", "-b", "master")
@@ -173,11 +172,10 @@ class HooksTest(InstallCase):
 
 class CiFollowsTheRemoteTest(TempCase):
     def test_a_gitlab_remote_gets_gitlab_ci(self):
-        from action_platform.settings import settings
         from tests.support import git, template_repo
 
-        self.patch(
-            settings, "TEMPLATES_DIR", str(template_repo(self.tmp_path / "official"))
+        self.setenv(
+            "ACTION_PLATFORM_TEMPLATES", str(template_repo(self.tmp_path / "official"))
         )
         repo = self.tmp_path / "svc"
         repo.mkdir()
@@ -194,11 +192,10 @@ class CiFollowsTheRemoteTest(TempCase):
         self.assertFalse(any(".github" in f for f in plan.created))
 
     def test_a_bitbucket_remote_gets_bitbucket_pipelines(self):
-        from action_platform.settings import settings
         from tests.support import git, template_repo
 
-        self.patch(
-            settings, "TEMPLATES_DIR", str(template_repo(self.tmp_path / "official"))
+        self.setenv(
+            "ACTION_PLATFORM_TEMPLATES", str(template_repo(self.tmp_path / "official"))
         )
         repo = self.tmp_path / "svc"
         repo.mkdir()

@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 from action_platform.core.flow import git
-from action_platform.settings import settings
 from tests.support import TempCase
 
 
 class RemoteUrlPolicyTest(TempCase):
     def setUp(self):
         super().setUp()
-        self.patch(settings, "ALLOW_FILE_URLS", False)
-        self.patch(settings, "ALLOW_INSECURE_HTTP", False)
-        self.patch(settings, "GIT_HOSTS", [])
+        self.setenv("AP_ALLOW_FILE_URLS", "0")
+        self.setenv("AP_ALLOW_INSECURE_HTTP", "0")
+        self.delenv("ACTION_PLATFORM_GIT_HOSTS")
 
     def test_https_only_by_default(self):
         self.assertEqual(
@@ -32,14 +31,14 @@ class RemoteUrlPolicyTest(TempCase):
                 git.check_remote_url(bad)
 
     def test_operator_opt_ins(self):
-        self.patch(settings, "ALLOW_INSECURE_HTTP", True)
-        self.patch(settings, "ALLOW_FILE_URLS", True)
+        self.setenv("AP_ALLOW_INSECURE_HTTP", "1")
+        self.setenv("AP_ALLOW_FILE_URLS", "1")
 
         git.check_remote_url("http://gitlab.internal/a/b.git")
         git.check_remote_url("file:///tmp/x")
 
     def test_host_allowlist_includes_subdomains(self):
-        self.patch(settings, "GIT_HOSTS", ["github.com", "gitlab.acme.com"])
+        self.setenv("ACTION_PLATFORM_GIT_HOSTS", "github.com,gitlab.acme.com")
 
         git.check_remote_url("https://github.com/a/b.git")
         git.check_remote_url("https://code.gitlab.acme.com/a/b.git")
