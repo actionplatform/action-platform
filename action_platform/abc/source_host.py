@@ -11,7 +11,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
-    from action_platform.core.context import Context, PRRef, ReleaseRef
+    from action_platform.core.context import (
+        Context,
+        PRRef,
+        PullRequestRow,
+        ReleaseRef,
+        ReleaseRow,
+    )
 
 
 class SourceHost(ABC):
@@ -76,13 +82,13 @@ class SupportsRepoDeletion(Protocol):
 class PublishesReleases(Protocol):
     """A host that lists the releases it publishes."""
 
-    def releases(self, repo: str) -> list[dict]:
-        """The releases the host publishes for `repo`, newest first: tag, name, body, url, author, sha, prerelease, draft, published_at, source."""
+    def releases(self, repo: str) -> "list[ReleaseRow]":
+        """The releases the host publishes for `repo`, newest first."""
 
 
 @runtime_checkable
 class ListsPullRequests(Protocol):
     """A host that lists pull (merge) requests."""
 
-    def pull_requests(self, repo: str) -> list[dict]:
-        """The pull (merge) requests of `repo`: number, title, url, author, head, base, state (open|merged|closed), draft, created_at, updated_at, merged_at, source."""
+    def pull_requests(self, repo: str) -> "list[PullRequestRow]":
+        """The pull (merge) requests of `repo`."""

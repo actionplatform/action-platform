@@ -14,7 +14,13 @@ import subprocess
 from pathlib import Path
 
 from action_platform.abc.source_host import SourceHost
-from action_platform.core.context import Context, PRRef, ReleaseRef
+from action_platform.core.context import (
+    Context,
+    PRRef,
+    PullRequestRow,
+    ReleaseRef,
+    ReleaseRow,
+)
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import rest
 from action_platform.settings import settings
@@ -271,47 +277,47 @@ class SourceGithub(SourceHost):
 
         return headers
 
-    def releases(self, repo: str) -> list[dict]:
+    def releases(self, repo: str) -> list[ReleaseRow]:
         return [
-            {
-                "tag": r["tag_name"],
-                "name": r.get("name"),
-                "body": r.get("body"),
-                "url": r.get("html_url"),
-                "author": (r.get("author") or {}).get("login"),
-                "sha": None,
-                "prerelease": bool(r.get("prerelease")),
-                "draft": bool(r.get("draft")),
-                "published_at": rest.parse_utc(
+            ReleaseRow(
+                tag=r["tag_name"],
+                name=r.get("name"),
+                body=r.get("body"),
+                url=r.get("html_url"),
+                author=(r.get("author") or {}).get("login"),
+                sha=None,
+                prerelease=bool(r.get("prerelease")),
+                draft=bool(r.get("draft")),
+                published_at=rest.parse_utc(
                     r.get("published_at") or r.get("created_at")
                 ),
-                "source": "github",
-            }
+                source="github",
+            )
             for r in rest.get_pages(
                 f"{self.api}/repos/{repo}/releases", self._read_headers()
             )
         ]
 
-    def pull_requests(self, repo: str) -> list[dict]:
+    def pull_requests(self, repo: str) -> list[PullRequestRow]:
         return [
-            {
-                "number": r["number"],
-                "title": r["title"],
-                "url": r["html_url"],
-                "author": (r.get("user") or {}).get("login"),
-                "head": r["head"]["ref"],
-                "base": r["base"]["ref"],
-                "state": "merged"
+            PullRequestRow(
+                number=r["number"],
+                title=r["title"],
+                url=r["html_url"],
+                author=(r.get("user") or {}).get("login"),
+                head=r["head"]["ref"],
+                base=r["base"]["ref"],
+                state="merged"
                 if r.get("merged_at")
                 else "open"
                 if r.get("state") == "open"
                 else "closed",
-                "draft": bool(r.get("draft")),
-                "created_at": rest.parse_utc(r["created_at"]),
-                "updated_at": rest.parse_utc(r["updated_at"]),
-                "merged_at": rest.parse_utc(r.get("merged_at")),
-                "source": "github",
-            }
+                draft=bool(r.get("draft")),
+                created_at=rest.parse_utc(r["created_at"]),
+                updated_at=rest.parse_utc(r["updated_at"]),
+                merged_at=rest.parse_utc(r.get("merged_at")),
+                source="github",
+            )
             for r in rest.get_pages(
                 f"{self.api}/repos/{repo}/pulls?state=all&sort=updated&direction=desc",
                 self._read_headers(),

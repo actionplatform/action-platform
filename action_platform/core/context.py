@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Literal, Optional
 
 
 @dataclass
@@ -19,6 +19,40 @@ class ReleaseRef:
 class PRRef:
     number: int
     url: str
+
+
+@dataclass
+class ReleaseRow:
+    """One release a source host publishes, in the platform's shape."""
+
+    tag: str
+    name: str | None
+    body: str | None
+    url: str | None
+    author: str | None
+    sha: str | None
+    prerelease: bool
+    draft: bool
+    published_at: Optional[datetime]
+    source: str
+
+
+@dataclass
+class PullRequestRow:
+    """One pull (merge) request of a source host, in the platform's shape."""
+
+    number: int
+    title: str
+    url: str | None
+    author: str | None
+    head: str
+    base: str
+    state: Literal["open", "merged", "closed"]
+    draft: bool
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+    merged_at: Optional[datetime]
+    source: str
 
 
 @dataclass

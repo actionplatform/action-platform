@@ -8,7 +8,13 @@ import urllib.parse
 from pathlib import Path
 
 from action_platform.abc.source_host import SourceHost
-from action_platform.core.context import Context, PRRef, ReleaseRef
+from action_platform.core.context import (
+    Context,
+    PRRef,
+    PullRequestRow,
+    ReleaseRef,
+    ReleaseRow,
+)
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import rest
 from action_platform.settings import settings
@@ -155,54 +161,54 @@ class SourceGitlab(SourceHost):
 
         return PRRef(number=data["iid"], url=data["web_url"])
 
-    def releases(self, repo: str) -> list[dict]:
+    def releases(self, repo: str) -> list[ReleaseRow]:
         headers = {"authorization": f"Bearer {self.token}"} if self.token else {}
 
         return [
-            {
-                "tag": r["tag_name"],
-                "name": r.get("name"),
-                "body": r.get("description"),
-                "url": ((r.get("_links") or {}).get("self"))
+            ReleaseRow(
+                tag=r["tag_name"],
+                name=r.get("name"),
+                body=r.get("description"),
+                url=((r.get("_links") or {}).get("self"))
                 or f"{self.web}/{repo}/-/releases/{r['tag_name']}",
-                "author": (r.get("author") or {}).get("username"),
-                "sha": ((r.get("commit") or {}).get("id") or "")[:7] or None,
-                "prerelease": bool(r.get("upcoming_release"))
+                author=(r.get("author") or {}).get("username"),
+                sha=((r.get("commit") or {}).get("id") or "")[:7] or None,
+                prerelease=bool(r.get("upcoming_release"))
                 or bool(RC.search(r["tag_name"])),
-                "draft": False,
-                "published_at": rest.parse_utc(
+                draft=False,
+                published_at=rest.parse_utc(
                     r.get("released_at") or r.get("created_at")
                 ),
-                "source": "gitlab",
-            }
+                source="gitlab",
+            )
             for r in rest.get_pages(
                 f"{self.api}/projects/{urllib.parse.quote(repo, safe='')}/releases",
                 headers,
             )
         ]
 
-    def pull_requests(self, repo: str) -> list[dict]:
+    def pull_requests(self, repo: str) -> list[PullRequestRow]:
         headers = {"authorization": f"Bearer {self.token}"} if self.token else {}
 
         return [
-            {
-                "number": r["iid"],
-                "title": r["title"],
-                "url": r["web_url"],
-                "author": (r.get("author") or {}).get("username"),
-                "head": r["source_branch"],
-                "base": r["target_branch"],
-                "state": "merged"
+            PullRequestRow(
+                number=r["iid"],
+                title=r["title"],
+                url=r["web_url"],
+                author=(r.get("author") or {}).get("username"),
+                head=r["source_branch"],
+                base=r["target_branch"],
+                state="merged"
                 if r.get("state") == "merged"
                 else "open"
                 if r.get("state") == "opened"
                 else "closed",
-                "draft": bool(r.get("draft")),
-                "created_at": rest.parse_utc(r["created_at"]),
-                "updated_at": rest.parse_utc(r["updated_at"]),
-                "merged_at": rest.parse_utc(r.get("merged_at")),
-                "source": "gitlab",
-            }
+                draft=bool(r.get("draft")),
+                created_at=rest.parse_utc(r["created_at"]),
+                updated_at=rest.parse_utc(r["updated_at"]),
+                merged_at=rest.parse_utc(r.get("merged_at")),
+                source="gitlab",
+            )
             for r in rest.get_pages(
                 f"{self.api}/projects/{urllib.parse.quote(repo, safe='')}/merge_requests?state=all&order_by=updated_at",
                 headers,

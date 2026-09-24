@@ -1,6 +1,7 @@
 """Releases and pull requests of an app, imported from its code host into the `release` and `pull_request` tables; the clone's tags land in `release` too, so every tag has a row."""
 
 import uuid
+from dataclasses import asdict
 from typing import Any, Optional
 
 from sqlalchemy import select
@@ -11,6 +12,7 @@ from action_platform.abc.source_host import (
     PublishesReleases,
     SourceHost,
 )
+from action_platform.core.context import PullRequestRow, ReleaseRow
 from action_platform.core.exception import ConfigError, ProviderError
 from action_platform.providers.source import build_source_host
 from app.core.db.models import PullRequest
@@ -38,7 +40,7 @@ class ActivityService:
         except ConfigError:
             return None
 
-    def remote_releases(self, creds: Credentials, repo: str) -> list[dict[str, Any]]:
+    def remote_releases(self, creds: Credentials, repo: str) -> list[ReleaseRow]:
         source = self.source_for(creds, repo)
 
         if not isinstance(source, PublishesReleases):
@@ -48,7 +50,7 @@ class ActivityService:
 
     def remote_pull_requests(
         self, creds: Credentials, repo: str
-    ) -> list[dict[str, Any]]:
+    ) -> list[PullRequestRow]:
         source = self.source_for(creds, repo)
 
         if not isinstance(source, ListsPullRequests):
@@ -66,11 +68,18 @@ class ActivityService:
         store = ReleaseStore(self.db)
 
         for item in remote:
-            fields = {
-                k: v for k, v in item.items() if k not in ("tag", "sha", "source")
-            }
             store.ensure(
-                app_id, item["tag"], item["source"], sha=item.get("sha"), **fields
+                app_id,
+                item.tag,
+                item.source,
+                sha=item.sha,
+                name=item.name,
+                body=item.body,
+                url=item.url,
+                author=item.author,
+                prerelease=item.prerelease,
+                draft=item.draft,
+                published_at=item.published_at,
             )
 
         return len(remote)
@@ -94,13 +103,13 @@ class ActivityService:
         }
 
         for item in remote:
-            row = by_number.get(item["number"])
+            row = by_number.get(item.number)
 
             if row is None:
                 row = PullRequest(id=str(uuid.uuid4()), app_id=app_id)
                 self.db.add(row)
 
-            for key, value in item.items():
+            for key, value in asdict(item).items():
                 setattr(row, key, value)
 
         self.db.flush()
