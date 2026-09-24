@@ -2,10 +2,9 @@
 
 from app.services.templates.published import TemplatesIndex, index, plugins_index
 from app.services.templates.service import CatalogService
-from app.services.templates.sources import OFFICIAL_REF, MatrixView, TemplateRepos
+from app.services.templates.sources import MatrixView, TemplateRepos
 
 __all__ = [
-    "OFFICIAL_REF",
     "CatalogService",
     "MatrixView",
     "TemplateRepos",

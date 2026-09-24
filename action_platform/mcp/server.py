@@ -8,6 +8,7 @@ from typing import Optional
 from mcp.server.mcpserver import MCPServer
 
 from action_platform import __version__
+from action_platform.env import load
 from action_platform.mcp import annotations, prompts
 from action_platform.mcp.tools import remote as remote_tools
 from action_platform.remote.client import Remote
@@ -150,6 +151,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
 
 
 def main(argv: Optional[list[str]] = None) -> None:
+    load()
     args = parse_args(argv)
     mcp = build(remote=args.remote)
 

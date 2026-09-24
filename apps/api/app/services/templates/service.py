@@ -13,7 +13,7 @@ from action_platform.settings import settings
 from app import api_version
 from app.schemas import SourceSpec
 from app.services.templates.published import index
-from app.services.templates.sources import OFFICIAL_REF, MatrixView, TemplateRepos
+from app.services.templates.sources import MatrixView, TemplateRepos
 
 
 class CatalogService:
@@ -28,16 +28,16 @@ class CatalogService:
             base = index.raw_base
         else:
             _, official = load_matrix()
-            base = MatrixView.raw_base(settings.TEMPLATES_REPO, OFFICIAL_REF)
+            base = MatrixView.raw_base(settings.TEMPLATES_REPO, settings.TEMPLATES_REF)
 
         out = MatrixView(
-            official, OFFICIAL, base, settings.TEMPLATES_REPO, OFFICIAL_REF
+            official, OFFICIAL, base, settings.TEMPLATES_REPO, settings.TEMPLATES_REF
         ).as_dict()
         out["sources"] = [
             {
                 "name": OFFICIAL,
                 "url": settings.TEMPLATES_REPO,
-                "ref": OFFICIAL_REF,
+                "ref": settings.TEMPLATES_REF,
                 "ok": True,
                 "projects": len(official.leaves),
                 "clouds": len(official.clouds),
