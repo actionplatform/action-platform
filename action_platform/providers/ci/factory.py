@@ -3,14 +3,21 @@
 from __future__ import annotations
 
 from action_platform.abc.ci_runner import CIRunner
-from action_platform.core.exception import ConfigError
 from action_platform.providers.ci.bitbucket_pipelines import CIBitbucket
 from action_platform.providers.ci.github_actions import CIGithubActions
 from action_platform.providers.ci.gitlab_ci import CIGitlab
 from action_platform.providers.ci.jenkins import CIJenkins
 from action_platform.providers.ci.none import CINone
+from action_platform.providers.registry import ProviderRegistry
 
-CI_KINDS = ("github_actions", "gitlab_ci", "bitbucket_pipelines", "jenkins", "none")
+CI_RUNNERS: ProviderRegistry[CIRunner] = ProviderRegistry("ci")
+CI_RUNNERS.register(CIGithubActions)
+CI_RUNNERS.register(CIGitlab)
+CI_RUNNERS.register(CIBitbucket)
+CI_RUNNERS.register(CIJenkins)
+CI_RUNNERS.register(CINone)
+
+CI_KINDS = CI_RUNNERS.kinds()
 
 EMBEDDED_CI = {
     "github": "github_actions",
@@ -32,22 +39,19 @@ def build_ci_runner(
     repo: str | None = None,
 ) -> CIRunner:
     """A CIRunner for `kind`. Embedded kinds take the source host's `repo` and `token`; servers take their own `base_url`, `username` and `token`."""
-    if kind == "github_actions":
-        return CIGithubActions(repo=repo or "", token=token, base_url=base_url)
-
-    if kind == "gitlab_ci":
-        return CIGitlab(repo=repo or "", token=token, base_url=base_url)
-
-    if kind == "bitbucket_pipelines":
-        return CIBitbucket(repo=repo or "", token=token, username=username)
-
-    if kind == "jenkins":
-        return CIJenkins(base_url=base_url or "", token=token, username=username)
-
-    if kind in ("none", "", None):
-        return CINone()
-
-    raise ConfigError(f"unknown ci kind: {kind} (available: {', '.join(CI_KINDS)})")
+    return CI_RUNNERS.build(
+        kind or "none",
+        repo=repo or "",
+        token=token,
+        username=username,
+        base_url=base_url,
+    )
 
 
-__all__ = ["CI_KINDS", "EMBEDDED_CI", "build_ci_runner", "embedded_ci_kind"]
+__all__ = [
+    "CI_KINDS",
+    "CI_RUNNERS",
+    "EMBEDDED_CI",
+    "build_ci_runner",
+    "embedded_ci_kind",
+]

@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 from action_platform.abc.source_host import SourceHost
-from action_platform.core.exception import ConfigError
+from action_platform.providers.registry import ProviderRegistry
 from action_platform.providers.source.bitbucket import SourceBitbucket
 from action_platform.providers.source.generic import SourceGeneric
 from action_platform.providers.source.github import SourceGithub
 from action_platform.providers.source.gitlab import SourceGitlab
 
-SOURCE_HOST_KINDS = ("github", "gitlab", "bitbucket", "generic")
+SOURCE_HOSTS: ProviderRegistry[SourceHost] = ProviderRegistry("source_host")
+SOURCE_HOSTS.register(SourceGithub)
+SOURCE_HOSTS.register(SourceGitlab)
+SOURCE_HOSTS.register(SourceBitbucket)
+SOURCE_HOSTS.register(SourceGeneric, "other")
+
+SOURCE_HOST_KINDS = SOURCE_HOSTS.kinds()
 
 
 def build_source_host(
@@ -20,25 +26,9 @@ def build_source_host(
     username: str | None = None,
 ) -> SourceHost:
     """A SourceHost for `kind`. Tokens default to the environment (see settings)."""
-    if kind == "github":
-        return SourceGithub(repo=repo, token=token, base_url=base_url)
-
-    if kind == "gitlab":
-        return SourceGitlab(repo=repo, token=token, base_url=base_url)
-
-    if kind == "bitbucket":
-        return SourceBitbucket(
-            repo=repo, token=token, username=username, base_url=base_url
-        )
-
-    if kind in ("generic", "other"):
-        return SourceGeneric(
-            repo=repo, token=token, username=username, base_url=base_url
-        )
-
-    raise ConfigError(
-        f"unknown source_host kind: {kind} (available: {', '.join(SOURCE_HOST_KINDS)})"
+    return SOURCE_HOSTS.build(
+        kind, repo=repo, token=token, username=username, base_url=base_url
     )
 
 
-__all__ = ["SOURCE_HOST_KINDS", "SourceHost", "build_source_host"]
+__all__ = ["SOURCE_HOSTS", "SOURCE_HOST_KINDS", "SourceHost", "build_source_host"]
