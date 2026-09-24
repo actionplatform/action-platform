@@ -125,6 +125,12 @@ class GithubProvider(HostProvider):
 
         return data
 
+    def owner(self, access_token: str, installation_id: Optional[str]) -> Optional[str]:
+        if not installation_id:
+            return None
+
+        return self.installation_owner(access_token, installation_id)
+
     def installation_owner(
         self, access_token: str, installation_id: str
     ) -> Optional[str]:

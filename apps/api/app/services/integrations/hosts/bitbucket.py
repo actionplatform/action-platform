@@ -75,6 +75,9 @@ class BitbucketProvider(HostProvider):
 
         return user["username"], user.get("display_name")
 
+    def owner(self, access_token: str, installation_id: Optional[str]) -> Optional[str]:
+        return self.first_workspace(access_token)
+
     def first_workspace(self, access_token: str) -> Optional[str]:
         """The workspace new repositories default to: owned first, then collaborated, then any."""
         try:

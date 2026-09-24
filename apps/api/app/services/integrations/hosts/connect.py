@@ -37,7 +37,7 @@ class HostConnector:
         try:
             access, refresh, expires_at = host.exchange_code(app, origin, code)
             login, _ = host.identity(app, access)
-            owner = self._owner(provider, access, installation_id)
+            owner = host.owner(access, installation_id)
             self.writes.connect_oauth_host(
                 org.id,
                 provider,
@@ -50,18 +50,6 @@ class HostConnector:
             )
         except ActionPlatformError as e:
             raise HostConnectError(str(e)) from e
-
-    @staticmethod
-    def _owner(
-        provider: str, access: str, installation_id: Optional[str]
-    ) -> Optional[str]:
-        if installation_id:
-            return PROVIDERS.github.installation_owner(access, installation_id)
-
-        if provider == "bitbucket":
-            return PROVIDERS.bitbucket.first_workspace(access)
-
-        return None
 
     def create_github_app(self, code: str) -> str:
         """Turn a manifest code into a stored GitHub App and answer its slug. Raises HostConnectError when GitHub refuses."""

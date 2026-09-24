@@ -118,6 +118,10 @@ class HostProvider(ABC):
         """(login, display name) of the account behind the token."""
 
     @abstractmethod
+    def owner(self, access_token: str, installation_id: Optional[str]) -> Optional[str]:
+        """The account new repositories default to right after connecting, None to use the login."""
+
+    @abstractmethod
     def access(self, creds: "Credentials", app_slug: Optional[str]) -> AccessReport:
         """What the connected account may create with: accounts, installations or workspaces, with what is wrong about each."""
 
