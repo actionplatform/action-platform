@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import unittest
 
+from pydantic import ValidationError
+
 from action_platform.cli.commands.login import _describe
 from action_platform.remote.credentials import Credentials
 from action_platform.remote.schemas import Me
 
 
 class DescribeTest(unittest.TestCase):
-    def test_names_the_reach_from_objects_or_strings(self):
+    def test_names_the_reach(self):
         creds = Credentials("https://p.example", "t", "read write")
         who = Me(
             user={"email": "me@example.com"},
@@ -28,3 +30,11 @@ class DescribeTest(unittest.TestCase):
             _describe(creds, Me(user={"email": "me@example.com"})),
             "me@example.com — scope: read write",
         )
+        self.assertEqual(
+            _describe(creds, Me(user={}, project={"id": "p1"})),
+            "? — scope: read write — on p1",
+        )
+
+    def test_a_reach_that_is_not_an_object_is_refused_at_the_boundary(self):
+        with self.assertRaises(ValidationError):
+            Me.model_validate({"user": {}, "project": "shop"})
