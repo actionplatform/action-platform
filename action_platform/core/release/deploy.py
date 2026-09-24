@@ -15,12 +15,14 @@ from action_platform.core.config import Config
 from action_platform.core.context import Context, DeployResult, Diagnosis
 from action_platform.core.exception import DeployError
 from action_platform.core.flow.repository import Repository
-from action_platform.core.wiring import slot, wired
+from action_platform.core.wiring import Wiring, slot, wired
 from action_platform.logging import logger
 
 
 @slot("deployer")
 class Deployer:
+    wiring: Wiring | None = None
+
     def __init__(
         self,
         config: Config,
@@ -54,8 +56,10 @@ class Deployer:
         return targets
 
     def _context(self, dry_run: bool = False, stage: str | None = None) -> Context:
-        ctx = wired.releaser(self.config, self.repo).context(
-            dry_run=dry_run, stage=stage
+        ctx = (
+            (self.wiring or wired)
+            .releaser(self.config, self.repo)
+            .context(dry_run=dry_run, stage=stage)
         )
         ctx.next_version = ctx.current_version
         ctx.identity = self.identity

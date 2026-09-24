@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Callable
 
-from action_platform.core.wiring import wired
+from action_platform.core.wiring import Wiring
 from action_platform.core.config import Config
 from action_platform.core.context import Check, Context, DeployResult, Diagnosis
 from action_platform.core.exception import ConfigError
@@ -37,6 +37,9 @@ class ActionPlatform:
         env: what the platform knows and the repository does not — settings a
             deploy target may read from `ctx.env` (`AP_APP`, a cloud's proxy
             url) instead of platform.toml.
+        wiring (Wiring): which class fills each slot; default the process's,
+            where installed plugins replace slots. Every process this facade
+            starts resolves through it.
     """
 
     def __init__(
@@ -45,6 +48,7 @@ class ActionPlatform:
         repo_root: Path | None = None,
         identity: Callable[[str], str] | None = None,
         env: dict[str, str] | None = None,
+        wiring: Wiring | None = None,
     ) -> None:
         if not isinstance(config, Config):
             raise ConfigError(
@@ -55,6 +59,7 @@ class ActionPlatform:
         self.repo = Repository(repo_root or Path.cwd())
         self.identity = identity
         self.env = dict(env or {})
+        self.wiring = Wiring.default() if wiring is None else wiring
 
     @property
     def repo_root(self) -> Path:
@@ -62,21 +67,27 @@ class ActionPlatform:
 
     @property
     def releaser(self) -> Releaser:
-        return wired.releaser(self.config, self.repo)
+        return self.wiring.releaser(self.config, self.repo)
 
     @property
     def deployer(self) -> Deployer:
-        return wired.deployer(
+        deployer = self.wiring.deployer(
             self.config, self.repo, identity=self.identity, env=self.env
         )
+        deployer.wiring = self.wiring
+
+        return deployer
 
     @property
     def readiness(self) -> Readiness:
-        return wired.readiness(self.config, self.repo.path, self.deployer)
+        return self.wiring.readiness(self.config, self.repo.path, self.deployer)
 
     @property
     def flow(self) -> GitFlow:
-        return wired.gitflow(self.repo)
+        flow = self.wiring.gitflow(self.repo)
+        flow.wiring = self.wiring
+
+        return flow
 
     def plan_release(
         self,
