@@ -149,7 +149,7 @@ class GithubProvider(HostProvider):
             None,
         )
 
-    def access(self, creds: Credentials, app_slug: Optional[str]) -> dict[str, Any]:
+    def access(self, creds: Credentials, app_slug: Optional[str]) -> AccessReport:
         api = (creds.base_url or "").rstrip("/") or "https://api.github.com"
         probe = Probe(
             {
@@ -160,7 +160,7 @@ class GithubProvider(HostProvider):
         status, me = probe.get(f"{api}/user")
 
         if not me:
-            return AccessReport.refused(self.label, status)
+            return AccessReport.refused(self.kind, self.label, status)
 
         report = AccessReport(
             kind=self.kind,
@@ -178,14 +178,14 @@ class GithubProvider(HostProvider):
                 "This token is not from a GitHub App (personal token): repositories are created with the token's own scopes. Needs `repo` and `workflow`."
             )
 
-            return report.as_dict()
+            return report
 
         for i in (listing or {}).get("installations", []):
             report.installations.append(self._installation(api, probe, i))
 
         self._check(report, me["login"])
 
-        return report.as_dict()
+        return report
 
     def _installation(self, api: str, probe: Probe, i: dict[str, Any]) -> Owner:
         org = i["account"].get("type") == "Organization"

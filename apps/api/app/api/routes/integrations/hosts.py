@@ -106,14 +106,14 @@ def host_access(
     except ActionPlatformError as e:
         return {"ok": False, "error": str(e)}
 
-    if creds.kind == "bitbucket" and access.get("ok") and access["installations"]:
-        slugs = [i["account"] for i in access["installations"]]
+    if creds.kind == "bitbucket" and access.ok and access.installations:
+        slugs = [i.account for i in access.installations]
 
         if not creds.owner or creds.owner not in slugs:
             first = next(
-                (i for i in access["installations"] if i["canCreateRepos"]),
-                access["installations"][0],
+                (i for i in access.installations if i.can_create_repos),
+                access.installations[0],
             )
-            writes.set_host_owner(org.id, host_id, first["account"])
+            writes.set_host_owner(org.id, host_id, first.account)
 
-    return access
+    return access.as_dict()

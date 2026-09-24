@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 from urllib.parse import urlencode
 
 from action_platform.core.exception import ProviderError
@@ -84,7 +84,7 @@ class GitlabProvider(HostProvider):
 
         return user["username"], user.get("name")
 
-    def access(self, creds: Credentials, app_slug: Optional[str]) -> dict[str, Any]:
+    def access(self, creds: Credentials, app_slug: Optional[str]) -> AccessReport:
         api = (
             re.sub(
                 r"/api/v4$",
@@ -97,7 +97,7 @@ class GitlabProvider(HostProvider):
         status, me = probe.get(f"{api}/user")
 
         if not me:
-            return AccessReport.refused(self.label, status)
+            return AccessReport.refused(self.kind, self.label, status)
 
         groups_status, groups = probe.get(
             f"{api}/groups?min_access_level=30&per_page=100&order_by=path"
@@ -128,4 +128,4 @@ class GitlabProvider(HostProvider):
                 "Could not list groups: the token needs the `api` scope."
             )
 
-        return report.as_dict()
+        return report
