@@ -281,6 +281,13 @@ class RemoteClientTest(TempCase):
         self.answer = None
         self.assertEqual(remote.whoami().permissions, {})
 
+    def test_me_names_the_role_by_its_label_first(self):
+        self.assertEqual(
+            schemas.Me(role="admin", role_label="Admin").role_name, "Admin"
+        )
+        self.assertEqual(schemas.Me(role="admin").role_name, "admin")
+        self.assertIsNone(schemas.Me().role_name)
+
     def test_an_answer_missing_a_guaranteed_field_is_refused(self):
         remote = client.Remote("https://p.example", "tok")
         self.answer = {"next": "1.1.0"}

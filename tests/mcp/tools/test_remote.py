@@ -436,3 +436,74 @@ class RemoteToolsTest(TempCase):
         )
         self.assertNotIn("init_project", names)
         self.assertNotIn("install_hooks", names)
+
+
+WIRE_PROJECTS = [
+    {
+        "id": "p1",
+        "name": "Shop",
+        "slug": "shop",
+        "description": None,
+        "team": {"id": "t1", "name": "Core"},
+        "apps": [{"id": "d1", "name": "orders", "registry_id": "a1"}],
+        "organization": {"id": "o2", "name": "Other"},
+        "created_at": "2026-09-01T00:00:00",
+        "tearing_down": False,
+    }
+]
+
+
+@unittest.skipUnless(HAS_MCP, "mcp is not installed")
+class RemoteToolsOverTheWireTest(TempCase):
+    def setUp(self):
+        super().setUp()
+        from action_platform.mcp.server import MCPServer, REMOTE_INSTRUCTIONS
+        from action_platform.mcp.tools import remote as remote_tools
+        from action_platform.remote import client
+
+        self.sent: list[tuple[str, str, Any, Any]] = []
+
+        def fake_request(method, url, body=None, token=None, **kwargs):
+            self.sent.append((method, url, body, kwargs.get("organization")))
+            path = url.split("?")[0]
+
+            if path.endswith("/projects"):
+                return WIRE_PROJECTS
+
+            if path.endswith("/scopes"):
+                return {"items": [], "kinds": ["web"], "criticalities": ["low"]}
+
+            return {"removed": ["d1"], "repositories": [], "job": "j1"}
+
+        self.patch(client, "_request", fake_request)
+        self.server = MCPServer("action-platform", instructions=REMOTE_INSTRUCTIONS)
+        remote_tools.register(self.server, Remote("https://p.example", "tok"))
+
+    def call(self, tool: str, args: dict[str, Any]):
+        result = asyncio.run(self.server.call_tool(tool, args))
+
+        return result.structured_content.get("result", result.structured_content)
+
+    def test_tools_find_rows_through_the_real_client(self):
+        self.assertEqual(
+            self.call("remove_app", {"id": "a1"}),
+            {"removed": ["d1"], "repositories": [], "job": "j1"},
+        )
+        self.assertEqual(
+            self.sent[-1][:2],
+            ("DELETE", "https://p.example/api/v1/projects/p1/apps/d1"),
+        )
+        self.assertEqual(self.sent[-1][3], "o2")
+
+        self.call("list_scopes", {"id": "a1"})
+        self.assertEqual(
+            self.sent[-1][1], "https://p.example/api/v1/projects/p1/apps/d1/scopes"
+        )
+
+    def test_list_projects_keeps_what_the_platform_sent(self):
+        (row,) = self.call("list_projects", {"organization": "other"})
+
+        self.assertEqual(row["organization"], {"id": "o2", "name": "Other"})
+        self.assertEqual(row["apps"][0]["registry_id"], "a1")
+        self.assertIs(row["tearing_down"], False)
+        self.assertEqual(self.sent[-1][3], "other")
