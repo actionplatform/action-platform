@@ -5,10 +5,10 @@ from __future__ import annotations
 from urllib.parse import quote
 
 from action_platform.core.exception import ConfigError
-from action_platform.providers.deploy.observed import ObservedTarget
+from action_platform.providers.deploy.pipeline_published import PipelinePublishedTarget
 
 
-class DeployNpm(ObservedTarget):
+class DeployNpm(PipelinePublishedTarget):
     """
     Args:
         package (str): the package name, scoped or not.

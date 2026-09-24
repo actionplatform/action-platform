@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from action_platform.core.exception import ConfigError
-from action_platform.providers.deploy.observed import ObservedTarget
+from action_platform.providers.deploy.pipeline_published import PipelinePublishedTarget
 
 
 TEST_INDEX = "https://test.pypi.org"
 
 
-class DeployPypi(ObservedTarget):
+class DeployPypi(PipelinePublishedTarget):
     """
     Args:
         package (str): the distribution name on the index.

@@ -15,7 +15,7 @@ import urllib.error
 import urllib.request
 
 from action_platform.core.exception import ConfigError, ProviderError
-from action_platform.providers.deploy.observed import ObservedTarget
+from action_platform.providers.deploy.pipeline_published import PipelinePublishedTarget
 
 MANIFESTS = ", ".join(
     [
@@ -27,7 +27,7 @@ MANIFESTS = ", ".join(
 )
 
 
-class DeployDocker(ObservedTarget):
+class DeployDocker(PipelinePublishedTarget):
     """
     Args:
         image (str): `registry/namespace/name`, e.g. ghcr.io/actionplatform/api; a bare `name` means Docker Hub's library.
