@@ -438,6 +438,87 @@ class RemoteToolsTest(TempCase):
         self.assertNotIn("install_hooks", names)
 
 
+CONCERNS = {
+    "directory": {
+        "whoami",
+        "list_organizations",
+        "list_projects",
+        "list_teams",
+        "list_members",
+        "create_project",
+        "create_team",
+        "add_team_member",
+        "assign_project_team",
+        "set_member_role",
+    },
+    "context": {"current_context"},
+    "apps": {
+        "list_apps",
+        "add_app",
+        "remove_app",
+        "delete_project",
+        "sync_app",
+        "app_info",
+        "init_app",
+    },
+    "flow": {
+        "gitflow_audit",
+        "app_commits",
+        "app_branches",
+        "app_tags",
+        "app_releases",
+        "release",
+        "start_branch",
+        "checkout_branch",
+        "propose_pull_request",
+        "open_pull_request",
+    },
+    "configuration": {
+        "read_manifest",
+        "write_manifest",
+        "set_cloud",
+        "add_service",
+        "commit_changes",
+    },
+    "deploy": {
+        "list_scopes",
+        "create_scope",
+        "deploy",
+        "diagnose",
+        "list_deployments",
+        "record_deployment",
+    },
+    "matrix": {"list_matrix"},
+}
+
+
+@unittest.skipUnless(HAS_MCP, "mcp is not installed")
+class RemotePackageTest(unittest.TestCase):
+    def tools(self, register) -> set[str]:
+        from action_platform.mcp.server import MCPServer
+
+        server = MCPServer("action-platform")
+        register(server, FakeRemote())
+
+        return {t.name for t in asyncio.run(server.list_tools())}
+
+    def test_each_concern_registers_its_own_tools(self):
+        from action_platform.mcp.tools import remote as remote_tools
+
+        for module in remote_tools.MODULES:
+            name = module.__name__.rsplit(".", 1)[-1]
+
+            with self.subTest(module=name):
+                self.assertEqual(self.tools(module.register), CONCERNS[name])
+
+    def test_the_package_registers_every_concern(self):
+        from action_platform.mcp.tools import remote as remote_tools
+
+        self.assertEqual(
+            self.tools(remote_tools.register), set().union(*CONCERNS.values())
+        )
+
+
 WIRE_PROJECTS = [
     {
         "id": "p1",
