@@ -7,11 +7,10 @@ from typing import Annotated, Any, Optional
 
 from pydantic import Field
 
+from action_platform.bootstrap import project as bootstrap_project
 from action_platform.core.facade import ActionPlatform
-from action_platform.core.config import Config
 from action_platform.mcp import schemas
 from action_platform.mcp.annotations import DESTRUCTIVE, READ_ONLY, REACHES_OUT, tool
-from action_platform.core.files import CONFIG_FILE
 
 ProjectDir = Annotated[
     Optional[str], Field(description="Project directory; default is the cwd.")
@@ -25,9 +24,7 @@ Stage = Annotated[
 
 
 def _tool(project: Optional[str]) -> ActionPlatform:
-    root = Path(project).resolve() if project else Path.cwd()
-
-    return ActionPlatform(config=Config.from_toml(root / CONFIG_FILE), repo_root=root)
+    return bootstrap_project(Path(project).resolve() if project else None)
 
 
 def register(mcp: Any) -> None:

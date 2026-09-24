@@ -1,11 +1,12 @@
 # Observability
 
-Every component reports to [Sentry](https://sentry.io) when given a DSN, and stays silent otherwise. Use one Sentry project per component so releases and issues do not mix: `cli`, `api`, `web`.
+Every component reports to [Sentry](https://sentry.io) when given a DSN, and stays silent otherwise. Use one Sentry project per component so releases and issues do not mix: `cli`, `api`, `web`. The Python ones — CLI, MCP server, API — all start through `action_platform.bootstrap`: `.env` first, then Sentry.
 
 | Component | Variable | Release tag | Extra |
 |---|---|---|---|
 | API | `AP_SENTRY_DSN` | `api@<version>` (the api component version) | always installed |
 | CLI | `AP_SENTRY_DSN` | `cli@<version>` | opt-in: `pip install "action-platform[sentry]"` and export the DSN |
+| MCP server | `AP_SENTRY_DSN` | `mcp@<version>` | same as the CLI |
 | Web | `SENTRY_DSN` | `web@<version>` | `@sentry/nextjs`; browser, server and edge |
 
 With the compose files and Dokploy, set `AP_SENTRY_DSN_API` and `AP_SENTRY_DSN_WEB` in `.env`; they reach the containers under the names above.

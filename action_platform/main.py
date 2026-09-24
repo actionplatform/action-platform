@@ -5,16 +5,13 @@ import sys
 
 from rich.console import Console
 
+from action_platform.bootstrap import bootstrap
 from action_platform.cli.setup import app
 from action_platform.core.exception import ActionPlatformError
-from action_platform.env import load
-from action_platform.observability import observe
-from action_platform.settings import settings
 
 
 def main() -> None:
-    load()
-    observe("cli", settings.observability)
+    bootstrap("cli")
 
     try:
         app()

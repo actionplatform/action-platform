@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
-from tests.mcp.support import McpCase
-from tests.support import git, install_templates
+import unittest
+from unittest import mock
+
+from tests.mcp.support import HAS_MCP, McpCase
+from tests.support import TempCase, git, install_templates
+
+if HAS_MCP:
+    from action_platform.mcp import server
 
 
 PLUGIN_PREFIXES = ("example_", "aws_lambda_")
@@ -117,3 +123,19 @@ class ReadOnlyToolsTest(McpCase):
         self.assertFalse(data["ok"])
         self.assertTrue(any("not git-flow" in p for p in data["problems"]))
         self.assertTrue(any("not a conventional commit" in p for p in data["problems"]))
+
+
+@unittest.skipUnless(HAS_MCP, "mcp is not installed")
+class EntryPointTest(TempCase):
+    def test_main_bootstraps_as_mcp_before_building_the_server(self):
+        calls = []
+        server_ = mock.Mock()
+        self.patch(server, "bootstrap", lambda component: calls.append(component))
+        self.patch(
+            server, "build", lambda remote: calls.append(("build", remote)) or server_
+        )
+
+        server.main([])
+
+        self.assertEqual(calls, ["mcp", ("build", None)])
+        server_.run.assert_called_once_with()

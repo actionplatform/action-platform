@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 
 from action_platform.core.exception import ActionPlatformError, ConfigError
 from app.core.errors import ServiceError
-from action_platform.observability import observe
+from action_platform.bootstrap import bootstrap
 from action_platform.plugins import registry
 from action_platform.settings import settings
 from app import api_version
@@ -45,7 +45,6 @@ def build(
     auth_secret: Optional[str] = None,
     public_url: Optional[str] = None,
 ) -> FastAPI:
-    observe("api", settings.observability, version=api_version())
     app = FastAPI(title="action-platform", version=api_version())
     get_registry.cache_clear()
     app.state.db = None
@@ -157,6 +156,8 @@ def build(
 
 
 def create_app() -> FastAPI:
+    """The factory a uvicorn worker or reloader imports in a process of its own, which starts like any entry point."""
+    bootstrap("api", version=api_version())
     origins = [o for o in os.environ.get("AP_CORS", "").split(",") if o]
 
     return build(origins or None)
