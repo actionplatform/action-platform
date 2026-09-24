@@ -1,24 +1,18 @@
-"""Run cookiecutter for project leaves, cloud overlays and services; keep platform.toml in sync."""
+"""Generate projects from leaves, overlay clouds and services on them, push the result: the steps in order, rendering, platform.toml and git each done by its own class."""
 
 from __future__ import annotations
 
-import re
 import shutil
-import subprocess
-import tempfile
 from pathlib import Path
-from typing import Protocol
 
-from cookiecutter.exceptions import CookiecutterException
-from cookiecutter.main import cookiecutter
-
-from action_platform.core.wiring import slot, wired
-from action_platform.core.config import Config
 from action_platform.core.exception import TemplateError
 from action_platform.core.flow.repository import Repository
-from action_platform.core.manifest import Manifest, check_owner, toml_str
+from action_platform.core.flow.workflow import slugify
+from action_platform.core.manifest import Manifest
+from action_platform.core.scaffold.publisher import SourceCredentialsLike, push_project
+from action_platform.core.scaffold.renderer import TemplateRenderer
 from action_platform.core.scaffold.templates import Cloud, Leaf, Service
-from action_platform.providers.source import build_source_host
+from action_platform.core.wiring import slot, wired
 from action_platform.settings import settings
 
 
@@ -39,36 +33,28 @@ def generate_project(
     if leaf.plain:
         return _copy_repository(repo, leaf, name, ci, output, context)
 
-    return _cookiecutter(repo, leaf.directory, output, context)
+    return TemplateRenderer().render(repo, leaf.directory, output, context)
 
 
 def _copy_repository(
     repo: Path, leaf: Leaf, name: str, ci: str | None, output: Path, context: dict
 ) -> Path:
     """Copy a plain repository as the new project and make sure it carries platform.toml, hooks and CI."""
-    slug = _slugify(name)
+    slug = slugify(name)
     target = output / slug
 
     if target.exists():
         raise TemplateError(f"{target} already exists")
 
     shutil.copytree(repo, target, ignore=shutil.ignore_patterns(".git"))
-    manifest = target / settings.CONFIG_FILE
+    manifest = Manifest.of(target)
 
     if not (target / settings.LAST_VERSION_FILE).exists():
         (target / settings.LAST_VERSION_FILE).write_text("0.0.0\n")
 
-    if manifest.exists():
-        text = manifest.read_text()
-        manifest.write_text(
-            re.sub(
-                r'(?m)^name\s*=\s*".*"$',
-                lambda _: f"name = {toml_str(slug)}",
-                text,
-                count=1,
-            )
-        )
-        _replace_owner(manifest, context.get("github_owner"))
+    if manifest.exists:
+        manifest.rename(slug)
+        _set_owner(manifest, context.get("github_owner"))
         return target
 
     Repository.init(target, branch="main")
@@ -76,48 +62,24 @@ def _copy_repository(
     if leaf.stack:
         wired.installer(target, type_=leaf.type, language=leaf.stack, ci=ci).apply()
     else:
-        (target / settings.CONFIG_FILE).write_text(
+        manifest.path.write_text(
             f'[project]\nname = "{slug}"\ntype = "{leaf.type}"\nci = "{ci or "github"}"\n'
             '\n[release]\nstrategy = "semver"\nchangelog = "conventional"\n'
         )
         (target / settings.LAST_VERSION_FILE).write_text("0.0.0\n")
 
     shutil.rmtree(target / ".git", ignore_errors=True)
-    _replace_owner(target / settings.CONFIG_FILE, context.get("github_owner"))
+    _set_owner(manifest, context.get("github_owner"))
 
     if context.get("description"):
-        text = (target / settings.CONFIG_FILE).read_text()
-        (target / settings.CONFIG_FILE).write_text(
-            text.replace(
-                "[project]\n",
-                f"[project]\ndescription = {toml_str(str(context['description']))}\n",
-                1,
-            )
-        )
+        manifest.set_description(str(context["description"]))
 
     return target
 
 
-def _replace_owner(manifest: Path, owner: str | None) -> None:
-    if not owner or not manifest.exists():
-        return
-
-    check_owner(owner)
-    text = manifest.read_text()
-
-    if "[source_host]" in text:
-        manifest.write_text(
-            re.sub(
-                r'(?m)^repo\s*=\s*"[^/"]+/',
-                lambda _: f'repo = "{owner}/',
-                text,
-                count=1,
-            )
-        )
-
-
-def _slugify(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+def _set_owner(manifest: Manifest, owner: str | None) -> None:
+    if owner and manifest.exists:
+        manifest.set_owner(owner)
 
 
 def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
@@ -133,9 +95,10 @@ def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
         )
 
     root = cloud.root or repo
+    renderer = TemplateRenderer()
 
     if (root / cloud.directory / "cookiecutter.json").exists():
-        _render_over(
+        renderer.overlay(
             root,
             cloud.directory,
             project,
@@ -148,33 +111,11 @@ def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
             },
         )
     else:
-        _copy_overlay(root / cloud.directory, project)
+        renderer.copy(root / cloud.directory, project)
 
     Manifest.of(project).set_deploy_target(cloud.name)
 
     return project
-
-
-def _render_over(repo: Path, directory: str, project: Path, extra: dict) -> None:
-    """Render a cookiecutter overlay with the project's own name as `project_slug` — not the directory it happens to live in, which on the platform is a registry id — and lay the files over the project."""
-    slug = extra["project_name"]
-
-    with tempfile.TemporaryDirectory(prefix="ap-overlay-") as tmp:
-        rendered = _cookiecutter(
-            repo, directory, Path(tmp), {**extra, "project_slug": slug}
-        )
-        _copy_overlay(rendered, project)
-
-
-def _copy_overlay(source: Path, project: Path) -> None:
-    """A plain overlay — no cookiecutter.json — is copied as it is, file over file."""
-    for item in source.rglob("*"):
-        if not item.is_file():
-            continue
-
-        target = project / item.relative_to(source)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(item, target)
 
 
 def apply_service(
@@ -194,7 +135,7 @@ def apply_service(
     if existing.exists():
         shutil.rmtree(existing)
 
-    _render_over(
+    TemplateRenderer().overlay(
         repo,
         service.directory,
         project,
@@ -208,89 +149,6 @@ def apply_service(
     Manifest.of(project).set_service(service.name, provider)
 
     return project
-
-
-def push_project(
-    project: Path,
-    private: bool = False,
-    branch: str = "main",
-    credentials: "SourceCredentialsLike | None" = None,
-) -> str:
-    """git init, first commit, create the remote via [source_host], push.
-
-    No secrets are written: the deploy workflow needs them, but which ones and
-    from where is the operator's call — DEPLOY.md in the project lists them.
-    `credentials` (kind, token, username, base_url) override the environment's.
-    """
-    config = Config.from_toml(project / settings.CONFIG_FILE)
-
-    if credentials is not None and credentials.token and config.source_host is not None:
-        config.source_host = build_source_host(
-            credentials.kind,
-            config.source_host.repo,
-            base_url=credentials.base_url,
-            token=credentials.token,
-            username=credentials.username,
-        )
-
-    if config.source_host is None:
-        raise TemplateError("platform.toml has no [source_host]; cannot push")
-
-    meta = Manifest.of(project).project
-    repo = (
-        Repository(project)
-        if (project / ".git").exists()
-        else Repository.init(project, branch=branch)
-    )
-
-    wired.gitflow(repo).install_hooks()
-    repo.add_all()
-
-    if not repo.is_clean():
-        repo.commit("chore: bootstrap project from action-platform")
-
-    url = config.source_host.create_repository(
-        config.source_host.repo,
-        description=meta.get("description", ""),
-        private=private,
-    )
-
-    if not repo.remote_url():
-        repo.add_remote(url)
-
-    try:
-        repo.push_upstream(branch)
-    except subprocess.CalledProcessError as e:
-        raise TemplateError(
-            f"push failed: {e.stderr.strip() if e.stderr else e}"
-        ) from e
-
-    return url
-
-
-class SourceCredentialsLike(Protocol):
-    kind: str
-    token: str
-    username: str | None
-    base_url: str | None
-
-
-def _cookiecutter(
-    repo: Path, directory: str, output: Path, extra: dict, overwrite: bool = False
-) -> Path:
-    try:
-        result = cookiecutter(
-            str(repo),
-            directory=directory,
-            no_input=True,
-            extra_context=extra,
-            output_dir=str(output),
-            overwrite_if_exists=overwrite,
-        )
-    except CookiecutterException as e:
-        raise TemplateError(str(e)) from e
-
-    return Path(result)
 
 
 @slot("scaffolder")
@@ -321,6 +179,6 @@ class Scaffolder:
         project: Path,
         private: bool = False,
         branch: str = "main",
-        credentials: "SourceCredentialsLike | None" = None,
+        credentials: SourceCredentialsLike | None = None,
     ) -> str:
         return push_project(project, private, branch, credentials)
