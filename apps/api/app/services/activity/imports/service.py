@@ -6,7 +6,11 @@ from typing import Any, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
-from action_platform.abc.source_host import SourceHost
+from action_platform.abc.source_host import (
+    ListsPullRequests,
+    PublishesReleases,
+    SourceHost,
+)
 from action_platform.core.exception import ConfigError, ProviderError
 from action_platform.providers.source import build_source_host
 from app.core.db.models import PullRequest
@@ -37,20 +41,20 @@ class ActivityService:
     def remote_releases(self, creds: Credentials, repo: str) -> list[dict[str, Any]]:
         source = self.source_for(creds, repo)
 
-        try:
-            return source.releases(repo) if source else []
-        except NotImplementedError:
+        if not isinstance(source, PublishesReleases):
             return []
+
+        return source.releases(repo)
 
     def remote_pull_requests(
         self, creds: Credentials, repo: str
     ) -> list[dict[str, Any]]:
         source = self.source_for(creds, repo)
 
-        try:
-            return source.pull_requests(repo) if source else []
-        except NotImplementedError:
+        if not isinstance(source, ListsPullRequests):
             return []
+
+        return source.pull_requests(repo)
 
     def sync_releases(
         self, app_id: str, creds: Optional[Credentials], repo: Optional[str]

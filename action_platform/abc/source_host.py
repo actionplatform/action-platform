@@ -1,8 +1,14 @@
-"""SourceHost ABC."""
+"""SourceHost ABC and the capability protocols a host may add to it.
+
+Every host detects its remotes, tags, publishes releases and opens pull
+requests. Creating and deleting repositories, listing releases and listing
+pull requests vary by host: a host that offers one implements the matching
+protocol, and callers ask with `isinstance` instead of catching an error.
+"""
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from action_platform.core.context import Context, PRRef, ReleaseRef
@@ -16,16 +22,6 @@ class SourceHost(ABC):
     @abstractmethod
     def detect(self, remote_url: str) -> bool:
         """Return True if this provider handles remote_url."""
-
-    def create_repository(
-        self, repo: str, description: str = "", private: bool = False
-    ) -> str:
-        """Create the remote repository; return its clone URL."""
-        raise NotImplementedError(f"{self.name} cannot create repositories")
-
-    def delete_repository(self, repo: str) -> None:
-        """Delete the remote repository; a repository that is already gone is not an error."""
-        raise NotImplementedError(f"{self.name} cannot delete repositories")
 
     @abstractmethod
     def create_tag(self, ctx: "Context", tag: str) -> None:
@@ -45,14 +41,6 @@ class SourceHost(ABC):
     ) -> "ReleaseRef":
         """Publish release on remote host. `name` titles it (the tag otherwise); `latest` says whether the host should mark it as the latest one."""
 
-    def releases(self, repo: str) -> list[dict]:
-        """The releases the host publishes for `repo`, newest first: tag, name, body, url, author, sha, prerelease, draft, published_at, source."""
-        raise NotImplementedError(f"{self.name} does not publish releases")
-
-    def pull_requests(self, repo: str) -> list[dict]:
-        """The pull (merge) requests of `repo`: number, title, url, author, head, base, state (open|merged|closed), draft, created_at, updated_at, merged_at, source."""
-        raise NotImplementedError(f"{self.name} does not know pull requests")
-
     @abstractmethod
     def open_pr(
         self,
@@ -64,3 +52,37 @@ class SourceHost(ABC):
         draft: bool = False,
     ) -> "PRRef":
         """Open pull/merge request."""
+
+
+@runtime_checkable
+class SupportsRepoCreation(Protocol):
+    """A host that creates repositories."""
+
+    def create_repository(
+        self, repo: str, description: str = "", private: bool = False
+    ) -> str:
+        """Create the remote repository; return its clone URL."""
+
+
+@runtime_checkable
+class SupportsRepoDeletion(Protocol):
+    """A host that deletes repositories."""
+
+    def delete_repository(self, repo: str) -> None:
+        """Delete the remote repository; a repository that is already gone is not an error."""
+
+
+@runtime_checkable
+class PublishesReleases(Protocol):
+    """A host that lists the releases it publishes."""
+
+    def releases(self, repo: str) -> list[dict]:
+        """The releases the host publishes for `repo`, newest first: tag, name, body, url, author, sha, prerelease, draft, published_at, source."""
+
+
+@runtime_checkable
+class ListsPullRequests(Protocol):
+    """A host that lists pull (merge) requests."""
+
+    def pull_requests(self, repo: str) -> list[dict]:
+        """The pull (merge) requests of `repo`: number, title, url, author, head, base, state (open|merged|closed), draft, created_at, updated_at, merged_at, source."""

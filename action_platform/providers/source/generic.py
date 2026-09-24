@@ -6,6 +6,7 @@ from pathlib import Path
 
 from action_platform.abc.source_host import SourceHost
 from action_platform.core.context import Context, PRRef, ReleaseRef
+from action_platform.core.exception import ProviderError
 
 
 class SourceGeneric(SourceHost):
@@ -57,6 +58,6 @@ class SourceGeneric(SourceHost):
         body: str,
         draft: bool = False,
     ) -> PRRef:
-        raise NotImplementedError(
+        raise ProviderError(
             "generic hosts cannot open pull requests; push the branch and open it by hand"
         )

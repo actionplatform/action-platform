@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-
+from action_platform.abc.source_host import SupportsRepoDeletion
 from action_platform.core.exception import ActionPlatformError, ProviderError
 from action_platform.providers.source import build_source_host
 from app.core.shared.urls import GitUrl
@@ -59,10 +59,11 @@ class AppRemote(AppsBase):
             username=credentials.username,
         )
 
+        if not isinstance(host, SupportsRepoDeletion):
+            raise Conflict(f"{host.name} cannot delete repositories")
+
         try:
             host.delete_repository(repo)
-        except NotImplementedError as e:
-            raise Conflict(str(e)) from e
         except ProviderError as e:
             raise Upstream(str(e)) from e
 

@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 from typing import Protocol
 
+from action_platform.abc.source_host import SupportsRepoCreation
 from action_platform.core.config import Config
 from action_platform.core.exception import TemplateError
 from action_platform.core.flow.repository import Repository
@@ -39,6 +40,12 @@ class Publisher:
     def push(self, private: bool = False, branch: str = "main") -> str:
         config = self._config()
         repo = self.initialize(branch)
+
+        if not isinstance(config.source_host, SupportsRepoCreation):
+            raise TemplateError(
+                f"{config.source_host.name} cannot create repositories; create it by hand and push"
+            )
+
         url = config.source_host.create_repository(
             config.source_host.repo,
             description=Manifest.of(self.project).project.get("description", ""),
