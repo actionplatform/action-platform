@@ -132,6 +132,44 @@ class Manifest:
     def services(self) -> dict:
         return dict(self.data().get("services", {}))
 
+    def rename(self, name: str) -> None:
+        """Replace the first `name = "…"` line — the [project] name a template ships with."""
+        self.path.write_text(
+            re.sub(
+                r'(?m)^name\s*=\s*".*"$',
+                lambda _: f"name = {toml_str(name)}",
+                self.text(),
+                count=1,
+            )
+        )
+
+    def set_owner(self, owner: str) -> None:
+        """Point [source_host] repo at `owner`, keeping the repository name; nothing when there is no [source_host]."""
+        check_owner(owner)
+        text = self.text()
+
+        if "[source_host]" not in text:
+            return
+
+        self.path.write_text(
+            re.sub(
+                r'(?m)^repo\s*=\s*"[^/"]+/',
+                lambda _: f'repo = "{owner}/',
+                text,
+                count=1,
+            )
+        )
+
+    def set_description(self, description: str) -> None:
+        """Put `description` first in [project]."""
+        self.path.write_text(
+            self.text().replace(
+                "[project]\n",
+                f"[project]\ndescription = {toml_str(description)}\n",
+                1,
+            )
+        )
+
     def set_source_host(
         self, kind: str, repo: str, base_url: str | None = None
     ) -> None:

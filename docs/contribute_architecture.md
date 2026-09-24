@@ -38,8 +38,8 @@ flowchart TB
 ```
 action_platform/
   core/
-    manifest/     Manifest: platform.toml as an object (project, source_host, services; set_source_host, set_deploy_target, set_service)
-    scaffold/     store (TemplateSource, TemplateStore: checkouts), templates (Matrix, Leaf, Cloud, Service), detect (LanguageDetector), install (Installer: plan/apply), generate (cookiecutter, overlays, push)
+    manifest/     Manifest: platform.toml as an object (project, source_host, services; rename, set_owner, set_description, set_source_host, set_deploy_target, set_service)
+    scaffold/     store (TemplateSource, TemplateStore: checkouts), templates (Matrix, Leaf, Cloud, Service), detect (LanguageDetector), install (Installer: plan/apply), generate (Scaffolder: the steps of generate, apply_cloud, apply_service, push), renderer (TemplateRenderer: cookiecutter and plain overlays), publisher (Publisher: git init, first commit, remote, push)
     flow/         repository (Repository: every git command on one clone, follow_remote, stashed), workflow (GitFlow: audit, start, propose, open_pr, install_hooks), gitflow (the rules as pure functions), git (ref/url policy, per-request credentials)
     release/      versioning (Version, VersionFiles), changelog, components, release (Releaser: plan → apply), deploy (Deployer), readiness (Readiness: can a release reach a scope)
     scopes.py     ScopeSpec (name, kind, criticality), release shapes, the acceptance policy, [[scopes]]

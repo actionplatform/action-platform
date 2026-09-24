@@ -9,6 +9,7 @@ from action_platform.core.manifest.manifest import dump_toml
 
 from action_platform.core.exception import TemplateError
 from action_platform.core.manifest import (
+    Manifest,
     check_owner,
     check_repo,
     read_platform,
@@ -88,6 +89,49 @@ class SourceHostTest(TempCase):
                 '\n[source_host]\nkind = "bitbucket"\nrepo = "ws/x"\n'
             )
         )
+
+
+class IdentityTest(TempCase):
+    def setUp(self):
+        super().setUp()
+        self.path = self.tmp_path / "platform.toml"
+        self.manifest = Manifest(self.path)
+
+    def test_rename_escapes_the_new_name(self):
+        self.path.write_text(BASE)
+
+        self.manifest.rename('my "shop"')
+
+        self.assertEqual(self.manifest.project["name"], 'my "shop"')
+        self.assertEqual(self.manifest.project["language"], "python")
+
+    def test_set_owner_keeps_the_repository_name(self):
+        self.path.write_text(BASE + '\n[source_host]\nkind = "github"\nrepo = "a/b"\n')
+
+        self.manifest.set_owner("acme")
+
+        self.assertEqual(self.manifest.source_host["repo"], "acme/b")
+
+    def test_set_owner_without_source_host_changes_nothing(self):
+        self.path.write_text(BASE)
+
+        self.manifest.set_owner("acme")
+
+        self.assertEqual(self.path.read_text(), BASE)
+
+    def test_set_owner_is_validated(self):
+        self.path.write_text(BASE + '\n[source_host]\nkind = "github"\nrepo = "a/b"\n')
+
+        with self.assertRaises(TemplateError):
+            self.manifest.set_owner('x"/')
+
+    def test_set_description_goes_first_in_project(self):
+        self.path.write_text(BASE)
+
+        self.manifest.set_description("line\nbreak")
+
+        self.assertEqual(self.manifest.project["description"], "line\nbreak")
+        self.assertTrue(self.path.read_text().startswith("[project]\ndescription"))
 
 
 class EscapingTest(TempCase):

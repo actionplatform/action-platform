@@ -1,49 +1,78 @@
-"""action_platform.core.scaffold.generate — pushing a generated project through the source host."""
+"""action_platform.core.scaffold.generate — a plain repository copied as a new project."""
 
 from __future__ import annotations
 
-from action_platform.core.flow.repository import Repository
-from action_platform.core.scaffold import generate
+import tomllib
+
+from action_platform.core.exception import TemplateError
+from action_platform.core.scaffold.generate import generate_project
+from action_platform.core.scaffold.templates import Leaf
 from tests.support import TempCase
 
 
-class FakeHost:
-    name = "fake"
-    repo = "owner/demo"
+class PlainRepositoryTest(TempCase):
+    def setUp(self):
+        super().setUp()
+        self.source = self.tmp_path / "starter"
+        self.source.mkdir()
+        (self.source / "README.md").write_text("# starter\n")
+        (self.source / ".git").mkdir()
+        self.output = self.tmp_path / "out"
+        self.output.mkdir()
 
-    def __init__(self) -> None:
-        self.created: list = []
-
-    def create_repository(self, repo, description="", private=False):
-        self.created.append((repo, description, private))
-        return f"https://example.com/{repo}.git"
-
-
-class PushProjectTest(TempCase):
-    def test_bootstraps_git_and_creates_the_remote(self):
-        (self.tmp_path / "platform.toml").write_text(
-            '[project]\nname = "demo"\nlanguage = "python"\n[source_host]\nkind = "github"\nrepo = "owner/demo"\n'
-        )
-        (self.tmp_path / "README.md").write_text("# demo\n")
-        host = FakeHost()
-        pushed: dict = {}
-        self.patch(
-            generate.Config,
-            "from_toml",
-            classmethod(lambda cls, p: type("C", (), {"source_host": host})()),
-        )
-        self.patch(
-            Repository,
-            "push_upstream",
-            lambda self, branch, remote="origin": pushed.update(branch=branch),
+    def test_renames_the_manifest_and_moves_the_owner(self):
+        (self.source / "platform.toml").write_text(
+            '[project]\nname = "starter"\ntype = "web"\n\n'
+            '[source_host]\nkind = "github"\nrepo = "someone/starter"\n'
         )
 
-        url = generate.push_project(self.tmp_path, private=True)
-        repo = Repository(self.tmp_path)
+        project = generate_project(
+            self.source,
+            Leaf("web", "", "starter", plain=True),
+            "My Shop",
+            None,
+            self.output,
+            {"github_owner": "acme"},
+        )
+        data = tomllib.loads((project / "platform.toml").read_text())
 
-        self.assertEqual(url, "https://example.com/owner/demo.git")
-        self.assertEqual(host.created, [("owner/demo", "", True)])
-        self.assertEqual(pushed, {"branch": "main"})
-        self.assertTrue(repo.is_clean())
-        self.assertEqual(repo.remote_url(), url)
-        self.assertEqual(repo.branch, "main")
+        self.assertEqual(project, self.output / "my-shop")
+        self.assertEqual(data["project"]["name"], "my-shop")
+        self.assertEqual(data["source_host"]["repo"], "acme/starter")
+        self.assertEqual((project / "LAST_VERSION").read_text(), "0.0.0\n")
+        self.assertFalse((project / ".git").exists())
+
+    def test_seeds_a_manifest_when_the_repository_has_none(self):
+        project = generate_project(
+            self.source,
+            Leaf("library", "", "starter", plain=True),
+            "tool",
+            "gitlab",
+            self.output,
+            {"description": 'says "hi"'},
+        )
+        data = tomllib.loads((project / "platform.toml").read_text())
+
+        self.assertEqual(
+            data["project"],
+            {
+                "description": 'says "hi"',
+                "name": "tool",
+                "type": "library",
+                "ci": "gitlab",
+            },
+        )
+        self.assertEqual(data["release"]["strategy"], "semver")
+        self.assertFalse((project / ".git").exists())
+
+    def test_refuses_an_existing_target(self):
+        (self.output / "tool").mkdir()
+
+        with self.assertRaises(TemplateError):
+            generate_project(
+                self.source,
+                Leaf("library", "", "starter", plain=True),
+                "tool",
+                None,
+                self.output,
+            )
