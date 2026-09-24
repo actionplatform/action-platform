@@ -8,6 +8,7 @@ from app.services.projects.organization_import import (
     OrganizationImport,
 )
 from app.services.projects.service import ProjectService
+from app.services.projects.view import ProjectView
 
 __all__ = [
     "JOB_KIND",
@@ -16,4 +17,5 @@ __all__ = [
     "ImportGateway",
     "OrganizationImport",
     "ProjectService",
+    "ProjectView",
 ]
