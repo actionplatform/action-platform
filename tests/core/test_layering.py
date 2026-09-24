@@ -30,3 +30,15 @@ class CoreLayeringTest(unittest.TestCase):
         ]
 
         self.assertEqual(offenders, [])
+
+
+class LibraryLayeringTest(unittest.TestCase):
+    def test_only_the_entry_points_import_the_settings(self):
+        package = CORE.parent
+        importers = [
+            str(path.relative_to(package))
+            for path in sorted(package.rglob("*.py"))
+            if "action_platform.settings" in imported_modules(path)
+        ]
+
+        self.assertEqual(importers, ["main.py"])
