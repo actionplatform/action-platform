@@ -23,7 +23,6 @@ from action_platform.core.context import (
 )
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import rest
-from action_platform.settings import settings
 
 
 REPO_NAME = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._-]*)/[A-Za-z0-9._-]+$")
@@ -39,7 +38,7 @@ class SourceGithub(SourceHost):
 
     Args:
         repo (str): "owner/name".
-        token (str | None): personal access or app token; default from ACTION_PLATFORM_GITHUB_TOKEN / GH_TOKEN, else the gh CLI.
+        token (str | None): personal access or app token; None uses the gh CLI.
         base_url (str | None): API root for GitHub Enterprise, e.g. https://ghe.example.com/api/v3.
     """
 
@@ -52,7 +51,7 @@ class SourceGithub(SourceHost):
             raise ProviderError(f"repository {repo!r} is not owner/name")
 
         self.repo = repo
-        self.token = token or settings.tokens.github
+        self.token = token
         self.api = (base_url or "https://api.github.com").rstrip("/")
         self.web = (
             "https://github.com"

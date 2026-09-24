@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import tomllib
@@ -17,6 +18,7 @@ from action_platform.core.release import strategies
 from action_platform.core.release.components import parse as parse_components
 from action_platform.core.scopes import ScopeSpec, parse_scopes
 from action_platform.core.targets import TargetSpec, parse_targets
+from action_platform.options import SourceTokens
 from action_platform.providers.ci.factory import build_ci_runner
 from action_platform.providers.deploy import BUILTIN_DEPLOY_TARGETS
 from action_platform.providers.deploy.dispatched import DispatchedTarget
@@ -146,19 +148,24 @@ class Config:
         )
 
     @classmethod
-    def from_toml(cls, path: Path) -> "Config":
+    def from_toml(cls, path: Path, tokens: SourceTokens | None = None) -> "Config":
         if not path.exists():
             raise ConfigError(f"platform.toml not found at {path}")
 
-        return cls.from_dict(tomllib.loads(path.read_text()))
+        return cls.from_dict(tomllib.loads(path.read_text()), tokens=tokens)
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Config":
-        """The same tables platform.toml holds, from wherever they were kept — the file, or the hosted platform's database."""
+    def from_dict(cls, data: dict, tokens: SourceTokens | None = None) -> "Config":
+        """The same tables platform.toml holds, from wherever they were kept — the file, or the hosted platform's database.
+
+        `tokens` are the code-host credentials the source host gets; None
+        means the ones this machine's environment holds (`SourceTokens.from_env`).
+        """
         project = data.get("project", {})
+        tokens = SourceTokens.from_env(os.environ) if tokens is None else tokens
 
         config = cls(
-            source_host=_build_source_host(data.get("source_host", {})),
+            source_host=_build_source_host(data.get("source_host", {}), tokens),
             project_name=project.get("name", ""),
             language=project.get("language", ""),
         )
@@ -170,13 +177,19 @@ class Config:
         return config
 
 
-def _build_source_host(cfg: dict) -> SourceHost | None:
+def _build_source_host(cfg: dict, tokens: SourceTokens) -> SourceHost | None:
     kind = cfg.get("kind")
 
     if not kind:
         return None
 
-    return build_source_host(kind, cfg.get("repo", ""), cfg.get("base_url"))
+    return build_source_host(
+        kind,
+        cfg.get("repo", ""),
+        cfg.get("base_url"),
+        token=tokens.token(kind),
+        username=tokens.username(kind),
+    )
 
 
 def _providers() -> dict[str, type]:
