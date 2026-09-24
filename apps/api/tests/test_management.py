@@ -533,6 +533,41 @@ class HostsAndSettingsTest(GateCase):
         )
         self.assertEqual(self.client.get("/api/v1/hosts", headers=self.h()).json(), [])
 
+    def test_oauth_callback_stores_the_providers_token_username(self):
+        from app.services.integrations.hosts import BitbucketProvider
+
+        self.client.put(
+            "/api/v1/oauth/apps/bitbucket",
+            json={"client_id": "cid", "client_secret": "sec"},
+            headers=self.h(),
+        )
+        started = self.client.post(
+            "/api/v1/oauth/bitbucket/start",
+            json={"origin": "https://ap.example.com"},
+            headers=self.h(),
+        ).json()
+        state = started["url"].split("state=")[1].split("&")[0]
+        self.patch(
+            BitbucketProvider,
+            "exchange_code",
+            lambda self, app, origin, code: ("access", None, None),
+        )
+        self.patch(
+            BitbucketProvider, "identity", lambda self, app, token: ("ana", "Ana")
+        )
+        self.patch(BitbucketProvider, "owner", lambda self, token, installation: "team")
+        done = self.client.post(
+            "/api/v1/oauth/bitbucket/callback",
+            json={"origin": "https://ap.example.com", "state": state, "code": "c"},
+            headers=self.h(),
+        ).json()
+        self.assertEqual(done["query"], {"connected": "bitbucket"})
+        hosts = self.client.get("/api/v1/hosts", headers=self.h()).json()
+        self.assertEqual(
+            (hosts[0]["username"], hosts[0]["default_owner"]),
+            ("x-token-auth", "team"),
+        )
+
 
 class DeadTokenTest(GateCase):
     def test_expired_oauth_host_without_refresh_answers_not_ok(self):

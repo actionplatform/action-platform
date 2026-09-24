@@ -84,6 +84,7 @@ class HostProvider(ABC):
     label: str
     scopes: str
     callback_hint: str
+    token_username: Optional[str] = None
 
     @abstractmethod
     def web_base(self, app: "OAuthApp") -> str:

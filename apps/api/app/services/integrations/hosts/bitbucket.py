@@ -20,6 +20,7 @@ class BitbucketProvider(HostProvider):
     kind = "bitbucket"
     label = "Bitbucket"
     scopes = ""
+    token_username = "x-token-auth"
     callback_hint = "Bitbucket → Workspace settings → OAuth consumers (permissions: account, repositories write/admin/delete, pull requests write)"
 
     def web_base(self, app: OAuthApp) -> str:
