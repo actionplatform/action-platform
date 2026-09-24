@@ -55,6 +55,9 @@ action_platform/
   mcp/            server (local or --remote), tools/{matrix,project,flow,lifecycle,remote}, prompts, annotations
   cli/            Typer commands: init install branch gitflow pr release deploy rollback diagnose destroy cloud service mcp login logout whoami
   observability.py   Sentry init shared by the CLI and the API (docs/concept_observability.md)
+  options.py      configuration slices, one frozen dataclass per concern (TemplatesConfig, WorkspacesConfig, GitConfig, SourceTokens, ApiConfig, DatabaseConfig, ObservabilityConfig), each parsed by `from_env(mapping)`
+  settings.py     `settings`: those slices read from the process environment when asked for (`settings.git`, `settings.database`…); `Settings.from_env(mapping)` for a fixed one
+  env.py          `.env` loading, called by the entry points — importing the library reads nothing
   hooks/          commit-msg, pre-commit, pre-push, gitflow.sh
 apps/web/         the web app: `app/` holds the routes (pages of a few lines), `features/<context>/` the code — projects (list, apps, app view, the wizard), activity, releases, deployments, configuration, templates, organization, integrations (Git, shown on Settings), plugins, account — each with `index.ts` (what pages import), `actions.ts` (server actions) and its tests; `lib/` (the generated OpenAPI client in `lib/api.ts`, its calls grouped per context under `lib/api/{organization,projects,integrations,jobs}.ts` and re-assembled as `v1`) and `components/` are shared. ESLint `no-restricted-imports` keeps pages on a feature's index and features off other features' internals.
 deploy/           Dockerfiles, compose, install.sh
