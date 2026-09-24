@@ -28,26 +28,43 @@ HOMES = {
 }
 
 
+DECLARED: dict[str, type] = {}
+
+
 class WiringError(ActionPlatformError):
     """A slot nobody provides, or a replacement that is not a subclass of what it replaces."""
 
 
 class Wiring:
+    """Which class fills each slot. The core's classes are declared once, for every wiring; replacements belong to one wiring.
+
+    `Wiring.default()` is the process's — the one installed plugins replace
+    slots in, and the one an `ActionPlatform` uses unless handed another. A
+    test builds its own `Wiring()`: nothing it provides or replaces leaks.
+    """
+
     def __init__(self) -> None:
         self._defaults: dict[str, type] = {}
         self._overrides: dict[str, type] = {}
         self._by: dict[str, str] = {}
 
+    @classmethod
+    def default(cls) -> "Wiring":
+        return wired
+
     def provide(self, slot: str, default: type) -> None:
-        """The core registers its own implementation of `slot` once, at import."""
+        """This wiring's own default for `slot`, over the core's declaration."""
         self._defaults.setdefault(slot, default)
 
     def _default(self, slot: str) -> type | None:
-        """The core's class for `slot`, importing the module that declares it when nothing has yet."""
-        if slot not in self._defaults and slot in HOMES:
+        """The default for `slot`: this wiring's own, else the core's class, importing the module that declares it when nothing has yet."""
+        if slot in self._defaults:
+            return self._defaults[slot]
+
+        if slot not in DECLARED and slot in HOMES:
             import_module(HOMES[slot])
 
-        return self._defaults.get(slot)
+        return DECLARED.get(slot)
 
     def replace(self, slot: str, impl: type, by: str = "") -> None:
         """A plugin puts `impl` — a subclass of the default — in `slot`; `by` names the plugin for `origins()`."""
@@ -84,7 +101,7 @@ class Wiring:
         return dict(self._by)
 
     def slots(self) -> list[str]:
-        return sorted(set(self._defaults) | set(HOMES))
+        return sorted(set(self._defaults) | set(DECLARED) | set(HOMES))
 
     def __getattr__(self, slot: str) -> Callable[..., Any]:
         if slot.startswith("_"):
@@ -97,10 +114,10 @@ wired = Wiring()
 
 
 def slot(name: str) -> Callable[[type], type]:
-    """`@slot("releaser")` on the core's class registers it as the default."""
+    """`@slot("releaser")` on the core's class declares it as the default of every wiring."""
 
     def decorate(cls: type) -> type:
-        wired.provide(name, cls)
+        DECLARED.setdefault(name, cls)
 
         return cls
 

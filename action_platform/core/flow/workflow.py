@@ -14,7 +14,7 @@ from action_platform.core.flow import gitflow as rules
 from action_platform.core.flow.repository import Repository
 from action_platform.core import extensions
 from action_platform.core.release import changelog
-from action_platform.core.wiring import slot, wired
+from action_platform.core.wiring import Wiring, slot, wired
 from action_platform.core.files import CONFIG_FILE
 
 
@@ -82,6 +82,8 @@ def slugify(text: str) -> str:
 
 @slot("gitflow")
 class GitFlow:
+    wiring: Wiring | None = None
+
     def __init__(self, repo: Repository | Path) -> None:
         self.repo = repo if isinstance(repo, Repository) else Repository(repo)
 
@@ -230,7 +232,7 @@ class GitFlow:
         if not self.repo.remote_branch_exists(proposal.head):
             self.repo.push_upstream(proposal.head)
 
-        ctx = wired.releaser(config, self.repo).context()
+        ctx = (self.wiring or wired).releaser(config, self.repo).context()
 
         ref = config.source_host.open_pr(
             ctx,
