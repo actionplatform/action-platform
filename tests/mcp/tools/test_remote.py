@@ -392,6 +392,26 @@ class RemoteToolsTest(TempCase):
                 self.assertIn("list_", str(caught.exception))
                 self.assertNotIsInstance(caught.exception, UnexpectedToolError)
 
+    def test_project_tools_name_the_organization_of_the_row(self):
+        self.fake.projects_rows[0]["organization"] = {"id": "o2", "name": "Other"}
+
+        for tool, args, expected in (
+            (
+                "add_app",
+                {"project": "shop", "url": "https://x/y.git"},
+                ("add_app", ("p1", "https://x/y.git", None, "o2"), {}),
+            ),
+            ("remove_app", {"id": "a1"}, ("remove_app", ("p1", "d1", False, "o2"), {})),
+            (
+                "delete_project",
+                {"project": "p1"},
+                ("delete_project", ("p1", False, "o2"), {}),
+            ),
+        ):
+            with self.subTest(tool=tool):
+                self.call(tool, args)
+                self.assertEqual(self.fake.calls[-1], expected)
+
     def test_remove_app_answers_with_what_the_platform_removed(self):
         self.assertEqual(
             self.call("remove_app", {"id": "a1"}),

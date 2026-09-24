@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import typer
 
 from action_platform.core.exception import ActionPlatformError
@@ -52,12 +54,8 @@ def whoami() -> None:
     )
 
 
-def _name(part: object) -> str:
-    return (
-        str(part.get("name") or part.get("id") or "?")
-        if isinstance(part, dict)
-        else str(part)
-    )
+def _name(part: dict[str, Any]) -> str:
+    return str(part.get("name") or part.get("id") or "?")
 
 
 def _describe(creds: credentials.Credentials, who: Me) -> str:
