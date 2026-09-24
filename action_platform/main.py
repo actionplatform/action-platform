@@ -9,11 +9,12 @@ from action_platform.cli.setup import app
 from action_platform.core.exception import ActionPlatformError
 from action_platform.env import load
 from action_platform.observability import observe
+from action_platform.settings import settings
 
 
 def main() -> None:
     load()
-    observe("cli")
+    observe("cli", settings.observability)
 
     try:
         app()

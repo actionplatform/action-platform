@@ -12,7 +12,7 @@ class MainTest(TempCase):
         (self.tmp_path / ".env").write_text("AP_PROBE=from-dotenv\n")
         self.delenv("AP_PROBE")
         seen = {}
-        self.patch(main, "observe", lambda component: None)
+        self.patch(main, "observe", lambda component, config: None)
         self.patch(
             main, "app", lambda: seen.setdefault("probe", os.environ.get("AP_PROBE"))
         )

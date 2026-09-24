@@ -57,18 +57,27 @@ class SentryTest(ApiCase):
         import sentry_sdk
 
         from action_platform.observability import observe
+        from action_platform.options import ObservabilityConfig
 
         seen: dict = {}
         self.patch(sentry_sdk, "init", lambda **kw: seen.update(kw))
 
-        self.assertFalse(observe("api", ""))
+        self.assertFalse(observe("api", ObservabilityConfig()))
         self.assertEqual(seen, {})
 
         self.patch(sentry_sdk, "set_tag", lambda *a: None)
-        self.assertTrue(observe("api", "https://key@o1.ingest.sentry.io/1"))
+        self.assertTrue(
+            observe(
+                "api",
+                ObservabilityConfig(
+                    dsn="https://key@o1.ingest.sentry.io/1", environment="staging"
+                ),
+            )
+        )
         self.assertEqual(seen["dsn"], "https://key@o1.ingest.sentry.io/1")
         self.assertTrue(seen["release"].startswith("api@"))
         self.assertFalse(seen["send_default_pii"])
+        self.assertEqual(seen["environment"], "staging")
 
 
 class CatalogIndexTest(ApiCase):

@@ -45,7 +45,7 @@ def build(
     auth_secret: Optional[str] = None,
     public_url: Optional[str] = None,
 ) -> FastAPI:
-    observe("api", version=api_version())
+    observe("api", settings.observability, version=api_version())
     app = FastAPI(title="action-platform", version=api_version())
     get_registry.cache_clear()
     app.state.db = None
