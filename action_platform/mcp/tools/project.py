@@ -8,9 +8,9 @@ from typing import Annotated, Any, Optional
 from pydantic import Field
 
 from action_platform.core.wiring import wired
-from action_platform.core.scaffold import install as installing
+from action_platform.core.scaffold import installer as installing
 from action_platform.core.manifest import Manifest
-from action_platform.core.scaffold.templates import load_matrix
+from action_platform.core.scaffold.catalog import load_matrix
 from action_platform.mcp import schemas
 from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL, tool
 

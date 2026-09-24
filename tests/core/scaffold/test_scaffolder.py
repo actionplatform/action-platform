@@ -1,12 +1,12 @@
-"""action_platform.core.scaffold.generate — a plain repository copied as a new project."""
+"""action_platform.core.scaffold.scaffolder — a plain repository copied as a new project."""
 
 from __future__ import annotations
 
 import tomllib
 
 from action_platform.core.exception import TemplateError
-from action_platform.core.scaffold.generate import generate_project
-from action_platform.core.scaffold.templates import Leaf
+from action_platform.core.scaffold.scaffolder import generate_project
+from action_platform.core.scaffold.catalog import Leaf
 from tests.support import TempCase
 
 

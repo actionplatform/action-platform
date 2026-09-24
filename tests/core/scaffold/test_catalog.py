@@ -1,16 +1,13 @@
-"""action_platform.core.scaffold.templates — the matrix read from index.json, and repositories as sources."""
+"""action_platform.core.scaffold.catalog — the matrix read from index.json, and repositories as sources."""
 
 from __future__ import annotations
 
 import json
 
 from action_platform.core.exception import TemplateError
-from action_platform.core.scaffold.templates import (
-    Matrix,
-    TemplateSource,
-    detect_language,
-    plain_matrix,
-)
+from action_platform.core.scaffold.catalog import Matrix, plain_matrix
+from action_platform.core.scaffold.language import detect_language
+from action_platform.core.scaffold.sources import TemplateSource
 from tests.support import TempCase
 
 INDEX = json.dumps(

@@ -5,7 +5,7 @@ from __future__ import annotations
 import unittest
 
 from action_platform.core.flow.repository import Repository
-from action_platform.core.scaffold import generate
+from action_platform.core.scaffold.scaffolder import Scaffolder
 from action_platform.settings import settings
 from action_platform.testing.fixtures import TempCase, git, platform_repo
 
@@ -63,7 +63,7 @@ class ApiCase(TempCase):
 
             return remote.as_uri()
 
-        self.patch(generate.Scaffolder, "push", staticmethod(push))
+        self.patch(Scaffolder, "push", staticmethod(push))
 
     @property
     def workspaces(self):

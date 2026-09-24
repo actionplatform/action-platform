@@ -12,20 +12,10 @@ from pathlib import Path
 from action_platform.core.flow.repository import Repository
 from action_platform.core.manifest import toml_str
 from action_platform.core.exception import ActionPlatformError
-from action_platform.core.scaffold.templates import Matrix, load_matrix
-from action_platform.core.scaffold.templates import detect_language as detect
+from action_platform.core.scaffold.catalog import Matrix, load_matrix
+from action_platform.core.scaffold.language import detect_language
 from action_platform.core.wiring import slot, wired
 from action_platform.settings import settings
-
-MARKERS = [
-    ("pyproject.toml", "python"),
-    ("go.mod", "go"),
-    ("package.json", "node"),
-    ("composer.json", "php"),
-    ("pom.xml", "java"),
-    ("Cargo.toml", "rust"),
-    ("Gemfile", "ruby"),
-]
 
 WORKFLOWS = ["code-quality.yml", "conventional-commit.yml", "gitflow.yml", "trivy.yml"]
 
@@ -64,10 +54,6 @@ class Plan:
     hooks_installed: bool = False
     hooks_preserved: list[str] = field(default_factory=list)
     hooks_skipped: str | None = None
-
-
-def detect_language(root: Path) -> str | None:
-    return detect(root) or None
 
 
 @slot("installer")

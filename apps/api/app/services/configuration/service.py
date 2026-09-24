@@ -3,8 +3,8 @@ from pathlib import Path
 import tomllib
 
 from action_platform.core.wiring import wired
-from action_platform.core.scaffold.install import install
-from action_platform.core.scaffold.templates import TemplateError
+from action_platform.core.scaffold.installer import install
+from action_platform.core.exception import TemplateError
 from action_platform.settings import settings
 from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.workspace.registry import Registry

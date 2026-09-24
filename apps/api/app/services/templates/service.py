@@ -3,7 +3,7 @@
 from action_platform import __version__
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.flow import gitflow
-from action_platform.core.scaffold.templates import (
+from action_platform.core.scaffold.catalog import (
     OFFICIAL,
     Matrix,
     load_matrix,
