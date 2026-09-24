@@ -47,6 +47,7 @@ class HostConnector:
                 expires_at,
                 host.stored_base_url(app),
                 owner,
+                username=host.token_username,
             )
         except ActionPlatformError as e:
             raise HostConnectError(str(e)) from e

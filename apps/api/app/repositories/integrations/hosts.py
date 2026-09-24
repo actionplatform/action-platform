@@ -114,6 +114,7 @@ class HostsWrites(HostsReads):
         expires_at: Optional[datetime],
         base_url: Optional[str],
         owner: Optional[str] = None,
+        username: Optional[str] = None,
     ) -> SourceHost:
         if self.sealer is None:
             raise DirectoryError("auth secret is not configured")
@@ -133,7 +134,7 @@ class HostsWrites(HostsReads):
                 organization_id=organization_id,
                 kind=provider,
                 name=f"{HOST_LABELS[provider]} · {login}",
-                username="x-token-auth" if provider == "bitbucket" else None,
+                username=username,
                 default_owner=owner or login,
                 auth_kind="oauth",
                 login=login,
