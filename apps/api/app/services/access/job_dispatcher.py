@@ -20,7 +20,7 @@ def wants_async(headers: dict[str, str]) -> bool:
     )
 
 
-class Dispatcher:
+class JobDispatcher:
     def __init__(self, queue: JobQueue) -> None:
         self.queue = queue
 

@@ -20,7 +20,7 @@ from app.core.db.models import Organization
 from app.schemas import common
 from app.schemas import projects as schemas
 from app.services.access.caller import Caller
-from app.services.access.dispatch import Dispatcher
+from app.services.access.job_dispatcher import JobDispatcher
 from app.services.jobs import JobQueue
 from app.repositories.projects import ProjectsRepository
 
@@ -139,7 +139,7 @@ def delete_project(
         response.status_code = 202
 
         return common.Removed(
-            job=Dispatcher(queue).destroy_project(org, project, caller, repositories)
+            job=JobDispatcher(queue).destroy_project(org, project, caller, repositories)
         )
 
     removed, deleted = projects.delete(org, project, repositories)

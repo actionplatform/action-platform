@@ -18,7 +18,7 @@ from app.api.dependencies import (
 )
 from app.schemas import common
 from app.schemas import projects as schemas
-from app.services.access.dispatch import Dispatcher
+from app.services.access.job_dispatcher import JobDispatcher
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -93,7 +93,7 @@ def delete_app(
         response.status_code = 202
 
         return common.Removed(
-            job=Dispatcher(queue).destroy_app(org, app, caller, repository)
+            job=JobDispatcher(queue).destroy_app(org, app, caller, repository)
         )
 
     removed, repositories = projects.delete_app(org, project, app, repository)

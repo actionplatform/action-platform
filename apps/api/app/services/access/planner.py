@@ -13,7 +13,7 @@ from app.core.errors import Invalid, Refused
 from app.repositories.configuration.config_store import ConfigStore
 from app.services.scopes import ScopesService
 from app.services.access.caller import Caller, resolve_caller
-from app.services.access.dispatch import Dispatcher
+from app.services.access.job_dispatcher import JobDispatcher
 from app.services.access.enrich import credentials_for, enrich
 from app.services.access.target import Authorizer, Target
 from app.services.access.directory import AccessDirectory
@@ -95,7 +95,7 @@ class Planner:
                     bool(parsed.get("force")),
                 )
 
-            job_id = Dispatcher(JobQueue(self.state.db)).async_job(
+            job_id = JobDispatcher(JobQueue(self.state.db)).async_job(
                 target.organization, target.app, caller, path, method, headers, parsed
             )
 
@@ -153,6 +153,6 @@ class Planner:
         if plan.target.app is None or plan.target.organization is None:
             return
 
-        Dispatcher(JobQueue(self.state.db)).import_later(
+        JobDispatcher(JobQueue(self.state.db)).import_later(
             plan.target.organization, plan.target.app, caller, path, method
         )

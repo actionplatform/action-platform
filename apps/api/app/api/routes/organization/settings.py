@@ -17,7 +17,7 @@ from app.repositories.workspace.registry import Registry
 from app.repositories.workspace.source import get_registry
 from app.schemas import common
 from app.schemas import organization as schemas
-from app.services.access.dispatch import Dispatcher
+from app.services.access.job_dispatcher import JobDispatcher
 from app.services.organization.removal import OrganizationRemoval
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
@@ -75,7 +75,7 @@ def delete_organization(
         response.status_code = 202
 
         return common.Removed(
-            job=Dispatcher(queue).destroy_organization(
+            job=JobDispatcher(queue).destroy_organization(
                 org, caller, repositories, confirm or ""
             )
         )
