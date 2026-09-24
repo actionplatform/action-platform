@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 from urllib.parse import urlencode
 
 from action_platform.core.exception import ProviderError
@@ -94,7 +94,7 @@ class BitbucketProvider(HostProvider):
 
         return chosen["workspace"]["slug"] if chosen else None
 
-    def access(self, creds: Credentials, app_slug: Optional[str]) -> dict[str, Any]:
+    def access(self, creds: Credentials, app_slug: Optional[str]) -> AccessReport:
         auth = (
             BasicAuth.header(creds.username, creds.token)
             if creds.username
@@ -104,7 +104,7 @@ class BitbucketProvider(HostProvider):
         status, me = probe.get(f"{API}/user")
 
         if not me:
-            return AccessReport.refused(self.label, status)
+            return AccessReport.refused(self.kind, self.label, status)
 
         spaces_status, spaces = probe.get(
             f"{API}/user/permissions/workspaces?pagelen=100"
@@ -133,4 +133,4 @@ class BitbucketProvider(HostProvider):
                 f"Bitbucket lists no workspace for this account (permissions endpoint answered {spaces_status}). The OAuth consumer needs Workspace membership: Read and Account: Read; repositories are created inside a workspace, never under the account name."
             )
 
-        return report.as_dict()
+        return report

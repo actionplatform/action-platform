@@ -1,70 +1,15 @@
-"""The one shape every provider answers an access check in."""
+"""The probe every provider reads an access check with; the report it answers in lives on the HostProvider contract."""
 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from action_platform.core.exception import ProviderError
+from app.core.abc import AccessReport, Owner
 from app.core.shared.http import http
 
-
-@dataclass
-class Owner:
-    """An account, installation or workspace the token may create repositories in."""
-
-    account: str
-    kind: str
-    repositories: str
-    administration: str
-    contents: str
-    actions: str = "none"
-    selected: Optional[list[str]] = None
-    configure_url: Optional[str] = None
-
-    @property
-    def can_create_repos(self) -> bool:
-        return self.administration == "write" and self.contents == "write"
-
-    def as_dict(self) -> dict[str, Any]:
-        return {
-            "account": self.account,
-            "kind": self.kind,
-            "repositories": self.repositories,
-            "administration": self.administration,
-            "contents": self.contents,
-            "actions": self.actions,
-            "canCreateRepos": self.can_create_repos,
-            "selected": self.selected,
-            "configureUrl": self.configure_url,
-        }
-
-
-@dataclass
-class AccessReport:
-    kind: str
-    login: str
-    installations: list[Owner] = field(default_factory=list)
-    install_url: Optional[str] = None
-    problems: list[str] = field(default_factory=list)
-
-    def as_dict(self) -> dict[str, Any]:
-        return {
-            "ok": True,
-            "kind": self.kind,
-            "login": self.login,
-            "installations": [o.as_dict() for o in self.installations],
-            "installUrl": self.install_url,
-            "problems": self.problems,
-        }
-
-    @staticmethod
-    def refused(label: str, status: int) -> dict[str, Any]:
-        return {
-            "ok": False,
-            "error": f"token rejected by {label} ({status}); reconnect the host",
-        }
+__all__ = ["AccessReport", "Owner", "Probe"]
 
 
 class Probe:
