@@ -6,7 +6,7 @@ import tomllib
 from pathlib import Path
 
 from action_platform.core.flow.repository import Repository
-from action_platform.settings import settings
+from action_platform.core.files import CONFIG_FILE
 from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.workspace.registry import Registry
 from app.services.workspace.checkout import Workspaces
@@ -45,7 +45,7 @@ class AppFacts:
     def manifest(self, id: str) -> dict:
         root = self.root(id)
         content = self.configs.render(id, root)
-        file = root / settings.CONFIG_FILE
+        file = root / CONFIG_FILE
         mirrored = file.exists() and same_toml(file.read_text(), content)
 
         return {"content": content, "mirrored": mirrored}

@@ -11,7 +11,7 @@ from action_platform.core.facade import ActionPlatform
 from action_platform.core.config import Config
 from action_platform.mcp import schemas
 from action_platform.mcp.annotations import DESTRUCTIVE, READ_ONLY, REACHES_OUT, tool
-from action_platform.settings import settings
+from action_platform.core.files import CONFIG_FILE
 
 ProjectDir = Annotated[
     Optional[str], Field(description="Project directory; default is the cwd.")
@@ -27,9 +27,7 @@ Stage = Annotated[
 def _tool(project: Optional[str]) -> ActionPlatform:
     root = Path(project).resolve() if project else Path.cwd()
 
-    return ActionPlatform(
-        config=Config.from_toml(root / settings.CONFIG_FILE), repo_root=root
-    )
+    return ActionPlatform(config=Config.from_toml(root / CONFIG_FILE), repo_root=root)
 
 
 def register(mcp: Any) -> None:

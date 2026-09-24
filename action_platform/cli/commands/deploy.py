@@ -14,7 +14,7 @@ from action_platform.core.exception import ActionPlatformError, DeployError
 from action_platform.remote.client import Remote
 from action_platform.remote.schemas import AppRef, ProjectRow
 from action_platform.logging import logger
-from action_platform.settings import settings
+from action_platform.core.files import CONFIG_FILE
 
 console = Console()
 
@@ -30,7 +30,7 @@ STAGE = typer.Option(
 
 
 def _tool() -> ActionPlatform:
-    return ActionPlatform(config=Config.from_toml(Path.cwd() / settings.CONFIG_FILE))
+    return ActionPlatform(config=Config.from_toml(Path.cwd() / CONFIG_FILE))
 
 
 def run(
@@ -89,7 +89,7 @@ def diagnose(target: str | None = TARGET, stage: str | None = STAGE) -> None:
 
 def scopes() -> None:
     """Where this repository's releases are deployed: `[[scopes]]`, or the `[deploy]` targets read as scopes."""
-    config = Config.from_toml(Path.cwd() / settings.CONFIG_FILE)
+    config = Config.from_toml(Path.cwd() / CONFIG_FILE)
 
     for scope in config.scopes:
         console.print(
@@ -157,7 +157,7 @@ def destroy(
 
 def _remote_app(app: str | None) -> tuple[Remote, ProjectRow, AppRef]:
     remote = Remote.from_credentials()
-    wanted = app or Config.from_toml(Path.cwd() / settings.CONFIG_FILE).project_name
+    wanted = app or Config.from_toml(Path.cwd() / CONFIG_FILE).project_name
 
     for project in remote.projects():
         for row in project.apps:

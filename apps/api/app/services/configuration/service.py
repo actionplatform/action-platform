@@ -5,7 +5,7 @@ import tomllib
 from action_platform.core.wiring import wired
 from action_platform.core.scaffold.installer import install
 from action_platform.core.exception import TemplateError
-from action_platform.settings import settings
+from action_platform.core.files import CONFIG_FILE
 from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.workspace.registry import Registry
 from app.schemas import SourceSpec
@@ -68,7 +68,7 @@ class ConfigurationService:
 
     def _remember(self, id: str, root: Path) -> None:
         """An overlay wrote `[deploy]` or `[services]` into the clone's file; the platform's record takes them."""
-        file = root / settings.CONFIG_FILE
+        file = root / CONFIG_FILE
 
         if not file.exists():
             return
