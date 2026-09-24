@@ -1,9 +1,9 @@
-"""action_platform.core.scaffold.generate — pushing a generated project through the source host."""
+"""action_platform.core.scaffold.publisher — pushing a generated project through the source host."""
 
 from __future__ import annotations
 
 from action_platform.core.flow.repository import Repository
-from action_platform.core.scaffold import generate
+from action_platform.core.scaffold import publisher
 from tests.support import TempCase
 
 
@@ -28,7 +28,7 @@ class PushProjectTest(TempCase):
         host = FakeHost()
         pushed: dict = {}
         self.patch(
-            generate.Config,
+            publisher.Config,
             "from_toml",
             classmethod(lambda cls, p: type("C", (), {"source_host": host})()),
         )
@@ -38,7 +38,7 @@ class PushProjectTest(TempCase):
             lambda self, branch, remote="origin": pushed.update(branch=branch),
         )
 
-        url = generate.push_project(self.tmp_path, private=True)
+        url = publisher.push_project(self.tmp_path, private=True)
         repo = Repository(self.tmp_path)
 
         self.assertEqual(url, "https://example.com/owner/demo.git")
