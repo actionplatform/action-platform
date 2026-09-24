@@ -2,7 +2,7 @@
 
 from app.services.integrations.hosts.access import AccessReport, Owner, Probe
 from app.services.integrations.hosts.bitbucket import BitbucketProvider
-from app.services.integrations.hosts.connect import HostConnector
+from app.services.integrations.hosts.connect import HostConnectError, HostConnector
 from app.services.integrations.hosts.github import (
     MANIFEST_PERMISSIONS,
     GithubProvider,
@@ -20,6 +20,7 @@ __all__ = [
     "BitbucketProvider",
     "GithubProvider",
     "GitlabProvider",
+    "HostConnectError",
     "HostConnector",
     "HostProviders",
     "OAuthState",

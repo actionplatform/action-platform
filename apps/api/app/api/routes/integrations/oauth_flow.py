@@ -10,7 +10,7 @@ from app.api.dependencies import (
     get_state_signer,
 )
 from app.schemas import integrations as schemas
-from app.services.integrations.hosts import PROVIDERS, HostConnector
+from app.services.integrations.hosts import PROVIDERS, HostConnectError, HostConnector
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -86,14 +86,12 @@ def oauth_callback(
             return_to=return_to, query={"oauth_error": "no code from the provider"}
         )
 
-    problem = HostConnector(writes).finish(
-        org, provider, body.origin.rstrip("/"), body.code, body.installation_id
-    )
-
-    if problem:
-        return schemas.OAuthFinished(
-            return_to=return_to, query={"oauth_error": problem}
+    try:
+        HostConnector(writes).finish(
+            org, provider, body.origin.rstrip("/"), body.code, body.installation_id
         )
+    except HostConnectError as e:
+        return schemas.OAuthFinished(return_to=return_to, query={"oauth_error": str(e)})
 
     return schemas.OAuthFinished(return_to=return_to, query={"connected": provider})
 
