@@ -4,10 +4,15 @@ from typing import TYPE_CHECKING, Optional
 
 from action_platform.core.exception import ActionPlatformError
 from app.core.db.models import Organization
+from app.core.errors import ServiceError
 from app.services.integrations.hosts.registry import PROVIDERS
 
 if TYPE_CHECKING:
     from app.services.integrations.hosts.directory import IntegrationsDirectory
+
+
+class HostConnectError(ServiceError):
+    """Connecting a code host failed; the message is what the settings page shows."""
 
 
 class HostConnector:
@@ -21,13 +26,13 @@ class HostConnector:
         origin: str,
         code: str,
         installation_id: Optional[str],
-    ) -> Optional[str]:
-        """Trade the code for tokens, read who signed in, store the host. Returns the problem to show, None when connected."""
+    ) -> None:
+        """Trade the code for tokens, read who signed in, store the host. Raises HostConnectError with the problem to show."""
         app = self.writes.oauth_app(provider)
         host = PROVIDERS.get(provider)
 
         if app is None:
-            return f"{host.label} OAuth app is not configured"
+            raise HostConnectError(f"{host.label} OAuth app is not configured")
 
         try:
             access, refresh, expires_at = host.exchange_code(app, origin, code)
@@ -44,9 +49,7 @@ class HostConnector:
                 owner,
             )
         except ActionPlatformError as e:
-            return str(e)
-
-        return None
+            raise HostConnectError(str(e)) from e
 
     @staticmethod
     def _owner(
@@ -60,15 +63,15 @@ class HostConnector:
 
         return None
 
-    def create_github_app(self, code: str) -> tuple[Optional[str], Optional[str]]:
-        """Turn a manifest code into a stored GitHub App: (slug, None) when created, (None, problem) otherwise."""
+    def create_github_app(self, code: str) -> str:
+        """Turn a manifest code into a stored GitHub App and answer its slug. Raises HostConnectError when GitHub refuses."""
         try:
             app = PROVIDERS.github.convert_manifest(code)
         except ActionPlatformError as e:
-            return None, str(e)
+            raise HostConnectError(str(e)) from e
 
         self.writes.save_oauth_app(
             "github", app["client_id"], app["client_secret"], None, app.get("slug")
         )
 
-        return app.get("slug") or "created", None
+        return app.get("slug") or "created"

@@ -12,7 +12,7 @@ from app.api.dependencies import (
     get_state_signer,
 )
 from app.schemas import integrations as schemas
-from app.services.integrations.hosts import PROVIDERS, HostConnector
+from app.services.integrations.hosts import PROVIDERS, HostConnectError, HostConnector
 
 GITHUB_LOGIN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$")
 
@@ -101,11 +101,11 @@ def github_manifest_callback(
             return_to=state["returnTo"], query={"oauth_error": "GitHub sent no code"}
         )
 
-    slug, problem = HostConnector(writes).create_github_app(body.code)
-
-    if problem:
+    try:
+        slug = HostConnector(writes).create_github_app(body.code)
+    except HostConnectError as e:
         return schemas.OAuthFinished(
-            return_to=state["returnTo"], query={"oauth_error": problem}
+            return_to=state["returnTo"], query={"oauth_error": str(e)}
         )
 
     return schemas.OAuthFinished(
