@@ -31,6 +31,10 @@ SHARED = {
     "DeployTargetRow": "TargetRow",
     "Diagnosis": "Diagnosis",
     "GitflowReport": "GitflowReport",
+    "Job": "JobOut",
+    "JobLogs": "JobLogsOut",
+    "LogLine": "LogLine",
+    "Me": "Me",
     "MemberRow": "MemberRow",
     "OrganizationRow": "OrganizationRow",
     "ProjectRow": "ProjectRow",
@@ -40,6 +44,7 @@ SHARED = {
     "ScopeRow": "ScopeRow",
     "Scopes": "Scopes",
     "TeamRow": "TeamRow",
+    "Version": "Version",
 }
 
 

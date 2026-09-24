@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 
+from pydantic import ValidationError
+
 from action_platform.core.exception import ActionPlatformError
-from action_platform.remote import client, credentials
+from action_platform.remote import client, credentials, schemas
 from tests.support import TempCase
 
 DEVICE_CODE = {
@@ -138,6 +140,20 @@ class LoginTest(LoginCase):
             client.login("https://p.example", echo=lambda s: None)
 
 
+LISTED = ("apps", "projects", "teams", "members", "commits")
+ANSWER = {
+    "ok": True,
+    "id": "p1",
+    "name": "Shop",
+    "slug": "shop",
+    "registry_id": "r1",
+    "current": "1.0.0",
+    "next": "1.1.0",
+    "changelog": "",
+    "dry_run": False,
+}
+
+
 class RemoteClientTest(TempCase):
     def setUp(self):
         super().setUp()
@@ -145,6 +161,8 @@ class RemoteClientTest(TempCase):
         self.delenv("AP_SERVER")
         self.delenv("AP_TOKEN")
         self.seen: dict = {}
+        self.rows: list = []
+        self.answer: object = ANSWER
 
         def fake_request(
             method,
@@ -156,9 +174,19 @@ class RemoteClientTest(TempCase):
             organization=None,
         ):
             self.seen.update(
-                method=method, url=url, body=body, token=token, client=client
+                method=method,
+                url=url,
+                body=body,
+                token=token,
+                client=client,
+                organization=organization,
             )
-            return {"ok": True}
+            path = url.split("?")[0]
+
+            if method == "GET" and path.endswith(LISTED):
+                return self.rows
+
+            return self.answer
 
         self.patch(client, "_request", fake_request)
 
@@ -185,6 +213,80 @@ class RemoteClientTest(TempCase):
 
         remote.write_manifest("p1", "[project]\n")
         self.assertEqual(self.seen["method"], "PUT")
+
+    def test_organization_level_calls_send_the_organization(self):
+        remote = client.Remote("https://p.example", "tok")
+
+        for call in (
+            lambda: remote.projects(organization="acme"),
+            lambda: remote.teams(organization="acme"),
+            lambda: remote.members(organization="acme"),
+            lambda: remote.create_project("Shop", "", organization="acme"),
+            lambda: remote.create_team("Core", "", organization="acme"),
+            lambda: remote.add_team_member("t1", "u1", organization="acme"),
+            lambda: remote.assign_project_team("p1", None, organization="acme"),
+            lambda: remote.set_member_role("u1", "viewer", organization="acme"),
+            lambda: remote.add_app("p1", "https://x/y.git", None, "acme"),
+            lambda: remote.remove_app("p1", "d1", True, "acme"),
+            lambda: remote.delete_project("p1", False, "acme"),
+        ):
+            with self.subTest(call=call):
+                call()
+                self.assertEqual(self.seen["organization"], "acme")
+
+        remote.remove_app("p1", "d1", True, "acme")
+        self.assertEqual(
+            self.seen["url"],
+            "https://p.example/api/v1/projects/p1/apps/d1?repository=true",
+        )
+        self.assertIsNone(self.seen["body"])
+
+        remote.projects()
+        self.assertIsNone(self.seen["organization"])
+
+    def test_answers_come_back_as_the_schemas(self):
+        remote = client.Remote("https://p.example", "tok")
+        self.rows = [
+            {
+                "id": "p1",
+                "name": "Shop",
+                "slug": "shop",
+                "apps": [{"id": "d1", "name": "orders", "registry_id": "r1"}],
+                "organization": {"id": "o1", "name": "Acme"},
+                "tearing_down": False,
+            }
+        ]
+
+        (project,) = remote.projects()
+
+        self.assertIsInstance(project, schemas.ProjectRow)
+        self.assertEqual(project.apps[0].registry_id, "r1")
+        self.assertEqual(project.organization.id, "o1")
+        self.assertIs(project.model_extra["tearing_down"], False)
+
+        self.assertIsInstance(
+            remote.release("p1", "minor", dry_run=False), schemas.ReleasePreview
+        )
+
+        self.answer = {
+            "user": {"email": "me@example.com"},
+            "permissions": {"app.release": True},
+        }
+        who = remote.whoami()
+
+        self.assertIsInstance(who, schemas.Me)
+        self.assertEqual(who.user["email"], "me@example.com")
+        self.assertIsNone(who.organization)
+
+        self.answer = None
+        self.assertEqual(remote.whoami().permissions, {})
+
+    def test_an_answer_missing_a_guaranteed_field_is_refused(self):
+        remote = client.Remote("https://p.example", "tok")
+        self.answer = {"next": "1.1.0"}
+
+        with self.assertRaises(ValidationError):
+            remote.release("p1")
 
     def test_from_credentials_requires_login(self):
         with self.assertRaisesRegex(ActionPlatformError, "login"):

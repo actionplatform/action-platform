@@ -35,29 +35,29 @@ def _repo_key(url: str) -> str:
     return "/".join(parts[-2:]).lower() if len(parts) >= 2 else ""
 
 
-def _org_of(row: dict) -> Optional[str]:
+def _org_of(row: schemas.ProjectRow) -> Optional[str]:
     """The organization a project row names when the token spans every organization; None when it does not need saying."""
-    organization = row.get("organization") or {}
-
-    return organization.get("id") if isinstance(organization, dict) else None
+    return row.organization.id if row.organization else None
 
 
 def _project_of(
     remote: Remote, project: str, organization: Optional[str] = None
-) -> dict:
+) -> schemas.ProjectRow:
     """The project row for an id or slug; a name the platform does not know is an error the agent can read."""
     for row in remote.projects(organization=organization):
-        if project in (row.get("id"), row.get("slug")):
+        if project in (row.id, row.slug):
             return row
 
     raise ActionPlatformError(f"no project {project!r}: list_projects shows them")
 
 
-def _app_in_project(remote: Remote, app_id: str) -> tuple[dict, dict]:
+def _app_in_project(
+    remote: Remote, app_id: str
+) -> tuple[schemas.ProjectRow, schemas.AppRef]:
     """(project, app) for an app id from list_apps, which is the registry id the workspace tools use."""
     for project in remote.projects():
-        for app in project.get("apps") or []:
-            if app_id in (app.get("registry_id"), app.get("id")):
+        for app in project.apps:
+            if app_id in (app.registry_id, app.id):
                 return project, app
 
     raise ActionPlatformError(f"no app {app_id!r}: list_apps shows them")
@@ -71,14 +71,14 @@ def register(mcp: Any, remote: Remote) -> None:
 
         return {
             "server": remote.server,
-            "user": who.get("user"),
-            "organization": who.get("organization"),
-            "organizations": who.get("organizations"),
-            "spans_every_organization": who.get("organization") is None,
-            "role": who.get("role_label") or who.get("role"),
-            "scope": who.get("scope"),
-            "limited_to": {"project": who.get("project"), "app": who.get("app")},
-            "can": {k: v for k, v in (who.get("permissions") or {}).items()},
+            "user": who.user,
+            "organization": who.organization,
+            "organizations": who.organizations,
+            "spans_every_organization": who.organization is None,
+            "role": who.role_label or who.role,
+            "scope": who.scope,
+            "limited_to": {"project": who.project, "app": who.app},
+            "can": dict(who.permissions),
         }
 
     @tool(mcp, annotations=READ_ONLY)
@@ -166,18 +166,13 @@ def register(mcp: Any, remote: Remote) -> None:
         key = _repo_key(remote_url)
         who = remote.whoami()
         match = next(
-            (a for a in remote.apps() if key and _repo_key(a.get("url") or "") == key),
+            (a for a in remote.apps() if key and _repo_key(a.url) == key),
             None,
         )
         projects = remote.projects() if match else []
         owner = (
             next(
-                (
-                    p
-                    for p in projects
-                    for a in p["apps"]
-                    if a["registry_id"] == match["id"]
-                ),
+                (p for p in projects for a in p.apps if a.registry_id == match.id),
                 None,
             )
             if match
@@ -188,18 +183,18 @@ def register(mcp: Any, remote: Remote) -> None:
             "directory": str(root),
             "remote": remote_url or None,
             "branch": repo.branch if repo.exists() else None,
-            "organization": who.get("organization"),
+            "organization": who.organization,
             "project": {
-                "id": owner["id"],
-                "name": owner["name"],
-                "team": owner.get("team"),
+                "id": owner.id,
+                "name": owner.name,
+                "team": owner.team.model_dump() if owner.team else None,
             }
             if owner
             else None,
-            "app": match,
-            "role": who.get("role_label") or who.get("role"),
-            "scope": who.get("scope"),
-            "can": who.get("permissions"),
+            "app": match.model_dump() if match else None,
+            "role": who.role_label or who.role,
+            "scope": who.scope,
+            "can": who.permissions,
             "hint": None
             if match
             else "this directory is not an app on the platform — add_app registers it",
@@ -237,7 +232,7 @@ def register(mcp: Any, remote: Remote) -> None:
         install = {"type": install_type, "ci": install_ci} if install_type else None
         row = _project_of(remote, project)
 
-        return remote.add_app(row["id"], url, install, _org_of(row))
+        return remote.add_app(row.id, url, install, _org_of(row))
 
     @tool(mcp, annotations=DESTRUCTIVE)
     def remove_app(
@@ -252,7 +247,7 @@ def register(mcp: Any, remote: Remote) -> None:
         """Remove an app from its project and drop the platform's clone. The repository on the code host stays unless `repository` is true."""
         project, app = _app_in_project(remote, id)
 
-        return remote.remove_app(project["id"], app["id"], repository, _org_of(project))
+        return remote.remove_app(project.id, app.id, repository, _org_of(project))
 
     @tool(mcp, annotations=DESTRUCTIVE)
     def delete_project(
@@ -267,7 +262,7 @@ def register(mcp: Any, remote: Remote) -> None:
         """Delete a project and remove its apps from the platform. Repositories on the code host stay unless `repositories` is true."""
         row = _project_of(remote, project)
 
-        return remote.delete_project(row["id"], repositories, _org_of(row))
+        return remote.delete_project(row.id, repositories, _org_of(row))
 
     @tool(mcp, annotations=REACHES_OUT)
     def sync_app(id: AppId) -> schemas.AppEntry:
@@ -467,7 +462,7 @@ def register(mcp: Any, remote: Remote) -> None:
         row = _project_of(remote, project)
 
         return remote.init(
-            row["id"],
+            row.id,
             {
                 "type": type,
                 "stack": stack,
@@ -488,7 +483,7 @@ def register(mcp: Any, remote: Remote) -> None:
         """Where the app's releases are deployed: each scope with its kind and its criticality (test, low, medium, high, critical). Criticality decides what a scope takes: test and low take candidates, stable and hotfix releases; medium and above take stable and hotfix only. A deploy always names a scope; an app without scopes does not deploy."""
         project, app = _app_in_project(remote, id)
 
-        return remote.scopes(project["id"], app["id"])
+        return remote.scopes(project.id, app.id)
 
     @tool(mcp, annotations=REACHES_OUT)
     def create_scope(
@@ -508,8 +503,8 @@ def register(mcp: Any, remote: Remote) -> None:
         project, app = _app_in_project(remote, id)
 
         return remote.create_scope(
-            project["id"],
-            app["id"],
+            project.id,
+            app.id,
             {"name": name, "kind": kind, "criticality": criticality},
         )
 
@@ -552,9 +547,9 @@ def register(mcp: Any, remote: Remote) -> None:
         project, app = _app_in_project(remote, id)
 
         if sync:
-            return remote.sync_deployments(project["id"], app["id"])
+            return remote.sync_deployments(project.id, app.id)
 
-        return remote.deployments(project["id"], app["id"])
+        return remote.deployments(project.id, app.id)
 
     @tool(mcp, annotations=REACHES_OUT)
     def record_deployment(
@@ -577,7 +572,7 @@ def register(mcp: Any, remote: Remote) -> None:
         project, app = _app_in_project(remote, id)
 
         return remote.record_deployment(
-            project["id"], app["id"], target, version, stage, url, None, ok
+            project.id, app.id, target, version, stage, url, None, ok
         )
 
     @tool(mcp, annotations=READ_ONLY)

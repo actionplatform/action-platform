@@ -5,7 +5,11 @@ from __future__ import annotations
 import asyncio
 import json
 import unittest
-from typing import Any
+from typing import Any, get_type_hints
+
+from pydantic import TypeAdapter
+
+from action_platform.remote.client import Remote
 
 from tests.mcp.support import HAS_MCP
 
@@ -68,33 +72,38 @@ class FakeRemote:
         self.projects_rows: list[dict] = []
 
     def __getattr__(self, name: str):
+        answers = TypeAdapter(get_type_hints(getattr(Remote, name))["return"])
+
         def method(*args, **kwargs):
             self.calls.append((name, args, kwargs))
 
-            if name == "whoami":
-                return {
-                    "user": {"email": "me@example.com", "name": "Me"},
-                    "organization": {"id": "o1", "name": "Acme"},
-                    "role": "developer",
-                    "role_label": "Developer",
-                    "scope": ["read", "write"],
-                    "permissions": {"app.release": False, "app.configure": True},
-                    "project": None,
-                    "app": None,
-                }
-
-            if name == "apps" and self.apps_rows:
-                return self.apps_rows
-
-            if name == "projects" and self.projects_rows:
-                return self.projects_rows
-
-            if name in LISTS:
-                return []
-
-            return SHAPES.get(name, {"called": name})
+            return answers.validate_python(self.answer(name))
 
         return method
+
+    def answer(self, name: str) -> Any:
+        if name == "whoami":
+            return {
+                "user": {"email": "me@example.com", "name": "Me"},
+                "organization": {"id": "o1", "name": "Acme"},
+                "role": "developer",
+                "role_label": "Developer",
+                "scope": ["read", "write"],
+                "permissions": {"app.release": False, "app.configure": True},
+                "project": None,
+                "app": None,
+            }
+
+        if name == "apps" and self.apps_rows:
+            return self.apps_rows
+
+        if name == "projects" and self.projects_rows:
+            return self.projects_rows
+
+        if name in LISTS:
+            return []
+
+        return SHAPES.get(name, {"called": name})
 
 
 CASES: list[tuple[str, dict[str, Any], str, tuple, dict]] = [
@@ -317,8 +326,9 @@ class RemoteToolsTest(TempCase):
             {
                 "id": "p1",
                 "name": "Shop",
+                "slug": "shop",
                 "team": None,
-                "apps": [{"registry_id": "r1", "name": "orders"}],
+                "apps": [{"id": "d1", "registry_id": "r1", "name": "orders"}],
             }
         ]
 
