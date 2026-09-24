@@ -335,7 +335,7 @@ def load_matrix(update: bool = False, source: str | None = None) -> tuple[Path, 
     repo = ensure_repo(update=update)
     matrix = with_plugin_clouds(Matrix.from_json(repo / "index.json"))
 
-    if not matrix.leaves and not update and settings.TEMPLATES_DIR is None:
+    if not matrix.leaves and not update and settings.templates.dir is None:
         logger.info("templates cache has no projects, refreshing")
         repo = ensure_repo(update=True)
         matrix = with_plugin_clouds(Matrix.from_json(repo / "index.json"))

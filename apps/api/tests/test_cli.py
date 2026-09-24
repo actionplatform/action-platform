@@ -15,8 +15,8 @@ API = Path(__file__).resolve().parents[1]
 RECORD_READS = """
 import action_platform.settings as s
 seen = []
-for key, read in list(s.FIELDS.items()):
-    s.FIELDS[key] = (lambda key, read: lambda env: (seen.append(key), read(env))[1])(key, read)
+for key, read in list(s.SLICES.items()):
+    s.SLICES[key] = (lambda key, read: lambda env: (seen.append(key), read(env))[1])(key, read)
 """
 
 

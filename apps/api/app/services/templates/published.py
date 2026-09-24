@@ -31,11 +31,11 @@ class TemplatesIndex:
         if callable(self._url):
             return self._url()
 
-        return self._url or settings.TEMPLATES_INDEX_URL
+        return self._url or settings.templates.index_url
 
     @property
     def ttl(self) -> int:
-        return settings.TEMPLATES_INDEX_TTL if self._ttl is None else self._ttl
+        return settings.templates.index_ttl if self._ttl is None else self._ttl
 
     @property
     def raw_base(self) -> str:
@@ -84,4 +84,4 @@ class TemplatesIndex:
 
 
 index = TemplatesIndex()
-plugins_index = TemplatesIndex(lambda: settings.PLUGINS_INDEX_URL)
+plugins_index = TemplatesIndex(lambda: settings.templates.plugins_index_url)

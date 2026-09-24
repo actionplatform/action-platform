@@ -43,7 +43,7 @@ def _trusted(peer: str) -> bool:
     except ValueError:
         return False
 
-    for cidr in settings.TRUSTED_PROXIES.split(","):
+    for cidr in settings.api.trusted_proxies.split(","):
         cidr = cidr.strip()
 
         if not cidr:

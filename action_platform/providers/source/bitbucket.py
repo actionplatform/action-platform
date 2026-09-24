@@ -42,8 +42,8 @@ class SourceBitbucket(SourceHost):
         base_url: str | None = None,
     ) -> None:
         self.repo = repo
-        self.token = token or settings.BITBUCKET_TOKEN
-        self.username = username or settings.BITBUCKET_USERNAME
+        self.token = token or settings.tokens.bitbucket
+        self.username = username or settings.tokens.bitbucket_username
         self.api = "https://api.bitbucket.org/2.0"
         self.web = "https://bitbucket.org"
 

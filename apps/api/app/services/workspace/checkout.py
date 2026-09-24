@@ -57,7 +57,7 @@ CLONES = Clones()
 class Workspaces:
     def __init__(self, registry: Registry, ttl: float | None = None) -> None:
         self.registry = registry
-        self.ttl = settings.WORKSPACE_TTL if ttl is None else ttl
+        self.ttl = settings.workspaces.ttl if ttl is None else ttl
         self.clones = CLONES
 
     def adopt(

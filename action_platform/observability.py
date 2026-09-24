@@ -16,7 +16,7 @@ from action_platform.settings import settings
 def observe(
     component: str, dsn: Optional[str] = None, version: Optional[str] = None
 ) -> bool:
-    dsn = settings.SENTRY_DSN if dsn is None else dsn
+    dsn = settings.observability.dsn if dsn is None else dsn
 
     if not dsn:
         return False
@@ -27,10 +27,10 @@ def observe(
     sentry_sdk.init(
         dsn=dsn,
         release=f"{component}@{version or __version__}",
-        environment=settings.SENTRY_ENVIRONMENT,
+        environment=settings.observability.environment,
         send_default_pii=False,
         enable_logs=True,
-        traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+        traces_sample_rate=settings.observability.traces_sample_rate,
     )
     sentry_sdk.set_tag("component", component)
 

@@ -6,7 +6,6 @@ import unittest
 
 from action_platform.core.flow.repository import Repository
 from action_platform.core.scaffold.scaffolder import Scaffolder
-from action_platform.settings import settings
 from action_platform.testing.fixtures import TempCase, git, platform_repo
 
 try:
@@ -24,14 +23,13 @@ class ApiCase(TempCase):
         from app.api.app import build
 
         self.setenv("AP_HOME", str(self.tmp_path / "home"))
-        self.patch(
-            settings,
-            "WORKSPACES",
-            self.tmp_path / "home" / "action-platform" / "workspaces",
+        self.setenv(
+            "AP_WORKSPACES",
+            str(self.tmp_path / "home" / "action-platform" / "workspaces"),
         )
-        self.patch(settings, "WORKSPACE_TTL", 0)
-        self.patch(settings, "ALLOW_UNAUTHENTICATED_API", True)
-        self.patch(settings, "ALLOW_FILE_URLS", True)
+        self.setenv("AP_WORKSPACE_TTL", "0")
+        self.setenv("AP_ALLOW_UNAUTHENTICATED", "1")
+        self.setenv("AP_ALLOW_FILE_URLS", "1")
         self.repo = platform_repo(self.tmp_path)
         self.url = self.repo.as_uri()
         self.client = TestClient(

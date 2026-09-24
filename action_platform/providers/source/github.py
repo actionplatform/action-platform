@@ -52,7 +52,7 @@ class SourceGithub(SourceHost):
             raise ProviderError(f"repository {repo!r} is not owner/name")
 
         self.repo = repo
-        self.token = token or settings.GITHUB_TOKEN
+        self.token = token or settings.tokens.github
         self.api = (base_url or "https://api.github.com").rstrip("/")
         self.web = (
             "https://github.com"

@@ -21,14 +21,13 @@ class GateCase(TempCase):
         from app.api.routes.auth.support import LIMITS
 
         self.setenv("AP_HOME", str(self.tmp_path / "home"))
-        self.patch(
-            settings,
-            "WORKSPACES",
-            self.tmp_path / "home" / "action-platform" / "workspaces",
+        self.setenv(
+            "AP_WORKSPACES",
+            str(self.tmp_path / "home" / "action-platform" / "workspaces"),
         )
-        self.patch(settings, "WORKSPACE_TTL", 0)
-        self.patch(settings, "ALLOW_UNAUTHENTICATED_API", False)
-        self.patch(settings, "ALLOW_FILE_URLS", True)
+        self.setenv("AP_WORKSPACE_TTL", "0")
+        self.setenv("AP_ALLOW_UNAUTHENTICATED", "0")
+        self.setenv("AP_ALLOW_FILE_URLS", "1")
         for limiter in LIMITS.values():
             limiter.hits.clear()
         self.app = build(
@@ -298,7 +297,7 @@ class AppsTest(GateCase):
             return original(url, path, *args, **kwargs)
 
         self.patch(Repository, "clone", staticmethod(spy))
-        shutil.rmtree(settings.WORKSPACES / registry_id, ignore_errors=True)
+        shutil.rmtree(settings.workspaces.root / registry_id, ignore_errors=True)
 
         res = self.client.get(f"/api/v1/apps/{registry_id}", headers=self.h())
 

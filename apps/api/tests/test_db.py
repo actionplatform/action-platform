@@ -8,7 +8,6 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import inspect, select
 
-from action_platform.settings import settings
 from action_platform.testing.fixtures import TempCase
 
 try:
@@ -184,11 +183,10 @@ class DatabaseTest(TempCase):
     def test_without_auto_migrate_the_app_reports_readiness(self):
         from fastapi.testclient import TestClient
 
-        from action_platform.settings import settings
         from app.api.app import build
         from app.core.db import Database
 
-        with mock.patch.object(settings, "DATABASE_AUTO_MIGRATE", False):
+        with mock.patch.dict("os.environ", {"AP_DATABASE_AUTO_MIGRATE": "0"}):
             behind = build(database_url=self.url(), auth_secret="s" * 32, token="t")
             before = TestClient(behind).get("/api/version").json()
             Database(self.url()).migrate()
@@ -203,7 +201,7 @@ class BootTest(TempCase):
     def setUp(self):
         super().setUp()
         self.setenv("AP_HOME", str(self.tmp_path / "home"))
-        self.patch(settings, "ALLOW_UNAUTHENTICATED_API", True)
+        self.setenv("AP_ALLOW_UNAUTHENTICATED", "1")
 
     def test_build_migrates_when_url_given(self):
         from app.api.app import build

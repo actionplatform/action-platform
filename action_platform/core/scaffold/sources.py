@@ -61,7 +61,7 @@ class TemplateSource:
     def cache(self) -> Path:
         key = hashlib.sha256(f"{self.url}@{self.ref}".encode()).hexdigest()[:16]
 
-        return settings.TEMPLATES_CACHE.parent / "sources" / key
+        return settings.templates.cache.parent / "sources" / key
 
 
 class LocalTemplateStore(TemplateStore):
@@ -117,7 +117,7 @@ class LocalTemplateStore(TemplateStore):
 
     def official(self, update: bool = False) -> Path:
         """The official templates repository: ACTION_PLATFORM_TEMPLATES when set, else a cached clone of ACTION_PLATFORM_TEMPLATES_REPO."""
-        local = settings.TEMPLATES_DIR
+        local = settings.templates.dir
 
         if local is not None:
             path = Path(local).expanduser()
@@ -129,18 +129,18 @@ class LocalTemplateStore(TemplateStore):
 
             return path
 
-        cache = settings.TEMPLATES_CACHE
+        cache = settings.templates.cache
 
         if not cache.exists():
-            logger.info("cloning %s", settings.TEMPLATES_REPO)
+            logger.info("cloning %s", settings.templates.repo)
             cache.parent.mkdir(parents=True, exist_ok=True)
             self._git(
                 "clone",
                 "--depth",
                 "1",
                 "--branch",
-                settings.TEMPLATES_REF,
-                settings.TEMPLATES_REPO,
+                settings.templates.ref,
+                settings.templates.repo,
                 str(cache),
             )
 

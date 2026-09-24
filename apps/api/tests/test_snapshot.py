@@ -28,7 +28,7 @@ class SnapshotTest(GateCase):
         ).json()
         self.assertTrue(commits)
 
-        shutil.rmtree(settings.WORKSPACES / registry_id, ignore_errors=True)
+        shutil.rmtree(settings.workspaces.root / registry_id, ignore_errors=True)
 
         with mock.patch.object(
             Repository, "clone", side_effect=AssertionError("a read cloned")
@@ -54,7 +54,7 @@ class SnapshotTest(GateCase):
     def test_the_app_list_reads_the_snapshot_when_the_clone_is_gone(self):
         registry_id = self.register()
         self.client.get(f"/api/v1/apps/{registry_id}", headers=self.h())
-        shutil.rmtree(settings.WORKSPACES / registry_id, ignore_errors=True)
+        shutil.rmtree(settings.workspaces.root / registry_id, ignore_errors=True)
 
         rows = self.client.get("/api/v1/apps", headers=self.h()).json()
         row = next(r for r in rows if r["id"] == registry_id)

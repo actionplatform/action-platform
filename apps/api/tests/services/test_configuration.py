@@ -129,11 +129,10 @@ class ChangesTest(ApiCase):
 
 class DiscardTest(ApiCase):
     def test_discard_drops_edits_but_the_platform_files_come_back(self):
-        from action_platform.settings import settings
         from action_platform.testing.fixtures import template_repo
 
-        self.patch(
-            settings, "TEMPLATES_DIR", str(template_repo(self.tmp_path / "official"))
+        self.setenv(
+            "ACTION_PLATFORM_TEMPLATES", str(template_repo(self.tmp_path / "official"))
         )
         bare = self.tmp_path / "legacy"
         bare.mkdir()
@@ -170,11 +169,10 @@ class DiscardTest(ApiCase):
 
 class InstallPlatformTest(ApiCase):
     def test_install_endpoint_adds_what_is_missing(self):
-        from action_platform.settings import settings
         from action_platform.testing.fixtures import template_repo
 
-        self.patch(
-            settings, "TEMPLATES_DIR", str(template_repo(self.tmp_path / "official"))
+        self.setenv(
+            "ACTION_PLATFORM_TEMPLATES", str(template_repo(self.tmp_path / "official"))
         )
         bare = self.tmp_path / "legacy"
         bare.mkdir()
@@ -197,11 +195,10 @@ class InstallPlatformTest(ApiCase):
         )
 
     def test_a_clone_that_lost_its_manifest_gets_it_back_on_the_next_request(self):
-        from action_platform.settings import settings
         from action_platform.testing.fixtures import template_repo
 
-        self.patch(
-            settings, "TEMPLATES_DIR", str(template_repo(self.tmp_path / "official"))
+        self.setenv(
+            "ACTION_PLATFORM_TEMPLATES", str(template_repo(self.tmp_path / "official"))
         )
         bare = self.tmp_path / "legacy"
         bare.mkdir()

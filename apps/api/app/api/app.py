@@ -49,7 +49,7 @@ def build(
     app = FastAPI(title="action-platform", version=api_version())
     get_registry.cache_clear()
     app.state.db = None
-    url = settings.DATABASE_URL if database_url is None else database_url
+    url = settings.database.url if database_url is None else database_url
 
     if not url:
         raise ConfigError(
@@ -57,10 +57,10 @@ def build(
         )
 
     app.state.db = Database(
-        url, settings.DATABASE_POOL_SIZE, settings.DATABASE_MAX_OVERFLOW
+        url, settings.database.pool_size, settings.database.max_overflow
     )
 
-    if settings.DATABASE_AUTO_MIGRATE:
+    if settings.database.auto_migrate:
         app.state.db.migrate()
     elif app.state.db.behind():
         log.warning(
@@ -69,15 +69,15 @@ def build(
     configure_registry(app.state.db)
     registry.use_options(lambda slug: DbOptions(app.state.db, slug))
 
-    secret = settings.AUTH_SECRET if auth_secret is None else auth_secret
+    secret = settings.api.auth_secret if auth_secret is None else auth_secret
     app.state.secrets = Secrets(secret) if secret else None
     app.state.sealer = Sealer(app.state.secrets) if app.state.secrets else None
-    base = (settings.PUBLIC_URL if public_url is None else public_url).rstrip("/")
+    base = (settings.api.public_url if public_url is None else public_url).rstrip("/")
     app.state.verification_uri = f"{base}/device"
     app.state.public_url = base
-    expected = settings.API_TOKEN if token is None else token
+    expected = settings.api.token if token is None else token
 
-    if not expected and not settings.ALLOW_UNAUTHENTICATED_API:
+    if not expected and not settings.api.allow_unauthenticated:
         raise ConfigError(
             "AP_API_TOKEN is empty: every route would be open. Set the shared secret "
             "(the web app sends it as Authorization: Bearer) or, for local development "
@@ -193,7 +193,7 @@ def serve(
             workers=workers,
             log_level="warning",
             proxy_headers=True,
-            forwarded_allow_ips=settings.FORWARDED_ALLOW_IPS,
+            forwarded_allow_ips=settings.api.forwarded_allow_ips,
         )
         return
 
@@ -203,5 +203,5 @@ def serve(
         port=port,
         log_level="warning",
         proxy_headers=True,
-        forwarded_allow_ips=settings.FORWARDED_ALLOW_IPS,
+        forwarded_allow_ips=settings.api.forwarded_allow_ips,
     )
