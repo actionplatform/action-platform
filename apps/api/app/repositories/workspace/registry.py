@@ -147,7 +147,7 @@ class Registry:
     ) -> None:
         self.root = root or home()
         self.file = self.root / "apps.json"
-        self.workspaces = settings.WORKSPACES
+        self.workspaces = settings.workspaces.root
         self.store = store
         self.drafts = drafts
 

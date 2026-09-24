@@ -34,7 +34,7 @@ class SourceGitlab(SourceHost):
         self, repo: str, token: str | None = None, base_url: str | None = None
     ) -> None:
         self.repo = repo
-        self.token = token or settings.GITLAB_TOKEN
+        self.token = token or settings.tokens.gitlab
         self.web = (base_url or "https://gitlab.com").rstrip("/")
         self.api = f"{self.web}/api/v4"
 

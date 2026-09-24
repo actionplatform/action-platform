@@ -177,7 +177,7 @@ class JobHandlers:
 
         scopes = self._scopes(ctx.app)
 
-        identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
+        identity = AppIdentity(self.database, self.sealer, settings.api.public_url)
         credentials = self._host_credentials(ctx)
         service = ReadinessService(
             self.registry,
@@ -215,7 +215,7 @@ class JobHandlers:
 
     def deploy(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
-        identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
+        identity = AppIdentity(self.database, self.sealer, settings.api.public_url)
         request = DeployRequest(**ctx.body)
         credentials = self._host_credentials(ctx)
         service = DeploymentsService(
@@ -305,7 +305,7 @@ class JobHandlers:
     def destroy(self, payload: dict[str, Any]) -> Any:
         """Every stage's stack down, then the app off the platform — the job the web queues for a deletion with cloud cleanup."""
         ctx = self.context(payload)
-        identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
+        identity = AppIdentity(self.database, self.sealer, settings.api.public_url)
         with auth.git_auth(self._host_credentials(ctx)):
             DeploymentsService(
                 self.registry,
@@ -328,7 +328,7 @@ class JobHandlers:
 
     def destroy_organization(self, payload: dict[str, Any]) -> Any:
         """Every app's stacks down, then the organization and everything it owned off the platform."""
-        identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
+        identity = AppIdentity(self.database, self.sealer, settings.api.public_url)
         env = DeployEnv(self.database)
         body = payload.get("body") or {}
 
@@ -362,7 +362,7 @@ class JobHandlers:
 
     def destroy_project(self, payload: dict[str, Any]) -> Any:
         """Each app's stacks down, then the project off the platform."""
-        identity = AppIdentity(self.database, self.sealer, settings.PUBLIC_URL)
+        identity = AppIdentity(self.database, self.sealer, settings.api.public_url)
         env = DeployEnv(self.database)
         manages = bool(payload.get("manages"))
 

@@ -43,10 +43,11 @@ def check_ref(name: str) -> str:
 def check_remote_url(url: str) -> str:
     """Only https (and http / file when the operator opted in) may be cloned or fetched on behalf of a user; ACTION_PLATFORM_GIT_HOSTS narrows the hosts further."""
     parts = urlsplit(url)
+    policy = settings.git
     allowed = (
         parts.scheme == "https"
-        or (parts.scheme == "http" and settings.ALLOW_INSECURE_HTTP)
-        or (parts.scheme == "file" and settings.ALLOW_FILE_URLS)
+        or (parts.scheme == "http" and policy.allow_insecure_http)
+        or (parts.scheme == "file" and policy.allow_file_urls)
     )
 
     if not allowed:
@@ -56,11 +57,11 @@ def check_remote_url(url: str) -> str:
 
     if (
         parts.scheme != "file"
-        and settings.GIT_HOSTS
-        and not any(host == h or host.endswith("." + h) for h in settings.GIT_HOSTS)
+        and policy.hosts
+        and not any(host == h or host.endswith("." + h) for h in policy.hosts)
     ):
         raise UnsafeUrl(
-            f"git host {host} is not allowed (ACTION_PLATFORM_GIT_HOSTS: {', '.join(settings.GIT_HOSTS)})"
+            f"git host {host} is not allowed (ACTION_PLATFORM_GIT_HOSTS: {', '.join(policy.hosts)})"
         )
 
     return url
@@ -68,18 +69,19 @@ def check_remote_url(url: str) -> str:
 
 def git_env() -> dict[str, str]:
     """Environment for a git subprocess: the process environment, the credentials of the current request, and a protocol policy: https always, http only when opted in, ssh/git never, local paths only for direct commands (never from submodules)."""
+    policy = settings.git
     env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
-    env.setdefault("GIT_AUTHOR_NAME", settings.GIT_AUTHOR_NAME)
-    env.setdefault("GIT_AUTHOR_EMAIL", settings.GIT_AUTHOR_EMAIL)
-    env.setdefault("GIT_COMMITTER_NAME", settings.GIT_AUTHOR_NAME)
-    env.setdefault("GIT_COMMITTER_EMAIL", settings.GIT_AUTHOR_EMAIL)
+    env.setdefault("GIT_AUTHOR_NAME", policy.author_name)
+    env.setdefault("GIT_AUTHOR_EMAIL", policy.author_email)
+    env.setdefault("GIT_COMMITTER_NAME", policy.author_name)
+    env.setdefault("GIT_COMMITTER_EMAIL", policy.author_email)
     extra = {**(AUTH_ENV.get() or {})}
     count = int(extra.get("GIT_CONFIG_COUNT", "0"))
     policy = {
         "protocol.allow": "never",
         "protocol.https.allow": "always",
-        "protocol.http.allow": "always" if settings.ALLOW_INSECURE_HTTP else "never",
-        "protocol.file.allow": "always" if settings.ALLOW_FILE_URLS else "user",
+        "protocol.http.allow": "always" if policy.allow_insecure_http else "never",
+        "protocol.file.allow": "always" if policy.allow_file_urls else "user",
     }
 
     for key, value in policy.items():

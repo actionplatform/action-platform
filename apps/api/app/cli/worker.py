@@ -30,12 +30,12 @@ def run(
 ) -> None:
     """Run queued jobs — sync, release, deploy, push, imports — against the API's database and workspaces."""
 
-    if not settings.DATABASE_URL:
+    if not settings.database.url:
         raise ActionPlatformError("no database: set AP_DATABASE_URL")
 
-    database = Database(settings.DATABASE_URL, settings.DATABASE_POOL_SIZE)
+    database = Database(settings.database.url, settings.database.pool_size)
 
-    if settings.DATABASE_AUTO_MIGRATE:
+    if settings.database.auto_migrate:
         database.migrate()
     elif database.behind():
         raise ActionPlatformError(
@@ -43,7 +43,7 @@ def run(
         )
     worker = Worker(
         database,
-        Secrets(settings.AUTH_SECRET) if settings.AUTH_SECRET else None,
+        Secrets(settings.api.auth_secret) if settings.api.auth_secret else None,
         name or None,
     )
     only = [k.strip() for k in kinds.split(",") if k.strip()] or None

@@ -21,23 +21,23 @@ class CatalogService:
         return {"version": __version__, "api": api_version()}
 
     def matrix(self, sources: list[SourceSpec] | None = None) -> dict:
-        published = index.get() if settings.TEMPLATES_DIR is None else None
+        published = index.get() if settings.templates.dir is None else None
 
         if published:
             official = with_plugin_clouds(Matrix.from_dict(published))
             base = index.raw_base
         else:
             _, official = load_matrix()
-            base = MatrixView.raw_base(settings.TEMPLATES_REPO, settings.TEMPLATES_REF)
+            base = MatrixView.raw_base(settings.templates.repo, settings.templates.ref)
 
         out = MatrixView(
-            official, OFFICIAL, base, settings.TEMPLATES_REPO, settings.TEMPLATES_REF
+            official, OFFICIAL, base, settings.templates.repo, settings.templates.ref
         ).as_dict()
         out["sources"] = [
             {
                 "name": OFFICIAL,
-                "url": settings.TEMPLATES_REPO,
-                "ref": settings.TEMPLATES_REF,
+                "url": settings.templates.repo,
+                "ref": settings.templates.ref,
                 "ok": True,
                 "projects": len(official.leaves),
                 "clouds": len(official.clouds),

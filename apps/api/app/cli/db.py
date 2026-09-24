@@ -14,12 +14,12 @@ app = typer.Typer(
 
 
 def _database(url: str | None):
-    chosen = url or settings.DATABASE_URL
+    chosen = url or settings.database.url
 
     if not chosen:
         raise ActionPlatformError("no database: set AP_DATABASE_URL or pass --url")
 
-    return Database(chosen, settings.DATABASE_POOL_SIZE)
+    return Database(chosen, settings.database.pool_size)
 
 
 @app.command("migrate")

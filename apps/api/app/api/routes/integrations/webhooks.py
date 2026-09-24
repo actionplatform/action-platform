@@ -43,7 +43,7 @@ def webhook(
     host = writes.host(org.id, host_id)
 
     return schemas.WebhookInfo(
-        url=f"{settings.PUBLIC_URL.rstrip('/')}/api/webhooks/{host_id}",
+        url=f"{settings.api.public_url.rstrip('/')}/api/webhooks/{host_id}",
         configured=bool(host and host.webhook_secret_encrypted),
         kind=host.kind if host else "",
     )
@@ -62,7 +62,7 @@ def rotate_webhook(
     host = writes.host(org.id, host_id)
 
     return schemas.WebhookSecret(
-        url=f"{settings.PUBLIC_URL.rstrip('/')}/api/webhooks/{host_id}",
+        url=f"{settings.api.public_url.rstrip('/')}/api/webhooks/{host_id}",
         secret=secret,
         kind=host.kind if host else "",
     )
