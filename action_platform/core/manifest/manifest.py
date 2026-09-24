@@ -7,7 +7,7 @@ import tomllib
 from pathlib import Path
 
 from action_platform.core.exception import TemplateError
-from action_platform.settings import settings
+from action_platform.core.files import CONFIG_FILE
 
 _ESCAPES = {
     "\\": "\\\\",
@@ -96,7 +96,7 @@ class Manifest:
 
     @classmethod
     def of(cls, project: Path) -> "Manifest":
-        return cls(Path(project) / settings.CONFIG_FILE)
+        return cls(Path(project) / CONFIG_FILE)
 
     @property
     def exists(self) -> bool:
@@ -107,9 +107,7 @@ class Manifest:
 
     def data(self) -> dict:
         if not self.path.exists():
-            raise TemplateError(
-                f"{settings.CONFIG_FILE} not found in {self.path.parent}"
-            )
+            raise TemplateError(f"{CONFIG_FILE} not found in {self.path.parent}")
 
         return tomllib.loads(self.path.read_text())
 

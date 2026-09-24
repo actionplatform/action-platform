@@ -15,7 +15,7 @@ from action_platform.core.release.components import Component, resolve
 from action_platform.core.release.versioning import VersionFiles
 from action_platform.logging import logger
 from action_platform.core.wiring import slot, wired
-from action_platform.settings import settings
+from action_platform.core.files import CHANGELOG_FILE, LAST_VERSION_FILE
 
 STABLE_BRANCHES = {"main", "master"}
 
@@ -101,16 +101,16 @@ class Releaser:
         ctx.next_version = plan.next
         ctx.changelog = plan.changelog
         where = comp.dir(self.repo.path)
-        files = VersionFiles(where, settings.LAST_VERSION_FILE)
-        had_changelog = (where / settings.CHANGELOG_FILE).exists()
+        files = VersionFiles(where, LAST_VERSION_FILE)
+        had_changelog = (where / CHANGELOG_FILE).exists()
 
         files.write(plan.next)
-        changelog.prepend(where / settings.CHANGELOG_FILE, plan.changelog)
+        changelog.prepend(where / CHANGELOG_FILE, plan.changelog)
         synced = files.sync(plan.next)
         rel = where.relative_to(self.repo.path)
         touched = [
             str(rel / f) if str(rel) != "." else f
-            for f in (settings.LAST_VERSION_FILE, settings.CHANGELOG_FILE, *synced)
+            for f in (LAST_VERSION_FILE, CHANGELOG_FILE, *synced)
         ]
 
         try:
@@ -195,9 +195,7 @@ class Releaser:
         if not self.repo.has_tag(component.tag_glob):
             return "0.0.0"
 
-        return VersionFiles(
-            component.dir(self.repo.path), settings.LAST_VERSION_FILE
-        ).read()
+        return VersionFiles(component.dir(self.repo.path), LAST_VERSION_FILE).read()
 
     def next_version(
         self,
@@ -228,16 +226,14 @@ class Releaser:
     ) -> None:
         self.repo.run(["reset", "-q", "--", *touched])
         tracked = [
-            f
-            for f in touched
-            if had_changelog or not f.endswith(settings.CHANGELOG_FILE)
+            f for f in touched if had_changelog or not f.endswith(CHANGELOG_FILE)
         ]
 
         if tracked:
             self.repo.run(["checkout", "--", *tracked])
 
         if not had_changelog:
-            (where / settings.CHANGELOG_FILE).unlink(missing_ok=True)
+            (where / CHANGELOG_FILE).unlink(missing_ok=True)
 
 
 def with_notes(entry: str, notes: str) -> str:

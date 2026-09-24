@@ -12,7 +12,7 @@ from action_platform.core.scaffold.language import detect_language
 from action_platform.core.scaffold.sources import LocalTemplateStore, TemplateSource
 from action_platform.core import extensions
 from action_platform.logging import logger
-from action_platform.settings import settings
+from action_platform.core.files import CONFIG_FILE
 
 
 @dataclass
@@ -267,7 +267,7 @@ OFFICIAL = "official"
 def plain_matrix(source: TemplateSource, repo: Path) -> Matrix:
     """A repository without index.json is one template: its own tree, copied as-is."""
     meta: dict = {}
-    manifest = repo / settings.CONFIG_FILE
+    manifest = repo / CONFIG_FILE
 
     if manifest.exists():
         try:
@@ -335,7 +335,7 @@ def load_matrix(update: bool = False, source: str | None = None) -> tuple[Path, 
     repo = ensure_repo(update=update)
     matrix = with_plugin_clouds(Matrix.from_json(repo / "index.json"))
 
-    if not matrix.leaves and not update and settings.templates.dir is None:
+    if not matrix.leaves and not update and LocalTemplateStore().config.dir is None:
         logger.info("templates cache has no projects, refreshing")
         repo = ensure_repo(update=True)
         matrix = with_plugin_clouds(Matrix.from_json(repo / "index.json"))

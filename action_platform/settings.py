@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 from typing import Any, Callable, Optional
 
+from action_platform.core import files
 from action_platform.options import (
     ApiConfig,
     DatabaseConfig,
@@ -45,10 +45,10 @@ class Settings:
     answers from a mapping of its own.
     """
 
-    CONFIG_FILE = "platform.toml"
-    LAST_VERSION_FILE = "LAST_VERSION"
-    HOOKS_DIR = Path(".action-platform/hooks")
-    CHANGELOG_FILE = "CHANGELOG.md"
+    CONFIG_FILE = files.CONFIG_FILE
+    LAST_VERSION_FILE = files.LAST_VERSION_FILE
+    HOOKS_DIR = files.HOOKS_DIR
+    CHANGELOG_FILE = files.CHANGELOG_FILE
 
     templates: TemplatesConfig
     workspaces: WorkspacesConfig

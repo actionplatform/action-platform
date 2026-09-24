@@ -15,7 +15,7 @@ from action_platform.core.exception import ActionPlatformError
 from action_platform.core.scaffold.catalog import Matrix, load_matrix
 from action_platform.core.scaffold.language import detect_language
 from action_platform.core.wiring import slot, wired
-from action_platform.settings import settings
+from action_platform.core.files import CONFIG_FILE, LAST_VERSION_FILE
 
 WORKFLOWS = ["code-quality.yml", "conventional-commit.yml", "gitflow.yml", "trivy.yml"]
 
@@ -105,15 +105,13 @@ class Installer:
 
         _write(
             plan,
-            settings.CONFIG_FILE,
+            CONFIG_FILE,
             _platform_toml(
                 self.repo, self.type, language, ci, self.name or self.root.name
             ),
             dry_run,
         )
-        _write(
-            plan, settings.LAST_VERSION_FILE, f"{_seed_version(self.repo)}\n", dry_run
-        )
+        _write(plan, LAST_VERSION_FILE, f"{_seed_version(self.repo)}\n", dry_run)
         _write(plan, "AGENTS.md", AGENTS, dry_run)
 
         if language:
@@ -201,7 +199,7 @@ def _ci_for_remote(repo: Repository) -> str:
 
 
 def _existing_ci(root: Path) -> str | None:
-    path = root / settings.CONFIG_FILE
+    path = root / CONFIG_FILE
 
     if not path.exists():
         return None

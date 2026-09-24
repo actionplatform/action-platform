@@ -13,7 +13,7 @@ from action_platform.core.scaffold.publisher import SourceCredentialsLike, push_
 from action_platform.core.scaffold.renderer import TemplateRenderer
 from action_platform.core.scaffold.catalog import Cloud, Leaf, Service
 from action_platform.core.wiring import slot, wired
-from action_platform.settings import settings
+from action_platform.core.files import LAST_VERSION_FILE
 
 
 def generate_project(
@@ -49,8 +49,8 @@ def _copy_repository(
     shutil.copytree(repo, target, ignore=shutil.ignore_patterns(".git"))
     manifest = Manifest.of(target)
 
-    if not (target / settings.LAST_VERSION_FILE).exists():
-        (target / settings.LAST_VERSION_FILE).write_text("0.0.0\n")
+    if not (target / LAST_VERSION_FILE).exists():
+        (target / LAST_VERSION_FILE).write_text("0.0.0\n")
 
     if manifest.exists:
         manifest.rename(slug)
@@ -66,7 +66,7 @@ def _copy_repository(
             f'[project]\nname = "{slug}"\ntype = "{leaf.type}"\nci = "{ci or "github"}"\n'
             '\n[release]\nstrategy = "semver"\nchangelog = "conventional"\n'
         )
-        (target / settings.LAST_VERSION_FILE).write_text("0.0.0\n")
+        (target / LAST_VERSION_FILE).write_text("0.0.0\n")
 
     shutil.rmtree(target / ".git", ignore_errors=True)
     _set_owner(manifest, context.get("github_owner"))
