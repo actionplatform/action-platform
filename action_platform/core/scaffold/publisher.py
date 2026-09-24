@@ -13,7 +13,7 @@ from action_platform.core.flow.repository import Repository
 from action_platform.core.manifest import Manifest
 from action_platform.core.wiring import wired
 from action_platform.providers.source import build_source_host
-from action_platform.settings import settings
+from action_platform.core.files import CONFIG_FILE
 
 
 class SourceCredentialsLike(Protocol):
@@ -81,7 +81,7 @@ class Publisher:
         return repo
 
     def _config(self) -> Config:
-        config = Config.from_toml(self.project / settings.CONFIG_FILE)
+        config = Config.from_toml(self.project / CONFIG_FILE)
         credentials = self.credentials
 
         if (

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import subprocess
 from dataclasses import dataclass
 import re
@@ -18,7 +19,7 @@ from action_platform.core.flow.git import (
     git_env,
 )
 from action_platform.logging import logger
-from action_platform.settings import settings
+from action_platform.options import CACHE, TemplatesConfig
 
 
 URL = re.compile(r"^https://[A-Za-z0-9.-]+(:\d+)?/[^\s]+$")
@@ -61,11 +62,17 @@ class TemplateSource:
     def cache(self) -> Path:
         key = hashlib.sha256(f"{self.url}@{self.ref}".encode()).hexdigest()[:16]
 
-        return settings.templates.cache.parent / "sources" / key
+        return CACHE / "sources" / key
 
 
 class LocalTemplateStore(TemplateStore):
-    """Clones template repositories under the cache directory and keeps them fresh; a refresh that fails falls back to the copy on disk unless `update` insists."""
+    """Clones template repositories under the cache directory and keeps them fresh; a refresh that fails falls back to the copy on disk unless `update` insists.
+
+    `config` says where the official templates come from; None reads it from the process environment now.
+    """
+
+    def __init__(self, config: TemplatesConfig | None = None) -> None:
+        self.config = TemplatesConfig.from_env(os.environ) if config is None else config
 
     def checkout(self, source: TemplateSource, update: bool = False) -> Path:
         cache = source.cache
@@ -117,7 +124,7 @@ class LocalTemplateStore(TemplateStore):
 
     def official(self, update: bool = False) -> Path:
         """The official templates repository: ACTION_PLATFORM_TEMPLATES when set, else a cached clone of ACTION_PLATFORM_TEMPLATES_REPO."""
-        local = settings.templates.dir
+        local = self.config.dir
 
         if local is not None:
             path = Path(local).expanduser()
@@ -129,18 +136,18 @@ class LocalTemplateStore(TemplateStore):
 
             return path
 
-        cache = settings.templates.cache
+        cache = self.config.cache
 
         if not cache.exists():
-            logger.info("cloning %s", settings.templates.repo)
+            logger.info("cloning %s", self.config.repo)
             cache.parent.mkdir(parents=True, exist_ok=True)
             self._git(
                 "clone",
                 "--depth",
                 "1",
                 "--branch",
-                settings.templates.ref,
-                settings.templates.repo,
+                self.config.ref,
+                self.config.repo,
                 str(cache),
             )
 

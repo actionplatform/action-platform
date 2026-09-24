@@ -43,7 +43,8 @@ action_platform/
     flow/         repository (Repository: every git command on one clone, composed from repo/ — runner (injectable GitRunner), branches, history, tags, remotes, sync: follow_remote, stashed), workflow (GitFlow: audit, start, propose, open_pr, install_hooks), gitflow (the rules as pure functions), git (ref/url policy, per-request credentials)
     release/      versioning (Version, VersionFiles), changelog, components, release (Releaser: plan → apply), deploy (Deployer), readiness (Readiness: can a release reach a scope)
     scopes.py     ScopeSpec (name, kind, criticality), release shapes, the acceptance policy, [[scopes]]
-    config.py     Config.from_toml → source host, deploy targets, components
+    config.py     Config.from_toml → source host (tokens from the machine unless given), deploy targets, components
+    files.py      the fixed file names: platform.toml, LAST_VERSION, CHANGELOG.md, the hooks directory
     context.py    Context, DeployResult, Diagnosis, PRRef, ReleaseRef
     action_platform.py   ActionPlatform: the facade the CLI, MCP and API call (releaser, deployer, readiness, flow)
     process.py    stream(args): a subprocess whose lines go to the log sink as they arrive

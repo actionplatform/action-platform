@@ -7,7 +7,7 @@ import re
 from contextvars import ContextVar
 from urllib.parse import urlsplit
 
-from action_platform.settings import settings
+from action_platform.options import GitConfig
 
 
 AUTH_ENV: ContextVar[dict[str, str] | None] = ContextVar("git_auth_env", default=None)
@@ -40,10 +40,14 @@ def check_ref(name: str) -> str:
     return name
 
 
-def check_remote_url(url: str) -> str:
-    """Only https (and http / file when the operator opted in) may be cloned or fetched on behalf of a user; ACTION_PLATFORM_GIT_HOSTS narrows the hosts further."""
+def _policy(config: GitConfig | None) -> GitConfig:
+    return GitConfig.from_env(os.environ) if config is None else config
+
+
+def check_remote_url(url: str, config: GitConfig | None = None) -> str:
+    """Only https (and http / file when the operator opted in) may be cloned or fetched on behalf of a user; ACTION_PLATFORM_GIT_HOSTS narrows the hosts further. `config` defaults to the process environment's."""
     parts = urlsplit(url)
-    policy = settings.git
+    policy = _policy(config)
     allowed = (
         parts.scheme == "https"
         or (parts.scheme == "http" and policy.allow_insecure_http)
@@ -67,9 +71,9 @@ def check_remote_url(url: str) -> str:
     return url
 
 
-def git_env() -> dict[str, str]:
+def git_env(config: GitConfig | None = None) -> dict[str, str]:
     """Environment for a git subprocess: the process environment, the credentials of the current request, and a protocol policy: https always, http only when opted in, ssh/git never, local paths only for direct commands (never from submodules)."""
-    policy = settings.git
+    policy = _policy(config)
     env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
     env.setdefault("GIT_AUTHOR_NAME", policy.author_name)
     env.setdefault("GIT_AUTHOR_EMAIL", policy.author_email)

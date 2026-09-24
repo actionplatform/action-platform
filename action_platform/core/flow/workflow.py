@@ -15,7 +15,7 @@ from action_platform.core.flow.repository import Repository
 from action_platform.core import extensions
 from action_platform.core.release import changelog
 from action_platform.core.wiring import slot, wired
-from action_platform.settings import settings
+from action_platform.core.files import CONFIG_FILE
 
 
 HOOK_MARK = "# action-platform hook"
@@ -218,7 +218,7 @@ class GitFlow:
         draft: bool = False,
         config: Config | None = None,
     ) -> PRRef:
-        config = config or Config.from_toml(self.repo.path / settings.CONFIG_FILE)
+        config = config or Config.from_toml(self.repo.path / CONFIG_FILE)
 
         if config.source_host is None:
             raise PullRequestError(
@@ -327,7 +327,7 @@ class GitFlow:
 
     def _commits_on_protected(self) -> list[str]:
         tag = self.repo.latest_tag()
-        installed = self.repo.first_commit_adding(settings.CONFIG_FILE)
+        installed = self.repo.first_commit_adding(CONFIG_FILE)
 
         if installed is None:
             return self.repo.commits_since(tag) if tag else []
