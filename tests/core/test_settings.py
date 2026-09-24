@@ -1,7 +1,9 @@
+import importlib.util
 import os
 import subprocess
 import sys
 from pathlib import Path
+from unittest import skipUnless
 
 from action_platform.settings import Settings, database_url_from_parts, secret
 from tests.support import TempCase
@@ -73,6 +75,7 @@ class ImportIsPureTest(TempCase):
 
         self.assertEqual(out, "-")
 
+    @skipUnless(importlib.util.find_spec("mcp"), "mcp is not installed")
     def test_importing_the_entry_points_reads_no_setting(self):
         out = self.run_python(
             "import action_platform.main, action_platform.mcp.server\n"
