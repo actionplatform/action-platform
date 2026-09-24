@@ -7,7 +7,7 @@ from pathlib import Path
 import typer
 
 from action_platform.core.config import Config
-from action_platform.core.action_platform import ActionPlatform
+from action_platform.core.facade import ActionPlatform
 from action_platform.logging import logger
 
 

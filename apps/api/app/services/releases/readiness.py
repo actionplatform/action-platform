@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Optional
 
-from action_platform.core.action_platform import ActionPlatform
+from action_platform.core.facade import ActionPlatform
 from action_platform.core.context import Check
 from app.core.db.database import Database
 from app.core.db.models import App, Release

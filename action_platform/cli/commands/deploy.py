@@ -8,7 +8,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from action_platform.core.action_platform import ActionPlatform
+from action_platform.core.facade import ActionPlatform
 from action_platform.core.config import Config
 from action_platform.core.exception import ActionPlatformError, DeployError
 from action_platform.remote.client import Remote
