@@ -5,7 +5,8 @@ import sys
 import typer
 
 from action_platform.core.exception import ActionPlatformError
-from action_platform.env import load
+from action_platform.bootstrap import bootstrap
+from app import api_version
 from app.cli import db as db_cmd
 from app.cli import serve as serve_cmd
 from app.cli import worker as worker_cmd
@@ -23,7 +24,7 @@ app.add_typer(db_cmd.app, name="db")
 
 
 def main() -> None:
-    load()
+    bootstrap("api", version=api_version())
 
     try:
         app()
