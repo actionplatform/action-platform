@@ -156,7 +156,12 @@ class RemoteClientTest(TempCase):
             organization=None,
         ):
             self.seen.update(
-                method=method, url=url, body=body, token=token, client=client
+                method=method,
+                url=url,
+                body=body,
+                token=token,
+                client=client,
+                organization=organization,
             )
             return {"ok": True}
 
@@ -185,6 +190,36 @@ class RemoteClientTest(TempCase):
 
         remote.write_manifest("p1", "[project]\n")
         self.assertEqual(self.seen["method"], "PUT")
+
+    def test_organization_level_calls_send_the_organization(self):
+        remote = client.Remote("https://p.example", "tok")
+
+        for call in (
+            lambda: remote.projects(organization="acme"),
+            lambda: remote.teams(organization="acme"),
+            lambda: remote.members(organization="acme"),
+            lambda: remote.create_project("Shop", "", organization="acme"),
+            lambda: remote.create_team("Core", "", organization="acme"),
+            lambda: remote.add_team_member("t1", "u1", organization="acme"),
+            lambda: remote.assign_project_team("p1", None, organization="acme"),
+            lambda: remote.set_member_role("u1", "viewer", organization="acme"),
+            lambda: remote.add_app("p1", "https://x/y.git", None, "acme"),
+            lambda: remote.remove_app("p1", "d1", True, "acme"),
+            lambda: remote.delete_project("p1", False, "acme"),
+        ):
+            with self.subTest(call=call):
+                call()
+                self.assertEqual(self.seen["organization"], "acme")
+
+        remote.remove_app("p1", "d1", True, "acme")
+        self.assertEqual(
+            self.seen["url"],
+            "https://p.example/api/v1/projects/p1/apps/d1?repository=true",
+        )
+        self.assertIsNone(self.seen["body"])
+
+        remote.projects()
+        self.assertIsNone(self.seen["organization"])
 
     def test_from_credentials_requires_login(self):
         with self.assertRaisesRegex(ActionPlatformError, "login"):
