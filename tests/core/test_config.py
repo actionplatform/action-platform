@@ -8,6 +8,7 @@ import unittest
 from action_platform.core import config as config_module
 from action_platform.core.config import Config
 from action_platform.core.exception import ConfigError
+from action_platform.options import SourceTokens
 from tests.support import TempCase
 
 BASE = '[project]\nname = "my-api"\nlanguage = "python"\n'
@@ -64,3 +65,30 @@ class ModuleIsolationTest(unittest.TestCase):
 
         self.assertNotIn("deploy_aws", src)
         self.assertNotIn("deploy_docker", src)
+
+
+class SourceHostTokensTest(TempCase):
+    GITHUB = {"source_host": {"kind": "github", "repo": "acme/x"}}
+    BITBUCKET = {"source_host": {"kind": "bitbucket", "repo": "acme/x"}}
+
+    def setUp(self):
+        super().setUp()
+        self.setenv("ACTION_PLATFORM_GITHUB_TOKEN", "env-gh")
+        self.setenv("ACTION_PLATFORM_BITBUCKET_TOKEN", "env-bb")
+        self.setenv("ACTION_PLATFORM_BITBUCKET_USERNAME", "env-user")
+
+    def test_the_machine_tokens_by_default(self):
+        self.assertEqual(Config.from_dict(self.GITHUB).source_host.token, "env-gh")
+
+        host = Config.from_dict(self.BITBUCKET).source_host
+        self.assertEqual((host.token, host.username), ("env-bb", "env-user"))
+
+    def test_the_tokens_given(self):
+        config = Config.from_dict(self.GITHUB, tokens=SourceTokens(github="given"))
+
+        self.assertEqual(config.source_host.token, "given")
+
+    def test_empty_tokens_mean_none(self):
+        host = Config.from_dict(self.BITBUCKET, tokens=SourceTokens()).source_host
+
+        self.assertEqual((host.token, host.username), (None, None))
