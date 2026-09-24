@@ -21,13 +21,15 @@ class FakeWrites:
     def __init__(self, app=None):
         self.app = app
         self.connected = []
+        self.usernames = []
         self.saved = []
 
     def oauth_app(self, provider):
         return self.app
 
-    def connect_oauth_host(self, *args):
+    def connect_oauth_host(self, *args, username=None):
         self.connected.append(args)
+        self.usernames.append(username)
 
     def save_oauth_app(self, *args):
         self.saved.append(args)
@@ -128,3 +130,25 @@ class OwnerTest(unittest.TestCase):
             HostConnector(writes).finish(ORG, "bitbucket", "https://ap", "c", None)
 
         self.assertEqual(writes.connected[0][-1], "team")
+
+
+class TokenUsernameTest(unittest.TestCase):
+    def test_bitbucket_stores_its_token_username(self):
+        writes = FakeWrites(OAuthApp("id", "secret", None))
+
+        with (
+            mock.patch.object(
+                BitbucketProvider, "exchange_code", return_value=("tok", None, None)
+            ),
+            mock.patch.object(
+                BitbucketProvider, "identity", return_value=("ana", "Ana")
+            ),
+            mock.patch.object(BitbucketProvider, "owner", return_value=None),
+        ):
+            HostConnector(writes).finish(ORG, "bitbucket", "https://ap", "c", None)
+
+        self.assertEqual(writes.usernames, ["x-token-auth"])
+
+    def test_other_hosts_store_no_username(self):
+        self.assertIsNone(GithubProvider.token_username)
+        self.assertIsNone(GitlabProvider.token_username)
