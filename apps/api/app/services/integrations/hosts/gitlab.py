@@ -84,6 +84,9 @@ class GitlabProvider(HostProvider):
 
         return user["username"], user.get("name")
 
+    def owner(self, access_token: str, installation_id: Optional[str]) -> Optional[str]:
+        return None
+
     def access(self, creds: Credentials, app_slug: Optional[str]) -> AccessReport:
         api = (
             re.sub(
