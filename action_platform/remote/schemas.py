@@ -396,6 +396,11 @@ class Me(Open):
     project: Optional[dict[str, Any]] = None
     app: Optional[dict[str, Any]] = None
 
+    @property
+    def role_name(self) -> Optional[str]:
+        """The role as people read it: its label when the platform sends one."""
+        return self.role_label or self.role
+
 
 class Job(Open):
     id: str

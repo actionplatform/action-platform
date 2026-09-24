@@ -75,7 +75,7 @@ def register(mcp: Any, remote: Remote) -> None:
             "organization": who.organization,
             "organizations": who.organizations,
             "spans_every_organization": who.organization is None,
-            "role": who.role_label or who.role,
+            "role": who.role_name,
             "scope": who.scope,
             "limited_to": {"project": who.project, "app": who.app},
             "can": dict(who.permissions),
@@ -192,7 +192,7 @@ def register(mcp: Any, remote: Remote) -> None:
             if owner
             else None,
             "app": match.model_dump() if match else None,
-            "role": who.role_label or who.role,
+            "role": who.role_name,
             "scope": who.scope,
             "can": who.permissions,
             "hint": None
