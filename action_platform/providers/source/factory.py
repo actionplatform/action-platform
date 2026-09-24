@@ -25,7 +25,7 @@ def build_source_host(
     token: str | None = None,
     username: str | None = None,
 ) -> SourceHost:
-    """A SourceHost for `kind`. Tokens default to the environment (see settings)."""
+    """A SourceHost for `kind` with exactly the credentials given — `Config.from_dict` hands it the machine's."""
     return SOURCE_HOSTS.build(
         kind, repo=repo, token=token, username=username, base_url=base_url
     )

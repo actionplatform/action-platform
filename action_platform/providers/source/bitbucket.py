@@ -17,7 +17,6 @@ from action_platform.core.context import (
 )
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import rest
-from action_platform.settings import settings
 
 
 OAUTH_USERNAME = "x-token-auth"
@@ -42,8 +41,8 @@ class SourceBitbucket(SourceHost):
         base_url: str | None = None,
     ) -> None:
         self.repo = repo
-        self.token = token or settings.tokens.bitbucket
-        self.username = username or settings.tokens.bitbucket_username
+        self.token = token
+        self.username = username
         self.api = "https://api.bitbucket.org/2.0"
         self.web = "https://bitbucket.org"
 

@@ -17,14 +17,13 @@ from action_platform.core.context import (
 )
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import rest
-from action_platform.settings import settings
 
 
 class SourceGitlab(SourceHost):
     """
     Args:
         repo (str): "group/name" (subgroups allowed: "group/sub/name").
-        token (str | None): personal / project / group access token; default from ACTION_PLATFORM_GITLAB_TOKEN / GITLAB_TOKEN.
+        token (str | None): personal / project / group access token.
         base_url (str | None): instance root, e.g. https://gitlab.example.com (default https://gitlab.com).
     """
 
@@ -34,7 +33,7 @@ class SourceGitlab(SourceHost):
         self, repo: str, token: str | None = None, base_url: str | None = None
     ) -> None:
         self.repo = repo
-        self.token = token or settings.tokens.gitlab
+        self.token = token
         self.web = (base_url or "https://gitlab.com").rstrip("/")
         self.api = f"{self.web}/api/v4"
 

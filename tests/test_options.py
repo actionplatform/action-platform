@@ -94,6 +94,14 @@ class SlicesFromEnvTest(unittest.TestCase):
             ("https://k@o1.ingest.sentry.io/1", 0.5),
         )
 
+    def test_tokens_by_source_host_kind(self):
+        tokens = SourceTokens(github="gh", bitbucket="bb", bitbucket_username="ada")
+
+        self.assertEqual(tokens.token("github"), "gh")
+        self.assertIsNone(tokens.token("generic"))
+        self.assertEqual(tokens.username("bitbucket"), "ada")
+        self.assertIsNone(tokens.username("github"))
+
     def test_a_slice_is_frozen(self):
         with self.assertRaises(FrozenInstanceError):
             GitConfig().allow_file_urls = True

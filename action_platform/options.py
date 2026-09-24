@@ -149,6 +149,16 @@ class SourceTokens:
             bitbucket_username=env.get("ACTION_PLATFORM_BITBUCKET_USERNAME"),
         )
 
+    def token(self, kind: str) -> Optional[str]:
+        return {
+            "github": self.github,
+            "gitlab": self.gitlab,
+            "bitbucket": self.bitbucket,
+        }.get(kind)
+
+    def username(self, kind: str) -> Optional[str]:
+        return self.bitbucket_username if kind == "bitbucket" else None
+
 
 @dataclass(frozen=True)
 class ApiConfig:
