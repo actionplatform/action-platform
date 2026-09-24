@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -115,7 +116,7 @@ class Releaser:
         try:
             self.repo.add(touched)
             self.repo.commit(f"chore(release): {comp.label(plan.next)}")
-        except Exception as e:
+        except (subprocess.CalledProcessError, OSError) as e:
             self._undo_writes(touched, had_changelog, where)
             raise ReleaseError(
                 f"could not commit the release: {_stderr(e) or e}"
@@ -126,7 +127,7 @@ class Releaser:
         try:
             self.repo.push()
             self.repo.push_tag(plan.tag)
-        except Exception as e:
+        except (subprocess.CalledProcessError, OSError) as e:
             self.repo.delete_tag(plan.tag)
             self.repo.reset_hard("HEAD~1")
             raise ReleaseError(

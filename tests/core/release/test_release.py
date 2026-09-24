@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import subprocess
+from unittest import mock
+
 from action_platform.core.config import Config
 from action_platform.core.exception import ReleaseError
 from action_platform.core.flow.repository import Repository
@@ -133,3 +136,44 @@ class ComponentTest(ReleaseCase):
     def test_unknown_component(self):
         with self.assertRaisesRegex(ReleaseError, "unknown component: api"):
             releasing.release(self.config, "patch", self.repo, component="api")
+
+
+class FailureTest(ReleaseCase):
+    def setUp(self):
+        super().setUp()
+        self.releaser = releasing.Releaser(Config(), Repository(self.repo))
+        self.before = run(self.repo, "rev-parse", "HEAD")
+
+    def refused(self, step: str, stderr: str) -> subprocess.CalledProcessError:
+        return subprocess.CalledProcessError(1, ["git", step], stderr=stderr)
+
+    def test_a_failed_commit_undoes_the_writes_and_keeps_the_cause(self):
+        cause = self.refused("commit", "hook said no")
+
+        with mock.patch.object(self.releaser.repo, "commit", side_effect=cause):
+            with self.assertRaisesRegex(ReleaseError, "hook said no") as caught:
+                self.releaser.release("patch")
+
+        self.assertIs(caught.exception.__cause__, cause)
+        self.assertEqual((self.repo / "LAST_VERSION").read_text(), "0.3.1\n")
+        self.assertFalse((self.repo / "CHANGELOG.md").exists())
+
+    def test_a_failed_push_drops_the_tag_and_the_commit(self):
+        cause = self.refused("push", "rejected")
+
+        with mock.patch.object(self.releaser.repo, "push", side_effect=cause):
+            with self.assertRaisesRegex(
+                ReleaseError, "nothing was published"
+            ) as caught:
+                self.releaser.release("patch")
+
+        self.assertIs(caught.exception.__cause__, cause)
+        self.assertNotIn("v0.3.2", Repository(self.repo).tags())
+        self.assertEqual(run(self.repo, "rev-parse", "HEAD"), self.before)
+
+    def test_an_unexpected_error_is_not_disguised_as_a_release_error(self):
+        with mock.patch.object(
+            self.releaser.repo, "push", side_effect=RuntimeError("bug")
+        ):
+            with self.assertRaisesRegex(RuntimeError, "bug"):
+                self.releaser.release("patch")
