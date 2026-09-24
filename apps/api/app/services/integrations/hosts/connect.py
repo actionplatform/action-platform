@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional
 from action_platform.core.exception import ActionPlatformError
 from app.core.db.models import Organization
 from app.core.errors import ServiceError
-from app.services.integrations.hosts.registry import PROVIDERS
+from app.services.integrations.hosts.registry import HostProviders
 
 if TYPE_CHECKING:
     from app.services.integrations.hosts.directory import IntegrationsDirectory
@@ -16,8 +16,11 @@ class HostConnectError(ServiceError):
 
 
 class HostConnector:
-    def __init__(self, writes: "IntegrationsDirectory") -> None:
+    def __init__(
+        self, writes: "IntegrationsDirectory", providers: HostProviders
+    ) -> None:
         self.writes = writes
+        self.providers = providers
 
     def finish(
         self,
@@ -29,7 +32,7 @@ class HostConnector:
     ) -> None:
         """Trade the code for tokens, read who signed in, store the host. Raises HostConnectError with the problem to show."""
         app = self.writes.oauth_app(provider)
-        host = PROVIDERS.get(provider)
+        host = self.providers.get(provider)
 
         if app is None:
             raise HostConnectError(f"{host.label} OAuth app is not configured")
@@ -55,7 +58,7 @@ class HostConnector:
     def create_github_app(self, code: str) -> str:
         """Turn a manifest code into a stored GitHub App and answer its slug. Raises HostConnectError when GitHub refuses."""
         try:
-            app = PROVIDERS.github.convert_manifest(code)
+            app = self.providers.github.convert_manifest(code)
         except ActionPlatformError as e:
             raise HostConnectError(str(e)) from e
 

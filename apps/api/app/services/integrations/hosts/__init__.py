@@ -8,13 +8,12 @@ from app.services.integrations.hosts.github import (
     GithubProvider,
 )
 from app.services.integrations.hosts.gitlab import GitlabProvider
-from app.services.integrations.hosts.registry import PROVIDERS, HostProviders
+from app.services.integrations.hosts.registry import HostProviders, host_providers
 from app.services.integrations.hosts.state import STATE_TTL, OAuthState
 from app.services.integrations.hosts.tokens import TokenResponse
 
 __all__ = [
     "MANIFEST_PERMISSIONS",
-    "PROVIDERS",
     "STATE_TTL",
     "AccessReport",
     "BitbucketProvider",
@@ -27,4 +26,5 @@ __all__ = [
     "Owner",
     "Probe",
     "TokenResponse",
+    "host_providers",
 ]

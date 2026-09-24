@@ -5,16 +5,28 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from sqlalchemy.orm import Session as DbSession
+
 from action_platform.core.exception import ProviderError
+from app.core.auth.crypto import Sealer
 from app.core.db.models import SourceHost
 from app.core.shared.clock import now
 from app.core.shared.credentials import Credentials, CredentialsError
 from app.repositories.base import REFRESH_MARGIN
 from app.repositories.integrations import HostsReads, OAuthAppsReads
-from app.services.integrations.hosts import PROVIDERS
+from app.services.integrations.hosts.registry import HostProviders, host_providers
 
 
 class FreshCredentials(HostsReads, OAuthAppsReads):
+    def __init__(
+        self,
+        db: DbSession,
+        sealer: Optional[Sealer] = None,
+        providers: Optional[HostProviders] = None,
+    ) -> None:
+        super().__init__(db, sealer)
+        self.providers = providers or host_providers()
+
     def credentials_for(
         self, organization_id: str, host_id: Optional[str]
     ) -> Optional[Credentials]:
@@ -63,6 +75,6 @@ class FreshCredentials(HostsReads, OAuthAppsReads):
             )
 
         try:
-            return PROVIDERS.get(kind).refresh(app, refresh_token)
+            return self.providers.get(kind).refresh(app, refresh_token)
         except ProviderError as e:
             raise CredentialsError(str(e)) from e
