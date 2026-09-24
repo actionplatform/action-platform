@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-from action_platform.env import DotEnv
+from action_platform.env import DotEnv, load
 from tests.support import TempCase
 
 
@@ -24,3 +24,11 @@ class DotEnvTest(TempCase):
 
     def test_missing_file_is_nothing(self):
         self.assertEqual(DotEnv(Path(self.tmp_path) / "nope").apply(), [])
+
+    def test_load_reads_the_path_it_is_given(self):
+        path = Path(self.tmp_path) / "custom.env"
+        path.write_text("AP_LOADED=yes\n")
+        self.delenv("AP_LOADED")
+
+        self.assertEqual(load(path), ["AP_LOADED"])
+        self.assertEqual(os.environ["AP_LOADED"], "yes")
