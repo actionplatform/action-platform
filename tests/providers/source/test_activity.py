@@ -6,6 +6,7 @@ import unittest
 from unittest import mock
 
 from action_platform.abc.source_host import ListsPullRequests, PublishesReleases
+from action_platform.core.context import PullRequestRow, ReleaseRow
 from action_platform.providers.source.bitbucket import SourceBitbucket
 from action_platform.providers.source.generic import SourceGeneric
 from action_platform.providers.source.github import SourceGithub
@@ -47,12 +48,14 @@ class GithubActivityTest(unittest.TestCase):
             pulls = host.pull_requests("acme/x")
 
         self.assertEqual(
-            (releases[0]["tag"], releases[0]["author"], releases[0]["source"]),
+            (releases[0].tag, releases[0].author, releases[0].source),
             ("v1.2.0", "ada", "github"),
         )
-        self.assertEqual(releases[0]["published_at"].hour, 10)
+        self.assertIsInstance(releases[0], ReleaseRow)
+        self.assertIsInstance(pulls[0], PullRequestRow)
+        self.assertEqual(releases[0].published_at.hour, 10)
         self.assertEqual(
-            (pulls[0]["number"], pulls[0]["state"], pulls[0]["head"], pulls[0]["base"]),
+            (pulls[0].number, pulls[0].state, pulls[0].head, pulls[0].base),
             (7, "merged", "feature/7", "develop"),
         )
         self.assertEqual(
@@ -95,12 +98,12 @@ class GitlabActivityTest(unittest.TestCase):
             releases = host.releases("acme/x")
             pulls = host.pull_requests("acme/x")
 
-        self.assertTrue(releases[0]["prerelease"])
-        self.assertEqual(releases[0]["sha"], "abcdef1")
+        self.assertTrue(releases[0].prerelease)
+        self.assertEqual(releases[0].sha, "abcdef1")
         self.assertEqual(
-            releases[0]["url"], "https://git.acme.io/acme/x/-/releases/v2.0.0-rc.1"
+            releases[0].url, "https://git.acme.io/acme/x/-/releases/v2.0.0-rc.1"
         )
-        self.assertEqual((pulls[0]["state"], pulls[0]["draft"]), ("open", True))
+        self.assertEqual((pulls[0].state, pulls[0].draft), ("open", True))
         self.assertIn(
             "/api/v4/projects/acme%2Fx/releases", pages.call_args_list[0].args[0]
         )
@@ -139,10 +142,10 @@ class BitbucketActivityTest(unittest.TestCase):
             pulls = host.pull_requests("acme/x")
 
         self.assertEqual(
-            (releases[0]["tag"], releases[0]["sha"], releases[0]["author"]),
+            (releases[0].tag, releases[0].sha, releases[0].author),
             ("v0.1.0", "1234567", "Ada"),
         )
-        self.assertEqual((pulls[0]["state"], pulls[0]["merged_at"]), ("closed", None))
+        self.assertEqual((pulls[0].state, pulls[0].merged_at), ("closed", None))
 
 
 class GenericTest(unittest.TestCase):
