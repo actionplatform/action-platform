@@ -8,6 +8,7 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
+from action_platform.bootstrap import project as open_project
 from action_platform.core.facade import ActionPlatform
 from action_platform.core.config import Config
 from action_platform.core.exception import ActionPlatformError, DeployError
@@ -30,7 +31,7 @@ STAGE = typer.Option(
 
 
 def _tool() -> ActionPlatform:
-    return ActionPlatform(config=Config.from_toml(Path.cwd() / CONFIG_FILE))
+    return open_project()
 
 
 def run(

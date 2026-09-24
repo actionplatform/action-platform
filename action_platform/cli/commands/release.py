@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import typer
 
-from action_platform.core.config import Config
-from action_platform.core.facade import ActionPlatform
+from action_platform.bootstrap import project
 from action_platform.logging import logger
 
 
@@ -27,7 +24,7 @@ def run(
     ),
 ) -> None:
     """Bump version, generate changelog, tag, and publish release. Off main/master it cuts an rc."""
-    config = Config.from_toml(Path.cwd() / "platform.toml")
-    tool = ActionPlatform(config=config)
-    ctx = tool.release(level=level, dry_run=dry_run, prerelease=rc, component=component)
+    ctx = project().release(
+        level=level, dry_run=dry_run, prerelease=rc, component=component
+    )
     logger.info("release done: %s", ctx.next_version)
