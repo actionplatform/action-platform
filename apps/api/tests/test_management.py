@@ -598,3 +598,70 @@ class DeadTokenTest(GateCase):
         self.assertEqual(res.status_code, 200, res.text)
         self.assertFalse(res.json()["ok"])
         self.assertIn("reconnect the host", res.json()["error"])
+
+
+class InjectedProvidersTest(GateCase):
+    def override(self, providers):
+        from app.api.dependencies import get_host_providers
+
+        self.app.dependency_overrides[get_host_providers] = lambda: providers
+        self.addCleanup(self.app.dependency_overrides.clear)
+
+    def test_routes_use_the_injected_providers(self):
+        from app.services.integrations.hosts import HostProviders
+
+        self.override(HostProviders())
+        res = self.client.post(
+            "/api/v1/oauth/gitlab/start",
+            json={"origin": "https://ap.example.com"},
+            headers=self.h(),
+        )
+        self.assertEqual(res.status_code, 404, res.text)
+
+    def test_refresh_and_access_go_through_the_injected_provider(self):
+        from datetime import timedelta
+
+        from app.core.abc import AccessReport
+        from app.core.auth.crypto import Sealer
+        from app.core.db.models import SourceHost
+        from app.core.shared.clock import now
+        from app.services.integrations.hosts import GitlabProvider, HostProviders
+
+        seen = []
+
+        class FakeGitlab(GitlabProvider):
+            def refresh(self, app, refresh_token):
+                seen.append(refresh_token)
+                return "fresh", None, None
+
+            def access(self, creds, app_slug):
+                seen.append(creds.token)
+                return AccessReport(kind=self.kind, login="ana")
+
+        self.override(HostProviders(FakeGitlab()))
+        self.client.put(
+            "/api/v1/oauth/apps/gitlab",
+            json={"client_id": "cid", "client_secret": "sec"},
+            headers=self.h(),
+        )
+        sealer = Sealer(self.app.state.secrets)
+
+        with self.app.state.db.session() as s:
+            s.add(
+                SourceHost(
+                    id="h1",
+                    organization_id=self.org["id"],
+                    kind="gitlab",
+                    name="GitLab · ana",
+                    token_encrypted=sealer.seal("old"),
+                    refresh_token_encrypted=sealer.seal("r1"),
+                    expires_at=now() - timedelta(hours=1),
+                    auth_kind="oauth",
+                    login="ana",
+                )
+            )
+
+        res = self.client.get("/api/v1/hosts/h1/access", headers=self.h())
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual(res.json()["login"], "ana")
+        self.assertEqual(seen, ["r1", "fresh"])

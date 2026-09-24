@@ -12,6 +12,7 @@ from app.services.integrations.hosts import (
     GitlabProvider,
     HostConnectError,
     HostConnector,
+    host_providers,
 )
 
 ORG = SimpleNamespace(id="o1")
@@ -38,7 +39,9 @@ class FakeWrites:
 class FinishTest(unittest.TestCase):
     def test_missing_oauth_app_raises(self):
         with self.assertRaisesRegex(HostConnectError, "GitLab OAuth app"):
-            HostConnector(FakeWrites()).finish(ORG, "gitlab", "https://ap", "c", None)
+            HostConnector(FakeWrites(), host_providers()).finish(
+                ORG, "gitlab", "https://ap", "c", None
+            )
 
     def test_provider_failure_raises(self):
         writes = FakeWrites(OAuthApp("id", "secret", None))
@@ -47,7 +50,9 @@ class FinishTest(unittest.TestCase):
             GitlabProvider, "exchange_code", side_effect=ProviderError("bad code")
         ):
             with self.assertRaisesRegex(HostConnectError, "bad code"):
-                HostConnector(writes).finish(ORG, "gitlab", "https://ap", "c", None)
+                HostConnector(writes, host_providers()).finish(
+                    ORG, "gitlab", "https://ap", "c", None
+                )
 
         self.assertEqual(writes.connected, [])
 
@@ -61,7 +66,9 @@ class FinishTest(unittest.TestCase):
             mock.patch.object(GitlabProvider, "identity", return_value=("ana", "Ana")),
         ):
             self.assertIsNone(
-                HostConnector(writes).finish(ORG, "gitlab", "https://ap", "c", None)
+                HostConnector(writes, host_providers()).finish(
+                    ORG, "gitlab", "https://ap", "c", None
+                )
             )
 
         self.assertEqual(writes.connected[0][:4], ("o1", "gitlab", "ana", "tok"))
@@ -76,7 +83,9 @@ class CreateGithubAppTest(unittest.TestCase):
             "convert_manifest",
             return_value={"client_id": "i", "client_secret": "s", "slug": "ap"},
         ):
-            self.assertEqual(HostConnector(writes).create_github_app("c"), "ap")
+            self.assertEqual(
+                HostConnector(writes, host_providers()).create_github_app("c"), "ap"
+            )
 
         self.assertEqual(writes.saved, [("github", "i", "s", None, "ap")])
 
@@ -89,7 +98,7 @@ class CreateGithubAppTest(unittest.TestCase):
             side_effect=ProviderError("GitHub app creation failed"),
         ):
             with self.assertRaisesRegex(HostConnectError, "creation failed"):
-                HostConnector(writes).create_github_app("c")
+                HostConnector(writes, host_providers()).create_github_app("c")
 
         self.assertEqual(writes.saved, [])
 
@@ -127,7 +136,9 @@ class OwnerTest(unittest.TestCase):
             ),
             mock.patch.object(BitbucketProvider, "owner", return_value="team"),
         ):
-            HostConnector(writes).finish(ORG, "bitbucket", "https://ap", "c", None)
+            HostConnector(writes, host_providers()).finish(
+                ORG, "bitbucket", "https://ap", "c", None
+            )
 
         self.assertEqual(writes.connected[0][-1], "team")
 
@@ -145,7 +156,9 @@ class TokenUsernameTest(unittest.TestCase):
             ),
             mock.patch.object(BitbucketProvider, "owner", return_value=None),
         ):
-            HostConnector(writes).finish(ORG, "bitbucket", "https://ap", "c", None)
+            HostConnector(writes, host_providers()).finish(
+                ORG, "bitbucket", "https://ap", "c", None
+            )
 
         self.assertEqual(writes.usernames, ["x-token-auth"])
 
