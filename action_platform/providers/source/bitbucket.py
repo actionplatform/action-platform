@@ -8,7 +8,13 @@ import base64
 from pathlib import Path
 
 from action_platform.abc.source_host import SourceHost
-from action_platform.core.context import Context, PRRef, ReleaseRef
+from action_platform.core.context import (
+    Context,
+    PRRef,
+    PullRequestRow,
+    ReleaseRef,
+    ReleaseRow,
+)
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import rest
 from action_platform.settings import settings
@@ -128,52 +134,52 @@ class SourceBitbucket(SourceHost):
 
         return PRRef(number=data["id"], url=data["links"]["html"]["href"])
 
-    def releases(self, repo: str) -> list[dict]:
+    def releases(self, repo: str) -> list[ReleaseRow]:
         return [
-            {
-                "tag": r["name"],
-                "name": r["name"],
-                "body": r.get("message"),
-                "url": ((r.get("links") or {}).get("html") or {}).get("href")
+            ReleaseRow(
+                tag=r["name"],
+                name=r["name"],
+                body=r.get("message"),
+                url=((r.get("links") or {}).get("html") or {}).get("href")
                 or f"{self.web}/{repo}/src/{r['name']}/",
-                "author": (
+                author=(
                     ((r.get("target") or {}).get("author") or {}).get("user") or {}
                 ).get("display_name"),
-                "sha": ((r.get("target") or {}).get("hash") or "")[:7] or None,
-                "prerelease": bool(RC.search(r["name"])),
-                "draft": False,
-                "published_at": rest.parse_utc((r.get("target") or {}).get("date")),
-                "source": "bitbucket",
-            }
+                sha=((r.get("target") or {}).get("hash") or "")[:7] or None,
+                prerelease=bool(RC.search(r["name"])),
+                draft=False,
+                published_at=rest.parse_utc((r.get("target") or {}).get("date")),
+                source="bitbucket",
+            )
             for r in rest.get_values(
                 f"{self.api}/repositories/{repo}/refs/tags?sort=-target.date&pagelen=100",
                 self._headers(),
             )
         ]
 
-    def pull_requests(self, repo: str) -> list[dict]:
+    def pull_requests(self, repo: str) -> list[PullRequestRow]:
         return [
-            {
-                "number": r["id"],
-                "title": r["title"],
-                "url": ((r.get("links") or {}).get("html") or {}).get("href")
+            PullRequestRow(
+                number=r["id"],
+                title=r["title"],
+                url=((r.get("links") or {}).get("html") or {}).get("href")
                 or f"{self.web}/{repo}/pull-requests/{r['id']}",
-                "author": (r.get("author") or {}).get("display_name"),
-                "head": r["source"]["branch"]["name"],
-                "base": r["destination"]["branch"]["name"],
-                "state": "merged"
+                author=(r.get("author") or {}).get("display_name"),
+                head=r["source"]["branch"]["name"],
+                base=r["destination"]["branch"]["name"],
+                state="merged"
                 if r.get("state") == "MERGED"
                 else "open"
                 if r.get("state") == "OPEN"
                 else "closed",
-                "draft": False,
-                "created_at": rest.parse_utc(r["created_on"]),
-                "updated_at": rest.parse_utc(r["updated_on"]),
-                "merged_at": rest.parse_utc(r["updated_on"])
+                draft=False,
+                created_at=rest.parse_utc(r["created_on"]),
+                updated_at=rest.parse_utc(r["updated_on"]),
+                merged_at=rest.parse_utc(r["updated_on"])
                 if r.get("state") == "MERGED"
                 else None,
-                "source": "bitbucket",
-            }
+                source="bitbucket",
+            )
             for r in rest.get_values(
                 f"{self.api}/repositories/{repo}/pullrequests?state=OPEN&state=MERGED&state=DECLINED&sort=-updated_on&pagelen=50",
                 self._headers(),
