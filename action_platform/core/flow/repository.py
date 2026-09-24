@@ -33,7 +33,7 @@ def subprocess_git(
         cwd=cwd,
         capture_output=True,
         text=True,
-        env=git_env(),
+        env={**git_env(), "LC_ALL": "C"},
     )
 
 
@@ -46,6 +46,15 @@ def _checked(
         )
 
     return result
+
+
+NO_TAG = ("No names found", "No tags can describe", "no tag exactly matches")
+NO_COMMITS = ("does not have any commits yet",)
+NO_UPSTREAM = (
+    "no upstream configured",
+    "HEAD does not point to a branch",
+    "no such branch",
+)
 
 
 class Repository(WorkingCopy):
@@ -97,15 +106,31 @@ class Repository(WorkingCopy):
         """Run without raising; the caller reads returncode/stderr."""
         return self.runner(args, self.path)
 
+    def lookup(
+        self,
+        args: list[str],
+        codes: tuple[int, ...] = (),
+        markers: tuple[str, ...] = (),
+    ) -> str | None:
+        """Stdout of a command whose failure can mean "not there": None when git exits with one of `codes` or says one of `markers`; any other failure raises."""
+        result = self.attempt(args)
+
+        if result.returncode == 0:
+            return result.stdout.strip()
+
+        if result.returncode in codes or any(m in result.stderr for m in markers):
+            return None
+
+        return _checked(result, args).stdout.strip()
+
     def exists(self) -> bool:
         return (self.path / ".git").exists()
 
     @property
     def branch(self) -> str:
-        try:
-            return self.run(["symbolic-ref", "--short", "-q", "HEAD"])
-        except subprocess.CalledProcessError:
-            return self.run(["rev-parse", "--abbrev-ref", "HEAD"])
+        return self.lookup(
+            ["symbolic-ref", "--short", "-q", "HEAD"], codes=(1,)
+        ) or self.run(["rev-parse", "--abbrev-ref", "HEAD"])
 
     @property
     def head(self) -> str:
@@ -118,17 +143,13 @@ class Repository(WorkingCopy):
         return self.run(["status", "--porcelain"]) == ""
 
     def changed_files(self) -> list[str]:
-        out = self.attempt(
-            ["status", "--porcelain=v1", "--untracked-files=all", "-z"]
-        ).stdout
+        args = ["status", "--porcelain=v1", "--untracked-files=all", "-z"]
+        out = _checked(self.attempt(args), args).stdout
 
         return sorted({entry[3:] for entry in out.split("\0") if len(entry) > 3})
 
     def remote_url(self, remote: str = "origin") -> str:
-        try:
-            return self.run(["remote", "get-url", remote])
-        except subprocess.CalledProcessError:
-            return ""
+        return self.lookup(["remote", "get-url", remote], codes=(2,)) or ""
 
     def add_remote(self, url: str, remote: str = "origin") -> None:
         self.run(["remote", "add", remote, url])
@@ -139,7 +160,7 @@ class Repository(WorkingCopy):
         ]
 
     def has_tag(self, glob: str) -> bool:
-        return bool(self.attempt(["tag", "--list", glob]).stdout.strip())
+        return bool(self.run(["tag", "--list", glob]))
 
     def tag_at_head(self, match: str | None = None) -> str | None:
         """The tag HEAD sits on exactly, None when it sits on none."""
@@ -148,9 +169,7 @@ class Repository(WorkingCopy):
         if match:
             args += ["--match", match]
 
-        result = self.attempt(args)
-
-        return result.stdout.strip() or None if result.returncode == 0 else None
+        return self.lookup(args, markers=NO_TAG) or None
 
     def latest_tag(self, match: str | None = None) -> str | None:
         args = ["describe", "--tags", "--abbrev=0"]
@@ -158,18 +177,14 @@ class Repository(WorkingCopy):
         if match:
             args += ["--match", match]
 
-        try:
-            return self.run(args)
-        except subprocess.CalledProcessError:
-            return None
+        return self.lookup(args, markers=NO_TAG) or None
 
     def remote_tag_exists(self, tag: str, remote: str = "origin") -> bool:
-        try:
-            return bool(
-                self.run(["ls-remote", "--tags", remote, f"refs/tags/{tag}"]).strip()
-            )
-        except subprocess.CalledProcessError:
+        """False when there is no such remote; a remote that cannot be asked raises."""
+        if not self.remote_url(remote):
             return False
+
+        return bool(self.run(["ls-remote", "--tags", remote, f"refs/tags/{tag}"]))
 
     def commits_since(
         self, ref: str | None, paths: list[str] | None = None
@@ -190,20 +205,19 @@ class Repository(WorkingCopy):
         return [line for line in self.run(args).split("\n") if line.strip()]
 
     def first_commit_adding(self, relative: str) -> str | None:
-        try:
-            out = self.run(["log", "--diff-filter=A", "--format=%H", "--", relative])
-        except subprocess.CalledProcessError:
-            return None
-
-        lines = out.splitlines()
+        out = self.lookup(
+            ["log", "--diff-filter=A", "--format=%H", "--", relative],
+            markers=NO_COMMITS,
+        )
+        lines = (out or "").splitlines()
 
         return lines[-1] if lines else None
 
     def merge_base(self, a: str, b: str) -> str | None:
-        try:
-            return self.run(["merge-base", a, b])
-        except subprocess.CalledProcessError:
-            return None
+        """None when the two share no history or either one does not exist."""
+        return self.lookup(
+            ["merge-base", a, b], codes=(1,), markers=("Not a valid object name",)
+        )
 
     def is_ancestor(self, ancestor: str, descendant: str) -> bool:
         return (
@@ -237,11 +251,10 @@ class Repository(WorkingCopy):
             return self.tracking_branch_exists(name, remote)
 
     def upstream(self) -> str | None:
-        result = self.attempt(
-            ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"]
+        return self.lookup(
+            ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"],
+            markers=NO_UPSTREAM,
         )
-
-        return result.stdout.strip() if result.returncode == 0 else None
 
     def tracks_a_remote(self) -> bool:
         branch = self.attempt(["rev-parse", "--abbrev-ref", "HEAD"]).stdout.strip()
