@@ -6,7 +6,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from action_platform.settings import settings
 
@@ -15,13 +15,27 @@ TIMEOUT = 5
 
 
 class TemplatesIndex:
-    def __init__(self, url: str = "", ttl: Optional[int] = None) -> None:
-        self.url = url or settings.TEMPLATES_INDEX_URL
-        self.ttl = settings.TEMPLATES_INDEX_TTL if ttl is None else ttl
+    def __init__(
+        self, url: str | Callable[[], str] = "", ttl: Optional[int] = None
+    ) -> None:
+        self._url = url
+        self._ttl = ttl
         self.lock = threading.Lock()
         self.cached: Optional[dict[str, Any]] = None
         self.etag = ""
         self.fetched_at = 0.0
+
+    @property
+    def url(self) -> str:
+        """Read when asked, not when the module is imported — the settings are not loaded yet then."""
+        if callable(self._url):
+            return self._url()
+
+        return self._url or settings.TEMPLATES_INDEX_URL
+
+    @property
+    def ttl(self) -> int:
+        return settings.TEMPLATES_INDEX_TTL if self._ttl is None else self._ttl
 
     @property
     def raw_base(self) -> str:
@@ -70,4 +84,4 @@ class TemplatesIndex:
 
 
 index = TemplatesIndex()
-plugins_index = TemplatesIndex(settings.PLUGINS_INDEX_URL)
+plugins_index = TemplatesIndex(lambda: settings.PLUGINS_INDEX_URL)

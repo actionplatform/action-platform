@@ -42,5 +42,6 @@ class DotEnv:
         return applied
 
 
-def load() -> list[str]:
-    return DotEnv(Path.cwd() / ".env").apply()
+def load(path: Path | None = None) -> list[str]:
+    """Apply `path` (default: `.env` in the working directory); an entry point calls it before it reads a setting — importing never does."""
+    return DotEnv(path or Path.cwd() / ".env").apply()
