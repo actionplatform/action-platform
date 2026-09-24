@@ -10,7 +10,7 @@ from action_platform.core.context import Check, Context, DeployResult
 from action_platform.core.exception import DeployError, ProviderError
 
 
-class ObservedTarget(DeployTarget):
+class PipelinePublishedTarget(DeployTarget):
     name: str
 
     def registry_for(self, criticality: str) -> str:
