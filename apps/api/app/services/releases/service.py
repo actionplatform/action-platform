@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 
-from action_platform.core.action_platform import ActionPlatform
+from action_platform.core.facade import ActionPlatform
 from action_platform.core.flow import git
 from action_platform.core.flow.repository import Repository
 from action_platform.core.release.components import resolve

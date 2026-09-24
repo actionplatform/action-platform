@@ -5,7 +5,7 @@ from typing import Callable, Optional
 
 from sqlalchemy import select
 
-from action_platform.core.action_platform import ActionPlatform
+from action_platform.core.facade import ActionPlatform
 from app.core.db.models import App
 from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.scopes import ScopeStore

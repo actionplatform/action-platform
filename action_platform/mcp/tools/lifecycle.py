@@ -7,7 +7,7 @@ from typing import Annotated, Any, Optional
 
 from pydantic import Field
 
-from action_platform.core.action_platform import ActionPlatform
+from action_platform.core.facade import ActionPlatform
 from action_platform.core.config import Config
 from action_platform.mcp import schemas
 from action_platform.mcp.annotations import DESTRUCTIVE, READ_ONLY, REACHES_OUT, tool
