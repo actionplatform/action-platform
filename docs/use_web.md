@@ -161,7 +161,7 @@ Everything signed in as you (also the key icon next to your name): API tokens ac
 
 One card per plugin the platform runs, with its version. **Configure** opens the settings the plugin declares, kept per organization; a plugin that failed to load shows the error. There is no marketplace: a plugin ships inside the platform's image ([plugins](use_plugins.md)).
 
-**AWS Lambda** asks for the URL of the deploy proxy installed in your AWS account; every deploy of the organization goes through it. Installing the proxy: the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README; how it works: [identity](concept_identity.md).
+**AWS Lambda** asks for the ARN of the deploy role your connected AWS account's IAM-only stack created; every deploy of the organization assumes it. Connecting the account: the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README; how it works: [identity](concept_identity.md).
 
 ## Settings
 

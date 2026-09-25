@@ -48,7 +48,7 @@ class AwsLambdaPlugin(Plugin):
     min_core = "0.16"
     needs = ["env: AWS_PROFILE or AWS_ACCESS_KEY_ID", "tool: sam, aws"]
     options = [
-        Option("proxy_url", "Deploy proxy URL", "url", help="The deploy proxy in your AWS account.", required=True),
+        Option("role_arn", "Deploy role ARN", "text", help="The deploy role of your connected AWS account.", required=True),
     ]
 
     @property
