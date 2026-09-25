@@ -17,6 +17,8 @@ from app.core.db.database import Database
 from app.core.db.models import SigningKey
 
 TTL = 300
+AWS_AUDIENCE = "sts.amazonaws.com"
+AWS_TAGS = "https://aws.amazon.com/tags"
 
 
 class IdentityError(ActionPlatformError):
@@ -146,6 +148,10 @@ class IdentityIssuer:
             "jti": secrets.token_hex(16),
             **{k: v for k, v in claims.items() if v is not None},
         }
+
+        if audience == AWS_AUDIENCE:
+            payload.update(aws_session_tags(**claims))
+
         signing_input = ".".join(
             _b64(json.dumps(part, separators=(",", ":")).encode())
             for part in (header, payload)
@@ -167,3 +173,22 @@ def subject_for(organization: str, project: Optional[str], app: Optional[str]) -
         parts.append(f"app:{app}")
 
     return ":".join(parts)
+
+
+def aws_session_tags(
+    organization: Optional[str] = None,
+    project: Optional[str] = None,
+    app: Optional[str] = None,
+    **_: Any,
+) -> dict[str, Any]:
+    """The session tags STS copies from a token for one app: `action-platform:prefix` = `ap-<org>-<project>-<app>`, the prefix a connected account's deploy role and boundary scope every resource by. Nothing for a token about a whole organization."""
+    if not (organization and project and app):
+        return {}
+
+    return {
+        AWS_TAGS: {
+            "principal_tags": {
+                "action-platform:prefix": [f"ap-{organization}-{project}-{app}"]
+            }
+        }
+    }
