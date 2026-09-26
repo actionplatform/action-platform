@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.34.0 — 2026-09-26
+
+### Features
+- **identity:** tokens for AWS carry the app's prefix as a session tag
+
+### Refactoring
+- **api:** deploy tokens no longer carry org.manage
+- **api:** start the api cli and uvicorn factory through the bootstrap
+- **api:** take fixed file names from core.files, not settings
+- **core:** pass observability config to observe explicitly
+- **core:** split settings into per-concern config slices
+- **core:** load .env in the entry points, not on settings import
+- **core:** return typed rows from source host releases and pull requests
+- **core:** split source host capabilities into protocols
+- **api:** projects route delegates row assembly to ProjectView
+- **api:** inject host providers through a dependency, not a module singleton
+- **core:** name scaffold modules by role
+- **api:** host provider supplies the username stored with its token
+- **api:** each HostProvider answers its connection owner
+- **api:** HostConnector raises HostConnectError instead of returning it
+- **api:** HostProvider.access answers a typed AccessReport
+- **api:** name the access dispatcher JobDispatcher
+- **core:** rename core/action_platform.py to core/facade.py
+
 ## v0.33.10 — 2026-09-21
 
 ### Bug Fixes
