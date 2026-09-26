@@ -1,5 +1,97 @@
 # Changelog
 
+## v0.32.0 — 2026-09-26
+
+### Features
+- **plugins:** an option's action may copy a command before opening its page
+- **plugins:** an option may carry a button that opens a setup page
+- **identity:** tokens for AWS carry the app's prefix as a session tag
+- **api:** bundle apx-dokploy
+- **web:** pick the source host an app uses, in Settings
+
+### Bug Fixes
+- **core:** raise git failures instead of reporting absence
+- **core:** release catches only git failures on commit and push
+- **core:** remote client takes the organization the MCP tools pass
+- **api:** applying a deploy target records it again
+- **api:** a plugin's slug as a cloud's source names the official catalog
+- **api:** the matrix from the published index carries the plugins' clouds
+- **github:** the app asks for Actions write — a deploy dispatches the publish workflow
+
+### Refactoring
+- **api:** deploy tokens no longer carry org.manage
+- **core:** share one bootstrap between the cli and mcp entry points
+- **core:** give each ActionPlatform its own injectable wiring
+- **cli:** read the manifest name from core.files, not settings
+- **core:** take config slices in core instead of the settings singleton
+- **core:** require an explicit Config in ActionPlatform
+- **core:** hand source providers their tokens from config loading
+- **core:** pass observability config to observe explicitly
+- **core:** split settings into per-concern config slices
+- **core:** read settings when asked and build them from a mapping
+- **core:** load .env in the entry points, not on settings import
+- **core:** build source hosts and ci runners from a registry
+- **core:** return typed rows from source host releases and pull requests
+- **core:** split source host capabilities into protocols
+- **core:** split repository into command groups by concern
+- **core:** inject a git runner into repository
+- **mcp:** split the remote tools into a package by concern
+- **mcp:** tools read the role from the typed answer, not the wire
+- **cli:** whoami reads a typed reach without isinstance
+- **core:** remote client answers with the typed schemas
+- **core:** name scaffold modules by role
+- **core:** split scaffold generate into renderer, publisher, manifest
+- **deploy:** name the base of pipeline-published targets for its role
+- **core:** rename core/action_platform.py to core/facade.py
+
+### Docs
+- a connected AWS account replaces the deploy proxy
+- **core:** describe the bootstrap and mcp observability
+- **core:** explain the process wiring and a facade's own
+- **core:** list core/files.py and where source tokens come from
+- **core:** map options, settings and env in the architecture
+- **core:** say the entry points read .env, including the mcp server
+- **core:** map the repository command groups
+- **core:** list scaffold modules by role
+- **core:** describe scaffold renderer and publisher
+- JobDispatcher in the architecture map
+
+### Tests
+- **mcp:** skip the entry-point test without the mcp extra
+- **core:** cover the shared bootstrap of cli, mcp and api
+- **core:** cover wiring isolation per instance and per facade
+- **core:** only the entry point imports settings in the library
+- **core:** cover injected git and templates config, forbid settings in core
+- **core:** cover ActionPlatform refusing a missing config
+- **core:** cover providers keeping only the tokens they are given
+- **core:** cover observe taking its config from the caller
+- **core:** cover config slices and set them through the environment
+- **core:** cover live settings and Settings.from_env
+- **core:** skip the mcp entry-point import check without the mcp extra
+- **core:** cover pure settings import and entry-point .env loading
+- **core:** cover the provider registry and both factories
+- **core:** cover typed release and pull request rows
+- **core:** cover source host capability protocols and their callers
+- **core:** tell absent refs from failed git commands
+- **core:** cover repository through a fake git runner
+- **core:** exercise each repository command group alone
+- **mcp:** each remote module registers only its concern
+- **core:** release rollback keeps the cause, bugs propagate
+- **api:** ProjectView joins team and apps, dates and teardown
+- **api:** routes and token refresh use the injected host providers
+- **mcp:** tools drive the real client over wire-shaped answers
+- **mcp:** typed rows carry the organization and the reach
+- **core:** remote answers are validated against the schemas
+- **api:** oauth host keeps the provider's token username
+- **api:** connection owner per host provider
+- **core:** organization-level remote calls send the organization
+- **core:** cover scaffold renderer, publisher and manifest identity edits
+- **api:** host connector failures raise HostConnectError
+- **api:** access report shape and provider refusal
+
+### Build
+- **api:** pin apx-aws-lambda 1.0.0, without the deploy proxy
+
 ## v0.31.0 — 2026-09-20
 
 ## v0.30.1 — 2026-09-19
