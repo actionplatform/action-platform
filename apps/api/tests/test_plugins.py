@@ -20,6 +20,7 @@ class Lambda(Plugin):
             required=True,
             action_label="Connect AWS",
             action_url="https://console.aws.amazon.com/?issuer={issuer}",
+            action_copy="connect {issuer} {organization}",
         )
     ]
 
@@ -107,6 +108,7 @@ class PluginsApiTest(GateCase):
                     "required": True,
                     "action_label": "Connect AWS",
                     "action_url": "https://console.aws.amazon.com/?issuer={issuer}",
+                    "action_copy": "connect {issuer} {organization}",
                 }
             ],
         )

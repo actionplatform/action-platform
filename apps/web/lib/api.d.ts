@@ -2671,6 +2671,7 @@ export interface components {
             required: boolean;
             action_label: string;
             action_url: string;
+            action_copy: string;
         };
         PluginOptions: {
             options: {

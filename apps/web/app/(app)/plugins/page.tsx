@@ -7,15 +7,19 @@ import { PluginCards, type PluginCardData } from "@/features/plugins";
 
 export const dynamic = "force-dynamic";
 
-function filled(url: string, issuer: string, organization: string): string {
-  return url.replaceAll("{issuer}", encodeURIComponent(issuer)).replaceAll("{organization}", encodeURIComponent(organization));
+function filled(text: string, issuer: string, organization: string, encode: (v: string) => string = encodeURIComponent): string {
+  return text.replaceAll("{issuer}", encode(issuer)).replaceAll("{organization}", encode(organization));
 }
 
 async function pluginCards(canManage: boolean, issuer: string, organization: string): Promise<PluginCardData[]> {
   const catalog = await v1.plugins().catch(() => ({ plugins: [] }));
   return Promise.all(
     catalog.plugins.map(async (p) => {
-      const options = (p.options ?? []).map((o) => ({ ...o, action_url: o.action_url ? filled(o.action_url, issuer, organization) : "" }));
+      const options = (p.options ?? []).map((o) => ({
+        ...o,
+        action_url: o.action_url ? filled(o.action_url, issuer, organization) : "",
+        action_copy: o.action_copy ? filled(o.action_copy, issuer, organization, (v) => v) : "",
+      }));
       const values = canManage && options.length > 0 ? await v1.pluginOptions(p.slug).then((r) => r.options).catch(() => ({})) : {};
       return { slug: p.slug, name: p.name || p.slug, version: p.version, description: p.description, error: p.error ?? null, options, values: values as Record<string, unknown> };
     }),

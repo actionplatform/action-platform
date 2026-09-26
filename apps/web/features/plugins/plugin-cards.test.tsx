@@ -42,13 +42,18 @@ describe("PluginCards", () => {
     await waitFor(() => expect(savePluginOptions).toHaveBeenCalledWith("aws-lambda", { role_arn: "123456789012" }));
   });
 
-  it("an option with an action opens its page from a button", () => {
+  it("an option with an action copies its command and opens its page from a button", async () => {
     const open = vi.spyOn(window, "open").mockImplementation(() => null);
-    render(<PluginCards plugins={[lambda]} canManage />);
+    const writeText = vi.fn(async () => undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    const withCopy = { ...lambda, options: [{ ...lambda.options[0], action_copy: "aws cloudformation deploy" }] };
+    render(<PluginCards plugins={[withCopy]} canManage />);
     fireEvent.click(screen.getByRole("button", { name: /configure/i }));
     fireEvent.click(screen.getByRole("button", { name: "Connect AWS" }));
 
-    expect(open).toHaveBeenCalledWith("https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate", "_blank", "noopener,noreferrer");
+    await waitFor(() => expect(open).toHaveBeenCalledWith("https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate", "_blank", "noopener,noreferrer"));
+    expect(writeText).toHaveBeenCalledWith("aws cloudformation deploy");
+    await waitFor(() => expect(screen.getByText(/Command copied/)).toBeInTheDocument());
   });
 
   it("a plugin that failed to load says why", () => {

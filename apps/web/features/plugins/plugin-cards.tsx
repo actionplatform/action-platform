@@ -18,6 +18,7 @@ export type PluginOption = {
   required: boolean;
   action_label?: string;
   action_url?: string;
+  action_copy?: string;
 };
 export type PluginCardData = {
   slug: string;
@@ -164,7 +165,16 @@ function PluginOptionsDialog({
     ),
   );
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  const act = (o: PluginOption) => {
+    const copy = o.action_copy
+      ? navigator.clipboard.writeText(o.action_copy)
+      : null;
+    window.open(o.action_url, "_blank", "noopener,noreferrer");
+    copy?.then(() => setCopied(o.key)).catch(() => undefined);
+  };
   const missing = plugin.options.filter(
     (o) =>
       o.required && o.kind !== "bool" && !String(values[o.key] ?? "").trim(),
@@ -250,12 +260,15 @@ function PluginOptionsDialog({
                   variant="outline"
                   size="sm"
                   className="mt-2"
-                  onClick={() =>
-                    window.open(o.action_url, "_blank", "noopener,noreferrer")
-                  }
+                  onClick={() => act(o)}
                 >
                   {o.action_label || "Open"}
                 </Button>
+              )}
+              {copied === o.key && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Command copied — paste it there and press Enter.
+                </p>
               )}
             </Field>
           ),
