@@ -22,8 +22,11 @@ jobs:
       url: ${{ inputs.registry == 'testpypi' && 'https://test.pypi.org/p/action-platform' || 'https://pypi.org/p/action-platform' }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actionplatform/ci-github/setup@v1
-      - uses: actionplatform/ci-github/publish@v1
+      - uses: actions/setup-python@v5
         with:
-          version: ${{ inputs.version }}
-          registry: ${{ inputs.registry }}
+          python-version: "3.12"
+      - run: pipx install poetry
+      - run: poetry version "${{ inputs.version }}" && poetry build
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: ${{ inputs.registry == 'testpypi' && 'https://test.pypi.org/legacy/' || 'https://upload.pypi.org/legacy/' }}
