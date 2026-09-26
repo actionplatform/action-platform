@@ -22,6 +22,8 @@ jobs:
       url: ${{ inputs.registry == 'testpypi' && 'https://test.pypi.org/p/action-platform' || 'https://pypi.org/p/action-platform' }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: v${{ inputs.version }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
