@@ -79,8 +79,6 @@ def check_readiness(
         release_tag,
         stages=stages,
         user_id=caller.user.id,
-        manages=caller.allows(org.id, "org.manage")[0]
-        and not (caller.project_id or caller.app_id),
     )
 
     return schemas.ReadinessQueued(

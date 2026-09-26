@@ -30,7 +30,7 @@ Bring an existing repository in with `action-platform install` instead of `init`
 1. Sign in to the platform, create an organization, connect GitHub, GitLab or Bitbucket (Settings → **Git** → *Connect*).
 2. **New app** from a template, or *Add an existing repository* with its URL — the platform clones it and installs the files above when they are missing; **Commit changes** opens the pull request.
 3. **Release** from the app's Releases tab; the branch decides stable (`main`/`master`) or `-rc.N`.
-4. **Deploy** from the Deployments tab: pick the release and the environment. For `aws/lambda`, install the deploy proxy once in your account and paste its URL under Plugins → AWS Lambda → Configure — no cloud key ever reaches the platform ([identity](concept_identity.md)).
+4. **Deploy** from the Deployments tab: pick the release and the environment. For `aws/lambda`, connect your AWS account once with the plugin's IAM-only stack and paste its `DeployRoleArn` under Plugins → AWS Lambda → Configure — no cloud key ever reaches the platform ([identity](concept_identity.md)).
 
 Point the CLI and an AI agent at it:
 

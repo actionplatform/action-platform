@@ -34,7 +34,7 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 | [CLI](use_cli.md) | every command, its flags and environment |
 | [MCP](use_mcp.md) | tools, prompts and skills for AI clients — locally or against a hosted platform |
 | [Plugins](use_plugins.md) | what a plugin adds or replaces, its options, how the hosted platform bundles them |
-| [Identity](concept_identity.md) | the platform as an OIDC issuer and the AWS deploy proxy: deploys without cloud access keys, apps registered on their first deploy |
+| [Identity](concept_identity.md) | the platform as an OIDC issuer and a connected AWS account: deploys without cloud access keys, one role scoped per app by a session tag |
 | [API](use_api.md) | the JSON API behind the web app: routes, credentials contract, trust, errors |
 
 **Concept** — the model, one term per guide
@@ -90,7 +90,7 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 | job | queued work the worker runs — sync, release, readiness, deploy, destroy, import; what Deployment history lists |
 | readiness | whether a release can reach a stage, checked per stage after every release without building; a blocked stage refuses the deploy unless forced |
 | plugin · option | a package that adds targets, overlays and tools; an option is a setting it declares, filled per organization under Plugins |
-| deploy proxy | the Lambda in an AWS account that turns the platform's identity token into credentials for one app |
+| connected account | an AWS account with the plugin's IAM-only stack: an OIDC provider for the platform, a boundary and one deploy role scoped per app by the token's session tag |
 | identity token | the short-lived JWT the platform signs about an app for a deploy; what the cloud trusts instead of a key |
 | token · scope · reach | what `action-platform login` mints; what it may do; where (organizations, a project, an app) |
 | role · permission | owner, admin, deployer, developer, viewer; the six things a role may do in an organization |

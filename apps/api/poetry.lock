@@ -94,14 +94,14 @@ trio = ["trio (>=0.32.0)"]
 
 [[package]]
 name = "apx-aws-lambda"
-version = "0.5.0"
+version = "1.0.0"
 description = "AWS Lambda for Action Platform: the aws/lambda deploy target (SAM) with its overlay, and tools to read stacks and functions."
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "apx_aws_lambda-0.5.0-py3-none-any.whl", hash = "sha256:5d0d8b0b33be0f3c033f902bd3772bebbf45b2f0a889bc12167cfb9df3ae2e5c"},
-    {file = "apx_aws_lambda-0.5.0.tar.gz", hash = "sha256:f961cd80a1ed2d19e485a38d1e44d3fcbb66d255c4908091abd7148727845ff2"},
+    {file = "apx_aws_lambda-1.0.0-py3-none-any.whl", hash = "sha256:bffea9e9475903b404f7c6fee7079e7faadef597d91c38e51dc8fc3408a2fcc6"},
+    {file = "apx_aws_lambda-1.0.0.tar.gz", hash = "sha256:6663c38f85f51cbf9e1e4f72c3c6655db93ec43be766441db46d8dea48f14c79"},
 ]
 
 [package.dependencies]
@@ -110,7 +110,7 @@ aws-sam-cli = ">=1.120"
 awscli = ">=1.34"
 
 [package.extras]
-dev = ["action-platform[mcp]", "boto3 (>=1.34)", "cryptography (>=42)", "pytest (>=8)", "ruff (>=0.6)"]
+dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
 
 [[package]]
 name = "apx-dokploy"
@@ -3530,4 +3530,4 @@ packaging = ">=24.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "6ee533536731a9a29c5215c61f3f61b3d2c63f8c1155151d7c0e9ab9947f15e1"
+content-hash = "c1f73748d643a5fe2eca2fc89ebfbb77bf3c96b669daaf1afc643044e7e21801"

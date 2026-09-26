@@ -155,7 +155,6 @@ class JobHandlers:
             tag,
             stages=stages,
             user_id=user_id,
-            manages=bool(ctx.payload.get("manages")),
         )
 
     def readiness(self, payload: dict[str, Any]) -> Any:
@@ -181,9 +180,7 @@ class JobHandlers:
         credentials = self._host_credentials(ctx)
         service = ReadinessService(
             self.registry,
-            identity=identity.minter(
-                ctx.organization, ctx.app, stage, manages=bool(payload.get("manages"))
-            ),
+            identity=identity.minter(ctx.organization, ctx.app, stage),
             env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
             credentials=credentials,
         )
@@ -220,12 +217,7 @@ class JobHandlers:
         credentials = self._host_credentials(ctx)
         service = DeploymentsService(
             self.registry,
-            identity=identity.minter(
-                ctx.organization,
-                ctx.app,
-                request.stage,
-                manages=bool(payload.get("manages")),
-            ),
+            identity=identity.minter(ctx.organization, ctx.app, request.stage),
             env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
             credentials=credentials,
         )
@@ -309,9 +301,7 @@ class JobHandlers:
         with auth.git_auth(self._host_credentials(ctx)):
             DeploymentsService(
                 self.registry,
-                identity=identity.minter(
-                    ctx.organization, ctx.app, manages=bool(payload.get("manages"))
-                ),
+                identity=identity.minter(ctx.organization, ctx.app),
                 env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
             ).destroy(ctx.registry_id)
 
@@ -346,7 +336,7 @@ class JobHandlers:
                 with auth.git_auth(self._app_credentials(organization, app)):
                     DeploymentsService(
                         self.registry,
-                        identity=identity.minter(organization, app, manages=True),
+                        identity=identity.minter(organization, app),
                         env=env.for_app(organization, app),
                     ).destroy(app.registry_id)
             except ActionPlatformError as e:
@@ -364,7 +354,6 @@ class JobHandlers:
         """Each app's stacks down, then the project off the platform."""
         identity = AppIdentity(self.database, self.sealer, settings.api.public_url)
         env = DeployEnv(self.database)
-        manages = bool(payload.get("manages"))
 
         with self.database.session() as db:
             organization = db.get(Organization, payload["organization_id"])
@@ -375,7 +364,7 @@ class JobHandlers:
             with auth.git_auth(self._app_credentials(organization, app)):
                 DeploymentsService(
                     self.registry,
-                    identity=identity.minter(organization, app, manages=manages),
+                    identity=identity.minter(organization, app),
                     env=env.for_app(organization, app),
                 ).destroy(app.registry_id)
 

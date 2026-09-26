@@ -137,7 +137,7 @@ They show on the release page like every other check, per scope instead of per s
 | readiness per (release, stage) | per (release, scope); the job runs for every scope of the app |
 | `deployment.stage` | `deployment.scope_id` (+ `scope_name` kept for history) |
 | `live_deploy(app, stage)` — one deploy at a time per stage | one at a time per scope |
-| `AppIdentity` token carries `stage` | carries `scope` and `criticality`; the deploy proxy may grant by criticality (a `critical` scope gets a different boundary) |
+| `AppIdentity` token carries `stage` | carries `scope` and `criticality`; a connected account may scope by criticality (a `critical` scope gets a different boundary) |
 
 A release stays what it is: a tag on the repository, one row in `release`, cut with no scope in mind. The row gains a `shape` — `candidate`, `stable` or `hotfix` — set when the platform cuts it: `hotfix` when the branch is `hotfix/*`, `candidate` for an `-rc.N` version, `stable` otherwise.
 

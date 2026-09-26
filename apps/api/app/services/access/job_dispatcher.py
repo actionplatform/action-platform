@@ -41,8 +41,6 @@ class JobDispatcher:
             "organization_id": organization.id,
             "app_id": app.id,
             "user_id": caller.user.id,
-            "manages": caller.allows(organization.id, "org.manage")[0]
-            and not (caller.project_id or caller.app_id),
         }
 
     def async_job(
@@ -130,8 +128,6 @@ class JobDispatcher:
                 "organization_id": organization.id,
                 "project_id": project.id,
                 "user_id": caller.user.id,
-                "manages": caller.allows(organization.id, "org.manage")[0]
-                and not (caller.project_id or caller.app_id),
             },
             organization_id=organization.id,
             dedupe_key=f"destroy_project:{project.id}",
@@ -152,8 +148,6 @@ class JobDispatcher:
                 "registry_id": "",
                 "organization_id": organization.id,
                 "user_id": caller.user.id,
-                "manages": caller.allows(organization.id, "org.manage")[0]
-                and not (caller.project_id or caller.app_id),
             },
             organization_id=organization.id,
             dedupe_key=f"destroy_organization:{organization.id}",
