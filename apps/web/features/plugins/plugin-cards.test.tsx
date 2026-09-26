@@ -11,7 +11,7 @@ const lambda: PluginCardData = {
   version: "0.3.4",
   description: "Deploy to AWS Lambda with SAM",
   error: null,
-  options: [{ key: "proxy_url", label: "Deploy proxy URL", kind: "url", help: "", required: true }],
+  options: [{ key: "role_arn", label: "AWS account", kind: "text", help: "", required: true, action_label: "Connect AWS", action_url: "https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate" }],
   values: {},
 };
 
@@ -23,7 +23,7 @@ describe("PluginCards", () => {
     expect(screen.getByText("Not configured")).toBeInTheDocument();
     cleanup();
 
-    render(<PluginCards plugins={[{ ...lambda, values: { proxy_url: "https://x.lambda-url.on.aws" } }]} canManage />);
+    render(<PluginCards plugins={[{ ...lambda, values: { role_arn: "123456789012" } }]} canManage />);
     expect(screen.getByText("Configured")).toBeInTheDocument();
   });
 
@@ -36,10 +36,19 @@ describe("PluginCards", () => {
   it("saves the form through the action", async () => {
     render(<PluginCards plugins={[lambda]} canManage />);
     fireEvent.click(screen.getByRole("button", { name: /configure/i }));
-    fireEvent.change(screen.getByLabelText("Deploy proxy URL"), { target: { value: "https://x.lambda-url.on.aws" } });
+    fireEvent.change(screen.getByLabelText("AWS account"), { target: { value: "123456789012" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
-    await waitFor(() => expect(savePluginOptions).toHaveBeenCalledWith("aws-lambda", { proxy_url: "https://x.lambda-url.on.aws" }));
+    await waitFor(() => expect(savePluginOptions).toHaveBeenCalledWith("aws-lambda", { role_arn: "123456789012" }));
+  });
+
+  it("an option with an action opens its page from a button", () => {
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    render(<PluginCards plugins={[lambda]} canManage />);
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Connect AWS" }));
+
+    expect(open).toHaveBeenCalledWith("https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate", "_blank", "noopener,noreferrer");
   });
 
   it("a plugin that failed to load says why", () => {

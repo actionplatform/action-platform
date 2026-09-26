@@ -16,6 +16,8 @@ export type PluginOption = {
   kind: string;
   help: string;
   required: boolean;
+  action_label?: string;
+  action_url?: string;
 };
 export type PluginCardData = {
   slug: string;
@@ -242,6 +244,19 @@ function PluginOptionsDialog({
                 placeholder={o.kind === "url" ? "https://" : undefined}
                 autoComplete="off"
               />
+              {o.action_url && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() =>
+                    window.open(o.action_url, "_blank", "noopener,noreferrer")
+                  }
+                >
+                  {o.action_label || "Open"}
+                </Button>
+              )}
             </Field>
           ),
         )}
