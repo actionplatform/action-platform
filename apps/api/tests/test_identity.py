@@ -8,7 +8,7 @@ import json
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
-from app.services.identity import IdentityIssuer, subject_for
+from app.services.identity import IdentityIssuer, aws_session_tags, subject_for
 from tests.test_access import GateCase
 
 
@@ -68,3 +68,26 @@ class IdentityTest(GateCase):
             subject_for("acme", "shop", "orders"), "org:acme:project:shop:app:orders"
         )
         self.assertEqual(subject_for("acme", None, None), "org:acme")
+
+    def test_an_aws_token_about_an_app_carries_its_prefix_as_a_session_tag(self):
+        issuer = IdentityIssuer(
+            self.app.state.db, self.app.state.sealer, "https://platform.example.com"
+        )
+        claims = dict(organization="acme", project="shop", app="orders")
+
+        aws = json.loads(
+            _b64d(issuer.mint("org:acme", "sts.amazonaws.com", **claims).split(".")[1])
+        )
+        other = json.loads(
+            _b64d(issuer.mint("org:acme", "https://proxy", **claims).split(".")[1])
+        )
+
+        self.assertEqual(
+            aws["https://aws.amazon.com/tags"],
+            {"principal_tags": {"action-platform:prefix": ["ap-acme-shop-orders"]}},
+        )
+        self.assertNotIn("https://aws.amazon.com/tags", other)
+
+    def test_a_token_about_the_whole_organization_carries_no_session_tag(self):
+        self.assertEqual(aws_session_tags(organization="acme"), {})
+        self.assertEqual(aws_session_tags(organization="acme", project="shop"), {})
