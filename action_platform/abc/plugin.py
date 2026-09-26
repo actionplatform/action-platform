@@ -33,13 +33,15 @@ class Surface:
 
 @dataclass(frozen=True)
 class Option:
-    """One setting a plugin asks its users for — the platform draws the form and stores the value in the plugin's options store under `key`."""
+    """One setting a plugin asks its users for — the platform draws the form and stores the value in the plugin's options store under `key`. `action_url` puts a button labelled `action_label` beside the field that opens the url, `{issuer}` and `{organization}` filled in — where the user goes to get the value."""
 
     key: str
     label: str
     kind: Literal["text", "url", "secret", "bool"] = "text"
     help: str = ""
     required: bool = False
+    action_label: str = ""
+    action_url: str = ""
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -48,6 +50,8 @@ class Option:
             "kind": self.kind,
             "help": self.help,
             "required": self.required,
+            "action_label": self.action_label,
+            "action_url": self.action_url,
         }
 
 

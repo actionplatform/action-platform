@@ -99,6 +99,8 @@ class PluginOption(BaseModel):
     kind: str = "text"
     help: str = ""
     required: bool = False
+    action_label: str = ""
+    action_url: str = ""
 
 
 class PluginRow(BaseModel):

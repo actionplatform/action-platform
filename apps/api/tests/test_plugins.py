@@ -13,7 +13,15 @@ class Lambda(Plugin):
     slug = "aws-lambda"
     name = "AWS Lambda"
     description = "fake"
-    options = [Option("proxy_url", "Deploy proxy URL", "url", required=True)]
+    options = [
+        Option(
+            "role_arn",
+            "AWS account",
+            required=True,
+            action_label="Connect AWS",
+            action_url="https://console.aws.amazon.com/?issuer={issuer}",
+        )
+    ]
 
     def register(self, surface):
         pass
@@ -54,19 +62,20 @@ class PluginsApiTest(GateCase):
         from app.services.integrations.plugins.options import DbOptions
 
         db = self.app.state.db
-        DbOptions(db, "aws-lambda").set("proxy_url", "https://default.test")
-        DbOptions(db, "aws-lambda", "org-a").set("proxy_url", "https://a.test")
+        DbOptions(db, "aws-lambda").set("role_arn", "arn:aws:iam::1:role/default")
+        DbOptions(db, "aws-lambda", "org-a").set("role_arn", "arn:aws:iam::2:role/a")
 
         self.assertEqual(
-            DbOptions(db, "aws-lambda", "org-a").all(), {"proxy_url": "https://a.test"}
+            DbOptions(db, "aws-lambda", "org-a").all(),
+            {"role_arn": "arn:aws:iam::2:role/a"},
         )
         self.assertEqual(
             DbOptions(db, "aws-lambda", "org-b").all(),
-            {"proxy_url": "https://default.test"},
+            {"role_arn": "arn:aws:iam::1:role/default"},
         )
         self.assertEqual(
-            DbOptions(db, "aws-lambda", "org-b").get("proxy_url"),
-            "https://default.test",
+            DbOptions(db, "aws-lambda", "org-b").get("role_arn"),
+            "arn:aws:iam::1:role/default",
         )
 
     def test_catalog_lists_the_bundled_plugins_and_the_ones_that_failed_to_load(self):
@@ -91,11 +100,13 @@ class PluginsApiTest(GateCase):
             rows["plugins"][0]["options"],
             [
                 {
-                    "key": "proxy_url",
-                    "label": "Deploy proxy URL",
-                    "kind": "url",
+                    "key": "role_arn",
+                    "label": "AWS account",
+                    "kind": "text",
                     "help": "",
                     "required": True,
+                    "action_label": "Connect AWS",
+                    "action_url": "https://console.aws.amazon.com/?issuer={issuer}",
                 }
             ],
         )
