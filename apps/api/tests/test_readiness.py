@@ -186,7 +186,6 @@ class ReadinessTest(GateCase):
             "app_id": "a1",
             "job_id": "j1",
             "user_id": self.user_id,
-            "manages": True,
         }
 
         with (

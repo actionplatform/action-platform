@@ -23,9 +23,8 @@ class AppIdentity:
         organization: Optional[Organization],
         app: Optional[App],
         stage: Optional[str] = None,
-        manages: bool = False,
     ) -> Optional[Callable[[str], str]]:
-        """What `ctx.identity_token(audience)` calls — None when the platform cannot sign. `manages` puts `org.manage` in the token's scopes: the caller may register the app where it deploys."""
+        """What `ctx.identity_token(audience)` calls — None when the platform cannot sign."""
         if organization is None or app is None or self.sealer is None:
             return None
 
@@ -44,7 +43,6 @@ class AppIdentity:
                 project=project_slug,
                 app=app.name,
                 stage=stage,
-                scopes=["org.manage"] if manages else None,
             )
 
         return mint

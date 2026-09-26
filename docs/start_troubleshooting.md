@@ -31,11 +31,9 @@ What the platform says when it refuses something, what it means and what to do. 
 
 **`no deploy target configured — run action-platform cloud set <cloud>`** — `platform.toml` has no `[deploy] target`. In the web: Configuration → **Deploy target**; from the CLI: `action-platform cloud set aws/lambda`.
 
-**`the proxy does not know <org>/<project>/<app> yet, and this deploy may not register it`** — the first deploy of an app on `aws/lambda` registers it on the deploy proxy and needs `org.manage`. Ask an owner or admin of the organization to deploy once (their token carries the scope), or run `action-platform aws-lambda proxy create` with a logged-in CLI. Later deploys by any deployer go through.
+**`AccessDenied` on `AssumeRoleWithWebIdentity`, or `AP_AWS_LAMBDA_ROLE_ARN` is missing** — the organization has not connected its AWS account, or the role's trust does not match: Plugins → **AWS Lambda** → **Configure** → *Deploy role ARN* must be the connect stack's `DeployRoleArn`, and the stack's `IssuerUrl` and `Organization` must be this platform's public url and the organization's slug. Connecting the account is in the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README.
 
-**Preflight or deploy says the proxy is unreachable, or `AP_AWS_LAMBDA_PROXY_URL` is missing** — the organization has no proxy URL. Plugins → **AWS Lambda** → **Configure** → *Deploy proxy URL*; `action-platform aws-lambda proxy health <url>` checks a URL from a terminal. Installing the proxy is in the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README.
-
-**`AccessDenied` on `AssumeRole` right after the app was registered** — IAM propagation. The proxy retries for a few seconds; when that is not enough, run the deploy again.
+**Readiness says `template.yaml has no PermissionsBoundaryArn parameter`** — the app's overlay predates connected accounts. Apply it again: Configuration → **Deploy target**, or `action-platform cloud set aws/lambda`.
 
 **`sam build` fails with a missing tool (`go`, `mvn`, `bundle`…)** — the worker builds inside the API image, which carries Go, Node, JDK + Maven and Ruby. A self-built image without them cannot build that language; use the published image or add the toolchain ([self-hosting](start_self_hosting.md)).
 

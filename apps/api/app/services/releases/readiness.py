@@ -81,7 +81,6 @@ class ReadinessRequests:
         tag: str,
         stages: tuple[str, ...],
         user_id: Any = None,
-        manages: bool = False,
     ) -> list[str]:
         ids: list[str] = []
 
@@ -97,7 +96,6 @@ class ReadinessRequests:
                     "app_id": app.id,
                     "release_id": release_id,
                     "user_id": user_id,
-                    "manages": manages,
                 },
                 organization_id=organization_id,
                 app_id=app.id,

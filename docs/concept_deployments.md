@@ -98,7 +98,7 @@ target = "aws/lambda"
 region = "us-east-1"
 ```
 
-— is a plugin — `aws/lambda` comes from [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda), bundled in the API image — and it brings three things: a **cloud overlay** for the templates (the SAM template, a deploy workflow, a `/health` route, an adapter per language) applied by *Configuration → Deploy target* or `action-platform cloud set`; the **deploy steps** (`preflight`, `create`, `deploy`, `switch_traffic`, `delete`); and, when it needs settings, the **options** an organization fills in under Plugins → Configure. The platform passes every option to the deploy as `AP_<PLUGIN>_<KEY>` — for `aws/lambda`, `AP_AWS_LAMBDA_PROXY_URL` — with `AP_APP=<org>/<project>/<app>`, so the repository only needs `target`; a value under `[deploy]` in the repository still wins. The plugin contract is in [writing a plugin](contribute_plugins.md), the overlays in [templates](concept_templates.md).
+— is a plugin — `aws/lambda` comes from [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda), bundled in the API image — and it brings three things: a **cloud overlay** for the templates (the SAM template, a deploy workflow, a `/health` route, an adapter per language) applied by *Configuration → Deploy target* or `action-platform cloud set`; the **deploy steps** (`preflight`, `create`, `deploy`, `switch_traffic`, `delete`); and, when it needs settings, the **options** an organization fills in under Plugins → Configure. The platform passes every option to the deploy as `AP_<PLUGIN>_<KEY>` — for `aws/lambda`, `AP_AWS_LAMBDA_ROLE_ARN` — with `AP_APP=<org>/<project>/<app>`, so the repository only needs `target`; a value under `[deploy]` in the repository still wins. The plugin contract is in [writing a plugin](contribute_plugins.md), the overlays in [templates](concept_templates.md).
 
 ## Readiness
 
@@ -122,12 +122,10 @@ On the platform a deploy never runs on the request: the API answers `202` with a
 | 2 | API | job `deploy` queued; the row is in the history at once |
 | 3 | worker | claims the job, opens the clone, checks the tag out |
 | 4 | worker | mints the app's identity token (`org:…:project:…:app:…`, stage, `org.manage` when step 1 said so) |
-| 5 | target | preflight, then build and deploy with credentials obtained from the token — on AWS through the deploy proxy |
+| 5 | target | preflight, then build and deploy with credentials obtained from the token — on AWS the connected account's deploy role, scoped to the app by the token's session tag |
 | 6 | worker | result (URL, stack) or error on the job; the history row updates |
 
 A job is one row in `job`: kind, status (`queued` → `running` → `done` or `failed`), payload, attempts, result or error. On PostgreSQL the enqueue sends `NOTIFY ap_jobs` and a worker listening on that channel claims within milliseconds; elsewhere it polls every two seconds. A worker that dies mid-deploy leaves the job `running` until the reaper (30 minutes) puts it back in the queue with `worker lost`; a job that crashes is retried up to three times with a growing delay (30 s, 60 s, 120 s); a job the platform refused — a missing tag, a target that said no — fails at once. The status the web shows is the row's. The tables are in [database](concept_database.md), the code path in [architecture](contribute_architecture.md#a-deploy-end-to-end).
-
-The first deploy of an app on `aws/lambda` also **registers** it on the deploy proxy: the proxy creates the app's two roles and its grant, which needs the token to carry `org.manage` — so that first deploy must come from someone who manages the organization (owner or admin). Anyone else gets `the proxy does not know <app> yet, and this deploy may not register it` and asks a manager to deploy once, or to run `action-platform aws-lambda proxy create`. Later deploys by any deployer go through.
 
 ## History
 
@@ -139,7 +137,7 @@ Deploying an older release to a stage is the rollback: pick it in the Deploy car
 
 ## Leaving the cloud
 
-Deleting an app offers **Also tear down `<target>`** (`?cloud=true`): the API queues a `destroy` job, the worker runs the target's `delete` for every stage — `sam delete` of each stack — and, on the proxy, removes the app's roles and grant when no stage is left; only then the app leaves the platform. A failure leaves the app in place with the error on the history (*Tear down*). Deleting a project with **Delete stacks on the cloud** does the same for every app in one `destroy_project` job; the card says *Tearing down* meanwhile. `action-platform destroy` is the CLI's version for one target of the repository you are in.
+Deleting an app offers **Also tear down `<target>`** (`?cloud=true`): the API queues a `destroy` job, the worker runs the target's `delete` for every stage — `sam delete` of each stack, with the execution role it created; only then the app leaves the platform. A failure leaves the app in place with the error on the history (*Tear down*). Deleting a project with **Delete stacks on the cloud** does the same for every app in one `destroy_project` job; the card says *Tearing down* meanwhile. `action-platform destroy` is the CLI's version for one target of the repository you are in.
 
 Deleting without the option removes the app from the platform only; the stacks keep running, and the repository's own CI, when the overlay installed one, can still deploy on its own. Deleting the repository on the host is a separate checkbox of the same dialog — [web](use_web.md#deleting).
 

@@ -86,7 +86,6 @@ class Webhooks:
                     "organization_id": host.organization_id,
                     "app_id": app.id,
                     "user_id": None,
-                    "manages": False,
                     "webhook": {"kind": host.kind, "event": delivery.event},
                 },
                 organization_id=host.organization_id,

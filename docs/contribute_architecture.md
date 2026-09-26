@@ -169,15 +169,15 @@ sequenceDiagram
     participant W as worker
     participant L as core Deployer
     participant T as target (apx-aws-lambda)
-    participant X as deploy proxy
+    participant X as AWS STS
     U->>A: POST apps/{id}/deploy {stage, version}  Prefer: respond-async
     A->>A: role ∩ scope ∩ reach · no live deploy for the stage
     A-->>U: 202 {job}
-    W->>W: claim · JobContext (credentials, plugin options as AP_AWS_LAMBDA_PROXY_URL, AP_APP)
-    W->>L: deploy(stage, version) with identity=minter(org, app, stage, manages)
+    W->>W: claim · JobContext (credentials, plugin options as AP_AWS_LAMBDA_ROLE_ARN, AP_APP)
+    W->>L: deploy(stage, version) with identity=minter(org, app, stage)
     L->>L: checkout tag v<version> (refused without a tag)
     L->>T: preflight(ctx) · deploy(ctx)
-    T->>X: credentials (token from ctx.identity_token) — registers the app on 404 when the token may
+    T->>X: AssumeRoleWithWebIdentity (token from ctx.identity_token, session tag action-platform:prefix)
     T->>T: sam build · sam deploy --stack-name ap-org-project-app-stage
     T-->>L: DeployResult(url)
     L-->>W: results → job done
