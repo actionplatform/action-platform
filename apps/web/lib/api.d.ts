@@ -2669,6 +2669,9 @@ export interface components {
             kind: string;
             help: string;
             required: boolean;
+            action_label: string;
+            action_url: string;
+            action_copy: string;
         };
         PluginOptions: {
             options: {
