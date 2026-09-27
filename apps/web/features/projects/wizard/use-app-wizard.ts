@@ -33,7 +33,8 @@ export function useAppWizard({ matrix, preset, projectId, projects, hosts }: { m
   const hasStack = stacks.length > 0;
   const clouds = useMemo(() => {
     if (!leaf) return [];
-    return matrix.clouds.filter((c) => c.source === leaf.source && (c.types.length === 0 || c.types.includes(leaf.type)) && (c.languages.length === 0 || c.languages.includes(leaf.stack)));
+    const templateSources = new Set((matrix.sources ?? []).map((s) => s.name));
+    return matrix.clouds.filter((c) => (c.source === leaf.source || !templateSources.has(c.source)) && (c.types.length === 0 || c.types.includes(leaf.type)) && (c.languages.length === 0 || c.languages.includes(leaf.stack)));
   }, [matrix, leaf]);
 
   useEffect(() => {
