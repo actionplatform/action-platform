@@ -32,7 +32,9 @@ const appItems = [
   { tab: "settings", label: "Settings", icon: Settings },
 ];
 
-const link = "mx-2.5 my-1 flex h-11 min-h-11 items-center gap-3 rounded-[7px] px-3.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground";
+const link = "mx-3 my-0.5 flex h-10 min-h-10 items-center gap-3 rounded-[7px] border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground";
+const on = "border-border bg-surface-selected text-foreground";
+const off = "border-transparent text-secondary hover:bg-surface-hover hover:text-foreground";
 
 type Props = { versions: { web: string; api: string; lib: string }; user: { name: string; email: string }; org: Org; orgs: Org[] };
 
@@ -65,7 +67,7 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
       </div>
       {scope ? (
         <nav aria-label={scope.appName} className="flex-1 py-2">
-          <Link href={`/projects/${scope.projectId}`} className={cn(link, "text-secondary hover:bg-surface-hover hover:text-foreground")}>
+          <Link href={`/projects/${scope.projectId}`} className={cn(link, off)}>
             <ArrowLeft className="size-[18px]" strokeWidth={1.75} />
             <span className="truncate">{scope.projectName}</span>
           </Link>
@@ -79,7 +81,7 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
                 key={label}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={cn(link, active ? "bg-surface-selected text-foreground" : "text-secondary hover:bg-surface-hover hover:text-foreground")}
+                className={cn(link, active ? on : off)}
               >
                 <Icon className="size-[18px]" strokeWidth={1.75} />
                 {label}
@@ -94,7 +96,7 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
               <Link
                 href={href}
                 aria-current={isActive(href) ? "page" : undefined}
-                className={cn(link, isActive(href) ? "bg-surface-selected text-foreground" : "text-secondary hover:bg-surface-hover hover:text-foreground")}
+                className={cn(link, isActive(href) ? on : off)}
               >
                 <Icon className="size-[18px]" strokeWidth={1.75} />
                 {label}
@@ -131,7 +133,7 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
 
   return (
     <>
-      <aside className="hidden md:block fixed inset-y-0 left-0 w-[280px] border-r border-border bg-sidebar">{panel}</aside>
+      <aside className="hidden md:block fixed inset-y-0 left-0 w-[280px] border-r border-border bg-sidebar xl:w-[304px]">{panel}</aside>
 
       <header className="md:hidden sticky top-0 z-30 flex h-14 items-center gap-2.5 border-b border-border bg-sidebar pl-4 pr-1.5">
         <Logo className="size-5" />

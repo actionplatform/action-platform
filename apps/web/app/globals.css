@@ -20,12 +20,12 @@
 
 :root {
   color-scheme: dark;
-  --background: #080808;
-  --sidebar: #0d0d0d;
-  --surface: #111111;
-  --surface-hover: #151515;
-  --surface-selected: #191919;
-  --border: #272727;
+  --background: #0a0a0a;
+  --sidebar: #111111;
+  --surface: #141414;
+  --surface-hover: #1a1a1a;
+  --surface-selected: #1f1f1f;
+  --border: #2a2a2a;
   --border-hover: #3a3a3a;
   --border-subtle: #1f1f1f;
   --text-primary: #f5f5f5;
