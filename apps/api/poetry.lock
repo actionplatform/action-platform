@@ -2,7 +2,7 @@
 
 [[package]]
 name = "action-platform"
-version = "0.31.0"
+version = "0.32.0"
 description = "Your platform team, as a CLI."
 optional = false
 python-versions = ">=3.10.0"
@@ -94,18 +94,18 @@ trio = ["trio (>=0.32.0)"]
 
 [[package]]
 name = "apx-aws-lambda"
-version = "1.0.0"
+version = "1.1.0"
 description = "AWS Lambda for Action Platform: the aws/lambda deploy target (SAM) with its overlay, and tools to read stacks and functions."
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "apx_aws_lambda-1.0.0-py3-none-any.whl", hash = "sha256:bffea9e9475903b404f7c6fee7079e7faadef597d91c38e51dc8fc3408a2fcc6"},
-    {file = "apx_aws_lambda-1.0.0.tar.gz", hash = "sha256:6663c38f85f51cbf9e1e4f72c3c6655db93ec43be766441db46d8dea48f14c79"},
+    {file = "apx_aws_lambda-1.1.0-py3-none-any.whl", hash = "sha256:5e67ff85f6922a966d0cce5c8e1d28a57daba4e28db6d66afbb1164d935d0422"},
+    {file = "apx_aws_lambda-1.1.0.tar.gz", hash = "sha256:f7ae49b26641c0219d7740a839da217348cd7220c0b222d503f2fd9b770b16aa"},
 ]
 
 [package.dependencies]
-action-platform = ">=0.23.0"
+action-platform = ">=0.32.0"
 aws-sam-cli = ">=1.120"
 awscli = ">=1.34"
 
@@ -3530,4 +3530,4 @@ packaging = ">=24.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "c1f73748d643a5fe2eca2fc89ebfbb77bf3c96b669daaf1afc643044e7e21801"
+content-hash = "de497675f758bed5b9fc88e0afdef0e912abd545b5d4c0d6c1de0f5dbb6cefc7"
