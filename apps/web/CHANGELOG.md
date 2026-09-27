@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.31.1 — 2026-09-27
+
+### Bug Fixes
+- **web:** the app wizard offers plugins' deploy targets
+
 ## v0.31.0 — 2026-09-27
 
 ### Features
