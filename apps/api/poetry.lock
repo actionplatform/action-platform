@@ -114,14 +114,14 @@ dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
 
 [[package]]
 name = "apx-dokploy"
-version = "0.4.0"
+version = "0.5.0"
 description = "Dokploy for Action Platform: the dokploy deploy target (a Docker image the CI publishes, pulled by Dokploy), its overlay, readiness checks, and tools to read projects, applications and deployments."
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "apx_dokploy-0.4.0-py3-none-any.whl", hash = "sha256:cc4b2b70eaed8063f06dfae872ff678e7aa818fe9919299b8fec8b63617e858b"},
-    {file = "apx_dokploy-0.4.0.tar.gz", hash = "sha256:be75c0ae6af278a31e7de1a00389ed73714b3dca261a3d5f7e95bdb71fd4250b"},
+    {file = "apx_dokploy-0.5.0-py3-none-any.whl", hash = "sha256:e9cd564e17116d39b39f4b24c1cc98f505077075c9f46f83e837bd76d8e66bd2"},
+    {file = "apx_dokploy-0.5.0.tar.gz", hash = "sha256:2a1d08846a0d0a06b4f65f00db49fcf83b71379f2d93ee420dc4fb3a0f9c1ba6"},
 ]
 
 [package.dependencies]
@@ -3530,4 +3530,4 @@ packaging = ">=24.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "521083826c623c42473fac34d81bd52d4777e01c17fa8c733d35cba80694cbc6"
+content-hash = "3cb14781c7610f5b51b2bebb9eb7ca6a77aa2fc133a7d27966e23eb5febcb809"
