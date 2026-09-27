@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.32.0 — 2026-09-27
+
+### Features
+- **web:** redesign the dashboard
+
 ## v0.31.1 — 2026-09-27
 
 ### Bug Fixes
