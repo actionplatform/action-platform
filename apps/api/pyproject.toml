@@ -17,7 +17,7 @@ dependencies = [
   "sentry-sdk[fastapi]>=2.0",
   "typer>=0.15",
   "apx-aws-lambda>=1.2.2",
-  "apx-dokploy>=0.1.0",
+  "apx-dokploy>=0.2.0",
 ]
 
 [project.scripts]
