@@ -70,6 +70,19 @@ describe("useAppWizard", () => {
     expect(result.current.clouds.map((c) => c.name)).toEqual(["aws/lambda"]);
   });
 
+  it("offers a plugin's cloud whatever source the template comes from", () => {
+    const withPlugin: Matrix = {
+      ...matrix,
+      clouds: [{ name: "aws/lambda", types: ["web"], languages: ["python"], description: "", source: "aws-lambda" }],
+      sources: [{ name: "official", url: "", ref: "", ok: true, projects: 3, clouds: 0, services: 0 }],
+    };
+    const { result } = renderHook(() => useAppWizard({ matrix: withPlugin, preset: null, projectId: "p1", projects: [{ id: "p1", name: "Shop" }], hosts }));
+
+    act(() => result.current.pickType("web"));
+    act(() => result.current.pickStack("python"));
+    expect(result.current.clouds.map((c) => c.name)).toEqual(["aws/lambda"]);
+  });
+
   it("starts at configuration with a preset and needs a name to continue", () => {
     const { result } = wizard({ type: "web", stack: "python", template: "fastapi" });
 
