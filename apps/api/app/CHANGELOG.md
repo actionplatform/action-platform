@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.35.0 — 2026-09-27
+
+### Features
+- **plugins:** an option's action may copy a command before opening its page
+- **plugins:** an option may carry a button that opens a setup page
+
 ## v0.34.0 — 2026-09-26
 
 ### Features
