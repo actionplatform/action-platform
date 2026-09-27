@@ -22,8 +22,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <ScopeProvider>
       <div className="min-h-screen bg-background">
         <Sidebar versions={versions} user={{ name: session.user.name, email: session.user.email }} org={org} orgs={orgs} />
-        <main className="min-h-screen pb-[calc(88px+env(safe-area-inset-bottom))] md:ml-[280px] md:pb-0">
-          <div className="w-full px-4 py-5 md:px-7 md:py-8 xl:px-8 xl:pt-9 xl:pb-16"><PageTransition>{children}</PageTransition></div>
+        <main className="min-h-screen pb-[calc(88px+env(safe-area-inset-bottom))] md:ml-[280px] md:pb-0 xl:ml-[304px]">
+          <div className="w-full px-4 py-5 md:px-8 md:py-8 xl:px-9 xl:pt-9 xl:pb-16"><PageTransition>{children}</PageTransition></div>
         </main>
         <BottomNav />
       </div>
