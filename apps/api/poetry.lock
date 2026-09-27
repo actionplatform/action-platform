@@ -94,14 +94,14 @@ trio = ["trio (>=0.32.0)"]
 
 [[package]]
 name = "apx-aws-lambda"
-version = "1.2.0"
+version = "1.2.1"
 description = "AWS Lambda for Action Platform: the aws/lambda deploy target (SAM) with its overlay, and tools to read stacks and functions."
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "apx_aws_lambda-1.2.0-py3-none-any.whl", hash = "sha256:6425d800fce71ad2baf11f9a59e3d4ffb2eae057cd1df7f08a191d26afa6e868"},
-    {file = "apx_aws_lambda-1.2.0.tar.gz", hash = "sha256:bb7d0ca2de408f5ce4965b40ffdd9fc384e5287a920e8b5a6bbf7c343d5f8d54"},
+    {file = "apx_aws_lambda-1.2.1-py3-none-any.whl", hash = "sha256:2c7ccadae6296464851b90c4118bf4e0b8a362f797ab8a5a9d028d05e22caff1"},
+    {file = "apx_aws_lambda-1.2.1.tar.gz", hash = "sha256:3633031698a546146f59dd93ed3fd099046426f50a018ce47e8b8e5f085fb09b"},
 ]
 
 [package.dependencies]
@@ -3530,4 +3530,4 @@ packaging = ">=24.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "627e6f726443cbb711a64f30d7b3b44035414ad06ecdcf1ee7b5bf6ebdefcb2b"
+content-hash = "6b39b9d335e86dfb57e23cc456ce0b1edc8af89e310c0888043c3818557fe042"
