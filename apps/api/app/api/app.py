@@ -74,7 +74,9 @@ def build(
         lambda slug: DbOptions(app.state.db, slug, sealer=app.state.sealer)
     )
 
-    if resealed := reseal(app.state.db, app.state.sealer):
+    if not app.state.db.behind() and (
+        resealed := reseal(app.state.db, app.state.sealer)
+    ):
         log.info("sealed %d plugin secrets stored in plain text", resealed)
     base = (settings.api.public_url if public_url is None else public_url).rstrip("/")
     app.state.verification_uri = f"{base}/device"
