@@ -28,13 +28,20 @@ export type PluginCardData = {
   error: string | null;
   options: PluginOption[];
   values: Record<string, unknown>;
+  secrets?: string[];
 };
+
+function stored(plugin: PluginCardData, key: string): boolean {
+  return (plugin.secrets ?? []).includes(key);
+}
 
 function configured(plugin: PluginCardData): boolean {
   return plugin.options
     .filter((o) => o.required)
     .every(
-      (o) => plugin.values[o.key] !== undefined && plugin.values[o.key] !== "",
+      (o) =>
+        stored(plugin, o.key) ||
+        (plugin.values[o.key] !== undefined && plugin.values[o.key] !== ""),
     );
 }
 
@@ -177,7 +184,10 @@ function PluginOptionsDialog({
   };
   const missing = plugin.options.filter(
     (o) =>
-      o.required && o.kind !== "bool" && !String(values[o.key] ?? "").trim(),
+      o.required &&
+      o.kind !== "bool" &&
+      !stored(plugin, o.key) &&
+      !String(values[o.key] ?? "").trim(),
   );
 
   const submit = () => {
@@ -251,7 +261,13 @@ function PluginOptionsDialog({
                 onChange={(e) =>
                   setValues({ ...values, [o.key]: e.target.value })
                 }
-                placeholder={o.kind === "url" ? "https://" : undefined}
+                placeholder={
+                  o.kind === "url"
+                    ? "https://"
+                    : o.kind === "secret" && stored(plugin, o.key)
+                      ? "Saved — type a new value to replace it"
+                      : undefined
+                }
                 autoComplete="off"
               />
               {o.action_url && (

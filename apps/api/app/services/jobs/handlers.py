@@ -181,7 +181,9 @@ class JobHandlers:
         service = ReadinessService(
             self.registry,
             identity=identity.minter(ctx.organization, ctx.app, stage),
-            env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
+            env=DeployEnv(self.database, self.sealer).for_app(
+                ctx.organization, ctx.app
+            ),
             credentials=credentials,
         )
 
@@ -218,7 +220,9 @@ class JobHandlers:
         service = DeploymentsService(
             self.registry,
             identity=identity.minter(ctx.organization, ctx.app, request.stage),
-            env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
+            env=DeployEnv(self.database, self.sealer).for_app(
+                ctx.organization, ctx.app
+            ),
             credentials=credentials,
         )
         started = now()
@@ -302,7 +306,9 @@ class JobHandlers:
             DeploymentsService(
                 self.registry,
                 identity=identity.minter(ctx.organization, ctx.app),
-                env=DeployEnv(self.database).for_app(ctx.organization, ctx.app),
+                env=DeployEnv(self.database, self.sealer).for_app(
+                    ctx.organization, ctx.app
+                ),
             ).destroy(ctx.registry_id)
 
         with self.database.session() as db:
@@ -319,7 +325,7 @@ class JobHandlers:
     def destroy_organization(self, payload: dict[str, Any]) -> Any:
         """Every app's stacks down, then the organization and everything it owned off the platform."""
         identity = AppIdentity(self.database, self.sealer, settings.api.public_url)
-        env = DeployEnv(self.database)
+        env = DeployEnv(self.database, self.sealer)
         body = payload.get("body") or {}
 
         with self.database.session() as db:
@@ -353,7 +359,7 @@ class JobHandlers:
     def destroy_project(self, payload: dict[str, Any]) -> Any:
         """Each app's stacks down, then the project off the platform."""
         identity = AppIdentity(self.database, self.sealer, settings.api.public_url)
-        env = DeployEnv(self.database)
+        env = DeployEnv(self.database, self.sealer)
 
         with self.database.session() as db:
             organization = db.get(Organization, payload["organization_id"])

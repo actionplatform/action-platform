@@ -2677,6 +2677,7 @@ export interface components {
             options: {
                 [key: string]: unknown;
             };
+            secrets?: string[];
         };
         PluginRow: {
             slug: string;
