@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.32.1 — 2026-09-27
+
+### Bug Fixes
+- **plugins:** seal plugin secrets at rest and never send them back
+
 ## v0.32.0 — 2026-09-27
 
 ### Features
