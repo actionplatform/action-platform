@@ -2,18 +2,20 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from action_platform.plugins import registry
+from app.core.auth.crypto import Sealer
 from app.services.integrations.plugins.options import DbOptions
 
 
 class PluginManager:
-    def __init__(self, database: Any) -> None:
+    def __init__(self, database: Any, sealer: Optional[Sealer] = None) -> None:
         self.database = database
+        self.sealer = sealer
 
     def options(self, slug: str, organization_id: str = "") -> DbOptions:
-        return DbOptions(self.database, slug, organization_id)
+        return DbOptions(self.database, slug, organization_id, self.sealer)
 
     def catalog(self) -> dict:
         plugins = registry.installed()

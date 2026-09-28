@@ -80,7 +80,7 @@ def get_plugins(request: Request) -> PluginManager:
     if request.app.state.db is None:
         raise HTTPException(503, "no database configured: set AP_DATABASE_URL")
 
-    return PluginManager(request.app.state.db)
+    return PluginManager(request.app.state.db, request.app.state.sealer)
 
 
 def get_queue(request: Request) -> JobQueue:

@@ -122,6 +122,7 @@ class Plugins(BaseModel):
 
 class PluginOptions(BaseModel):
     options: dict[str, Any]
+    secrets: list[str] = []
 
 
 class WebhookInfo(BaseModel):

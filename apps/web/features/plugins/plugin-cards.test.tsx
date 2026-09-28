@@ -27,6 +27,17 @@ describe("PluginCards", () => {
     expect(screen.getByText("Configured")).toBeInTheDocument();
   });
 
+  it("a stored secret counts as configured and is never put in the field", () => {
+    const vault: PluginCardData = { ...lambda, slug: "vault", options: [{ key: "api_key", label: "API key", kind: "secret", help: "", required: true }], values: {}, secrets: ["api_key"] };
+    render(<PluginCards plugins={[vault]} canManage />);
+    expect(screen.getByText("Configured")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    const field = screen.getByLabelText("API key") as HTMLInputElement;
+    expect(field.value).toBe("");
+    expect(field.placeholder).toMatch(/Saved/);
+    expect(screen.getByRole("button", { name: "Save" })).not.toBeDisabled();
+  });
+
   it("a plugin without options is just installed, with no button", () => {
     render(<PluginCards plugins={[{ ...lambda, options: [] }]} canManage />);
     expect(screen.getByText("Installed")).toBeInTheDocument();

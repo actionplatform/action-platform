@@ -2,18 +2,20 @@
 
 from __future__ import annotations
 
-import json
 from typing import Optional
 
 from sqlalchemy import select
 
 from app.core.db.database import Database
+from app.core.auth.crypto import Sealer
 from app.core.db.models import App, Organization, PluginOption, Project
+from app.services.integrations.plugins.options import decode
 
 
 class DeployEnv:
-    def __init__(self, database: Database) -> None:
+    def __init__(self, database: Database, sealer: Optional[Sealer] = None) -> None:
         self.database = database
+        self.sealer = sealer
 
     def for_app(
         self, organization: Optional[Organization], app: Optional[App]
@@ -34,7 +36,7 @@ class DeployEnv:
         }
 
         for row in sorted(rows, key=lambda r: r.organization_id != ""):
-            value = json.loads(row.value)
+            value = decode(row.value, self.sealer)
 
             if isinstance(value, (str, int, float)) and not isinstance(value, bool):
                 name = f"AP_{row.plugin}_{row.key}".upper().replace("-", "_")

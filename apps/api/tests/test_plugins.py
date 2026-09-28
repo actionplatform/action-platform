@@ -37,7 +37,7 @@ class PluginsApiTest(GateCase):
     def test_options_round_trip_through_the_table(self):
         empty = self.client.get("/api/v1/plugins/aws-lambda/options", headers=self.h())
 
-        self.assertEqual(empty.json(), {"options": {}})
+        self.assertEqual(empty.json(), {"options": {}, "secrets": []})
 
         saved = self.client.put(
             "/api/v1/plugins/aws-lambda/options",
@@ -124,3 +124,113 @@ class PluginsApiTest(GateCase):
             gone = self.client.post(f"/api/v1/plugins/{path}", headers=self.h())
 
             self.assertIn(gone.status_code, (404, 405), path)
+
+
+class Vault(Plugin):
+    slug = "vault"
+    name = "Vault"
+    options = [
+        Option("url", "URL", "url", required=True),
+        Option("api_key", "API key", "secret", required=True),
+    ]
+
+    def register(self, surface):
+        pass
+
+
+class PluginSecretsTest(GateCase):
+    def setUp(self):
+        super().setUp()
+        registry.reset()
+        self.addCleanup(registry.reset)
+        loaded = registry.Loaded(Vault(), "apx-vault", "0.1.0")
+        patcher = mock.patch.object(
+            registry.Plugins, "find", staticmethod(lambda known=None: [loaded])
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def raw(self, key):
+        from app.core.db.models import PluginOption
+
+        with self.app.state.db.session() as s:
+            row = s.get(PluginOption, (self.org["id"], "vault", key))
+
+            return row.value if row else None
+
+    def test_a_secret_is_sealed_at_rest_and_never_answered(self):
+        saved = self.client.put(
+            "/api/v1/plugins/vault/options",
+            json={"options": {"url": "https://v.test", "api_key": "tok-123"}},
+            headers=self.h(),
+        ).json()
+
+        self.assertEqual(
+            saved, {"options": {"url": "https://v.test"}, "secrets": ["api_key"]}
+        )
+        self.assertNotIn("tok-123", self.raw("api_key"))
+        self.assertIn("$sealed", self.raw("api_key"))
+
+        read = self.client.get("/api/v1/plugins/vault/options", headers=self.h())
+
+        self.assertNotIn("tok-123", read.text)
+
+    def test_a_form_that_leaves_the_secret_empty_keeps_it(self):
+        self.client.put(
+            "/api/v1/plugins/vault/options",
+            json={"options": {"url": "https://v.test", "api_key": "tok-123"}},
+            headers=self.h(),
+        )
+
+        for body in (
+            {"url": "https://w.test"},
+            {"url": "https://w.test", "api_key": ""},
+        ):
+            kept = self.client.put(
+                "/api/v1/plugins/vault/options",
+                json={"options": body},
+                headers=self.h(),
+            ).json()
+
+            self.assertEqual(kept["secrets"], ["api_key"])
+
+        cleared = self.client.put(
+            "/api/v1/plugins/vault/options",
+            json={"options": {"url": "https://w.test", "api_key": None}},
+            headers=self.h(),
+        ).json()
+
+        self.assertEqual(cleared["secrets"], [])
+
+    def test_a_deploy_job_gets_the_secret_opened(self):
+        from app.services.deployments.env import DeployEnv
+        from app.services.integrations.plugins import DbOptions
+
+        DbOptions(
+            self.app.state.db, "vault", self.org["id"], self.app.state.sealer
+        ).set("api_key", "tok-123")
+        org = mock.Mock(id=self.org["id"], slug="acme")
+        app = mock.Mock(project_id="none", name="orders")
+
+        env = DeployEnv(self.app.state.db, self.app.state.sealer).for_app(org, app)
+
+        self.assertEqual(env["AP_VAULT_API_KEY"], "tok-123")
+
+    def test_secrets_stored_in_plain_text_are_sealed_at_start(self):
+        from app.core.db.models import PluginOption
+        from app.services.integrations.plugins import reseal
+
+        with self.app.state.db.session() as s:
+            s.add(
+                PluginOption(
+                    organization_id=self.org["id"],
+                    plugin="vault",
+                    key="api_key",
+                    value='"legacy-tok"',
+                )
+            )
+            s.commit()
+
+        self.assertEqual(reseal(self.app.state.db, self.app.state.sealer), 1)
+        self.assertNotIn("legacy-tok", self.raw("api_key"))
+        self.assertEqual(reseal(self.app.state.db, self.app.state.sealer), 0)

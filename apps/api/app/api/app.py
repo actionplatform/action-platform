@@ -17,7 +17,7 @@ from action_platform.settings import settings
 from app import api_version
 from app.api.gate import AccessGate
 from app.api.routes import router as routes
-from app.services.integrations.plugins import DbOptions
+from app.services.integrations.plugins import DbOptions, reseal
 from app.core.auth.crypto import Sealer
 from app.services.auth.errors import AuthError
 from app.core.auth.secrets import Secrets
@@ -66,11 +66,18 @@ def build(
             "database behind head: run `action-platform-api db migrate` — /api/version reports ready=false until then"
         )
     configure_registry(app.state.db)
-    registry.use_options(lambda slug: DbOptions(app.state.db, slug))
 
     secret = settings.api.auth_secret if auth_secret is None else auth_secret
     app.state.secrets = Secrets(secret) if secret else None
     app.state.sealer = Sealer(app.state.secrets) if app.state.secrets else None
+    registry.use_options(
+        lambda slug: DbOptions(app.state.db, slug, sealer=app.state.sealer)
+    )
+
+    if not app.state.db.behind() and (
+        resealed := reseal(app.state.db, app.state.sealer)
+    ):
+        log.info("sealed %d plugin secrets stored in plain text", resealed)
     base = (settings.api.public_url if public_url is None else public_url).rstrip("/")
     app.state.verification_uri = f"{base}/device"
     app.state.public_url = base

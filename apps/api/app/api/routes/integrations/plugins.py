@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from app.schemas.integrations import Plugins
 from app.schemas.integrations import PluginOptions
 from app.api.dependencies import CallerDep, OrgDep, PluginsDep, allowed
+from app.services.integrations.plugins.options import secret_keys
 
 router = APIRouter(prefix="/api/v1/plugins", tags=["plugins"])
 
@@ -19,8 +20,9 @@ def plugin_options(
     slug: str, org: OrgDep, caller: CallerDep, manager: PluginsDep
 ) -> PluginOptions:
     allowed(caller, org, "org.manage")
+    store = manager.options(slug, org.id)
 
-    return PluginOptions(options=manager.options(slug, org.id).all())
+    return PluginOptions(options=store.public(), secrets=store.stored_secrets())
 
 
 @router.put("/{slug}/options")
@@ -31,14 +33,20 @@ def set_plugin_options(
     caller: CallerDep,
     manager: PluginsDep,
 ) -> PluginOptions:
-    """Replaces the plugin's options with the body's; a key left out is deleted."""
+    """Replaces the plugin's options with the body's; a key left out is deleted — except a secret, which a form never sees and so leaves out or sends empty to keep. `null` deletes a secret."""
     allowed(caller, org, "org.manage")
     store = manager.options(slug, org.id)
+    secrets = set(store.stored_secrets()) | secret_keys(slug)
 
-    for key in set(store.all()) - set(body.options):
+    for key in set(store.public()) - set(body.options):
         store.delete(key)
 
     for key, value in body.options.items():
-        store.set(key, value)
+        if key in secrets and value is None:
+            store.delete(key)
+        elif key in secrets and value == "":
+            continue
+        else:
+            store.set(key, value)
 
-    return PluginOptions(options=store.all())
+    return PluginOptions(options=store.public(), secrets=store.stored_secrets())
