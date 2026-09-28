@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.39.2 — 2026-09-27
+
+### Bug Fixes
+- **api:** reseal plugin secrets only once the schema is current
+- **plugins:** seal plugin secrets at rest and never send them back
+
 ## v0.39.1 — 2026-09-27
 
 ## v0.39.0 — 2026-09-27
