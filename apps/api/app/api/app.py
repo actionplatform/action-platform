@@ -22,6 +22,7 @@ from app.core.auth.crypto import Sealer
 from app.services.auth.errors import AuthError
 from app.core.auth.secrets import Secrets
 from app.core.db import Database
+from app.core.shared.mail import Mailer, mailer_from_env
 from app.core.shared.urls import GitUrl
 from app.repositories.workspace.source import configure_registry, get_registry
 
@@ -44,6 +45,7 @@ def build(
     database_url: Optional[str] = None,
     auth_secret: Optional[str] = None,
     public_url: Optional[str] = None,
+    mailer: Optional[Mailer] = None,
 ) -> FastAPI:
     app = FastAPI(title="action-platform", version=api_version())
     get_registry.cache_clear()
@@ -81,6 +83,7 @@ def build(
     base = (settings.api.public_url if public_url is None else public_url).rstrip("/")
     app.state.verification_uri = f"{base}/device"
     app.state.public_url = base
+    app.state.mailer = mailer_from_env(os.environ) if mailer is None else mailer
     expected = settings.api.token if token is None else token
 
     if not expected and not settings.api.allow_unauthenticated:
