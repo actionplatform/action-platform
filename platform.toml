@@ -26,3 +26,8 @@ kind = "pypi"
 run_by = "github_actions"
 workflow = "python-publish-pypi.yml"
 package = "action-platform"
+
+[[scopes]]
+name = "prod"
+kind = "library"
+criticality = "high"
