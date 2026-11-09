@@ -20,6 +20,7 @@ from app.api.routes import router as routes
 from app.services.integrations.plugins import DbOptions, reseal
 from app.core.auth.crypto import Sealer
 from app.services.auth.errors import AuthError
+from app.services.auth.google import GoogleConfig
 from app.core.auth.secrets import Secrets
 from app.core.db import Database
 from app.core.shared.mail import Mailer, mailer_from_env
@@ -46,6 +47,7 @@ def build(
     auth_secret: Optional[str] = None,
     public_url: Optional[str] = None,
     mailer: Optional[Mailer] = None,
+    google: Optional[GoogleConfig] = None,
 ) -> FastAPI:
     app = FastAPI(title="action-platform", version=api_version())
     get_registry.cache_clear()
@@ -84,6 +86,8 @@ def build(
     app.state.verification_uri = f"{base}/device"
     app.state.public_url = base
     app.state.mailer = mailer_from_env(os.environ) if mailer is None else mailer
+    google = GoogleConfig.from_env(os.environ) if google is None else google
+    app.state.google = google if google.configured else None
     expected = settings.api.token if token is None else token
 
     if not expected and not settings.api.allow_unauthenticated:

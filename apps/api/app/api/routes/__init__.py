@@ -15,6 +15,7 @@ from app.api.routes import (
 )
 from app.api.routes.auth import (
     device,
+    google,
     invitations as invites,
     password,
     sessions,
@@ -47,6 +48,7 @@ from app.api.routes.projects import scopes as project_scopes
 routers = [
     sessions,
     password,
+    google,
     setup,
     invites,
     device,

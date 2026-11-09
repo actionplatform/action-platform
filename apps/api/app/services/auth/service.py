@@ -16,13 +16,16 @@ from app.services.auth.base import (
     now,
 )
 from app.services.auth.device import Device
+from app.services.auth.google import GoogleAccounts
 from app.services.auth.organizations import Organizations
 from app.services.auth.recovery import Recovery
 from app.services.auth.sessions import Sessions
 from app.services.auth.tokens import Tokens
 
 
-class AuthService(Accounts, Sessions, Organizations, Device, Tokens, Recovery):
+class AuthService(
+    Accounts, Sessions, Organizations, Device, Tokens, Recovery, GoogleAccounts
+):
     pass
 
 

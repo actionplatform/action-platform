@@ -39,6 +39,7 @@ def status(
         users=users,
         organizations=organizations,
         password_recovery=request.app.state.mailer is not None,
+        google=request.app.state.google is not None,
     )
 
 

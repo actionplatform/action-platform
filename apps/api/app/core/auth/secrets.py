@@ -7,7 +7,7 @@ from urllib.parse import quote, unquote
 from action_platform.core.exception import ConfigError
 
 SALT = b"action-platform"
-PURPOSES = ("api-token", "oauth-state", "source-host")
+PURPOSES = ("api-token", "oauth-state", "source-host", "sign-in-state")
 
 
 def hkdf(secret: bytes, salt: bytes, info: bytes, length: int) -> bytes:

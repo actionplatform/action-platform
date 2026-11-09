@@ -50,6 +50,10 @@ class Signed(BaseModel):
     session: SessionOut
 
 
+class GoogleSigned(Signed):
+    next: str
+
+
 class IdentityOut(BaseModel):
     user: UserOut
     session: SessionOut
@@ -204,6 +208,26 @@ class AuthStatus(BaseModel):
     users: int
     organizations: int = 0
     password_recovery: bool = False
+    google: bool = False
+
+
+class GoogleStartRequest(BaseModel):
+    origin: str
+    next: str = "/projects"
+
+
+class GoogleStartOut(BaseModel):
+    url: str
+    verifier: str
+
+
+class GoogleCallbackRequest(BaseModel):
+    origin: str
+    code: str
+    state: str
+    verifier: str
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
 
 
 class ForgotPasswordRequest(BaseModel):
