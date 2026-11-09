@@ -11,5 +11,5 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const target = safePath(next, "/projects");
   if (await getSession()) redirect(target);
 
-  return <LoginForm next={target} />;
+  return <LoginForm next={target} recovery={status.passwordRecovery} />;
 }

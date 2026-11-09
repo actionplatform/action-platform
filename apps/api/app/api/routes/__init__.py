@@ -13,7 +13,13 @@ from app.api.routes import (
     releases,
     templates,
 )
-from app.api.routes.auth import device, invitations as invites, sessions, setup
+from app.api.routes.auth import (
+    device,
+    invitations as invites,
+    password,
+    sessions,
+    setup,
+)
 from app.api.routes.integrations import (
     ci_hosts,
     github_app,
@@ -40,6 +46,7 @@ from app.api.routes.projects import scopes as project_scopes
 
 routers = [
     sessions,
+    password,
     setup,
     invites,
     device,

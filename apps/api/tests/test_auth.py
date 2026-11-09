@@ -71,7 +71,12 @@ class AccountsTest(AuthCase):
         self.sign_up()
         self.assertEqual(
             self.client.get("/api/auth/status").json(),
-            {"configured": True, "users": 1, "organizations": 0},
+            {
+                "configured": True,
+                "users": 1,
+                "organizations": 0,
+                "password_recovery": False,
+            },
         )
 
     def test_sign_in_with_better_auth_hash(self):

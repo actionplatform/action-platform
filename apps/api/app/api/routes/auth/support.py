@@ -32,6 +32,8 @@ from app.schemas import common
 LIMITS = {
     "sign-in": RateLimiter(10, 60),
     "sign-up": RateLimiter(10, 60),
+    "password-forgot": RateLimiter(5, 60),
+    "password-reset": RateLimiter(10, 60),
     "device-code": RateLimiter(20, 60),
     "device-token": RateLimiter(40, 60),
 }

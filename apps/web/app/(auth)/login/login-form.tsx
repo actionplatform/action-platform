@@ -2,13 +2,14 @@
 
 import { Logo } from "@/components/logo";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { signIn } from "@/lib/auth-actions";
 
-export function LoginForm({ next = "/projects" }: { next?: string }) {
+export function LoginForm({ next = "/projects", recovery = false }: { next?: string; recovery?: boolean }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -37,6 +38,11 @@ export function LoginForm({ next = "/projects" }: { next?: string }) {
           {error && <div className="text-sm text-foreground border border-foreground rounded-md px-3 py-2">{error}</div>}
           <Button type="submit" className="w-full" disabled={busy}>Sign in</Button>
         </form>
+        {recovery && (
+          <div className="text-center text-xs">
+            <Link href="/forgot-password" className="text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">Forgot your password?</Link>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
