@@ -77,6 +77,12 @@ services:
       ACTION_PLATFORM_TEMPLATES_REPO: ${ACTION_PLATFORM_TEMPLATES_REPO:-https://github.com/actionplatform/templates.git}
       ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
       AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
+      AP_SMTP_HOST: ${AP_SMTP_HOST:-}
+      AP_SMTP_PORT: ${AP_SMTP_PORT:-}
+      AP_SMTP_USER: ${AP_SMTP_USER:-}
+      AP_SMTP_PASSWORD: ${AP_SMTP_PASSWORD:-}
+      AP_SMTP_FROM: ${AP_SMTP_FROM:-}
+      AP_SMTP_SECURITY: ${AP_SMTP_SECURITY:-starttls}
 
   worker:
     image: ${AP_IMAGE_WORKER:-actionplatformio/action-platform-worker:latest}
