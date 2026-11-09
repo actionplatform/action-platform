@@ -1,5 +1,6 @@
 "use client";
 
+import { GoogleButton } from "@/components/google-button";
 import { Logo } from "@/components/logo";
 
 import Link from "next/link";
@@ -9,9 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { signIn } from "@/lib/auth-actions";
 
-export function LoginForm({ next = "/projects", recovery = false }: { next?: string; recovery?: boolean }) {
+export function LoginForm({ next = "/projects", recovery = false, google = false, initialError = null }: { next?: string; recovery?: boolean; google?: boolean; initialError?: string | null }) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -32,6 +33,12 @@ export function LoginForm({ next = "/projects", recovery = false }: { next?: str
     <Card className="w-full max-w-sm">
       <CardContent className="space-y-4">
         <div className="flex items-center gap-2 font-semibold"><Logo className="size-5" /> action-platform</div>
+        {google && (
+          <>
+            <GoogleButton next={next} />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />or<span className="h-px flex-1 bg-border" /></div>
+          </>
+        )}
         <form method="post" onSubmit={submit} className="space-y-3">
           <Field name="email" label="Email" type="email" />
           <Field name="password" label="Password" type="password" />

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { GoogleButton } from "@/components/google-button";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +12,7 @@ import { acceptInvite, joinWithNewAccount } from "./actions";
 
 type Invitation = { id: string; email: string; role: string; org: string; inviter: string };
 
-export function InviteForm({ invitation, mode, currentEmail }: { invitation: Invitation; mode: "accept" | "mismatch" | "join"; currentEmail: string | null }) {
+export function InviteForm({ invitation, mode, currentEmail, google = false }: { invitation: Invitation; mode: "accept" | "mismatch" | "join"; currentEmail: string | null; google?: boolean }) {
   const router = useRouter();
   const [tab, setTab] = useState<"signup" | "signin">("signup");
   const [name, setName] = useState("");
@@ -45,6 +46,7 @@ export function InviteForm({ invitation, mode, currentEmail }: { invitation: Inv
 
         {mode === "join" && (
           <div className="space-y-3">
+            {google && <GoogleButton next={`/invite/${invitation.id}`} label={`Join with Google as ${invitation.email}`} />}
             <div className="flex gap-1 rounded-md border border-border p-1 text-sm">
               <button type="button" onClick={() => setTab("signup")} className={`flex-1 rounded px-2 py-1 ${tab === "signup" ? "bg-surface-hover text-foreground" : "text-secondary"}`}>Create account</button>
               <button type="button" onClick={() => setTab("signin")} className={`flex-1 rounded px-2 py-1 ${tab === "signin" ? "bg-surface-hover text-foreground" : "text-secondary"}`}>I have an account</button>
