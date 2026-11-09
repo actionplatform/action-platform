@@ -6,10 +6,11 @@ export type SetupStatus = {
   hasUser: boolean;
   hasOrg: boolean;
   complete: boolean;
+  passwordRecovery: boolean;
   error?: string;
 };
 
-const NONE: SetupStatus = { configured: false, dbOk: false, hasUser: false, hasOrg: false, complete: false };
+const NONE: SetupStatus = { configured: false, dbOk: false, hasUser: false, hasOrg: false, complete: false, passwordRecovery: false };
 
 export async function setupStatus(): Promise<SetupStatus> {
   let status;
@@ -21,5 +22,5 @@ export async function setupStatus(): Promise<SetupStatus> {
   if (!status.configured) return { ...NONE, error: "The API has no database or auth secret. Start it with AP_DATABASE_URL and AP_AUTH_SECRET." };
   const hasUser = status.users > 0;
   const hasOrg = status.organizations > 0;
-  return { configured: true, dbOk: true, hasUser, hasOrg, complete: hasUser && hasOrg };
+  return { configured: true, dbOk: true, hasUser, hasOrg, complete: hasUser && hasOrg, passwordRecovery: status.password_recovery };
 }
