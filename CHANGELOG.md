@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.32.1 — 2026-11-08
+
+### Bug Fixes
+- **api:** bump pyasn1, urllib3, certifi, werkzeug, mako and setuptools
+- **deps:** bump pyjwt, urllib3, certifi and opentelemetry-api
+- **plugins:** seal plugin secrets at rest and never send them back
+
+### Build
+- **api:** pin apx-dokploy 0.5.0
+- **api:** pin apx-aws-lambda 1.3.0
+- **api:** pin apx-dokploy 0.4.0
+- **api:** pin apx-dokploy 0.3.2, application found by name
+- **api:** pin apx-dokploy 0.3.1, one application per scope
+- **api:** pin apx-dokploy 0.3.0, generated domain
+- **api:** pin apx-dokploy 0.2.0, language version in the Dockerfile
+- **api:** lock apx-aws-lambda 1.2.2
+- **api:** pin apx-aws-lambda 1.2.2
+- **api:** lock apx-aws-lambda 1.2.1
+- **api:** pin apx-aws-lambda 1.2.1, stack per scope
+- **api:** lock apx-aws-lambda 1.2.0
+- **api:** pin apx-aws-lambda 1.2.0, execution roles by path
+- **api:** pin apx-aws-lambda 1.1.0, Connect AWS
+
+### CI
+- **publish:** dispatch python-publish-pypi.yml, the workflow PyPI trusts
+- **publish:** check out the release's tag whatever ref dispatched it
+- **publish:** build and upload from the workflow, not the composite action
+
 ## v0.32.0 — 2026-09-26
 
 ### Features
