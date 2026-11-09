@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.32.2 — 2026-11-08
+
+### Bug Fixes
+- **web:** regenerate package-lock.json with patched transitive deps
+- **web:** bump next, @sentry/nextjs and override glob to 14
+
 ## v0.32.1 — 2026-09-27
 
 ### Bug Fixes
