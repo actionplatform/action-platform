@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.32.3 — 2026-11-08
+
+### Bug Fixes
+- **web:** regenerate package-lock.json with npm 10 so npm ci finds @emnapi
+
 ## v0.32.2 — 2026-11-08
 
 ### Bug Fixes
