@@ -89,6 +89,7 @@ Images are published for every `api/vX.Y.Z` and `web/vX.Y.Z` tag to Docker Hub a
 | `GITHUB_CLIENT_ID/SECRET`, `GITLAB_*`, `BITBUCKET_*` | no | OAuth apps, read by the API; the ones entered in the UI (or created through the GitHub manifest) are stored in the database and win |
 | `ACTION_PLATFORM_TEMPLATES_REPO` | no | templates matrix, default `actionplatform/templates` |
 | `AP_SMTP_HOST`, `AP_SMTP_PORT`, `AP_SMTP_USER`, `AP_SMTP_PASSWORD`, `AP_SMTP_FROM`, `AP_SMTP_SECURITY` | no | SMTP server the API sends email through (password recovery). `AP_SMTP_SECURITY` is `starttls` (default, port 587), `ssl` (465) or `none`; `AP_SMTP_PASSWORD_FILE` reads the password from a file. Empty `AP_SMTP_HOST` means the API sends no email. |
+| `AP_GOOGLE_CLIENT_ID`, `AP_GOOGLE_CLIENT_SECRET` | no | OAuth client (type Web application) of a Google Cloud project for "Continue with Google"; its authorized redirect URI is `${PUBLIC_URL}/api/sign-in/google/callback`. `AP_GOOGLE_CLIENT_SECRET_FILE` reads the secret from a file. Google signs in an existing account (matched by Google's account id, or by the verified email the first time) and creates one only for an email with a pending invitation. |
 
 The setup wizard's first step only checks that the API has its database and secret; with the compose files it passes at once.
 

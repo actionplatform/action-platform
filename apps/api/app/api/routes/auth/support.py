@@ -34,6 +34,7 @@ LIMITS = {
     "sign-up": RateLimiter(10, 60),
     "password-forgot": RateLimiter(5, 60),
     "password-reset": RateLimiter(10, 60),
+    "google": RateLimiter(20, 60),
     "device-code": RateLimiter(20, 60),
     "device-token": RateLimiter(40, 60),
 }

@@ -76,6 +76,7 @@ class AccountsTest(AuthCase):
                 "users": 1,
                 "organizations": 0,
                 "password_recovery": False,
+                "google": False,
             },
         )
 

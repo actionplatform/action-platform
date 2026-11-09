@@ -32,6 +32,11 @@ describe("setupStatus", () => {
     api.status.mockResolvedValue({ configured: true, users: 1, organizations: 1, password_recovery: false });
     expect((await setupStatus()).passwordRecovery).toBe(false);
   });
+
+  it("says whether Google sign-in is configured", async () => {
+    api.status.mockResolvedValue({ configured: true, users: 1, organizations: 1, password_recovery: false, google: true });
+    expect((await setupStatus()).google).toBe(true);
+  });
 });
 
 describe("requestPasswordReset", () => {

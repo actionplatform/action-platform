@@ -29,5 +29,5 @@ export default async function InvitePage({ params }: { params: Promise<{ id: str
   const session = await getSession();
   const mode = session ? (session.user.email.toLowerCase() === invitation.email ? "accept" : "mismatch") : "join";
 
-  return <InviteForm invitation={{ id: invitation.id, email: invitation.email, role: invitation.role, org: invitation.org.name, inviter: invitation.inviter }} mode={mode} currentEmail={session?.user.email ?? null} />;
+  return <InviteForm invitation={{ id: invitation.id, email: invitation.email, role: invitation.role, org: invitation.org.name, inviter: invitation.inviter }} mode={mode} currentEmail={session?.user.email ?? null} google={status.google} />;
 }

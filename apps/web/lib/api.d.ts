@@ -159,6 +159,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/google/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["start_api_auth_google_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/google/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["callback_api_auth_google_callback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/organizations": {
         parameters: {
             query?: never;
@@ -2008,6 +2040,7 @@ export interface components {
             users: number;
             organizations: number;
             password_recovery: boolean;
+            google: boolean;
         };
         Branch: {
             name: string;
@@ -2325,6 +2358,27 @@ export interface components {
             members: string[];
             repositories: string[];
             exists: boolean;
+        };
+        GoogleCallbackRequest: {
+            origin: string;
+            code: string;
+            state: string;
+            verifier: string;
+            ip_address?: string | null;
+            user_agent?: string | null;
+        };
+        GoogleSigned: {
+            user: components["schemas"]["UserOut"];
+            session: components["schemas"]["SessionOut"];
+            next: string;
+        };
+        GoogleStartOut: {
+            url: string;
+            verifier: string;
+        };
+        GoogleStartRequest: {
+            origin: string;
+            next: string;
         };
         GrantIn: {
             scope?: string[];
@@ -3410,6 +3464,68 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_api_auth_google_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoogleStartRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoogleStartOut"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    callback_api_auth_google_callback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoogleCallbackRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoogleSigned"];
+                };
             };
             422: {
                 headers: {

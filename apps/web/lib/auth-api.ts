@@ -29,6 +29,10 @@ export const authApi = {
     unwrap(await client.POST("/api/auth/sign-up", { body, headers: clientHeaders(ip) })),
   signIn: async (body: { email: string; password: string; ip_address?: string | null; user_agent?: string | null }, ip: string | null) =>
     unwrap(await client.POST("/api/auth/sign-in", { body, headers: clientHeaders(ip) })),
+  googleStart: async (body: { origin: string; next: string }, ip: string | null) =>
+    unwrap(await client.POST("/api/auth/google/start", { body, headers: clientHeaders(ip) })),
+  googleCallback: async (body: { origin: string; code: string; state: string; verifier: string; ip_address?: string | null; user_agent?: string | null }, ip: string | null) =>
+    unwrap(await client.POST("/api/auth/google/callback", { body, headers: clientHeaders(ip) })),
   forgotPassword: async (email: string, ip: string | null) =>
     unwrap(await client.POST("/api/auth/password/forgot", { body: { email }, headers: clientHeaders(ip) })),
   resetPassword: async (body: { token: string; password: string }, ip: string | null) =>
