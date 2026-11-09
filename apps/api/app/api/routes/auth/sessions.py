@@ -35,7 +35,10 @@ def status(
     organizations = db.scalar(select(func.count()).select_from(Organization)) or 0
 
     return schemas.AuthStatus(
-        configured=configured, users=users, organizations=organizations
+        configured=configured,
+        users=users,
+        organizations=organizations,
+        password_recovery=request.app.state.mailer is not None,
     )
 
 

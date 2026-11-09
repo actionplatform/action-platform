@@ -203,6 +203,16 @@ class AuthStatus(BaseModel):
     configured: bool
     users: int
     organizations: int = 0
+    password_recovery: bool = False
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
 
 
 class OpenInvitation(BaseModel):
