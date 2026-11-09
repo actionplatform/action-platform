@@ -83,6 +83,8 @@ services:
       AP_SMTP_PASSWORD: ${AP_SMTP_PASSWORD:-}
       AP_SMTP_FROM: ${AP_SMTP_FROM:-}
       AP_SMTP_SECURITY: ${AP_SMTP_SECURITY:-starttls}
+      AP_GOOGLE_CLIENT_ID: ${AP_GOOGLE_CLIENT_ID:-}
+      AP_GOOGLE_CLIENT_SECRET: ${AP_GOOGLE_CLIENT_SECRET:-}
 
   worker:
     image: ${AP_IMAGE_WORKER:-actionplatformio/action-platform-worker:latest}
