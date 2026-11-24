@@ -61,7 +61,7 @@ export function AdoptionView({ projectId, rows, canManage, options }: { projectI
 
   const run = (dryRun: boolean, apps: string[]) => start(async () => {
     setError(null);
-    if (dryRun) setPreview(null);
+    setPreview(null);
     const r = await call(() => startInstall(projectId, { apps, type, ci: ci || null, language: language || null, code: "platform", dry_run: dryRun }), (error) => ({ ok: false as const, error }), "The run may have started anyway: reload before trying again.");
     setConfirming(false);
     if (r.ok) setJob({ id: r.data.job, dryRun, status: "queued", result: null, error: null });
