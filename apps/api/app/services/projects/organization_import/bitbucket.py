@@ -16,7 +16,7 @@ class BitbucketDirectory(HostDirectory):
     kind = "bitbucket"
     label = "Bitbucket"
     limits = (
-        "Bitbucket never shows a member's email: people are invited by their Bitbucket nickname.",
+        "Bitbucket never shows a member's email: people are invited by nickname and join only with the Bitbucket account (uuid) listed in the workspace.",
         "Bitbucket Cloud's API does not list a workspace's user groups, so no teams are offered; create them under Organization › Teams.",
     )
 
@@ -122,6 +122,7 @@ class BitbucketDirectory(HostDirectory):
             rows.append(
                 {
                     "login": nickname,
+                    "user_id": user.get("uuid"),
                     "name": user.get("display_name") or nickname,
                     "email": None,
                     "avatar": ((user.get("links") or {}).get("avatar") or {}).get(

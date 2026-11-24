@@ -71,10 +71,17 @@ class BitbucketProvider(HostProvider):
     def identity(self, app: OAuthApp, access_token: str) -> tuple[str, Optional[str]]:
         user = http.get_json(f"{API}/user", {"authorization": f"Bearer {access_token}"})
 
-        if not user.get("username"):
+        login = user.get("username") or user.get("nickname")
+
+        if not login:
             raise ProviderError("Bitbucket: could not read the signed-in user")
 
-        return user["username"], user.get("display_name")
+        return login, user.get("display_name")
+
+    def subject(self, app: OAuthApp, access_token: str) -> Optional[str]:
+        user = http.get_json(f"{API}/user", {"authorization": f"Bearer {access_token}"})
+
+        return user.get("uuid") or None
 
     def owner(self, access_token: str, installation_id: Optional[str]) -> Optional[str]:
         return self.first_workspace(access_token)

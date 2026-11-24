@@ -423,12 +423,10 @@ class NeutralImportTest(GateCase):
             200,
         )
 
-    def test_a_bitbucket_invitee_proves_the_nickname_the_workspace_lists(self):
+    def _bitbucket_invitation(self):
         from urllib.parse import unquote
 
-        from app.services.integrations.hosts import bitbucket as provider
         from app.services.jobs.worker import Worker
-        from app.services.organization import invitations
 
         self.setenv("AP_BITBUCKET_CLIENT_ID", "cid")
         self.setenv("AP_BITBUCKET_CLIENT_SECRET", "csecret")
@@ -465,6 +463,11 @@ class NeutralImportTest(GateCase):
         ).json()["url"]
         state = unquote(url.split("state=")[1].split("&")[0])
 
+        return invitation, session, state
+
+    def _prove_bitbucket(self, invitation, session, state, nickname, uuid):
+        from app.services.integrations.hosts import bitbucket as provider
+
         self.patch(
             provider.BitbucketProvider,
             "exchange_code",
@@ -473,18 +476,35 @@ class NeutralImportTest(GateCase):
         self.patch(
             provider.BitbucketProvider,
             "identity",
-            lambda self, app, token: ("bob-account", "Bob"),
+            lambda self, app, token: (nickname, nickname),
         )
-        self.patch(
-            invitations,
-            "http",
-            FakeHttp(
-                {f"{BITBUCKET}/user": {"username": "bob-account", "nickname": "bob"}}
-            ),
-        )
-        joined = self.client.post(
+        self.patch(provider.BitbucketProvider, "subject", lambda self, app, token: uuid)
+
+        return self.client.post(
             f"/api/auth/invitations/{invitation['id']}/verify/callback",
             json={"origin": "https://ap.example.com", "code": "c", "state": state},
             headers=session,
         )
+
+    def test_a_bitbucket_invitee_is_bound_to_the_account_uuid(self):
+        invitation, session, state = self._bitbucket_invitation()
+        joined = self._prove_bitbucket(invitation, session, state, "bob", "{b}")
         self.assertEqual(joined.status_code, 200, joined.text)
+
+    def test_a_bitbucket_account_with_the_same_nickname_but_another_uuid_is_refused(
+        self,
+    ):
+        invitation, session, state = self._bitbucket_invitation()
+        refused = self._prove_bitbucket(invitation, session, state, "bob", "{evil}")
+        self.assertGreaterEqual(refused.status_code, 400)
+        self.assertNotEqual(refused.status_code, 200)
+        listed = self.client.get("/api/v1/invitations", headers=self.h()).json()
+        self.assertEqual(listed[0]["status"], "pending")
+
+        joined = self._prove_bitbucket(invitation, session, state, "bob", "{b}")
+        self.assertEqual(joined.status_code, 200, joined.text)
+
+    def test_a_bitbucket_account_without_a_uuid_is_refused(self):
+        invitation, session, state = self._bitbucket_invitation()
+        refused = self._prove_bitbucket(invitation, session, state, "bob", None)
+        self.assertGreaterEqual(refused.status_code, 400)

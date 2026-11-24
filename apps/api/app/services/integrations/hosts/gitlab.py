@@ -85,6 +85,13 @@ class GitlabProvider(HostProvider):
 
         return user["username"], user.get("name")
 
+    def subject(self, app: OAuthApp, access_token: str) -> Optional[str]:
+        user = http.get_json(
+            f"{self.api_base(app)}/user", {"authorization": f"Bearer {access_token}"}
+        )
+
+        return str(user["id"]) if user.get("id") is not None else None
+
     def owner(self, access_token: str, installation_id: Optional[str]) -> Optional[str]:
         return None
 

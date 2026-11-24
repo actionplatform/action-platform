@@ -10,7 +10,6 @@ from app.core.auth.crypto import Sealer
 from app.core.auth.secrets import Secrets
 from app.core.db.models import Invitation, Organization, User
 from app.core.errors import Forbidden, Invalid, NotFound, Upstream
-from app.core.shared.http import http
 from app.repositories.organization import OrganizationRepository
 from app.services.integrations.hosts.directory import IntegrationsDirectory
 from app.services.integrations.hosts.registry import HostProviders
@@ -77,14 +76,13 @@ class InvitationProof:
         try:
             token, _, _ = provider.exchange_code(app, origin, code)
             login, _ = provider.identity(app, token)
-            logins = [
-                login,
-                *self._aliases(provider.kind, provider.api_base(app), token),
-            ]
+            subject = provider.subject(app, token)
         except ActionPlatformError as e:
             raise Upstream(str(e)) from e
 
-        return self.directory.accept_invitation(id, user, verified_logins=logins)
+        return self.directory.accept_invitation(
+            id, user, verified_login=login, verified_subject=subject
+        )
 
     def _pending_login_invitation(self, id: str) -> Invitation:
         found = self.directory.invitation(id)
@@ -101,16 +99,6 @@ class InvitationProof:
             raise Invalid(f"invitation {invitation.status}")
 
         return invitation
-
-    @staticmethod
-    def _aliases(kind: str, api: str, token: str) -> list[str]:
-        """Other names the host shows the same account under: Bitbucket lists workspace members by nickname, not username."""
-        if kind != "bitbucket":
-            return []
-
-        me = http.get_json(f"{api}/user", {"authorization": f"Bearer {token}"})
-
-        return [me[k] for k in ("nickname", "username") if me.get(k)]
 
     @staticmethod
     def _identity_only(kind: str, url: str) -> str:

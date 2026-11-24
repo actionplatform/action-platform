@@ -61,6 +61,7 @@ class Invitation(Base):
     email: Mapped[Optional[str]] = mapped_column(SHORT)
     host_kind: Mapped[Optional[str]] = mapped_column(SHORT)
     host_login: Mapped[Optional[str]] = mapped_column(SHORT)
+    host_user_id: Mapped[Optional[str]] = mapped_column(SHORT)
     team_ids: Mapped[Optional[str]] = mapped_column(Text)
     role: Mapped[Optional[str]] = mapped_column(SHORT)
     status: Mapped[str] = mapped_column(SHORT, nullable=False)

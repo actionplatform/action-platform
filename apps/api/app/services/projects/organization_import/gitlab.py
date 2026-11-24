@@ -161,6 +161,7 @@ class GitlabDirectory(HostDirectory):
             rows.append(
                 {
                     "login": m["username"],
+                    "user_id": str(m["id"]),
                     "name": m.get("name") or m["username"],
                     "email": email.strip().lower() or None,
                     "avatar": m.get("avatar_url"),

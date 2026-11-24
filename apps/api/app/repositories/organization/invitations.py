@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Optional, Sequence
+from typing import Optional
 
 from sqlalchemy import select
 
@@ -86,8 +86,9 @@ class InvitationsWrites(InvitationsReads):
         login: str,
         role: str,
         team_ids: Optional[list[str]] = None,
+        host_user_id: Optional[str] = None,
     ) -> Invitation:
-        """An invitation for whoever proves they own `login` on the code host, for people the host shows no email for."""
+        """An invitation for whoever proves they own `login` on the code host, for people the host shows no email for. `host_user_id` is the account's immutable id: when present it is what must match, the login is only shown."""
         login = login.strip()
 
         if role not in ROLES:
@@ -103,6 +104,10 @@ class InvitationsWrites(InvitationsReads):
             ):
                 self.add_invitation_teams(invitation, team_ids or [])
 
+                if host_user_id and not invitation.host_user_id:
+                    invitation.host_user_id = host_user_id
+                    self.db.flush()
+
                 return invitation
 
         return self._new_invitation(
@@ -112,6 +117,7 @@ class InvitationsWrites(InvitationsReads):
             team_ids,
             host_kind=host_kind,
             host_login=login,
+            host_user_id=host_user_id,
         )
 
     def _new_invitation(
@@ -123,6 +129,7 @@ class InvitationsWrites(InvitationsReads):
         email: Optional[str] = None,
         host_kind: Optional[str] = None,
         host_login: Optional[str] = None,
+        host_user_id: Optional[str] = None,
     ) -> Invitation:
         moment = now()
         invitation = Invitation(
@@ -131,6 +138,7 @@ class InvitationsWrites(InvitationsReads):
             email=email,
             host_kind=host_kind,
             host_login=host_login,
+            host_user_id=host_user_id,
             team_ids=json.dumps(sorted(set(team_ids))) if team_ids else None,
             role=role,
             status="pending",
@@ -206,9 +214,13 @@ class InvitationsWrites(InvitationsReads):
         return (row[0], row[1], row[2]) if row else None
 
     def accept_invitation(
-        self, id: str, user: User, verified_logins: Sequence[str] = ()
+        self,
+        id: str,
+        user: User,
+        verified_login: Optional[str] = None,
+        verified_subject: Optional[str] = None,
     ) -> Organization:
-        """Make `user` a member with the invitation's role and put them in its teams. A login invitation needs `verified_logins`, the names the host knows the person by, just proved."""
+        """Make `user` a member with the invitation's role and put them in its teams. A login invitation needs what the host just proved: the account's immutable id when the invitation holds one, else its login."""
         found = self.invitation(id)
 
         if found is None:
@@ -223,18 +235,24 @@ class InvitationsWrites(InvitationsReads):
             raise DirectoryError("invitation expired")
 
         if invitation.host_login:
-            if not verified_logins:
+            if not verified_login:
                 raise DirectoryError(
                     f"this invitation is for @{invitation.host_login} on "
                     f"{invitation.host_kind}: verify the account to join"
                 )
 
-            if invitation.host_login.lower() not in {
-                v.lower() for v in verified_logins
-            }:
+            if invitation.host_user_id:
+                matches = verified_subject == invitation.host_user_id
+            else:
+                matches = (
+                    invitation.host_kind != "bitbucket"
+                    and invitation.host_login.lower() == verified_login.lower()
+                )
+
+            if not matches:
                 raise DirectoryError(
                     f"this invitation is for @{invitation.host_login}, "
-                    f"not @{verified_logins[0]}"
+                    f"not @{verified_login}"
                 )
         elif invitation.email != user.email.lower():
             raise DirectoryError(f"this invitation is for {invitation.email}")
