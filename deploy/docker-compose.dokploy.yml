@@ -1,7 +1,7 @@
 name: action-platform
 
 services:
-  postgres:
+  ap-postgres:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
@@ -16,15 +16,15 @@ services:
       timeout: 5s
       retries: 5
 
-  pgbouncer:
+  ap-pgbouncer:
     image: edoburu/pgbouncer:latest
     restart: unless-stopped
     profiles: ["pooler"]
     depends_on:
-      postgres:
+      ap-postgres:
         condition: service_healthy
     environment:
-      DB_HOST: postgres
+      DB_HOST: ap-postgres
       DB_USER: action_platform
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: action_platform
@@ -38,29 +38,29 @@ services:
       timeout: 5s
       retries: 5
 
-  migrate:
+  ap-migrate:
     image: ${AP_IMAGE_API:?set AP_IMAGE_API in .env, e.g. actionplatformio/action-platform-api:X.Y.Z}
     restart: "no"
     command: ["action-platform-api", "db", "migrate"]
     depends_on:
-      postgres:
+      ap-postgres:
         condition: service_healthy
     environment:
-      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-postgres}:5432/action_platform
+      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-ap-postgres}:5432/action_platform
 
-  api:
+  ap-api:
     image: ${AP_IMAGE_API:?set AP_IMAGE_API in .env, e.g. actionplatformio/action-platform-api:X.Y.Z}
     restart: unless-stopped
     expose: ["7788"]
     depends_on:
-      postgres:
+      ap-postgres:
         condition: service_healthy
-      migrate:
+      ap-migrate:
         condition: service_completed_successfully
     environment:
       AP_API_TOKEN: ${AP_API_TOKEN:-}
       AP_API_WORKERS: ${AP_API_WORKERS:-2}
-      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-postgres}:5432/action_platform
+      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-ap-postgres}:5432/action_platform
       AP_DATABASE_AUTO_MIGRATE: "0"
       AP_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       AP_PUBLIC_URL: ${PUBLIC_URL}
@@ -84,20 +84,20 @@ services:
       AP_GOOGLE_CLIENT_ID: ${AP_GOOGLE_CLIENT_ID:-}
       AP_GOOGLE_CLIENT_SECRET: ${AP_GOOGLE_CLIENT_SECRET:-}
 
-  worker:
+  ap-worker:
     image: ${AP_IMAGE_WORKER:?set AP_IMAGE_WORKER in .env, e.g. actionplatformio/action-platform-worker:X.Y.Z}
     restart: unless-stopped
     depends_on:
-      postgres:
+      ap-postgres:
         condition: service_healthy
-      migrate:
+      ap-migrate:
         condition: service_completed_successfully
-      api:
+      ap-api:
         condition: service_started
     command: ["action-platform-api", "worker", "--concurrency", "${AP_WORKER_CONCURRENCY:-2}", "--kinds", "sync,release,push,import,import_github"]
     environment:
       AP_API_TOKEN: ${AP_API_TOKEN:-}
-      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-postgres}:5432/action_platform
+      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-ap-postgres}:5432/action_platform
       AP_DATABASE_AUTO_MIGRATE: "0"
       AP_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       AP_PUBLIC_URL: ${PUBLIC_URL}
@@ -113,20 +113,20 @@ services:
       ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
       AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
 
-  worker-deploy:
+  ap-worker-deploy:
     image: ${AP_IMAGE_WORKER:?set AP_IMAGE_WORKER in .env, e.g. actionplatformio/action-platform-worker:X.Y.Z}
     restart: unless-stopped
     depends_on:
-      postgres:
+      ap-postgres:
         condition: service_healthy
-      migrate:
+      ap-migrate:
         condition: service_completed_successfully
-      api:
+      ap-api:
         condition: service_started
     command: ["action-platform-api", "worker", "--concurrency", "${AP_DEPLOY_CONCURRENCY:-1}", "--kinds", "deploy,readiness,destroy,destroy_project,destroy_organization", "--name", "deploy"]
     environment:
       AP_API_TOKEN: ${AP_API_TOKEN:-}
-      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-postgres}:5432/action_platform
+      AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-ap-postgres}:5432/action_platform
       AP_DATABASE_AUTO_MIGRATE: "0"
       AP_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       AP_PUBLIC_URL: ${PUBLIC_URL}
@@ -142,15 +142,15 @@ services:
       ACTION_PLATFORM_GIT_HOSTS: ${ACTION_PLATFORM_GIT_HOSTS:-}
       AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
 
-  web:
+  ap-web:
     image: ${AP_IMAGE_WEB:?set AP_IMAGE_WEB in .env, e.g. actionplatformio/action-platform-web:X.Y.Z}
     restart: unless-stopped
     depends_on:
-      api:
+      ap-api:
         condition: service_started
     expose: ["3000"]
     environment:
-      AP_API: http://api:7788
+      AP_API: http://ap-api:7788
       SENTRY_DSN: ${AP_SENTRY_DSN_WEB:-}
       PUBLIC_URL: ${PUBLIC_URL}
 
