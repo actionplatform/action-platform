@@ -32,6 +32,21 @@ class DokployTemplateTest(unittest.TestCase):
         for key in ("AP_IMAGE_API", "AP_IMAGE_WORKER", "AP_IMAGE_WEB"):
             self.assertRegex(self.toml, rf'(?m)^{key} = "[^"]+:\d+\.\d+\.\d+"$')
 
+    def test_optional_variables_the_compose_reads_are_offered_empty(self):
+        for key in (
+            "AP_SENTRY_DSN_API",
+            "AP_SENTRY_DSN_WEB",
+            "AP_SMTP_HOST",
+            "AP_SMTP_PORT",
+            "AP_SMTP_USER",
+            "AP_SMTP_PASSWORD",
+            "AP_SMTP_FROM",
+            "AP_GOOGLE_CLIENT_ID",
+            "AP_GOOGLE_CLIENT_SECRET",
+        ):
+            self.assertIn(f"${{{key}", self.compose)
+            self.assertRegex(self.toml, rf'(?m)^{key} = ""$')
+
     def test_template_b64_is_built_from_the_current_files(self):
         packed = json.loads(base64.b64decode((DOKPLOY / "template.b64").read_text()))
 
