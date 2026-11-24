@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from action_platform.core.exception import ProviderError
@@ -40,7 +41,10 @@ class FreshConnections(ConnectionsReads, OAuthAppsReads):
             return None
 
         if self._expiring(row):
-            self._refresh_connection(row)
+            row = self._locked(row)
+
+            if self._expiring(row):
+                self._refresh_connection(row)
 
         return Credential(
             kind=row.kind,
@@ -49,6 +53,15 @@ class FreshConnections(ConnectionsReads, OAuthAppsReads):
             api_url=row.base_url,
             scopes=tuple(row.scopes.split()) if row.scopes is not None else None,
         )
+
+    def _locked(self, row: ServiceConnection) -> ServiceConnection:
+        """The row again, held until the transaction ends, so two calls never spend the same refresh token."""
+        return self.db.execute(
+            select(ServiceConnection)
+            .where(ServiceConnection.id == row.id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        ).scalar_one()
 
     @staticmethod
     def _expiring(row: ServiceConnection) -> bool:
