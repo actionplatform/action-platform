@@ -244,6 +244,71 @@ class RemoteClientTest(TempCase):
         remote.projects()
         self.assertIsNone(self.seen["organization"])
 
+    def test_access_calls_reach_the_access_routes(self):
+        remote = client.Remote("https://p.example", "tok")
+        self.answer = {"organization_members": 2, "services": []}
+
+        audit = remote.access_audit("github", organization="acme")
+
+        self.assertEqual(audit.organization_members, 2)
+        self.assertEqual(
+            self.seen["url"], "https://p.example/api/v1/access/audit?service=github"
+        )
+        self.assertEqual(self.seen["organization"], "acme")
+
+        self.answer = {"dry_run": True}
+
+        for call, path, body in (
+            (
+                lambda: remote.access_grant("ana@x.dev", "github", "repo/api", "push"),
+                "grant",
+                {
+                    "person": "ana@x.dev",
+                    "service": "github",
+                    "resource": "repo/api",
+                    "level": "push",
+                    "account": None,
+                    "apply": False,
+                },
+            ),
+            (
+                lambda: remote.access_revoke("ana@x.dev", "github", "repo/api"),
+                "revoke",
+                {
+                    "person": "ana@x.dev",
+                    "service": "github",
+                    "resource": "repo/api",
+                    "apply": False,
+                },
+            ),
+            (
+                lambda: remote.access_offboard("ana@x.dev", apply=True),
+                "offboard",
+                {
+                    "person": "ana@x.dev",
+                    "apply": True,
+                    "remove_from_platform": False,
+                },
+            ),
+            (
+                lambda: remote.access_sync(links={"a@x.dev": {"github": "a"}}),
+                "sync",
+                {
+                    "service": None,
+                    "apply": False,
+                    "reimport": False,
+                    "links": {"a@x.dev": {"github": "a"}},
+                },
+            ),
+        ):
+            with self.subTest(path=path):
+                self.assertTrue(call().dry_run)
+                self.assertEqual(self.seen["method"], "POST")
+                self.assertEqual(
+                    self.seen["url"], f"https://p.example/api/v1/access/{path}"
+                )
+                self.assertEqual(self.seen["body"], body)
+
     def test_answers_come_back_as_the_schemas(self):
         remote = client.Remote("https://p.example", "tok")
         self.rows = [

@@ -11,6 +11,7 @@ from app.api.routes import (
     insights,
     jobs,
     releases,
+    service_access,
     templates,
 )
 from app.api.routes.auth import (
@@ -81,6 +82,7 @@ routers = [
     plugins,
     identity,
     insights,
+    service_access,
 ]
 
 router = APIRouter()

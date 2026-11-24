@@ -23,6 +23,7 @@ from pydantic import TypeAdapter
 
 from action_platform import __version__
 from action_platform.core.exception import ActionPlatformError
+from action_platform.core.service_access.models import Audit, Plan, Who
 from action_platform.remote.credentials import Credentials, load, save
 from action_platform.remote.schemas import (
     AppAdded,
@@ -572,6 +573,102 @@ class Remote:
                 "POST", "members/role", {"user_id": user_id, "role": role}, organization
             ),
         )
+
+    def access_audit(
+        self, service: Optional[str] = None, organization: Optional[str] = None
+    ) -> Audit:
+        return _as(
+            Audit,
+            self._call("GET", "access/audit", None, organization, service=service),
+        )
+
+    def access_who(
+        self,
+        person: Optional[str] = None,
+        service: Optional[str] = None,
+        organization: Optional[str] = None,
+    ) -> Who:
+        return _as(
+            Who,
+            self._call(
+                "GET",
+                "access/who",
+                None,
+                organization,
+                person=person,
+                service=service,
+            ),
+        )
+
+    def access_sync(
+        self,
+        service: Optional[str] = None,
+        apply: bool = False,
+        reimport: bool = False,
+        links: Optional[dict[str, dict[str, str]]] = None,
+        organization: Optional[str] = None,
+    ) -> Plan:
+        body = {
+            "service": service,
+            "apply": apply,
+            "reimport": reimport,
+            "links": links,
+        }
+
+        return _as(Plan, self._call("POST", "access/sync", body, organization))
+
+    def access_grant(
+        self,
+        person: str,
+        service: str,
+        resource: str,
+        level: str,
+        account: Optional[str] = None,
+        apply: bool = False,
+        organization: Optional[str] = None,
+    ) -> Plan:
+        body = {
+            "person": person,
+            "service": service,
+            "resource": resource,
+            "level": level,
+            "account": account,
+            "apply": apply,
+        }
+
+        return _as(Plan, self._call("POST", "access/grant", body, organization))
+
+    def access_revoke(
+        self,
+        person: str,
+        service: str,
+        resource: str,
+        apply: bool = False,
+        organization: Optional[str] = None,
+    ) -> Plan:
+        body = {
+            "person": person,
+            "service": service,
+            "resource": resource,
+            "apply": apply,
+        }
+
+        return _as(Plan, self._call("POST", "access/revoke", body, organization))
+
+    def access_offboard(
+        self,
+        person: str,
+        apply: bool = False,
+        remove_from_platform: bool = False,
+        organization: Optional[str] = None,
+    ) -> Plan:
+        body = {
+            "person": person,
+            "apply": apply,
+            "remove_from_platform": remove_from_platform,
+        }
+
+        return _as(Plan, self._call("POST", "access/offboard", body, organization))
 
 
 SCOPES = ("read", "write", "release", "admin")

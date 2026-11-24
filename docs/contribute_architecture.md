@@ -42,6 +42,7 @@ action_platform/
     scaffold/     sources (TemplateSource, LocalTemplateStore: checkouts), catalog (Matrix, Leaf, Cloud, Service, load_matrix), language (LanguageDetector), renderer (TemplateRenderer: cookiecutter and plain overlays), scaffolder (Scaffolder: generate, apply_cloud, apply_service, push), publisher (Publisher: git init, first commit, remote, push), installer (Installer: plan/apply)
     flow/         repository (Repository: every git command on one clone, composed from repo/ — runner (injectable GitRunner), branches, history, tags, remotes, sync: follow_remote, stashed), workflow (GitFlow: audit, start, propose, open_pr, install_hooks), gitflow (the rules as pure functions), git (ref/url policy, per-request credentials)
     release/      versioning (Version, VersionFiles), changelog, components, release (Releaser: plan → apply), deploy (Deployer), readiness (Readiness: can a release reach a scope)
+    service_access/  access on the services a team uses: AccessProvider and Directory (the contracts), the mapping and the diff (policy), Access (who, audit, sync, grant, revoke, offboard), Http (the JSON client plugins share)
     scopes.py     ScopeSpec (name, kind, criticality), release shapes, the acceptance policy, [[scopes]]
     config.py     Config.from_toml → source host (tokens from the machine unless given), deploy targets, components
     files.py      the fixed file names: platform.toml, LAST_VERSION, CHANGELOG.md, the hooks directory
@@ -113,6 +114,7 @@ The API and the web app are one deployable each, cut into the same contexts — 
 | Organization | members, teams, invitations, settings, connected apps | `organization/` | `organization/` | `organization/` | `organization.py` | `organization.py` | `organization/` |
 | Integrations | GitHub, GitLab, Bitbucket (OAuth apps, tokens), template sources, the plugins and their options | `integrations/` | `integrations/` (+ `hosts/`, `plugins/`) | `integrations/` | `integrations.py` | `integrations.py` | `integrations/` (Git, on Settings), `plugins/` |
 | Auth | accounts, sessions, device flow, API tokens | `auth/` | `auth/` | — | `auth.py` | `auth.py` | `account/` |
+| Service access | access on the services the bundled plugins own, mapped from members, roles and teams | `service_access.py` | `service_access/` | — (organization repository, plugin options) | `service_access.py` | — | — |
 | Identity | the platform as OIDC issuer: JWKS and the short-lived tokens the clouds trust | `identity.py` | `identity/` | — | `identity.py` | — | — |
 | Jobs | the queue, the worker, kind → handler | `jobs.py` | `jobs/` | — | `jobs.py` | `jobs.py` | — |
 

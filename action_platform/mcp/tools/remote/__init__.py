@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from action_platform.mcp.tools.remote import (
+    access,
     apps,
     configuration,
     context,
@@ -15,7 +16,16 @@ from action_platform.mcp.tools.remote import (
 )
 from action_platform.remote.client import Remote
 
-MODULES = (directory, context, apps, flow, configuration, deploy, matrix)
+MODULES = (
+    directory,
+    context,
+    apps,
+    flow,
+    configuration,
+    deploy,
+    matrix,
+    access,
+)
 
 
 def register(mcp: Any, remote: Remote) -> None:

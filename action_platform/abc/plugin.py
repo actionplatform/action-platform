@@ -17,6 +17,7 @@ from action_platform.logging import attach
 
 if TYPE_CHECKING:
     from action_platform.core.context import Context, DeployResult, PRRef
+    from action_platform.core.service_access.provider import AccessProvider
     from action_platform.core.wiring import Wiring
     from action_platform.plugins.options import Options
 
@@ -86,6 +87,10 @@ class Plugin(ABC):
 
     def register(self, surface: Surface) -> None:
         """Declare tools on `surface.mcp`, commands on `surface.cli`, replacements on `surface.core`. No I/O here."""
+
+    def access(self, options: "Options") -> Optional["AccessProvider"]:
+        """Access on the plugin's service, built from `options` alone — the organization's values on the hosted platform, the plugin's options file on a machine; None while they do not configure it. Raise `AccessError` when they are incomplete."""
+        return None
 
     def after_release(self, ctx: "Context") -> None:
         """Called once a release was really cut (never on a dry run)."""
