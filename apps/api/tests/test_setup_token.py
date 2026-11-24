@@ -100,3 +100,38 @@ class SetupTokenTest(OperatorCase):
             any("action-platform-api setup token" in line for line in logs.output)
         )
         self.assertFalse(any(re.search(TOKEN, line) for line in logs.output))
+
+    def test_a_claimed_instance_logs_nothing_about_setup(self):
+        from app.api.app import build
+
+        self.first(setup_token=TOKEN)
+
+        with self.assertNoLogs("action_platform.api", "WARNING"):
+            build(
+                database_url=f"sqlite:///{self.tmp_path / 'auth.db'}",
+                auth_secret="s3cret",
+            )
+
+    def test_without_an_auth_secret_setup_stays_closed(self):
+        from fastapi.testclient import TestClient
+
+        from app.api.app import build
+
+        client = TestClient(
+            build(
+                database_url=f"sqlite:///{self.tmp_path / 'nosecret.db'}",
+                auth_secret="",
+            )
+        )
+        res = client.post(
+            "/api/auth/sign-up",
+            json={
+                "name": "Ana",
+                "email": "ana@example.com",
+                "password": "password1",
+                "setup_token": TOKEN,
+            },
+        )
+
+        self.assertEqual(res.status_code, 503)
+        self.assertEqual(client.get("/api/auth/status").json()["setup"], "closed")
