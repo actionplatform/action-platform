@@ -1,4 +1,4 @@
-"""A small JSON client over urllib: one per service, credentials in headers that never reach an error message."""
+"""A small JSON client over urllib: one per service, credentials in headers that never reach an error message, nor an HTML error page."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections import deque
 from dataclasses import dataclass, field
 from typing import Any, Iterator, Optional
 
@@ -14,6 +15,8 @@ from typing import Any, Iterator, Optional
 from action_platform.core.service_access.provider import AccessError
 
 LINK = re.compile(r'<([^>]+)>;\s*rel="next"(?:;\s*results="(true|false)")?')
+HTML = re.compile(r"^\s*<(?:!doctype\s+html|html|head|body)\b", re.IGNORECASE)
+TITLE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
 
 
 @dataclass
@@ -99,6 +102,37 @@ class Http:
 
         return res.data
 
+    def text(
+        self,
+        path: str,
+        query: Optional[dict[str, Any]] = None,
+        tail_lines: Optional[int] = None,
+    ) -> str:
+        """A plain-text body — a console log, a raw file — read as a stream, never cut; with `tail_lines` only its last lines are kept."""
+        headers = {
+            "accept": "text/plain, */*",
+            "user-agent": f"action-platform ({self.service})",
+            **self.headers,
+        }
+        req = urllib.request.Request(
+            self.url(path, query), method="GET", headers=headers
+        )
+
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout) as res:
+                charset = res.headers.get_content_charset() or "utf-8"
+                lines: deque[bytes] = deque(res, maxlen=tail_lines or None)
+
+                return b"".join(lines).decode(charset, errors="replace")
+        except urllib.error.HTTPError as e:
+            raise AccessError(
+                f"{self.service}: GET {urllib.parse.urlsplit(self.url(path)).path} answered {e.code}: {_detail(_decode(e.read()))}"
+            ) from e
+        except urllib.error.URLError as e:
+            raise AccessError(
+                f"{self.service}: cannot reach {urllib.parse.urlsplit(self.base).netloc}: {e.reason}"
+            ) from e
+
     def pages(self, path: str, query: Optional[dict[str, Any]] = None) -> Iterator[Any]:
         """Every item of a listing that pages through a `Link: rel="next"` header — GitHub's and Sentry's."""
         url: Optional[str] = self.url(path, query)
@@ -138,5 +172,14 @@ def _detail(data: Any) -> str:
         for key in ("detail", "message", "error"):
             if data.get(key):
                 return str(data[key])[:300]
+
+    if isinstance(data, str) and HTML.match(data):
+        title = TITLE.search(data)
+
+        return (
+            f"an HTML page titled {' '.join(title.group(1).split())[:120]!r}"
+            if title and title.group(1).strip()
+            else "an HTML page"
+        )
 
     return str(data)[:300] if data else "no body"
