@@ -19,6 +19,7 @@ export type PluginOption = {
   action_label?: string;
   action_url?: string;
   action_copy?: string;
+  default?: string;
 };
 export type PluginCardData = {
   slug: string;
@@ -262,11 +263,13 @@ function PluginOptionsDialog({
                   setValues({ ...values, [o.key]: e.target.value })
                 }
                 placeholder={
-                  o.kind === "url"
-                    ? "https://"
-                    : o.kind === "secret" && stored(plugin, o.key)
-                      ? "Saved — type a new value to replace it"
-                      : undefined
+                  o.kind === "secret" && stored(plugin, o.key)
+                    ? "Saved — type a new value to replace it"
+                    : o.default
+                      ? o.default
+                      : o.kind === "url"
+                        ? "https://"
+                        : undefined
                 }
                 autoComplete="off"
               />

@@ -34,7 +34,7 @@ class Surface:
 
 @dataclass(frozen=True)
 class Option:
-    """One setting a plugin asks its users for — the platform draws the form and stores the value in the plugin's options store under `key`. `action_url` puts a button labelled `action_label` beside the field that opens the url, and first copies `action_copy` (a command to paste there) when set; `{issuer}` and `{organization}` are filled in both — where the user goes to get the value."""
+    """One setting a plugin asks its users for — the platform draws the form and stores the value in the plugin's options store under `key`. `action_url` puts a button labelled `action_label` beside the field that opens the url, and first copies `action_copy` (a command to paste there) when set; `{issuer}` and `{organization}` are filled in both — where the user goes to get the value. `default` is what the plugin uses while the field is empty, shown as its placeholder."""
 
     key: str
     label: str
@@ -44,6 +44,7 @@ class Option:
     action_label: str = ""
     action_url: str = ""
     action_copy: str = ""
+    default: str = ""
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -55,6 +56,7 @@ class Option:
             "action_label": self.action_label,
             "action_url": self.action_url,
             "action_copy": self.action_copy,
+            "default": self.default,
         }
 
 
