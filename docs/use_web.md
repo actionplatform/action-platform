@@ -28,6 +28,16 @@ flowchart LR
 | **Project** | the apps that ship together (`orders-platform`) | apps |
 | **App** | one git repository on a code host; the platform clones it when it needs the files and keeps nothing of its own | branches, releases, deployments, configuration |
 
+## Sign-in
+
+`/login` offers what the API is configured for:
+
+- **Email and password** — always. The first account comes from the setup wizard, every other one from an invitation; public sign-up is closed.
+- **Continue with Google** — on the login and invitation pages when the API has `AP_GOOGLE_CLIENT_ID` and `AP_GOOGLE_CLIENT_SECRET`. Google signs in an existing account (matched by its Google account, or by the verified email the first time, then linked) and creates one only for an email with a pending invitation; anyone else gets `no account for <email>: an owner has to invite you`. Before the first account exists it is refused: create that one with a password. The OAuth client's authorized redirect URI is `${PUBLIC_URL}/api/sign-in/google/callback`.
+- **Forgot your password?** — under the form when the API has an SMTP server (`AP_SMTP_HOST`). `/forgot-password` takes an email and answers the same whether or not an account exists; an account with a password gets a link to `/reset-password`, valid 30 minutes. Setting the new password signs out every session of that account. An account that has only ever used Google has no password to reset.
+
+The variables are in [self-hosting › environment](start_self_hosting.md#environment), the errors in [troubleshooting › self-hosting](start_troubleshooting.md#self-hosting).
+
 ## First run: the setup wizard
 
 `/setup` opens until an organization exists.

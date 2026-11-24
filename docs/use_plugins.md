@@ -1,6 +1,6 @@
 # Plugins
 
-A plugin — an *apx*, Action Platform extension; every package is named `apx-<slug>` — is a Python package installed next to the CLI. It can add MCP tools and CLI commands, ship cloud overlays and deploy targets, bring a release strategy or a changelog format, and replace any process of the core — git-flow rules, the releaser, the deployer, the installer, the scaffolder — with its own subclass. Everything runs in-process on the machine that installed it; the hosted platform (API, worker, web) loads nothing of the kind.
+A plugin — an *apx*, Action Platform extension; every package is named `apx-<slug>` — is a Python package installed next to the CLI. It can add MCP tools and CLI commands, ship cloud overlays and deploy targets, bring a release strategy or a changelog format, and replace any process of the core — git-flow rules, the releaser, the deployer, the installer, the scaffolder — with its own subclass. Everything runs in-process on the machine that installed it. The hosted platform installs nothing at runtime: its API and workers load only the plugins bundled in the image — `apx-aws-lambda` and `apx-dokploy` today, see [On the hosted platform](#on-the-hosted-platform) — and the web app none.
 
 ```bash
 action-platform plugin search aws-lambda
@@ -62,4 +62,4 @@ An index is a directory of `<slug>.json` files served over HTTPS — the officia
 
 ## Trust
 
-In-process means no sandbox: an installed plugin can do whatever the CLI's user can. The barriers are the index review (`verified`), the `needs` you read before installing, and the rule that nothing of this runs on the hosted platform. Write your own for anything company-specific; see [contribute: plugins](contribute_plugins.md).
+In-process means no sandbox: an installed plugin can do whatever the CLI's user can. The barriers are the index review (`verified`), the `needs` you read before installing, and the rule that the hosted platform runs only the plugins reviewed into its image. Write your own for anything company-specific; see [contribute: plugins](contribute_plugins.md).

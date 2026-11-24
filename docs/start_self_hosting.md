@@ -1,6 +1,6 @@
 # Self-hosting
 
-Three containers — Postgres, the Python API and the web app — plus a reverse proxy in front of the web app. Everything after `docker compose up` happens in the browser.
+Postgres, a one-shot `migrate`, the Python API, two workers (`worker` and `worker-deploy`) and the web app, plus Traefik and its Docker socket proxy in front of the web app when the instance has a domain, and an optional PgBouncer — [the services](#the-services) lists each. Everything after `docker compose up` happens in the browser.
 
 This page follows `master`, which can describe settings the newest images do not read yet. The page that matches what you run is in the docs of its tag: `https://github.com/actionplatform/action-platform/blob/api/vX.Y.Z/docs/start_self_hosting.md`. What an operator downloads (`install.sh`'s compose files, the release assets below) always comes from the same tag as the images it names.
 
@@ -45,7 +45,7 @@ A service created from a template older than these names keeps its data (the `pg
 
 ### Template (nothing to type)
 
-`deploy/dokploy/` is a Dokploy template: `template.toml` declares the domain and generates `POSTGRES_PASSWORD` / `BETTER_AUTH_SECRET` / `AP_API_TOKEN`, and pins the images in `AP_IMAGE_API` / `AP_IMAGE_WORKER` / `AP_IMAGE_WEB`; `template.b64` is the two files packed for import.
+`deploy/dokploy/` is a Dokploy template: `template.toml` declares the domain and generates `POSTGRES_PASSWORD` / `BETTER_AUTH_SECRET` / `AP_API_TOKEN`, and pins the images in `AP_IMAGE_API` / `AP_IMAGE_WORKER` / `AP_IMAGE_WEB`, and lists the optional `AP_SMTP_*`, `AP_GOOGLE_*` and `AP_SENTRY_DSN_*` empty under *Environment*; `template.b64` is the two files packed for import.
 
 Every stable `api/v…` and `web/v…` [release](https://github.com/actionplatform/action-platform/releases) carries the files to import, built by the image workflow once the images are pushed: `dokploy-template.b64`, `docker-compose.yml`, `docker-compose.dokploy.yml` and `env.example`, taken from the `api/vX.Y.Z` tag and pinned to that release and the newest stable release of the other component. Use the ones of the newest release that has them; release candidates get none. The `template.b64` on `master` is the source they are built from and can name other versions.
 
@@ -80,10 +80,14 @@ flowchart LR
 | Service | Image | Notes |
 |---|---|---|
 | `postgres` | `postgres:16-alpine` | volume `pgdata` |
+| `migrate` | `actionplatformio/action-platform-api` | runs `action-platform-api db migrate` once per `up`; `api` and the workers start after it succeeds |
 | `api` | `actionplatformio/action-platform-api` | Python; keeps nothing on disk — clones are made under the container's temp dir when a request needs them and rebuilt from the code host any time. Reachable from `web`, which also forwards `/api/v1` and `/api/auth` to it. |
-| `worker` | `actionplatformio/action-platform-api` | same image, `action-platform-api worker`: runs queued syncs, releases, deploys and imports. Stateless like the API: any host, any number — `docker compose up --scale worker=3`. |
+| `worker` | `actionplatformio/action-platform-worker` | `action-platform-api worker` on the image with the build toolchains: runs queued syncs, releases, pushes and imports. Stateless like the API: any host, any number — `docker compose up --scale worker=3`. |
+| `worker-deploy` | `actionplatformio/action-platform-worker` | the same image and command limited to deploy, readiness and tear-down jobs, so a long deploy never holds a sync |
 | `web` | `actionplatformio/action-platform-web` | Next.js standalone, stateless: pages and server actions over the API. Port 3000. |
 | `traefik` | `traefik:v3.3` | only with `--profile tls`; certificates in volume `letsencrypt` |
+| `docker-proxy` | `tecnativa/docker-socket-proxy` | only with `--profile tls`; read-only view of the Docker socket for Traefik |
+| `pgbouncer` | `edoburu/pgbouncer` | only with `--profile pooler` |
 
 Images are published for every `api/vX.Y.Z` and `web/vX.Y.Z` tag to Docker Hub and mirrored to GHCR (`ghcr.io/actionplatform/…`). `.env` names the version of each: `AP_IMAGE_API`, `AP_IMAGE_WORKER`, `AP_IMAGE_WEB`.
 
@@ -113,7 +117,7 @@ The setup wizard's first step only checks that the API has its database and secr
 
 ## Backups
 
-One volume holds state: `pgdata` (accounts, organizations, projects, apps, encrypted tokens, OAuth apps, the registry, pending edits, jobs). Back up `pgdata`; keep `BETTER_AUTH_SECRET` (`secrets/better_auth_secret`) with it or the tokens cannot be decrypted. Clones live under the API's and worker's temp dir (`AP_WORKSPACES` to move them, `AP_WORKSPACE_TTL` seconds between fetches, default 15) and can be deleted at any moment. Capacity: `AP_API_WORKERS` uvicorn processes for the API (default 2 in the compose files; each keeps its own clone cache). Two worker services share the queue: `worker` takes sync, release, push and the imports (`AP_WORKER_CONCURRENCY` at once, default 2) and `worker-deploy` takes deploy, readiness and tear-down (`AP_DEPLOY_CONCURRENCY`, default 1) so a ten-minute deploy never holds a sync. The `api` image carries Python and git only; the `worker` image adds Go, Node, JDK and Ruby for the deploy targets plus `ap-build`, the one build entrypoint the cloud overlays call (`ap-build package` assembles a Lambda Web Adapter artifact for every language) — both published from the `api/vX.Y.Z` tag. Base images are pinned by digest and the API's Python dependencies install from `poetry.lock` with `--require-hashes`; the web image installs with `npm ci` — a release rebuilds exactly what the lock files say. `docker compose --profile pooler up -d` with `AP_DB_HOST=pgbouncer` (`ap-pgbouncer` on Dokploy) puts PgBouncer (transaction pooling, 500 clients) in front of Postgres when the replicas outgrow its connections. Every per-app listing and the queue's claim are indexed (migration 0014).
+One volume holds state: `pgdata` (accounts, organizations, projects, apps, encrypted tokens, OAuth apps, the registry, pending edits, jobs). Back up `pgdata`; keep `BETTER_AUTH_SECRET` (`secrets/better_auth_secret`) with it or the tokens cannot be decrypted. Clones live under the API's and worker's temp dir (`AP_WORKSPACES` to move them, `AP_WORKSPACE_TTL` seconds between fetches, default 15) and can be deleted at any moment. Capacity: `AP_API_WORKERS` uvicorn processes for the API (default 2 in the compose files; each keeps its own clone cache). Two worker services share the queue: `worker` takes sync, release, push and the imports (`AP_WORKER_CONCURRENCY` at once, default 2) and `worker-deploy` takes deploy, readiness and tear-down (`AP_DEPLOY_CONCURRENCY`, default 1) so a ten-minute deploy never holds a sync. The `api` image carries Python, git and the API's Python packages, no toolchains; the `worker` image adds Go, Node, JDK and Ruby for the deploy targets plus `ap-build`, the one build entrypoint the cloud overlays call (`ap-build package` assembles a Lambda Web Adapter artifact for every language) — both published from the `api/vX.Y.Z` tag. Base images are pinned by digest and the API's Python dependencies install from `poetry.lock` with `--require-hashes`; the web image installs with `npm ci` — a release rebuilds exactly what the lock files say. `docker compose --profile pooler up -d` with `AP_DB_HOST=pgbouncer` (`ap-pgbouncer` on Dokploy) puts PgBouncer (transaction pooling, 500 clients) in front of Postgres when the replicas outgrow its connections. Every per-app listing and the queue's claim are indexed (migration 0014).
 
 ```bash
 docker compose exec postgres pg_dump -U action_platform action_platform > backup.sql
@@ -130,7 +134,7 @@ AP_IMAGE_API=action-platform-api:local AP_IMAGE_WORKER=action-platform-worker:lo
 
 ## Limits today
 
-- The API image carries git, `sam`, the AWS CLI and the toolchains of every web language (Go, Node, JDK + Maven, Ruby) — 2.3 GB; the host needs room for it and for the build artifacts of deploys.
+- The worker image carries git, `sam`, the AWS CLI and the toolchains of every web language (Go, Node, JDK + Maven, Ruby); the api image has the same Python packages (`sam` and the AWS CLI come with `apx-aws-lambda`) without the toolchains. The host needs room for both and for the build artifacts of deploys.
 - Domains are set in `.env` (or in Dokploy), not from the app's Settings.
 - Sync, release, readiness, deploy, destroy and import run as jobs on the worker; the rest of the calls run inline. Queued work is in [database](concept_database.md#jobs).
 
