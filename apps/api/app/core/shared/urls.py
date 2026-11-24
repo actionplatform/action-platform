@@ -4,6 +4,9 @@ import re
 from typing import Optional
 
 REPO_IN_URL = re.compile(r"[:/]([^/:]+/[^/]+?)(?:\.git)?$")
+PATH_IN_URL = re.compile(
+    r"^(?:[a-z][a-z0-9+.-]*://[^/]+/|[^@/]+@[^:/]+:)(.+?)(?:\.git)?/?$"
+)
 
 
 class GitUrl:
@@ -16,6 +19,13 @@ class GitUrl:
         match = REPO_IN_URL.search(self.url)
 
         return match.group(1) if match else None
+
+    @property
+    def path(self) -> Optional[str]:
+        """Everything after the host: owner/name, or group/subgroup/name on GitLab."""
+        match = PATH_IN_URL.match(self.url)
+
+        return match.group(1) if match else self.repo
 
     @property
     def kind(self) -> Optional[str]:

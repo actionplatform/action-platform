@@ -460,7 +460,7 @@ class JobHandlers:
 
             return errors
 
-    def import_github(self, payload: dict[str, Any]) -> Any:
+    def import_organization(self, payload: dict[str, Any]) -> Any:
         with self.database.session() as db:
             writes = ImportDirectory(db, self.sealer)
             creds = writes.credentials_for(
@@ -483,7 +483,7 @@ class JobHandlers:
                 payload.get("role") or "developer",
                 payload.get("project_id") or None,
                 {
-                    int(p["number"]): p.get("project_id") or None
+                    p["number"]: p.get("project_id") or None
                     for p in payload.get("projects") or []
                 },
                 payload.get("roles") or {},
@@ -517,5 +517,6 @@ register("push", lambda s: JobHandlers.of(s).push)
 register("destroy", lambda s: JobHandlers.of(s).destroy)
 register("destroy_project", lambda s: JobHandlers.of(s).destroy_project)
 register("import", lambda s: JobHandlers.of(s).import_activity)
-register("import_github", lambda s: JobHandlers.of(s).import_github)
+register("import_organization", lambda s: JobHandlers.of(s).import_organization)
+register("import_github", lambda s: JobHandlers.of(s).import_organization)
 register("install", lambda s: JobHandlers.of(s).install)

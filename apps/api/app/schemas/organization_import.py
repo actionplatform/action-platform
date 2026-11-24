@@ -1,12 +1,12 @@
 """Importing an organization from a code host: what the host shows, what to pick, what was queued."""
 
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel
 
 
 class ProjectPick(BaseModel):
-    number: int
+    number: Union[int, str]
     project_id: Optional[str] = None
 
 
@@ -28,19 +28,19 @@ class ImportQueued(BaseModel):
     poll: str
 
 
-class GithubOrganization(BaseModel):
+class ImportOrganization(BaseModel):
     login: str
     name: str
     kind: str
     avatar: Optional[str] = None
 
 
-class GithubOrganizations(BaseModel):
-    organizations: list[GithubOrganization]
+class ImportOrganizations(BaseModel):
+    organizations: list[ImportOrganization]
     install_url: Optional[str] = None
 
 
-class GithubRepository(BaseModel):
+class ImportRepository(BaseModel):
     full_name: str
     name: str
     description: Optional[str] = None
@@ -54,8 +54,8 @@ class GithubRepository(BaseModel):
     imported_as: Optional[str] = None
 
 
-class GithubProject(BaseModel):
-    number: int
+class ImportProject(BaseModel):
+    number: Union[int, str]
     title: str
     description: Optional[str] = None
     closed: bool
@@ -64,7 +64,7 @@ class GithubProject(BaseModel):
     exists: bool
 
 
-class GithubTeam(BaseModel):
+class ImportTeam(BaseModel):
     slug: str
     name: str
     description: Optional[str] = None
@@ -73,7 +73,7 @@ class GithubTeam(BaseModel):
     exists: bool
 
 
-class GithubPerson(BaseModel):
+class ImportPerson(BaseModel):
     login: str
     name: str
     email: Optional[str] = None
@@ -82,10 +82,12 @@ class GithubPerson(BaseModel):
     status: str
 
 
-class GithubPreview(BaseModel):
+class ImportPreview(BaseModel):
     organization: str
-    repositories: list[GithubRepository]
-    projects: list[GithubProject] = []
-    teams: list[GithubTeam]
-    people: list[GithubPerson]
+    host_kind: str = "github"
+    repositories: list[ImportRepository]
+    projects: list[ImportProject] = []
+    teams: list[ImportTeam]
+    people: list[ImportPerson]
     problems: list[str] = []
+    limits: list[str] = []

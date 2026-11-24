@@ -1,6 +1,6 @@
 """Entry point: preview or run an import into one platform organization."""
 
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from app.repositories.workspace.registry import Registry
 from app.services.projects.organization_import.directory import ImportDirectory
@@ -31,7 +31,7 @@ class OrganizationImport:
         self.ctx = ImportContext(writes, registry, organization_id, invites=invites)
 
     def preview(self, creds: Credentials, login: str) -> dict[str, Any]:
-        return ImportPreview(self.ctx, client.GithubDirectory(creds)).run(login)
+        return ImportPreview(self.ctx, client.directory_for(creds)).run(login)
 
     def run(
         self,
@@ -44,13 +44,13 @@ class OrganizationImport:
         people: list[str],
         role: str,
         project_id: Optional[str] = None,
-        projects: Optional[dict[int, Optional[str]]] = None,
+        projects: Optional[dict[Union[int, str], Optional[str]]] = None,
         roles: Optional[dict[str, str]] = None,
         people_roles: Optional[dict[str, str]] = None,
     ) -> dict[str, Any]:
         mapping = RoleMapping(role, roles or {}, people_roles or {})
         into = self._project(project_id)
-        host = client.GithubDirectory(creds)
+        host = client.directory_for(creds)
         targets = ProjectImporter(self.ctx, host).run(login, projects or {})
         by_repo = RepositoryImporter(self.ctx, host).run(
             creds,

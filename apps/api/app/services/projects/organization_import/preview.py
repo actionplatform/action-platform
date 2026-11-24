@@ -6,57 +6,39 @@ from action_platform.core.exception import ProviderError
 from app.core.shared.ids import slugify
 from app.services.projects.organization_import.step import ImportStep
 
-MEMBERS_HINT = (
-    "Teams and people need the GitHub App permission Organization › Members (read) — "
-    "update it under the app's settings on GitHub and accept it on the organization — "
-    "or a token with the read:org scope."
-)
-
 
 class ImportPreview(ImportStep):
     def run(self, login: str) -> dict[str, Any]:
         self.problems: list[str] = []
-        repositories = self._read(
-            "repositories",
-            lambda: self.host.repositories(login),
-            self._repositories_hint(login),
-        )
-        projects = self._read(
-            "projects",
-            lambda: self.host.projects(login),
-            "GitHub Projects need the GitHub App permission Organization › Projects (read) or a token with the read:project scope.",
-        )
-        teams = self._read("teams", lambda: self.host.teams(login), None)
-        people = self._read("people", lambda: self.host.people(login), None)
-
-        if any(p.startswith(("teams:", "people:")) for p in self.problems):
-            self.problems.append(MEMBERS_HINT)
+        repositories = self._read("repositories", login, self.host.repositories)
+        projects = self._read("projects", login, self.host.projects)
+        teams = self._read("teams", login, self.host.teams)
+        people = self._read("people", login, self.host.people)
 
         return {
             "organization": login,
+            "host_kind": self.host.kind,
             "repositories": self._repositories(repositories),
             "projects": self._projects(projects),
             "teams": self._teams(teams),
             "people": self._people(people),
             "problems": self.problems,
+            "limits": list(self.host.limits),
         }
 
     def _read(
-        self, what: str, fetch: Callable[[], list[dict]], hint: str | None
+        self, what: str, login: str, fetch: Callable[[str], list[dict]]
     ) -> list[dict]:
         try:
-            return fetch()
+            return fetch(login)
         except ProviderError as e:
-            self.problems.append(f"{what}: {e}" + (f". {hint}" if hint else ""))
+            hint = self.host.hint(what, login)
+            self.problems.append(f"{what}: {e}")
+
+            if hint and hint not in self.problems:
+                self.problems.append(hint)
 
             return []
-
-    @staticmethod
-    def _repositories_hint(login: str) -> str:
-        return (
-            f"The GitHub App must be installed on {login} with access to its repositories "
-            "(Install the app on GitHub, pick the organization, all repositories); an OAuth token needs the repo scope."
-        )
 
     def _repositories(self, rows: list[dict]) -> list[dict]:
         known = self.ctx.known_repositories()

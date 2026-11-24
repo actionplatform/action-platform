@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
+from typing import Optional, Sequence
 
 from sqlalchemy import select
 
@@ -206,9 +206,9 @@ class InvitationsWrites(InvitationsReads):
         return (row[0], row[1], row[2]) if row else None
 
     def accept_invitation(
-        self, id: str, user: User, verified_login: Optional[str] = None
+        self, id: str, user: User, verified_logins: Sequence[str] = ()
     ) -> Organization:
-        """Make `user` a member with the invitation's role and put them in its teams. A login invitation needs `verified_login`, the host login the person just proved."""
+        """Make `user` a member with the invitation's role and put them in its teams. A login invitation needs `verified_logins`, the names the host knows the person by, just proved."""
         found = self.invitation(id)
 
         if found is None:
@@ -223,16 +223,18 @@ class InvitationsWrites(InvitationsReads):
             raise DirectoryError("invitation expired")
 
         if invitation.host_login:
-            if verified_login is None:
+            if not verified_logins:
                 raise DirectoryError(
                     f"this invitation is for @{invitation.host_login} on "
                     f"{invitation.host_kind}: verify the account to join"
                 )
 
-            if verified_login.lower() != invitation.host_login.lower():
+            if invitation.host_login.lower() not in {
+                v.lower() for v in verified_logins
+            }:
                 raise DirectoryError(
                     f"this invitation is for @{invitation.host_login}, "
-                    f"not @{verified_login}"
+                    f"not @{verified_logins[0]}"
                 )
         elif invitation.email != user.email.lower():
             raise DirectoryError(f"this invitation is for {invitation.email}")

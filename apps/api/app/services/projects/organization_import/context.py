@@ -75,7 +75,7 @@ class ImportContext:
             except ActionPlatformError:
                 continue
 
-            repo = GitUrl(url).repo
+            repo = GitUrl(url).path
 
             if repo:
                 known[repo.lower()] = project_name
