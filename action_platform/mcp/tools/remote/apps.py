@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import Field
 
@@ -87,8 +87,8 @@ def register(mcp: Any, remote: Remote) -> None:
         return remote.delete_project(row.id, repositories, org_of(row))
 
     @tool(mcp, annotations=REACHES_OUT)
-    def sync_app(id: AppId) -> schemas.AppEntry:
-        """git fetch + fast-forward the platform's clone. Run before auditing or releasing."""
+    def sync_app(id: AppId) -> Union[schemas.AppEntry, schemas.JobQueued]:
+        """git fetch + fast-forward the platform's clone. Run before auditing or releasing. Runs as a job on the platform's worker and is followed until it ends; one still running after 15 minutes answers with its job id."""
         return remote.sync_app(id)
 
     @tool(mcp, annotations=READ_ONLY)

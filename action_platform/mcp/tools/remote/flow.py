@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import Field
 
@@ -53,12 +53,14 @@ def register(mcp: Any, remote: Remote) -> None:
                 description="Release from this branch instead of the current one; the clone must be clean. main/master cut a stable version, anything else an rc"
             ),
         ] = None,
-    ) -> schemas.ReleasePreview:
+    ) -> Union[schemas.ReleasePreview, schemas.JobQueued]:
         """Bump, changelog, tag and publish a release on the platform.
 
         Defaults to a dry run: show `next`, `branch` and `prerelease`, then
         call again with dry_run=false. Stable versions come only from
-        main/master; any other branch produces X.Y.Z-rc.N.
+        main/master; any other branch produces X.Y.Z-rc.N. A release runs
+        as a job on the platform's worker and is followed until it ends;
+        one still running after 15 minutes answers with its job id.
         """
         return remote.release(id, level, dry_run, branch)
 
