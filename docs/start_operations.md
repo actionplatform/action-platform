@@ -1,6 +1,6 @@
 # Operations
 
-Backups, restores and secret rotation for a self-hosted platform. Commands run in the install directory (`/opt/action-platform` with `install.sh`); add `--profile tls` to `docker compose up` when the instance has a domain. On Dokploy the services are prefixed (`ap-postgres`, `ap-api`, …) and the commands run on the host with `docker exec` against their containers (`docker ps --filter name=ap-postgres`).
+Backups, restores, secret rotation and accounts from the command line for a self-hosted platform. Commands run in the install directory (`/opt/action-platform` with `install.sh`); add `--profile tls` to `docker compose up` when the instance has a domain. On Dokploy the services are prefixed (`ap-postgres`, `ap-api`, …) and the commands run on the host with `docker exec` against their containers (`docker ps --filter name=ap-postgres`).
 
 ## What holds state
 
@@ -131,3 +131,29 @@ docker compose exec -T postgres psql -U action_platform action_platform -c 'DELE
 ```
 
 Then work through the recovery column of the table above. On Dokploy: new `BETTER_AUTH_SECRET` under *Environment*, **Deploy**, and the `DELETE` through `docker exec` into `ap-postgres`.
+
+## Users and tokens
+
+`action-platform-api users` and `tokens` run inside the API container against its database (`AP_DATABASE_URL`) and auth secret, like the worker; nothing goes through the web app. Links they print start with `AP_PUBLIC_URL` (`PUBLIC_URL` in `.env`).
+
+```bash
+docker compose exec api action-platform-api users list
+docker compose exec api action-platform-api users create bob@example.com --name Bob --org acme --role developer
+docker compose exec api action-platform-api users reset-password ana@example.com
+printf '%s\n' 'new password' | docker compose exec -T api action-platform-api users reset-password ana@example.com --password-stdin
+docker compose exec api action-platform-api users disable bob@example.com
+docker compose exec api action-platform-api users enable bob@example.com
+docker compose exec -T api action-platform-api tokens issue ci@example.com --scope read,write --org acme --name ci > token.txt
+```
+
+| Command | What it does |
+|---|---|
+| `users list` | email, name, `active` or `disabled`, created, `organization:role` for each membership |
+| `users create EMAIL --name N [--org SLUG --role R] [--password-stdin]` | creates the account (role `developer` unless `--role`); without `--password-stdin` prints a single-use link to `/reset-password`, valid 24 hours, where the person chooses the password |
+| `users reset-password EMAIL [--password-stdin]` | replaces the password at once, ends every session and revokes every API token of the account, so the CLI and the MCP servers signed in as it have to log in again; without `--password-stdin` the old password stops working and a single-use reset link valid 24 hours is printed |
+| `users disable EMAIL` | the account cannot sign in, its sessions end and its API tokens are refused (`401`) until `users enable EMAIL` |
+| `tokens issue EMAIL [--scope …] [--org SLUG\|*] [--project ID] [--app ID] [--name N] [--days N]` | a bearer token on stdout (what it carries on stderr), narrowed to the account's role like a token approved in the browser: scope `read` unless `--scope`, all organizations unless `--org`, valid 90 days (30 with `admin`) or fewer with `--days` |
+
+The new password is read from stdin, never from the command line; without a terminal pipe it in and pass `-T` to `docker compose exec`. A token from `tokens issue` signs a machine in without a browser: `action-platform login <url> --token < token.txt`, or `AP_SERVER` + `AP_TOKEN` ([CLI](use_cli.md#tokens-and-scopes)).
+
+On Dokploy run the same commands in the terminal of the `ap-api` container (or `docker exec -it $(docker ps -qf name=ap-api) action-platform-api users list` on the host).

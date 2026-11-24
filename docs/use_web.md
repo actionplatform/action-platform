@@ -34,7 +34,7 @@ flowchart LR
 
 - **Email and password** — always. The first account comes from the setup wizard, every other one from an invitation; public sign-up is closed.
 - **Continue with Google** — on the login and invitation pages when the API has `AP_GOOGLE_CLIENT_ID` and `AP_GOOGLE_CLIENT_SECRET`. Google signs in an existing account (matched by its Google account, or by the verified email the first time, then linked) and creates one only for an email with a pending invitation; anyone else gets `no account for <email>: an owner has to invite you`. Before the first account exists it is refused: create that one with a password. The OAuth client's authorized redirect URI is `${PUBLIC_URL}/api/sign-in/google/callback`.
-- **Forgot your password?** — under the form when the API has an SMTP server (`AP_SMTP_HOST`). `/forgot-password` takes an email and answers the same whether or not an account exists; an account with a password gets a link to `/reset-password`, valid 30 minutes. Setting the new password signs out every session of that account. An account that has only ever used Google has no password to reset.
+- **Forgot your password?** — under the form when the API has an SMTP server (`AP_SMTP_HOST`). `/forgot-password` takes an email and answers the same whether or not an account exists; an account with a password gets a link to `/reset-password`, valid 30 minutes. Setting the new password signs out every session of that account and revokes its API tokens, so the CLI and MCP servers signed in as it have to log in again. An account that has only ever used Google has no password to reset.
 
 The variables are in [self-hosting › environment](start_self_hosting.md#environment), the errors in [troubleshooting › self-hosting](start_troubleshooting.md#self-hosting).
 
@@ -173,7 +173,7 @@ People, roles and invitations. **Add member** creates the account or attaches an
 
 ### Sessions
 
-Everything signed in as you (also the key icon next to your name): API tokens across organizations — scope, reach, the programs using them, last used, expiry — and browser sessions, each revocable at once.
+Everything signed in as you (also the key icon next to your name): API tokens across organizations — scope, reach, the programs using them, last used, expiry — and browser sessions, each revocable at once. **New token** creates a bearer token for a machine with no browser to approve a login: a name, the scopes your role allows and the reach (one organization or all, optionally one project or app); it is shown once, valid 90 days (30 with Admin), and goes to `action-platform login <url> --token` or `AP_TOKEN`.
 
 ## Plugins
 
