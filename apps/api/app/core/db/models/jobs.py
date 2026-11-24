@@ -72,3 +72,23 @@ class JobLog(Base):
     at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=now, server_default=func.now()
     )
+
+
+class Worker(Base):
+    """A worker process and the last time it said it was alive."""
+
+    __tablename__ = "worker"
+
+    name: Mapped[str] = mapped_column(SHORT, primary_key=True)
+    kinds: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=""
+    )
+    host: Mapped[str] = mapped_column(
+        SHORT, nullable=False, default="", server_default=""
+    )
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, server_default=func.now()
+    )
+    last_seen: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, server_default=func.now()
+    )

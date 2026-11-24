@@ -18,6 +18,7 @@ function rowsOf(job: JobRow): DeployResult[] {
 }
 
 function statusOf(job: JobRow): Status {
+  if (job.status === "queued" && job.no_worker) return { tone: "warning", label: "No worker running" };
   if (job.status === "queued") return { tone: "neutral", label: "Queued" };
   if (job.status === "running") return { tone: "warning", label: "Running" };
   if (job.status === "failed" || rowsOf(job).some((r) => !r.ok)) return { tone: "danger", label: "Failed" };

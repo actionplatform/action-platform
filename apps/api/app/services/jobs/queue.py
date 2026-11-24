@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session as DbSession
 from app.core.db.database import Database
 from app.core.db.models import Job
 from app.core.shared.clock import now
+from app.services.jobs.workers import Workers, lacks_worker
 
 MAX_ATTEMPTS = 3
 CHANNEL = "ap_jobs"
@@ -328,8 +329,35 @@ class JobQueue:
                 )
             ).rowcount
 
+    def live_kinds(self) -> set[str]:
+        return Workers(self.database).live_kinds()
+
+    def depth(self, organization_id: Optional[str] = None) -> dict[str, dict[str, Any]]:
+        """Per job kind: queued and running counts and the oldest queued wait, for one organization or all."""
+        out: dict[str, dict[str, Any]] = {}
+        query = (
+            select(Job.kind, Job.status, func.count(), func.min(Job.run_after))
+            .where(Job.status.in_(LIVE))
+            .group_by(Job.kind, Job.status)
+        )
+
+        if organization_id is not None:
+            query = query.where(Job.organization_id == organization_id)
+
+        with self.database.session() as s:
+            for kind, status, count, oldest in s.execute(query):
+                row = out.setdefault(
+                    kind, {"queued": 0, "running": 0, "oldest_queued": None}
+                )
+                row[status] = int(count)
+
+                if status == "queued":
+                    row["oldest_queued"] = oldest
+
+        return out
+
     @staticmethod
-    def view(job: Job) -> dict[str, Any]:
+    def view(job: Job, live: Optional[set[str]] = None) -> dict[str, Any]:
         payload = loads(job.payload)
         body = payload.get("body") if isinstance(payload.get("body"), dict) else {}
 
@@ -346,6 +374,8 @@ class JobQueue:
             "user_id": payload.get("user_id") or payload.get("by"),
             "result": _result(job.result),
             "error": job.error,
+            "no_worker": live is not None
+            and lacks_worker(job.status, job.kind, job.run_after, live, now()),
             "created_at": job.created_at,
             "updated_at": job.updated_at,
             "finished_at": job.finished_at,

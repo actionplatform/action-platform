@@ -26,6 +26,7 @@ class JobOut(BaseModel):
     status: str
     app_id: Optional[str] = None
     attempts: int
+    no_worker: bool = False
     stage: Optional[str] = None
     dry_run: Optional[bool] = None
     version: Optional[str] = None
@@ -65,11 +66,12 @@ def jobs_page(
         raise HTTPException(404, "app not found")
 
     wanted = [k.strip() for k in kinds.split(",") if k.strip()]
+    live = queue.live_kinds()
     page, per, offset = page_bounds(page, per)
 
     return JobPage(
         items=[
-            _out(directory, JobQueue.view(j))
+            _out(directory, JobQueue.view(j, live))
             for j in queue.for_app(found[0].id, limit=per, kinds=wanted, offset=offset)
         ],
         total=queue.count_for_app(found[0].id, kinds=wanted),
@@ -92,7 +94,7 @@ def job(
     ):
         raise HTTPException(404, "no such job")
 
-    return _out(directory, JobQueue.view(found))
+    return _out(directory, JobQueue.view(found, queue.live_kinds()))
 
 
 class LogLine(BaseModel):
@@ -105,6 +107,8 @@ class JobLogsOut(BaseModel):
     lines: list[LogLine]
     next: int
     status: str
+    kind: str = ""
+    no_worker: bool = False
     finished: bool
 
 
@@ -127,7 +131,10 @@ def job_logs(
     logs = JobLogs(request.app.state.db)
 
     return JobLogsOut(
-        **JobLogs.view(found, logs.after(id, max(0, after), limit), after)
+        **JobLogs.view(found, logs.after(id, max(0, after), limit), after),
+        kind=found.kind,
+        no_worker=found.status == "queued"
+        and JobQueue.view(found, queue.live_kinds())["no_worker"],
     )
 
 
@@ -156,7 +163,9 @@ def jobs(
     ):
         raise HTTPException(404, "app not found")
 
+    live = queue.live_kinds()
+
     return [
-        _out(directory, JobQueue.view(j))
+        _out(directory, JobQueue.view(j, live))
         for j in queue.for_app(found[0].id, limit=max(1, min(limit, 500)), kind=kind)
     ]

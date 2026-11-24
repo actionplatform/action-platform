@@ -2127,6 +2127,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["health_api_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/instance/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["instance_health_api_v1_instance_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/instance/test-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["send_test_email_api_v1_instance_test_email_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2658,6 +2706,10 @@ export interface components {
             ip_address?: string | null;
             user_agent?: string | null;
         };
+        GoogleOut: {
+            configured: boolean;
+            redirect_uri: string;
+        };
         GoogleSigned: {
             user: components["schemas"]["UserOut"];
             session: components["schemas"]["SessionOut"];
@@ -2701,6 +2753,14 @@ export interface components {
         };
         HTTPValidationError: {
             detail?: components["schemas"]["ValidationError"][];
+        };
+        Health: {
+            status: string;
+            database: boolean;
+            migrations: boolean;
+            workers: {
+                [key: string]: boolean;
+            };
         };
         HostOwnerRequest: {
             owner: string;
@@ -2834,6 +2894,25 @@ export interface components {
             installed: string[];
             report?: components["schemas"]["InstallReport"] | null;
         };
+        InstanceHealthOut: {
+            status: string;
+            database: boolean;
+            migrations: boolean;
+            workers: {
+                [key: string]: boolean;
+            };
+            version: string;
+            api: string;
+            workers_seen: components["schemas"]["WorkerRow"][];
+            queue: components["schemas"]["QueueRow"][];
+            integrations: components["schemas"]["Integrations"];
+        };
+        Integrations: {
+            smtp: components["schemas"]["SmtpOut"];
+            google: components["schemas"]["GoogleOut"];
+            sentry_api: boolean;
+            oauth_apps: components["schemas"]["OAuthAppState"][];
+        };
         InvitationRow: {
             id: string;
             email?: string | null;
@@ -2884,6 +2963,8 @@ export interface components {
             lines: components["schemas"]["LogLine"][];
             next: number;
             status: string;
+            kind: string;
+            no_worker: boolean;
             finished: boolean;
         };
         JobOut: {
@@ -2892,6 +2973,7 @@ export interface components {
             status: string;
             app_id?: string | null;
             attempts: number;
+            no_worker: boolean;
             stage?: string | null;
             dry_run?: boolean | null;
             version?: string | null;
@@ -3034,6 +3116,10 @@ export interface components {
             slug?: string | null;
             scopes: string;
             callback_hint: string;
+        };
+        OAuthAppState: {
+            provider: string;
+            configured: boolean;
         };
         OAuthCallbackRequest: {
             origin: string;
@@ -3222,6 +3308,14 @@ export interface components {
             id: string;
             url: string;
         };
+        QueueRow: {
+            kind: string;
+            group: string;
+            queued: number;
+            running: number;
+            oldest_queued_seconds?: number | null;
+            worker_running: boolean;
+        };
         ReadinessCheck: {
             id: string;
             ok: boolean;
@@ -3399,6 +3493,13 @@ export interface components {
             user: components["schemas"]["UserOut"];
             session: components["schemas"]["SessionOut"];
         };
+        SmtpOut: {
+            configured: boolean;
+            host?: string | null;
+            port?: number | null;
+            security?: string | null;
+            sender?: string | null;
+        };
         SourceCredentials: {
             kind?: string | null;
             token?: string | null;
@@ -3470,6 +3571,11 @@ export interface components {
             ref: string;
             source_host_id?: string | null;
             created_at: string;
+        };
+        TestEmailOut: {
+            sent: boolean;
+            to: string;
+            error?: string | null;
         };
         Timeline: {
             release: components["schemas"]["ReleaseRow"];
@@ -3567,6 +3673,13 @@ export interface components {
             grants?: components["schemas"]["GrantRow"][];
             drift?: components["schemas"]["Change"][];
             errors?: string[];
+        };
+        WorkerRow: {
+            name: string;
+            kinds: string[];
+            started_at: string;
+            last_seen: string;
+            alive: boolean;
         };
         app__schemas__common__AppRef: {
             id: string;
@@ -8481,6 +8594,83 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Plan"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    health_api_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    instance_health_api_v1_instance_health_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstanceHealthOut"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_test_email_api_v1_instance_test_email_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestEmailOut"];
                 };
             };
             422: {

@@ -62,7 +62,7 @@ db.sqlite3
 db.sqlite3-journal
 
 # Flask stuff:
-instance/
+/instance/
 .webassets-cache
 
 # Scrapy stuff:
@@ -222,7 +222,7 @@ PLAN.md
 .DS_Store
 
 # apps/web
-node_modules/
+node_modules
 apps/web/.next/
 apps/web/next-env.d.ts
 apps/web/openapi.json

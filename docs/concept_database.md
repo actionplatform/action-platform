@@ -44,6 +44,7 @@ Alembic, shipped with the API — one revision per change:
 | `0024` | `user.disabled_at`: an operator turned the account off; it cannot sign in or use its sessions and tokens |
 | `0025` | `invitation`: `email` may be empty when the invitation is bound to a code-host login (`host_kind`, `host_login`); `team_ids` are the teams the person joins on accepting |
 | `0026` | `invitation.emailed_at` and `email_error`: when the invitation email last went out and why the last send failed |
+| `0027` | `worker`: the heartbeat each worker process writes, so the API can tell whether anyone is taking jobs |
 
 A database the web app created has no `alembic_version` table but does have `user`; the API recognises that, stamps it at `0001` and applies only what follows. Nothing is recreated, nothing is copied: pointing the API at the web app's database is the whole data migration.
 

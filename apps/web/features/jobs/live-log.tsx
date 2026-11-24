@@ -15,6 +15,7 @@ export function useJobLog(jobId: string | null, live: boolean) {
   const [lines, setLines] = useState<Line[]>([]);
   const [finished, setFinished] = useState(!live);
   const [status, setStatus] = useState<string>("unknown");
+  const [noWorker, setNoWorker] = useState<string | null>(null);
   const next = useRef(0);
   const id = useRef<string | null>(null);
 
@@ -36,6 +37,7 @@ export function useJobLog(jobId: string | null, live: boolean) {
       next.current = r.data.next;
     }
     setStatus(r.data.status);
+    setNoWorker(r.data.no_worker ? r.data.kind : null);
     if (r.data.finished) setFinished(true);
   }, [jobId]);
 
@@ -49,11 +51,11 @@ export function useJobLog(jobId: string | null, live: boolean) {
     return () => { alive = false; clearInterval(timer); };
   }, [jobId, live, finished, pull]);
 
-  return { lines, finished, status };
+  return { lines, finished, status, noWorker };
 }
 
 export function LiveLog({ jobId, live, title = "Run log", className, maxHeight = "max-h-72" }: { jobId: string | null; live: boolean; title?: string; className?: string; maxHeight?: string }) {
-  const { lines, finished } = useJobLog(jobId, live);
+  const { lines, finished, noWorker } = useJobLog(jobId, live);
   const box = useRef<HTMLPreElement>(null);
   const [follow, setFollow] = useState(true);
   const text = lines.map((l) => l.line).join("\n");
@@ -74,7 +76,7 @@ export function LiveLog({ jobId, live, title = "Run log", className, maxHeight =
     <section className={cn("min-w-0", className)} aria-live={running ? "polite" : undefined}>
       <div className="mb-1.5 flex items-center gap-2">
         <span className="text-xs text-secondary">{title}</span>
-        {running && <Loader2 className="size-3 animate-spin text-secondary" aria-label="running" />}
+        {running && !noWorker && <Loader2 className="size-3 animate-spin text-secondary" aria-label="running" />}
         <span className="ml-auto flex items-center gap-1">
           {!follow && lines.length > 0 && <Button size="icon" variant="ghost" aria-label="Jump to the end" onClick={() => { setFollow(true); if (box.current) box.current.scrollTop = box.current.scrollHeight; }}><ArrowDownToLine className="size-3.5" strokeWidth={1.75} /></Button>}
           {text && <CopyButton text={text} label="Copy log" size="icon" />}
@@ -82,7 +84,7 @@ export function LiveLog({ jobId, live, title = "Run log", className, maxHeight =
       </div>
       <pre ref={box} onScroll={onScroll} tabIndex={0} className={cn("overflow-auto rounded-lg border border-border bg-background p-3 font-mono text-xs leading-5 text-secondary [overflow-wrap:anywhere] whitespace-pre-wrap focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground", maxHeight)}>
         {lines.length === 0 ? (
-          <span className="text-muted-foreground">{running ? "Waiting for the worker…" : "No output recorded."}</span>
+          <span className="text-muted-foreground">{noWorker ? `No worker is running for ${noWorker} jobs. Start one, or ask an owner to check Settings › Instance.` : running ? "Waiting for the worker…" : "No output recorded."}</span>
         ) : (
           lines.map((l) => <span key={l.seq} className={cn("block", l.line.startsWith("$ ") && "text-foreground")}>{l.line || " "}</span>)
         )}

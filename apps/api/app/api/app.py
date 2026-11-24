@@ -31,6 +31,7 @@ log = logging.getLogger("action_platform.api")
 
 OPEN_PATHS = {
     "/api/version",
+    "/api/health",
     "/docs",
     "/openapi.json",
     "/redoc",

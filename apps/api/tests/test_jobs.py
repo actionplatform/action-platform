@@ -221,7 +221,14 @@ class AsyncRouteTest(GateCase):
             self.client.get(
                 f"/api/v1/jobs/{job_id}/logs", params={"after": 99}, headers=self.h()
             ).json(),
-            {"lines": [], "next": 99, "status": "done", "finished": True},
+            {
+                "lines": [],
+                "next": 99,
+                "status": "done",
+                "kind": "sync",
+                "no_worker": False,
+                "finished": True,
+            },
         )
 
     def test_a_deploy_job_carries_the_app_and_the_plugin_options(self):
