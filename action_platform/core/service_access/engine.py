@@ -323,6 +323,16 @@ class Access:
         self, provider: Provider, ops: list[Op], live: list[Grant], apply: bool
     ) -> list[Change]:
         refused = provider.guard(ops, live)
+        held = {
+            op.grant.account.lower(): f"{op.describe()} was refused"
+            for op in refused
+            if provider.kind(op.grant.resource) in ("org", "global")
+        }
+
+        for op in ops:
+            if op not in refused and op.grant.account.lower() in held:
+                refused[op] = held[op.grant.account.lower()]
+
         changes = []
 
         for op in sorted(ops, key=provider.order):

@@ -125,6 +125,19 @@ class Changes(World):
         plan = self.access.offboard("ana@acme.dev", apply=True)
 
         self.assertEqual([c.status for c in plan.changes], ["refused"])
+
+    def test_a_refused_organization_change_holds_the_rest_of_that_account(self):
+        self.vault.add("ana", "repo/api", "write")
+        self.imported()
+        self.vault.grants = [g for g in self.vault.grants if g.account != "bot"]
+
+        plan = self.access.offboard("ana@acme.dev", apply=True)
+
+        self.assertEqual(
+            sorted((c.resource, c.status) for c in plan.changes),
+            [("org", "refused"), ("repo/api", "refused")],
+        )
+        self.assertIn(Grant("vault", "ana", "repo/api", "write"), self.vault.grants)
         self.assertIn(Grant("vault", "ana", "org", "admin"), self.vault.grants)
 
         ben = self.access.offboard(
