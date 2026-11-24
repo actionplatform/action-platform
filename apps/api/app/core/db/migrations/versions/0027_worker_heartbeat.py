@@ -1,14 +1,14 @@
 """worker: the heartbeat each worker process writes, so the API can tell whether anyone is taking jobs
 
-Revision ID: 0025
-Revises: 0024
+Revision ID: 0027
+Revises: 0026
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0025"
-down_revision = "0024"
+revision = "0027"
+down_revision = "0026"
 branch_labels = None
 depends_on = None
 
