@@ -104,12 +104,11 @@ export function InstanceView({ health }: { health: InstanceHealthRow }) {
           <p className="p-4 text-sm text-secondary">No worker has ever started against this database.</p>
         ) : (
           <Table>
-            <thead><tr><Th>Name</Th><Th>Host</Th><Th>Takes</Th><Th>Last seen</Th><Th>State</Th></tr></thead>
+            <thead><tr><Th>Name</Th><Th>Takes</Th><Th>Last seen</Th><Th>State</Th></tr></thead>
             <tbody>
               {health.workers_seen.map((w) => (
                 <tr key={w.name}>
                   <Td className="font-mono">{w.name}</Td>
-                  <Td className="font-mono">{w.host}</Td>
                   <Td className="font-mono text-xs [overflow-wrap:anywhere]">{w.kinds.join(", ")}</Td>
                   <Td>{new Date(w.last_seen + "Z").toLocaleTimeString()}</Td>
                   <Td><Yes ok={w.alive} yes="Alive" no="Silent" /></Td>
@@ -124,7 +123,6 @@ export function InstanceView({ health }: { health: InstanceHealthRow }) {
         <PanelHeader title="Email" description="Invitations and password resets go out over SMTP." aside={<Yes ok={smtp.configured} yes="Configured" no="Not configured" />} />
         <div className="p-4 text-sm">
           {smtp.configured && smtp.host && <p>Sending as <span className="font-mono">{smtp.sender}</span> through <span className="font-mono">{smtp.host}:{smtp.port}</span> ({smtp.security}).</p>}
-          {smtp.last_failure && <p className="mt-2 break-words text-status-bad">Last failure ({smtp.last_failure.what}): {smtp.last_failure.error}</p>}
           <TestEmailBox configured={smtp.configured} />
         </div>
       </Panel>

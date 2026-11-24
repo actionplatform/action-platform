@@ -38,9 +38,8 @@ def forgot(
 
         try:
             mailer.send(reset_mail(user, link))
-        except ProviderError as e:
+        except ProviderError:
             log.exception("password reset email to user %s not sent", user.id)
-            request.app.state.mail_log.failed("password reset", str(e))
 
     return Response(status_code=202)
 

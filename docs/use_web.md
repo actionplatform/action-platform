@@ -232,7 +232,7 @@ Build servers of their own, per organization: name, base URL, username and API t
 
 ### Instance
 
-**Settings → Instance** (owners only; others see a short notice) answers "is this instance OK?": database and migrations, whether a worker runs for each kind of job, every worker with its last heartbeat, the queue per kind with the age of the oldest waiting job, and what is configured — email, Google sign-in, error reporting on the API and the code-host OAuth apps. It refreshes every ten seconds. **Send test email** sends a message to you and shows the SMTP server's error text when it fails. For Google sign-in it shows the redirect URI to add to the OAuth client, with a copy button. A job that waits with no worker taking its kind shows "No worker running" in the deployments table and in its log; see [observability](concept_observability.md#instance-health).
+**Settings → Instance** (owners only; others see a short notice) answers "is this instance OK?": database and migrations, whether a worker runs for each kind of job, every worker with its last heartbeat, the queue of your organization per kind with the age of the oldest waiting job, and what is configured — email, Google sign-in, error reporting on the API and the code-host OAuth apps. It refreshes every ten seconds. **Send test email** sends a message to you and shows the SMTP server's error text when it fails. For Google sign-in it shows the redirect URI to add to the OAuth client, with a copy button. A job that waits with no worker taking its kind shows "No worker running" in the deployments table and in its log; see [observability](concept_observability.md#instance-health).
 
 ### Delete organization
 

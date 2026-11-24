@@ -332,16 +332,20 @@ class JobQueue:
     def live_kinds(self) -> set[str]:
         return Workers(self.database).live_kinds()
 
-    def depth(self) -> dict[str, dict[str, Any]]:
-        """Per job kind: how many are queued and running, and since when the oldest queued one waits."""
+    def depth(self, organization_id: Optional[str] = None) -> dict[str, dict[str, Any]]:
+        """Per job kind: queued and running counts and the oldest queued wait, for one organization or all."""
         out: dict[str, dict[str, Any]] = {}
+        query = (
+            select(Job.kind, Job.status, func.count(), func.min(Job.run_after))
+            .where(Job.status.in_(LIVE))
+            .group_by(Job.kind, Job.status)
+        )
+
+        if organization_id is not None:
+            query = query.where(Job.organization_id == organization_id)
 
         with self.database.session() as s:
-            for kind, status, count, oldest in s.execute(
-                select(Job.kind, Job.status, func.count(), func.min(Job.run_after))
-                .where(Job.status.in_(LIVE))
-                .group_by(Job.kind, Job.status)
-            ):
+            for kind, status, count, oldest in s.execute(query):
                 row = out.setdefault(
                     kind, {"queued": 0, "running": 0, "oldest_queued": None}
                 )

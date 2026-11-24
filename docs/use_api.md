@@ -43,7 +43,7 @@ Every route but `/api/version`, `/docs` and `/openapi.json` requires `Authorizat
 
 ## Instance health
 
-`GET /api/health` needs no token: `200` or `503` with `{status, database, migrations, workers: {light, deploy}}` — database reachable, migrations at head, a worker seen in the last minute for each kind group. `GET /api/v1/instance/health` (owners) adds `workers_seen`, the `queue` per kind (`queued`, `running`, `oldest_queued_seconds`, `worker_running`), `integrations` (`smtp`, `google` with the `redirect_uri`, `sentry_api`, `oauth_apps`) and the versions; `POST /api/v1/instance/test-email` (owners) sends to the caller and answers `{sent, to, error}`. [Observability](concept_observability.md#instance-health) has the details.
+`GET /api/health` needs no token: `200` or `503` with `{status, database, migrations, workers: {light, deploy}}` — database reachable, migrations at head, a worker seen in the last minute for each kind group. `GET /api/v1/instance/health` (owners) adds `workers_seen` (name, kinds, times, `alive`), the `queue` per kind for the caller's organization (`queued`, `running`, `oldest_queued_seconds`, `worker_running`), `integrations` (`smtp`, `google` with the `redirect_uri`, `sentry_api`, `oauth_apps`) and the versions; `POST /api/v1/instance/test-email` (owners) sends to the caller and answers `{sent, to, error}`. [Observability](concept_observability.md#instance-health) has the details.
 
 ## `/api/v1`
 

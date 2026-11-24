@@ -2996,11 +2996,6 @@ export interface components {
             at: string;
             line: string;
         };
-        MailFailureOut: {
-            at: string;
-            what: string;
-            error: string;
-        };
         Manifest: {
             target: string;
             state: string;
@@ -3504,7 +3499,6 @@ export interface components {
             port?: number | null;
             security?: string | null;
             sender?: string | null;
-            last_failure?: components["schemas"]["MailFailureOut"] | null;
         };
         SourceCredentials: {
             kind?: string | null;
@@ -3682,7 +3676,6 @@ export interface components {
         };
         WorkerRow: {
             name: string;
-            host: string;
             kinds: string[];
             started_at: string;
             last_seen: string;

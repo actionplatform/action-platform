@@ -18,7 +18,5 @@ export function problems(h: InstanceHealthRow): string[] {
   for (const row of h.queue) {
     if (row.queued > 0 && !row.worker_running && !out.some((p) => p.includes(` ${row.group} jobs`))) out.push(`${row.queued} ${row.kind} job${row.queued === 1 ? "" : "s"} waiting and no worker takes ${row.kind} jobs.`);
   }
-  const failure = h.integrations.smtp.last_failure;
-  if (failure) out.push(`The last ${failure.what} email failed: ${failure.error}`);
   return out;
 }

@@ -132,9 +132,10 @@ class OwnerViewTest(HealthCase):
 
         self.both()
         queue = JobQueue(self.app.state.db)
-        queue.enqueue("sync", {})
-        queue.enqueue("sync", {}, dedupe_key="b", app_id="a")
-        queue.enqueue("deploy", {})
+        org = self.org["id"]
+        queue.enqueue("sync", {}, organization_id=org)
+        queue.enqueue("sync", {}, organization_id=org, dedupe_key="b", app_id="a")
+        queue.enqueue("deploy", {}, organization_id=org)
         queue.claim("w", ["deploy"])
         with self.app.state.db.session() as s:
             from app.core.db.models import Job
@@ -160,8 +161,31 @@ class OwnerViewTest(HealthCase):
                 "deploy": (True, ["deploy", "destroy"]),
             },
         )
+        self.assertNotIn("host", body["workers_seen"][0])
         self.assertIn("version", body)
         self.assertIn("api", body)
+
+    def test_an_owner_does_not_see_another_organizations_queue(self):
+        from app.services.jobs import JobQueue
+
+        JobQueue(self.app.state.db).enqueue("sync", {}, organization_id=self.org["id"])
+        other = self.client.post(
+            "/api/auth/organizations",
+            json={"name": "Beta", "slug": "beta"},
+            headers=self.h(),
+        ).json()
+
+        mine = self.client.get(
+            "/api/v1/instance/health",
+            headers={**self.h(), "X-Organization": self.org["id"]},
+        ).json()
+        theirs = self.client.get(
+            "/api/v1/instance/health",
+            headers={**self.h(), "X-Organization": other["id"]},
+        ).json()
+
+        self.assertEqual([r["kind"] for r in mine["queue"]], ["sync"])
+        self.assertEqual(theirs["queue"], [])
 
     def test_integrations_say_what_is_configured(self):
         body = self.detail().json()["integrations"]
@@ -176,17 +200,6 @@ class OwnerViewTest(HealthCase):
         )
         self.assertFalse(body["sentry_api"])
         self.assertIn("github", {a["provider"] for a in body["oauth_apps"]})
-
-    def test_a_failed_password_reset_mail_shows_up(self):
-        outbox = Outbox()
-        outbox.fail = "smtp down"
-        self.app.state.mailer = outbox
-        self.client.post("/api/auth/password/forgot", json={"email": "ana@example.com"})
-
-        failure = self.detail().json()["integrations"]["smtp"]["last_failure"]
-
-        self.assertEqual(failure["what"], "password reset")
-        self.assertEqual(failure["error"], "smtp down")
 
 
 class TestEmailTest(HealthCase):
@@ -214,20 +227,6 @@ class TestEmailTest(HealthCase):
         self.assertEqual(res.status_code, 200)
         self.assertFalse(res.json()["sent"])
         self.assertIn("535 bad credentials", res.json()["error"])
-
-    def test_a_success_clears_the_last_failure(self):
-        outbox = Outbox()
-        self.app.state.mailer = outbox
-        outbox.fail = "boom"
-        self.send()
-        self.assertIsNotNone(
-            self.detail().json()["integrations"]["smtp"]["last_failure"]
-        )
-
-        outbox.fail = None
-        self.send()
-
-        self.assertIsNone(self.detail().json()["integrations"]["smtp"]["last_failure"])
 
     def test_without_smtp_it_says_so(self):
         res = self.send()

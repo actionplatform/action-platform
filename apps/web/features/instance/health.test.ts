@@ -39,9 +39,4 @@ describe("problems", () => {
     const queue = [{ kind: "install", group: "light", queued: 2, running: 0, oldest_queued_seconds: 400, worker_running: false }];
     expect(problems(healthy({ queue }))).toEqual(["2 install jobs waiting and no worker takes install jobs."]);
   });
-
-  it("shows the last email failure", () => {
-    const smtp = { configured: true, last_failure: { at: "2026-01-01T00:00:00", what: "invitation", error: "535 bad credentials" } };
-    expect(problems(healthy({ integrations: { ...healthy().integrations, smtp } }))).toEqual(["The last invitation email failed: 535 bad credentials"]);
-  });
 });

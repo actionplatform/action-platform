@@ -19,7 +19,7 @@ router = APIRouter(tags=["instance"])
 
 @router.get("/api/health", response_model=schemas.Health)
 def health(request: Request) -> JSONResponse:
-    """200 when the database answers, migrations are at head and a worker takes each kind group; 503 with the same body otherwise."""
+    """200 when healthy, 503 with the same body otherwise."""
     probe = InstanceHealth(request.app.state.db).probe()
 
     return JSONResponse(probe, status_code=200 if probe["status"] == "ok" else 503)
@@ -42,21 +42,13 @@ def instance_health(
     owner(caller, org)
     state = request.app.state
     service = InstanceHealth(state.db)
-    last = state.mail_log.last
 
     return schemas.InstanceHealthOut(
         **service.probe(),
-        **service.detail(),
+        **service.detail(org.id),
         **CatalogService().version(),
         integrations=schemas.Integrations(
-            smtp=schemas.SmtpOut(
-                **service.smtp(state.mailer),
-                last_failure=(
-                    schemas.MailFailureOut(at=last.at, what=last.what, error=last.error)
-                    if last
-                    else None
-                ),
-            ),
+            smtp=schemas.SmtpOut(**service.smtp(state.mailer)),
             google=schemas.GoogleOut(
                 **service.google(state.google is not None, state.public_url)
             ),
@@ -87,10 +79,6 @@ def send_test_email(
     try:
         mailer.send(probe_mail(caller.user))
     except ProviderError as e:
-        request.app.state.mail_log.failed("test email", str(e))
-
         return schemas.TestEmailOut(sent=False, to=to, error=str(e))
-
-    request.app.state.mail_log.sent()
 
     return schemas.TestEmailOut(sent=True, to=to)

@@ -1,4 +1,4 @@
-"""Whether the instance can do its job: database, migrations, workers, and what is waiting in the queue."""
+"""Instance health: database, migrations, workers and the caller's queue."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ class InstanceHealth:
         self.workers = Workers(database)
 
     def probe(self) -> dict[str, Any]:
-        """The status every caller may see: database reachable, migrations at head, a live worker per group."""
+        """The open status: database, migrations, a live worker per group."""
         reachable = self._reachable()
         current = reachable and self._current()
         groups = self.workers.groups() if current else {g: False for g in GROUPS}
@@ -36,8 +36,8 @@ class InstanceHealth:
             "workers": groups,
         }
 
-    def detail(self) -> dict[str, Any]:
-        """Everything an owner needs to find out why: each worker, the queue per kind, the versions."""
+    def detail(self, organization_id: str) -> dict[str, Any]:
+        """The owner view: each worker and the queue of one organization."""
         moment = now()
         rows = self.workers.all()
         live = {
@@ -46,14 +46,13 @@ class InstanceHealth:
             if Workers.alive(row, moment)
             for kind in split(row.kinds)
         }
-        depth = self.queue.depth()
+        depth = self.queue.depth(organization_id)
         kinds = sorted(set(depth) | live)
 
         return {
             "workers_seen": [
                 {
                     "name": row.name,
-                    "host": row.host,
                     "kinds": split(row.kinds),
                     "started_at": row.started_at,
                     "last_seen": row.last_seen,

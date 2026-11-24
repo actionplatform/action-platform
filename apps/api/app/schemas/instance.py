@@ -15,7 +15,6 @@ class Health(BaseModel):
 
 class WorkerRow(BaseModel):
     name: str
-    host: str
     kinds: list[str]
     started_at: datetime
     last_seen: datetime
@@ -31,19 +30,12 @@ class QueueRow(BaseModel):
     worker_running: bool
 
 
-class MailFailureOut(BaseModel):
-    at: datetime
-    what: str
-    error: str
-
-
 class SmtpOut(BaseModel):
     configured: bool
     host: Optional[str] = None
     port: Optional[int] = None
     security: Optional[str] = None
     sender: Optional[str] = None
-    last_failure: Optional[MailFailureOut] = None
 
 
 class GoogleOut(BaseModel):
