@@ -31,7 +31,7 @@ From a fresh instance to a verified deployment. Each step names the page that ha
 
 ### 1. First run
 
-Open the instance: `/setup` runs until an organization exists. **API** checks the API is reachable, **Admin** creates the first account (public sign-up stays closed; everyone else joins by invitation), **Organization** takes a name and slug, **Source hosts** connects a code host or skips it. [Web › first run](use_web.md#first-run-the-setup-wizard).
+Open the instance. Until an account exists `/setup` is open, and the first account needs the **setup token**: `install.sh` prints it at the end, and `docker compose exec api action-platform-api setup token` in the API container prints it again (on Dokploy, run `action-platform-api setup token` in the `ap-api` terminal). `AP_SETUP_TOKEN` replaces the derived token with one of your own. The wizard then runs **API** (checks the API is reachable), **Admin** (the first account; public sign-up stays closed, everyone else joins by invitation), **Organization** (name and slug) and **Source hosts** (connect a code host or skip). Once an account exists the token stops working and `/setup` sends anyone not signed in to `/login`. [Self-hosting › first run](start_self_hosting.md#first-run), [Web › first run](use_web.md#first-run-the-setup-wizard).
 
 ### 2. Connect a code host and the webhook
 
