@@ -12,6 +12,7 @@ from app.api.dependencies import (
     host_row,
 )
 from app.schemas import integrations as schemas
+from app.services.templates import TemplateRepos
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -56,6 +57,7 @@ def remove_host(
 ) -> None:
     allowed(caller, org, "org.manage")
     writes.remove_host(org.id, host_id)
+    TemplateRepos.forget(org.id)
 
 
 @router.put("/hosts/{host_id}/token", status_code=204)

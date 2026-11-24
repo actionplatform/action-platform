@@ -127,7 +127,9 @@ class TemplateSourcesWrites(TemplateSourcesReads):
 
         return row
 
-    def remove_template_source(self, organization_id: str, id: str) -> None:
+    def remove_template_source(
+        self, organization_id: str, id: str
+    ) -> Optional[TemplateSource]:
         row = self.db.scalar(
             select(TemplateSource).where(
                 TemplateSource.id == id,
@@ -138,3 +140,5 @@ class TemplateSourcesWrites(TemplateSourcesReads):
         if row is not None:
             self.db.delete(row)
             self.db.flush()
+
+        return row

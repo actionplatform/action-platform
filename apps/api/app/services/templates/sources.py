@@ -37,6 +37,16 @@ class TemplateRepos:
                 shutil.rmtree(source.cache, ignore_errors=True)
                 raise
 
+    @staticmethod
+    def forget(organization_id: str, url: str = "", ref: str = "") -> None:
+        """Delete the clones kept for an organization: one source's, or every one when no url is given."""
+        path = (
+            TemplateSource(url=url, ref=ref, owner=organization_id).cache
+            if url
+            else TemplateSource.owner_cache(organization_id)
+        )
+        shutil.rmtree(path, ignore_errors=True)
+
 
 class MatrixView:
     """One templates matrix as the API answers it: every path absolute, every entry tagged with its source."""

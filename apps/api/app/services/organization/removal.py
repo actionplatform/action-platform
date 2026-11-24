@@ -30,6 +30,7 @@ from app.repositories.workspace.registry import Registry
 from app.services.projects import ProjectService
 from app.services.projects.apps import AppService
 from app.services.projects.organization_import.directory import ImportDirectory
+from app.services.templates import TemplateRepos
 
 
 class OrganizationRemoval:
@@ -72,6 +73,7 @@ class OrganizationRemoval:
         self._forget_rows(organization.id)
         self.db.delete(organization)
         self.db.flush()
+        TemplateRepos.forget(organization.id)
 
         return {
             "organization": organization.slug,
