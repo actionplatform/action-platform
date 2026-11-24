@@ -10,7 +10,7 @@ from action_platform.core.flow.repository import Repository
 from action_platform.core.flow.workflow import slugify
 from action_platform.core.manifest import Manifest
 from action_platform.core.scaffold.publisher import SourceCredentialsLike, push_project
-from action_platform.core.scaffold.renderer import TemplateRenderer
+from action_platform.core.scaffold.renderer import TemplateRenderer, check_tree
 from action_platform.core.scaffold.catalog import Cloud, Leaf, Service
 from action_platform.core.wiring import slot, wired
 from action_platform.core.files import LAST_VERSION_FILE
@@ -55,6 +55,7 @@ def _copy_repository(
     if target.exists():
         raise TemplateError(f"{target} already exists")
 
+    check_tree(repo)
     shutil.copytree(repo, target, ignore=shutil.ignore_patterns(".git"))
     manifest = Manifest.of(target)
 

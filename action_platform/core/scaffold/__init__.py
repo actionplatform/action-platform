@@ -4,6 +4,7 @@
 - `catalog`: what templates exist (`Matrix`, `Leaf`, `Cloud`, `Service`, `load_matrix`)
 - `language`: which language a repository is written in (`LanguageDetector`)
 - `renderer`: how a template turns into files (`TemplateRenderer`)
+- `sandbox`: the process a template renders in
 - `scaffolder`: generate a project, overlay clouds and services (`Scaffolder`)
 - `publisher`: push a generated project to its source host (`Publisher`)
 - `installer`: bring an existing repository onto the platform (`Installer`)
