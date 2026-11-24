@@ -82,6 +82,20 @@ class PlainRepositoryTest(TempCase):
         self.assertEqual(data["release"]["strategy"], "semver")
         self.assertFalse((project / ".git").exists())
 
+    def test_a_symlink_out_of_the_repository_is_refused(self):
+        (self.source / "passwd").symlink_to("/etc/passwd")
+
+        with self.assertRaisesRegex(TemplateError, "symlink"):
+            generate_project(
+                self.source,
+                Leaf("library", "", "starter", plain=True),
+                "tool",
+                None,
+                self.output,
+            )
+
+        self.assertFalse((self.output / "tool").exists())
+
     def test_refuses_an_existing_target(self):
         (self.output / "tool").mkdir()
 
