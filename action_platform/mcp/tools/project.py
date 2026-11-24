@@ -177,6 +177,12 @@ def register(mcp: Any) -> None:
                 description="github, gitlab, jenkins, bitbucket, or none for no pipeline files; default platform.toml, else the CI the repository already has, else the one of its remote"
             ),
         ] = None,
+        version: Annotated[
+            Optional[str],
+            Field(
+                description="LAST_VERSION to start from; default the newest release tag, else the manifest's version, else the newest CHANGELOG entry, else 0.0.0"
+            ),
+        ] = None,
         dry_run: Annotated[
             bool, Field(description="true only reports what would be created")
         ] = True,
@@ -188,7 +194,12 @@ def register(mcp: Any) -> None:
         files are not touched.
         """
         plan = installing.install(
-            _root(project), type_=type, language=language, ci=ci, dry_run=dry_run
+            _root(project),
+            type_=type,
+            language=language,
+            ci=ci,
+            dry_run=dry_run,
+            version=version,
         )
 
         return {
@@ -199,6 +210,10 @@ def register(mcp: Any) -> None:
             "detected_ci": plan.detected_ci,
             "warnings": plan.warnings,
             "ci_snippet": plan.ci_snippet,
+            "seeds": [
+                {"file": s.file, "version": s.version, "source": s.source}
+                for s in plan.seeds
+            ],
             "created": plan.created,
             "kept": plan.skipped,
             "hooks_installed": plan.hooks_installed,
