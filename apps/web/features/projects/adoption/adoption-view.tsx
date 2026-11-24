@@ -11,7 +11,7 @@ import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
 import { call } from "@/lib/call";
 import { installJob, startInstall } from "./actions";
-import { type AdoptionRow, type InstallResult, type InstallRun, selectable, stateLabel, toOpen, versionSource } from "./model";
+import { type AdoptionRow, type InstallResult, type InstallRun, selectable, stateLabel, toOpen } from "./model";
 
 type Options = { types: { id: string; label: string }[] };
 type Job = { id: string; dryRun: boolean; status: string; result: InstallRun | null; error: string | null };
@@ -169,7 +169,7 @@ function ResultRow({ result }: { result: InstallResult }) {
         <dl className="grid gap-x-6 gap-y-1 text-[13px] text-secondary sm:grid-cols-2">
           <div><dt className="inline">Language </dt><dd className="inline font-mono text-foreground">{plan.language || "none"}</dd></div>
           <div><dt className="inline">CI </dt><dd className="inline font-mono text-foreground">{plan.ci}</dd>{plan.detected_ci.length > 0 && <span> · detected {plan.detected_ci.join(", ")}</span>}</div>
-          <div><dt className="inline">Version </dt><dd className="inline font-mono text-foreground">{plan.version}</dd><span> · from {versionSource(plan.version_source)}</span></div>
+          <div><dt className="inline">Version </dt><dd className="inline font-mono text-foreground">{plan.version}</dd>{plan.version_source && <span> · from {plan.version_source}</span>}</div>
           <div><dt className="inline">Branch </dt><dd className="inline font-mono text-foreground">{plan.branch}</dd><span> → {plan.base}</span></div>
           <div className="sm:col-span-2"><dt className="inline">Creates </dt><dd className="inline font-mono text-foreground">{plan.created.join(", ") || "nothing"}</dd></div>
           {plan.kept.length > 0 && <div className="sm:col-span-2"><dt className="inline">Keeps </dt><dd className="inline font-mono">{plan.kept.join(", ")}</dd></div>}

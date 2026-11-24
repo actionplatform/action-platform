@@ -45,12 +45,6 @@ export function stateLabel(row: { state: string; reason?: string | null; pull_re
   }
 }
 
-const SOURCES: Record<string, string> = { file: "LAST_VERSION", tag: "newest release tag", default: "no release yet" };
-
-export function versionSource(source: string): string {
-  return SOURCES[source] ?? source;
-}
-
 export function selectable(row: AdoptionRow): boolean {
   return row.state !== "installed" && row.state !== "pr_open";
 }

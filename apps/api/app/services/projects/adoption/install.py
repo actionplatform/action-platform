@@ -11,7 +11,7 @@ from typing import Any, Optional
 
 from action_platform.core.config import Config
 from action_platform.core.exception import ActionPlatformError
-from action_platform.core.files import CONFIG_FILE
+from action_platform.core.files import CONFIG_FILE, LAST_VERSION_FILE
 from action_platform.core.flow.repository import Repository
 from action_platform.core.flow.workflow import branch_name
 from action_platform.core.scaffold.installer import Plan
@@ -79,6 +79,16 @@ def reason_of(error: BaseException) -> str:
 
 
 def plan_view(plan: Plan, base: str, branch: str) -> dict[str, Any]:
+    seeded = next((s for s in plan.seeds if s.file == LAST_VERSION_FILE), None)
+    kept = plan.root / LAST_VERSION_FILE
+
+    if seeded is not None:
+        version, source = seeded.version, seeded.source
+    elif kept.is_file():
+        version, source = kept.read_text().strip(), LAST_VERSION_FILE
+    else:
+        version, source = "", ""
+
     return {
         "type": plan.type,
         "language": plan.language,
@@ -87,8 +97,8 @@ def plan_view(plan: Plan, base: str, branch: str) -> dict[str, Any]:
         "created": list(plan.created),
         "kept": list(plan.skipped),
         "warnings": list(plan.warnings),
-        "version": plan.version,
-        "version_source": plan.version_source,
+        "version": version,
+        "version_source": source,
         "base": base,
         "branch": branch,
     }

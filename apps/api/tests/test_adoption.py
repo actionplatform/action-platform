@@ -153,7 +153,8 @@ class AdoptionTest(GateCase):
         self.assertEqual(shop["plan"]["language"], "python")
         self.assertEqual(shop["plan"]["ci"], "github")
         self.assertEqual(
-            (shop["plan"]["version"], shop["plan"]["version_source"]), ("1.4.0", "tag")
+            (shop["plan"]["version"], shop["plan"]["version_source"]),
+            ("1.4.0", "tag v1.4.0"),
         )
         self.assertEqual(shop["plan"]["branch"], "chore/platform")
         self.assertEqual(result["docs"]["state"], "failed")
