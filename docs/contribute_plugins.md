@@ -77,6 +77,7 @@ class AwsLambdaPlugin(Plugin):
 - `surface.options` is the plugin's key/value store — `get(key, default)`, `set(key, value)` (anything JSON carries), `delete(key)`, `all()`. A file per plugin on a machine, a table on the hosted platform; the plugin never cares which.
 - `options` declares the settings a user fills in: `Option(key, label, kind, help, required)` with `kind` one of `text`, `url`, `secret`, `bool`. The hosted platform draws the form behind **Configure** on the plugin's card under **Plugins** from this list and stores each value under `key`, per organization; the CLI reads the same keys from the file. A plugin with no `options` shows up as installed and nothing else. `name` is the title shown; the slug when empty.
 - `after_release(ctx)`, `after_deploy(results)`, `after_pull_request(ref)` run after the real thing; an exception is logged and never undoes the action.
+- `access(options)` brings access on the plugin's service — see [Access](#access).
 
 ## Providers
 
@@ -89,6 +90,59 @@ class AwsLambdaPlugin(Plugin):
 | `abc.ChangelogRenderer` — `render(version, commits)` | `action_platform.changelog` | `[release] changelog` |
 
 A disabled plugin's providers disappear from every lookup.
+
+## Access
+
+A plugin that owns a service can also own who has access to it. It returns an `AccessProvider` from `Plugin.access(options)`, and the platform's [service access](concept_service_access.md) — `access_audit`, `access_sync`, `access_grant`, `access_revoke`, `access_offboard`, `access_who` — runs over every installed plugin that does.
+
+```python
+from action_platform.abc import AccessProvider, Option, Plugin
+from action_platform.core.service_access import AccessError, Grant, Http, Op
+
+
+class VaultAccess(AccessProvider):
+    name = "vault"
+    levels = {"org": ("member", "admin"), "repo": ("read", "write")}
+
+    def __init__(self, url: str, token: str) -> None:
+        self.http = Http("vault", url, {"authorization": f"Bearer {token}"})
+
+    def read(self) -> list[Grant]:
+        return [
+            Grant("vault", m["login"], "org", m["role"])
+            for m in self.http.pages("members")
+        ]
+
+    def apply(self, op: Op) -> None:
+        ...
+
+
+class VaultPlugin(Plugin):
+    slug = "vault"
+    options = [Option("url", "URL", "url"), Option("token", "Token", "secret")]
+
+    def access(self, options):
+        if not options.get("url"):
+            return None
+
+        if not options.get("token"):
+            raise AccessError("vault: set the token option")
+
+        return VaultAccess(options.get("url"), options.get("token"))
+```
+
+| Member | Contract |
+|---|---|
+| `name` | the service, as tools and the mapping name it; one provider per service |
+| `levels` | resource kind → levels, lowest first; a resource is `<kind>` or `<kind>/<name>` |
+| `read()` | every grant the service holds today, `(service, account, resource, level)`; accounts compare without case |
+| `apply(op)` | one `add`, `change` or `remove`; raise `AccessError` when the service refuses — the message names the service and the call, never a credential |
+| `companions(resource)` | grants the service needs beside this one to be usable (a repository grant needs organization membership); `access_grant` adds the missing ones |
+| `expand(grants)` | the grants the service implies alongside the wanted ones, so they are not reported as drift |
+| `guard(ops, live)` | changes refused before anything is sent, with the reason — at least: never the last administrator; a refused `org`/`global` change holds every other change of that account |
+| `order(op)` | the order changes are sent in; by default organization-wide adds first and removes last |
+
+`access(options)` reads **only** `options`: on the hosted platform they are the calling organization's values of the plugin (secrets opened for that call), so an environment variable would leak one organization's credential into another's. Return `None` while the options do not configure the service and raise `AccessError` naming the missing key when they half do; the audit shows it as a failed service. Keep it cheap — it runs on every access call. Test with `action_platform.testing.access` (`MemoryDirectory`, and `MemoryProvider` as a reference) and the core's `Access`: the first sync imports and changes nothing, a second one is a no-op.
 
 Log through `self.logger` (the plugin's own logger, wired at load to the platform's job log) or `action_platform.logging.logger`; a logger of your own named after your package works too — every plugin's package is attached when it is discovered. Long commands should stream: run them through `action_platform.core.process.stream(args, cwd, env)` — every line reaches whoever follows the job (the web's run log, `action-platform logs -f`) as it appears, and the tail comes back for the error — or `emit(line)` from `action_platform.logging` for lines of your own. Output the platform never sees is output nobody can debug.
 

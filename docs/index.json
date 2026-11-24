@@ -24,6 +24,7 @@
       "title": "Concept",
       "pages": [
         { "slug": "concept_access_control", "title": "Access control" },
+        { "slug": "concept_service_access", "title": "Service access" },
         { "slug": "concept_git_flow", "title": "Git-flow" },
         { "slug": "concept_manifest", "title": "Manifest" },
         { "slug": "concept_templates", "title": "Templates" },

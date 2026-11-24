@@ -65,6 +65,7 @@ action-platform mcp [--http] [--remote]                     # MCP server (local 
 action-platform login <url> [--scope read,write] [--name label] [--no-browser]   # device flow → bearer token; asks for everything your role allows unless --scope narrows it
 action-platform whoami                                      # server — account — scope — on Org / project / app
 action-platform logout
+action-platform access audit | who | grant | revoke | offboard | sync   # service access on the logged-in platform; dry runs unless --apply
 action-platform-api db status | migrate [--url …]            # the API's database: revision, migrate on demand
 action-platform-api worker [--once] [--interval 2] [--name]  # run queued jobs against AP_DATABASE_URL
 ```

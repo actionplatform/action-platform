@@ -25,6 +25,7 @@ State lives in `~/.action-platform/plugins.json` (`AP_HOME` moves it): which plu
 | Deploy targets, CI runners | `[deploy] target = "<name>"` in platform.toml finds them; `action-platform deploy` says which package is missing otherwise |
 | Release strategy, changelog | `[release] strategy = "<name>"`, `[release] changelog = "<name>"` |
 | Replaced core processes | `action-platform plugin list` shows `replaces`; `gitflow_rules`, `gitflow`, `releaser`, `deployer`, `installer`, `scaffolder` |
+| Access on its service (`Plugin.access`) | the platform's `access_*` tools, `action-platform access …` and `/api/v1/access/*` cover the service once the plugin is bundled in the API image and its options are filled in — see [service access](concept_service_access.md); `plugin list` shows `access` |
 | Lifecycle hooks | run after a real release, deploy or pull request — never on dry runs |
 
 The git hooks the CLI installs ask the core (`action-platform gitflow-check`) when the CLI is on `PATH`, so a plugin that changed the git-flow rules is obeyed at commit time too; without the CLI they fall back to the shell rules in `ci-scripts`. CI on the server keeps the shell rules: the repository's minimum, whatever a developer installed locally.
