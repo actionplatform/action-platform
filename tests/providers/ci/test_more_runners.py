@@ -103,13 +103,20 @@ class StartTest(unittest.TestCase):
     def test_jenkins_builds_with_the_crumb(self):
         ci = CIJenkins(base_url="https://ci.acme.io", token="t", username="u")
 
-        with mock.patch(
-            "action_platform.providers.ci.jenkins.rest.call",
-            side_effect=[{"crumbRequestField": "Jenkins-Crumb", "crumb": "c1"}, None],
-        ) as call:
-            ci.start("team/app", "main")
+        with (
+            mock.patch(
+                "action_platform.providers.ci.jenkins.rest.call",
+                return_value={"crumbRequestField": "Jenkins-Crumb", "crumb": "c1"},
+            ),
+            mock.patch(
+                "action_platform.providers.ci.jenkins.rest.location",
+                return_value="https://ci.acme.io/queue/item/7/",
+            ) as post,
+        ):
+            ref = ci.start("team/app", "main")
 
-        post = call.call_args_list[1]
+        post = post.call_args
+        self.assertEqual(ref.id, "queue:7")
         self.assertEqual(post.args[0], "POST")
         self.assertTrue(
             post.args[1].startswith(

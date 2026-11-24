@@ -50,7 +50,7 @@ job = "team/app/publish"
 image = "ghcr.io/actionplatform/api"
 ```
 
-`run_by = "platform"` is the target the worker deploys itself through a plugin (below). `github_actions`, `gitlab_ci` and `bitbucket_pipelines` are *dispatched*: the deploy starts the target's `workflow` on the release tag with two inputs, `version` and `registry` — the registry the kind pairs with the scope's criticality: a `test` scope publishes to TestPyPI or the npm `next` dist-tag, any other to the registry itself; the scope's name is yours — follows the run in the job log until it ends, then asks the destination whether the version arrived — the pipeline publishes with its own credentials (trusted publishing, OIDC), the platform decides when and to which scope, and no registry token reaches it (strategy: [ADR 0010](https://github.com/actionplatform/strategy/blob/main/adr/0010-library-publishing.md)). `jenkins` is *observed*: the platform reads the builds of the job named on the target, turns each one that shipped a release into a deployment record, and verifies the version at the destination. `manual` is observed too: a person records what they shipped. `observe = true` on a `github_actions`, `gitlab_ci` or `bitbucket_pipelines` target makes it observed as well — for a pipeline that keeps deploying on its own, on a release tag: its runs are imported on **Sync** and verified, and a platform deploy never dispatches it (`observe` on a `platform` target is refused). The platform never runs an observed target: a deploy whose only matching targets are observed is refused with the executor named — `app-prod is deployed by jenkins; the platform records it, it does not run it`. `stages`, when present, limits a target to some scopes; `registry` on the target overrides the pairing. The registry kinds `pypi` (`package`), `npm` (`package`), `docker` (`image`), `packagist` (`package`, `vendor/name`) and `go` (`module`) are built into the core; other kinds come from plugins. The single `[deploy] target = "aws/lambda"` form is still read as one target named after its kind, run by the platform.
+`run_by = "platform"` is the target the worker deploys itself through a plugin (below). `github_actions`, `gitlab_ci` and `bitbucket_pipelines` are *dispatched*: the deploy starts the target's `workflow` on the release tag with two inputs, `version` and `registry` — the registry the kind pairs with the scope's criticality: a `test` scope publishes to TestPyPI or the npm `next` dist-tag, any other to the registry itself; the scope's name is yours — follows the run in the job log until it ends, then asks the destination whether the version arrived — the pipeline publishes with its own credentials (trusted publishing, OIDC), the platform decides when and to which scope, and no registry token reaches it (strategy: [ADR 0010](https://github.com/actionplatform/strategy/blob/main/adr/0010-library-publishing.md)). `jenkins` is *observed* by default: the platform reads the builds of the job named on the target, turns each one that shipped a release into a deployment record, and verifies the version at the destination; with `observe = false` it is dispatched too ([below](#dispatched-jenkins-jobs)). `manual` is observed too: a person records what they shipped. `observe = true` on a `github_actions`, `gitlab_ci` or `bitbucket_pipelines` target makes it observed as well — for a pipeline that keeps deploying on its own, on a release tag: its runs are imported on **Sync** and verified, and a platform deploy never dispatches it (`observe` on a `platform` target is refused). The platform never runs an observed target: a deploy whose only matching targets are observed is refused with the executor named — `app-prod is deployed by jenkins; the platform records it, it does not run it`. `stages`, when present, limits a target to some scopes; `registry` on the target overrides the pairing. The registry kinds `pypi` (`package`), `npm` (`package`), `docker` (`image`), `packagist` (`package`, `vendor/name`) and `go` (`module`) are built into the core; other kinds come from plugins. The single `[deploy] target = "aws/lambda"` form is still read as one target named after its kind, run by the platform.
 
 ## The record
 
@@ -71,7 +71,7 @@ How a row is born depends on the executor:
 |---|---|
 | `platform` | the worker writes it as the `deploy` job runs |
 | `github_actions`, `gitlab_ci`, `bitbucket_pipelines` | the worker writes it as the `deploy` job dispatches the workflow and follows the run; a run of the same workflow started outside the platform on a release tag is imported on **Sync** unless the platform already recorded that version; with `observe = true`, every run on a release tag is imported and none is dispatched |
-| `jenkins` | the builds of the target's `job` — version from the build's tag or parameter, scope from a parameter or the target's only stage ([below](#observed-builds)) |
+| `jenkins` | the builds of the target's `job` — version from the build's tag or parameter, scope from a parameter or the target's only stage ([below](#observed-builds)); with `observe = false`, the worker writes it as the `deploy` job starts the build and follows it |
 | `manual` | `POST /api/v1/apps/{id}/deployments`, `action-platform deploy record` |
 
 ## Observed builds
@@ -102,6 +102,37 @@ stage_parameter = "ENV"
 - **Scope.** The value of `stage_parameter` when the build has it; otherwise the target's single entry in `stages` when it lists exactly one — the one-job-per-environment setup; otherwise the row has no scope.
 
 Runs imported from a dispatched target carry no parameters, so their scope comes from a single entry in `stages` alone. Without the keys, a build is recorded only when it checked out a release tag, as before.
+
+## Dispatched Jenkins jobs
+
+A Jenkins job that already does the whole deploy — migrations, several destinations, its own checks — can be started from the platform instead of only watched. The platform is the button and the record; Jenkins keeps every credential.
+
+```toml
+[[deploy.targets]]
+name = "lambda-prod"
+kind = "aws/lambda"
+run_by = "jenkins"
+observe = false
+job = "team/app-prod"
+version_parameter = "RELEASE_TAG"
+stages = ["prod-lambda"]
+
+[[deploy.targets]]
+name = "container-prod"
+kind = "dokploy"
+run_by = "jenkins"
+observe = false
+job = "team/app-prod"
+version_parameter = "RELEASE_TAG"
+stages = ["prod-container"]
+```
+
+- **Start.** A deploy calls the job's `buildWithParameters` with `version_parameter` set to the release tag and nothing else, with the credentials of the Jenkins server connected to the app (Settings › CI hosts, then the app's CI tab) — never the source host's token. `version_parameter` is required.
+- **Follow.** The job log shows the queue item becoming a build number, each pipeline stage as its status changes (`wfapi/describe`) and the build's result. A build cancelled in the queue fails the deploy at once.
+- **Result.** The build's result is the deploy's: `SUCCESS` records `success`, anything else `failure`, and the row links to the build. The destination is asked later, on **Sync**, when the kind can answer.
+- **One build, several scopes.** Dispatched targets on the same `job` without a `stage_parameter` are one build: a deploy to any of their scopes starts the job once and records a deployment for each target on its own scope.
+- **Both ways in.** A build the job's own trigger started (a webhook on a release) is still imported on **Sync**, unless the platform already recorded that version for the target.
+- **Long builds.** The worker keeps a running job's lock fresh, so a build that takes longer than the 30-minute reaper window is not handed to another worker — which would start the job again.
 
 ## Verified at the destination
 
@@ -156,7 +187,7 @@ On the platform a deploy never runs on the request: the API answers `202` with a
 | 5 | target | preflight, then build and deploy with credentials obtained from the token — on AWS the connected account's deploy role, scoped to the app by the token's session tag |
 | 6 | worker | result (URL, stack) or error on the job; the history row updates |
 
-A job is one row in `job`: kind, status (`queued` → `running` → `done` or `failed`), payload, attempts, result or error. On PostgreSQL the enqueue sends `NOTIFY ap_jobs` and a worker listening on that channel claims within milliseconds; elsewhere it polls every two seconds. A worker that dies mid-deploy leaves the job `running` until the reaper (30 minutes) puts it back in the queue with `worker lost`; a job that crashes is retried up to three times with a growing delay (30 s, 60 s, 120 s); a job the platform refused — a missing tag, a target that said no — fails at once. The status the web shows is the row's. The tables are in [database](concept_database.md), the code path in [architecture](contribute_architecture.md#a-deploy-end-to-end).
+A job is one row in `job`: kind, status (`queued` → `running` → `done` or `failed`), payload, attempts, result or error. On PostgreSQL the enqueue sends `NOTIFY ap_jobs` and a worker listening on that channel claims within milliseconds; elsewhere it polls every two seconds. A live worker refreshes its job's lock every minute; one that dies mid-deploy leaves the job `running` until the reaper, 30 minutes after the last refresh, puts it back in the queue with `worker lost`; a job that crashes is retried up to three times with a growing delay (30 s, 60 s, 120 s); a job the platform refused — a missing tag, a target that said no — fails at once. The status the web shows is the row's. The tables are in [database](concept_database.md), the code path in [architecture](contribute_architecture.md#a-deploy-end-to-end).
 
 ## History
 

@@ -166,3 +166,68 @@ class ObservedTargetsAreNeverRunTest(TempCase):
             self.deployer([]).targets(stage="prod")
 
         self.assertIn("no deploy target configured", str(caught.exception))
+
+
+class OneRunForTargetsOnOneJobTest(TempCase):
+    def setUp(self):
+        super().setUp()
+        from action_platform.abc.ci_runner import CIRunner
+        from action_platform.core.context import Run, RunRef
+
+        class Jenkins(CIRunner):
+            name = "jenkins"
+            started: list = []
+
+            def test(self):
+                return None
+
+            def start(self, job, ref, params=None):
+                self.started.append((job, params))
+                return RunRef(id="queue:1")
+
+            def run_of(self, job, ref):
+                return Run(number=4, status="success", url="https://ci/job/4/")
+
+            def stages(self, job, number):
+                return []
+
+        self.repo = platform_repo(Path(self.tmp_path))
+        self.jenkins = Jenkins()
+        target = {
+            "kind": "pypi",
+            "package": "app",
+            "run_by": "jenkins",
+            "observe": False,
+            "job": "team/app-prod",
+            "version_parameter": "RELEASE_TAG",
+        }
+        config = Config.from_dict(
+            {
+                "scopes": [
+                    {"name": "prod-a", "criticality": "high"},
+                    {"name": "prod-b", "criticality": "high"},
+                ],
+                "deploy": {
+                    "targets": [
+                        {**target, "name": "a", "stages": ["prod-a"]},
+                        {**target, "name": "b", "stages": ["prod-b"]},
+                    ]
+                },
+            }
+        )
+        config.ci = [self.jenkins]
+        self.deployer = Deployer(config, self.repo)
+
+    def test_one_build_records_every_target_on_its_own_stage(self):
+        results = self.deployer.deploy(version="1.2.3", stage="prod-a")
+
+        self.assertEqual(
+            self.jenkins.started, [("team/app-prod", {"RELEASE_TAG": "v1.2.3"})]
+        )
+        self.assertEqual(
+            [(r.target, r.stage, r.ok, r.url) for r in results],
+            [
+                ("a", None, True, "https://ci/job/4/"),
+                ("b", "prod-b", True, "https://ci/job/4/"),
+            ],
+        )

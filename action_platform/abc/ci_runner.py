@@ -36,6 +36,14 @@ class CIRunner(ABC):
         """Start a run of `job` on `ref` (a branch or tag) from outside a release — what the CI tab's Run button does."""
         raise NotImplementedError(f"{self.name} cannot start runs")
 
+    def run_of(self, job: str, ref: "RunRef") -> "Run | None":
+        """The run a `start` became, once the server has given it a number; None while it waits. NotImplementedError when the server cannot tell, and the run is looked for among the job's runs."""
+        raise NotImplementedError(f"{self.name} cannot follow a started run")
+
+    def stages(self, job: str, number: int) -> "list[tuple[str, str]]":
+        """The stages of one run and the status of each, in order."""
+        raise NotImplementedError(f"{self.name} cannot read stages")
+
     def wait(self, ctx: "Context", run: "RunRef", timeout: int = 1800) -> "RunResult":
         """Block until pipeline finishes or timeout."""
         raise NotImplementedError(f"{self.name} cannot wait for runs")

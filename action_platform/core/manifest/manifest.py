@@ -54,9 +54,12 @@ def toml_value(value: object) -> str:
 
 
 def dump_toml(data: dict, prefix: str = "") -> str:
-    """The tables of platform.toml as text: scalars of a table first, then its sub-tables as `[a.b]` — enough for what the platform writes, no inline tables."""
+    """The tables of platform.toml as text: scalars of a table first, then its sub-tables as `[a.b]` and its arrays of tables as `[[a.b]]` — enough for what the platform writes, no inline tables."""
     lines: list[str] = []
-    scalars = {k: v for k, v in data.items() if not isinstance(v, dict)}
+    arrays = {k: v for k, v in data.items() if _is_array_of_tables(v)}
+    scalars = {
+        k: v for k, v in data.items() if not isinstance(v, dict) and k not in arrays
+    }
     tables = {k: v for k, v in data.items() if isinstance(v, dict)}
 
     if prefix and (scalars or not tables):
@@ -71,7 +74,23 @@ def dump_toml(data: dict, prefix: str = "") -> str:
     for key, value in tables.items():
         lines.append(dump_toml(value, f"{prefix}.{key}" if prefix else key))
 
+    for key, items in arrays.items():
+        path = f"{prefix}.{key}" if prefix else key
+
+        for item in items:
+            lines.append(f"[[{path}]]")
+            lines.extend(f"{k} = {toml_value(v)}" for k, v in item.items())
+            lines.append("")
+
     return "\n".join(line for line in lines if line is not None).rstrip("\n") + "\n"
+
+
+def _is_array_of_tables(value: object) -> bool:
+    return (
+        isinstance(value, list)
+        and bool(value)
+        and all(isinstance(item, dict) for item in value)
+    )
 
 
 def check_owner(owner: str) -> str:

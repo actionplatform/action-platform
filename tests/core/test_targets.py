@@ -226,3 +226,24 @@ class ObservedRunTest(unittest.TestCase):
         self.assertEqual(self.spec(["prod"]).run_stage({"ENV": "dev"}), "prod")
         self.assertIsNone(self.spec(["dev", "prod"]).run_stage({}))
         self.assertIsNone(self.spec().run_stage({}))
+
+
+class JenkinsObservesByDefaultTest(unittest.TestCase):
+    def test_default_and_explicit(self):
+        specs = parse_targets(
+            {
+                "targets": [
+                    {"name": "a", "kind": "docker", "run_by": "jenkins", "job": "x"},
+                    {
+                        "name": "b",
+                        "kind": "docker",
+                        "run_by": "jenkins",
+                        "job": "x",
+                        "observe": False,
+                    },
+                ]
+            }
+        )
+
+        self.assertEqual([s.observed for s in specs], [True, False])
+        self.assertEqual([s.dispatched for s in specs], [False, True])

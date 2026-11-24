@@ -155,6 +155,32 @@ class DeploymentRecordsTest(GateCase):
             ("lambda", "prod", "1.2.0", "success", "platform", "job-1", "Ana"),
         )
 
+    def test_one_run_records_each_target_on_its_own_stage(self):
+        from app.core.db.models import App
+        from app.repositories.configuration.config_store import ConfigStore
+        from app.services.deployments import DeploymentRecords
+
+        with self.app.state.db.session() as s:
+            rows = DeploymentRecords(s, self.app.state.sealer).record_platform(
+                s.get(App, "a1"),
+                ConfigStore(self.app.state.db).config_of(self.registry_id),
+                [
+                    DeployResult(ok=True, target="lambda", version="1.2.0"),
+                    DeployResult(
+                        ok=True, target="ghcr", version="1.2.0", stage="prod-container"
+                    ),
+                ],
+                "prod",
+                "job-2",
+                "Ana",
+                datetime(2026, 9, 17, 9, 0),
+            )
+
+            self.assertEqual(
+                [(r.target, r.stage) for r in rows],
+                [("lambda", "prod"), ("ghcr", "prod-container")],
+            )
+
     def test_observed_runs_on_a_tag_become_deployments_and_are_verified(self):
         self.github()
         runs = [

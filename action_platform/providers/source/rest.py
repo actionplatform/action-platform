@@ -58,6 +58,38 @@ def call(
         raise ProviderError(f"cannot reach {url}: {e.reason}") from e
 
 
+def location(
+    method: str,
+    url: str,
+    headers: dict[str, str],
+    ok: tuple[int, ...] = (200, 201, 202),
+) -> Optional[str]:
+    """`call` for an endpoint that answers where its result will be: the `Location` header, or None."""
+    req = urllib.request.Request(
+        url,
+        data=b"" if method != "GET" else None,
+        method=method,
+        headers={
+            "accept": "application/json",
+            "user-agent": "action-platform",
+            **headers,
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=60) as res:
+            if res.status not in ok:
+                raise ProviderError(f"{method} {url} → {res.status}")
+
+            return res.headers.get("Location")
+    except urllib.error.HTTPError as e:
+        raise ProviderError(
+            f"{method} {url} → {e.code}: {e.read().decode(errors='replace')[:300] or e.reason}"
+        ) from e
+    except urllib.error.URLError as e:
+        raise ProviderError(f"cannot reach {url}: {e.reason}") from e
+
+
 def get_pages(url: str, headers: dict[str, str], limit: int = 20) -> list[Any]:
     """Every row of a `per_page`/`page` paginated listing (GitHub, GitLab), up to `limit` pages."""
     out: list[Any] = []

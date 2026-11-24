@@ -7,7 +7,9 @@
     workflow = "publish.yml"
     package = "my-lib"
 
-`deploy` starts `workflow` on the release tag with `version` and `registry` as inputs — the registry the kind pairs with the scope's criticality (`testpypi` for a `test` scope, `pypi` otherwise), or the target's `registry` option — follows the run to its end and asks the registry whether the version arrived. No credential of the registry reaches the platform: the pipeline holds them (trusted publishing, OIDC)."""
+`deploy` starts `workflow` on the release tag with `version` and `registry` as inputs — the registry the kind pairs with the scope's criticality (`testpypi` for a `test` scope, `pypi` otherwise), or the target's `registry` option — follows the run to its end and asks the registry whether the version arrived. No credential of the registry reaches the platform: the pipeline holds them (trusted publishing, OIDC).
+
+A job that takes the release as a parameter (`version_parameter`, a Jenkins job) is started with that parameter alone, set to the tag; its result is the deploy's, and the row links to the build — the destination is asked later, on Sync."""
 
 from __future__ import annotations
 
@@ -25,28 +27,46 @@ from action_platform.core.context import (
     Run,
     RunRef,
 )
-from action_platform.core.exception import DeployError, ProviderError
+from action_platform.core.exception import (
+    ActionPlatformError,
+    DeployError,
+    ProviderError,
+)
 from action_platform.logging import logger
+from action_platform.providers.deploy.pipeline_published import (
+    PipelinePublishedTarget,
+)
 
 FINAL = ("success", "failure", "unstable", "aborted")
 POLL_SECONDS = 10
-TIMEOUT_SECONDS = 1800
+TIMEOUT_SECONDS = 3600
 
 
 class DispatchedTarget(DeployTarget):
     def __init__(
-        self, inner: DeployTarget, runner: CIRunner, job: str, registry: str = ""
+        self,
+        inner: DeployTarget,
+        runner: CIRunner,
+        job: str,
+        registry: str = "",
+        version_parameter: str = "",
     ) -> None:
         self.inner = inner
         self.runner = runner
         self.job = job
         self.name = inner.name
         self.fixed_registry = registry
+        self.version_parameter = version_parameter
 
     def preflight(self, ctx: Context) -> None:
         if not self.job:
             raise DeployError(
                 f"{self.name}: run by {self.runner.name} but no workflow or job named"
+            )
+
+        if self.runner.name == "jenkins" and not self.version_parameter:
+            raise DeployError(
+                f"{self.name}: a Jenkins job takes the release through a parameter; set version_parameter"
             )
 
         try:
@@ -63,10 +83,17 @@ class DispatchedTarget(DeployTarget):
 
         return self.name
 
+    def parameters(self, ctx: Context, ref: str) -> tuple[str, dict[str, str]]:
+        """The ref the run starts on and its parameters: the release in `version_parameter` alone for a job that takes it, else the tag with `version` and `registry`."""
+        if self.version_parameter:
+            return "", {self.version_parameter: ref}
+
+        return ref, {"version": ctx.next_version, "registry": self.registry(ctx)}
+
     def deploy(self, ctx: Context) -> DeployResult:
         ref = ctx.tag or f"v{ctx.next_version}"
         registry = self.registry(ctx)
-        params = {"version": ctx.next_version, "registry": registry}
+        on, params = self.parameters(ctx, ref)
         logger.info(
             "dispatch %s on %s (%s) version=%s registry=%s scope=%s",
             self.job,
@@ -79,14 +106,14 @@ class DispatchedTarget(DeployTarget):
         started = datetime.now(timezone.utc)
 
         try:
-            ref_ = self.runner.start(self.job, ref, params)
+            ref_ = self.runner.start(self.job, on, params)
             run = self.follow(
                 ref_,
                 ref,
                 started,
                 int(ctx.env.get("AP_DISPATCH_TIMEOUT", TIMEOUT_SECONDS)),
             )
-        except ProviderError as e:
+        except (ProviderError, DeployError) as e:
             return DeployResult(
                 ok=False, target=self.name, version=ctx.next_version, error=str(e)
             )
@@ -98,6 +125,11 @@ class DispatchedTarget(DeployTarget):
                 version=ctx.next_version,
                 url=run.url,
                 error=f"{self.runner.name} run ended {run.status}",
+            )
+
+        if self.version_parameter:
+            return DeployResult(
+                ok=True, target=self.name, version=ctx.next_version, url=run.url
             )
 
         published = self._verify(ctx.next_version, registry)
@@ -113,12 +145,21 @@ class DispatchedTarget(DeployTarget):
         )
 
     def follow(self, ref: RunRef, tag: str, since: datetime, timeout: int) -> Run:
-        """The run `ref` points at, polled until it ends. A dispatch that returns no run id (GitHub) is found among the job's runs started on `tag` after `since`."""
+        """The run `ref` points at, polled until it ends. A dispatch that returns no run id (GitHub) is found among the job's runs started on `tag` after `since`; each stage of the run is logged as it changes."""
         deadline = time.monotonic() + timeout
         last = None
+        seen: dict[str, str] = {}
 
         while True:
-            run = self._locate(ref, tag, since)
+            try:
+                run = self._locate(ref, tag, since)
+            except (ProviderError, OSError) as e:
+                if time.monotonic() > deadline:
+                    raise ProviderError(f"{self.job}: {e}") from e
+
+                logger.warning("run of %s: %s; asking again", self.job, e)
+                time.sleep(POLL_SECONDS)
+                continue
 
             if run is not None and run.status != last:
                 logger.info(
@@ -128,6 +169,9 @@ class DispatchedTarget(DeployTarget):
                     f" {run.url}" if run.url else "",
                 )
                 last = run.status
+
+            if run is not None:
+                self._stages(run, seen)
 
             if run is not None and run.status in FINAL:
                 return run
@@ -141,13 +185,35 @@ class DispatchedTarget(DeployTarget):
 
             time.sleep(POLL_SECONDS)
 
+    def _stages(self, run: Run, seen: dict[str, str]) -> None:
+        try:
+            stages = self.runner.stages(self.job, run.number)
+        except (NotImplementedError, ProviderError):
+            return
+
+        for name, status in stages:
+            if seen.get(name) != status:
+                logger.info("run %s: stage %s %s", run.number, name, status)
+                seen[name] = status
+
     def _locate(self, ref: RunRef, tag: str, since: datetime) -> Run | None:
+        try:
+            return self.runner.run_of(self.job, ref)
+        except NotImplementedError:
+            pass
+
         if ref.id.isdigit():
             return self.runner.run(self.job, int(ref.id))
 
         for run in self.runner.runs(self.job, limit=20):
+            named = (
+                run.params.get(self.version_parameter) == tag
+                if self.version_parameter
+                else run.branch == tag
+            )
+
             if (
-                run.branch == tag
+                named
                 and run.started_at
                 and run.started_at >= since.replace(microsecond=0)
             ):
@@ -160,7 +226,7 @@ class DispatchedTarget(DeployTarget):
             return self.inner.verify(version, stage)
         except NotImplementedError:
             return None
-        except ProviderError as e:
+        except ActionPlatformError as e:
             logger.warning("%s: could not verify %s: %s", self.name, version, e)
             return None
 
@@ -200,9 +266,10 @@ class DispatchedTarget(DeployTarget):
                 )
             )
 
-        for check in self.inner.readiness(replace(ctx, stage=self.registry(ctx))):
-            check.target = check.target or self.name
-            checks.append(check)
+        if isinstance(self.inner, PipelinePublishedTarget):
+            for check in self.inner.readiness(replace(ctx, stage=self.registry(ctx))):
+                check.target = check.target or self.name
+                checks.append(check)
 
         return checks
 

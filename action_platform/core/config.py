@@ -97,33 +97,66 @@ class Config:
         return self._deploy
 
     def dispatched(self) -> list[DeployTarget]:
-        """The targets a CI of the source host runs for the platform — `run_by = "github_actions"` and the like — each wrapped so a deploy starts the workflow and follows the run."""
-        specs = [t for t in self.targets if t.dispatched]
-
-        if not specs:
-            return []
-
-        if self.source_host is None:
-            raise ConfigError(
-                f"{specs[0].name} is run by {specs[0].run_by}, but platform.toml names no source host"
-            )
-
+        """The targets a CI runs for the platform — `run_by = "github_actions"`, a Jenkins job with `observe = false` and the like — each wrapped so a deploy starts the run and follows it."""
         return [
             DispatchedTarget(
                 _build_target(spec),
-                build_ci_runner(
-                    spec.run_by,
-                    repo=self.source_host.repo,
-                    token=self.source_host.token,
-                    base_url=getattr(self.source_host, "api", None)
-                    if spec.run_by == "github_actions"
-                    else getattr(self.source_host, "web", None),
-                    username=getattr(self.source_host, "username", None),
-                ),
-                spec.workflow,
+                self._runner_for(spec),
+                spec.job if spec.run_by == "jenkins" else spec.workflow,
                 str(spec.options.get("registry") or ""),
+                version_parameter=spec.version_parameter
+                if spec.run_by == "jenkins"
+                else "",
             )
-            for spec in specs
+            for spec in self.targets
+            if spec.dispatched
+        ]
+
+    def _runner_for(self, spec: TargetSpec) -> CIRunner:
+        """A server of its own (Jenkins) comes from `ci`, connected with its own credentials; an embedded CI from the source host."""
+        if spec.run_by == "jenkins":
+            runner = next((r for r in self.ci if r.name == "jenkins"), None)
+
+            if runner is None:
+                raise ConfigError(
+                    f"{spec.name} is run by jenkins, but no Jenkins server is connected to the app"
+                )
+
+            return runner
+
+        if self.source_host is None:
+            raise ConfigError(
+                f"{spec.name} is run by {spec.run_by}, but platform.toml names no source host"
+            )
+
+        return build_ci_runner(
+            spec.run_by,
+            repo=self.source_host.repo,
+            token=self.source_host.token,
+            base_url=getattr(self.source_host, "api", None)
+            if spec.run_by == "github_actions"
+            else getattr(self.source_host, "web", None),
+            username=getattr(self.source_host, "username", None),
+        )
+
+    def runs_with(self, name: str) -> list[TargetSpec]:
+        """The other targets one dispatch of target `name` deploys: Jenkins targets started on the same job that take no stage parameter share its build."""
+        spec = next((t for t in self.targets if t.name == name), None)
+
+        if spec is None or spec.run_by != "jenkins" or not spec.dispatched:
+            return []
+
+        if not spec.job or spec.stage_parameter:
+            return []
+
+        return [
+            t
+            for t in self.targets
+            if t.name != spec.name
+            and t.run_by == "jenkins"
+            and t.dispatched
+            and t.job == spec.job
+            and not t.stage_parameter
         ]
 
     def provides(self, kind: str) -> bool:

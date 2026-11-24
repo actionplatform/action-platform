@@ -102,6 +102,7 @@ class DeployResult:
     version: str
     url: str | None = None
     error: str | None = None
+    stage: str | None = None
 
 
 CHECK_LEVELS = ("static", "target", "plan", "proof")

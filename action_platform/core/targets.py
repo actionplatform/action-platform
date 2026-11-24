@@ -12,10 +12,11 @@
     package = "action-platform"
 
 The platform executes `run_by = "platform"` targets itself and dispatches the
-CI-run ones (`github_actions`, `gitlab_ci`, `bitbucket_pipelines`): it starts
-the workflow on the release tag and follows the run. `jenkins` and `manual`
-targets, and CI-run ones with `observe = true`, are observed — their runs
-become deployment records and are verified, a platform deploy never runs them.
+CI-run ones (`github_actions`, `gitlab_ci`, `bitbucket_pipelines`, and `jenkins`
+with `observe = false`): it starts the workflow or job on the release and
+follows the run. `manual` targets, `jenkins` ones by default, and CI-run ones
+with `observe = true` are observed — their runs become deployment records and
+are verified, a platform deploy never runs them.
 `stages` limits a target to some scopes. An observed run names its release by
 the tag it built or, with `version_parameter`, by a build parameter; its scope
 comes from `stage_parameter`, else the target's only stage. A dispatched workflow receives the
@@ -39,7 +40,8 @@ EXECUTORS = (
     "jenkins",
     "manual",
 )
-CI_EXECUTORS = ("github_actions", "gitlab_ci", "bitbucket_pipelines")
+CI_EXECUTORS = ("github_actions", "gitlab_ci", "bitbucket_pipelines", "jenkins")
+OBSERVED_BY_DEFAULT = ("jenkins",)
 RESERVED = {"name", "kind", "run_by", "stages", "observe", "target", "targets"}
 VERSION = re.compile(
     r"^(?:refs/)?(?:tags/)?(?:(?P<component>[A-Za-z0-9_.-]+)/)?v?(?P<version>\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)$"
@@ -53,7 +55,7 @@ class TargetSpec:
     run_by: str = "platform"
     stages: tuple[str, ...] = ()
     options: dict[str, Any] = field(default_factory=dict)
-    observe: bool = False
+    observe: bool | None = None
 
     @property
     def platform(self) -> bool:
@@ -62,7 +64,15 @@ class TargetSpec:
     @property
     def dispatched(self) -> bool:
         """Run by a CI the platform can start and follow: the deploy is a run of the repository's own pipeline."""
-        return self.run_by in CI_EXECUTORS and not self.observe
+        return self.run_by in CI_EXECUTORS and not self.observing
+
+    @property
+    def observing(self) -> bool:
+        """`observe` as written, else true for the executors the platform only reads unless told otherwise (Jenkins)."""
+        if self.observe is not None:
+            return self.observe
+
+        return self.run_by in OBSERVED_BY_DEFAULT
 
     @property
     def observed(self) -> bool:
@@ -142,9 +152,9 @@ def parse_targets(cfg: dict) -> list[TargetSpec]:
                 f"[[deploy.targets]] run_by {run_by!r} is not one of {', '.join(EXECUTORS)}"
             )
 
-        observe = raw.get("observe", False)
+        observe = raw.get("observe")
 
-        if not isinstance(observe, bool):
+        if observe is not None and not isinstance(observe, bool):
             raise ConfigError("[[deploy.targets]] observe is true or false")
 
         if observe and run_by == "platform":
@@ -191,6 +201,7 @@ def version_from_ref(ref: str | None, component: str = "") -> str | None:
 __all__ = [
     "CI_EXECUTORS",
     "EXECUTORS",
+    "OBSERVED_BY_DEFAULT",
     "TargetSpec",
     "parse_targets",
     "version_from_ref",

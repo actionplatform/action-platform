@@ -7,12 +7,13 @@ multibranch branches: `team/app` or `team/app/main`.
 from __future__ import annotations
 
 import base64
+import re
 from datetime import datetime, timezone
 from urllib.parse import quote, urlencode
 
 from action_platform.abc.ci_runner import CIRunner
 from action_platform.core.context import Run, RunRef
-from action_platform.core.exception import ProviderError
+from action_platform.core.exception import DeployError, ProviderError
 from action_platform.providers.source import rest
 
 TREE = (
@@ -20,6 +21,8 @@ TREE = (
     "actions[lastBuiltRevision[SHA1,branch[name]],causes[shortDescription],"
     "parameters[name,value]]]"
 )
+
+QUEUE_ITEM = re.compile(r"/queue/item/(\d+)")
 
 RESULTS = {
     "SUCCESS": "success",
@@ -49,6 +52,7 @@ class CIJenkins(CIRunner):
         self.base_url = base_url.rstrip("/")
         self.token = token
         self.username = username
+        self._builds: dict[str, int] = {}
 
     def _headers(self) -> dict[str, str]:
         if not self.token:
@@ -130,8 +134,9 @@ class CIJenkins(CIRunner):
         )
 
     def start(self, job: str, ref: str, params: dict | None = None) -> RunRef:
+        """Queue a build: `REF` set to `ref` when there is one, plus `params`. The run's id is its queue item, which `run_of` turns into the build."""
         url = self._job_url(job)
-        query = {"REF": ref, **(params or {})} if params or ref else {}
+        query = {**({"REF": ref} if ref else {}), **(params or {})}
         headers = self._headers()
 
         try:
@@ -145,11 +150,61 @@ class CIJenkins(CIRunner):
             pass
 
         path = "/buildWithParameters" if query else "/build"
-        rest.call(
+        queued = rest.location(
             "POST",
             url + path + ("?" + urlencode(query) if query else ""),
             headers,
             ok=(200, 201, 202),
         )
+        item = QUEUE_ITEM.search(queued or "")
 
-        return RunRef(id=f"{job}@{ref}", url=url)
+        return RunRef(
+            id=f"queue:{item.group(1)}" if item else f"{job}@{ref}",
+            url=url,
+        )
+
+    def run_of(self, job: str, ref: RunRef) -> Run | None:
+        """The build a queue item became; None while it waits. A cancelled item is an error."""
+        if not ref.id.startswith("queue:"):
+            raise NotImplementedError(f"{job} was started without a queue item")
+
+        number = self._builds.get(ref.id)
+
+        if number is None:
+            item = (
+                rest.call(
+                    "GET",
+                    f"{self.base_url}/queue/item/{ref.id[6:]}/api/json",
+                    self._headers(),
+                )
+                or {}
+            )
+
+            if item.get("cancelled"):
+                raise DeployError(f"the build of {job} was cancelled in the queue")
+
+            number = (item.get("executable") or {}).get("number")
+
+            if number is None:
+                return None
+
+            self._builds[ref.id] = int(number)
+
+        return self.run(job, int(number))
+
+    def stages(self, job: str, number: int) -> list[tuple[str, str]]:
+        """The pipeline's stages from `wfapi/describe`, in order."""
+        payload = (
+            rest.call(
+                "GET",
+                f"{self._job_url(job)}/{int(number)}/wfapi/describe",
+                self._headers(),
+            )
+            or {}
+        )
+
+        return [
+            (str(s.get("name")), str(s.get("status")))
+            for s in payload.get("stages") or []
+            if s.get("name")
+        ]

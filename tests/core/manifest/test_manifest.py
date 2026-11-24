@@ -198,6 +198,23 @@ class DumpTomlTest(unittest.TestCase):
 
         self.assertEqual(tomllib.loads(dump_toml(data)), data)
 
+    def test_deploy_targets_round_trip_as_an_array_of_tables(self):
+        data = {
+            "project": {"name": "shop"},
+            "deploy": {
+                "region": "us-east-1",
+                "targets": [
+                    {"name": "a", "kind": "aws/lambda", "observe": False},
+                    {"name": "b", "kind": "pypi", "stages": ["prod"]},
+                ],
+            },
+        }
+
+        text = dump_toml(data)
+
+        self.assertIn("[[deploy.targets]]", text)
+        self.assertEqual(tomllib.loads(text), data)
+
     def test_a_quote_in_a_value_stays_inside_the_string(self):
         text = dump_toml({"project": {"name": 'a "quoted" name'}})
 
