@@ -13,7 +13,7 @@ export default async function ImportPage() {
 
   return (
     <>
-      <PageHeader title="Import" description={`Bring a GitHub organization into ${org.name}: repositories become projects, teams become teams, people become members or invitations.`} />
+      <PageHeader title="Import" description={`Bring a GitHub organization, GitLab group or Bitbucket workspace into ${org.name}: repositories become projects, teams become teams, people become members or invitations.`} />
       <ImportWizard
         hosts={hosts.map((h) => ({ id: h.id, kind: h.kind, name: h.name, login: h.login }))}
         roles={catalog.roles.filter((r) => r.id !== "owner").map((r) => ({ id: r.id, label: r.label }))}

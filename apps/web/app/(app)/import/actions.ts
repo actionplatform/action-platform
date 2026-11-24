@@ -6,33 +6,33 @@ import { requireOrg } from "@/lib/session";
 import type { Schemas } from "@/lib/api";
 import { v1 } from "@/lib/v1";
 
-export type GithubOrganization = Schemas["GithubOrganization"];
-export type GithubOrganizations = Schemas["GithubOrganizations"];
-export type GithubPreview = Schemas["GithubPreview"];
+export type ImportOrganization = Schemas["ImportOrganization"];
+export type ImportOrganizations = Schemas["ImportOrganizations"];
+export type ImportPreview = Schemas["ImportPreview"];
 export type ImportSummary = { projects: string[]; apps: string[]; teams: string[]; members: string[]; invitations: string[]; login_invitations?: string[]; waiting?: string[]; skipped: string[] };
 
-export async function loadGithubOrganizations(host: string): Promise<Result<GithubOrganizations>> {
+export async function loadOrganizations(host: string): Promise<Result<ImportOrganizations>> {
   await requireOrg();
   try {
-    return { ok: true, data: await v1.githubOrganizations(host) };
+    return { ok: true, data: await v1.importOrganizations(host) };
   } catch (e) {
     return failed(e);
   }
 }
 
-export async function loadGithubOrganization(host: string, login: string): Promise<Result<GithubPreview>> {
+export async function loadPreview(host: string, login: string): Promise<Result<ImportPreview>> {
   await requireOrg();
   try {
-    return { ok: true, data: await v1.githubOrganization(host, login) };
+    return { ok: true, data: await v1.importPreview(host, login) };
   } catch (e) {
     return failed(e);
   }
 }
 
-export async function startGithubImport(body: Schemas["ImportRequest"]): Promise<Result<{ job: string }>> {
+export async function startImport(body: Schemas["ImportRequest"]): Promise<Result<{ job: string }>> {
   await requireOrg();
   try {
-    return { ok: true, data: await v1.importGithub(body) };
+    return { ok: true, data: await v1.importOrganization(body) };
   } catch (e) {
     return failed(e);
   }

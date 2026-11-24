@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { type GithubOrganizations, type GithubPreview, type ImportSummary, importJob, loadGithubOrganization, loadGithubOrganizations, startGithubImport } from "./actions";
+import { type ImportOrganizations, type ImportPreview, type ImportSummary, importJob, loadOrganizations, loadPreview, startImport } from "./actions";
 
 type Host = { id: string; kind: string; name: string; login: string | null };
 type RoleOption = { id: string; label: string };
@@ -20,16 +20,18 @@ const PEOPLE_STATUS: Record<string, { label: string; hint: string; selectable: b
   user: { label: "Has account", hint: "added as a member right away", selectable: true },
   invited: { label: "Invited", hint: "an invitation is already pending", selectable: false },
   invitable: { label: "Invite", hint: "receives an invitation, by email when the instance sends email", selectable: true },
-  invitable_login: { label: "Invite by login", hint: "invited by GitHub login; they verify it when they accept", selectable: true },
-  no_email: { label: "No email", hint: "no public email, and no GitHub OAuth app on the platform to verify a login; invite by hand", selectable: false },
+  invitable_login: { label: "Invite by login", hint: "invited by login; they verify it when they accept", selectable: true },
+  no_email: { label: "No email", hint: "no public email, and no OAuth app for this host on the platform to verify a login; invite by hand", selectable: false },
 };
 
-const HOST_ROLES = [
-  { id: "org_admin", label: "Organization owners" },
-  { id: "team_maintainer", label: "Team maintainers" },
-  { id: "member", label: "Members" },
-] as const;
-type HostRole = (typeof HOST_ROLES)[number]["id"];
+type HostRole = "org_admin" | "team_maintainer" | "member";
+
+const KINDS: Record<string, { label: string; org: string; projects: string; via: string; roles: Record<HostRole, string>; badge: Record<HostRole, string> }> = {
+  github: { label: "GitHub", org: "Organization", projects: "GitHub Projects", via: "via GitHub Project", roles: { org_admin: "Organization owners", team_maintainer: "Team maintainers", member: "Members" }, badge: { org_admin: "GitHub owner", team_maintainer: "team maintainer", member: "" } },
+  gitlab: { label: "GitLab", org: "Group", projects: "Subgroups", via: "via subgroup", roles: { org_admin: "Group owners", team_maintainer: "Maintainers", member: "Developers and below" }, badge: { org_admin: "GitLab owner", team_maintainer: "maintainer", member: "" } },
+  bitbucket: { label: "Bitbucket", org: "Workspace", projects: "Bitbucket projects", via: "via Bitbucket project", roles: { org_admin: "Workspace owners", team_maintainer: "Maintainers", member: "Members" }, badge: { org_admin: "workspace owner", team_maintainer: "maintainer", member: "" } },
+};
+const HOST_ROLES: HostRole[] = ["org_admin", "team_maintainer", "member"];
 
 function Row({ id, checked, disabled, onToggle, children }: { id: string; checked: boolean; disabled?: boolean; onToggle: () => void; children: React.ReactNode }) {
   return (
@@ -56,11 +58,12 @@ function useSelection(all: string[]) {
 }
 
 export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Host[]; roles: RoleOption[]; projects: ProjectOption[]; canManage: boolean }) {
-  const github = hosts.filter((h) => h.kind === "github");
-  const [hostId, setHostId] = useState(github[0]?.id ?? "");
-  const [orgs, setOrgs] = useState<GithubOrganizations | null>(null);
+  const importable = hosts.filter((h) => h.kind in KINDS);
+  const [hostId, setHostId] = useState(importable[0]?.id ?? "");
+  const kind = KINDS[importable.find((h) => h.id === hostId)?.kind ?? "github"] ?? KINDS.github;
+  const [orgs, setOrgs] = useState<ImportOrganizations | null>(null);
   const [login, setLogin] = useState("");
-  const [preview, setPreview] = useState<GithubPreview | null>(null);
+  const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [projectId, setProjectId] = useState("");
   const [projectTargets, setProjectTargets] = useState<Record<string, string>>({});
   const fallback = roles.find((r) => r.id === "developer")?.id ?? roles[0]?.id ?? "developer";
@@ -85,7 +88,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
     if (!hostId || !canManage) return;
     setOrgs(null); setLogin(""); setPreview(null); setError(null);
     startOrgs(async () => {
-      const r = await loadGithubOrganizations(hostId);
+      const r = await loadOrganizations(hostId);
       if (r.ok) setOrgs(r.data); else setError(r.error);
     });
   }, [hostId, canManage]);
@@ -94,7 +97,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
     if (!login) { setPreview(null); return; }
     setPreview(null); setError(null); setOverrides({}); repos.reset(); ghProjects.reset(); teams.reset(); people.reset();
     startPreview(async () => {
-      const r = await loadGithubOrganization(hostId, login);
+      const r = await loadPreview(hostId, login);
       if (r.ok) setPreview(r.data); else setError(r.error);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,12 +118,12 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
     return <Panel><PanelBody className="text-sm text-secondary">Importing needs the admin role in this organization.</PanelBody></Panel>;
   }
 
-  if (github.length === 0) {
+  if (importable.length === 0) {
     return (
       <Panel>
         <PanelBody className="space-y-3 text-sm">
-          <p className="text-secondary">No GitHub host is connected to this organization yet.</p>
-          <Link href="/settings"><Button>Connect GitHub in Settings</Button></Link>
+          <p className="text-secondary">No GitHub, GitLab or Bitbucket host is connected to this organization yet.</p>
+          <Link href="/settings"><Button>Connect a code host in Settings</Button></Link>
         </PanelBody>
       </Panel>
     );
@@ -130,7 +133,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
 
   const submit = () => startSubmit(async () => {
     setError(null);
-    const r = await call(() => startGithubImport({ host_id: hostId, organization: login, repositories: [...repos.picked].filter((r) => !linked.has(r)), projects: [...ghProjects.picked].map((n) => ({ number: Number(n), project_id: projectTargets[n] || null })), teams: [...teams.picked], people: [...people.picked], role: mapping.member, roles: { org_admin: mapping.org_admin, team_maintainer: mapping.team_maintainer }, people_roles: Object.fromEntries(Object.entries(overrides).filter(([l]) => people.picked.has(l))), project_id: projectId || null }), (error) => ({ ok: false as const, error }), "The import may have started anyway: check Projects before trying again.");
+    const r = await call(() => startImport({ host_id: hostId, organization: login, repositories: [...repos.picked].filter((r) => !linked.has(r)), projects: (preview?.projects ?? []).filter((p) => ghProjects.picked.has(String(p.number))).map((p) => ({ number: p.number, project_id: projectTargets[String(p.number)] || null })), teams: [...teams.picked], people: [...people.picked], role: mapping.member, roles: { org_admin: mapping.org_admin, team_maintainer: mapping.team_maintainer }, people_roles: Object.fromEntries(Object.entries(overrides).filter(([l]) => people.picked.has(l))), project_id: projectId || null }), (error) => ({ ok: false as const, error }), "The import may have started anyway: check Projects before trying again.");
     if (r.ok) setJob({ id: r.data.job, status: "queued", result: null, error: null }); else setError(r.error);
   });
 
@@ -183,27 +186,32 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
         <PanelHeader title="Source" />
         <PanelBody className="grid gap-4 md:grid-cols-2">
           <label className="block text-sm">
-            <span className="mb-1 block text-xs text-secondary">GitHub host</span>
-            <Select value={hostId} onChange={setHostId} options={github.map((h) => ({ value: h.id, label: h.name, hint: h.login ?? undefined }))} />
+            <span className="mb-1 block text-xs text-secondary">Code host</span>
+            <Select value={hostId} onChange={setHostId} options={importable.map((h) => ({ value: h.id, label: h.name, hint: [KINDS[h.kind]?.label, h.login].filter(Boolean).join(" · ") || undefined }))} />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block text-xs text-secondary">Organization</span>
+            <span className="mb-1 block text-xs text-secondary">{kind.org}</span>
             <Select value={login} onChange={setLogin} disabled={loadingOrgs || !orgs} placeholder={loadingOrgs ? "Loading…" : "Pick an organization"} options={(orgs?.organizations ?? []).map((o) => ({ value: o.login, label: o.login, hint: o.kind === "user" ? "personal account" : o.name !== o.login ? o.name : undefined }))} />
           </label>
           {orgs && (
             <p className="text-[13px] text-secondary md:col-span-2">
               Only organizations the connected host can see are listed.
-              {orgs.install_url ? <> Missing one? <a href={orgs.install_url} target="_blank" rel="noreferrer" className="underline underline-offset-4 hover:text-foreground">Install the GitHub App on it</a>, then reload.</> : <> Missing one? Reconnect the host with the <code className="font-mono">read:org</code> scope in Settings.</>}
+              {orgs.install_url ? <> Missing one? <a href={orgs.install_url} target="_blank" rel="noreferrer" className="underline underline-offset-4 hover:text-foreground">Install the GitHub App on it</a>, then reload.</> : kind === KINDS.github ? <> Missing one? Reconnect the host with the <code className="font-mono">read:org</code> scope in Settings.</> : null}
             </p>
           )}
         </PanelBody>
       </Panel>
 
       {error && <div className="rounded-md border border-foreground px-3 py-2 text-sm">{error}</div>}
-      {loadingPreview && <Panel><PanelBody className="flex items-center gap-2 text-sm text-secondary"><RefreshCw className="size-4 animate-spin" strokeWidth={1.75} aria-hidden="true" />Reading {login} on GitHub…</PanelBody></Panel>}
+      {loadingPreview && <Panel><PanelBody className="flex items-center gap-2 text-sm text-secondary"><RefreshCw className="size-4 animate-spin" strokeWidth={1.75} aria-hidden="true" />Reading {login} on {kind.label}…</PanelBody></Panel>}
 
       {preview && (
         <>
+          {preview.limits.length > 0 && (
+            <div className="space-y-1 rounded-md border border-border px-3 py-2 text-[13px] text-secondary">
+              {preview.limits.map((l) => <p key={l}>{l}</p>)}
+            </div>
+          )}
           {preview.problems.length > 0 && (
             <div className="space-y-1 rounded-md border border-foreground px-3 py-2 text-sm">
               {preview.problems.map((p) => <p key={p}>{p}</p>)}
@@ -212,7 +220,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
           {preview.projects.length > 0 && (
             <Panel>
               <PanelHeader
-                title={`GitHub Projects · ${preview.projects.length}`}
+                title={`${kind.projects} · ${preview.projects.length}`}
                 aside={<button type="button" className="text-xs text-secondary hover:text-foreground" onClick={ghProjects.toggleAll}>{ghProjects.allPicked ? "Clear" : "Select all"}</button>}
               />
               <ul className="divide-y divide-border">
@@ -256,7 +264,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
                     {r.fork && <Badge>fork</Badge>}
                     {r.language && <Badge>{r.language}</Badge>}
                     {r.imported_as && <Badge tone="ok"><Check className="mr-1 size-3" strokeWidth={1.75} aria-hidden="true" />imported as {r.imported_as}</Badge>}
-                    {!r.imported_as && linked.has(r.full_name) && <Badge tone="ok">via GitHub Project</Badge>}
+                    {!r.imported_as && linked.has(r.full_name) && <Badge tone="ok">{kind.via}</Badge>}
                   </div>
                   {r.description && <div className="text-[13px] text-secondary">{r.description}</div>}
                 </Row>
@@ -294,16 +302,16 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
             />
             <div className="grid gap-3 border-b border-border px-4 py-3 md:grid-cols-3">
               {HOST_ROLES.map((h) => (
-                <label key={h.id} className="block text-sm">
-                  <span className="mb-1 block text-xs text-secondary">{h.label} on GitHub become</span>
-                  <Select size="sm" value={mapping[h.id]} onChange={(v) => setMapping((m) => ({ ...m, [h.id]: v }))} options={roles.map((r) => ({ value: r.id, label: r.label }))} aria-label={`Platform role for ${h.label.toLowerCase()}`} />
+                <label key={h} className="block text-sm">
+                  <span className="mb-1 block text-xs text-secondary">{kind.roles[h]} on {kind.label} become</span>
+                  <Select size="sm" value={mapping[h]} onChange={(v) => setMapping((m) => ({ ...m, [h]: v }))} options={roles.map((r) => ({ value: r.id, label: r.label }))} aria-label={`Platform role for ${kind.roles[h].toLowerCase()}`} />
                 </label>
               ))}
             </div>
             <ul className="divide-y divide-border">
               {preview.people.map((p) => {
                 const status = PEOPLE_STATUS[p.status] ?? { label: p.status, hint: "", selectable: false };
-                const hostRole = (HOST_ROLES.find((h) => h.id === p.role) ?? HOST_ROLES[2]).id;
+                const hostRole = HOST_ROLES.find((h) => h === p.role) ?? "member";
                 const picked = people.picked.has(p.login);
                 return (
                   <Row key={p.login} id={`person-${p.login}`} checked={picked} disabled={!status.selectable} onToggle={() => people.toggle(p.login)}>
@@ -311,7 +319,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
                       <UserRound className="size-4 text-secondary" strokeWidth={1.75} aria-hidden="true" />{p.name}
                       <span className="font-mono text-xs text-secondary">@{p.login}</span>
                       <Badge tone={p.status === "member" ? "ok" : "neutral"}>{status.label}</Badge>
-                      {hostRole !== "member" && <Badge>{hostRole === "org_admin" ? "GitHub owner" : "team maintainer"}</Badge>}
+                      {hostRole !== "member" && <Badge>{kind.badge[hostRole]}</Badge>}
                       {picked && (
                         <span className="ml-auto" onClick={(e) => e.preventDefault()}>
                           <Select size="sm" value={overrides[p.login] ?? mapping[hostRole]} onChange={(v) => setOverrides((o) => ({ ...o, [p.login]: v }))} options={roles.map((r) => ({ value: r.id, label: r.label }))} aria-label={`Role for ${p.login}`} />
