@@ -15,7 +15,9 @@ The platform executes `run_by = "platform"` targets itself and dispatches the
 CI-run ones (`github_actions`, `gitlab_ci`, `bitbucket_pipelines`): it starts
 the workflow on the release tag and follows the run. `jenkins` and `manual`
 targets are observed — their runs become deployment records — and verified.
-`stages` limits a target to some scopes. A dispatched workflow receives the
+`stages` limits a target to some scopes. An observed run names its release by
+the tag it built or, with `version_parameter`, by a build parameter; its scope
+comes from `stage_parameter`, else the target's only stage. A dispatched workflow receives the
 registry the kind pairs with the scope's criticality — a `test` scope publishes
 to TestPyPI or the npm `next` tag — unless the target fixes one with `registry`.
 """
@@ -73,6 +75,39 @@ class TargetSpec:
     @property
     def component(self) -> str:
         return str(self.options.get("component") or "")
+
+    @property
+    def version_parameter(self) -> str:
+        return str(self.options.get("version_parameter") or "")
+
+    @property
+    def stage_parameter(self) -> str:
+        return str(self.options.get("stage_parameter") or "")
+
+    def run_version(self, ref: str | None, params: dict[str, str]) -> str | None:
+        """The release a run shipped: the tag it built, else the value of `version_parameter` — `v1.2.3`, `1.2.3` or `<component>/v1.2.3`."""
+        found = version_from_ref(ref, self.component)
+
+        if found is not None or not self.version_parameter:
+            return found
+
+        value = (params.get(self.version_parameter) or "").strip()
+        found = version_from_ref(value, self.component)
+
+        if found is None and "/" not in value:
+            found = version_from_ref(value)
+
+        return found
+
+    def run_stage(self, params: dict[str, str]) -> str | None:
+        """The scope a run deployed to: the value of `stage_parameter`, else the target's only stage."""
+        if self.stage_parameter:
+            value = (params.get(self.stage_parameter) or "").strip()
+
+            if value:
+                return value
+
+        return self.stages[0] if len(self.stages) == 1 else None
 
 
 def parse_targets(cfg: dict) -> list[TargetSpec]:

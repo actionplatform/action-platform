@@ -6,7 +6,7 @@ import unittest
 
 from action_platform.core.config import Config
 from action_platform.core.exception import ConfigError
-from action_platform.core.targets import parse_targets, version_from_ref
+from action_platform.core.targets import TargetSpec, parse_targets, version_from_ref
 
 
 class ParseTargetsTest(unittest.TestCase):
@@ -117,3 +117,48 @@ class VersionFromRefTest(unittest.TestCase):
     def test_branches_are_not_releases(self):
         for ref in ("main", "feature/226-x", "release/1.2", "", None):
             self.assertIsNone(version_from_ref(ref), ref)
+
+
+class ObservedRunTest(unittest.TestCase):
+    def spec(self, stages=(), **options) -> TargetSpec:
+        return TargetSpec("app", "docker", "jenkins", tuple(stages), options)
+
+    def test_the_built_tag_wins(self):
+        spec = self.spec(version_parameter="RELEASE_TAG")
+
+        self.assertEqual(spec.run_version("v2.0.0", {"RELEASE_TAG": "v1.0.0"}), "2.0.0")
+
+    def test_version_from_the_parameter_when_the_ref_is_a_branch(self):
+        spec = self.spec(version_parameter="RELEASE_TAG")
+
+        for value in ("v1.2.3", "1.2.3", " v1.2.3 "):
+            self.assertEqual(spec.run_version("main", {"RELEASE_TAG": value}), "1.2.3")
+
+        self.assertIsNone(spec.run_version("main", {"RELEASE_TAG": "latest"}))
+        self.assertIsNone(spec.run_version("main", {}))
+
+    def test_component_parameter(self):
+        spec = self.spec(version_parameter="RELEASE_TAG", component="api")
+
+        self.assertEqual(
+            spec.run_version("main", {"RELEASE_TAG": "api/v1.2.3"}), "1.2.3"
+        )
+        self.assertEqual(spec.run_version("main", {"RELEASE_TAG": "v1.2.3"}), "1.2.3")
+        self.assertIsNone(spec.run_version("main", {"RELEASE_TAG": "web/v1.2.3"}))
+
+    def test_without_the_option_parameters_are_ignored(self):
+        self.assertIsNone(self.spec().run_version("main", {"RELEASE_TAG": "v1.2.3"}))
+
+    def test_stage_from_the_parameter_then_the_only_stage(self):
+        self.assertEqual(
+            self.spec(["dev", "prod"], stage_parameter="ENV").run_stage(
+                {"ENV": "prod"}
+            ),
+            "prod",
+        )
+        self.assertEqual(
+            self.spec(["prod"], stage_parameter="ENV").run_stage({}), "prod"
+        )
+        self.assertEqual(self.spec(["prod"]).run_stage({"ENV": "dev"}), "prod")
+        self.assertIsNone(self.spec(["dev", "prod"]).run_stage({}))
+        self.assertIsNone(self.spec().run_stage({}))
