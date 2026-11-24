@@ -20,8 +20,8 @@
 
 | Endpoint | |
 |---|---|
-| `GET /api/auth/status` | `{configured, users}` — whether `AP_AUTH_SECRET` is set and anyone has signed up |
-| `POST /api/auth/sign-up {name, email, password, invitation_id}` | open for the first account only; afterwards needs a pending invitation for that email (an invitation bound to a code-host login takes any email). Answers user + session (`token`, signed `cookie`, `expires_at`) |
+| `GET /api/auth/status` | `{configured, users, organizations, password_recovery, google, setup}` — whether `AP_AUTH_SECRET` is set, how many accounts and organizations exist, which sign-in options are on, and `setup`: `open` until the first account exists, then `closed` |
+| `POST /api/auth/sign-up {name, email, password, invitation_id, setup_token}` | the first account needs `setup_token` (`action-platform-api setup token`; `403 setup_token` without it); afterwards needs a pending invitation for that email (an invitation bound to a code-host login takes any email). Answers user + session (`token`, signed `cookie`, `expires_at`) |
 | `GET /api/auth/invitations/{id}`, `POST /invitations/{id}/accept` | open an invitation (`email`, or `login` and `host_kind` when it is bound to a code-host login; role, organization, status) and accept it as the signed-in user, who joins with its role and the teams it carries. A login invitation refuses the plain accept |
 | `POST /api/auth/invitations/{id}/verify {origin}`, `POST /invitations/{id}/verify/callback {origin, code, state}` | accept a login invitation: `verify` answers the code host's sign-in URL (the platform's OAuth app for that host, asking only for the profile); the callback trades the code for the login and joins when it is the invited one |
 | `POST /api/auth/sign-in {email, password, ip_address, user_agent}`, `POST /sign-out` | password checked with the same scrypt parameters the web app used, so every existing account keeps working; 10 attempts per minute per IP |

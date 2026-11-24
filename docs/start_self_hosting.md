@@ -16,7 +16,7 @@ curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/mast
 - resolves the newest stable `api/vX.Y.Z` and `web/vX.Y.Z` releases (release candidates are skipped) and downloads `docker-compose.yml` and `.env.example` from the `api/vX.Y.Z` tag, the commit the api image was built from
 - writes `/opt/action-platform/.env` with the settings and `/opt/action-platform/secrets/{postgres_password,better_auth_secret,api_token}` with fresh values (`openssl rand -hex 32`); the containers read them from `/run/secrets/*`, never from the environment
 - `PUBLIC_URL=http://<public ip>:3000`, and the image versions as explicit tags: `AP_IMAGE_API`, `AP_IMAGE_WORKER` (both the api version) and `AP_IMAGE_WEB`
-- `docker compose pull && docker compose up -d`, prints the URL
+- `docker compose pull && docker compose up -d`, prints the URL and, once the API is healthy, the setup token the first account asks for (see [first run](#first-run))
 
 The compose files have no default image and no `pull_policy: always`: a missing `AP_IMAGE_*` stops `docker compose` with an error, and `docker compose up -d` (or a reboot) on an unchanged `.env` runs the same versions it ran before.
 
@@ -27,6 +27,16 @@ curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/mast
 ```
 
 Running the script again is the upgrade path — see [Upgrading](#upgrading).
+
+## First run
+
+Until the first account exists, anyone who reaches the URL could otherwise claim the instance. The first sign-up therefore needs a **setup token**: the setup wizard's Admin step asks for it, and `POST /api/auth/sign-up` without it answers `403 setup_token`. It is derived from the auth secret, so every API process agrees on it without storing anything, and it stops working once an account exists. Print it in the API container:
+
+```bash
+docker compose exec api action-platform-api setup token     # install directory, compose
+```
+
+On Dokploy open the `ap-api` container's terminal (service → *Logs*/*Terminal*, or `docker exec -it $(docker ps -qf name=ap-api) sh` on the host) and run `action-platform-api setup token`. While no account exists the API logs a warning at startup pointing at the command; it never logs the token. `AP_SETUP_TOKEN` (in `.env`, or under *Environment* on Dokploy) replaces the derived token with one of your own. Once an account exists the command refuses, `/api/auth/status` answers `"setup": "closed"`, and `/setup` sends anyone not signed in to `/login`.
 
 Pin versions with `AP_REF` (api, worker and the compose files) and `AP_WEB_REF` (web); either one alone pins only that component and resolves the other:
 
@@ -53,6 +63,7 @@ Every stable `api/v…` and `web/v…` [release](https://github.com/actionplatfo
 2. In the service: **Advanced → Import Template** (or *Raw* → *Import*), paste the contents of the release's `dokploy-template.b64` (or of [`deploy/dokploy/template.b64`](../deploy/dokploy/template.b64) to run what `master` names), import. Compose, environment and the `ap-web` domain are filled in; the host is `<app>-<random>.<server ip>.traefik.me` until you change it.
 3. **Domains**: edit the host to your domain, HTTPS on. Update `PUBLIC_URL` under *Environment* to match.
 4. **Deploy**. Upgrades: change the `AP_IMAGE_*` tags under *Environment*, then *Redeploy*.
+5. Run `action-platform-api setup token` in the `ap-api` container's terminal and open the domain: the setup wizard asks for that token before it creates the first account ([first run](#first-run)).
 
 Regenerate `template.b64` after editing the compose or the toml: `sh deploy/dokploy/build.sh` — it also copies the compose to `deploy/docker-compose.dokploy.yml`, the file a Git-provider service reads; the two are one file.
 
@@ -62,6 +73,7 @@ Regenerate `template.b64` after editing the compose or the toml: `sh deploy/dokp
 2. **Environment**: `PUBLIC_URL=https://platform.example.com`, `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, `AP_API_TOKEN` (`openssl rand -hex 32` each), and the images with explicit tags: `AP_IMAGE_API=actionplatformio/action-platform-api:X.Y.Z`, `AP_IMAGE_WORKER=actionplatformio/action-platform-worker:X.Y.Z` (the same version) and `AP_IMAGE_WEB=actionplatformio/action-platform-web:X.Y.Z` (the newest `api/v…` and `web/v…` [releases](https://github.com/actionplatform/action-platform/releases)). Save — the deploy fails with an unhealthy Postgres when the secrets are empty, and with `required variable AP_IMAGE_API is missing a value` when an image is.
 3. **Domains → Add**: your host → service `ap-web`, container port `3000`, HTTPS on.
 4. **Deploy**. Upgrades: change the `AP_IMAGE_*` tags under *Environment*, then *Redeploy*.
+5. Print the setup token in the `ap-api` container's terminal (`action-platform-api setup token`) for the wizard's first account ([first run](#first-run)).
 
 ## The services
 
@@ -115,7 +127,7 @@ Both worker services have a healthcheck that reads the worker's heartbeat (`acti
 | `AP_SMTP_HOST`, `AP_SMTP_PORT`, `AP_SMTP_USER`, `AP_SMTP_PASSWORD`, `AP_SMTP_FROM`, `AP_SMTP_SECURITY` | no | SMTP server the API sends email through (password recovery). `AP_SMTP_SECURITY` is `starttls` (default, port 587), `ssl` (465) or `none`; `AP_SMTP_PASSWORD_FILE` reads the password from a file. Empty `AP_SMTP_HOST` means the API sends no email. Settings → Instance sends a test message and shows the server's error. |
 | `AP_GOOGLE_CLIENT_ID`, `AP_GOOGLE_CLIENT_SECRET` | no | OAuth client (type Web application) of a Google Cloud project for "Continue with Google"; its authorized redirect URI is `${PUBLIC_URL}/api/sign-in/google/callback`. `AP_GOOGLE_CLIENT_SECRET_FILE` reads the secret from a file. Google signs in an existing account (matched by Google's account id, or by the verified email the first time) and creates one only for an email with a pending invitation. |
 
-The setup wizard's first step only checks that the API has its database and secret; with the compose files it passes at once.
+The setup wizard's first step only checks that the API has its database and secret; with the compose files it passes at once. `AP_SETUP_TOKEN` (optional) replaces the setup token derived from the auth secret ([first run](#first-run)).
 
 ## Backups
 
