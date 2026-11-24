@@ -433,6 +433,36 @@ class DeploymentRecordsTest(GateCase):
         pypi = [d for d in body["deployments"] if d["target"] == "pypi"][0]
         self.assertIsNotNone(pypi["ci_run_id"])
 
+    def test_a_deployment_never_links_a_run_of_another_job(self):
+        self.github()
+        from app.core.db.models import App
+        from app.services.ci import CiService
+
+        other = run(77, "main")
+        other.url = "https://ci/other-job/77"
+
+        with mock.patch(
+            "action_platform.providers.ci.github_actions.CIGithubActions.runs",
+            return_value=[other],
+        ):
+            with self.app.state.db.session() as s:
+                CiService(s, self.app.state.sealer).sync_runs(
+                    self.org["id"], s.get(App, "a1"), "acme/demo"
+                )
+
+        with mock.patch(
+            "action_platform.providers.ci.github_actions.CIGithubActions.runs",
+            return_value=[run(77, "v3.0.0")],
+        ):
+            with mock.patch(
+                "action_platform.providers.deploy.pypi.DeployPypi.verify",
+                return_value=False,
+            ):
+                body = self.client.post(f"{self.base}/sync", headers=self.h()).json()
+
+        pypi = [d for d in body["deployments"] if d["target"] == "pypi"][0]
+        self.assertIsNone(pypi["ci_run_id"])
+
     def test_a_manual_record_needs_a_known_target_and_a_version(self):
         res = self.client.post(
             self.base,
