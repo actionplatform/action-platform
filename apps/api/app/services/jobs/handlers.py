@@ -31,6 +31,7 @@ from app.services.projects.apps import AppService
 from app.services.deployments import AppCiRunners, DeployEnv, DeploymentRecords
 from app.services.integrations.hosts.directory import IntegrationsDirectory
 from app.services.projects.organization_import.directory import ImportDirectory
+from app.services.projects.adoption import BulkInstall, InstallOptions
 from app.services.deployments.identity import AppIdentity, TargetContexts
 from app.services.jobs.context import JobContext
 from app.services.jobs.registry import JobServices, register
@@ -486,6 +487,23 @@ class JobHandlers:
                 },
             )
 
+    def install(self, payload: dict[str, Any]) -> Any:
+        """Install the platform on a project's apps: a plan per app on a dry run, else a pull request per repository."""
+        body = payload.get("body") or {}
+
+        return BulkInstall(self.database, self.sealer, self.registry).run(
+            payload["organization_id"],
+            payload["project_id"],
+            list(body.get("apps") or []),
+            InstallOptions(
+                type=body.get("type") or "web",
+                ci=body.get("ci") or None,
+                language=body.get("language") or None,
+                code=body.get("code") or "platform",
+                dry_run=bool(body.get("dry_run", True)),
+            ),
+        )
+
 
 register("sync", lambda s: JobHandlers.of(s).sync)
 register("destroy_organization", lambda s: JobHandlers.of(s).destroy_organization)
@@ -497,3 +515,4 @@ register("destroy", lambda s: JobHandlers.of(s).destroy)
 register("destroy_project", lambda s: JobHandlers.of(s).destroy_project)
 register("import", lambda s: JobHandlers.of(s).import_activity)
 register("import_github", lambda s: JobHandlers.of(s).import_github)
+register("install", lambda s: JobHandlers.of(s).install)

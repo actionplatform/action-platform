@@ -238,3 +238,36 @@ class PullRequestPage(BaseModel):
     total: int
     page: int
     per: int
+
+
+class ProjectInstallRequest(BaseModel):
+    apps: list[str] = []
+    type: str = "web"
+    ci: Optional[str] = None
+    language: Optional[str] = None
+    code: str = "platform"
+    dry_run: bool = True
+
+
+class InstallQueued(BaseModel):
+    job: str
+    poll: str
+
+
+class AdoptionPullRequest(BaseModel):
+    number: int
+    url: str
+
+
+class AdoptionRow(BaseModel):
+    app_id: str
+    name: str
+    registry_id: str
+    state: str
+    reason: Optional[str] = None
+    language: Optional[str] = None
+    ci: Optional[str] = None
+    version: Optional[str] = None
+    branch: Optional[str] = None
+    pull_request: Optional[AdoptionPullRequest] = None
+    checked_at: Optional[datetime] = None

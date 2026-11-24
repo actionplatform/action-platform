@@ -26,13 +26,20 @@ from app.core.db.models.organization import (
     Team,
     TeamMember,
 )
-from app.core.db.models.projects import App, Draft, Project, RegistryEntry
+from app.core.db.models.projects import (
+    App,
+    AppAdoption,
+    Draft,
+    Project,
+    RegistryEntry,
+)
 
 __all__ = [
     "Account",
     "ApiToken",
     "ApiTokenClient",
     "App",
+    "AppAdoption",
     "AppConfig",
     "AppSnapshot",
     "CiHost",

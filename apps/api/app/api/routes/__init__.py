@@ -40,6 +40,7 @@ from app.api.routes.organization import (
     sessions as connected_apps,
     settings,
 )
+from app.api.routes.projects import adoption as project_adoption
 from app.api.routes.projects import apps as project_apps
 from app.api.routes.projects import ci as project_ci
 from app.api.routes.projects import deployments as project_deployments
@@ -73,6 +74,7 @@ routers = [
     project_deployments,
     project_readiness,
     project_scopes,
+    project_adoption,
     organization_import,
     apps,
     releases,

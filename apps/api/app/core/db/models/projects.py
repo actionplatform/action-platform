@@ -7,6 +7,7 @@ from sqlalchemy import (
     DateTime,
     Index,
     ForeignKey,
+    Integer,
     Text,
     func,
 )
@@ -53,6 +54,27 @@ class App(Base):
         DateTime, nullable=False, default=now, server_default=func.now()
     )
     project: Mapped[Project] = relationship(foreign_keys=[project_id])
+
+
+class AppAdoption(Base):
+    """Where an app stands on the way onto the platform, as the last install run found it."""
+
+    __tablename__ = "app_adoption"
+
+    app_id: Mapped[str] = mapped_column(
+        KEY, ForeignKey("app.id", ondelete="CASCADE"), primary_key=True
+    )
+    state: Mapped[str] = mapped_column(SHORT, nullable=False)
+    reason: Mapped[Optional[str]] = mapped_column(Text)
+    language: Mapped[Optional[str]] = mapped_column(SHORT)
+    ci: Mapped[Optional[str]] = mapped_column(SHORT)
+    version: Mapped[Optional[str]] = mapped_column(SHORT)
+    branch: Mapped[Optional[str]] = mapped_column(SHORT)
+    pull_request_number: Mapped[Optional[int]] = mapped_column(Integer)
+    pull_request_url: Mapped[Optional[str]] = mapped_column(Text)
+    checked_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, server_default=func.now()
+    )
 
 
 class RegistryEntry(Base):
