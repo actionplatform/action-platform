@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.41.2 — 2026-11-24
+
+### Bug Fixes
+- **api:** link an observed deployment only to the CI run of the same build
+
 ## v0.41.1 — 2026-11-24
 
 ### Bug Fixes
