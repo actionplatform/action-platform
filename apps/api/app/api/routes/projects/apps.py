@@ -41,6 +41,7 @@ def add_app(
         registry_id=app.registry_id,
         name=app.name,
         installed=entry.get("installed"),
+        report=entry.get("report"),
     )
 
 

@@ -119,4 +119,4 @@ class ConfigurationService:
         plan = install(root, type_=type_, language=language, ci=ci, name=entry.name)
         self._drafted(id, root)
 
-        return {"installed": plan.created}
+        return {"installed": plan.created, "report": plan.report()}
