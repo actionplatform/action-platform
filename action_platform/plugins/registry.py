@@ -18,9 +18,13 @@ from action_platform.plugins.state import PluginState
 
 if TYPE_CHECKING:
     from action_platform.core.context import Context, DeployResult, PRRef
+    from action_platform.core.service_access.provider import AccessProvider
 
 GROUP = "action_platform.plugins"
 FAILURES: dict[str, str] = {}
+RESERVED = {
+    "access": "the core owns access: uninstall it and install the plugin of each service (apx-github, apx-jenkins, apx-sentry, apx-dokploy)"
+}
 
 
 class PluginError(ActionPlatformError):
@@ -149,6 +153,14 @@ class Plugins:
 
                 continue
 
+            if plugin.slug in RESERVED:
+                FAILURES[ep.name] = (
+                    f"slug {plugin.slug!r} is reserved: {RESERVED[plugin.slug]}"
+                )
+                logger.warning(FAILURES[ep.name])
+
+                continue
+
             FAILURES.pop(ep.name, None)
 
             dist = getattr(ep, "dist", None)
@@ -236,6 +248,7 @@ class Plugins:
                 "needs": list(row.plugin.needs),
                 "options": [o.as_dict() for o in row.plugin.options],
                 "overlays": row.plugin.overlays is not None,
+                "access": type(row.plugin).access is not Plugin.access,
                 "replaces": sorted(
                     slot for slot, by in wired.origins().items() if by == row.slug
                 ),
@@ -272,6 +285,32 @@ class Plugins:
     def options_for(self, slug: str) -> Options:
         """The plugin's option store — the file backend unless the host process installed another (the API's table)."""
         return self.options_factory(slug)
+
+    def access_providers(
+        self, options_for: Optional[Callable[[str], Options]] = None
+    ) -> tuple[dict[str, "AccessProvider"], dict[str, str]]:
+        """Access on every service an enabled plugin owns and its options configure, by service name; and why the ones that tried could not be built, by service or plugin slug."""
+        options_for = options_for or self.options_for
+        providers: dict[str, AccessProvider] = {}
+        errors: dict[str, str] = {}
+
+        for row in self.enabled():
+            try:
+                provider = row.plugin.access(options_for(row.slug))
+            except ActionPlatformError as e:
+                errors[row.slug] = str(e)
+
+                continue
+            except Exception as e:
+                logger.warning(f"plugin {row.slug}.access failed: {e}")
+                errors[row.slug] = f"{type(e).__name__}: plugin {row.slug} failed"
+
+                continue
+
+            if provider is not None:
+                providers[provider.name] = provider
+
+        return providers, errors
 
     def overlay_roots(self) -> list[tuple[str, Path]]:
         """(slug, directory) for every enabled plugin that ships overlays; the directory holds an `index.json` and `cloud/<name>/`."""
