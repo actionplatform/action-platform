@@ -20,6 +20,7 @@ from app.services.integrations.connections import (
     connection_providers,
 )
 from app.services.jobs import JobQueue
+from app.services.organization import InvitationSender
 from app.services.projects.organization_import import ImportGateway
 from app.services.integrations.plugins import PluginManager
 from app.services.projects.service import ProjectService
@@ -100,6 +101,12 @@ def get_queue(request: Request) -> JobQueue:
         raise HTTPException(503, "no database configured: set AP_DATABASE_URL")
 
     return JobQueue(request.app.state.db)
+
+
+def get_invitation_sender(request: Request) -> InvitationSender:
+    state = request.app.state
+
+    return InvitationSender(state.mailer, state.public_url, state.google is not None)
 
 
 def get_state_signer(request: Request) -> OAuthState:

@@ -129,6 +129,9 @@ class InvitationRow(BaseModel):
     expires_at: datetime
     created_at: datetime
     inviter: str
+    emailed_at: Optional[datetime] = None
+    email_error: Optional[str] = None
+    email_state: str = "off"
 
 
 class InviteRequest(BaseModel):

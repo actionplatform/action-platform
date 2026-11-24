@@ -50,10 +50,10 @@ export async function membersOf(): Promise<Member[]> {
   return (await v1.members()).map((m) => ({ id: m.user_id, userId: m.user_id, role: m.role, name: m.name, email: m.email }));
 }
 
-export type Invitation = { id: string; email: string | null; login: string | null; hostKind: string | null; teams: string[]; role: string | null; status: string; expiresAt: Date; createdAt: Date; inviter: string };
+export type Invitation = { id: string; email: string | null; login: string | null; hostKind: string | null; teams: string[]; role: string | null; status: string; expiresAt: Date; createdAt: Date; inviter: string; emailState: string; emailError: string | null };
 
 export async function invitationsOf(): Promise<Invitation[]> {
-  return (await v1.invitations()).map((i) => ({ id: i.id, email: i.email ?? null, login: i.login ?? null, hostKind: i.host_kind ?? null, teams: i.teams ?? [], role: i.role ?? null, status: i.status, expiresAt: new Date(i.expires_at), createdAt: new Date(i.created_at), inviter: i.inviter }));
+  return (await v1.invitations()).map((i) => ({ id: i.id, email: i.email ?? null, login: i.login ?? null, hostKind: i.host_kind ?? null, teams: i.teams ?? [], role: i.role ?? null, status: i.status, expiresAt: new Date(i.expires_at), createdAt: new Date(i.created_at), inviter: i.inviter, emailState: i.email_state ?? "off", emailError: i.email_error ?? null }));
 }
 
 export type OpenInvitation = { id: string; email: string | null; login: string | null; hostKind: string | null; role: string; org: Org; inviter: string; expired: boolean; status: string };

@@ -28,6 +28,7 @@ from app.api.dependencies.services import (
     get_projects,
     get_project_view,
     get_plugins,
+    get_invitation_sender,
     get_queue,
     get_state_signer,
 )
@@ -41,6 +42,7 @@ from app.services.integrations.hosts.directory import IntegrationsDirectory
 from app.services.integrations.hosts import HostProviders, OAuthState
 from app.services.integrations.connections import ConnectionProviders
 from app.services.jobs import JobQueue
+from app.services.organization import InvitationSender
 from app.services.integrations.plugins import PluginManager
 from app.services.projects.organization_import import ImportGateway
 from app.services.projects.service import ProjectService
@@ -56,6 +58,7 @@ from app.services.workspace.state import GitStateService
 
 CallerDep = Annotated[Caller, Depends(get_caller)]
 DbDep = Annotated[DbSession, Depends(get_db)]
+InvitationSenderDep = Annotated[InvitationSender, Depends(get_invitation_sender)]
 OrganizationRepoDep = Annotated[
     OrganizationRepository, Depends(get_organization_repository)
 ]

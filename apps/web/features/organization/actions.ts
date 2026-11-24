@@ -9,13 +9,26 @@ import { requireOrg } from "@/lib/session";
 import { HOST_KINDS, type HostKind } from "@/lib/source-hosts";
 import { v1 } from "@/lib/v1";
 
-export async function inviteMember(email: string, role: Role): Promise<Result<{ id: string }>> {
+export type InvitationSent = { id: string; emailState: string; emailError: string | null };
+
+export async function inviteMember(email: string, role: Role): Promise<Result<InvitationSent>> {
   await requireOrg();
   try {
     if (!ROLES.includes(role)) throw new Error("unknown role");
     const invitation = await v1.invite(email, role);
     revalidatePath("/", "layout");
-    return { ok: true, data: { id: invitation.id } };
+    return { ok: true, data: { id: invitation.id, emailState: invitation.email_state ?? "off", emailError: invitation.email_error ?? null } };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
+export async function resendInvitation(id: string): Promise<Result<InvitationSent>> {
+  await requireOrg();
+  try {
+    const invitation = await v1.resendInvitation(id);
+    revalidatePath("/", "layout");
+    return { ok: true, data: { id: invitation.id, emailState: invitation.email_state ?? "off", emailError: invitation.email_error ?? null } };
   } catch (e) {
     return failed(e);
   }

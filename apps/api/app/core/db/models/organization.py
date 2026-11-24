@@ -71,6 +71,8 @@ class Invitation(Base):
     inviter_id: Mapped[str] = mapped_column(
         KEY, ForeignKey("user.id", ondelete="CASCADE"), nullable=False
     )
+    emailed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    email_error: Mapped[Optional[str]] = mapped_column(Text)
     organization: Mapped[Organization] = relationship(foreign_keys=[organization_id])
     inviter: Mapped[User] = relationship(foreign_keys=[inviter_id])
 

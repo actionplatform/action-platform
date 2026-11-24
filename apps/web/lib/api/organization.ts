@@ -17,6 +17,7 @@ export const organization = {
   removeMember: async (userId: string) => unwrap(await client.DELETE("/api/v1/members/{user_id}", { params: { path: { user_id: userId } } })),
   invitations: async () => unwrap(await client.GET("/api/v1/invitations")),
   invite: async (email: string, role: string, teamIds: string[] = []) => unwrap(await client.POST("/api/v1/invitations", { body: { email, role, team_ids: teamIds } })),
+  resendInvitation: async (id: string) => unwrap(await client.POST("/api/v1/invitations/{id}/resend", { params: { path: { id } } })),
   cancelInvitation: async (id: string) => unwrap(await client.DELETE("/api/v1/invitations/{id}", { params: { path: { id } } })),
   gitAuthor: async () => unwrap(await client.GET("/api/v1/settings/git-author")),
   setGitAuthor: async (name: string, email: string) => unwrap(await client.PUT("/api/v1/settings/git-author", { body: { name, email } })),

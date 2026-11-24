@@ -153,6 +153,37 @@ class InvitationsWrites(InvitationsReads):
         invitation.team_ids = json.dumps(sorted(waiting | set(team_ids)))
         self.db.flush()
 
+    def record_invitation_email(self, id: str, error: Optional[str]) -> None:
+        invitation = self.db.get(Invitation, id)
+
+        if invitation is None:
+            return
+
+        invitation.email_error = error[:1000] if error else None
+
+        if error is None:
+            invitation.emailed_at = now()
+
+        self.db.flush()
+
+    def renew_invitation(self, organization_id: str, id: str) -> Invitation:
+        """Same invitation, same link, a fresh expiry."""
+        invitation = self.db.scalar(
+            select(Invitation).where(
+                Invitation.id == id,
+                Invitation.organization_id == organization_id,
+                Invitation.status == "pending",
+            )
+        )
+
+        if invitation is None:
+            raise DirectoryError("invitation not found")
+
+        invitation.expires_at = now() + INVITATION_TTL
+        self.db.flush()
+
+        return invitation
+
     def cancel_invitation(self, organization_id: str, id: str) -> None:
         invitation = self.db.scalar(
             select(Invitation).where(

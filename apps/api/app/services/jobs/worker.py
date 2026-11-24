@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import socket
 import threading
 import time
@@ -12,6 +13,7 @@ from typing import Iterator, Optional
 
 from action_platform.core.exception import ActionPlatformError
 from action_platform.plugins import registry as plugin_registry
+from action_platform.settings import settings
 from app.core.auth.crypto import Sealer
 from app.core.auth.secrets import Secrets
 from app.core.db.database import Database
@@ -19,6 +21,7 @@ from app.core.db.models import Job
 from app.repositories.workspace.registry import Registry
 from app.repositories.workspace.source import configure_registry, get_registry
 from app.services.integrations import plugins
+from app.services.organization import InvitationSender
 from app.services.jobs import JobQueue, handlers as _handlers  # noqa: F401 — registers the job kinds
 from app.services.jobs.logs import JobLogs
 from app.services.jobs.registry import JobServices, handlers
@@ -61,7 +64,14 @@ class Worker:
 
         self.registry = registry
         self.listener = self.queue.listener()
-        self.handlers = handlers(JobServices(database, self.sealer, registry))
+        self.handlers = handlers(
+            JobServices(
+                database,
+                self.sealer,
+                registry,
+                InvitationSender.from_env(os.environ, settings.api.public_url),
+            )
+        )
         plugin_registry.use_options(lambda slug: plugins.DbOptions(database, slug))
 
     def run(
