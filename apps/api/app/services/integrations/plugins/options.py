@@ -1,4 +1,4 @@
-"""The plugin options store backed by the database — what the file backend is on a machine. Rows belong to an organization; the empty organization holds the platform-wide defaults an organization's own values override.
+"""The plugin options store backed by the database — what the file backend is on a machine. Rows belong to an organization; the empty organization holds the platform's own. An organization reads one owner's options whole, never a mix: its own when it keeps any for the plugin, else the platform's when `AP_PLATFORM_CONNECTIONS` grants it, else none — an endpoint and the credential sent to it always come from the same record.
 
 A plugin reads the organization's connections through `credential(kind)` — the code host it connected (GitHub, GitLab, Bitbucket) or a service connected under Settings (Sentry) — only for a kind it declares in `connections`; the token is refreshed when it is about to expire and handed to that call alone.
 
@@ -18,9 +18,13 @@ from app.core.db.database import Database
 from app.core.db.models import PluginOption
 from app.repositories.base import HOST_KINDS
 from app.services.integrations.connections.credentials import FreshConnections
+from app.services.integrations.plugins.connections import (
+    PLATFORM,
+    SharedConnections,
+    owner_of,
+)
 from app.services.integrations.hosts.credentials import FreshCredentials
 
-PLATFORM = ""
 SEALED = "$sealed"
 
 
@@ -90,21 +94,21 @@ class DbOptions(Options):
         slug: str,
         organization_id: str = PLATFORM,
         sealer: Optional[Sealer] = None,
+        policy: Optional[SharedConnections] = None,
     ) -> None:
         self.database = database
         self.slug = slug
         self.organization_id = organization_id or PLATFORM
         self.sealer = sealer
+        self.policy = policy
 
     def _key(self, key: str, organization_id: str) -> tuple[str, str, str]:
         return (organization_id, self.slug, key)
 
     def get(self, key: str, default: Any = None) -> Any:
         with self.database.session() as s:
-            row = s.get(PluginOption, self._key(key, self.organization_id))
-
-            if row is None and self.organization_id != PLATFORM:
-                row = s.get(PluginOption, self._key(key, PLATFORM))
+            owner = owner_of(s, self.slug, self.organization_id, self.policy)
+            row = None if owner is None else s.get(PluginOption, self._key(key, owner))
 
             return decode(row.value, self.sealer) if row else default
 
@@ -178,31 +182,26 @@ class DbOptions(Options):
             app=app.slug if app else None,
         )
 
-    def _rows(self) -> list[PluginOption]:
+    def _merged(self) -> dict[str, str]:
+        """Raw values of the one owner the organization reads."""
         with self.database.session() as s:
-            return list(
-                s.scalars(
+            owner = owner_of(s, self.slug, self.organization_id, self.policy)
+
+            if owner is None:
+                return {}
+
+            return {
+                r.key: r.value
+                for r in s.scalars(
                     select(PluginOption).where(
                         PluginOption.plugin == self.slug,
-                        PluginOption.organization_id.in_(
-                            {PLATFORM, self.organization_id}
-                        ),
+                        PluginOption.organization_id == owner,
                     )
                 ).all()
-            )
-
-    def _merged(self) -> dict[str, str]:
-        """Raw values, the organization's over the platform's defaults."""
-        rows = self._rows()
-        merged = {r.key: r.value for r in rows if r.organization_id == PLATFORM}
-        merged.update(
-            {r.key: r.value for r in rows if r.organization_id == self.organization_id}
-        )
-
-        return merged
+            }
 
     def all(self) -> dict[str, Any]:
-        """The organization's values over the platform's defaults, secrets opened — for the processes that use them, never for a response."""
+        """The owner's values, secrets opened — for the processes that use them, never for a response."""
         return {key: decode(raw, self.sealer) for key, raw in self._merged().items()}
 
     def public(self) -> dict[str, Any]:

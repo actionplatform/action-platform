@@ -14,6 +14,7 @@ from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.releases import ReadinessStore, ReleaseStore, tag_of, verdict
 from app.repositories.workspace.registry import Registry
 from app.schemas import SourceCredentials
+from app.services.integrations.plugins.connections import ConnectionGuard
 from app.services.jobs import JobQueue
 from app.services.workspace import Workspaces
 from app.services.workspace import git_auth as auth
@@ -28,11 +29,13 @@ class ReadinessService:
         configs: ConfigStore | None = None,
         credentials: SourceCredentials | None = None,
         ci: list[CIRunner] | None = None,
+        guard: ConnectionGuard | None = None,
     ) -> None:
         self.registry = registry
         self.ci = list(ci or [])
         self.identity = identity
         self.env = env
+        self.guard = guard or ConnectionGuard(env or {}, False)
         self.configs = configs or ConfigStore(registry.store.database)
         self.credentials = credentials
 
@@ -51,6 +54,7 @@ class ReadinessService:
         if scopes:
             config._scopes_spec = scopes
 
+        self.guard.check(config.targets)
         tool = ActionPlatform(
             config=config,
             repo_root=root,

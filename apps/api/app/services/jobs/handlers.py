@@ -109,6 +109,13 @@ class JobHandlers:
 
         return SourceCredentials(**creds.as_dict()) if creds else None
 
+    def _deploy_env(
+        self, organization: Optional[Organization], app: Optional[App]
+    ) -> dict[str, Any]:
+        guard = DeployEnv(self.database, self.sealer).connections(organization, app)
+
+        return {"env": dict(guard.env), "guard": guard}
+
     def _ci_runners(self, ctx: JobContext) -> list[CIRunner]:
         with self.database.session() as db:
             return AppCiRunners(db, self.sealer).of(ctx.app)
@@ -194,9 +201,7 @@ class JobHandlers:
         service = ReadinessService(
             self.registry,
             identity=identity.minter(ctx.organization, ctx.app, stage),
-            env=DeployEnv(self.database, self.sealer).for_app(
-                ctx.organization, ctx.app
-            ),
+            **self._deploy_env(ctx.organization, ctx.app),
             credentials=credentials,
             ci=self._ci_runners(ctx),
         )
@@ -234,9 +239,7 @@ class JobHandlers:
         service = DeploymentsService(
             self.registry,
             identity=identity.minter(ctx.organization, ctx.app, request.stage),
-            env=DeployEnv(self.database, self.sealer).for_app(
-                ctx.organization, ctx.app
-            ),
+            **self._deploy_env(ctx.organization, ctx.app),
             credentials=credentials,
             ci=self._ci_runners(ctx),
         )
@@ -321,9 +324,7 @@ class JobHandlers:
             DeploymentsService(
                 self.registry,
                 identity=identity.minter(ctx.organization, ctx.app),
-                env=DeployEnv(self.database, self.sealer).for_app(
-                    ctx.organization, ctx.app
-                ),
+                **self._deploy_env(ctx.organization, ctx.app),
             ).destroy(ctx.registry_id)
 
         with self.database.session() as db:
@@ -340,7 +341,6 @@ class JobHandlers:
     def destroy_organization(self, payload: dict[str, Any]) -> Any:
         """Every app's stacks down, then the organization and everything it owned off the platform."""
         identity = AppIdentity(self.database, self.sealer, settings.api.public_url)
-        env = DeployEnv(self.database, self.sealer)
         body = payload.get("body") or {}
 
         with self.database.session() as db:
@@ -358,7 +358,7 @@ class JobHandlers:
                     DeploymentsService(
                         self.registry,
                         identity=identity.minter(organization, app),
-                        env=env.for_app(organization, app),
+                        **self._deploy_env(organization, app),
                     ).destroy(app.registry_id)
             except ActionPlatformError as e:
                 log.warning("tear down of %s skipped: %s", app.name, e)
@@ -374,7 +374,6 @@ class JobHandlers:
     def destroy_project(self, payload: dict[str, Any]) -> Any:
         """Each app's stacks down, then the project off the platform."""
         identity = AppIdentity(self.database, self.sealer, settings.api.public_url)
-        env = DeployEnv(self.database, self.sealer)
 
         with self.database.session() as db:
             organization = db.get(Organization, payload["organization_id"])
@@ -386,7 +385,7 @@ class JobHandlers:
                 DeploymentsService(
                     self.registry,
                     identity=identity.minter(organization, app),
-                    env=env.for_app(organization, app),
+                    **self._deploy_env(organization, app),
                 ).destroy(app.registry_id)
 
         with self.database.session() as db:
