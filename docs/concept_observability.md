@@ -11,6 +11,17 @@ Every component reports to [Sentry](https://sentry.io) when given a DSN, and sta
 
 With the compose files and Dokploy, set `AP_SENTRY_DSN_API` and `AP_SENTRY_DSN_WEB` in `.env`; they reach the containers under the names above.
 
+## Instance health
+
+Sentry reports what went wrong; the instance also answers whether it is able to work.
+
+- **`GET /api/health`** — no token, no details. `200 {"status": "ok", ...}` when the database answers, the migrations are at head and a worker was seen in the last minute for each of the two kind groups; `503` with the same body otherwise: `{status, database, migrations, workers: {light, deploy}}`. `light` is the worker that takes sync, release, push and the imports, `deploy` the one that takes deploy, readiness and tear-down. An instance run on purpose without one of them reports `503` for as long as it has none. It is a probe for a monitor; the containers' own checks stay on `/api/version`.
+- **`GET /api/v1/instance/health`** — owners only. The same fields plus every worker (name, host, the kinds it takes, last seen), the queue per job kind (queued, running, age of the oldest queued job, whether a live worker takes that kind), whether email, Google sign-in, Sentry on the API and each code-host OAuth app are configured, the redirect URI Google must allow, the last email the API failed to send since it started, and the versions.
+- **`POST /api/v1/instance/test-email`** — owners only. Sends a message to the signed-in owner and answers `{sent, to, error}`; on failure `error` carries the SMTP server's text.
+- **Settings → Instance** in the web shows all of it, refreshed every ten seconds, with **Send test email**.
+
+Workers write a heartbeat (table `worker`: name, kinds, host, started, last seen) every fifteen seconds, also while a long job runs; one silent for sixty seconds does not count, and rows older than a day are dropped when a worker starts. `action-platform-api worker --check --name <name>` exits `0` when the worker of that name is alive and `1` otherwise; it is the healthcheck of `worker` (`--name worker`) and `worker-deploy` (`--name deploy`) in the compose files. A job queued for more than two minutes with no live worker for its kind carries `no_worker: true`, and the web says "No worker is running for <kind> jobs" instead of waiting.
+
 ## What is sent
 
 - Unhandled exceptions and HTTP 5xx, with the request route (never the body) and the release. In the web app every server action that answers `{ ok: false }` also reports the underlying error unless it is an expected API answer below 500 (`lib/result.ts`).

@@ -41,6 +41,10 @@ Every response is typed and published as OpenAPI at `/docs`; the web app generat
 
 Every route but `/api/version`, `/docs` and `/openapi.json` requires `Authorization: Bearer <AP_API_TOKEN>`, the shared secret between the web app and the API, checked in constant time. Without a token the API refuses to start — `AP_ALLOW_UNAUTHENTICATED=1` opts into an open API for local development only. Two prefixes authenticate the person instead: `/api/auth/*` (sessions, tokens, the device flow) and `/api/v1/*`, the user-facing face of the same routes. The web app rewrites both paths to the API unchanged — release tags with dots in them included — so the CLI, MCP and browser reach them through the platform's public address.
 
+## Instance health
+
+`GET /api/health` needs no token: `200` or `503` with `{status, database, migrations, workers: {light, deploy}}` — database reachable, migrations at head, a worker seen in the last minute for each kind group. `GET /api/v1/instance/health` (owners) adds `workers_seen`, the `queue` per kind (`queued`, `running`, `oldest_queued_seconds`, `worker_running`), `integrations` (`smtp`, `google` with the `redirect_uri`, `sentry_api`, `oauth_apps`) and the versions; `POST /api/v1/instance/test-email` (owners) sends to the caller and answers `{sent, to, error}`. [Observability](concept_observability.md#instance-health) has the details.
+
 ## `/api/v1`
 
 A gate sits in front of `/api/v1/*` and, for every call:
@@ -91,7 +95,7 @@ The registry — id, name, url, default branch of every app — is the `registry
 
 ## Jobs
 
-`POST /api/v1/apps/{id}/sync|release|deploy|push` with `Prefer: respond-async` (or `X-Async: 1`) does not run the action: it answers `202 {job, status, poll}` — a `deploy` to a stage that already has one queued or running is refused with `409` (one deploy per environment) and a worker (`action-platform-api worker`) runs it with the same services, filling in credentials and identity the same way and copying releases and pull requests afterwards. `GET /api/v1/jobs/{id}` answers `status` (`queued` → `running` → `done` | `failed`), `attempts`, `result` (what the inline call would have answered) and `error`; `GET /api/v1/jobs?app=<registry id>` lists an app's last twenty. A second async `sync` for the same app while one is live returns the live job. Failures retry three times with backoff; a job whose worker vanished goes back to the queue after thirty minutes. Without the header everything runs inline as before.
+`POST /api/v1/apps/{id}/sync|release|deploy|push` with `Prefer: respond-async` (or `X-Async: 1`) does not run the action: it answers `202 {job, status, poll}` — a `deploy` to a stage that already has one queued or running is refused with `409` (one deploy per environment) and a worker (`action-platform-api worker`) runs it with the same services, filling in credentials and identity the same way and copying releases and pull requests afterwards. `GET /api/v1/jobs/{id}` answers `status` (`queued` → `running` → `done` | `failed`), `no_worker` (true for a job queued more than two minutes with no live worker taking its kind), `attempts`, `result` (what the inline call would have answered) and `error`; `GET /api/v1/jobs?app=<registry id>` lists an app's last twenty. A second async `sync` for the same app while one is live returns the live job. Failures retry three times with backoff; a job whose worker vanished goes back to the queue after thirty minutes. Without the header everything runs inline as before.
 
 ## Adoption
 
@@ -109,7 +113,7 @@ Each app runs on its own, so one failure never stops the others; `reason` names 
 
 ## Job logs
 
-`GET /api/v1/jobs/{id}/logs?after=<seq>&limit=<n>` answers what the worker wrote for a job — the core's log records, a plugin's `sam build` / `sam deploy` output line by line — as `{lines: [{seq, at, line}], next, status, finished}`. Lines are stored as they happen (flushed every half second or fifty lines); poll with `after=next` until `finished` is true. Same visibility as `GET jobs/{id}`: a member of the job's organization. A job keeps at most twenty thousand lines; a longer output ends with a truncation notice.
+`GET /api/v1/jobs/{id}/logs?after=<seq>&limit=<n>` answers what the worker wrote for a job — the core's log records, a plugin's `sam build` / `sam deploy` output line by line — as `{lines: [{seq, at, line}], next, status, kind, no_worker, finished}`. Lines are stored as they happen (flushed every half second or fifty lines); poll with `after=next` until `finished` is true. Same visibility as `GET jobs/{id}`: a member of the job's organization. A job keeps at most twenty thousand lines; a longer output ends with a truncation notice.
 
 ## Errors
 
