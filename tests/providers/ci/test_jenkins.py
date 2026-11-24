@@ -58,6 +58,27 @@ class JenkinsTest(unittest.TestCase):
         self.assertEqual(run.trigger, "Started by user ada")
         self.assertEqual(run.duration_ms, 65_000)
         self.assertEqual(run.started_at.year, 2023)
+        self.assertEqual(run.params, {})
+
+    def test_parameters_become_run_params(self):
+        build = {
+            **BUILD,
+            "actions": [
+                *BUILD["actions"],
+                {
+                    "_class": "hudson.model.ParametersAction",
+                    "parameters": [
+                        {"name": "RELEASE_TAG", "value": "v1.4.0"},
+                        {"name": "DRY_RUN", "value": False},
+                        {"name": "EMPTY", "value": None},
+                    ],
+                },
+            ],
+        }
+
+        run = CIJenkins._run(build)
+
+        self.assertEqual(run.params, {"RELEASE_TAG": "v1.4.0", "DRY_RUN": "False"})
 
     def test_building_wins_over_result(self):
         run = CIJenkins._run({**BUILD, "building": True, "result": None})
@@ -81,3 +102,4 @@ class JenkinsTest(unittest.TestCase):
             url.startswith("https://ci.acme.io/job/team/job/app/api/json?tree=builds[")
         )
         self.assertTrue(url.endswith("{0,10}"))
+        self.assertIn("parameters[name,value]", url)

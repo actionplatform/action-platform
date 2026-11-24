@@ -17,7 +17,8 @@ from action_platform.providers.source import rest
 
 TREE = (
     "builds[number,result,building,timestamp,duration,url,displayName,"
-    "actions[lastBuiltRevision[SHA1,branch[name]],causes[shortDescription]]]"
+    "actions[lastBuiltRevision[SHA1,branch[name]],causes[shortDescription],"
+    "parameters[name,value]]]"
 )
 
 RESULTS = {
@@ -82,6 +83,7 @@ class CIJenkins(CIRunner):
     @staticmethod
     def _run(build: dict) -> Run:
         sha = branch = trigger = None
+        params: dict[str, str] = {}
 
         for action in build.get("actions") or []:
             revision = action.get("lastBuiltRevision") or {}
@@ -95,6 +97,10 @@ class CIJenkins(CIRunner):
 
             if causes and not trigger:
                 trigger = causes[0].get("shortDescription")
+
+            for param in action.get("parameters") or []:
+                if param.get("name") and param.get("value") is not None:
+                    params[str(param["name"])] = str(param["value"])
 
         if branch and "/" in branch:
             branch = branch.split("/", 1)[1]
@@ -120,6 +126,7 @@ class CIJenkins(CIRunner):
             ),
             duration_ms=build.get("duration") or None,
             name=build.get("displayName"),
+            params=params,
         )
 
     def start(self, job: str, ref: str, params: dict | None = None) -> RunRef:
