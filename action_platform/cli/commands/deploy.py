@@ -7,6 +7,7 @@ from pathlib import Path
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 
 from action_platform.bootstrap import project as open_project
 from action_platform.core.facade import ActionPlatform
@@ -120,11 +121,11 @@ def readiness(
             if c.severity == "warning"
             else "[red]fail[/red]"
         )
-        where = f" [dim]{c.target}[/dim]" if c.target else ""
-        console.print(f"{mark} [bold]{c.id}[/bold]{where} {c.detail}")
+        where = f" [dim]{escape(c.target)}[/dim]" if c.target else ""
+        console.print(f"{mark} [bold]{escape(c.id)}[/bold]{where} {escape(c.detail)}")
 
         if c.fix and not c.ok:
-            console.print(f"     fix: {c.fix}")
+            console.print(f"     fix: {escape(c.fix)}")
 
     blocking = [c for c in checks if c.blocking]
     console.print(
