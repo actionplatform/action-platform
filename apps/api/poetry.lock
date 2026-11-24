@@ -131,6 +131,60 @@ action-platform = ">=0.33"
 dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
 
 [[package]]
+name = "apx-github"
+version = "0.1.0"
+description = "Action Platform plugin for GitHub: organization access and read-only checks of branch protection and repository settings."
+optional = false
+python-versions = ">=3.11"
+groups = ["main"]
+files = [
+    {file = "apx_github-0.1.0-py3-none-any.whl", hash = "sha256:049ebf97c6160d0e7ffad9e9c555989771bd2ef798134f4c57b2cb389ac27de8"},
+    {file = "apx_github-0.1.0.tar.gz", hash = "sha256:fe62bd3f316e78057745d859dea49f7cf9c413f5977a618c67a8c32c1385c484"},
+]
+
+[package.dependencies]
+action-platform = ">=0.33"
+
+[package.extras]
+dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
+
+[[package]]
+name = "apx-jenkins"
+version = "0.1.0"
+description = "Jenkins for Action Platform: access management through Role-based Authorization Strategy, and read-only tools for jobs, builds and the queue."
+optional = false
+python-versions = ">=3.11"
+groups = ["main"]
+files = [
+    {file = "apx_jenkins-0.1.0-py3-none-any.whl", hash = "sha256:d7fd363548e7500a619216890c54d423f20fa79abd7e85653ba3ac2b59e5c036"},
+    {file = "apx_jenkins-0.1.0.tar.gz", hash = "sha256:027d0bac09fc4b05ff2f6ca48fac0a497e065ef15250a29f0773986af4b1af63"},
+]
+
+[package.dependencies]
+action-platform = ">=0.33"
+
+[package.extras]
+dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
+
+[[package]]
+name = "apx-sentry"
+version = "0.1.0"
+description = "Sentry for Action Platform: organization and team access, and read-only tools for a release's new issues and the errors after a deploy."
+optional = false
+python-versions = ">=3.11"
+groups = ["main"]
+files = [
+    {file = "apx_sentry-0.1.0-py3-none-any.whl", hash = "sha256:ac3257798a4eb4544bb23c50e62616f50092071e57556f93ffa5df454e2790bc"},
+    {file = "apx_sentry-0.1.0.tar.gz", hash = "sha256:78b7ebb0d98558c7a0d2d36f6d892673c3d4f0698f053f4c991a22b604230152"},
+]
+
+[package.dependencies]
+action-platform = ">=0.33"
+
+[package.extras]
+dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
+
+[[package]]
 name = "arrow"
 version = "1.4.0"
 description = "Better dates & times for Python"
@@ -3530,4 +3584,4 @@ packaging = ">=24.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "2a35b219d395a00532f4379e35c14769bf343f6f2fd9ad25b02448b86e8e4c2d"
+content-hash = "bc2b71b23e76665d49e3bfe9d1969a6dee03c9642d1fbe0f5250130f0b229f52"
