@@ -154,7 +154,7 @@ def register(mcp: Any, remote: Remote) -> None:
             ),
         ] = False,
     ) -> Union[list[schemas.DeployResult], schemas.JobQueued]:
-        """Ship a release to one of the app's scopes. Defaults to preflight; call again with dry_run=false to deploy. Cut the release first (`release`) when none exists; the scope's criticality decides whether the release may go there, and a release whose readiness for the scope is blocked is refused (release_readiness says why). With background=true the answer is a job id: follow it with job_logs and job_status."""
+        """Ship a release to one of the app's scopes. Defaults to preflight; call again with dry_run=false to deploy. Cut the release first (`release`) when none exists; the scope's criticality decides whether the release may go there, and, when `version` is given, a release whose readiness for the scope is blocked is refused (release_readiness says why). With background=true the answer is a job id: follow it with job_logs and job_status."""
         if background and not dry_run:
             return remote.deploy_later(id, stage, version)
 
