@@ -22,9 +22,13 @@ from app.services.projects.organization_import.teams import TeamImporter
 
 class OrganizationImport:
     def __init__(
-        self, writes: ImportDirectory, organization_id: str, registry: Registry
+        self,
+        writes: ImportDirectory,
+        organization_id: str,
+        registry: Registry,
+        invites: Any = None,
     ) -> None:
-        self.ctx = ImportContext(writes, registry, organization_id)
+        self.ctx = ImportContext(writes, registry, organization_id, invites=invites)
 
     def preview(self, creds: Credentials, login: str) -> dict[str, Any]:
         return ImportPreview(self.ctx, client.GithubDirectory(creds)).run(login)

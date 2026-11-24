@@ -5,21 +5,23 @@ from fastapi import APIRouter
 
 from app.api.dependencies import (
     CallerDep,
+    InvitationSenderDep,
     OrgDep,
     OrganizationRepoDep,
     allowed,
 )
 from app.core.db.models import Invitation, User
-from app.core.errors import Forbidden, NotFound
+from app.core.errors import Conflict, Forbidden, NotFound
 from app.repositories.organization import OrganizationRepository
 from app.repositories.organization.invitations import invitation_team_ids
 from app.schemas import organization as schemas
+from app.services.organization import email_state
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
 
 def row(
-    writes: OrganizationRepository, i: Invitation, inviter: User
+    writes: OrganizationRepository, i: Invitation, inviter: User, enabled: bool
 ) -> schemas.InvitationRow:
     names = {t.id: t.name for t in writes.teams_of(i.organization_id)}
 
@@ -34,6 +36,9 @@ def row(
         expires_at=i.expires_at,
         created_at=i.created_at,
         inviter=people.label(inviter) or "",
+        emailed_at=i.emailed_at,
+        email_error=i.email_error,
+        email_state=email_state(i, enabled),
     )
 
 
@@ -42,10 +47,11 @@ def invitations(
     org: OrgDep,
     caller: CallerDep,
     writes: OrganizationRepoDep,
+    sender: InvitationSenderDep,
 ) -> list[schemas.InvitationRow]:
     allowed(caller, org, "org.manage")
 
-    return [row(writes, i, u) for i, u in writes.invitations_of(org.id)]
+    return [row(writes, i, u, sender.enabled) for i, u in writes.invitations_of(org.id)]
 
 
 @router.post("/invitations", status_code=201)
@@ -54,6 +60,7 @@ def invite(
     org: OrgDep,
     caller: CallerDep,
     writes: OrganizationRepoDep,
+    sender: InvitationSenderDep,
 ) -> schemas.InvitationRow:
     allowed(caller, org, "org.manage")
 
@@ -68,7 +75,41 @@ def invite(
         org.id, caller.user.id, body.email, body.role, body.team_ids
     )
 
-    return row(writes, i, caller.user)
+    if i.emailed_at is None:
+        sender.send(writes, i.id)
+
+    return row(writes, i, caller.user, sender.enabled)
+
+
+@router.post("/invitations/{id}/resend")
+def resend_invitation(
+    id: str,
+    org: OrgDep,
+    caller: CallerDep,
+    writes: OrganizationRepoDep,
+    sender: InvitationSenderDep,
+) -> schemas.InvitationRow:
+    """Send the invitation email again: same id, expiry renewed. A failed send is recorded on the invitation, not raised."""
+    allowed(caller, org, "org.manage")
+
+    if not sender.enabled:
+        raise Conflict("email is not configured: set AP_SMTP_HOST")
+
+    found = next(((i, u) for i, u in writes.invitations_of(org.id) if i.id == id), None)
+
+    if found is None:
+        raise NotFound("invitation not found")
+
+    if not found[0].email:
+        raise Conflict("this invitation is for a login, not an email: nothing to send")
+
+    if found[0].role == "owner" and writes.role_in(caller.user.id, org.id) != "owner":
+        raise Forbidden("only an owner may give or take the owner role")
+
+    i = writes.renew_invitation(org.id, id)
+    sender.send(writes, id)
+
+    return row(writes, i, found[1], sender.enabled)
 
 
 @router.delete("/invitations/{id}", status_code=204)

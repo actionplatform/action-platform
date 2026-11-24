@@ -118,10 +118,14 @@ class PeopleImporter(ImportStep):
         self, found: People, key: str, inviter_id: str, person: dict, role: str
     ) -> None:
         try:
-            found.invitations[key] = self.writes.create_invitation(
+            invitation = self.writes.create_invitation(
                 self.organization_id, inviter_id, person["email"], role
             )
+            found.invitations[key] = invitation
             self.summary.invitations.append(person["email"])
+
+            if self.ctx.invites is not None and invitation.emailed_at is None:
+                self.ctx.invites.send(self.writes, invitation.id)
         except DirectoryError as e:
             self.summary.skip(person["login"], str(e))
 

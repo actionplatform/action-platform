@@ -54,6 +54,7 @@ class ImportContext:
     registry: Registry
     organization_id: str
     summary: Summary = field(default_factory=Summary)
+    invites: Any = None
 
     @property
     def db(self):

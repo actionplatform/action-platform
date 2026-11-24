@@ -60,16 +60,23 @@ log = logging.getLogger(__name__)
 
 class JobHandlers:
     def __init__(
-        self, database: Database, sealer: Optional[Sealer], registry: Registry
+        self,
+        database: Database,
+        sealer: Optional[Sealer],
+        registry: Registry,
+        invites: Any = None,
     ) -> None:
         self.database = database
         self.sealer = sealer
         self.registry = registry
+        self.invites = invites
         self.configs = ConfigStore(database)
 
     @classmethod
     def of(cls, services: JobServices) -> "JobHandlers":
-        return cls(services.database, services.sealer, services.registry)
+        return cls(
+            services.database, services.sealer, services.registry, services.invites
+        )
 
     def context(self, payload: dict[str, Any]) -> JobContext:
         return JobContext.of(payload, self.database, self.sealer)
@@ -464,7 +471,7 @@ class JobHandlers:
                 raise ActionPlatformError("the host has no credentials any more")
 
             return OrganizationImport(
-                writes, payload["organization_id"], self.registry
+                writes, payload["organization_id"], self.registry, self.invites
             ).run(
                 creds,
                 payload["host_id"],

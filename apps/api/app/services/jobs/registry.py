@@ -9,12 +9,15 @@ Factory = Callable[["JobServices"], Handler]
 
 
 class JobServices:
-    """What a handler factory receives: the database, the sealer, the registry of apps."""
+    """What a handler factory receives: the database, the sealer, the registry of apps, the invitation sender."""
 
-    def __init__(self, database: Any, sealer: Any, registry: Any) -> None:
+    def __init__(
+        self, database: Any, sealer: Any, registry: Any, invites: Any = None
+    ) -> None:
         self.database = database
         self.sealer = sealer
         self.registry = registry
+        self.invites = invites
 
 
 _factories: dict[str, Factory] = {}
