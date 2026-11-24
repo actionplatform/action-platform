@@ -15,6 +15,13 @@ class InstallSpec(BaseModel):
     ci: Optional[str] = None
 
 
+class InstallReport(BaseModel):
+    ci: str
+    detected_ci: list[str] = []
+    warnings: list[str] = []
+    ci_snippet: str = ""
+
+
 class AddAppRequest(BaseModel):
     url: str
     name: Optional[str] = None
@@ -66,6 +73,7 @@ class PushResult(BaseModel):
 
 class Installed(BaseModel):
     installed: list[str]
+    report: Optional[InstallReport] = None
 
 
 class AppInProject(BaseModel):
@@ -109,6 +117,7 @@ class AppAdded(BaseModel):
     registry_id: str
     name: str
     installed: Optional[list[str]] = None
+    report: Optional[InstallReport] = None
 
 
 class InitAppInProject(InitRequest):

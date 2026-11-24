@@ -66,6 +66,9 @@ class InstallPlan(BaseModel):
     language: str
     type: str
     ci: str
+    detected_ci: list[str] = []
+    warnings: list[str] = []
+    ci_snippet: str = ""
     created: list[str]
     kept: list[str]
     hooks_installed: bool
@@ -478,11 +481,19 @@ class AppRow(Open):
     branch: Optional[str] = None
 
 
+class InstallReport(Open):
+    ci: str
+    detected_ci: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    ci_snippet: str = ""
+
+
 class AppAdded(Open):
     id: str
     registry_id: str
     name: str
     installed: Optional[list[str]] = None
+    report: Optional[InstallReport] = None
 
 
 class Removed(Open):
@@ -636,6 +647,7 @@ __all__ = [
     "CloudSet",
     "ServiceAdded",
     "InstallPlan",
+    "InstallReport",
     "ProjectInfo",
     "GitflowRules",
     "BranchStarted",

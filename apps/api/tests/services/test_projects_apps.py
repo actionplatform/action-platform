@@ -183,6 +183,23 @@ class LegacyImportCase(ApiCase):
 
 
 class ImportWithInstallTest(LegacyImportCase):
+    def test_a_kept_jenkinsfile_is_reported_with_its_stages(self):
+        (self.bare / "Jenkinsfile").write_text("pipeline {}\n")
+        git(self.bare, "add", "-A")
+        git(self.bare, "commit", "-q", "-m", "ci: jenkins")
+
+        res = self.client.post(
+            "/api/apps",
+            json={"url": self.bare.as_uri(), "install": {"type": "web"}},
+        )
+
+        self.assertEqual(res.status_code, 201, res.text)
+        report = res.json()["report"]
+        self.assertEqual(report["ci"], "jenkins")
+        self.assertEqual(report["detected_ci"], ["jenkins"])
+        self.assertIn("apCheck(language: 'python')", report["ci_snippet"])
+        self.assertFalse(any(".github" in f for f in res.json()["installed"]))
+
     def test_refused_without_install_then_installed(self):
         refused = self.client.post("/api/apps", json={"url": self.bare.as_uri()})
         self.assertEqual(refused.status_code, 422)

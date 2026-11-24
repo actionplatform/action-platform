@@ -38,7 +38,7 @@ def register(mcp: Any, remote: Remote) -> None:
         install_ci: Annotated[
             Optional[str],
             Field(
-                description="github, gitlab, jenkins, bitbucket, or none for no pipeline files; default from the remote"
+                description="github, gitlab, jenkins, bitbucket, or none for no pipeline files; default the CI the repository already has, else the one of its remote"
             ),
         ] = None,
     ) -> schemas.AppAdded:
@@ -47,7 +47,9 @@ def register(mcp: Any, remote: Remote) -> None:
         A repository without platform.toml is refused with code `needs_install`;
         call again with install_type to have the platform files added to the
         clone, then commit them with commit_changes (branch + pull request).
-        The answer carries `registry_id`: the id the other app tools take.
+        The answer carries `registry_id`: the id the other app tools take,
+        and after an install `report`: the CI chosen, the CIs found in the
+        repository, warnings, and the stages to paste into a kept Jenkinsfile.
         """
         install = {"type": install_type, "ci": install_ci} if install_type else None
         row = project_of(remote, project)

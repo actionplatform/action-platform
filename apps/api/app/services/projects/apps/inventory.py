@@ -112,6 +112,7 @@ class AppInventory(AppsBase):
                 raise Invalid(str(e)) from e
 
             result["installed"] = plan.created
+            result["report"] = plan.report()
 
             if self.registry.drafts is not None:
                 self.registry.drafts.capture(entry.id, root)

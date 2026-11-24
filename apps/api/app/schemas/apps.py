@@ -5,6 +5,8 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+from app.schemas.projects import InstallReport
+
 
 class AppRow(BaseModel):
     id: str
@@ -25,6 +27,7 @@ class AppEntry(BaseModel):
     path: str
     default_branch: str = ""
     installed: Optional[list[str]] = None
+    report: Optional[InstallReport] = None
 
 
 class AppMeta(BaseModel):

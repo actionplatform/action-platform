@@ -44,6 +44,12 @@ def run(
     for rel in plan.skipped:
         console.print(f"  [dim]= {rel}  (exists, kept)[/dim]")
 
+    if plan.ci_snippet:
+        console.print(
+            "\n  Jenkinsfile kept. Load the library at its top and add these stages to its pipeline to run the platform's checks:\n"
+        )
+        console.print(plan.ci_snippet, markup=False, highlight=False)
+
     for name in plan.hooks_preserved:
         console.print(
             f"  kept your {name} as {name}.pre-action-platform; it still runs after ours"
