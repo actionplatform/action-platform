@@ -7,6 +7,7 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 | I want to… | Read |
 |---|---|
 | install it and ship a first project | [Getting started](start_getting_started.md) |
+| bring repositories, tags and pipelines I already have | [Adopting repositories](use_adopting.md) |
 | run the platform for my team | [Self-hosting](start_self_hosting.md) |
 | understand what happens when I deploy | [Deployments](concept_deployments.md) · [Identity](concept_identity.md) |
 | know before deploying whether a release will make it | [Deployments › readiness](concept_deployments.md#readiness) |
@@ -30,6 +31,7 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 
 | | |
 |---|---|
+| [Adopting repositories](use_adopting.md) | import many repositories, `install` on an existing one, scopes, observed Jenkins and CI targets, connecting Jenkins, recording history |
 | [Web](use_web.md) | one section per screen: setup, projects and apps, the app's tabs, templates, import, organization, plugins, settings |
 | [CLI](use_cli.md) | every command, its flags and environment |
 | [MCP](use_mcp.md) | tools, prompts and skills for AI clients — locally or against a hosted platform |

@@ -23,7 +23,7 @@ action-platform pr                      # target from the rules, body from the c
 action-platform release --dry-run       # shows the next version and changelog; drop --dry-run on main to publish
 ```
 
-Bring an existing repository in with `action-platform install` instead of `init`: it adds `platform.toml`, `LAST_VERSION` (the newest release tag among all the repository's tags, `v1.2.3` or `1.2.3`, a pre-release only when no stable release follows it; `0.0.0` when it never tagged a release), `AGENTS.md`, the quality config, the CI files and the hooks, never overwriting a file you have. The CI files are for the CI the repository already runs — `[project] ci` in an existing `platform.toml`, else a `Jenkinsfile`, `.gitlab-ci.yml`, `bitbucket-pipelines.yml` or `.github/workflows/` — and only without any of them for the remote's host; a repository with more than one needs `--ci`, and `--ci` naming another CI is applied with a warning that a second CI will run. `[source_host]` is filled for GitHub, GitLab (with `base_url` when self-hosted) and Bitbucket remotes.
+Bring an existing repository in with `action-platform install` instead of `init`: it adds `platform.toml`, `LAST_VERSION` (the newest release tag among all the repository's tags, `v1.2.3` or `1.2.3`, a pre-release only when no stable release follows it; `0.0.0` when it never tagged a release), `AGENTS.md`, the quality config, the CI files and the hooks, never overwriting a file you have. The CI files are for the CI the repository already runs — `[project] ci` in an existing `platform.toml`, else a `Jenkinsfile`, `.gitlab-ci.yml`, `bitbucket-pipelines.yml` or `.github/workflows/` — and only without any of them for the remote's host; a repository with more than one needs `--ci`, and `--ci` naming another CI is applied with a warning that a second CI will run. `[source_host]` is filled for GitHub, GitLab (with `base_url` when self-hosted) and Bitbucket remotes. The whole path — many repositories, existing Jenkins or Actions deploys, tags, scopes — is in [adopting repositories](use_adopting.md).
 
 ## First project, hosted
 
@@ -44,4 +44,4 @@ What a token may do is your role narrowed by its scope and reach — [access con
 
 ## Next
 
-[CLI](use_cli.md) for every command · [web](use_web.md) for every screen · [MCP](use_mcp.md) for agents · [manifest](concept_manifest.md) for `platform.toml` · [self-hosting](start_self_hosting.md) to run your own.
+[adopting](use_adopting.md) for repositories you already have · [CLI](use_cli.md) for every command · [web](use_web.md) for every screen · [MCP](use_mcp.md) for agents · [manifest](concept_manifest.md) for `platform.toml` · [self-hosting](start_self_hosting.md) to run your own.
