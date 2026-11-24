@@ -232,6 +232,19 @@ class ExistingCiTest(InstallCase):
         self.assertEqual((self.repo / "Jenkinsfile").read_text(), "pipeline {}\n")
         self.assertFalse(any(".github" in f for f in plan.created))
 
+    def test_a_kept_jenkinsfile_gets_the_stages_that_run_the_checks(self):
+        (self.repo / "Jenkinsfile").write_text("pipeline {}\n")
+
+        plan = installer.install(self.repo, dry_run=True)
+
+        self.assertIn("ci-jenkins@v1", plan.ci_snippet)
+        self.assertIn("apCheck(language: 'python')", plan.ci_snippet)
+        self.assertIn("apConventionalCommit()", plan.ci_snippet)
+        self.assertIn("apGitflow()", plan.ci_snippet)
+        self.assertEqual(
+            installer.install(self.repo, ci="github", dry_run=True).ci_snippet, ""
+        )
+
     def test_gitlab_and_bitbucket_files_are_detected(self):
         (self.repo / ".gitlab-ci.yml").write_text("stages: []\n")
         self.assertEqual(installer.install(self.repo, dry_run=True).ci, "gitlab")

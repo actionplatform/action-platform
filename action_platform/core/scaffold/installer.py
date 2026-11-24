@@ -35,6 +35,26 @@ CI_MARKERS = {
     "github": ".github/workflows",
 }
 
+JENKINS_STAGES = """library identifier: 'ci-jenkins@v1',
+        retriever: modernSCM([$class: 'GitSCMSource',
+                              remote: 'https://github.com/actionplatform/ci-jenkins.git'])
+
+stage('Check') {{
+    steps {{
+        apSetup(language: '{language}')
+        apCheck(language: '{language}')
+    }}
+}}
+stage('Commits') {{
+    when {{ changeRequest() }}
+    steps {{ apConventionalCommit() }}
+}}
+stage('Git-flow') {{
+    when {{ changeRequest() }}
+    steps {{ apGitflow() }}
+}}
+"""
+
 AGENTS = """# AGENTS.md
 
 Rules an AI agent (or a new contributor) follows in this repo. Added by `action-platform install`; keep it current.
@@ -64,6 +84,16 @@ class Plan:
     hooks_skipped: str | None = None
     detected_ci: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    ci_snippet: str = ""
+
+    def report(self) -> dict:
+        """The CI the plan settled on and what it found on the way: the CIs already in the repository, the warnings, the stages to paste into a kept Jenkinsfile."""
+        return {
+            "ci": self.ci,
+            "detected_ci": self.detected_ci,
+            "warnings": self.warnings,
+            "ci_snippet": self.ci_snippet,
+        }
 
 
 @slot("installer")
@@ -95,7 +125,7 @@ class Installer:
         if not self.repo.exists():
             raise InstallError(f"{self.root} is not a git repository")
 
-        detected = _ci_in_repository(self.root)
+        detected = ci_in_repository(self.root)
         ci = self.requested_ci or _existing_ci(self.root)
 
         if not ci and len(detected) > 1:
@@ -152,6 +182,9 @@ class Installer:
                 continue
 
             _copy_file(plan, source / rel, rel, dry_run)
+
+        if ci == "jenkins" and (self.root / "Jenkinsfile").is_file():
+            plan.ci_snippet = JENKINS_STAGES.format(language=language)
 
         if not dry_run:
             report = wired.gitflow(self.repo).install_hooks()
@@ -239,7 +272,7 @@ def _ci_for_remote(repo: Repository) -> str:
     return "github"
 
 
-def _ci_in_repository(root: Path) -> list[str]:
+def ci_in_repository(root: Path) -> list[str]:
     """The CIs the repository already has, from their files."""
     found = [
         kind

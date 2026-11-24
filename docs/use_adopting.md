@@ -47,6 +47,8 @@ action-platform install
 
 A repository that shows more than one CI and no `--ci` is refused, naming them: pass the one the platform's checks belong to, or `none`. `--ci` naming a CI other than the one present is applied with a warning (`Jenkinsfile found; installing github CI files runs a second CI next to it`). **`--ci none`** writes no pipeline files at all — the right choice when the pipelines are yours and stay untouched.
 
+With **Jenkins** and a `Jenkinsfile` already there, the file is kept and `install` prints the stages that run the platform's checks from [ci-jenkins](https://github.com/actionplatform/ci-jenkins) — `apSetup`/`apCheck`, and `apConventionalCommit` and `apGitflow` on pull requests — with the `library` line to put at its top; paste them into the pipeline's `stages`. The MCP tool `install_platform` returns them as `ci_snippet`, next to `detected_ci` and `warnings`; the web shows them after installing.
+
 **Type and language.** `--type web|library|docs|plugin` (default `web`) goes into `platform.toml`. The language is detected; `--language python|go|node|php|java|rust|ruby` sets it, and **`--language none`** installs no `.code_quality/` and no code-quality workflow.
 
 **`LAST_VERSION`** is seeded from the tags: the highest release tag among all the repository's tags, `v1.2.3` or `1.2.3`, from any branch. A pre-release is the seed only while no stable release follows it (`v1.9.0` and `v2.0.0-rc.1` give `2.0.0-rc.1`; once `v2.0.0` exists, `2.0.0`). Component tags and tags that are not versions are ignored; a repository that never tagged a release starts at `0.0.0`. The first `action-platform release` continues from there.
