@@ -12,11 +12,12 @@ from pathlib import Path
 from action_platform.core.flow.repository import Repository
 from action_platform.core.manifest import toml_str
 from action_platform.core.exception import ActionPlatformError
-from action_platform.core.release.versioning import SEMVER_RE
+from action_platform.core.release.components import parse as parse_components
 from action_platform.core.scaffold.catalog import Matrix, load_matrix
 from action_platform.core.scaffold.language import detect_language
+from action_platform.core.scaffold.seed import Seed, changelog_style, seed
 from action_platform.core.wiring import slot, wired
-from action_platform.core.files import CONFIG_FILE, LAST_VERSION_FILE
+from action_platform.core.files import CHANGELOG_FILE, CONFIG_FILE
 
 WORKFLOWS = ["code-quality.yml", "conventional-commit.yml", "gitflow.yml", "trivy.yml"]
 
@@ -85,6 +86,7 @@ class Plan:
     detected_ci: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     ci_snippet: str = ""
+    seeds: list[Seed] = field(default_factory=list)
 
     def report(self) -> dict:
         """The CI the plan settled on and what it found on the way: the CIs already in the repository, the warnings, the stages to paste into a kept Jenkinsfile."""
@@ -107,6 +109,7 @@ class Installer:
         language: str | None = None,
         ci: str | None = None,
         name: str | None = None,
+        version: str | None = None,
     ) -> None:
         self.root = Path(root).resolve()
         self.repo = Repository(self.root)
@@ -114,6 +117,7 @@ class Installer:
         self.requested_language = language
         self.requested_ci = ci
         self.name = name
+        self.version = version
 
     def plan(self) -> Plan:
         return self._run(dry_run=True)
@@ -171,7 +175,7 @@ class Installer:
             ),
             dry_run,
         )
-        _write(plan, LAST_VERSION_FILE, f"{_seed_version(self.repo)}\n", dry_run)
+        self._seed(plan, dry_run)
         _write(plan, "AGENTS.md", AGENTS, dry_run)
 
         if language:
@@ -194,6 +198,31 @@ class Installer:
 
         return plan
 
+    def _seed(self, plan: Plan, dry_run: bool) -> None:
+        """LAST_VERSION of the root and of every component an existing platform.toml declares, each from its own tags, manifest or CHANGELOG."""
+        for component in parse_components(_existing_components(self.root)).values():
+            try:
+                found, warnings = seed(
+                    self.repo, component, self.version if component.root else None
+                )
+            except ValueError as e:
+                raise InstallError(str(e)) from e
+
+            if (self.root / found.file).exists():
+                plan.skipped.append(found.file)
+                continue
+
+            _write(plan, found.file, f"{found.version}\n", dry_run)
+            plan.seeds.append(found)
+            plan.warnings.extend(warnings)
+            style = changelog_style(component.dir(self.root) / CHANGELOG_FILE)
+
+            if style:
+                plan.warnings.append(
+                    f"{Path(found.file).with_name(CHANGELOG_FILE)} starts with {style!r}; "
+                    "release adds its entries above it as '## vX.Y.Z — date'"
+                )
+
 
 def install(
     root: Path,
@@ -202,31 +231,13 @@ def install(
     ci: str | None = None,
     dry_run: bool = False,
     name: str | None = None,
+    version: str | None = None,
 ) -> Plan:
-    installer = wired.installer(root, type_=type_, language=language, ci=ci, name=name)
-
-    return installer.plan() if dry_run else installer.apply()
-
-
-def _seed_version(repo: Repository) -> str:
-    """LAST_VERSION for a repository joining the platform: its newest release tag among all tags, `v1.2.3` or `1.2.3`, a pre-release only when no stable release follows it; 0.0.0 when it never released."""
-    found = [
-        m for m in (SEMVER_RE.match(t.removeprefix("v")) for t in repo.tags()) if m
-    ]
-
-    if not found:
-        return "0.0.0"
-
-    return max(found, key=_precedence).group(0)
-
-
-def _precedence(found: re.Match) -> tuple:
-    major, minor, patch, pre = found.groups()
-    identifiers = tuple(
-        (0, int(p), "") if p.isdigit() else (1, 0, p) for p in (pre or "").split(".")
+    installer = wired.installer(
+        root, type_=type_, language=language, ci=ci, name=name, version=version
     )
 
-    return int(major), int(minor), int(patch), pre is None, identifiers
+    return installer.plan() if dry_run else installer.apply()
 
 
 def _any_leaf(repo: Path, matrix: Matrix) -> Path:
@@ -287,6 +298,18 @@ def ci_in_repository(root: Path) -> list[str]:
         found.append("github")
 
     return found
+
+
+def _existing_components(root: Path) -> dict:
+    path = root / CONFIG_FILE
+
+    if not path.exists():
+        return {}
+
+    try:
+        return tomllib.loads(path.read_text()).get("components", {})
+    except tomllib.TOMLDecodeError:
+        return {}
 
 
 def _existing_ci(root: Path) -> str | None:
