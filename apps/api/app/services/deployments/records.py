@@ -309,12 +309,17 @@ class DeploymentRecords:
             f"{spec.name}: nothing to observe for run_by {spec.run_by!r}"
         )
 
-    def _ci_run_id(self, app_id: str, source: str, number: int) -> Optional[str]:
-        return self.db.scalar(
-            select(CiRun.id).where(
-                CiRun.app_id == app_id, CiRun.source == source, CiRun.number == number
-            )
+    def _ci_run_id(
+        self, app_id: str, source: str, number: int, url: Optional[str] = None
+    ) -> Optional[str]:
+        query = select(CiRun.id).where(
+            CiRun.app_id == app_id, CiRun.source == source, CiRun.number == number
         )
+
+        if url:
+            query = query.where(CiRun.url == url)
+
+        return self.db.scalar(query)
 
     def sync_observed(
         self, organization_id: str, app: App, config: Config, repo: str
@@ -365,7 +370,7 @@ class DeploymentRecords:
             version=version,
             sha=run.sha,
             status=RUN_STATUS.get(run.status, "failure"),
-            ci_run_id=self._ci_run_id(app.id, source, run.number),
+            ci_run_id=self._ci_run_id(app.id, source, run.number, run.url),
             url=run.url,
             actor=run.trigger,
             started_at=run.started_at,
