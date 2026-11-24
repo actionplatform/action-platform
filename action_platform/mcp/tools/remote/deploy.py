@@ -1,15 +1,33 @@
-"""Scopes, deploys, diagnosis and the deployments recorded for an app."""
+"""Scopes, readiness, deploys, diagnosis and the deployments recorded for an app."""
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, Literal, Optional, Union
 
 from pydantic import Field
 
+from action_platform.core.exception import ActionPlatformError
 from action_platform.mcp import schemas
-from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, tool
-from action_platform.mcp.tools.remote.common import AppId, app_in_project
+from action_platform.mcp.annotations import DESTRUCTIVE, READ_ONLY, REACHES_OUT, tool
+from action_platform.mcp.tools.remote.common import AppId, app_in_project, org_of
 from action_platform.remote.client import Remote
+
+
+Criticality = Literal["test", "low", "medium", "high", "critical"]
+ScopeKind = Literal["web", "job", "worker", "static", "library"]
+ScopeName = Annotated[str, Field(description="A scope name from list_scopes")]
+Tag = Annotated[
+    str,
+    Field(
+        description="The release as app_releases lists it: v1.4.0, web/v1.4.0; a bare 1.4.0 means v1.4.0"
+    ),
+]
+
+
+def tag_of(value: str) -> str:
+    value = value.strip()
+
+    return f"v{value}" if value[:1].isdigit() else value
 
 
 def register(mcp: Any, remote: Remote) -> None:
@@ -18,7 +36,77 @@ def register(mcp: Any, remote: Remote) -> None:
         """Where the app's releases are deployed: each scope with its kind and its criticality (test, low, medium, high, critical). Criticality decides what a scope takes: test and low take candidates, stable and hotfix releases; medium and above take stable and hotfix only. A deploy always names a scope; an app without scopes does not deploy."""
         project, app = app_in_project(remote, id)
 
-        return remote.scopes(project.id, app.id)
+        return remote.scopes(project.id, app.id, org_of(project))
+
+    @tool(mcp, annotations=REACHES_OUT)
+    def update_scope(
+        id: AppId,
+        name: ScopeName,
+        criticality: Optional[Criticality] = None,
+        kind: Optional[ScopeKind] = None,
+    ) -> schemas.Scopes:
+        """Change a scope's criticality or kind; what is not given stays. Needs app.configure. Raising the criticality narrows what the scope takes (medium and above refuse candidates). Show the change and ask first."""
+        project, app = app_in_project(remote, id)
+        organization = org_of(project)
+        current = next(
+            (
+                s
+                for s in remote.scopes(project.id, app.id, organization).items
+                if s.name == name
+            ),
+            None,
+        )
+
+        if current is None:
+            raise ActionPlatformError(f"no scope {name!r}: list_scopes shows them")
+
+        return remote.update_scope(
+            project.id,
+            app.id,
+            name,
+            {
+                "name": name,
+                "kind": kind or current.kind,
+                "criticality": criticality or current.criticality,
+            },
+            organization,
+        )
+
+    @tool(mcp, annotations=DESTRUCTIVE)
+    def delete_scope(id: AppId, name: ScopeName) -> schemas.Scopes:
+        """Delete a scope, so deploy no longer accepts it; refused while a deploy to it is running. Needs app.configure. Ask first."""
+        project, app = app_in_project(remote, id)
+
+        return remote.delete_scope(project.id, app.id, name, org_of(project))
+
+    @tool(mcp, annotations=READ_ONLY)
+    def release_readiness(
+        id: AppId,
+        tag: Tag,
+        scope: Annotated[
+            Optional[str], Field(description="Only this scope; default every scope")
+        ] = None,
+    ) -> list[schemas.ReadinessRow]:
+        """Whether a release can reach each scope, as the release page shows it: per scope a verdict (ok, blocked, pending) and the checks with id, severity, detail and fix. A blocked verdict makes deploy refuse that scope. No row for a scope means it was never checked: recheck_readiness queues the check. Call before a deploy's dry run."""
+        project, app = app_in_project(remote, id)
+        rows = remote.readiness(project.id, app.id, tag_of(tag), org_of(project))
+
+        return [row for row in rows if scope is None or row.stage == scope]
+
+    @tool(mcp, annotations=REACHES_OUT)
+    def recheck_readiness(
+        id: AppId,
+        tag: Tag,
+        scope: Annotated[
+            Optional[str], Field(description="Only this scope; default every scope")
+        ] = None,
+    ) -> schemas.ReadinessQueued:
+        """Queue a new readiness check of a release on the worker (needs app.release): configuration, manifests, credentials, permissions and the destination's state, nothing built or changed. Answers with the job ids; follow them with job_status, then read release_readiness."""
+        project, app = app_in_project(remote, id)
+
+        return remote.check_readiness(
+            project.id, app.id, tag_of(tag), scope, org_of(project)
+        )
 
     @tool(mcp, annotations=REACHES_OUT)
     def create_scope(
@@ -59,8 +147,17 @@ def register(mcp: Any, remote: Remote) -> None:
                 description="Release to ship (tag v<version>); default: the tag the app's checkout sits on. A deploy never ships an untagged tree"
             ),
         ] = None,
-    ) -> list[schemas.DeployResult]:
-        """Ship a release to one of the app's scopes. Defaults to preflight; call again with dry_run=false to deploy. Cut the release first (`release`) when none exists; the scope's criticality decides whether the release may go there."""
+        background: Annotated[
+            bool,
+            Field(
+                description="With dry_run=false: run the deploy as a job on the platform's worker and answer with its id at once, instead of waiting for it"
+            ),
+        ] = False,
+    ) -> Union[list[schemas.DeployResult], schemas.JobQueued]:
+        """Ship a release to one of the app's scopes. Defaults to preflight; call again with dry_run=false to deploy. Cut the release first (`release`) when none exists; the scope's criticality decides whether the release may go there, and a release whose readiness for the scope is blocked is refused (release_readiness says why). With background=true the answer is a job id: follow it with job_logs and job_status."""
+        if background and not dry_run:
+            return remote.deploy_later(id, stage, version)
+
         return remote.deploy(id, stage, dry_run, version)
 
     @tool(mcp, annotations=READ_ONLY)

@@ -20,6 +20,9 @@ from tests.support import TempCase, git, repo_with_origin
 LISTS = {
     "apps",
     "invitations",
+    "readiness",
+    "hosts",
+    "ci_hosts",
     "commits",
     "branches",
     "tags",
@@ -71,6 +74,53 @@ SHAPES: dict[str, Any] = {
         "inviter": "Ana",
     },
 }
+SCOPES = {
+    "items": [
+        {
+            "id": "s1",
+            "name": "prod",
+            "kind": "web",
+            "criticality": "high",
+            "created_at": "2026-11-24T00:00:00",
+        }
+    ],
+    "kinds": ["web"],
+    "criticalities": ["high"],
+}
+CI = {"link": {"kind": "jenkins", "ci_host_id": "c1", "job": "app"}, "runs": []}
+QUEUED = {"job": "j1", "poll": "/api/v1/jobs/j1", "status": "queued"}
+SHAPES.update(
+    {
+        "scopes": SCOPES,
+        "update_scope": SCOPES,
+        "delete_scope": SCOPES,
+        "check_readiness": {"jobs": ["j1"], "readiness": []},
+        "deploy_later": QUEUED,
+        "job": {"id": "j1", "kind": "deploy", "status": "running"},
+        "job_logs": {"lines": [], "next": 0, "status": "running", "finished": False},
+        "app_ci": CI,
+        "sync_app_ci": CI,
+        "link_app_ci": CI["link"],
+        "run_ci": {"id": "7", "ref": "main"},
+        "add_ci_host": {
+            "id": "c1",
+            "kind": "jenkins",
+            "name": "Jenkins",
+            "base_url": "https://ci.example.com",
+            "created_at": "2026-11-24T00:00:00",
+        },
+        "test_ci_host": {"ok": True},
+        "set_app_host": {"source_host_id": "h1"},
+        "import_organizations": {"organizations": []},
+        "import_preview": {
+            "organization": "acme",
+            "repositories": [],
+            "teams": [],
+            "people": [],
+        },
+        "import_organization": QUEUED,
+    }
+)
 NOTHING = {"remove_member", "remove_team_member", "cancel_invitation"}
 
 
@@ -81,6 +131,7 @@ class FakeRemote:
         self.calls: list[tuple[str, tuple, dict]] = []
         self.apps_rows: list[dict] = []
         self.projects_rows: list[dict] = []
+        self.readiness_rows: list[dict] = []
 
     def __getattr__(self, name: str):
         answers = TypeAdapter(get_type_hints(getattr(Remote, name))["return"])
@@ -110,6 +161,9 @@ class FakeRemote:
 
         if name == "projects" and self.projects_rows:
             return self.projects_rows
+
+        if name == "readiness" and self.readiness_rows:
+            return self.readiness_rows
 
         if name in LISTS:
             return []
@@ -232,6 +286,109 @@ CASES: list[tuple[str, dict[str, Any], str, tuple, dict]] = [
         {},
     ),
     ("list_matrix", {}, "matrix", (), {}),
+    (
+        "deploy",
+        {"id": "a1", "stage": "prod", "dry_run": False, "background": True},
+        "deploy_later",
+        ("a1", "prod", None),
+        {},
+    ),
+    (
+        "deploy",
+        {"id": "a1", "stage": "prod", "background": True},
+        "deploy",
+        ("a1", "prod", True, None),
+        {},
+    ),
+    ("list_scopes", {"id": "a1"}, "scopes", ("p1", "d1", None), {}),
+    (
+        "update_scope",
+        {"id": "a1", "name": "prod", "criticality": "critical"},
+        "update_scope",
+        (
+            "p1",
+            "d1",
+            "prod",
+            {"name": "prod", "kind": "web", "criticality": "critical"},
+            None,
+        ),
+        {},
+    ),
+    (
+        "delete_scope",
+        {"id": "a1", "name": "prod"},
+        "delete_scope",
+        ("p1", "d1", "prod", None),
+        {},
+    ),
+    (
+        "release_readiness",
+        {"id": "a1", "tag": "1.2.3"},
+        "readiness",
+        ("p1", "d1", "v1.2.3", None),
+        {},
+    ),
+    (
+        "recheck_readiness",
+        {"id": "a1", "tag": "web/v1.2.3", "scope": "prod"},
+        "check_readiness",
+        ("p1", "d1", "web/v1.2.3", "prod", None),
+        {},
+    ),
+    ("job_status", {"job_id": "j1"}, "job", ("j1",), {}),
+    ("job_logs", {"job_id": "j1", "after": 5}, "job_logs", ("j1",), {"after": 5}),
+    ("get_app_ci", {"id": "a1"}, "app_ci", ("p1", "d1", None), {}),
+    ("get_app_ci", {"id": "a1", "sync": True}, "sync_app_ci", ("p1", "d1", None), {}),
+    (
+        "set_app_ci",
+        {"id": "a1", "ci_host": "c1", "job": "team/app"},
+        "link_app_ci",
+        ("p1", "d1", "c1", "team/app", None),
+        {},
+    ),
+    ("run_ci", {"id": "a1", "ref": "main"}, "run_ci", ("p1", "d1", "main", None), {}),
+    ("list_ci_hosts", {}, "ci_hosts", (None,), {}),
+    ("test_ci_host", {"id": "c1"}, "test_ci_host", ("c1", None), {}),
+    ("list_hosts", {"organization": "acme"}, "hosts", ("acme",), {}),
+    (
+        "set_app_host",
+        {"id": "a1", "host": "h1"},
+        "set_app_host",
+        ("p1", "d1", "h1", None),
+        {},
+    ),
+    (
+        "list_import_organizations",
+        {"host": "h1"},
+        "import_organizations",
+        ("h1", None),
+        {},
+    ),
+    (
+        "preview_organization_import",
+        {"host": "h1", "login": "acme"},
+        "import_preview",
+        ("h1", "acme", None),
+        {},
+    ),
+    (
+        "import_organization",
+        {"host": "h1", "login": "acme", "repositories": ["acme/web"]},
+        "import_organization",
+        (
+            {
+                "host_id": "h1",
+                "organization": "acme",
+                "repositories": ["acme/web"],
+                "teams": [],
+                "people": [],
+                "role": "developer",
+                "project_id": None,
+            },
+            None,
+        ),
+        {},
+    ),
 ]
 
 
@@ -355,6 +512,82 @@ class RemoteToolsTest(TempCase):
         sent = self.call("invite_member", {"email": "b@x.io", "role": "viewer"})
 
         self.assertEqual(sent["link"], "https://p.example/invite/i1")
+
+    def test_add_ci_host_reads_the_token_from_the_named_variable(self):
+        self.setenv("ACME_JENKINS_TOKEN", "tok-1")
+
+        self.call(
+            "add_ci_host",
+            {"base_url": "https://ci.example.com", "token_env": "ACME_JENKINS_TOKEN"},
+        )
+
+        self.assertEqual(
+            self.fake.calls[-1],
+            (
+                "add_ci_host",
+                ("jenkins", "https://ci.example.com", "tok-1", "", "", None),
+                {},
+            ),
+        )
+
+    def test_add_ci_host_refuses_a_missing_variable_or_a_token_as_its_name(self):
+        for name in ("NOT_SET_ANYWHERE", "tok-1 with spaces"):
+            with self.subTest(name=name):
+                with self.assertRaises(ToolError):
+                    asyncio.run(
+                        self.server.call_tool(
+                            "add_ci_host",
+                            {"base_url": "https://ci.example.com", "token_env": name},
+                        )
+                    )
+
+        self.assertNotIn("add_ci_host", [c[0] for c in self.fake.calls])
+
+    def test_update_scope_refuses_an_unknown_scope(self):
+        with self.assertRaises(ToolError) as caught:
+            asyncio.run(
+                self.server.call_tool("update_scope", {"id": "a1", "name": "nope"})
+            )
+
+        self.assertIn("list_scopes", str(caught.exception))
+
+    def test_release_readiness_keeps_the_scope_asked_for(self):
+        self.fake.readiness_rows = [
+            {"stage": "dev", "status": "done", "verdict": "ok"},
+            {"stage": "prod", "status": "done", "verdict": "blocked"},
+        ]
+
+        rows = self.call(
+            "release_readiness", {"id": "a1", "tag": "v1", "scope": "prod"}
+        )
+
+        self.assertEqual([r["stage"] for r in rows], ["prod"])
+
+    def test_deploy_app_checks_readiness_before_the_dry_run(self):
+        from action_platform.mcp import prompts
+
+        prompts.register_remote(self.server)
+        result = asyncio.run(self.server.get_prompt("deploy_app", {}))
+        text = "\n".join(m.content.text for m in result.messages)
+
+        self.assertLess(text.index("release_readiness"), text.index("dry_run=true"))
+        self.assertLess(text.index("wait for a yes"), text.index("dry_run=false"))
+        self.assertIn("job_logs", text)
+
+    def test_adopt_organization_previews_before_importing(self):
+        from action_platform.mcp import prompts
+
+        prompts.register_remote(self.server)
+        result = asyncio.run(self.server.get_prompt("adopt_organization", {}))
+        text = "\n".join(m.content.text for m in result.messages)
+
+        self.assertLess(
+            text.index("preview_organization_import"),
+            text.index("wait for a yes"),
+        )
+        self.assertLess(
+            text.index("wait for a yes"), text.index("Call import_organization")
+        )
 
     def test_current_context_matches_the_checkout_to_an_app(self):
         repo = repo_with_origin(self.tmp_path)
@@ -528,10 +761,30 @@ CONCERNS = {
     "deploy": {
         "list_scopes",
         "create_scope",
+        "update_scope",
+        "delete_scope",
+        "release_readiness",
+        "recheck_readiness",
         "deploy",
         "diagnose",
         "list_deployments",
         "record_deployment",
+    },
+    "jobs": {"job_status", "job_logs"},
+    "ci": {
+        "get_app_ci",
+        "set_app_ci",
+        "run_ci",
+        "list_ci_hosts",
+        "add_ci_host",
+        "test_ci_host",
+    },
+    "adoption": {
+        "list_hosts",
+        "set_app_host",
+        "list_import_organizations",
+        "preview_organization_import",
+        "import_organization",
     },
     "matrix": {"list_matrix"},
     "access": {
