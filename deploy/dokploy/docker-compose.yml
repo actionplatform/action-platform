@@ -39,8 +39,7 @@ services:
       retries: 5
 
   migrate:
-    image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
-    pull_policy: always
+    image: ${AP_IMAGE_API:?set AP_IMAGE_API in .env, e.g. actionplatformio/action-platform-api:X.Y.Z}
     restart: "no"
     command: ["action-platform-api", "db", "migrate"]
     depends_on:
@@ -50,8 +49,7 @@ services:
       AP_DATABASE_URL: postgres://action_platform:${POSTGRES_PASSWORD}@${AP_DB_HOST:-postgres}:5432/action_platform
 
   api:
-    image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
-    pull_policy: always
+    image: ${AP_IMAGE_API:?set AP_IMAGE_API in .env, e.g. actionplatformio/action-platform-api:X.Y.Z}
     restart: unless-stopped
     expose: ["7788"]
     depends_on:
@@ -87,8 +85,7 @@ services:
       AP_GOOGLE_CLIENT_SECRET: ${AP_GOOGLE_CLIENT_SECRET:-}
 
   worker:
-    image: ${AP_IMAGE_WORKER:-actionplatformio/action-platform-worker:latest}
-    pull_policy: always
+    image: ${AP_IMAGE_WORKER:?set AP_IMAGE_WORKER in .env, e.g. actionplatformio/action-platform-worker:X.Y.Z}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -117,8 +114,7 @@ services:
       AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
 
   worker-deploy:
-    image: ${AP_IMAGE_WORKER:-actionplatformio/action-platform-worker:latest}
-    pull_policy: always
+    image: ${AP_IMAGE_WORKER:?set AP_IMAGE_WORKER in .env, e.g. actionplatformio/action-platform-worker:X.Y.Z}
     restart: unless-stopped
     depends_on:
       postgres:
@@ -147,8 +143,7 @@ services:
       AP_SENTRY_DSN: ${AP_SENTRY_DSN_API:-}
 
   web:
-    image: ${AP_IMAGE_WEB:-actionplatformio/action-platform-web:latest}
-    pull_policy: always
+    image: ${AP_IMAGE_WEB:?set AP_IMAGE_WEB in .env, e.g. actionplatformio/action-platform-web:X.Y.Z}
     restart: unless-stopped
     depends_on:
       api:

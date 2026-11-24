@@ -81,8 +81,7 @@ services:
       retries: 5
 
   migrate:
-    image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
-    pull_policy: always
+    image: ${AP_IMAGE_API:?set AP_IMAGE_API in .env, e.g. actionplatformio/action-platform-api:X.Y.Z}
     restart: "no"
     command: ["action-platform-api", "db", "migrate"]
     depends_on:
@@ -94,8 +93,7 @@ services:
     secrets: [postgres_password]
 
   api:
-    image: ${AP_IMAGE_API:-actionplatformio/action-platform-api:latest}
-    pull_policy: always
+    image: ${AP_IMAGE_API:?set AP_IMAGE_API in .env, e.g. actionplatformio/action-platform-api:X.Y.Z}
     build:
       context: ..
       dockerfile: deploy/Dockerfile.api
@@ -144,8 +142,7 @@ services:
       retries: 3
 
   worker:
-    image: ${AP_IMAGE_WORKER:-actionplatformio/action-platform-worker:latest}
-    pull_policy: always
+    image: ${AP_IMAGE_WORKER:?set AP_IMAGE_WORKER in .env, e.g. actionplatformio/action-platform-worker:X.Y.Z}
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -179,8 +176,7 @@ services:
     secrets: [postgres_password, better_auth_secret, api_token]
 
   worker-deploy:
-    image: ${AP_IMAGE_WORKER:-actionplatformio/action-platform-worker:latest}
-    pull_policy: always
+    image: ${AP_IMAGE_WORKER:?set AP_IMAGE_WORKER in .env, e.g. actionplatformio/action-platform-worker:X.Y.Z}
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -214,8 +210,7 @@ services:
     secrets: [postgres_password, better_auth_secret, api_token]
 
   web:
-    image: ${AP_IMAGE_WEB:-actionplatformio/action-platform-web:latest}
-    pull_policy: always
+    image: ${AP_IMAGE_WEB:?set AP_IMAGE_WEB in .env, e.g. actionplatformio/action-platform-web:X.Y.Z}
     build:
       context: ..
       dockerfile: deploy/Dockerfile.web
