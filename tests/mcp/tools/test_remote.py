@@ -489,6 +489,14 @@ CONCERNS = {
         "record_deployment",
     },
     "matrix": {"list_matrix"},
+    "access": {
+        "access_audit",
+        "access_who",
+        "access_grant",
+        "access_revoke",
+        "access_offboard",
+        "access_sync",
+    },
 }
 
 
