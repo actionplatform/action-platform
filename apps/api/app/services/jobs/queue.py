@@ -263,6 +263,17 @@ class JobQueue:
 
             return job
 
+    def touch(self, id: str, worker: str) -> None:
+        """The worker still holds job `id`: its lock moves to now, so `reap` leaves a long job alone."""
+        moment = now()
+
+        with self.database.session() as s:
+            s.execute(
+                update(Job)
+                .where(Job.id == id, Job.status == "running", Job.locked_by == worker)
+                .values(locked_at=moment, updated_at=moment)
+            )
+
     def finish(self, id: str, result: Any) -> None:
         moment = now()
 

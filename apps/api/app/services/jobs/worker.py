@@ -3,10 +3,12 @@
 import json
 import logging
 import socket
+import threading
 import time
+from contextlib import contextmanager
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 import uuid
-from typing import Optional
+from typing import Iterator, Optional
 
 from action_platform.core.exception import ActionPlatformError
 from action_platform.plugins import registry as plugin_registry
@@ -29,6 +31,9 @@ ASYNC_ROUTES = {
     "deploy": "app.release",
     "push": "app.flow",
 }
+
+
+HEARTBEAT_SECONDS = 60.0
 
 
 def worker_name() -> str:
@@ -129,6 +134,27 @@ class Worker:
                 live.add(pool.submit(self.handle, job))
                 done += 1
 
+    @contextmanager
+    def holding(self, id: str) -> Iterator[None]:
+        """Keep job `id`'s lock fresh while it runs, so a deploy that follows a long pipeline is not handed to another worker as lost."""
+        stop = threading.Event()
+
+        def beat() -> None:
+            while not stop.wait(HEARTBEAT_SECONDS):
+                try:
+                    self.queue.touch(id, self.name)
+                except Exception:
+                    log.warning("job %s: lock refresh failed", id, exc_info=True)
+
+        thread = threading.Thread(target=beat, name=f"{self.name}:beat", daemon=True)
+        thread.start()
+
+        try:
+            yield
+        finally:
+            stop.set()
+            thread.join(timeout=5)
+
     def handle(self, job: Job) -> None:
         payload = {**json.loads(job.payload or "{}"), "job_id": job.id}
         handler = self.handlers.get(job.kind)
@@ -138,7 +164,7 @@ class Worker:
 
             return
 
-        with self.logs.record(job.id):
+        with self.logs.record(job.id), self.holding(job.id):
             log.info("job %s %s starts (attempt %s)", job.kind, job.id, job.attempts)
 
             try:

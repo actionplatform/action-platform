@@ -83,6 +83,48 @@ class QueueTest(TempCase):
         self.assertEqual(queue.reap(), 1)
         self.assertEqual(queue.get(job.id).status, "queued")
 
+    def test_a_job_its_worker_still_holds_is_not_reaped(self):
+        from datetime import timedelta
+
+        from app.core.db.models import Job
+        from app.core.shared.clock import now
+
+        queue = self.queue()
+        job = queue.enqueue("deploy", {})
+        queue.claim("w")
+
+        with queue.database.session() as s:
+            s.query(Job).filter(Job.id == job.id).update(
+                {"locked_at": now() - timedelta(hours=1)}
+            )
+
+        queue.touch(job.id, "other")
+        queue.touch(job.id, "w")
+
+        self.assertEqual(queue.reap(), 0)
+        self.assertEqual(queue.get(job.id).status, "running")
+
+    def test_the_worker_keeps_the_lock_fresh_while_a_job_runs(self):
+        from unittest import mock
+
+        from app.services.jobs import worker as module
+
+        touched = []
+        holder = mock.Mock()
+        holder.name = "w"
+        holder.queue.touch.side_effect = lambda id, name: touched.append((id, name))
+
+        with mock.patch.object(module, "HEARTBEAT_SECONDS", 0.01):
+            with module.Worker.holding(holder, "job-1"):
+                import time
+
+                time.sleep(0.1)
+
+        self.assertIn(("job-1", "w"), touched)
+        count = len(touched)
+        time.sleep(0.05)
+        self.assertEqual(len(touched), count)
+
 
 class AsyncRouteTest(GateCase):
     def test_sync_with_prefer_async_is_queued_and_the_worker_runs_it(self):
