@@ -129,7 +129,11 @@ class Insights:
         for d in self.db.scalars(
             select(Deployment)
             .where(Deployment.app_id.in_(ids))
-            .order_by(Deployment.synced_at.desc())
+            .order_by(
+                func.coalesce(
+                    Deployment.finished_at, Deployment.started_at, Deployment.synced_at
+                ).desc()
+            )
             .limit(limit)
         ):
             events.append(
@@ -147,7 +151,7 @@ class Insights:
         for r in self.db.scalars(
             select(Release)
             .where(Release.app_id.in_(ids))
-            .order_by(Release.synced_at.desc())
+            .order_by(func.coalesce(Release.published_at, Release.synced_at).desc())
             .limit(limit)
         ):
             events.append(
@@ -165,7 +169,9 @@ class Insights:
         for p in self.db.scalars(
             select(PullRequest)
             .where(PullRequest.app_id.in_(ids))
-            .order_by(PullRequest.updated_at.desc())
+            .order_by(
+                func.coalesce(PullRequest.merged_at, PullRequest.updated_at).desc()
+            )
             .limit(limit)
         ):
             events.append(
@@ -183,7 +189,7 @@ class Insights:
         for c in self.db.scalars(
             select(CiRun)
             .where(CiRun.app_id.in_(ids))
-            .order_by(CiRun.synced_at.desc())
+            .order_by(func.coalesce(CiRun.started_at, CiRun.synced_at).desc())
             .limit(limit)
         ):
             events.append(
