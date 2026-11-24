@@ -38,6 +38,41 @@ services:
       timeout: 5s
       retries: 5
 
+  ap-backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      ap-postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: ap-postgres
+      PGUSER: action_platform
+      PGDATABASE: action_platform
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      AP_BACKUP_HOUR: ${AP_BACKUP_HOUR:-3}
+      AP_BACKUP_KEEP_DAYS: ${AP_BACKUP_KEEP_DAYS:-7}
+    volumes:
+      - backups:/backups
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        set -o pipefail
+        hour=$${AP_BACKUP_HOUR#0}
+        while :; do
+          file=/backups/action_platform-$$(date -u +%Y%m%dT%H%M%SZ).sql.gz
+          if pg_dump --no-owner --no-privileges | gzip > "$$file.partial"; then
+            mv "$$file.partial" "$$file"
+            echo "wrote $$file"
+          else
+            rm -f "$$file.partial"
+            echo "backup failed" >&2
+          fi
+          find /backups -name 'action_platform-*.sql.gz' -mtime +"$$AP_BACKUP_KEEP_DAYS" -delete
+          now=$$(date -u +%s)
+          wait=$$(( (hour * 3600 - now % 86400 + 86400) % 86400 ))
+          sleep $$(( wait > 0 ? wait : 86400 ))
+        done
+
   ap-migrate:
     image: ${AP_IMAGE_API:?set AP_IMAGE_API in .env, e.g. actionplatformio/action-platform-api:X.Y.Z}
     restart: "no"
@@ -156,3 +191,4 @@ services:
 
 volumes:
   pgdata:
+  backups:
