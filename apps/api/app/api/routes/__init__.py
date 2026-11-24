@@ -24,6 +24,7 @@ from app.api.routes.auth import (
 )
 from app.api.routes.integrations import (
     ci_hosts,
+    connections,
     github_app,
     hosts,
     oauth_apps,
@@ -65,6 +66,7 @@ routers = [
     oauth_apps,
     oauth_flow,
     github_app,
+    connections,
     projects,
     project_apps,
     project_ci,

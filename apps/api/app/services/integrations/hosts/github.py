@@ -12,6 +12,11 @@ from app.core.abc import HostProvider
 from app.core.shared.credentials import Credentials, OAuthApp
 from app.core.shared.http import http
 from app.services.integrations.hosts.access import AccessReport, Owner, Probe
+from app.services.integrations.hosts.scopes import (
+    PERMISSION_RANK,
+    permissions_for,
+    scopes_for,
+)
 from app.services.integrations.hosts.tokens import TokenResponse
 
 MANIFEST_PERMISSIONS = {
@@ -51,7 +56,7 @@ class GithubProvider(HostProvider):
             "redirect_uri": self.callback_url(origin),
             "state": state,
             "response_type": "code",
-            "scope": self.scopes,
+            "scope": scopes_for(self.kind, self.scopes),
         }
 
         return f"{self.web_base(app)}/login/oauth/authorize?{urlencode(params)}"
@@ -106,7 +111,7 @@ class GithubProvider(HostProvider):
             "setup_url": f"{origin}{return_to}",
             "public": True,
             "request_oauth_on_install": True,
-            "default_permissions": MANIFEST_PERMISSIONS,
+            "default_permissions": permissions_for(self.kind, MANIFEST_PERMISSIONS),
         }
 
     def convert_manifest(self, code: str) -> dict[str, Any]:
@@ -219,6 +224,7 @@ class GithubProvider(HostProvider):
                 if org
                 else f"https://github.com/settings/installations/{i['id']}"
             ),
+            permissions=dict(i.get("permissions") or {}),
         )
 
     @staticmethod
@@ -243,6 +249,16 @@ class GithubProvider(HostProvider):
                 report.problems.append(
                     f'{i.account}: repository permission "Actions" is {i.actions}; it must be "Read and write" — the CI tab lists runs and a deploy dispatches the publish workflow. Change it in the app\'s Permissions & events, then accept the new permissions on the installation.'
                 )
+
+            for name, level in permissions_for("github", {}).items():
+                held = i.permissions.get(name, "none")
+
+                if i.kind == "org" and PERMISSION_RANK.get(
+                    held, 0
+                ) < PERMISSION_RANK.get(level, 0):
+                    report.problems.append(
+                        f'{i.account}: permission "{name}" is {held}; a plugin on this platform needs "{level}". Add it in the app\'s Permissions & events, then accept the new permissions on the installation.'
+                    )
 
             if i.repositories != "all":
                 report.problems.append(

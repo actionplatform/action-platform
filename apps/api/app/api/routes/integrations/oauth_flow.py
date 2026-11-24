@@ -1,9 +1,10 @@
-"""Connecting a host with OAuth: start, callback, disconnect."""
+"""Connecting a code host or a service (Sentry) with OAuth: start, callback, disconnect."""
 
 from fastapi import APIRouter, HTTPException, Request
 
 from app.api.dependencies import (
     CallerDep,
+    ConnectionProvidersDep,
     HostProvidersDep,
     OrgDep,
     IntegrationsDep,
@@ -11,7 +12,9 @@ from app.api.dependencies import (
     get_state_signer,
 )
 from app.schemas import integrations as schemas
+from app.services.integrations.connections import ConnectionConnector
 from app.services.integrations.hosts import HostConnectError, HostConnector
+from app.services.integrations.hosts.scopes import scopes_for
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -25,25 +28,31 @@ def oauth_start(
     caller: CallerDep,
     writes: IntegrationsDep,
     providers: HostProvidersDep,
+    services: ConnectionProvidersDep,
 ) -> schemas.OAuthStarted:
-    if provider not in providers:
+    if provider not in providers and provider not in services:
         raise HTTPException(404, "unknown provider")
 
     allowed(caller, org, "org.manage")
+    host = providers.get(provider) if provider in providers else services.get(provider)
     app = writes.oauth_app(provider)
 
     if app is None:
-        raise HTTPException(
-            400, f"{providers.get(provider).label} OAuth app is not configured"
-        )
+        raise HTTPException(400, f"{host.label} OAuth app is not configured")
 
     state = get_state_signer(request).sign(
         org.id, body.return_to or "/settings", caller.user.id
     )
+    origin = body.origin.rstrip("/")
 
-    return schemas.OAuthStarted(
-        url=providers.get(provider).authorize_url(app, body.origin.rstrip("/"), state)
-    )
+    if provider in services:
+        return schemas.OAuthStarted(
+            url=host.authorize_url(
+                app, origin, state, scopes_for(provider, host.scopes)
+            )
+        )
+
+    return schemas.OAuthStarted(url=host.authorize_url(app, origin, state))
 
 
 @router.post("/oauth/{provider}/callback")
@@ -54,8 +63,9 @@ def oauth_callback(
     caller: CallerDep,
     writes: IntegrationsDep,
     providers: HostProvidersDep,
+    services: ConnectionProvidersDep,
 ) -> schemas.OAuthFinished:
-    if provider not in providers:
+    if provider not in providers and provider not in services:
         raise HTTPException(404, "unknown provider")
 
     state = get_state_signer(request).verify(body.state, caller.user.id)
@@ -90,9 +100,14 @@ def oauth_callback(
         )
 
     try:
-        HostConnector(writes, providers).finish(
-            org, provider, body.origin.rstrip("/"), body.code, body.installation_id
-        )
+        if provider in services:
+            ConnectionConnector(writes, services).finish(
+                org, provider, body.origin.rstrip("/"), body.code, caller.user.id
+            )
+        else:
+            HostConnector(writes, providers).finish(
+                org, provider, body.origin.rstrip("/"), body.code, body.installation_id
+            )
     except HostConnectError as e:
         return schemas.OAuthFinished(return_to=return_to, query={"oauth_error": str(e)})
 
