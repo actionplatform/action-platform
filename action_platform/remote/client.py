@@ -452,14 +452,20 @@ class Remote:
         return _as(JobQueued, self._call("POST", path, body))
 
     def wait_job(self, id: str, timeout: float = JOB_WAIT_SECONDS) -> Job:
-        """Job `id` once it finished, or as it stands when `timeout` seconds passed."""
+        """Job `id` once it finished, or as it stands when `timeout` seconds passed; a poll that fails is retried until then."""
         deadline = time.monotonic() + timeout
 
         while True:
-            job = self.job(id)
-
-            if job.status in JOB_FINISHED or time.monotonic() >= deadline:
-                return job
+            try:
+                job = self.job(id)
+            except (ActionPlatformError, OSError) as e:
+                if time.monotonic() >= deadline:
+                    raise ActionPlatformError(
+                        f"job {id} could not be read: {e}; follow it with job_status"
+                    ) from e
+            else:
+                if job.status in JOB_FINISHED or time.monotonic() >= deadline:
+                    return job
 
             time.sleep(JOB_POLL_SECONDS)
 

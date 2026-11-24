@@ -212,7 +212,7 @@ class RemoteClientTest(TempCase):
             self.seen["body"], {"stage": "prod", "dry_run": True, "version": None}
         )
 
-    def followed(self, *jobs: dict) -> list[tuple[str, str]]:
+    def followed(self, *jobs: object) -> list[tuple[str, str]]:
         """Answer the queued call with job j1, then each GET of it with the next of `jobs`; the calls made, in order."""
         calls: list[tuple[str, str]] = []
         states = list(jobs)
@@ -223,7 +223,12 @@ class RemoteClientTest(TempCase):
             if method == "POST":
                 return {"job": "j1", "poll": "/api/v1/jobs/j1", "status": "queued"}
 
-            return {"id": "j1", "kind": "deploy", **states.pop(0)}
+            state = states.pop(0)
+
+            if isinstance(state, BaseException):
+                raise state
+
+            return {"id": "j1", "kind": "deploy", **state}
 
         self.patch(client, "_request", fake_request)
         self.patch(client.time, "sleep", lambda s: None)
@@ -271,6 +276,30 @@ class RemoteClientTest(TempCase):
         with self.assertRaisesRegex(ActionPlatformError, "jenkins said no"):
             client.Remote("https://p.example", "tok").deploy(
                 "a1", "dev", dry_run=False, version="1.0.0"
+            )
+
+    def test_a_poll_that_fails_is_retried(self):
+        self.followed(
+            client.RemoteError(502, "Bad Gateway"),
+            TimeoutError("timed out"),
+            {
+                "status": "done",
+                "result": [{"target": "api", "ok": True, "version": "1.0.0"}],
+            },
+        )
+
+        (result,) = client.Remote("https://p.example", "tok").deploy(
+            "a1", "dev", dry_run=False, version="1.0.0"
+        )
+
+        self.assertTrue(result.ok)
+
+    def test_a_job_that_cannot_be_read_by_the_deadline_names_its_id(self):
+        self.followed(client.RemoteError(401, "token expired"))
+
+        with self.assertRaisesRegex(ActionPlatformError, "job j1 could not be read"):
+            client.Remote("https://p.example", "tok").deploy(
+                "a1", "dev", dry_run=False, version="1.0.0", wait=0
             )
 
     def test_a_deploy_still_running_after_the_wait_answers_with_its_job(self):
