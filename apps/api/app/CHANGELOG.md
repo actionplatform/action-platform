@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.41.1 — 2026-11-24
+
+### Bug Fixes
+- **api:** a deploy run on the request reaches Jenkins with the app's connected server too
+
 ## v0.41.0 — 2026-11-24
 
 ### Features
