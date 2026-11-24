@@ -1,14 +1,14 @@
 """invitation: the code-host account's immutable id a login invitation is bound to
 
 Revision ID: 0034
-Revises: 0025
+Revises: 0026
 """
 
 import sqlalchemy as sa
 from alembic import op
 
 revision = "0034"
-down_revision = "0025"
+down_revision = "0026"
 branch_labels = None
 depends_on = None
 
