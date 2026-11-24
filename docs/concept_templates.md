@@ -63,6 +63,23 @@ The official catalog always comes from [actionplatform/templates](https://github
 
 Names are unique per organization and `official` is reserved. A repository that cannot be cloned shows as *Unavailable* with the error, without hiding the others.
 
+### Ownership and retention on the API
+
+A template repository belongs to the organization that added it:
+
+- `/api/v1` reads a `source` — a name, or `{name, url, ref}` — only from the calling organization's own list. A name it does not have, or a `url`/`ref` that differs from the one registered under that name, answers `400 template source <name> not found`, even when another organization added that URL.
+- The API keeps each organization's clones in a directory of its own (`~/.cache/action-platform/sources/owners/<hash of the organization id>/<hash of url@ref>`). Two organizations that add the same URL get two clones, each fetched with its own organization's source host.
+- Every read (`GET /api/v1/matrix`, `apps/init`, `apps/{id}/cloud`, `apps/{id}/services`) fetches the repository with the organization's current credentials first. When that fetch fails the clone is deleted and the call fails; the copy on disk is never served instead. The CLI and the local MCP keep their own cache and still fall back to it offline.
+
+A clone is kept only while the organization can still read the repository. It is deleted when:
+
+| Event | What goes |
+|---|---|
+| `DELETE /api/v1/template-sources/{id}` | that source's clone |
+| `DELETE /api/v1/hosts/{id}`, `DELETE /api/v1/oauth/{provider}/hosts/{login}` | every clone of the organization; the next read clones again with the credentials left |
+| a refresh fails (token revoked, access removed, repository gone) | that source's clone |
+| the organization is deleted | every clone of the organization |
+
 ## Adding one
 
 1. In the templates repository, add `projects/<type>/<stack>/<name>/` with a `cookiecutter.json` (`project_name`, `project_slug`, `description`, `package_name`, `github_owner`, `author`, `license`, `source_host`, `ci` — owner and author empty, licence `none` by default) and a `{{cookiecutter.project_slug}}/` tree.

@@ -32,6 +32,7 @@ class TemplateSource:
     url: str
     ref: str = "main"
     name: str = ""
+    owner: str = ""
 
     @classmethod
     def parse(cls, spec: str, name: str = "") -> "TemplateSource":
@@ -58,11 +59,22 @@ class TemplateSource:
     def label(self) -> str:
         return self.name or self.url.rstrip("/").rsplit("/", 1)[-1].removesuffix(".git")
 
+    @staticmethod
+    def owner_cache(owner: str) -> Path:
+        """Where the clones of one owner's sources live, apart from every other owner's."""
+        return (
+            CACHE
+            / "sources"
+            / "owners"
+            / hashlib.sha256(owner.encode()).hexdigest()[:16]
+        )
+
     @property
     def cache(self) -> Path:
         key = hashlib.sha256(f"{self.url}@{self.ref}".encode()).hexdigest()[:16]
+        root = self.owner_cache(self.owner) if self.owner else CACHE / "sources"
 
-        return CACHE / "sources" / key
+        return root / key
 
 
 class LocalTemplateStore(TemplateStore):

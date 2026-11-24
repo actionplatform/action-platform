@@ -366,6 +366,7 @@ class MatrixTest(GateCase):
                     "url": "https://example.com/x.git",
                     "ref": "v1",
                     "credentials": None,
+                    "organization_id": self.org["id"],
                 }
             ],
         )

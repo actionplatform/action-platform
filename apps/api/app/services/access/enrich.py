@@ -21,8 +21,8 @@ def enrich(
     if organization is None:
         return parsed
 
-    if SOURCE_BODY.match(path) and isinstance(parsed.get("source"), str):
-        parsed["source"] = directory.source_spec_by_name(
+    if SOURCE_BODY.match(path) and isinstance(parsed.get("source"), (str, dict)):
+        parsed["source"] = directory.owned_source_spec(
             organization.id, parsed["source"]
         )
 

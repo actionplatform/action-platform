@@ -48,6 +48,7 @@ class SourceSpec(BaseModel):
     url: str
     ref: str = "main"
     credentials: Optional[SourceCredentials] = None
+    organization_id: Optional[str] = None
 
 
 class PageMeta(BaseModel):

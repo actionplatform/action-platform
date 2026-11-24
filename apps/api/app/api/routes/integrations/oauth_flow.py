@@ -15,6 +15,7 @@ from app.schemas import integrations as schemas
 from app.services.integrations.connections import ConnectionConnector
 from app.services.integrations.hosts import HostConnectError, HostConnector
 from app.services.integrations.hosts.scopes import scopes_for
+from app.services.templates import TemplateRepos
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -124,3 +125,4 @@ def disconnect_oauth_host(
 ) -> None:
     allowed(caller, org, "org.manage")
     writes.remove_oauth_host(org.id, provider, login)
+    TemplateRepos.forget(org.id)

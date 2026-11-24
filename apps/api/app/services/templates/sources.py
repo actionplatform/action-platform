@@ -1,7 +1,9 @@
 """Which template repository a request reads from, and the matrix as the API presents it."""
 
+import shutil
 from typing import Optional
 
+from action_platform.core.exception import TemplateError
 from action_platform.core.scaffold.catalog import Matrix, load_matrix, load_source
 from action_platform.core.scaffold.sources import TemplateSource
 from app.services.workspace import git_auth as auth
@@ -13,7 +15,12 @@ class TemplateRepos:
 
     @staticmethod
     def source(spec: SourceSpec) -> TemplateSource:
-        return TemplateSource(url=spec.url, ref=spec.ref, name=spec.name)
+        return TemplateSource(
+            url=spec.url,
+            ref=spec.ref,
+            name=spec.name,
+            owner=spec.organization_id or "",
+        )
 
     @classmethod
     def resolve(cls, spec: SourceSpec | str | None):
@@ -21,8 +28,24 @@ class TemplateRepos:
         if spec is None or isinstance(spec, str):
             return load_matrix()
 
+        source = cls.source(spec)
+
         with auth.git_auth(spec.credentials):
-            return load_source(cls.source(spec))
+            try:
+                return load_source(source, update=True)
+            except TemplateError:
+                shutil.rmtree(source.cache, ignore_errors=True)
+                raise
+
+    @staticmethod
+    def forget(organization_id: str, url: str = "", ref: str = "") -> None:
+        """Delete the clones kept for an organization: one source's, or every one when no url is given."""
+        path = (
+            TemplateSource(url=url, ref=ref, owner=organization_id).cache
+            if url
+            else TemplateSource.owner_cache(organization_id)
+        )
+        shutil.rmtree(path, ignore_errors=True)
 
 
 class MatrixView:

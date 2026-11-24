@@ -9,6 +9,7 @@ from app.api.dependencies import (
     allowed,
 )
 from app.schemas import organization as schemas
+from app.services.templates import TemplateRepos
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -48,4 +49,7 @@ def remove_template_source(
     writes: IntegrationsDep,
 ) -> None:
     allowed(caller, org, "org.manage")
-    writes.remove_template_source(org.id, id)
+    removed = writes.remove_template_source(org.id, id)
+
+    if removed is not None:
+        TemplateRepos.forget(org.id, removed.url, removed.ref)
