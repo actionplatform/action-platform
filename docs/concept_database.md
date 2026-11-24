@@ -48,6 +48,8 @@ A database the web app created has no `alembic_version` table but does have `use
 action-platform-api db status                       # dialect, current and head revision
 action-platform-api db migrate                      # same as boot, on demand
 action-platform-api db migrate --url sqlite:///dev.db
+action-platform-api db backup [--out FILE|-]           # pg_dump, plain SQL
+action-platform-api db restore FILE|- [--force]       # psql in one transaction; --force drops existing tables
 ```
 
 Both read `AP_DATABASE_URL` unless `--url` is given.

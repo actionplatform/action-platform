@@ -12,7 +12,8 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 | understand what happens when I deploy | [Deployments](concept_deployments.md) · [Identity](concept_identity.md) |
 | know before deploying whether a release will make it | [Deployments › readiness](concept_deployments.md#readiness) |
 | decide which releases may reach production | [Scopes](concept_scopes.md) |
-| fix something that was refused | [Troubleshooting](start_troubleshooting.md) |
+| fix something that was refused | [Operations](start_operations.md) | backups (daily dumps), restore into a fresh host, losing and rotating the secrets |
+| [Troubleshooting](start_troubleshooting.md) |
 | know what a screen, command or tool does | [Web](use_web.md) · [CLI](use_cli.md) · [MCP](use_mcp.md) · [API](use_api.md) · [Plugins](use_plugins.md) |
 | understand who may do what | [Access control](concept_access_control.md) |
 | change or extend the code | [Architecture](contribute_architecture.md) · [Development](contribute_development.md) · [Writing a plugin](contribute_plugins.md) |
