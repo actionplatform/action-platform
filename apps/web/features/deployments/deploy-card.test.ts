@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { targetsOf } from "./targets";
+import { targetNamesOf, targetsOf } from "./targets";
 
 describe("targetsOf", () => {
   it("reads the single form", () => {
@@ -15,5 +15,9 @@ describe("targetsOf", () => {
 
   it("is null without targets", () => {
     expect(targetsOf({}, "prod")).toBeNull();
+  });
+
+  it("lists names without joining them", () => {
+    expect(targetNamesOf({ target: "a", targets: [{ name: "b" }, { kind: "c" }] })).toEqual(["a", "b", "c"]);
   });
 });
