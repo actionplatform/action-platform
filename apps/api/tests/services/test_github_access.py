@@ -4,6 +4,7 @@ import unittest
 
 from app.services.integrations.hosts.access import AccessReport, Owner
 from app.services.integrations.hosts.github import MANIFEST_PERMISSIONS, GithubProvider
+from app.services.integrations.hosts.scopes import permissions_for
 
 
 class GithubAccessTest(unittest.TestCase):
@@ -20,6 +21,7 @@ class GithubAccessTest(unittest.TestCase):
                 administration="write",
                 contents="write",
                 actions="none",
+                permissions=permissions_for("github", {}),
             )
         )
 
@@ -39,6 +41,7 @@ class GithubAccessTest(unittest.TestCase):
                 administration="write",
                 contents="write",
                 actions="write",
+                permissions=permissions_for("github", {}),
             )
         )
 
