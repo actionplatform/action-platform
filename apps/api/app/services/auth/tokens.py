@@ -1,9 +1,9 @@
 """Scoped API tokens: issued, verified, noted, listed, revoked."""
 
-from datetime import timezone
+from datetime import timedelta, timezone
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from action_platform.core.access import (
     Grant,
@@ -20,6 +20,7 @@ from app.services.auth.base import (
     now,
 )
 from app.services.auth.errors import (
+    AuthError,
     Forbidden,
 )
 from app.core.db.models import (
@@ -33,11 +34,7 @@ class Tokens(AuthBase):
     def issue_token(
         self, session: Session, grant: Grant, name: str
     ) -> tuple[ApiToken, str]:
-        name = name.strip()[:120] or "token"
-
-        if grant.organization_id == "*":
-            grant = Grant(grant.scope, None, grant.project_id, grant.app_id)
-        elif grant.organization_id is None:
+        if grant.organization_id is None:
             grant = Grant(
                 grant.scope,
                 session.active_organization_id,
@@ -45,44 +42,67 @@ class Tokens(AuthBase):
                 grant.app_id,
             )
 
+        return self.issue_token_for(session.user_id, grant, name)
+
+    def issue_token_for(
+        self,
+        user_id: str,
+        grant: Grant,
+        name: str,
+        ttl: Optional[timedelta] = None,
+    ) -> tuple[ApiToken, str]:
+        """A token for the user with `grant` narrowed to their role; `org:*` reaches every organization, and `ttl` can only shorten the default lifetime."""
+        name = name.strip()[:120] or "token"
+
+        if grant.organization_id == "*":
+            grant = Grant(grant.scope, None, grant.project_id, grant.app_id)
+
         if grant.organization_id:
-            role = self.role_in(session.user_id, grant.organization_id)
+            role = self.role_in(user_id, grant.organization_id)
 
             if role is None:
                 raise Forbidden("you are not a member of that organization")
 
             allowed = grantable_scopes(role)
         else:
-            organizations = self.organizations_of(session.user_id)
+            organizations = self.organizations_of(user_id)
 
             if not organizations:
                 raise Forbidden("join an organization before issuing a token")
 
-            roles = [self.role_in(session.user_id, o.id) for o in organizations]
+            roles = [self.role_in(user_id, o.id) for o in organizations]
             allowed = [
                 s for s in grant.scope if all(s in grantable_scopes(r) for r in roles)
             ]
 
         grant = self._narrow(grant, allowed)
         scope = grant.scope
+        lifetime = ADMIN_TOKEN_TTL if "admin" in scope else TOKEN_TTL
+
+        if ttl is not None:
+            if ttl <= timedelta(0):
+                raise AuthError("invalid", "a token has to live a positive time")
+
+            lifetime = min(lifetime, ttl)
+
         moment = now()
         token = ApiToken(
             id=new_id(),
-            user_id=session.user_id,
+            user_id=user_id,
             organization_id=grant.organization_id,
             name=name,
             scope=" ".join(scope),
             project_id=grant.project_id,
             app_id=grant.app_id,
             created_at=moment,
-            expires_at=moment + (ADMIN_TOKEN_TTL if "admin" in scope else TOKEN_TTL),
+            expires_at=moment + lifetime,
         )
         self.db.add(token)
         self.db.flush()
         claims = {
             "iss": ISSUER,
             "aud": AUDIENCE,
-            "sub": session.user_id,
+            "sub": user_id,
             "jti": token.id,
             "iat": int(moment.replace(tzinfo=timezone.utc).timestamp()),
             "exp": int(token.expires_at.replace(tzinfo=timezone.utc).timestamp()),
@@ -114,6 +134,7 @@ class Tokens(AuthBase):
             token is None
             or token.revoked_at is not None
             or token.user_id != claims["sub"]
+            or token.user.disabled_at is not None
         ):
             return None
 
@@ -204,3 +225,18 @@ class Tokens(AuthBase):
         self.db.flush()
 
         return True
+
+    def revoke_tokens_of(self, user_id: str) -> int:
+        moment = now()
+        result = self.db.execute(
+            update(ApiToken)
+            .where(
+                ApiToken.user_id == user_id,
+                ApiToken.revoked_at.is_(None),
+                ApiToken.expires_at > moment,
+            )
+            .values(revoked_at=moment)
+        )
+        self.db.flush()
+
+        return result.rowcount or 0

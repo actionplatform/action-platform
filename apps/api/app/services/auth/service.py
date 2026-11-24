@@ -17,6 +17,7 @@ from app.services.auth.base import (
 )
 from app.services.auth.device import Device
 from app.services.auth.google import GoogleAccounts
+from app.services.auth.operators import Operators
 from app.services.auth.organizations import Organizations
 from app.services.auth.recovery import Recovery
 from app.services.auth.sessions import Sessions
@@ -24,7 +25,14 @@ from app.services.auth.tokens import Tokens
 
 
 class AuthService(
-    Accounts, Sessions, Organizations, Device, Tokens, Recovery, GoogleAccounts
+    Accounts,
+    Sessions,
+    Organizations,
+    Device,
+    Tokens,
+    Recovery,
+    GoogleAccounts,
+    Operators,
 ):
     pass
 

@@ -24,6 +24,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(SHORT, nullable=False, unique=True)
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     image: Mapped[Optional[str]] = mapped_column(Text)
+    disabled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=now, server_default=func.now()
     )

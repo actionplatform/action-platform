@@ -9,12 +9,13 @@ from typing import Optional
 from sqlalchemy import delete, select
 
 from app.core.auth.passwords import hash_password
-from app.core.db.models import Account, Session, User, Verification
+from app.core.db.models import Account, User, Verification
 from app.core.shared.mail import Mail
 from app.services.auth.base import PASSWORD_MIN, PROVIDER, AuthBase, new_id, now
 from app.services.auth.errors import AuthError
 
 RESET_TTL = timedelta(minutes=30)
+LINK_TTL = timedelta(hours=24)
 RESET_PREFIX = "password-reset:"
 
 
@@ -50,6 +51,10 @@ class Recovery(AuthBase):
         if user is None or self._credential(user.id) is None:
             return None
 
+        return user, self.reset_token(user)
+
+    def reset_token(self, user: User, ttl: timedelta = RESET_TTL) -> str:
+        """A fresh single-use token for /reset-password, replacing any earlier one of the user."""
         identifier = f"{RESET_PREFIX}{user.id}"
         self.db.execute(
             delete(Verification).where(Verification.identifier == identifier)
@@ -61,14 +66,14 @@ class Recovery(AuthBase):
                 id=new_id(),
                 identifier=identifier,
                 value=_digest(token),
-                expires_at=moment + RESET_TTL,
+                expires_at=moment + ttl,
                 created_at=moment,
                 updated_at=moment,
             )
         )
         self.db.flush()
 
-        return user, token
+        return token
 
     def reset_password(self, token: str, password: str) -> User:
         if len(password) < PASSWORD_MIN:
@@ -100,14 +105,38 @@ class Recovery(AuthBase):
 
             raise AuthError("invalid_token", "this link is invalid or has expired")
 
-        moment = now()
-        account.password = hash_password(password)
-        account.updated_at = moment
         self.db.delete(row)
-        self.db.execute(delete(Session).where(Session.user_id == user_id))
-        self.db.flush()
+        self.set_password(user, password)
 
         return user
+
+    def set_password(
+        self, user: User, password: str, keep: Optional[str] = None
+    ) -> tuple[int, int]:
+        """A new password for the user: every session but `keep` ends and every API token is revoked, which signs out the CLI and MCP; the counts of both."""
+        if len(password) < PASSWORD_MIN:
+            raise AuthError(
+                "weak_password", f"password needs at least {PASSWORD_MIN} characters"
+            )
+
+        account = self._credential(user.id)
+        moment = now()
+
+        if account is None:
+            account = Account(
+                id=new_id(),
+                account_id=user.id,
+                provider_id=PROVIDER,
+                user_id=user.id,
+                created_at=moment,
+            )
+            self.db.add(account)
+
+        account.password = hash_password(password)
+        account.updated_at = moment
+        self.db.flush()
+
+        return self.end_sessions(user.id, keep), self.revoke_tokens_of(user.id)
 
     def _credential(self, user_id: str) -> Optional[Account]:
         return self.db.scalar(
