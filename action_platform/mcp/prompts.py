@@ -238,18 +238,20 @@ def register_remote(mcp: Any) -> None:
 
     @mcp.prompt(
         title="Adopt an organization",
-        description="Preview a GitHub organization, import the picked repositories, teams and people on approval, connect each app's existing pipeline.",
+        description="Preview a GitHub organization, GitLab group or Bitbucket workspace, import the picked repositories, teams and people on approval, connect each app's existing pipeline.",
     )
     def adopt_organization(host: str = "", organization: str = "") -> str:
         return (
-            "Bring a GitHub organization onto the hosted platform.\n\n"
-            f"Code host: {host or 'list_hosts — a GitHub host'}. "
+            "Bring a GitHub organization, GitLab group or Bitbucket workspace onto "
+            "the hosted platform.\n\n"
+            f"Code host: {host or 'list_hosts — a GitHub, GitLab or Bitbucket host'}. "
             f"Organization: {organization or 'ask — list_import_organizations shows them'}.\n\n"
             "1. Call whoami; without org.manage and an admin-scoped token stop and "
             "say who can grant it.\n"
             "2. Call preview_organization_import. Show the repositories (skip archived "
             "ones unless asked; imported_as means already an app), the teams and "
-            "the people with their status, and let the user pick.\n"
+            "the people with their status and host role, and what the preview's "
+            "limits say the host cannot provide, and let the user pick.\n"
             "3. Say what import_organization will create — projects, apps, teams, "
             "invitations and the role they get — and wait for a yes.\n"
             "4. Call import_organization, then job_status until the job is done or "
