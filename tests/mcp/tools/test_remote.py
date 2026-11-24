@@ -19,6 +19,7 @@ from tests.support import TempCase, git, repo_with_origin
 
 LISTS = {
     "apps",
+    "invitations",
     "commits",
     "branches",
     "tags",
@@ -60,7 +61,17 @@ SHAPES: dict[str, Any] = {
     "assign_project_team": {"ok": True},
     "set_member_role": {"ok": True},
     "matrix": {"projects": [], "clouds": [], "services": []},
+    "invite": {
+        "id": "i1",
+        "email": "b@x.io",
+        "role": "viewer",
+        "status": "pending",
+        "expires_at": "2026-12-01T00:00:00",
+        "created_at": "2026-11-24T00:00:00",
+        "inviter": "Ana",
+    },
 }
+NOTHING = {"remove_member", "remove_team_member", "cancel_invitation"}
 
 
 class FakeRemote:
@@ -102,6 +113,9 @@ class FakeRemote:
 
         if name in LISTS:
             return []
+
+        if name in NOTHING:
+            return None
 
         return SHAPES.get(name, {"called": name})
 
@@ -311,10 +325,36 @@ class RemoteToolsTest(TempCase):
                 {"user_id": "u1", "role": "deployer"},
                 ("set_member_role", ("u1", "deployer"), {"organization": None}),
             ),
+            (
+                "remove_member",
+                {"user_id": "u1", "organization": "acme"},
+                ("remove_member", ("u1",), {"organization": "acme"}),
+            ),
+            (
+                "remove_team_member",
+                {"team_id": "t1", "user_id": "u1"},
+                ("remove_team_member", ("t1", "u1"), {"organization": None}),
+            ),
+            ("list_invitations", {}, ("invitations", (None,), {})),
+            (
+                "invite_member",
+                {"email": "b@x.io", "role": "viewer"},
+                ("invite", ("b@x.io", "viewer", None), {}),
+            ),
+            (
+                "cancel_invitation",
+                {"id": "i1"},
+                ("cancel_invitation", ("i1", None), {}),
+            ),
         ):
             with self.subTest(tool=tool):
                 self.call(tool, args)
                 self.assertEqual(self.fake.calls[-1], expected)
+
+    def test_an_invitation_answers_with_the_link_that_accepts_it(self):
+        sent = self.call("invite_member", {"email": "b@x.io", "role": "viewer"})
+
+        self.assertEqual(sent["link"], "https://p.example/invite/i1")
 
     def test_current_context_matches_the_checkout_to_an_app(self):
         repo = repo_with_origin(self.tmp_path)
@@ -450,6 +490,11 @@ CONCERNS = {
         "add_team_member",
         "assign_project_team",
         "set_member_role",
+        "remove_member",
+        "remove_team_member",
+        "list_invitations",
+        "invite_member",
+        "cancel_invitation",
     },
     "context": {"current_context"},
     "apps": {
