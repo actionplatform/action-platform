@@ -7,10 +7,34 @@ import re
 from contextvars import ContextVar
 from urllib.parse import urlsplit
 
+from action_platform.core.origin import Origin
 from action_platform.options import GitConfig
 
 
 AUTH_ENV: ContextVar[dict[str, str] | None] = ContextVar("git_auth_env", default=None)
+AUTH_ORIGIN: ContextVar[Origin | None] = ContextVar("git_auth_origin", default=None)
+
+
+def credential_helper(origin: Origin, helper: str) -> dict[str, str]:
+    """GIT_CONFIG_* entries that drop every inherited credential helper and answer with `helper` for `origin` alone; git asks no helper for any other scheme, host or port, redirects included."""
+    return {
+        "GIT_CONFIG_COUNT": "2",
+        "GIT_CONFIG_KEY_0": "credential.helper",
+        "GIT_CONFIG_VALUE_0": "",
+        "GIT_CONFIG_KEY_1": f"credential.{origin.url}.helper",
+        "GIT_CONFIG_VALUE_1": helper,
+    }
+
+
+def credential_scope_problem(url: str) -> str | None:
+    """Why the request's credentials were not offered to `url`, or None when they were (or there are none)."""
+    origin = AUTH_ORIGIN.get()
+    target = Origin.parse(url)
+
+    if origin is None or target is None or target == origin:
+        return None
+
+    return f"the connected host's credentials are scoped to {origin.url} and are not sent to {target.url}"
 
 
 class UnsafeUrl(ValueError):
