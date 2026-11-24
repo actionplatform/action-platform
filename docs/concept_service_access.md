@@ -36,7 +36,9 @@ Every route needs `org.manage` and a token that is not limited to a project or a
 | `access_offboard` | `action-platform access offboard <email>` | `POST /api/v1/access/offboard` | every grant of every linked account, the mapping entries, optionally the platform membership |
 | `access_sync` | `action-platform access sync` | `POST /api/v1/access/sync` | imports a service the first time; then adds, changes and removes to close the drift |
 
-The operations run on the API, with the plugins the image bundles and each plugin's options of the caller's organization — credentials stay sealed on the platform and never reach the client. The CLI commands and the remote MCP tools call these routes; the local MCP server, which acts on files on one machine, has none of them.
+The operations run on the API, with the plugins the image bundles and each plugin's options of the caller's organization — credentials stay sealed on the platform and never reach the client.
+
+**No personal token to paste.** A plugin reads the organization's own connections: the code host connected under **Settings → Git** (apx-github) and the services connected under **Settings → Services** (*Connect Sentry*, for apx-sentry). Connecting asks for the scopes the plugins declare; when a connection lacks one, the audit names it and the click that grants it. A plugin's token option, where it has one, still wins when set. The CLI commands and the remote MCP tools call these routes; the local MCP server, which acts on files on one machine, has none of them.
 
 ## Where the pieces live
 

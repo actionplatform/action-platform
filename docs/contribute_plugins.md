@@ -144,6 +144,37 @@ class VaultPlugin(Plugin):
 
 `Http(service, base, headers)` is the JSON client the bundled plugins share: `call(method, path, body=…, query=…, form=…, ok=…)` answers the decoded body and raises `AccessError` on any status of 400 or more that `ok` does not list; `pages(path)` follows `Link: rel="next"`; `text(path, tail_lines=None)` reads a plain-text body (a console log) as a stream, whole or only its last `tail_lines` lines. An error message names the service, the method and the path, never a header; an HTML error page shows up only as its `<title>`.
 
+### Connections instead of a token
+
+A plugin should not make anyone paste a personal token. It declares the organization's connections it reads in `connections`, and takes a live token from `options.credential(kind)`:
+
+```python
+from action_platform.abc import Connection, Plugin
+
+
+class VaultPlugin(Plugin):
+    slug = "vault"
+    connections = [
+        Connection("github", scopes=("admin:org",), permissions=(("members", "write"),)),
+        Connection("sentry", scopes=("member:admin", "team:write")),
+    ]
+
+    def access(self, options):
+        found = options.credential("sentry")
+
+        if found is None:
+            raise AccessError("vault: connect Sentry under Settings → Services")
+
+        return VaultAccess(found.api_url or "https://sentry.io/api/0", found.token)
+```
+
+| Kind | The connection | What the declaration adds |
+|---|---|---|
+| `github`, `gitlab`, `bitbucket` | the code host the organization connected under **Settings → Git** — the OAuth host first, then one added with a token | its `scopes` join what connecting asks the provider for; a GitHub App created from the platform's manifest also carries its `permissions`, and **Settings → Git** names an installation that lacks one |
+| `sentry` | **Settings → Services → Connect Sentry**, an OAuth connection of its own | its `scopes` join what connecting asks Sentry for |
+
+`credential(kind)` answers a `Credential` — `token`, `login`, `api_url` (None for the public service), `scopes` (what was granted, when the provider says), `app` (the GitHub App slug when the token comes from one) — or `None`: on a machine, for a kind the plugin did not declare, or while nothing is connected. The token is refreshed before it is handed over and is the caller's for that call only; never log it, never put it in an error. When it lacks a scope or a permission the plugin needs, raise an `AccessError` that names the missing one and the click that grants it (reconnect, accept the app's new permissions). A token option may stay for platforms without the connection; read it first and fall back to the connection.
+
 `access(options)` reads **only** `options`: on the hosted platform they are the calling organization's values of the plugin (secrets opened for that call), so an environment variable would leak one organization's credential into another's. Return `None` while the options do not configure the service and raise `AccessError` naming the missing key when they half do; the audit shows it as a failed service. Keep it cheap — it runs on every access call. Test with `action_platform.testing.access` (`MemoryDirectory`, and `MemoryProvider` as a reference) and the core's `Access`: the first sync imports and changes nothing, a second one is a no-op.
 
 Log through `self.logger` (the plugin's own logger, wired at load to the platform's job log) or `action_platform.logging.logger`; a logger of your own named after your package works too — every plugin's package is attached when it is discovered. Long commands should stream: run them through `action_platform.core.process.stream(args, cwd, env)` — every line reaches whoever follows the job (the web's run log, `action-platform logs -f`) as it appears, and the tail comes back for the error — or `emit(line)` from `action_platform.logging` for lines of your own. Output the platform never sees is output nobody can debug.
