@@ -8,7 +8,7 @@ import { InviteForm } from "./invite-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function InvitePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function InvitePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string }> }) {
   const status = await setupStatus();
   if (!status.complete) redirect("/setup");
   const { id } = await params;
@@ -27,7 +27,8 @@ export default async function InvitePage({ params }: { params: Promise<{ id: str
   }
 
   const session = await getSession();
-  const mode = session ? (session.user.email.toLowerCase() === invitation.email ? "accept" : "mismatch") : "join";
+  const { error } = await searchParams;
+  const mode = !session ? "join" : invitation.login ? "verify" : session.user.email.toLowerCase() === invitation.email ? "accept" : "mismatch";
 
-  return <InviteForm invitation={{ id: invitation.id, email: invitation.email, role: invitation.role, org: invitation.org.name, inviter: invitation.inviter }} mode={mode} currentEmail={session?.user.email ?? null} google={status.google} />;
+  return <InviteForm invitation={{ id: invitation.id, email: invitation.email, login: invitation.login, host: invitation.hostKind, role: invitation.role, org: invitation.org.name, inviter: invitation.inviter }} mode={mode} currentEmail={session?.user.email ?? null} google={status.google} problem={error ?? null} />;
 }

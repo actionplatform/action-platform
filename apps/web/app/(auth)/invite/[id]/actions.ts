@@ -18,14 +18,17 @@ export async function acceptInvite(id: string): Promise<Result> {
   }
 }
 
-export async function joinWithNewAccount(id: string, name: string, password: string): Promise<Result> {
+export async function joinWithNewAccount(id: string, name: string, password: string, email?: string): Promise<Result> {
   const invitation = await invitationById(id);
   if (!invitation || invitation.status !== "pending" || invitation.expired) return { ok: false, error: "invitation is no longer valid" };
   if (!name.trim()) return { ok: false, error: "name is required" };
   if (password.length < 8) return { ok: false, error: "password needs at least 8 characters" };
-  const created = await signUp(name.trim(), invitation.email, password, id);
+  const address = invitation.email ?? email?.trim() ?? "";
+  if (!address) return { ok: false, error: "email is required" };
+  const created = await signUp(name.trim(), address, password, id);
   if (!created.ok) return created;
   const session = await getSession();
   if (!session) return { ok: false, error: "account created; sign in to join" };
+  if (invitation.login) return { ok: true };
   return acceptInvite(id);
 }

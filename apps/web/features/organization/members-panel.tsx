@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Link2, Mail, Trash2, UserMinus, UserPlus } from "lucide-react";
+import { AtSign, Check, Copy, Link2, Mail, Trash2, UserMinus, UserPlus } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { type Role, type RoleInfo } from "@/lib/permissions";
 import { addMember, changeRole, inviteMember, kickMember, revokeInvitation } from "./actions";
 
 type Member = { id: string; userId: string; name: string; email: string; role: string };
-type Pending = { id: string; email: string; role: string | null; inviter: string; expiresAt: string };
+type Pending = { id: string; email: string | null; login: string | null; teams: string[]; role: string | null; inviter: string; expiresAt: string };
 
 type RoleOption = { value: string; label: string; hint: string };
 
@@ -63,10 +63,11 @@ export function MembersPanel({ org, members, invitations, me, canManage, origin,
           minWidth={640}
           empty={{ icon: Mail, title: "No invitations" }}
           columns={[
-            { key: "email", label: "Email", width: 34, render: (i) => <Inline><Mail className="size-4 shrink-0 text-secondary" strokeWidth={1.75} /><span className="truncate">{i.email}</span></Inline> },
-            { key: "role", label: "Role", width: 14, render: (i) => <Cell muted>{i.role ?? "member"}</Cell> },
-            { key: "by", label: "Invited by", width: 20, hide: "md", render: (i) => <Cell muted title={i.inviter}>{i.inviter}</Cell> },
-            { key: "expires", label: "Expires", width: 14, hide: "sm", render: (i) => <Cell muted>{new Date(i.expiresAt).toLocaleDateString()}</Cell> },
+            { key: "email", label: "Email or login", width: 28, render: (i) => <Inline>{i.email ? <Mail className="size-4 shrink-0 text-secondary" strokeWidth={1.75} /> : <AtSign className="size-4 shrink-0 text-secondary" strokeWidth={1.75} />}<span className="truncate">{i.email ?? i.login}</span></Inline> },
+            { key: "role", label: "Role", width: 12, render: (i) => <Cell muted>{i.role ?? "member"}</Cell> },
+            { key: "teams", label: "Teams on joining", width: 16, hide: "md", render: (i) => <Cell muted title={i.teams.join(", ")}>{i.teams.length ? i.teams.join(", ") : "—"}</Cell> },
+            { key: "by", label: "Invited by", width: 14, hide: "md", render: (i) => <Cell muted title={i.inviter}>{i.inviter}</Cell> },
+            { key: "expires", label: "Expires", width: 12, hide: "sm", render: (i) => <Cell muted>{new Date(i.expiresAt).toLocaleDateString()}</Cell> },
             { key: "actions", label: "", width: 18, align: "right", render: (i) => <InvitationActions invitation={i} origin={origin} canManage={canManage} onError={setError} /> },
           ]}
         />
@@ -105,7 +106,7 @@ function InvitationActions({ invitation, origin, canManage, onError }: { invitat
   return (
     <span className="inline-flex items-center gap-1">
       <CopyLink url={inviteUrl(origin, invitation.id)} />
-      {canManage && <button type="button" title="Revoke invitation" aria-label={`Revoke invitation for ${invitation.email}`} disabled={pending} onClick={() => start(async () => { onError(null); const r = await revokeInvitation(invitation.id); if (!r.ok) onError(r.error); })} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><Trash2 className="size-4" strokeWidth={1.75} /></button>}
+      {canManage && <button type="button" title="Revoke invitation" aria-label={`Revoke invitation for ${invitation.email ?? `@${invitation.login}`}`} disabled={pending} onClick={() => start(async () => { onError(null); const r = await revokeInvitation(invitation.id); if (!r.ok) onError(r.error); })} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><Trash2 className="size-4" strokeWidth={1.75} /></button>}
     </span>
   );
 }
