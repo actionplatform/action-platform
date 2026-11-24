@@ -1,14 +1,14 @@
 """invitation: bound to a code-host login when there is no email, and the teams the person joins on accepting
 
-Revision ID: 0024
-Revises: 0023
+Revision ID: 0025
+Revises: 0024
 """
 
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0024"
-down_revision = "0023"
+revision = "0025"
+down_revision = "0024"
 branch_labels = None
 depends_on = None
 
