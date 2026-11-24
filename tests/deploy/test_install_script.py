@@ -102,6 +102,28 @@ class EnvFileTest(unittest.TestCase):
         )
 
 
+class SetupHintTest(unittest.TestCase):
+    def test_prints_the_setup_token_while_nobody_signed_up(self):
+        result = run(
+            'DIR=/opt/ap; compose() { [ "$1" = exec ] && echo ABCD-EFGH-IJKL-MNOP; return 0; }; setup_hint'
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("      ABCD-EFGH-IJKL-MNOP\n", result.stdout)
+        self.assertIn(
+            "docker compose exec api action-platform-api setup token", result.stdout
+        )
+
+    def test_says_sign_in_when_setup_is_closed(self):
+        result = run(
+            'DIR=/opt/ap; compose() { [ "$1" = exec ] && return 1; return 0; }; setup_hint'
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Open it and sign in.", result.stdout)
+        self.assertNotIn("first account asks", result.stdout)
+
+
 class SyntaxTest(unittest.TestCase):
     def test_parses_as_posix_sh(self):
         result = subprocess.run(
