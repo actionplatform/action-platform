@@ -1,11 +1,12 @@
 import { type OAuthAppRow, v1 } from "./v1";
 
-export type Provider = "github" | "gitlab" | "bitbucket";
+export type Provider = "github" | "gitlab" | "bitbucket" | "sentry";
 
 export const PROVIDERS: Record<Provider, { label: string }> = {
   github: { label: "GitHub" },
   gitlab: { label: "GitLab" },
   bitbucket: { label: "Bitbucket" },
+  sentry: { label: "Sentry" },
 };
 
 export type OAuthApp = OAuthAppRow;

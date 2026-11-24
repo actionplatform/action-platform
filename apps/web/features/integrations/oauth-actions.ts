@@ -41,3 +41,15 @@ export async function disconnectHost(provider: Provider, login: string): Promise
   revalidatePath("/", "layout");
   return { ok: true };
 }
+
+export async function disconnectService(kind: Provider): Promise<Outcome> {
+  if (!(kind in PROVIDERS)) return { ok: false, error: "unknown provider" };
+  await requireSession();
+  try {
+    await v1.disconnectService(kind);
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true };
+}

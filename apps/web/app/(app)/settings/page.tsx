@@ -12,7 +12,7 @@ import { requireOrg } from "@/lib/session";
 import { hostsOf } from "@/lib/source-hosts";
 import { ciHostsOf } from "@/lib/ci";
 import { CiHosts } from "@/features/ci";
-import { ConnectHosts, SourceHosts } from "@/features/integrations";
+import { ConnectHosts, ConnectServices, SourceHosts } from "@/features/integrations";
 import { DeleteOrganizationCard, GitflowCard, IdentityCard } from "@/features/organization";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 export default async function GeneralSettingsPage({ searchParams }: { searchParams: Promise<{ connected?: string; oauth_error?: string; github_app?: string }> }) {
   const { session, org } = await requireOrg();
   const canManage = !!session.grants["org.manage"];
-  const [author, hosts, query, apps, ciHosts, projects] = await Promise.all([gitAuthorOf(), hostsOf(org.id), searchParams, oauthApps(), ciHostsOf(), v1.projects(org.id).catch(() => [])]);
+  const [author, hosts, query, apps, ciHosts, projects, services] = await Promise.all([gitAuthorOf(), hostsOf(org.id), searchParams, oauthApps(), ciHostsOf(), v1.projects(org.id).catch(() => []), v1.connections().catch(() => [])]);
   const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind !== "generic").map(async (h) => [h.id, await hostAccess(org.id, h.id)] as const)));
   const origin = publicOrigin(await headers());
   const connected = { github: [] as string[], gitlab: [] as string[], bitbucket: [] as string[] };
@@ -60,6 +60,14 @@ export default async function GeneralSettingsPage({ searchParams }: { searchPara
         </div>
       </Panel>
       <SourceHosts hosts={hosts} access={access} canManage={canManage} />
+      {services.length > 0 && (
+        <Panel>
+          <PanelHeader title="Services" description="Services the organization connects with OAuth; plugins read these connections instead of a pasted token." />
+          <div className="p-4">
+            <ConnectServices rows={services} origin={origin} orgId={org.id} returnTo="/settings" canManage={canManage} />
+          </div>
+        </Panel>
+      )}
       <CiHosts hosts={ciHosts} canManage={canManage} />
       {canManage && connected.github.length > 0 && (
         <Link href="/import" className="flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-sm transition-colors hover:border-border-hover hover:bg-surface-hover">

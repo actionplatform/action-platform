@@ -18,6 +18,8 @@ export const integrations = {
     unwrap(await client.POST("/api/v1/oauth/{provider}/callback", { params: { path: { provider } }, body })),
   disconnectOAuthHost: async (provider: string, login: string) =>
     unwrap(await client.DELETE("/api/v1/oauth/{provider}/hosts/{login}", { params: { path: { provider, login } } })),
+  connections: async () => unwrap(await client.GET("/api/v1/connections")),
+  disconnectService: async (kind: string) => unwrap(await client.DELETE("/api/v1/connections/{kind}", { params: { path: { kind } } })),
   githubManifest: async (body: Schemas["GitHubAppManifestRequest"]) => unwrap(await client.POST("/api/v1/oauth/github/manifest", { body })),
   githubManifestCallback: async (body: Schemas["ManifestCallbackRequest"]) => unwrap(await client.POST("/api/v1/oauth/github/manifest/callback", { body })),
   githubInstall: async (origin: string, returnTo: string) => unwrap(await client.POST("/api/v1/oauth/github/install", { body: { origin, return_to: returnTo } })),
@@ -31,5 +33,5 @@ export const integrations = {
   plugins: async () => unwrap(await client.GET("/api/v1/plugins")),
   pluginOptions: async (slug: string) => unwrap(await client.GET("/api/v1/plugins/{slug}/options", { params: { path: { slug } } })),
   setPluginOptions: async (slug: string, options: Record<string, unknown>) =>
-    unwrap(await client.PUT("/api/v1/plugins/{slug}/options", { params: { path: { slug } }, body: { options } })),
+    unwrap(await client.PUT("/api/v1/plugins/{slug}/options", { params: { path: { slug } }, body: { options, secrets: [] } })),
 };
