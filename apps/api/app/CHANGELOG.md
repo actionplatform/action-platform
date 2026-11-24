@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.41.0 — 2026-11-24
+
+### Features
+- **api:** deploys and readiness reach Jenkins with the app's connected server
+- **deploy:** a Jenkins target with `observe = false` is dispatched: the job starts with the release parameter, the build is followed through the queue and its stages
+- **deploy:** targets on one Jenkins job share its build and are recorded per scope
+
+### Bug Fixes
+- **worker:** keep a running job's lock fresh so a long deploy is not reaped
+- **manifest:** render arrays of tables such as `[[deploy.targets]]`
+- **deploy:** a build cancelled in the queue fails its target, not the whole deploy
+
 ## v0.40.0 — 2026-11-24
 
 ### Features
