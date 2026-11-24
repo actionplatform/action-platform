@@ -33,6 +33,12 @@ from action_platform.remote.schemas import (
     BranchRow,
     BranchStarted,
     Commit,
+    AppHost,
+    CiHostRow,
+    CiHostTest,
+    CiLink,
+    CiRuns,
+    CiStarted,
     Committed,
     ConfigurationChanged,
     Created,
@@ -41,10 +47,14 @@ from action_platform.remote.schemas import (
     Deployments,
     Diagnosis,
     GitflowReport,
+    HostRow,
+    ImportOrganizations,
+    ImportPreview,
     Initialized,
     InvitationRow,
     Job,
     JobLogs,
+    JobQueued,
     ManifestText,
     Matrix,
     Me,
@@ -55,6 +65,8 @@ from action_platform.remote.schemas import (
     ProjectRow,
     PullRequestOpened,
     PullRequestPlan,
+    ReadinessQueued,
+    ReadinessRow,
     ReleasePreview,
     ReleaseRow,
     Removed,
@@ -94,6 +106,7 @@ def _request(
     timeout: float = 60,
     client: Optional[str] = None,
     organization: Optional[str] = None,
+    prefer: Optional[str] = None,
 ) -> Any:
     data = json.dumps(body).encode() if body is not None else None
     headers = {
@@ -112,6 +125,9 @@ def _request(
 
     if organization:
         headers["x-organization"] = organization
+
+    if prefer:
+        headers["prefer"] = prefer
 
     req = urllib.request.Request(url, data=data, method=method, headers=headers)
 
@@ -178,6 +194,7 @@ class Remote:
         path: str,
         body: Optional[dict] = None,
         organization: Optional[str] = None,
+        prefer: Optional[str] = None,
         **query: Any,
     ) -> Any:
         q = {k: v for k, v in query.items() if v is not None}
@@ -193,6 +210,7 @@ class Remote:
             self.token,
             client=self.client,
             organization=organization,
+            prefer=prefer,
         )
 
     def apps(self, organization: Optional[str] = None) -> list[AppRow]:
@@ -412,6 +430,20 @@ class Remote:
             ),
         )
 
+    def deploy_later(
+        self, id: str, stage: Optional[str] = None, version: Optional[str] = None
+    ) -> JobQueued:
+        """The deploy as a job on the platform's worker; follow it with `job` and `job_logs`."""
+        return _as(
+            JobQueued,
+            self._call(
+                "POST",
+                f"apps/{id}/deploy",
+                {"stage": stage, "dry_run": False, "version": version},
+                prefer="respond-async",
+            ),
+        )
+
     def diagnose(self, id: str, stage: Optional[str] = None) -> list[Diagnosis]:
         return _as(
             list[Diagnosis], self._call("GET", f"apps/{id}/diagnose", stage=stage)
@@ -425,13 +457,213 @@ class Remote:
             JobLogs, self._call("GET", f"jobs/{id}/logs", after=after, limit=limit)
         )
 
-    def scopes(self, project: str, app: str) -> Scopes:
-        return _as(Scopes, self._call("GET", f"projects/{project}/apps/{app}/scopes"))
+    def scopes(
+        self, project: str, app: str, organization: Optional[str] = None
+    ) -> Scopes:
+        return _as(
+            Scopes,
+            self._call(
+                "GET", f"projects/{project}/apps/{app}/scopes", None, organization
+            ),
+        )
 
     def create_scope(self, project: str, app: str, body: dict) -> Scopes:
         return _as(
             Scopes, self._call("POST", f"projects/{project}/apps/{app}/scopes", body)
         )
+
+    def update_scope(
+        self,
+        project: str,
+        app: str,
+        name: str,
+        body: dict,
+        organization: Optional[str] = None,
+    ) -> Scopes:
+        return _as(
+            Scopes,
+            self._call(
+                "PUT",
+                f"projects/{project}/apps/{app}/scopes/{name}",
+                body,
+                organization,
+            ),
+        )
+
+    def delete_scope(
+        self, project: str, app: str, name: str, organization: Optional[str] = None
+    ) -> Scopes:
+        return _as(
+            Scopes,
+            self._call(
+                "DELETE",
+                f"projects/{project}/apps/{app}/scopes/{name}",
+                None,
+                organization,
+            ),
+        )
+
+    def readiness(
+        self, project: str, app: str, tag: str, organization: Optional[str] = None
+    ) -> list[ReadinessRow]:
+        return _as(
+            list[ReadinessRow],
+            self._call(
+                "GET",
+                f"projects/{project}/apps/{app}/releases/{tag}/readiness",
+                None,
+                organization,
+            ),
+        )
+
+    def check_readiness(
+        self,
+        project: str,
+        app: str,
+        tag: str,
+        stage: Optional[str] = None,
+        organization: Optional[str] = None,
+    ) -> ReadinessQueued:
+        return _as(
+            ReadinessQueued,
+            self._call(
+                "POST",
+                f"projects/{project}/apps/{app}/releases/{tag}/readiness",
+                {"stage": stage},
+                organization,
+            ),
+        )
+
+    def app_ci(
+        self, project: str, app: str, organization: Optional[str] = None
+    ) -> CiRuns:
+        return _as(
+            CiRuns,
+            self._call("GET", f"projects/{project}/apps/{app}/ci", None, organization),
+        )
+
+    def sync_app_ci(
+        self, project: str, app: str, organization: Optional[str] = None
+    ) -> CiRuns:
+        return _as(
+            CiRuns,
+            self._call(
+                "POST", f"projects/{project}/apps/{app}/ci/sync", None, organization
+            ),
+        )
+
+    def link_app_ci(
+        self,
+        project: str,
+        app: str,
+        ci_host_id: Optional[str],
+        job: str,
+        organization: Optional[str] = None,
+    ) -> CiLink:
+        return _as(
+            CiLink,
+            self._call(
+                "PUT",
+                f"projects/{project}/apps/{app}/ci",
+                {"ci_host_id": ci_host_id, "job": job},
+                organization,
+            ),
+        )
+
+    def run_ci(
+        self, project: str, app: str, ref: str, organization: Optional[str] = None
+    ) -> CiStarted:
+        return _as(
+            CiStarted,
+            self._call(
+                "POST",
+                f"projects/{project}/apps/{app}/ci/run",
+                {"ref": ref},
+                organization,
+            ),
+        )
+
+    def set_app_host(
+        self,
+        project: str,
+        app: str,
+        host_id: Optional[str],
+        organization: Optional[str] = None,
+    ) -> AppHost:
+        return _as(
+            AppHost,
+            self._call(
+                "PUT",
+                f"projects/{project}/apps/{app}/host",
+                {"source_host_id": host_id},
+                organization,
+            ),
+        )
+
+    def hosts(self, organization: Optional[str] = None) -> list[HostRow]:
+        return _as(list[HostRow], self._call("GET", "hosts", None, organization))
+
+    def ci_hosts(self, organization: Optional[str] = None) -> list[CiHostRow]:
+        return _as(list[CiHostRow], self._call("GET", "ci-hosts", None, organization))
+
+    def add_ci_host(
+        self,
+        kind: str,
+        base_url: str,
+        token: str,
+        username: str = "",
+        name: str = "",
+        organization: Optional[str] = None,
+    ) -> CiHostRow:
+        return _as(
+            CiHostRow,
+            self._call(
+                "POST",
+                "ci-hosts",
+                {
+                    "kind": kind,
+                    "base_url": base_url,
+                    "token": token,
+                    "username": username,
+                    "name": name,
+                },
+                organization,
+            ),
+        )
+
+    def test_ci_host(self, id: str, organization: Optional[str] = None) -> CiHostTest:
+        return _as(
+            CiHostTest, self._call("POST", f"ci-hosts/{id}/test", None, organization)
+        )
+
+    def import_organizations(
+        self, host: str, organization: Optional[str] = None
+    ) -> ImportOrganizations:
+        return _as(
+            ImportOrganizations,
+            self._call(
+                "GET", "import/github/organizations", None, organization, host=host
+            ),
+        )
+
+    def import_preview(
+        self, host: str, login: str, organization: Optional[str] = None
+    ) -> ImportPreview:
+        return _as(
+            ImportPreview,
+            self._call(
+                "GET",
+                f"import/github/organizations/{login}",
+                None,
+                organization,
+                host=host,
+            ),
+        )
+
+    def import_organization(
+        self, body: dict, organization: Optional[str] = None
+    ) -> JobQueued:
+        return _as(JobQueued, self._call("POST", "import/github", body, organization))
 
     def deployments(self, project: str, app: str) -> Deployments:
         return _as(
