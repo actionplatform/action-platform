@@ -55,7 +55,7 @@ def seed(
     if tag and declared and _key(declared[0]) != _key(tag[0]):
         higher = max((tag, declared), key=lambda found: _key(found[0]))
         warnings.append(
-            f"{declared[1]} declares {declared[0]} and the newest tag is {tag[1]}; "
+            f"{declared[1]} declares {declared[0]} and the newest release is {tag[1]}; "
             f"{file} starts at the higher, {higher[0]}"
         )
 

@@ -426,7 +426,7 @@ class SeedSourcesTest(TempCase):
 
         self.assertEqual((found.version, found.source), ("3.4.2", "pyproject.toml"))
         self.assertIn(
-            "pyproject.toml declares 3.4.2 and the newest tag is tag v3.4.1",
+            "pyproject.toml declares 3.4.2 and the newest release is tag v3.4.1",
             warnings[0],
         )
 
