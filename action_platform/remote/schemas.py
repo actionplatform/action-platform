@@ -352,6 +352,7 @@ class ImportPerson(Open):
     name: str
     email: Optional[str] = None
     avatar: Optional[str] = None
+    role: str = "member"
     status: str
 
 
@@ -440,7 +441,10 @@ class MemberRow(Open):
 
 class InvitationRow(Open):
     id: str
-    email: str
+    email: Optional[str] = None
+    login: Optional[str] = None
+    host_kind: Optional[str] = None
+    teams: list[str] = Field(default_factory=list)
     role: Optional[str] = None
     status: str
     expires_at: datetime
