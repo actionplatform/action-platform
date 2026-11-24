@@ -53,7 +53,7 @@ A scope belongs to an app. Two apps never share a scope. Where the release goes 
 | `high` | High | Affects important operations and many users. |
 | `critical` | Critical | Essential to the business: stops operations, causes financial loss or legal risk. |
 
-Criticality is ordered: `test < low < medium < high < critical`. Rules are written against that order, so a new level fits without touching the rules.
+Criticality is ordered: `test < low < medium < high < critical`.
 
 ## What a scope accepts
 
@@ -95,14 +95,14 @@ In words:
 - **A stable release serves any scope**, any version of it.
 - **A hotfix goes anywhere**: production and every other level — that is what a hotfix is for.
 
-The policy is a table, not code. An organization may loosen or tighten it per criticality in Settings (or `[scopes.policy]` in `platform.toml` for one app). The defaults above are what a new organization gets.
+The policy is this table, the same for every app; there is no setting that changes it.
 
 ## Where the rules run
 
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant W as Web / CLI
+    participant W as Web / MCP
     participant A as API gate
     participant R as Readiness
     participant K as Worker
@@ -126,36 +126,27 @@ The gate that refuses a deploy already exists — [readiness](concept_deployment
 |---|---|
 | `scope.release-shape` | a candidate aims at `medium`+; never for a stable release or a hotfix |
 
-They show on the release page like every other check, per scope instead of per stage, and the deploy form refuses the same way (`409`, `force` for `org.manage`).
+They show on the release page like every other check, per scope, and the deploy form refuses the same way (`409`, unless the request sets `force`).
 
-## Relationship with what exists
+## Relationship with the stage
 
-| Today | With scopes |
+Underneath, the platform still says *stage*: a scope's name is the stage. The plugin receives `ctx.stage = scope.name`, so `aws/lambda` names stacks `<prefix>-<scope>`, and `ctx.criticality` carries the scope's criticality.
+
+| Where | Holds |
 |---|---|
-| `stage` (`dev` \| `prod`) on deploy, readiness, deployment rows, the identity token | `scope` (name); the plugin still receives `ctx.stage = scope.name`, so `aws/lambda` keeps naming stacks `<prefix>-<scope>` |
-| `[[deploy.targets]]` — *where* and *who* | unchanged: the target still says where and who; the scope says what it is and how much it matters |
-| readiness per (release, stage) | per (release, scope); the job runs for every scope of the app |
-| `deployment.stage` | `deployment.scope_id` (+ `scope_name` kept for history) |
-| `live_deploy(app, stage)` — one deploy at a time per stage | one at a time per scope |
-| `AppIdentity` token carries `stage` | carries `scope` and `criticality`; a connected account may scope by criticality (a `critical` scope gets a different boundary) |
+| `scope` table | the app's scopes: `name`, `kind`, `criticality`, unique per app |
+| `release.shape` | `candidate`, `stable` or `hotfix` |
+| `release_readiness.stage`, `deployment.stage` | the scope's name |
+| `POST apps/{id}/deploy` | takes `scope`, or `stage` (the same thing) |
+| `[[deploy.targets]]` | unchanged: *where* and *who*; the scope says what it is and how much it matters |
 
-A release stays what it is: a tag on the repository, one row in `release`, cut with no scope in mind. The row gains a `shape` — `candidate`, `stable` or `hotfix` — set when the platform cuts it: `hotfix` when the branch is `hotfix/*`, `candidate` for an `-rc.N` version, `stable` otherwise.
+A deploy of one scope at a time: a second deploy to a scope with one running is refused.
 
-Open question: a release imported from the code host (not cut here) has no branch to read; its shape comes from the version alone (`candidate` or `stable`), so an imported hotfix is a `stable` until someone marks it.
+A release stays what it is: a tag on the repository, one row in `release`, cut with no scope in mind. The row carries a `shape`, set when the platform cuts it: `hotfix` when the branch is `hotfix/*`, `candidate` for a version with a pre-release part (`-rc.N`), `stable` otherwise. A release imported from the code host has no branch to read, so its shape comes from the version alone: an imported hotfix is `stable`.
 
 ## Kinds
 
-The kind changes how the platform **verifies** and **diagnoses**, not how it deploys:
-
-| Kind | Verify after deploy | Diagnose |
-|---|---|---|
-| `web` | `GET <url>/health` answers, version header or body matches | status, url, last error rate when the target exposes it |
-| `job` | the job definition exists with the new version; last run status | next run, last run, duration |
-| `worker` | the consumer is running with the new version | queue depth, consumers |
-| `static` | the index at `<url>` carries the release marker | url, cache state |
-| `library` | the version is at the registry (`pypi`, `npm`, `docker`, `packagist`, `go` already do this) | registry page |
-
-`DeployTarget.verify(version, scope)` and `diagnose(ctx)` receive the scope, kind included; a target that does not know a kind says so and the scope refuses to be created with it.
+The kind says what runs at the scope: `web`, `job`, `worker`, `static` or `library`. It is recorded, validated and shown (the scope table, the `deploy.stage` readiness check); it does not change how a deploy is verified or diagnosed yet.
 
 ## Data model
 
@@ -163,10 +154,7 @@ The kind changes how the platform **verifies** and **diagnoses**, not how it dep
 erDiagram
     app ||--o{ scope : "has"
     app ||--o{ release : "cuts"
-    release ||--o{ deployment : "shipped as"
-    scope ||--o{ deployment : "receives"
     release ||--o{ release_readiness : "checked for"
-    scope ||--o{ release_readiness : "per scope"
     scope {
         string name
         string kind "web job worker static library"
@@ -177,55 +165,59 @@ erDiagram
         string version
         string shape "candidate stable hotfix"
     }
-    deployment {
-        string status
-        string executor
-    }
 ```
 
 ```
 scope(id, app_id, name, kind, criticality, created_by, created_at)
       unique (app_id, name)
 release.shape                  candidate | stable | hotfix
-deployment.scope_id            (replaces stage; stage kept as scope_name for old rows)
-release_readiness.scope_id     (replaces stage)
-organization_setting scopes.policy     the policy table, when the organization changed it
-organization_setting scopes.presets    the scopes a new app is created with
+release_readiness              one row per (release, stage), stage = the scope's name
 ```
 
-Migration: nothing is derived. An app has no scopes until someone creates them; deployment and readiness rows keep the stage name they were written with.
+An app has no scopes until someone creates them.
+
+## Creating scopes
+
+Three ways, all producing the same name, kind and criticality (kind defaults to `web`, criticality to `low`):
+
+- **Web**: the app's **Scopes** tab, **New scope**.
+- **MCP**: the `create_scope` tool on the hosted platform.
+- **`platform.toml`**: `[[scopes]]` for a repository that deploys on its own (below).
+
+Editing a scope changes its kind and criticality, never its name; deleting it is refused while a deploy to it is running. Both need `app.configure`.
 
 ## API
 
 ```
-GET    projects/{p}/apps/{a}/scopes                      the app's scopes with their policy verdict for the latest release
+GET    projects/{p}/apps/{a}/scopes                      the app's scopes, with the kinds and criticalities that exist
 POST   projects/{p}/apps/{a}/scopes                      {name, kind, criticality}
-PUT    projects/{p}/apps/{a}/scopes/{scope}
-DELETE projects/{p}/apps/{a}/scopes/{scope}              refused while a deployment is live there
-POST   apps/{id}/deploy {scope, version, dry_run, force}  scope replaces stage; stage still accepted and mapped to the scope of that name
+PUT    projects/{p}/apps/{a}/scopes/{name}               {kind, criticality}
+DELETE projects/{p}/apps/{a}/scopes/{name}               refused while a deploy to it is running
+POST   apps/{id}/deploy {scope, version, dry_run, force}  stage is accepted as the same thing
 GET    projects/{p}/apps/{a}/releases/{tag}/readiness    one row per scope
-GET    organizations/settings/scopes                     policy and presets
-PUT    organizations/settings/scopes
+POST   projects/{p}/apps/{a}/releases/{tag}/readiness    {stage?}: queue the check for one scope, or every scope
 ```
 
 ## Web
 
-- **Scopes** section on the app: the table of scopes — name, kind, criticality, what each accepts — and **New scope**.
-- **New deployment**: *Release* + *Scope* (replaces Environment); the readiness box explains the scope's verdict (`1.4.0-rc.1 cannot go to prod (medium): candidates stop at low`).
-- **Releases › timeline**: readiness per scope; deployments grouped by scope.
-- **Settings › Scopes**: the policy table with the defaults and the organization's overrides; presets.
-- Criticality badge tones: `test` neutral, `low` neutral, `medium` warning, `high` danger outline, `critical` danger.
+- **Scopes** tab on the app: the table of scopes — name, kind, criticality, what each accepts — and **New scope** (Name, Kind, Criticality). A scope's menu edits or deletes it.
+- **Deploy**: pick the release and the scope; the form refuses a release the scope does not accept and a blocked readiness unless *Deploy anyway* is ticked.
+- **Releases**: the *Ready* column shows the verdict per scope; the release page lists the checks per scope.
+- Criticality badge tones: `test` and `low` neutral, `medium` warning, `high` and `critical` danger.
 
 ## CLI and MCP
 
 ```
-action-platform scopes                              list
-action-platform scope add prod-eu --kind web --criticality high
+action-platform scopes                                    list the [[scopes]] of platform.toml
 action-platform deploy --scope prod-eu --version 1.4.0
 action-platform readiness --scope prod-eu --version 1.4.0
 ```
 
-MCP: `list_scopes`, `create_scope`, `deploy` takes `scope`. `platform.toml` for a repository deploying on its own:
+`scopes` only reads the manifest; the CLI does not create scopes. `--scope` is the same option as `--stage`.
+
+MCP, on a repository (reads `platform.toml`): `list_scopes`, `readiness`, `deploy`. On the hosted platform: `list_scopes`, `create_scope`, `update_scope`, `delete_scope`, `release_readiness`, `recheck_readiness`, `deploy`.
+
+`platform.toml` for a repository deploying on its own:
 
 ```toml
 [[scopes]]
@@ -241,30 +233,11 @@ criticality = "high"
 
 `[deploy]` keeps saying where and who; a repository without `[[scopes]]` releases but does not deploy.
 
-## Rollout
-
-```mermaid
-flowchart LR
-    S1["1 · model + policy<br/>scope table · release.shape<br/>stage → scope mapping"] --> S2["2 · checks + gate<br/>scope.release-shape"]
-    S2 --> S3["3 · web<br/>Scopes table · New scope · deploy form"]
-    S3 --> S4["4 · kinds<br/>verify/diagnose per kind"]
-    S4 --> S5["5 · CLI · MCP · platform.toml scopes"]
-```
-
-
-1. **Model and policy** — `scope`, `ScopePolicy` in the library (`core/scopes.py`: criticality order, the default table, the shape check), tests. Deploy, readiness and deployment rows take `scope`; `stage` accepted and mapped.
-2. **Checks and gate** — the `scope.*` checks join readiness; the deploy gate reads them.
-3. **Web** — Scopes table and New scope; the deploy form on scopes; readiness and timeline per scope; Settings › Scopes.
-4. **Kinds** — `verify`/`diagnose` receive the scope; `aws/lambda` implements `web` and `job`; observed targets are `library`.
-5. **CLI, MCP, `[[scopes]]`** in `platform.toml`; docs; `[[deploy.targets]]` documented as the short form.
-
-Each step ships on its own; after step 1 the platform behaves as today. Steps 1–3 and step 5 shipped with [#275](https://github.com/actionplatform/action-platform/issues/275); kinds (step 4) and the MCP tools are next.
-
 ## Decisions
 
 - Scope belongs to the app, not the organization: two apps' `prod` are two different places.
 - Criticality is on the scope, not on the release: a release does not know where it goes; the same `1.4.0` is harmless on `low` and a business risk on `critical`.
-- The policy is data with defaults, not code: organizations differ on how strict `medium` is; the ladder (`test < low < medium < high < critical`) is the only thing fixed.
+- The ladder (`test < low < medium < high < critical`) and the policy table are fixed.
 - Rules run as readiness checks: one gate, one place the user reads why a deploy is refused.
 - `stage` survives as the plugin's view of a scope (`ctx.stage = scope.name`): no plugin changes, and stacks keep their names.
 - A scope carries no target, region, url or executor: those belong to the deploy configuration and the cloud. The scope says what runs there and how much it matters.
