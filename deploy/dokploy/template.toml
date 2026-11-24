@@ -7,7 +7,7 @@ api_token = "${password:64}"
 
 [config]
 [[config.domains]]
-serviceName = "web"
+serviceName = "ap-web"
 port = 3000
 host = "${main_domain}"
 
