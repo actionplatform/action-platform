@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 from contextlib import contextmanager
+from dataclasses import replace
 from pathlib import Path
 from typing import Iterator
 from typing import Callable
@@ -144,9 +145,13 @@ class Deployer:
         ctx.current_version = ctx.next_version = shipped
         ctx.tag = tag
         results: list[DeployResult] = []
+        covered: set[str] = set()
 
         with self.at_release(tag):
             for t in self.targets(target, ctx.stage):
+                if t.name in covered:
+                    continue
+
                 logger.info(
                     "deploy target=%s stage=%s version=%s tag=%s",
                     t.name,
@@ -162,7 +167,12 @@ class Deployer:
                     )
                     continue
 
-                results.append(t.deploy(ctx))
+                result = t.deploy(ctx)
+                results.append(result)
+
+                for spec in self.config.runs_with(t.name):
+                    covered.add(spec.name)
+                    results.extend(shared(result, spec, ctx.stage))
 
         return results
 
@@ -195,6 +205,19 @@ class Deployer:
             logger.info("delete target=%s stage=%s", t.name, ctx.stage)
             t.preflight(ctx)
             t.delete(ctx)
+
+
+def shared(
+    result: DeployResult, spec: TargetSpec, stage: str | None
+) -> list[DeployResult]:
+    """What one run did for another target it deploys too: the same outcome, on the stage being deployed when that target serves it, else on each of its own."""
+    stages = (
+        [stage]
+        if not spec.stages or (stage and stage in spec.stages)
+        else list(spec.stages)
+    )
+
+    return [replace(result, target=spec.name, stage=s) for s in stages]
 
 
 def missing_target(name: str | None, stage: str | None) -> str:
