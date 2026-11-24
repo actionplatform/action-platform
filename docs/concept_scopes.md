@@ -153,7 +153,7 @@ The kind changes how the platform **verifies** and **diagnoses**, not how it dep
 | `job` | the job definition exists with the new version; last run status | next run, last run, duration |
 | `worker` | the consumer is running with the new version | queue depth, consumers |
 | `static` | the index at `<url>` carries the release marker | url, cache state |
-| `library` | the version is at the registry (`pypi`, `npm`, `docker` already do this) | registry page |
+| `library` | the version is at the registry (`pypi`, `npm`, `docker`, `packagist`, `go` already do this) | registry page |
 
 `DeployTarget.verify(version, scope)` and `diagnose(ctx)` receive the scope, kind included; a target that does not know a kind says so and the scope refuses to be created with it.
 
