@@ -15,6 +15,7 @@ from action_platform.core.config import Config
 from action_platform.core.context import Context, DeployResult, Diagnosis
 from action_platform.core.exception import DeployError
 from action_platform.core.flow.repository import Repository
+from action_platform.core.targets import TargetSpec
 from action_platform.core.wiring import Wiring, slot, wired
 from action_platform.logging import logger
 
@@ -35,25 +36,51 @@ class Deployer:
         self.identity = identity
         self.env = dict(env or {})
 
-    def targets(
+    def runnable(
         self, name: str | None = None, stage: str | None = None
     ) -> list[DeployTarget]:
         """The targets a deploy runs: the platform's own and the dispatched ones, those serving `stage` when a target lists stages, `name` alone when given."""
         stages = {t.name: t.stages for t in self.config.targets}
-        targets = [
+
+        return [
             t
             for t in self.config.deploy + self.config.dispatched()
             if (name is None or t.name == name)
             and (stage is None or not stages.get(t.name) or stage in stages[t.name])
         ]
 
-        if not targets:
+    def observed(
+        self, name: str | None = None, stage: str | None = None
+    ) -> list[TargetSpec]:
+        """The targets someone else deploys and the platform only records, filtered like `runnable`."""
+        return [
+            t
+            for t in self.config.targets
+            if t.observed
+            and (name is None or t.name == name)
+            and (stage is None or t.serves(stage))
+        ]
+
+    def targets(
+        self, name: str | None = None, stage: str | None = None
+    ) -> list[DeployTarget]:
+        """The targets a deploy runs; refused when there are none, naming who deploys the observed ones that matched."""
+        targets = self.runnable(name, stage)
+
+        if targets:
+            return targets
+
+        observed = self.observed(name, stage)
+
+        if observed:
             raise DeployError(
-                f"no deploy target configured (filter={name!r}, stage={stage!r}) — "
-                "run `action-platform cloud set <cloud>`"
+                "; ".join(
+                    f"{t.name} is deployed by {t.run_by}; the platform records it, it does not run it"
+                    for t in observed
+                )
             )
 
-        return targets
+        raise DeployError(missing_target(name, stage))
 
     def _context(self, dry_run: bool = False, stage: str | None = None) -> Context:
         ctx = (
@@ -168,6 +195,13 @@ class Deployer:
             logger.info("delete target=%s stage=%s", t.name, ctx.stage)
             t.preflight(ctx)
             t.delete(ctx)
+
+
+def missing_target(name: str | None, stage: str | None) -> str:
+    return (
+        f"no deploy target configured (filter={name!r}, stage={stage!r}) — "
+        "run `action-platform cloud set <cloud>`"
+    )
 
 
 def deploy(

@@ -102,3 +102,67 @@ class DeployShipsAReleaseTest(TempCase):
 
         self.assertIn("no scope named 'prod'", str(caught.exception))
         self.assertEqual(self.target.seen, [])
+
+
+class ObservedTargetsAreNeverRunTest(TempCase):
+    def setUp(self):
+        super().setUp()
+        self.repo = platform_repo(Path(self.tmp_path))
+
+    def deployer(self, targets: list[dict]) -> Deployer:
+        return Deployer(
+            Config.from_dict(
+                {
+                    "scopes": [{"name": "prod", "criticality": "high"}],
+                    "deploy": {"targets": targets},
+                }
+            ),
+            self.repo,
+        )
+
+    def test_a_deploy_to_jenkins_targets_names_the_executor(self):
+        deployer = self.deployer(
+            [
+                {
+                    "name": "app-prod",
+                    "kind": "docker",
+                    "run_by": "jenkins",
+                    "job": "team/app-prod",
+                    "image": "ghcr.io/acme/app",
+                }
+            ]
+        )
+
+        with self.assertRaises(DeployError) as caught:
+            deployer.deploy(version="1.2.3", stage="prod")
+
+        self.assertEqual(
+            str(caught.exception),
+            "app-prod is deployed by jenkins; the platform records it, it does not run it",
+        )
+
+    def test_an_observed_ci_target_is_not_dispatched(self):
+        deployer = self.deployer(
+            [
+                {
+                    "kind": "pypi",
+                    "run_by": "github_actions",
+                    "observe": True,
+                    "package": "x",
+                }
+            ]
+        )
+
+        self.assertEqual(deployer.runnable(stage="prod"), [])
+        self.assertEqual([t.name for t in deployer.observed(stage="prod")], ["pypi"])
+
+        with self.assertRaises(DeployError) as caught:
+            deployer.targets(stage="prod")
+
+        self.assertIn("deployed by github_actions", str(caught.exception))
+
+    def test_without_any_target_the_old_message_stays(self):
+        with self.assertRaises(DeployError) as caught:
+            self.deployer([]).targets(stage="prod")
+
+        self.assertIn("no deploy target configured", str(caught.exception))
