@@ -24,7 +24,11 @@ from app.services.configuration.commit import CommitService
 from app.services.configuration.service import ConfigurationService
 from app.services.activity.flow import FlowService
 from app.services.ci import CiService
-from app.services.deployments import DeploymentRecords, DeploymentsService
+from app.services.deployments import (
+    AppCiRunners,
+    DeploymentRecords,
+    DeploymentsService,
+)
 from app.services.workspace.app_context import AppContext
 from app.services.releases import ReleasesService
 from app.services.workspace.snapshot import SnapshotService
@@ -124,10 +128,17 @@ def get_releases(
 
 
 def get_deployments(
+    id: str,
+    request: Request,
+    db: DbSession = Depends(get_db),
     registry: Registry = Depends(get_registry),
     configs: ConfigStore = Depends(get_config_store),
 ) -> DeploymentsService:
-    return DeploymentsService(registry, configs=configs)
+    return DeploymentsService(
+        registry,
+        configs=configs,
+        ci=AppCiRunners(db, request.app.state.sealer).of_registry(id),
+    )
 
 
 def get_app_context(

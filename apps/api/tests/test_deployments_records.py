@@ -116,6 +116,31 @@ class DeploymentRecordsTest(GateCase):
         self.assertEqual(body["targets"][1]["workflow"], "publish.yml")
         self.assertEqual(body["deployments"], [])
 
+    def test_the_app_ci_server_is_a_runner_with_its_own_credentials(self):
+        from app.core.db.models import App
+        from app.services.deployments import AppCiRunners
+
+        with self.app.state.db.session() as s:
+            self.assertEqual(
+                AppCiRunners(s, self.app.state.sealer).of_registry(self.registry_id),
+                [],
+            )
+
+        self.jenkins()
+
+        with self.app.state.db.session() as s:
+            runners = AppCiRunners(s, self.app.state.sealer).of_registry(
+                self.registry_id
+            )
+            self.assertEqual(
+                [(r.name, r.base_url, r.username, r.token) for r in runners],
+                [("jenkins", "https://ci.acme.io", "u", "t")],
+            )
+            self.assertEqual(
+                AppCiRunners(s, self.app.state.sealer).of(s.get(App, "a1"))[0].name,
+                "jenkins",
+            )
+
     def test_the_worker_records_what_it_shipped(self):
         from app.core.db.models import App
         from app.repositories.configuration.config_store import ConfigStore

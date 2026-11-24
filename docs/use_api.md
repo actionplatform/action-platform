@@ -36,7 +36,7 @@ Every response is typed and published as OpenAPI at `/docs`; the web app generat
 
 ## Trust
 
-Every route but `/api/version`, `/docs` and `/openapi.json` requires `Authorization: Bearer <AP_API_TOKEN>`, the shared secret between the web app and the API, checked in constant time. Without a token the API refuses to start — `AP_ALLOW_UNAUTHENTICATED=1` opts into an open API for local development only. Two prefixes authenticate the person instead: `/api/auth/*` (sessions, tokens, the device flow) and `/api/v1/*`, the user-facing face of the same routes. The web app rewrites both paths to the API unchanged, so the CLI, MCP and browser reach them through the platform's public address.
+Every route but `/api/version`, `/docs` and `/openapi.json` requires `Authorization: Bearer <AP_API_TOKEN>`, the shared secret between the web app and the API, checked in constant time. Without a token the API refuses to start — `AP_ALLOW_UNAUTHENTICATED=1` opts into an open API for local development only. Two prefixes authenticate the person instead: `/api/auth/*` (sessions, tokens, the device flow) and `/api/v1/*`, the user-facing face of the same routes. The web app rewrites both paths to the API unchanged — release tags with dots in them included — so the CLI, MCP and browser reach them through the platform's public address.
 
 ## `/api/v1`
 
