@@ -339,6 +339,58 @@ class AppsTest(GateCase):
                 "h1",
             )
 
+    def test_a_url_off_the_hosts_origin_gets_no_host(self):
+        from app.core.auth.crypto import Sealer
+        from app.core.db.models import SourceHost
+        from app.services.integrations.hosts.directory import IntegrationsDirectory
+
+        sealer = Sealer(self.app.state.secrets)
+        with self.app.state.db.session() as s:
+            for id, kind, base_url in (
+                ("h1", "github", None),
+                ("h2", "gitlab", "https://git.example.com:8443"),
+            ):
+                s.add(
+                    SourceHost(
+                        id=id,
+                        organization_id=self.org["id"],
+                        kind=kind,
+                        name=id,
+                        base_url=base_url,
+                        token_encrypted=sealer.seal("t"),
+                        auth_kind="token",
+                    )
+                )
+        with self.app.state.db.session() as s:
+            directory = IntegrationsDirectory(s, sealer)
+            found = {
+                url: directory.host_id_for_url(self.org["id"], url)
+                for url in (
+                    "https://github.com/acme/x.git",
+                    "https://github.com.evil.example.com/acme/x.git",
+                    "https://github.com@evil.example.com/acme/x.git",
+                    "http://github.com/acme/x.git",
+                    "https://gitlab.evil.example.com/acme/x.git",
+                    "https://git.example.com:8443/acme/x.git",
+                    "https://git.example.com/acme/x.git",
+                    "git@github.com:acme/x.git",
+                )
+            }
+
+        self.assertEqual(
+            found,
+            {
+                "https://github.com/acme/x.git": "h1",
+                "https://github.com.evil.example.com/acme/x.git": None,
+                "https://github.com@evil.example.com/acme/x.git": None,
+                "http://github.com/acme/x.git": None,
+                "https://gitlab.evil.example.com/acme/x.git": None,
+                "https://git.example.com:8443/acme/x.git": "h2",
+                "https://git.example.com/acme/x.git": None,
+                "git@github.com:acme/x.git": None,
+            },
+        )
+
 
 class MatrixTest(GateCase):
     def test_matrix_carries_the_organizations_template_sources(self):

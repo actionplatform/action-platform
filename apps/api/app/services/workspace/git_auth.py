@@ -14,6 +14,7 @@ from typing import Iterator, Optional
 from action_platform.core.config import Config
 from action_platform.core.flow import git
 from action_platform.providers.source import build_source_host
+from app.core.shared.credentials import connection_origin
 from app.schemas.common import SourceCredentials
 
 GIT_USERNAMES = {
@@ -21,6 +22,7 @@ GIT_USERNAMES = {
     "gitlab": "oauth2",
     "bitbucket": "x-token-auth",
 }
+HELPER = '!f() { printf \'username=%s\\npassword=%s\\n\' "$AP_GIT_USER" "$AP_GIT_TOKEN"; }; f'
 
 
 def apply(config: Config, creds: Optional[SourceCredentials]) -> Config:
@@ -48,25 +50,23 @@ def git_auth(creds: Optional[SourceCredentials]) -> Iterator[None]:
     tasks never see them — and reach git through GIT_CONFIG_{COUNT,KEY,VALUE}
     (git ≥ 2.31) as a credential helper that answers from two variables, so
     the token never lands in .git/config, on a command line, or in the
-    process environment.
+    process environment. The helper is bound to the connection's origin
+    (`connection_origin`): git never hands the token to another scheme, host
+    or port, and a connection without a usable origin gets no helper at all.
     """
     if creds is None:
         yield
         return
 
     env: dict[str, str] = {}
+    origin = connection_origin(creds.kind, creds.base_url) if creds.token else None
 
-    if creds.token:
+    if creds.token and origin is not None:
         username = creds.username or GIT_USERNAMES.get(creds.kind or "", "git")
-        helper = '!f() { printf \'username=%s\\npassword=%s\\n\' "$AP_GIT_USER" "$AP_GIT_TOKEN"; }; f'
         env.update(
             AP_GIT_USER=username,
             AP_GIT_TOKEN=creds.token,
-            GIT_CONFIG_COUNT="2",
-            GIT_CONFIG_KEY_0="credential.helper",
-            GIT_CONFIG_VALUE_0="",
-            GIT_CONFIG_KEY_1="credential.helper",
-            GIT_CONFIG_VALUE_1=helper,
+            **git.credential_helper(origin, HELPER),
         )
 
     if creds.author_name and creds.author_email:
@@ -78,8 +78,10 @@ def git_auth(creds: Optional[SourceCredentials]) -> Iterator[None]:
         )
 
     token = git.AUTH_ENV.set(env)
+    scope = git.AUTH_ORIGIN.set(origin)
 
     try:
         yield
     finally:
+        git.AUTH_ORIGIN.reset(scope)
         git.AUTH_ENV.reset(token)

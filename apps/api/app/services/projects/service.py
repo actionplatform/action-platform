@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 
 from action_platform.core.exception import ActionPlatformError
+from action_platform.core.origin import Origin
 from app.core.db.models import App, Organization, Project
 from app.core.shared.urls import GitUrl
 from app.schemas import InitRequest, InstallSpec, SourceCredentials
@@ -41,7 +42,7 @@ class ProjectService:
 
         if kind and host_id is None:
             raise Invalid(
-                f"No {kind} host is connected to this organization. Connect one in Settings so private repositories can be cloned.",
+                f"No {kind} host at {Origin.parse(url) or url} is connected to this organization. Connect one in Settings so private repositories can be cloned.",
             )
 
         credentials = credentials_for(self.writes, org, None, {"url": url})

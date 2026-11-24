@@ -9,9 +9,9 @@ from typing import Optional
 
 from sqlalchemy import select
 
+from action_platform.core.origin import Origin
 from app.core.db.models import SourceHost
-from app.core.shared.credentials import Credentials
-from app.core.shared.urls import GitUrl
+from app.core.shared.credentials import Credentials, connection_origin
 from app.core.shared.clock import now
 from app.core.shared.ids import new_id
 from app.repositories.base import (
@@ -40,13 +40,19 @@ class HostsReads(DirectoryBase):
         )
 
     def host_id_for_url(self, organization_id: str, url: str) -> Optional[str]:
-        kind = GitUrl(url).kind
+        """The first connected host whose origin is the url's; a url anywhere else gets no host, so no credentials."""
+        target = Origin.parse(url)
 
-        if kind is None:
+        if target is None:
             return None
 
         return next(
-            (h.id for h in self.hosts_of(organization_id) if h.kind == kind), None
+            (
+                h.id
+                for h in self.hosts_of(organization_id)
+                if connection_origin(h.kind, h.base_url) == target
+            ),
+            None,
         )
 
     def credentials_for(

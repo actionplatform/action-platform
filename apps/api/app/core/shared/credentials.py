@@ -1,14 +1,32 @@
 """Code-host credentials and the OAuth apps they come from."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Optional
 
 from action_platform.core.exception import ActionPlatformError
+from action_platform.core.origin import Origin
 from action_platform.settings import settings
+
+PUBLIC_HOSTS = {
+    "github": "https://github.com",
+    "gitlab": "https://gitlab.com",
+    "bitbucket": "https://bitbucket.org",
+}
+API_HOSTS = {"api.github.com": "github.com", "api.bitbucket.org": "bitbucket.org"}
 
 
 class CredentialsError(ActionPlatformError):
     pass
+
+
+def connection_origin(kind: Optional[str], base_url: Optional[str]) -> Optional[Origin]:
+    """The one origin a connection's token is good for: its base URL's, else the public instance of its kind; None when neither names one, so the token goes nowhere."""
+    origin = Origin.parse(base_url if base_url else PUBLIC_HOSTS.get(kind or ""))
+
+    if origin is not None and origin.host in API_HOSTS:
+        return replace(origin, host=API_HOSTS[origin.host])
+
+    return origin
 
 
 @dataclass(frozen=True)
@@ -18,6 +36,10 @@ class Credentials:
     username: Optional[str]
     base_url: Optional[str]
     owner: Optional[str]
+
+    @property
+    def origin(self) -> Optional[Origin]:
+        return connection_origin(self.kind, self.base_url)
 
     def as_dict(self) -> dict:
         return {

@@ -12,7 +12,11 @@ from pathlib import Path
 
 
 from action_platform.core.exception import ActionPlatformError
-from action_platform.core.flow.git import UnsafeUrl, check_remote_url
+from action_platform.core.flow.git import (
+    UnsafeUrl,
+    check_remote_url,
+    credential_scope_problem,
+)
 from action_platform.core.flow.repository import Repository, SyncError, _fetch_problem
 from action_platform.core.scaffold.installer import InstallError, install
 from action_platform.core.files import CONFIG_FILE
@@ -41,6 +45,11 @@ def clone_problem(url: str, stderr: str) -> str:
         or "Authentication failed" in text
         or "could not read Username" in text
     ):
+        scope = credential_scope_problem(url)
+
+        if scope:
+            return f"cannot read {repo}: {scope}"
+
         where = (
             "If it is a private repository of an organization, the organization may restrict third-party OAuth apps "
             "(an owner approves the app under the organization's Settings → Third-party access), "
