@@ -72,7 +72,12 @@ class RepositoryImporter(ImportStep):
             self.ctx.db.commit()
 
         for key in sorted(wanted - seen):
-            self.summary.skip(key, "not found on the host")
+            self.summary.skip(
+                key,
+                "not found on the host"
+                if "/" in key
+                else "not found on the host — name it as owner/name",
+            )
 
         return projects
 

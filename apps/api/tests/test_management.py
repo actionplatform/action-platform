@@ -41,6 +41,36 @@ class ProjectsAndAppsTest(GateCase):
             [],
         )
 
+    def test_adding_an_app_again_answers_it_and_another_project_is_refused(self):
+        web, api = (
+            self.client.post(
+                "/api/v1/projects", json={"name": name}, headers=self.h()
+            ).json()
+            for name in ("Web", "Api")
+        )
+        first, again = (
+            self.client.post(
+                f"/api/v1/projects/{web['id']}/apps",
+                json={"url": self.url},
+                headers=self.h(),
+            )
+            for _ in range(2)
+        )
+
+        self.assertEqual(again.status_code, 201, again.text)
+        self.assertEqual(again.json()["id"], first.json()["id"])
+
+        elsewhere = self.client.post(
+            f"/api/v1/projects/{api['id']}/apps",
+            json={"url": self.url},
+            headers=self.h(),
+        )
+
+        self.assertEqual(elsewhere.status_code, 409, elsewhere.text)
+        self.assertIn("already an app of project Web", elsewhere.json()["detail"])
+        rows = self.client.get("/api/v1/projects", headers=self.h()).json()
+        self.assertEqual(sorted(len(p["apps"]) for p in rows), [0, 1])
+
     def test_adding_a_github_url_without_a_host_is_refused(self):
         project = self.client.post(
             "/api/v1/projects", json={"name": "Web"}, headers=self.h()

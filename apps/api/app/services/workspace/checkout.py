@@ -18,6 +18,7 @@ from action_platform.core.scaffold.installer import InstallError, install
 from action_platform.core.files import CONFIG_FILE
 from action_platform.settings import settings
 from app.core.errors import Gone, Upstream
+from app.core.shared.urls import GitUrl
 from app.repositories.workspace.registry import (
     Entry,
     MissingManifest,
@@ -26,6 +27,40 @@ from app.repositories.workspace.registry import (
     check_workspace,
     name_from_url,
 )
+
+
+def clone_problem(url: str, stderr: str) -> str:
+    """Why a clone failed, in terms of what to fix: a refused credential names where access is granted, an unknown repository says it may only be hidden."""
+    text = stderr.strip()
+    repo = GitUrl(url).repo or url
+    kind = GitUrl(url).kind
+
+    if (
+        "403" in text
+        or "access to repository not granted" in text.lower()
+        or "Authentication failed" in text
+        or "could not read Username" in text
+    ):
+        where = (
+            "If it is a private repository of an organization, the organization may restrict third-party OAuth apps "
+            "(an owner approves the app under the organization's Settings → Third-party access), "
+            "or the GitHub App is not installed there with access to this repository; "
+            "otherwise reconnect the host in Settings with a token that can read private repositories."
+            if kind == "github"
+            else "Reconnect the host in Settings with an account that can read it."
+        )
+
+        return (
+            f"cannot read {repo}: the code host refused the connected account. {where}"
+        )
+
+    if "not found" in text.lower() or "does not appear to be a git repository" in text:
+        return f"cannot read {repo}: it does not exist, or the connected account cannot see it"
+
+    if "Could not resolve host" in text or "unable to access" in text:
+        return f"cannot read {repo}: the code host could not be reached"
+
+    return f"clone failed: {text.splitlines()[-1] if text else url}"
 
 
 class Clones:
@@ -87,9 +122,7 @@ class Workspaces:
         try:
             repo = Repository.clone(url, path)
         except subprocess.CalledProcessError as e:
-            raise ActionPlatformError(
-                f"clone failed: {(e.stderr or '').strip() or url}"
-            ) from e
+            raise ActionPlatformError(clone_problem(url, e.stderr or "")) from e
 
         try:
             check_workspace(path)

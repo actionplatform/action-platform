@@ -156,7 +156,7 @@ class GithubImportTest(GateCase):
             json={
                 "host_id": "gh",
                 "organization": "acme",
-                "repositories": ["acme/web", "acme/broken", "acme/missing"],
+                "repositories": ["acme/web", "acme/broken", "acme/missing", "lost"],
                 "teams": ["platform"],
                 "people": ["ana", "bob", "ghost"],
                 "role": "developer",
@@ -178,6 +178,9 @@ class GithubImportTest(GateCase):
         self.assertEqual(summary["invitations"], ["bob@example.com"])
         self.assertTrue(any(s.startswith("acme/broken:") for s in summary["skipped"]))
         self.assertIn("acme/missing: not found on the host", summary["skipped"])
+        self.assertIn(
+            "lost: not found on the host — name it as owner/name", summary["skipped"]
+        )
         self.assertTrue(any(s.startswith("ghost:") for s in summary["skipped"]))
 
         projects = self.client.get("/api/v1/projects", headers=self.h()).json()
