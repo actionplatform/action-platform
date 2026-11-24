@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Callable
 
 import tomllib
 
@@ -99,8 +100,35 @@ class Config:
 
         return self._deploy
 
-    def dispatched(self) -> list[DeployTarget]:
-        """The targets a CI runs for the platform — `run_by = "github_actions"`, a Jenkins job with `observe = false` and the like — each wrapped so a deploy starts the run and follows it."""
+    def runnable(
+        self, name: str | None = None, stage: str | None = None
+    ) -> list[DeployTarget]:
+        """The platform's own and the dispatched targets named `name` and serving `stage`, chosen on their declarations before any is built: a target outside the selection never resolves its provider or runner."""
+
+        def wanted(spec: TargetSpec) -> bool:
+            return (name is None or spec.name == name) and (
+                stage is None or spec.serves(stage)
+            )
+
+        specs = {s.name: s for s in self.targets}
+
+        if self._deploy is None:
+            own = [_build_target(s) for s in specs.values() if s.platform and wanted(s)]
+        else:
+            own = [
+                t
+                for t in self._deploy
+                if (
+                    wanted(specs[t.name]) if t.name in specs else name in (None, t.name)
+                )
+            ]
+
+        return own + self.dispatched(wanted)
+
+    def dispatched(
+        self, keep: Callable[[TargetSpec], bool] | None = None
+    ) -> list[DeployTarget]:
+        """The targets a CI runs for the platform — `run_by = "github_actions"`, a Jenkins job with `observe = false` and the like — each wrapped so a deploy starts the run and follows it; `keep` picks which before they are built."""
         return [
             DispatchedTarget(
                 _dispatched_inner(spec),
@@ -112,7 +140,7 @@ class Config:
                 else "",
             )
             for spec in self.targets
-            if spec.dispatched
+            if spec.dispatched and (keep is None or keep(spec))
         ]
 
     def _runner_for(self, spec: TargetSpec) -> CIRunner:

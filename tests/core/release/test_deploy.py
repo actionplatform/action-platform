@@ -168,6 +168,68 @@ class ObservedTargetsAreNeverRunTest(TempCase):
         self.assertIn("no deploy target configured", str(caught.exception))
 
 
+class OnlyTheChosenTargetsAreBuiltTest(TempCase):
+    def setUp(self):
+        super().setUp()
+        self.repo = platform_repo(Path(self.tmp_path))
+        self.deployer = Deployer(
+            Config.from_dict(
+                {
+                    "scopes": [
+                        {"name": "dev", "criticality": "test"},
+                        {"name": "prod", "criticality": "high"},
+                    ],
+                    "deploy": {
+                        "targets": [
+                            {
+                                "name": "lambda-dev",
+                                "kind": "lambda-of-a-plugin",
+                                "run_by": "jenkins",
+                                "observe": False,
+                                "job": "team/lambda",
+                                "version_parameter": "RELEASE_TAG",
+                                "stages": ["dev"],
+                            },
+                            {
+                                "name": "broken-prod",
+                                "kind": "nowhere",
+                                "stages": ["prod"],
+                            },
+                            {
+                                "name": "worker-prod",
+                                "kind": "docker",
+                                "run_by": "jenkins",
+                                "job": "team/worker",
+                                "stages": ["prod"],
+                            },
+                        ]
+                    },
+                }
+            ),
+            self.repo,
+        )
+
+    def test_a_dispatched_target_of_another_scope_does_not_block(self):
+        self.assertEqual(self.deployer.runnable(name="worker-prod"), [])
+        self.assertEqual(
+            [t.name for t in self.deployer.observed(name="worker-prod")],
+            ["worker-prod"],
+        )
+
+    def test_a_target_left_out_by_name_is_never_built(self):
+        with self.assertRaises(ConfigError) as caught:
+            self.deployer.runnable(stage="prod")
+
+        self.assertIn("'nowhere'", str(caught.exception))
+        self.assertEqual(self.deployer.runnable(name="worker-prod", stage="prod"), [])
+
+    def test_the_chosen_target_still_reports_its_own_error(self):
+        with self.assertRaises(ConfigError) as caught:
+            self.deployer.runnable(stage="dev")
+
+        self.assertIn("no Jenkins server is connected", str(caught.exception))
+
+
 class OneRunForTargetsOnOneJobTest(TempCase):
     def setUp(self):
         super().setUp()

@@ -40,15 +40,8 @@ class Deployer:
     def runnable(
         self, name: str | None = None, stage: str | None = None
     ) -> list[DeployTarget]:
-        """The targets a deploy runs: the platform's own and the dispatched ones, those serving `stage` when a target lists stages, `name` alone when given."""
-        stages = {t.name: t.stages for t in self.config.targets}
-
-        return [
-            t
-            for t in self.config.deploy + self.config.dispatched()
-            if (name is None or t.name == name)
-            and (stage is None or not stages.get(t.name) or stage in stages[t.name])
-        ]
+        """The targets a deploy runs: the platform's own and the dispatched ones, those serving `stage` when a target lists stages, `name` alone when given; only those are built."""
+        return self.config.runnable(name, stage)
 
     def observed(
         self, name: str | None = None, stage: str | None = None
