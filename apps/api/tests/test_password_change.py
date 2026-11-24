@@ -1,5 +1,3 @@
-"""Changing your own password: the current one is checked, the other sessions and API tokens end, this session stays."""
-
 from __future__ import annotations
 
 from tests.test_auth import AuthCase
