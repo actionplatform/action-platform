@@ -77,8 +77,15 @@ Protected branches refuse direct commits.
 
 release and deploy default to dry runs: show the user what would happen,
 then call again with dry_run=false. Stable versions come only from
-main/master; pass `branch` to release from another branch. remove_app
-deletes the platform's clone; ask first."""
+main/master; pass `branch` to release from another branch. Before a deploy,
+release_readiness says whether the release can reach the scope; a deploy
+with background=true, an import and a readiness check answer with a job id
+that job_status and job_logs follow. remove_app deletes the platform's
+clone; ask first.
+
+Adopting what exists: preview_organization_import before
+import_organization, set_app_ci to connect the pipeline that already builds
+an app, record_deployment for what it shipped."""
 
 
 def build(remote: Optional[str] = None) -> MCPServer:

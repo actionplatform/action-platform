@@ -6,12 +6,15 @@ from typing import Any
 
 from action_platform.mcp.tools.remote import (
     access,
+    adoption,
     apps,
+    ci,
     configuration,
     context,
     deploy,
     directory,
     flow,
+    jobs,
     matrix,
 )
 from action_platform.remote.client import Remote
@@ -23,6 +26,9 @@ MODULES = (
     flow,
     configuration,
     deploy,
+    jobs,
+    ci,
+    adoption,
     matrix,
     access,
 )

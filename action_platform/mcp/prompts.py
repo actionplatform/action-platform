@@ -210,21 +210,59 @@ def register_remote(mcp: Any) -> None:
 
     @mcp.prompt(
         title="Deploy",
-        description="Preflight an app's deploy, deploy on approval, verify with diagnose.",
+        description="Check readiness, preflight an app's deploy, deploy on approval, follow the job, verify with diagnose.",
     )
-    def deploy_app(app: str = "", stage: str = "") -> str:
+    def deploy_app(app: str = "", stage: str = "", version: str = "") -> str:
         return (
             "Deploy an app on the hosted platform.\n\n"
             f"App: {app or 'current_context or list_apps'}. "
-            f"Stage: {stage or 'from the branch — main/master is prod, anything else dev'}.\n\n"
+            f"Scope: {stage or 'ask — list_scopes shows them'}. "
+            f"Release: {version or 'the one the user names, else the latest in app_releases'}.\n\n"
             "1. Call app_info; without a deploy target offer set_cloud (then "
             "commit_changes on a branch and a pull request) and stop.\n"
-            "2. Call deploy with dry_run=true. That is preflight: tooling, template "
+            "2. Call list_scopes; the scope must exist and its criticality must "
+            "take the release (medium and above refuse candidates).\n"
+            "3. Call release_readiness for the release and the scope. blocked: relay "
+            "each failing check with its fix and stop. No row: recheck_readiness, "
+            "follow the job with job_status, then read release_readiness again.\n"
+            "4. Call deploy with dry_run=true. That is preflight: tooling, template "
             "validation, credentials. Relay any error verbatim.\n"
-            "3. Say the target, stage and version that would go live and wait for a yes.\n"
-            "4. Call deploy with dry_run=false, then diagnose. Report status and URL.\n"
-            "5. If diagnose is not ok, say so and stop; rolling back is done from the "
-            "web app or the CLI on a checkout."
+            "5. Say the target, scope and version that would go live and wait for a yes.\n"
+            "6. Call deploy with dry_run=false and background=true; follow the job "
+            "with job_logs (after=next) until finished, then job_status.\n"
+            "7. Call diagnose and report status and URL. If it is not ok, say so "
+            "and stop; rolling back is done from the web app or the CLI on a checkout."
+        )
+
+    @mcp.prompt(
+        title="Adopt an organization",
+        description="Preview a GitHub organization, import the picked repositories, teams and people on approval, connect each app's existing pipeline.",
+    )
+    def adopt_organization(host: str = "", organization: str = "") -> str:
+        return (
+            "Bring a GitHub organization onto the hosted platform.\n\n"
+            f"Code host: {host or 'list_hosts — a GitHub host'}. "
+            f"Organization: {organization or 'ask — list_import_organizations shows them'}.\n\n"
+            "1. Call whoami; without org.manage and an admin-scoped token stop and "
+            "say who can grant it.\n"
+            "2. Call preview_organization_import. Show the repositories (skip archived "
+            "ones unless asked; imported_as means already an app), the teams and "
+            "the people with their status, and let the user pick.\n"
+            "3. Say what import_organization will create — projects, apps, teams, "
+            "invitations and the role they get — and wait for a yes.\n"
+            "4. Call import_organization, then job_status until the job is done or "
+            "failed; job_logs shows its progress. Report the result: projects, apps, "
+            "teams, invitations (list_invitations has their links; no email is "
+            "sent) and every skipped entry with its reason.\n"
+            "5. For each app whose pipeline already builds and deploys it: "
+            "list_ci_hosts (add_ci_host for a Jenkins server, with the token in an "
+            "environment variable the user names), set_app_ci with the job, "
+            "get_app_ci(sync=true) to see its runs, and record_deployment for a "
+            "release the pipeline already shipped.\n"
+            "6. Imported repositories without platform.toml are apps but not on the "
+            "platform's rules yet: list them, and say the platform files are "
+            "installed one app at a time from the web app (open the app, pick type "
+            "and CI, Commit changes)."
         )
 
     @mcp.prompt(

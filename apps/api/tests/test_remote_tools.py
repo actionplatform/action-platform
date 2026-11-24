@@ -76,7 +76,9 @@ class RemoteToolsCase(GateCase):
         result = asyncio.run(server.call_tool(tool, args))
 
         if result.structured_content:
-            return result.structured_content.get("result", result.structured_content)
+            content = result.structured_content
+
+            return content["result"] if set(content) == {"result"} else content
 
         return json.loads(result.content[0].text)
 
@@ -268,3 +270,410 @@ class PluginOptionsClientTest(RemoteToolsCase):
 
             self.assertEqual(caught.exception.status, 404)
             self.assertIn("nope", caught.exception.detail)
+
+
+class AppToolsCase(RemoteToolsCase):
+    def setUp(self):
+        super().setUp()
+        self.registry_id = self.register()
+
+
+class ScopeToolsTest(AppToolsCase):
+    def test_update_keeps_what_is_not_given_and_delete_removes(self):
+        self.scopes("dev", "prod")
+        server = self.server()
+
+        updated = self.call(
+            server,
+            "update_scope",
+            id=self.registry_id,
+            name="prod",
+            criticality="critical",
+        )
+        self.assertEqual(
+            {s["name"]: (s["kind"], s["criticality"]) for s in updated["items"]},
+            {"dev": ("web", "test"), "prod": ("web", "critical")},
+        )
+
+        left = self.call(server, "delete_scope", id=self.registry_id, name="dev")
+        self.assertEqual([s["name"] for s in left["items"]], ["prod"])
+
+    def test_a_read_only_token_cannot_change_scopes(self):
+        self.scopes("prod")
+        server = self.server("read")
+
+        for tool, args in (
+            ("update_scope", {"name": "prod", "criticality": "low"}),
+            ("delete_scope", {"name": "prod"}),
+        ):
+            with self.subTest(tool=tool):
+                self.assertIn(
+                    "app.configure",
+                    self.refused(server, tool, id=self.registry_id, **args),
+                )
+
+
+class ReadinessAndJobToolsTest(AppToolsCase):
+    def setUp(self):
+        super().setUp()
+        from app.core.db.models import Release
+        from app.repositories.releases import ReadinessStore, ReleaseStore
+
+        from action_platform.core.context import Check
+
+        self.scopes("dev", "prod")
+
+        with self.app.state.db.session() as s:
+            release = ReleaseStore(s).ensure("a1", "v1.2.3", "git")
+            s.flush()
+            ReadinessStore(s).done(
+                s.get(Release, release.id),
+                "prod",
+                [
+                    Check(
+                        "aws.permissions",
+                        False,
+                        "may not lambda:GetLayerVersion",
+                        fix="grant it",
+                    )
+                ],
+                "j0",
+            )
+
+    def test_readiness_shows_the_checks_the_web_shows(self):
+        server = self.server()
+
+        (row,) = self.call(
+            server, "release_readiness", id=self.registry_id, tag="1.2.3", scope="prod"
+        )
+
+        self.assertEqual((row["stage"], row["verdict"]), ("prod", "blocked"))
+        self.assertEqual(row["checks"][0]["id"], "aws.permissions")
+        self.assertEqual(row["checks"][0]["fix"], "grant it")
+        self.assertEqual(
+            self.call(
+                server,
+                "release_readiness",
+                id=self.registry_id,
+                tag="v1.2.3",
+                scope="dev",
+            ),
+            [],
+        )
+
+    def test_recheck_queues_a_job_the_job_tools_follow(self):
+        server = self.server()
+
+        queued = self.call(
+            server, "recheck_readiness", id=self.registry_id, tag="v1.2.3", scope="dev"
+        )
+        (job_id,) = queued["jobs"]
+
+        self.assertEqual(
+            self.call(server, "job_status", job_id=job_id)["kind"], "readiness"
+        )
+        logs = self.call(server, "job_logs", job_id=job_id)
+        self.assertEqual((logs["lines"], logs["finished"]), ([], False))
+
+    def test_recheck_needs_app_release(self):
+        server = self.server("read,write")
+
+        self.assertIn(
+            "app.release",
+            self.refused(
+                server, "recheck_readiness", id=self.registry_id, tag="v1.2.3"
+            ),
+        )
+
+    def test_a_blocked_release_is_refused_by_deploy(self):
+        server = self.server()
+
+        self.assertIn(
+            "not deployable to prod",
+            self.refused(
+                server,
+                "deploy",
+                id=self.registry_id,
+                stage="prod",
+                version="1.2.3",
+                dry_run=False,
+                background=True,
+            ),
+        )
+
+    def test_a_background_deploy_answers_with_a_job_whose_log_can_be_followed(self):
+        from action_platform.logging import emit
+        from app.services.jobs import registry
+        from app.services.jobs.worker import Worker
+
+        server = self.server()
+
+        queued = self.call(
+            server,
+            "deploy",
+            id=self.registry_id,
+            stage="dev",
+            version="1.2.3",
+            dry_run=False,
+            background=True,
+        )
+        self.assertEqual(queued["status"], "queued")
+
+        def fake(payload):
+            emit("$ sam deploy")
+            emit("Successfully created/updated stack")
+
+            return {"ok": True}
+
+        original = registry._factories["deploy"]
+        registry.register("deploy", lambda s: fake)
+
+        try:
+            Worker(self.app.state.db, self.app.state.secrets, "test").run(once=True)
+        finally:
+            registry.register("deploy", original)
+
+        logs = self.call(server, "job_logs", job_id=queued["job"])
+        lines = [row["line"] for row in logs["lines"]]
+
+        self.assertIn("$ sam deploy", lines)
+        self.assertTrue(logs["finished"])
+        self.assertEqual(
+            self.call(server, "job_logs", job_id=queued["job"], after=logs["next"])[
+                "lines"
+            ],
+            [],
+        )
+        self.assertEqual(
+            self.call(server, "job_status", job_id=queued["job"])["status"], "done"
+        )
+
+    def test_a_job_of_another_organization_is_not_found(self):
+        server = self.server()
+
+        self.assertIn("no such job", self.refused(server, "job_status", job_id="nope"))
+
+
+class CiToolsTest(AppToolsCase):
+    def test_connect_an_existing_jenkins_job_and_run_it(self):
+        from unittest import mock
+
+        from action_platform.core.context import Run, RunRef
+
+        self.setenv("ACME_JENKINS_TOKEN", "tok")
+        server = self.server()
+
+        host = self.call(
+            server,
+            "add_ci_host",
+            base_url="https://ci.acme.io/",
+            token_env="ACME_JENKINS_TOKEN",
+            username="ada",
+        )
+        self.assertEqual(
+            (host["kind"], host["base_url"]), ("jenkins", "https://ci.acme.io")
+        )
+        self.assertEqual(
+            [h["id"] for h in self.call(server, "list_ci_hosts")], [host["id"]]
+        )
+
+        with mock.patch(
+            "action_platform.providers.ci.jenkins.rest.call",
+            return_value={"mode": "NORMAL"},
+        ):
+            self.assertEqual(
+                self.call(server, "test_ci_host", id=host["id"]),
+                {"ok": True, "error": None},
+            )
+
+        link = self.call(
+            server,
+            "set_app_ci",
+            id=self.registry_id,
+            ci_host=host["id"],
+            job="team/app",
+        )
+        self.assertEqual(
+            link, {"kind": "jenkins", "ci_host_id": host["id"], "job": "team/app"}
+        )
+
+        with (
+            mock.patch(
+                "action_platform.providers.ci.jenkins.CIJenkins.start",
+                return_value=RunRef(
+                    id="8", url="https://ci.acme.io/job/team/job/app/8/"
+                ),
+            ) as start,
+            mock.patch(
+                "action_platform.providers.ci.jenkins.CIJenkins.runs",
+                return_value=[Run(number=8, status="running", branch="main")],
+            ),
+        ):
+            started = self.call(server, "run_ci", id=self.registry_id, ref="main")
+            synced = self.call(server, "get_app_ci", id=self.registry_id, sync=True)
+
+        self.assertEqual(started["id"], "8")
+        self.assertEqual(start.call_args.args[1], "main")
+        self.assertEqual([r["number"] for r in synced["runs"]], [8])
+        self.assertEqual(
+            self.call(server, "get_app_ci", id=self.registry_id)["link"]["job"],
+            "team/app",
+        )
+
+    def test_ci_changes_follow_the_role_and_the_scope(self):
+        self.setenv("ACME_JENKINS_TOKEN", "tok")
+        server = self.server("read,write,release")
+
+        self.assertIn(
+            "org.manage",
+            self.refused(
+                server,
+                "add_ci_host",
+                base_url="https://ci.acme.io",
+                token_env="ACME_JENKINS_TOKEN",
+            ),
+        )
+
+        reader = self.server("read")
+        self.assertIn(
+            "app.configure",
+            self.refused(reader, "set_app_ci", id=self.registry_id, job="x"),
+        )
+        self.assertIn(
+            "app.flow", self.refused(reader, "run_ci", id=self.registry_id, ref="main")
+        )
+
+
+class HostToolsTest(AppToolsCase):
+    def setUp(self):
+        super().setUp()
+        from app.core.auth.crypto import Sealer
+        from app.core.db.models import SourceHost
+
+        with self.app.state.db.session() as s:
+            s.add(
+                SourceHost(
+                    id="h1",
+                    organization_id=self.org["id"],
+                    kind="github",
+                    name="GitHub",
+                    token_encrypted=Sealer(self.app.state.secrets).seal("t"),
+                )
+            )
+
+    def test_list_hosts_and_point_an_app_at_one(self):
+        server = self.server()
+
+        (row,) = self.call(server, "list_hosts")
+        self.assertEqual((row["id"], row["kind"]), ("h1", "github"))
+        self.assertNotIn("token", row)
+        self.assertEqual(
+            self.call(server, "set_app_host", id=self.registry_id, host="h1"),
+            {"source_host_id": "h1"},
+        )
+        self.assertIn(
+            "host not found",
+            self.refused(server, "set_app_host", id=self.registry_id, host="nope"),
+        )
+
+    def test_a_read_only_token_cannot_point_an_app_elsewhere(self):
+        self.assertIn(
+            "app.flow",
+            self.refused(
+                self.server("read"), "set_app_host", id=self.registry_id, host="h1"
+            ),
+        )
+
+
+class ImportToolsTest(RemoteToolsCase):
+    def setUp(self):
+        super().setUp()
+        from app.core.auth.crypto import Sealer
+        from app.core.db.models import SourceHost
+        from app.services.projects.organization_import import client, context
+
+        from tests.test_import_github import FakeGithub
+
+        with self.app.state.db.session() as s:
+            s.add(
+                SourceHost(
+                    id="gh",
+                    organization_id=self.org["id"],
+                    kind="github",
+                    name="GitHub",
+                    token_encrypted=Sealer(self.app.state.secrets).seal("t"),
+                )
+            )
+
+        fake = FakeGithub(self.url)
+        self.patch(client, "GithubDirectory", lambda creds: fake)
+        url = self.url
+
+        class KnownUrl:
+            def __init__(self, value):
+                self.value = value
+
+            @property
+            def repo(self):
+                return "acme/web" if self.value == url else None
+
+        self.patch(context, "GitUrl", KnownUrl)
+
+    def test_preview_then_import_and_follow_the_job(self):
+        from app.services.jobs.worker import Worker
+
+        server = self.server()
+
+        self.assertEqual(
+            [
+                o["login"]
+                for o in self.call(server, "list_import_organizations", host="gh")[
+                    "organizations"
+                ]
+            ],
+            ["ana", "acme"],
+        )
+        preview = self.call(
+            server, "preview_organization_import", host="gh", login="acme"
+        )
+        self.assertEqual(
+            {p["login"]: p["status"] for p in preview["people"]},
+            {"ana": "member", "bob": "invitable", "ghost": "no_email"},
+        )
+
+        queued = self.call(
+            server,
+            "import_organization",
+            host="gh",
+            login="acme",
+            repositories=["acme/web"],
+            teams=["platform"],
+            people=["bob"],
+        )
+        self.assertEqual(
+            Worker(self.app.state.db, self.app.state.secrets, "test").run(once=True), 1
+        )
+
+        done = self.call(server, "job_status", job_id=queued["job"])
+        self.assertEqual(done["status"], "done", done)
+        self.assertEqual(done["result"]["projects"], ["web"])
+        self.assertEqual(done["result"]["invitations"], ["bob@example.com"])
+        self.assertTrue(self.call(server, "job_logs", job_id=queued["job"])["finished"])
+        self.assertEqual(
+            [i["email"] for i in self.call(server, "list_invitations")],
+            ["bob@example.com"],
+        )
+
+    def test_import_needs_org_manage_and_an_admin_scope(self):
+        server = self.server("read,write,release")
+
+        for tool, args in (
+            ("list_import_organizations", {"host": "gh"}),
+            ("preview_organization_import", {"host": "gh", "login": "acme"}),
+            (
+                "import_organization",
+                {"host": "gh", "login": "acme", "repositories": []},
+            ),
+        ):
+            with self.subTest(tool=tool):
+                self.assertIn("org.manage", self.refused(server, tool, **args))
