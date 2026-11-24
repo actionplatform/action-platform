@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+import getpass
+import os
+import sys
 from typing import Any
 
 import typer
 
 from action_platform.core.exception import ActionPlatformError
 from action_platform.remote import credentials
-from action_platform.remote.client import DEFAULT_SCOPE, Remote, login as device_login
+from action_platform.remote.client import (
+    DEFAULT_SCOPE,
+    Remote,
+    login as device_login,
+    login_with_token,
+)
 from action_platform.remote.schemas import Me
 
 
@@ -27,14 +35,36 @@ def login(
     name: str | None = typer.Option(
         None, "--name", help="Label for the token in Settings (default user@host)"
     ),
+    token: bool = typer.Option(
+        False,
+        "--token",
+        help="No browser: keep a token created in the web app or by `action-platform-api tokens issue`, read from AP_TOKEN or stdin",
+    ),
 ) -> None:
-    """Sign in to a hosted Action Platform through the browser; a scoped bearer token is kept in ~/.action-platform."""
+    """Sign in to a hosted Action Platform through the browser, or with --token; a scoped bearer token is kept in ~/.action-platform."""
+    if token:
+        creds, who = login_with_token(server, _read_token())
+        typer.echo(f"logged in to {creds.server} — {_describe(creds, who)}")
+        return
+
     creds = device_login(
         server, open_browser=not no_browser, echo=typer.echo, scope=scope, name=name
     )
     typer.echo(
         f"logged in to {creds.server} — {_describe(creds, Remote(creds.server, creds.token).whoami())}"
     )
+
+
+def _read_token() -> str:
+    value = os.environ.get("AP_TOKEN") or (
+        getpass.getpass("Token: ") if sys.stdin.isatty() else sys.stdin.readline()
+    )
+    value = value.strip()
+
+    if not value:
+        raise ActionPlatformError("no token: pipe it on stdin or set AP_TOKEN")
+
+    return value
 
 
 def logout() -> None:

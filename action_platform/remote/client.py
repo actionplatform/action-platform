@@ -1069,6 +1069,34 @@ def login(
     raise ActionPlatformError("login timed out — run it again")
 
 
+def login_with_token(server: str, token: str) -> tuple[Credentials, Me]:
+    """Keep a bearer token minted elsewhere (the web app, `action-platform-api tokens issue`) once the platform accepts it."""
+    server = server.rstrip("/")
+    token = token.strip()
+
+    if len(token.split(".")) != 3:
+        raise ActionPlatformError(
+            "that is not an API token: copy the whole token the web app or "
+            "`action-platform-api tokens issue` printed"
+        )
+
+    try:
+        who = _as(
+            Me, _request("GET", f"{server}/api/v1/me", token=token, client=CLIENT_ID)
+        )
+    except RemoteError as e:
+        if e.status == 401:
+            raise ActionPlatformError(
+                f"{server} refused the token: it is invalid, expired or revoked"
+            ) from e
+        raise
+
+    creds = Credentials(server=server, token=token, scope=" ".join(who.scope or []))
+    save(creds)
+
+    return creds, who
+
+
 def _device_name() -> str:
     try:
         return f"{getpass.getuser()}@{socket.gethostname()}"

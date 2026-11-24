@@ -382,3 +382,43 @@ class RemoteClientTest(TempCase):
     def test_from_credentials_requires_login(self):
         with self.assertRaisesRegex(ActionPlatformError, "login"):
             client.Remote.from_credentials()
+
+
+JWT = "aaaa.bbbb.cccc"
+
+
+class LoginWithTokenTest(LoginCase):
+    def test_keeps_the_token_once_the_platform_accepts_it(self):
+        self.answers()
+        self.patch(
+            client,
+            "_request",
+            lambda method, url, body=None, token=None, **kw: (
+                self.calls.append((method, url, token))
+                or {"user": {"email": "me@example.com"}, "scope": ["read", "write"]}
+            ),
+        )
+
+        creds, who = client.login_with_token("https://p.example/", f" {JWT}\n")
+
+        self.assertEqual(
+            creds, credentials.Credentials("https://p.example", JWT, "read write")
+        )
+        self.assertEqual(credentials.load(), creds)
+        self.assertEqual(who.user["email"], "me@example.com")
+        self.assertEqual(self.calls, [("GET", "https://p.example/api/v1/me", JWT)])
+        self.assertEqual(self.opened, [])
+
+    def test_a_refused_or_malformed_token_is_not_saved(self):
+        def refuse(*args, **kwargs):
+            raise client.RemoteError(401, "unauthorized")
+
+        self.patch(client, "_request", refuse)
+
+        with self.assertRaisesRegex(ActionPlatformError, "invalid, expired or revoked"):
+            client.login_with_token("https://p.example", JWT)
+
+        with self.assertRaisesRegex(ActionPlatformError, "not an API token"):
+            client.login_with_token("https://p.example", "session-token")
+
+        self.assertIsNone(credentials.load())
