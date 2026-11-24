@@ -161,3 +161,48 @@ class InsightsTest(GateCase):
             ).status_code,
             404,
         )
+
+    def test_latest_events_follow_the_event_time_not_the_sync(self):
+        from app.core.db.models import Deployment
+        from app.core.shared.clock import now
+
+        self.register()
+        moment = now()
+        with self.app.state.db.session() as s:
+            for i in range(13):
+                s.add(
+                    Deployment(
+                        id=f"old{i}",
+                        app_id="a1",
+                        target="lambda",
+                        kind="aws/lambda",
+                        stage="prod",
+                        version=f"0.{i}.0",
+                        status="success",
+                        executor="jenkins",
+                        external_ref=f"jenkins:{i}",
+                        started_at=moment - timedelta(days=30, minutes=i),
+                        finished_at=moment - timedelta(days=30, minutes=i),
+                        synced_at=moment,
+                    )
+                )
+            s.add(
+                Deployment(
+                    id="fresh",
+                    app_id="a1",
+                    target="lambda",
+                    kind="aws/lambda",
+                    stage="prod",
+                    version="2.0.0",
+                    status="success",
+                    executor="jenkins",
+                    external_ref="jenkins:99",
+                    started_at=moment - timedelta(minutes=5),
+                    finished_at=moment - timedelta(minutes=2),
+                    synced_at=moment - timedelta(hours=1),
+                )
+            )
+
+        body = self.client.get("/api/v1/dashboard?fresh=true", headers=self.h()).json()
+
+        self.assertEqual(body["events"][0]["title"], "lambda 2.0.0")
