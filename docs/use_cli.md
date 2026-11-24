@@ -1,9 +1,7 @@
 # CLI
 
 ```bash
-pipx install action-platform          # library + CLI
-pip install "action-platform[mcp]"    # + MCP server
-pip install ./apps/api    # + the JSON API the web app uses (from a checkout of the repository)
+pipx install "action-platform[mcp]"   # library + CLI + MCP server
 ```
 
 ## Scaffold

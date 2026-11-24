@@ -3,7 +3,7 @@
 The platform ships as an MCP server. Claude Code, Codex, Cursor — anything that speaks MCP — gets 21 local tools (`list_matrix`, `init_project`, `install_platform`, `start_branch`, `gitflow_audit`, `propose_pull_request`, `release`, `list_scopes`, `readiness`, `deploy`, `diagnose`, …) or 69 remote ones (projects and their apps, configuration, git-flow, releases, readiness, deployments, jobs, CI, importing a GitHub organization, GitLab group or Bitbucket workspace, plus orientation, organization management and access on the organization's services), prompts that put them in the right order (local: `new_service`, `ship_feature`, `cut_release`, `deploy_project`, `adopt_repository`, `fix_gitflow`; remote: `orient`, `new_app`, `ship_change`, `cut_release`, `deploy_app`, `adopt_repository`, `adopt_organization`) and, from the plugin repository, 15 skills that make the agent preview and ask before anything leaves the machine. Every tool carries an input schema and an output schema (`action_platform/mcp/schemas.py`), and a platform error — a refused permission, an unknown app, a git-flow violation — comes back as the tool's error text, so the agent can read why.
 
 ```bash
-pip install "action-platform[mcp]"
+pipx install "action-platform[mcp]"
 action-platform mcp                 # stdio
 action-platform mcp --http          # http://127.0.0.1:8765/mcp
 ```
