@@ -40,6 +40,7 @@ class TemplateSourcesReads(DirectoryBase):
                     "url": row.url,
                     "ref": row.ref,
                     "credentials": credentials.as_dict() if credentials else None,
+                    "organization_id": organization_id,
                 }
             )
 
@@ -57,6 +58,26 @@ class TemplateSourcesReads(DirectoryBase):
         )
 
         if spec is None:
+            raise DirectoryError(f"template source {name} not found")
+
+        return spec
+
+    def owned_source_spec(
+        self, organization_id: str, requested: str | dict
+    ) -> Optional[dict]:
+        """The organization's own source a request names; a repository it did not add is refused."""
+        if isinstance(requested, str):
+            return self.source_spec_by_name(organization_id, requested)
+
+        name = requested.get("name")
+        spec = self.source_spec_by_name(
+            organization_id, name if isinstance(name, str) else ""
+        )
+
+        if spec is not None and (
+            requested.get("url") != spec["url"]
+            or (requested.get("ref") or "main") != spec["ref"]
+        ):
             raise DirectoryError(f"template source {name} not found")
 
         return spec
