@@ -159,6 +159,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/password/change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["change_api_auth_password_change_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/google/start": {
         parameters: {
             query?: never;
@@ -2305,6 +2321,10 @@ export interface components {
             status: "planned" | "applied" | "refused" | "failed";
             detail?: string | null;
         };
+        ChangePasswordRequest: {
+            current_password: string;
+            new_password: string;
+        };
         Changes: {
             files: string[];
             clean: boolean;
@@ -3837,6 +3857,38 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ResetPasswordRequest"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_api_auth_password_change_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequest"];
             };
         };
         responses: {

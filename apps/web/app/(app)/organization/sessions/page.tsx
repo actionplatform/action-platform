@@ -1,4 +1,4 @@
-import { SessionsCard, TokensCard } from "@/features/account";
+import { ChangePasswordCard, SessionsCard, TokensCard } from "@/features/account";
 import { ApiCard } from "@/features/organization";
 import { API_BASE, api } from "@/lib/api";
 import { tokensOfUser } from "@/lib/api-tokens";
@@ -24,6 +24,7 @@ export default async function SessionsPage() {
     <div className="space-y-5">
       <TokensCard tokens={tokens} now={now} scopes={access.scopes} />
       <SessionsCard sessions={sessions} now={now} />
+      <ChangePasswordCard />
       <ApiCard baseUrl={API_BASE} version={version} docsUrl={DOCS_URL} />
     </div>
   );
