@@ -103,3 +103,82 @@ class JenkinsTest(unittest.TestCase):
         )
         self.assertTrue(url.endswith("{0,10}"))
         self.assertIn("parameters[name,value]", url)
+
+
+class FollowTest(unittest.TestCase):
+    def setUp(self):
+        self.ci = CIJenkins(base_url="https://ci.acme.io", token="tok", username="ada")
+
+    def test_start_without_a_ref_sends_only_the_parameters(self):
+        with (
+            mock.patch(
+                "action_platform.providers.ci.jenkins.rest.call", return_value={}
+            ),
+            mock.patch(
+                "action_platform.providers.ci.jenkins.rest.location",
+                return_value="https://ci.acme.io/queue/item/12/",
+            ) as post,
+        ):
+            ref = self.ci.start("team/app", "", {"RELEASE_TAG": "v1.2.3"})
+
+        self.assertEqual(
+            post.call_args.args[1],
+            "https://ci.acme.io/job/team/job/app/buildWithParameters?RELEASE_TAG=v1.2.3",
+        )
+        self.assertEqual(ref.id, "queue:12")
+
+    def test_a_waiting_item_has_no_run_then_the_build_is_read(self):
+        from action_platform.core.context import RunRef
+
+        ref = RunRef(id="queue:12")
+
+        with mock.patch(
+            "action_platform.providers.ci.jenkins.rest.call",
+            side_effect=[
+                {"why": "waiting"},
+                {"executable": {"number": 42}},
+                BUILD,
+                BUILD,
+            ],
+        ) as call:
+            self.assertIsNone(self.ci.run_of("team/app", ref))
+            self.assertEqual(self.ci.run_of("team/app", ref).number, 42)
+            self.assertEqual(self.ci.run_of("team/app", ref).number, 42)
+
+        urls = [c.args[1] for c in call.call_args_list]
+        self.assertEqual(urls.count("https://ci.acme.io/queue/item/12/api/json"), 2)
+
+    def test_a_cancelled_item_is_refused(self):
+        from action_platform.core.context import RunRef
+        from action_platform.core.exception import DeployError
+
+        with mock.patch(
+            "action_platform.providers.ci.jenkins.rest.call",
+            return_value={"cancelled": True},
+        ):
+            with self.assertRaises(DeployError):
+                self.ci.run_of("team/app", RunRef(id="queue:3"))
+
+    def test_a_ref_without_a_queue_item_is_looked_for_elsewhere(self):
+        from action_platform.core.context import RunRef
+
+        with self.assertRaises(NotImplementedError):
+            self.ci.run_of("team/app", RunRef(id="team/app@v1"))
+
+    def test_stages_come_from_the_pipeline_description(self):
+        with mock.patch(
+            "action_platform.providers.ci.jenkins.rest.call",
+            return_value={
+                "stages": [
+                    {"name": "Migrate", "status": "SUCCESS"},
+                    {"name": "Deploy", "status": "IN_PROGRESS"},
+                ]
+            },
+        ) as call:
+            stages = self.ci.stages("team/app", 42)
+
+        self.assertEqual(stages, [("Migrate", "SUCCESS"), ("Deploy", "IN_PROGRESS")])
+        self.assertEqual(
+            call.call_args.args[1],
+            "https://ci.acme.io/job/team/job/app/42/wfapi/describe",
+        )
