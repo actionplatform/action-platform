@@ -10,7 +10,7 @@ from app.api.dependencies import (
     allowed,
 )
 from app.core.db.models import Invitation, User
-from app.core.errors import NotFound
+from app.core.errors import Forbidden, NotFound
 from app.repositories.organization import OrganizationRepository
 from app.repositories.organization.invitations import invitation_team_ids
 from app.schemas import organization as schemas
@@ -56,6 +56,9 @@ def invite(
     writes: OrganizationRepoDep,
 ) -> schemas.InvitationRow:
     allowed(caller, org, "org.manage")
+
+    if body.role == "owner" and writes.role_in(caller.user.id, org.id) != "owner":
+        raise Forbidden("only an owner may give or take the owner role")
 
     for team_id in body.team_ids:
         if writes.team(org.id, team_id) is None:
