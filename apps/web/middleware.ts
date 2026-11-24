@@ -45,7 +45,7 @@ function contentSecurityPolicy(nonce: string): string {
   ].join("; ");
 }
 
-export const config = { matcher: ["/((?!_next|.*\\..*).*)", "/.well-known/:path*"] };
+export const config = { matcher: ["/api/v1/:path*", "/api/auth/:path*", "/((?!_next|.*\\..*).*)", "/.well-known/:path*"] };
 
 function sameHost(source: string, host: string): boolean {
   try {
