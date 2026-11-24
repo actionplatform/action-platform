@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from urllib.parse import quote
 
 from typing import Any, Optional
 
@@ -30,6 +31,7 @@ from app.services.ci import CiService
 from app.services.projects.apps import AppService
 from app.services.deployments import AppCiRunners, DeployEnv, DeploymentRecords
 from app.services.integrations.hosts.directory import IntegrationsDirectory
+from app.services.integrations.plugins import PluginEvents, deliver
 from app.services.projects.organization_import.directory import ImportDirectory
 from app.services.projects.adoption import BulkInstall, InstallOptions
 from app.services.deployments.identity import AppIdentity, TargetContexts
@@ -145,6 +147,20 @@ class JobHandlers:
             )
             db.flush()
             release_id, tag = release.id, release.tag
+            PluginEvents(db, self.sealer).emit(
+                db.get(App, ctx.app.id),
+                "release.created",
+                {
+                    "tag": release.tag,
+                    "version": release.version,
+                    "component": release.component or None,
+                    "name": release.name,
+                    "prerelease": bool(release.prerelease),
+                    "changelog": release.body,
+                },
+                actor=release.author,
+                page=f"releases/{quote(release.tag, safe='')}",
+            )
 
         with self.database.session() as db:
             stages = tuple(
@@ -177,6 +193,8 @@ class JobHandlers:
             if release is None:
                 raise ActionPlatformError(f"no release {tag} for this app")
 
+            previous = ReadinessStore(db).get(release.id, stage)
+            was_blocked = previous is not None and previous.ok is False
             ReadinessStore(db).running(release.id, stage)
             release_id, shape = release.id, release.shape
 
@@ -212,6 +230,22 @@ class JobHandlers:
                 db.get(Release, release_id), stage, checks, payload.get("job_id")
             )
 
+            if not row.ok and not was_blocked:
+                PluginEvents(db, self.sealer).emit(
+                    db.get(App, ctx.app.id),
+                    "readiness.blocked",
+                    {
+                        "tag": tag,
+                        "stage": stage,
+                        "checks": [
+                            {"id": c.id, "detail": c.detail, "fix": c.fix}
+                            for c in checks
+                            if c.blocking
+                        ],
+                    },
+                    page=f"releases/{quote(tag, safe='')}",
+                )
+
             return {
                 "tag": tag,
                 "stage": stage,
@@ -235,6 +269,9 @@ class JobHandlers:
         )
         started = now()
 
+        if not request.dry_run and ctx.app is not None:
+            self._deploy_started(ctx, payload, request)
+
         try:
             with auth.git_auth(credentials):
                 results = service.deploy(ctx.registry_id, request)
@@ -248,6 +285,27 @@ class JobHandlers:
             self._record_deploy(ctx, payload, request, started, results)
 
         return results
+
+    def _deploy_started(
+        self, ctx: JobContext, payload: dict[str, Any], request: DeployRequest
+    ) -> None:
+        with self.database.session() as db:
+            PluginEvents(db, self.sealer).emit(
+                db.get(App, ctx.app.id),
+                "deployment.started",
+                {
+                    "stage": request.stage or request.scope,
+                    "version": request.version,
+                    "executor": "platform",
+                },
+                actor=DeploymentRecords(db, self.sealer).actor_name(
+                    payload.get("user_id")
+                ),
+                page="deployments",
+            )
+
+    def plugin_event(self, payload: dict[str, Any]) -> Any:
+        return deliver(self.database, self.sealer, payload)
 
     def _scopes(self, app: Optional[App]) -> list[dict]:
         if app is None:
@@ -516,3 +574,4 @@ register("destroy_project", lambda s: JobHandlers.of(s).destroy_project)
 register("import", lambda s: JobHandlers.of(s).import_activity)
 register("import_github", lambda s: JobHandlers.of(s).import_github)
 register("install", lambda s: JobHandlers.of(s).install)
+register("plugin_event", lambda s: JobHandlers.of(s).plugin_event)

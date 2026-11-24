@@ -2,8 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.schemas.integrations import Plugins
-from app.schemas.integrations import PluginOptions
+from app.schemas.integrations import PluginDeliveries, PluginOptions, Plugins
 from app.api.dependencies import CallerDep, OrgDep, PluginsDep, allowed
 from app.services.integrations.plugins.options import secret_keys
 
@@ -23,6 +22,16 @@ def plugin_options(
     store = manager.options(slug, org.id)
 
     return PluginOptions(options=store.public(), secrets=store.stored_secrets())
+
+
+@router.get("/{slug}/deliveries")
+def plugin_deliveries(
+    slug: str, org: OrgDep, caller: CallerDep, manager: PluginsDep
+) -> PluginDeliveries:
+    """The organization's latest events queued for the plugin, newest first: which event, where to, and whether it arrived."""
+    allowed(caller, org, "org.manage")
+
+    return PluginDeliveries(deliveries=manager.deliveries(slug, org.id))
 
 
 @router.put("/{slug}/options")
