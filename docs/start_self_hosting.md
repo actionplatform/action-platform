@@ -11,9 +11,12 @@ curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/mast
 ```
 
 - installs Docker when missing
+- resolves the newest stable `api/vX.Y.Z` and `web/vX.Y.Z` releases (release candidates are skipped) and downloads `docker-compose.yml` and `.env.example` from the `api/vX.Y.Z` tag, the commit the api image was built from
 - writes `/opt/action-platform/.env` with the settings and `/opt/action-platform/secrets/{postgres_password,better_auth_secret,api_token}` with fresh values (`openssl rand -hex 32`); the containers read them from `/run/secrets/*`, never from the environment
-- `PUBLIC_URL=http://<public ip>:3000`
-- `docker compose up -d`, prints the URL
+- `PUBLIC_URL=http://<public ip>:3000`, and the image versions as explicit tags: `AP_IMAGE_API`, `AP_IMAGE_WORKER` (both the api version) and `AP_IMAGE_WEB`
+- `docker compose pull && docker compose up -d`, prints the URL
+
+The compose files have no default image and no `pull_policy: always`: a missing `AP_IMAGE_*` stops `docker compose` with an error, and `docker compose up -d` (or a reboot) on an unchanged `.env` runs the same versions it ran before.
 
 With a domain (DNS `A` record already pointing at the host) Traefik is added and Let's Encrypt issues the certificate:
 
@@ -21,7 +24,14 @@ With a domain (DNS `A` record already pointing at the host) Traefik is added and
 curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/master/deploy/install.sh | sudo sh -s -- platform.example.com you@example.com
 ```
 
-Running the script again keeps the existing `.env` and `secrets/` and only pulls and restarts — that is the upgrade path.
+Running the script again is the upgrade path — see [Upgrading](#upgrading).
+
+Pin versions with `AP_REF` (api, worker and the compose files) and `AP_WEB_REF` (web); either one alone pins only that component and resolves the other:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/actionplatform/action-platform/master/deploy/install.sh \
+  | sudo AP_REF=api/v0.41.2 AP_WEB_REF=web/v0.33.0 sh
+```
 
 ## Dokploy
 
@@ -29,21 +39,21 @@ Dokploy already runs Traefik, so the compose file has no proxy and publishes no 
 
 ### Template (nothing to type)
 
-`deploy/dokploy/` is a Dokploy template: `template.toml` declares the domain and generates `POSTGRES_PASSWORD` / `BETTER_AUTH_SECRET` / `AP_API_TOKEN`; `template.b64` is the two files packed for import.
+`deploy/dokploy/` is a Dokploy template: `template.toml` declares the domain and generates `POSTGRES_PASSWORD` / `BETTER_AUTH_SECRET` / `AP_API_TOKEN`, and pins the images in `AP_IMAGE_API` / `AP_IMAGE_WORKER` / `AP_IMAGE_WEB`; `template.b64` is the two files packed for import.
 
 1. Project → **Create Service → Compose**, any name, *Create*.
 2. In the service: **Advanced → Import Template** (or *Raw* → *Import*), paste the contents of [`deploy/dokploy/template.b64`](../deploy/dokploy/template.b64), import. Compose, environment and the `web` domain are filled in; the host is `<app>-<random>.<server ip>.traefik.me` until you change it.
 3. **Domains**: edit the host to your domain, HTTPS on. Update `PUBLIC_URL` under *Environment* to match.
-4. **Deploy**.
+4. **Deploy**. Upgrades: change the `AP_IMAGE_*` tags under *Environment*, then *Redeploy*.
 
 Regenerate `template.b64` after editing the compose or the toml: `sh deploy/dokploy/build.sh` — it also copies the compose to `deploy/docker-compose.dokploy.yml`, the file a Git-provider service reads; the two are one file.
 
 ### By hand
 
 1. **Create Service → Compose**. Provider *Git*, repository `https://github.com/actionplatform/action-platform`, branch `master`, compose path `deploy/docker-compose.dokploy.yml`.
-2. **Environment**: `PUBLIC_URL=https://platform.example.com`, `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, `AP_API_TOKEN` (`openssl rand -hex 32` each). Save — the deploy fails with an unhealthy Postgres when these are empty.
+2. **Environment**: `PUBLIC_URL=https://platform.example.com`, `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, `AP_API_TOKEN` (`openssl rand -hex 32` each), and the images with explicit tags: `AP_IMAGE_API=actionplatformio/action-platform-api:X.Y.Z`, `AP_IMAGE_WORKER=actionplatformio/action-platform-worker:X.Y.Z` (the same version) and `AP_IMAGE_WEB=actionplatformio/action-platform-web:X.Y.Z` (the newest `api/v…` and `web/v…` [releases](https://github.com/actionplatform/action-platform/releases)). Save — the deploy fails with an unhealthy Postgres when the secrets are empty, and with `required variable AP_IMAGE_API is missing a value` when an image is.
 3. **Domains → Add**: your host → service `web`, container port `3000`, HTTPS on.
-4. **Deploy**. Later upgrades: *Redeploy* pulls `latest`.
+4. **Deploy**. Upgrades: change the `AP_IMAGE_*` tags under *Environment*, then *Redeploy*.
 
 ## The services
 
@@ -67,7 +77,7 @@ flowchart LR
 | `web` | `actionplatformio/action-platform-web` | Next.js standalone, stateless: pages and server actions over the API. Port 3000. |
 | `traefik` | `traefik:v3.3` | only with `--profile tls`; certificates in volume `letsencrypt` |
 
-Images are published for every `api/vX.Y.Z` and `web/vX.Y.Z` tag to Docker Hub and mirrored to GHCR (`ghcr.io/actionplatform/…`). Pin a version with `AP_IMAGE_WEB=actionplatformio/action-platform-web:0.1.2` in `.env`.
+Images are published for every `api/vX.Y.Z` and `web/vX.Y.Z` tag to Docker Hub and mirrored to GHCR (`ghcr.io/actionplatform/…`). `.env` names the version of each: `AP_IMAGE_API`, `AP_IMAGE_WORKER`, `AP_IMAGE_WEB`.
 
 ## Environment
 
@@ -104,9 +114,10 @@ docker compose exec postgres pg_dump -U action_platform action_platform > backup
 ## Building the images yourself
 
 ```bash
-docker build -f deploy/Dockerfile.api -t action-platform-api:local .
+docker build -f deploy/Dockerfile.api --target api -t action-platform-api:local .
+docker build -f deploy/Dockerfile.api --target worker -t action-platform-worker:local .
 docker build -f deploy/Dockerfile.web -t action-platform-web:local .
-AP_IMAGE_API=action-platform-api:local AP_IMAGE_WEB=action-platform-web:local docker compose -f deploy/docker-compose.yml up -d
+AP_IMAGE_API=action-platform-api:local AP_IMAGE_WORKER=action-platform-worker:local AP_IMAGE_WEB=action-platform-web:local docker compose -f deploy/docker-compose.yml up -d
 ```
 
 ## Limits today
@@ -119,8 +130,25 @@ AP_IMAGE_API=action-platform-api:local AP_IMAGE_WEB=action-platform-web:local do
 
 Each component ships on its own tag and image: `api/vX.Y.Z` → `actionplatformio/action-platform-api`, `web/vX.Y.Z` → `actionplatformio/action-platform-web`, `vX.Y.Z` → `action-platform` on PyPI ([releases](concept_releases.md)). To upgrade:
 
-1. Pull the new images (`install.sh` again, or *Redeploy* on Dokploy). Start the **api** before or together with the **web**: the web client is generated from the API's schema, so an older API may miss fields a newer web sends.
-2. The API applies its migrations on boot (or the compose `migrate` service does); nothing to run by hand. Back up the database first for a major jump.
+1. Run `install.sh` again (with the same arguments, or none). It resolves the newest `api/v…` and `web/v…` releases (or the `AP_REF` / `AP_WEB_REF` you pin), prints `api <current> → <target>, web <current> → <target>`, and when either changes it dumps the database with `pg_dump` into `/opt/action-platform/backups/pre-upgrade-<UTC time>.sql` and prints that path. Then it downloads the compose files of the target api tag, writes the new tags into `.env` (everything else in `.env` and `secrets/` is kept), pulls and runs `docker compose up -d`. On Dokploy, change the `AP_IMAGE_*` tags under *Environment* and *Redeploy*. Upgrade the **api** before or together with the **web**: the web client is generated from the API's schema, so an older API may miss fields a newer web sends.
+2. The compose `migrate` service applies the API's migrations before `api` and the workers start; nothing to run by hand.
 3. Update the CLI where people use it: `pip install -U action-platform`. Tokens minted by `action-platform login` keep working across upgrades until they expire (90 days) or are revoked.
+
+### Rolling back
+
+Migrations only move forward, so going back to an older api means going back to the database from before the upgrade. In `/opt/action-platform`:
+
+1. Set the previous tags in `.env` (`AP_IMAGE_API`, `AP_IMAGE_WORKER`, `AP_IMAGE_WEB`; the `api … → …` line `install.sh` printed has them).
+2. If only the web changed, `docker compose up -d` is all. If the api changed, its migrations may have run: stop everything but Postgres, recreate the database from the dump and start again:
+
+   ```bash
+   docker compose stop web worker worker-deploy api
+   docker compose exec -T postgres psql -U action_platform -d postgres \
+     -c 'DROP DATABASE action_platform' -c 'CREATE DATABASE action_platform OWNER action_platform'
+   docker compose exec -T postgres psql -U action_platform action_platform < backups/pre-upgrade-<UTC time>.sql
+   docker compose up -d
+   ```
+
+Anything written between the upgrade and the restore is lost. Add `--profile tls` to each `docker compose` command when the instance has a domain.
 
 `GET /api/version` on the API and the sidebar footer in the web app (`web · api · lib`) show what is running.
