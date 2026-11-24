@@ -14,8 +14,11 @@ depends_on = None
 
 
 def upgrade() -> None:
-    with op.batch_alter_table("user") as batch:
-        batch.add_column(sa.Column("disabled_at", sa.DateTime(), nullable=True))
+    columns = {c["name"] for c in sa.inspect(op.get_bind()).get_columns("user")}
+
+    if "disabled_at" not in columns:
+        with op.batch_alter_table("user") as batch:
+            batch.add_column(sa.Column("disabled_at", sa.DateTime(), nullable=True))
 
 
 def downgrade() -> None:
