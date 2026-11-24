@@ -59,6 +59,7 @@ class DatabaseTest(TempCase):
                 "scope",
                 "service_connection",
                 "app_adoption",
+                "worker",
             }
             <= set(inspect(db.engine).get_table_names())
         )
