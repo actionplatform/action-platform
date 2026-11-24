@@ -18,6 +18,9 @@ dependencies = [
   "typer>=0.15",
   "apx-aws-lambda>=1.3.0",
   "apx-dokploy>=0.6.0",
+  "apx-github>=0.1.0",
+  "apx-jenkins>=0.1.0",
+  "apx-sentry>=0.1.0",
 ]
 
 [project.scripts]
