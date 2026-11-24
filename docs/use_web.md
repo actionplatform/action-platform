@@ -63,7 +63,7 @@ The organization's projects: search, sort, **Import** ([Import](#import)) and **
 
 ### The project page
 
-The project's apps with their language and branch. **New app** opens the wizard; **Add an existing repository** takes a git URL.
+The project's apps with their language and branch. **New app** opens the wizard; **Add an existing repository** takes a git URL; **Adoption** opens the install pull requests for many apps at once ([Adoption](#adoption)).
 
 ### Creating an app
 
@@ -86,6 +86,12 @@ flowchart LR
 ### Adding an existing repository
 
 A git URL. With a `platform.toml` the app is registered as it is. Without one, the platform offers to install it: pick the type and the CI — **Detect from the repository** (the default) takes the CI the repository already runs, the same rules as [`install`](use_adopting.md), and a repository with two of them asks for one. When the installer found a CI in the repository or has a warning (a second CI next to an existing one), it shows them before anything else, with the stages to paste into a kept `Jenkinsfile`; **Open configuration** goes on. The app opens on Configuration with `platform.toml`, the quality config, the CI files and the hooks as **pending edits** — nothing pushed yet. **Commit changes** puts them on a `chore/<code>` branch with a pull request; **Discard changes** drops them. Pending edits live on the platform, not in a clone: they survive restarts and are applied on top of a fresh clone whenever the app's files are needed.
+
+### Adoption
+
+**Adoption** on the project page lists every app with where it stands — *not checked*, *no platform.toml*, *install PR #N open* with a link to it, *installed*, or *failed* with the reason — and the language, CI and version the last run found. Pick the apps (the ones not installed and without an open install pull request are picked already), the type, the CI (detected by default) and the language (detected by default; *No language* installs without the quality config), then **Install selected**. A job on the worker clones each repository and shows its plan: the files it creates and the ones it keeps, the CI it detected, the version `LAST_VERSION` starts at and where it comes from (a release tag, a manifest, the CHANGELOG, or an existing `LAST_VERSION`), and the branch it would use. **Open N pull requests** asks to confirm, then commits the files on `chore/platform` from the base branch (`develop` when the repository has one, else the default branch) and opens one pull request per repository; each app moves to that branch, as after **Commit changes**.
+
+Each app runs on its own: one that fails — archived, no permission to push, a language the platform cannot detect, a `chore/platform` branch that already exists with no install pull request — is reported with the reason and the others go on. Running it again opens nothing twice: an app whose base branch has `platform.toml` is *installed*, one with its install pull request still open is skipped. An install pull request the code host reports merged reads as *installed* once the app's activity is imported; a closed one reads as *no platform.toml* again. Any member sees the list; previewing and opening pull requests need `project.manage`.
 
 ## The app page
 
@@ -149,7 +155,7 @@ The catalog: the official repository plus the ones the organization added under 
 - **Teams** become teams; their members already on the platform join them.
 - **People** join at once when an account with that email exists, or receive an invitation; people without a public email are listed for you to invite by hand.
 
-Repositories already on the platform cannot be picked twice. Teams and people need the GitHub App permission *Organization › Members (read)* or the `read:org` scope; the page says so when GitHub refuses. The import runs in the background and ends with what was created and what was skipped, with the reason.
+Repositories already on the platform cannot be picked twice. Teams and people need the GitHub App permission *Organization › Members (read)* or the `read:org` scope; the page says so when GitHub refuses. The import runs in the background and ends with what was created and what was skipped, with the reason. When the repositories went into one project, **Open install pull requests for N repositories** leads to that project's [Adoption](#adoption); otherwise each imported project has its own.
 
 ## Organization
 

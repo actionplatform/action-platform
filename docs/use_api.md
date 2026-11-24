@@ -56,6 +56,8 @@ Routes that are not workspaces live directly under `/api/v1` and are what the we
 | `POST tokens {scope, name}` | a session (never a token) |
 | `DELETE organizations/{id}?confirm=<slug>&repositories&cloud` (the organization and everything it owned; `cloud` answers `202` with a `destroy_organization` job that tears every app's stacks down first) | `org.manage` and the `owner` role |
 | `POST projects`, `DELETE projects/{id}` (removes the workspaces too; `?repositories=true` deletes the repositories on the host, `?cloud=true` answers `202` with a `destroy_project` job that tears every app's stacks down first), `POST projects/{id}/apps {url, install}` (adding a repository that is already an app of the project answers that app; one of another project answers `409`), `POST projects/{id}/apps/init {…InitRequest, source_host_id, template_source}`, `DELETE projects/{id}/apps/{id}` (`?repository=true`, `?cloud=true` → `202` with a `destroy` job), `POST projects/team` | `project.manage` |
+| `GET projects/{id}/adoption` (where each app stands — [adoption](#adoption)) | read: reach |
+| `POST projects/{id}/install {apps, type, ci, language, code, dry_run}` (queue the install job; answers `202` with the job id and the `poll` path) | `project.manage` |
 | `PUT projects/{id}/apps/{id}/host` | `app.flow` |
 | `POST projects/{id}/apps/{id}/imports` (copy releases and pull requests now) | `app.sync` |
 | `GET projects/{id}/apps/{id}/scopes` (the app's scopes with the vocabulary of kinds and criticalities), `POST … {name, kind, criticality}`, `PUT/DELETE …/scopes/{name}` (delete refused while a deploy to it runs) | read: reach; writes: `app.configure` |
@@ -87,6 +89,20 @@ The registry — id, name, url, default branch of every app — is the `registry
 ## Jobs
 
 `POST /api/v1/apps/{id}/sync|release|deploy|push` with `Prefer: respond-async` (or `X-Async: 1`) does not run the action: it answers `202 {job, status, poll}` — a `deploy` to a stage that already has one queued or running is refused with `409` (one deploy per environment) and a worker (`action-platform-api worker`) runs it with the same services, filling in credentials and identity the same way and copying releases and pull requests afterwards. `GET /api/v1/jobs/{id}` answers `status` (`queued` → `running` → `done` | `failed`), `attempts`, `result` (what the inline call would have answered) and `error`; `GET /api/v1/jobs?app=<registry id>` lists an app's last twenty. A second async `sync` for the same app while one is live returns the live job. Failures retry three times with backoff; a job whose worker vanished goes back to the queue after thirty minutes. Without the header everything runs inline as before.
+
+## Adoption
+
+`POST /api/v1/projects/{id}/install` installs the platform on many apps of a project at once, on the worker:
+
+```json
+{"apps": ["<app id>", "<app id>"], "type": "web", "ci": null, "language": null, "code": "platform", "dry_run": true}
+```
+
+`apps` empty means every app of the project the caller reaches; `ci` and `language` empty mean detected per repository (`language: "none"` installs without the quality config); `dry_run` defaults to `true`. The answer is `202 {job, poll}`. The job clones each repository and, from its base branch (`develop` when it exists, else the default branch), runs the installer: a dry run answers the plan, otherwise the files are committed on `chore/<code>` and a pull request is opened against the base, and the app moves to that branch. `GET /api/v1/jobs/{id}` ends with `{dry_run, branch, apps, opened, skipped, failed}`; each entry of `apps` is `{app_id, name, state, skipped, reason, pull_request, plan}`, `plan` being `{type, language, ci, detected_ci, created, kept, warnings, version, version_source, base, branch}` with `version` the one `LAST_VERSION` starts at and `version_source` where it comes from, as the installer says it: the release tag, the manifest that declares it, the CHANGELOG, or `LAST_VERSION` when the file already exists.
+
+Each app runs on its own, so one failure never stops the others; `reason` names it — `archived: the repository is read-only`, `no permission: …` with the host's words, `unknown language: …`, or a `chore/<code>` branch that exists with no open install pull request. A second run opens nothing twice: an app whose base branch has `platform.toml` is `installed` and skipped, one whose install pull request is still open (opened by an earlier run, or reported open by the code host from `chore/<code>`) is `pr_open` and skipped. Only one non-dry run per project is live at a time: a second one answers the job already queued or running.
+
+`GET /api/v1/projects/{id}/adoption` answers one row per app — `{app_id, name, registry_id, state, reason, language, ci, version, branch, pull_request, checked_at}` — with `state` `unchecked` (no run has looked at it), `missing` (no `platform.toml`), `pr_open`, `installed` or `failed`, as the last run found it. A `pr_open` whose pull request the code host reports merged reads as `installed`, closed as `missing`.
 
 ## Job logs
 

@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { GitPullRequestArrow, Plus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApiOffline } from "@/components/api-offline";
@@ -44,7 +44,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
       <PageHeader
         title={project.name}
         description={project.description || `Apps in ${project.name}.`}
-        actions={manage ? <Link href={`/projects/${project.id}/apps/new`}><Button><Plus className="size-4" /> New app</Button></Link> : undefined}
+        actions={<><Link href={`/projects/${project.id}/adoption`}><Button variant="outline"><GitPullRequestArrow className="size-4" /> Adoption</Button></Link>{manage && <Link href={`/projects/${project.id}/apps/new`}><Button><Plus className="size-4" /> New app</Button></Link>}</>}
       />
 
       {manage && <div className="mb-6"><AddForm projectId={project.id} types={catalog.types} stacks={catalog.stacks} /></div>}

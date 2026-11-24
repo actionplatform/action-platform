@@ -1263,6 +1263,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/adoption": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adoption_api_v1_projects__project_id__adoption_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/install": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["install_api_v1_projects__project_id__install_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/import/github/organizations": {
         parameters: {
             query?: never;
@@ -2081,6 +2113,23 @@ export interface components {
             url: string;
             ref: string | null;
         };
+        AdoptionPullRequest: {
+            number: number;
+            url: string;
+        };
+        AdoptionRow: {
+            app_id: string;
+            name: string;
+            registry_id: string;
+            state: string;
+            reason?: string | null;
+            language?: string | null;
+            ci?: string | null;
+            version?: string | null;
+            branch?: string | null;
+            pull_request?: components["schemas"]["AdoptionPullRequest"] | null;
+            checked_at?: string | null;
+        };
         AppAdded: {
             id: string;
             registry_id: string;
@@ -2672,6 +2721,10 @@ export interface components {
             cloud?: string | null;
             pushed: boolean;
         };
+        InstallQueued: {
+            job: string;
+            poll: string;
+        };
         InstallReport: {
             ci: string;
             detected_ci: string[];
@@ -2990,6 +3043,14 @@ export interface components {
         };
         Plugins: {
             plugins: components["schemas"]["PluginRow"][];
+        };
+        ProjectInstallRequest: {
+            apps: string[];
+            type: string;
+            ci?: string | null;
+            language?: string | null;
+            code: string;
+            dry_run: boolean;
         };
         ProjectPick: {
             number: number;
@@ -6436,6 +6497,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Scopes"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adoption_api_v1_projects__project_id__adoption_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdoptionRow"][];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    install_api_v1_projects__project_id__install_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectInstallRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallQueued"];
                 };
             };
             422: {

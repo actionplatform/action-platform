@@ -50,6 +50,10 @@ export const projects = {
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/releases/{tag}/readiness", { params: { path: { project_id: projectId, app_id: appId, tag } }, body: { stage } })),
   timeline: async (projectId: string, appId: string, tag: string) =>
     unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/releases/{tag}/timeline", { params: { path: { project_id: projectId, app_id: appId, tag } } })),
+  adoption: async (projectId: string) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/adoption", { params: { path: { project_id: projectId } } })),
+  installApps: async (projectId: string, body: Schemas["ProjectInstallRequest"]) =>
+    unwrap(await client.POST("/api/v1/projects/{project_id}/install", { params: { path: { project_id: projectId } }, body })),
   githubOrganizations: async (host: string) => unwrap(await client.GET("/api/v1/import/github/organizations", { params: { query: { host } } })),
   githubOrganization: async (host: string, login: string) =>
     unwrap(await client.GET("/api/v1/import/github/organizations/{login}", { params: { path: { login }, query: { host } } })),
