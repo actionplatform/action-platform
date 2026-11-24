@@ -184,7 +184,7 @@ class DeploymentRecords:
                     spec,
                     "platform",
                     job_id,
-                    stage=stage,
+                    stage=result.stage or stage,
                     version=result.version,
                     status="success" if result.ok else "failure",
                     job_id=job_id,
@@ -214,7 +214,7 @@ class DeploymentRecords:
             return
 
         for spec in config.targets:
-            if spec.platform or spec.dispatched:
+            if (spec.platform or spec.dispatched) and (not stage or spec.serves(stage)):
                 self._upsert(
                     app,
                     spec,

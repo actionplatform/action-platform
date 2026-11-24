@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Optional
 
+from action_platform.abc.ci_runner import CIRunner
 from action_platform.core.facade import ActionPlatform
 from action_platform.core.context import Check
 from app.core.db.database import Database
@@ -26,8 +27,10 @@ class ReadinessService:
         env: dict[str, str] | None = None,
         configs: ConfigStore | None = None,
         credentials: SourceCredentials | None = None,
+        ci: list[CIRunner] | None = None,
     ) -> None:
         self.registry = registry
+        self.ci = list(ci or [])
         self.identity = identity
         self.env = env
         self.configs = configs or ConfigStore(registry.store.database)
@@ -43,6 +46,7 @@ class ReadinessService:
     ) -> list[Check]:
         _, root = Workspaces(self.registry).checkout(id)
         config = auth.apply(self.configs.config(id, root), self.credentials)
+        config.ci = [*config.ci, *self.ci]
 
         if scopes:
             config._scopes_spec = scopes

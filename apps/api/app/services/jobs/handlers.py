@@ -6,9 +6,11 @@ import logging
 
 from typing import Any, Optional
 
+from action_platform.abc.ci_runner import CIRunner
 from action_platform.core.context import DeployResult
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.scopes import shape_of
+from action_platform.providers.ci import build_ci_runner
 from action_platform.settings import settings
 from app.core.auth.crypto import Sealer
 from app.core.db.database import Database
@@ -100,6 +102,30 @@ class JobHandlers:
 
         return SourceCredentials(**creds.as_dict()) if creds else None
 
+    def _ci_runners(self, ctx: JobContext) -> list[CIRunner]:
+        """The app's connected CI server with its own credentials, for the targets it runs — a Jenkins job a deploy starts."""
+        app, organization = ctx.app, ctx.organization
+
+        if app is None or organization is None or not app.ci_host_id:
+            return []
+
+        with self.database.session() as db:
+            creds = IntegrationsDirectory(db, self.sealer).ci_credentials_for(
+                organization.id, app.ci_host_id
+            )
+
+        if creds is None:
+            return []
+
+        return [
+            build_ci_runner(
+                creds.kind,
+                base_url=creds.base_url,
+                token=creds.token,
+                username=creds.username,
+            )
+        ]
+
     def release(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
         request = ReleaseRequest(**ctx.body)
@@ -185,6 +211,7 @@ class JobHandlers:
                 ctx.organization, ctx.app
             ),
             credentials=credentials,
+            ci=self._ci_runners(ctx),
         )
 
         try:
@@ -224,6 +251,7 @@ class JobHandlers:
                 ctx.organization, ctx.app
             ),
             credentials=credentials,
+            ci=self._ci_runners(ctx),
         )
         started = now()
 

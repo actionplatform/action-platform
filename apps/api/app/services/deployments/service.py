@@ -5,6 +5,7 @@ from typing import Callable, Optional
 
 from sqlalchemy import select
 
+from action_platform.abc.ci_runner import CIRunner
 from action_platform.core.facade import ActionPlatform
 from app.core.db.models import App
 from app.repositories.configuration.config_store import ConfigStore
@@ -24,8 +25,10 @@ class DeploymentsService:
         env: dict[str, str] | None = None,
         configs: ConfigStore | None = None,
         credentials: SourceCredentials | None = None,
+        ci: list[CIRunner] | None = None,
     ) -> None:
         self.registry = registry
+        self.ci = list(ci or [])
         self.identity = identity
         self.env = env
         self.configs = configs or ConfigStore(registry.store.database)
@@ -47,6 +50,7 @@ class DeploymentsService:
     def _tool(self, id: str) -> ActionPlatform:
         _, root = Workspaces(self.registry).checkout(id)
         config = auth.apply(self.configs.config(id, root), self.credentials)
+        config.ci = [*config.ci, *self.ci]
         config._scopes_spec = self._scopes(id)
 
         return ActionPlatform(
@@ -68,6 +72,7 @@ class DeploymentsService:
                 "version": r.version,
                 "url": r.url,
                 "error": r.error,
+                "stage": r.stage,
             }
             for r in results
         ]
