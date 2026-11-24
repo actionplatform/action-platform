@@ -8,7 +8,7 @@ from typing import Optional
 
 from sqlalchemy import delete, select
 
-from app.core.auth.passwords import hash_password
+from app.core.auth.passwords import hash_password, verify_password
 from app.core.db.models import Account, User, Verification
 from app.core.shared.mail import Mail
 from app.services.auth.base import PASSWORD_MIN, PROVIDER, AuthBase, new_id, now
@@ -109,6 +109,17 @@ class Recovery(AuthBase):
         self.set_password(user, password)
 
         return user
+
+    def change_password(
+        self, user: User, current: str, password: str, keep: str
+    ) -> tuple[int, int]:
+        """A signed-in user's own change: the current password has to match; every other session ends and every API token is revoked, so the CLI and MCP sign out; the counts of both."""
+        account = self._credential(user.id)
+
+        if account is None or not verify_password(account.password, current):
+            raise AuthError("wrong_password", "the current password is wrong")
+
+        return self.set_password(user, password, keep)
 
     def set_password(
         self, user: User, password: str, keep: Optional[str] = None

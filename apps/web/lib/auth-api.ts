@@ -37,6 +37,8 @@ export const authApi = {
     unwrap(await client.POST("/api/auth/password/forgot", { body: { email }, headers: clientHeaders(ip) })),
   resetPassword: async (body: { token: string; password: string }, ip: string | null) =>
     unwrap(await client.POST("/api/auth/password/reset", { body, headers: clientHeaders(ip) })),
+  changePassword: async (session: Session, body: { current_password: string; new_password: string }, ip: string | null) =>
+    unwrap(await client.POST("/api/auth/password/change", { body, headers: { ...sessionHeaders(session), ...clientHeaders(ip) } })),
   signOut: async (session: Session) => unwrap(await client.POST("/api/auth/sign-out", { headers: sessionHeaders(session) })),
   session: async (session: Session) => unwrap(await client.GET("/api/auth/session", { headers: sessionHeaders(session) })),
   setActiveOrganization: async (session: Session, organizationId: string) =>

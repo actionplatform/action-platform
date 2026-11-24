@@ -253,6 +253,11 @@ class VerifyLoginCallback(BaseModel):
     state: str
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
 class OpenInvitation(BaseModel):
     id: str
     email: Optional[str] = None

@@ -1,4 +1,4 @@
-"""Password recovery: ask for a reset link by email, then set a new password with it."""
+"""Passwords: ask for a reset link by email and set a new one with it, or change your own while signed in."""
 
 import logging
 from urllib.parse import urlencode
@@ -7,7 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from action_platform.core.exception import ProviderError
 from app.api.dependencies import AuthDep
-from app.api.routes.auth.support import limited
+from app.api.routes.auth.support import current_session, limited
+from app.core.db.models import Session
 from app.schemas import auth as schemas
 from app.services.auth.recovery import reset_mail
 
@@ -51,5 +52,19 @@ def reset(
     auth: AuthDep,
 ) -> Response:
     auth.reset_password(body.token, body.password)
+
+    return Response(status_code=204)
+
+
+@router.post(
+    "/change", status_code=204, dependencies=[Depends(limited("password-change"))]
+)
+def change(
+    body: schemas.ChangePasswordRequest,
+    auth: AuthDep,
+    session: Session = Depends(current_session),
+) -> Response:
+    user = auth.identity_of(session).user
+    auth.change_password(user, body.current_password, body.new_password, session.id)
 
     return Response(status_code=204)
