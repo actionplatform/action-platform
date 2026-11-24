@@ -14,11 +14,24 @@ depends_on = None
 
 
 def upgrade() -> None:
+    columns = {
+        c["name"]: c for c in sa.inspect(op.get_bind()).get_columns("invitation")
+    }
+    added = [
+        sa.Column("host_kind", sa.String(255), nullable=True),
+        sa.Column("host_login", sa.String(255), nullable=True),
+        sa.Column("team_ids", sa.Text(), nullable=True),
+    ]
+    missing = [c for c in added if c.name not in columns]
+
+    if not missing and columns["email"]["nullable"]:
+        return
+
     with op.batch_alter_table("invitation") as batch:
         batch.alter_column("email", existing_type=sa.String(255), nullable=True)
-        batch.add_column(sa.Column("host_kind", sa.String(255), nullable=True))
-        batch.add_column(sa.Column("host_login", sa.String(255), nullable=True))
-        batch.add_column(sa.Column("team_ids", sa.Text(), nullable=True))
+
+        for column in missing:
+            batch.add_column(column)
 
 
 def downgrade() -> None:
