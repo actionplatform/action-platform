@@ -42,7 +42,7 @@ See [git-flow](concept_git_flow.md).
 action-platform release [patch|minor|major|X.Y.Z] [--dry-run] [--rc|--stable] [--component web]
 action-platform scopes                                    # the repository's [[scopes]]; none means it does not deploy
 action-platform readiness [--version X.Y.Z] [--target name] [--scope name]
-action-platform deploy [--version X.Y.Z] [--target name] [--scope name] [--dry-run]
+action-platform deploy [--version X.Y.Z] [--target name] [--scope name] [--dry-run]   # a dispatched Jenkins target needs the app's connected server: deploy it from the platform
 action-platform rollback [--target name] [--to X.Y.Z] [--stage …]
 action-platform diagnose [--target name]
 action-platform destroy [--target name]
