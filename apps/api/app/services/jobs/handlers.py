@@ -32,7 +32,7 @@ from app.services.deployments import AppCiRunners, DeployEnv, DeploymentRecords
 from app.services.integrations.hosts.directory import IntegrationsDirectory
 from app.services.projects.organization_import.directory import ImportDirectory
 from app.services.projects.adoption import BulkInstall, InstallOptions
-from app.services.deployments.identity import AppIdentity, TargetContexts
+from app.services.deployments.identity import AppIdentity
 from app.services.jobs.context import JobContext
 from app.services.jobs.registry import JobServices, register
 from app.repositories.projects import ProjectsRepository
@@ -439,13 +439,7 @@ class JobHandlers:
                 errors["ci"] = str(e)
 
             try:
-                observed = DeploymentRecords(
-                    db,
-                    self.sealer,
-                    targets=TargetContexts(
-                        self.database, self.sealer, settings.api.public_url
-                    ),
-                ).sync_observed(
+                observed = DeploymentRecords(db, self.sealer).sync_observed(
                     payload["organization_id"],
                     app,
                     self.configs.config_of(payload["registry_id"]),

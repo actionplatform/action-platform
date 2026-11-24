@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Callable, Optional
 
-from action_platform.core.context import Context
 from app.core.auth.crypto import Sealer
 from app.core.db.database import Database
 from app.core.db.models import App, Organization, Project
-from app.services.deployments.env import DeployEnv
 from app.services.identity.issuer import IdentityIssuer, subject_for
 
 
@@ -49,30 +46,3 @@ class AppIdentity:
             )
 
         return mint
-
-
-class TargetContexts:
-    """What a deploy target is given when the platform asks it about an app outside a deploy — `verify`, `url`: the app's environment and an identity for the scope."""
-
-    def __init__(
-        self, database: Database, sealer: Optional[Sealer], issuer_url: str
-    ) -> None:
-        self.database = database
-        self.sealer = sealer
-        self.issuer_url = issuer_url
-
-    def of(self, app: App, stage: Optional[str]) -> Context:
-        with self.database.session() as db:
-            project = db.get(Project, app.project_id)
-            organization = (
-                db.get(Organization, project.organization_id) if project else None
-            )
-
-        return Context(
-            repo_root=Path.cwd(),
-            stage=stage or "",
-            env=DeployEnv(self.database, self.sealer).for_app(organization, app),
-            identity=AppIdentity(self.database, self.sealer, self.issuer_url).minter(
-                organization, app, stage
-            ),
-        )

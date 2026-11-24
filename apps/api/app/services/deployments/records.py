@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
@@ -28,9 +28,6 @@ from app.services.integrations.hosts.directory import IntegrationsDirectory
 from app.services.workspace.app_context import AppContext
 from app.repositories.releases.store import ReleaseStore
 
-if TYPE_CHECKING:
-    from app.services.deployments.identity import TargetContexts
-
 LIMIT = 50
 
 RUN_STATUS = {
@@ -50,13 +47,11 @@ class DeploymentRecords:
         db: DbSession,
         sealer: Optional[Sealer],
         context: Optional[AppContext] = None,
-        targets: Optional[TargetContexts] = None,
     ) -> None:
         self.db = db
         self.directory = IntegrationsDirectory(db, sealer)
         self.releases = ReleaseStore(db)
         self.context = context
-        self.target_contexts = targets
 
     def _context(self) -> AppContext:
         if self.context is None:
@@ -421,9 +416,6 @@ class DeploymentRecords:
                 continue
 
             try:
-                if self.target_contexts is not None:
-                    target.attach(self.target_contexts.of(app, row.stage))
-
                 there = target.verify(row.version, row.stage)
             except (NotImplementedError, ActionPlatformError):
                 continue

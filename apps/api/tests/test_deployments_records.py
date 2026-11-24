@@ -378,53 +378,6 @@ class DeploymentRecordsTest(GateCase):
             [("1.0.0", "verified", "github_actions")],
         )
 
-    def test_a_target_verifies_with_the_apps_env_and_identity(self):
-        from app.repositories.configuration.config_store import ConfigStore
-
-        ConfigStore(self.app.state.db).set(
-            self.registry_id,
-            {
-                "project": {"name": "demo"},
-                "deploy": {
-                    "targets": [
-                        {
-                            "name": "pypi",
-                            "kind": "pypi",
-                            "run_by": "github_actions",
-                            "observe": True,
-                            "workflow": "publish.yml",
-                            "package": "demo",
-                        }
-                    ]
-                },
-            },
-        )
-        self.github()
-        attached = []
-
-        with (
-            mock.patch(
-                "action_platform.providers.ci.github_actions.CIGithubActions.runs",
-                return_value=[run(3, "v1.0.0")],
-            ),
-            mock.patch(
-                "action_platform.providers.deploy.pypi.DeployPypi.attach",
-                autospec=True,
-                side_effect=lambda target, ctx: attached.append(ctx),
-            ),
-            mock.patch(
-                "action_platform.providers.deploy.pypi.DeployPypi.verify",
-                return_value=True,
-            ),
-        ):
-            body = self.client.post(f"{self.base}/sync", headers=self.h()).json()
-
-        self.assertEqual(body["deployments"][0]["status"], "verified")
-        self.assertEqual(len(attached), 1)
-        self.assertEqual(attached[0].env["AP_APP"].count("/"), 2)
-        self.assertTrue(attached[0].env["AP_APP"].startswith(self.org["slug"] + "/"))
-        self.assertTrue(callable(attached[0].identity))
-
     def test_a_second_sync_updates_instead_of_duplicating(self):
         self.github()
 
