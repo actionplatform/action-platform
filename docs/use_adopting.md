@@ -26,7 +26,7 @@ An imported app is registered as it is: its files are not touched. The releases 
 
 **One.** *Add an existing repository* on a project (`POST /api/v1/projects/{id}/apps {url, install}`, the `add_app` tool) with its URL. It installs the platform files when they are missing and leaves them as pending changes; **Commit changes** opens the pull request.
 
-Either way, install the files per repository next.
+Either way, install the files next: per repository below, or for many apps of a project at once from the project's **Adoption** page (`POST /api/v1/projects/{id}/install`), which previews each plan and then opens one pull request per repository — see [web](use_web.md#adoption) and [API](use_api.md#adoption).
 
 ## Install on an existing repository
 
@@ -171,7 +171,7 @@ For an observed target a version already at the destination is the expected stat
 ## Checklist
 
 - [ ] Repositories imported (`POST /api/v1/import/github`) or added one by one; their releases appear in the Releases tab.
-- [ ] `action-platform install --dry-run` read; `--ci`, `--type` and `--language` chosen on purpose, `--ci none` where the pipelines stay yours.
+- [ ] `action-platform install --dry-run` (or the Adoption preview) read; `--ci`, `--type` and `--language` chosen on purpose, `--ci none` where the pipelines stay yours.
 - [ ] `LAST_VERSION` equals the newest release tag.
 - [ ] Hooks installed only where the team works through branches and pull requests.
 - [ ] One scope per place a release lands, with kind and criticality.
