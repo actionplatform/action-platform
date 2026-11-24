@@ -94,6 +94,15 @@ class SlicesFromEnvTest(unittest.TestCase):
             ("https://k@o1.ingest.sentry.io/1", 0.5),
         )
 
+    def test_platform_connections_are_a_list_of_slugs(self):
+        self.assertEqual(
+            ApiConfig.from_env(
+                {"AP_PLATFORM_CONNECTIONS": " Acme, ,beta "}
+            ).platform_connections,
+            ("acme", "beta"),
+        )
+        self.assertEqual(ApiConfig.from_env({}).platform_connections, ())
+
     def test_tokens_by_source_host_kind(self):
         tokens = SourceTokens(github="gh", bitbucket="bb", bitbucket_username="ada")
 

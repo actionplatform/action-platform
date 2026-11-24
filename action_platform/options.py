@@ -162,7 +162,7 @@ class SourceTokens:
 
 @dataclass(frozen=True)
 class ApiConfig:
-    """How the hosted API authenticates its callers and names itself."""
+    """How the hosted API authenticates its callers, names itself, and which organizations (slugs, `*` for all) may use the platform-level plugin connections."""
 
     token: str = ""
     allow_unauthenticated: bool = False
@@ -173,10 +173,16 @@ class ApiConfig:
     trusted_proxies: str = (
         "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fc00::/7"
     )
+    platform_connections: tuple[str, ...] = ()
 
     @classmethod
     def from_env(cls, env: Env) -> "ApiConfig":
         return cls(
+            platform_connections=tuple(
+                s.strip().lower()
+                for s in env.get("AP_PLATFORM_CONNECTIONS", "").split(",")
+                if s.strip()
+            ),
             token=secret("AP_API_TOKEN", env=env),
             allow_unauthenticated=env.get("AP_ALLOW_UNAUTHENTICATED", "") == "1",
             auth_secret=secret("AP_AUTH_SECRET", "BETTER_AUTH_SECRET", env=env),

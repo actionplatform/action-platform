@@ -237,7 +237,9 @@ class AsyncRouteTest(GateCase):
         from app.services.integrations.plugins.options import DbOptions
 
         registry_id = self.register()
-        DbOptions(self.app.state.db, "aws-lambda").set("proxy_url", "https://p.test")
+        DbOptions(self.app.state.db, "aws-lambda", self.org["id"]).set(
+            "proxy_url", "https://p.test"
+        )
 
         ctx = JobContext.of(
             {

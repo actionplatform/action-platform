@@ -12,6 +12,7 @@ from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.scopes import ScopeStore
 from app.repositories.workspace.registry import Registry
 from app.schemas import DeployRequest, SourceCredentials
+from app.services.integrations.plugins.connections import ConnectionGuard
 from app.services.scopes import ScopesService
 from app.services.workspace import Workspaces
 from app.services.workspace import git_auth as auth
@@ -26,11 +27,13 @@ class DeploymentsService:
         configs: ConfigStore | None = None,
         credentials: SourceCredentials | None = None,
         ci: list[CIRunner] | None = None,
+        guard: ConnectionGuard | None = None,
     ) -> None:
         self.registry = registry
         self.ci = list(ci or [])
         self.identity = identity
         self.env = env
+        self.guard = guard or ConnectionGuard(env or {}, False)
         self.configs = configs or ConfigStore(registry.store.database)
         self.credentials = credentials
 
@@ -52,6 +55,7 @@ class DeploymentsService:
         config = auth.apply(self.configs.config(id, root), self.credentials)
         config.ci = [*config.ci, *self.ci]
         config._scopes_spec = self._scopes(id)
+        self.guard.check(config.targets)
 
         return ActionPlatform(
             config=config,

@@ -31,6 +31,7 @@ from app.services.activity.flow import FlowService
 from app.services.ci import CiService
 from app.services.deployments import (
     AppCiRunners,
+    DeployEnv,
     DeploymentRecords,
     DeploymentsService,
 )
@@ -149,10 +150,14 @@ def get_deployments(
     registry: Registry = Depends(get_registry),
     configs: ConfigStore = Depends(get_config_store),
 ) -> DeploymentsService:
+    guard = DeployEnv(request.app.state.db, request.app.state.sealer).of_registry(id)
+
     return DeploymentsService(
         registry,
+        env=dict(guard.env),
         configs=configs,
         ci=AppCiRunners(db, request.app.state.sealer).of_registry(id),
+        guard=guard,
     )
 
 

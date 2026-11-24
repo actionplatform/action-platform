@@ -60,24 +60,30 @@ class PluginsApiTest(GateCase):
             "an organization's value is not the platform's default",
         )
 
-    def test_options_belong_to_the_organization_over_platform_defaults(self):
+    def test_options_belong_to_the_organization_and_the_platforms_only_by_policy(
+        self,
+    ):
+        from app.services.integrations.plugins.connections import SharedConnections
         from app.services.integrations.plugins.options import DbOptions
 
         db = self.app.state.db
+        org = self.org["id"]
         DbOptions(db, "aws-lambda").set("role_arn", "arn:aws:iam::1:role/default")
-        DbOptions(db, "aws-lambda", "org-a").set("role_arn", "arn:aws:iam::2:role/a")
+
+        self.assertEqual(DbOptions(db, "aws-lambda", org).all(), {})
+        self.assertIsNone(DbOptions(db, "aws-lambda", org).get("role_arn"))
+        self.assertEqual(
+            DbOptions(db, "aws-lambda", org, policy=SharedConnections(("acme",))).get(
+                "role_arn"
+            ),
+            "arn:aws:iam::1:role/default",
+        )
+
+        DbOptions(db, "aws-lambda", org).set("role_arn", "arn:aws:iam::2:role/a")
 
         self.assertEqual(
-            DbOptions(db, "aws-lambda", "org-a").all(),
+            DbOptions(db, "aws-lambda", org, policy=SharedConnections(("*",))).all(),
             {"role_arn": "arn:aws:iam::2:role/a"},
-        )
-        self.assertEqual(
-            DbOptions(db, "aws-lambda", "org-b").all(),
-            {"role_arn": "arn:aws:iam::1:role/default"},
-        )
-        self.assertEqual(
-            DbOptions(db, "aws-lambda", "org-b").get("role_arn"),
-            "arn:aws:iam::1:role/default",
         )
 
     def test_catalog_lists_the_bundled_plugins_and_the_ones_that_failed_to_load(self):
@@ -205,14 +211,18 @@ class PluginSecretsTest(GateCase):
         self.assertEqual(cleared["secrets"], [])
 
     def test_a_deploy_job_gets_the_secret_opened(self):
+        from app.core.db.models import App, Organization
         from app.services.deployments.env import DeployEnv
         from app.services.integrations.plugins import DbOptions
 
+        self.register()
         DbOptions(
             self.app.state.db, "vault", self.org["id"], self.app.state.sealer
         ).set("api_key", "tok-123")
-        org = mock.Mock(id=self.org["id"], slug="acme")
-        app = mock.Mock(project_id="none", name="orders")
+
+        with self.app.state.db.session() as s:
+            org = s.get(Organization, self.org["id"])
+            app = s.get(App, "a1")
 
         env = DeployEnv(self.app.state.db, self.app.state.sealer).for_app(org, app)
 
