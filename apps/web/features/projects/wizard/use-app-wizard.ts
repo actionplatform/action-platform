@@ -21,7 +21,7 @@ export function useAppWizard({ matrix, preset, projectId, projects, hosts }: { m
   const [stack, setStack] = useState<string | null>(preset?.stack ?? null);
   const [template, setTemplate] = useState<string | null>(preset?.template ?? null);
   const [source, setSource] = useState<string>(preset?.source ?? "official");
-  const [config, setConfig] = useState<Config>({ name: "", directory: "", packageName: "", description: "", githubOwner: "", ci: true, ciProvider: ciFor(hosts[0]?.kind), cloud: null });
+  const [config, setConfig] = useState<Config>({ name: "", directory: "", packageName: "", description: "", githubOwner: "", ci: true, ciProvider: ciFor(hosts[0]?.kind), cloud: null, license: "none", visibility: "private" });
   const [touched, setTouched] = useState({ directory: false, packageName: false });
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -88,7 +88,7 @@ export function useAppWizard({ matrix, preset, projectId, projects, hosts }: { m
   };
   const cancel = () => router.push(projectId ? `/projects/${projectId}` : "/projects");
 
-  const command = initCommand({ type: type ?? "", stack: hasStack ? stack : null, template: templates.length > 1 ? template : null, name: config.name, ci: config.ci && type !== "empty" ? config.ciProvider : null, cloud: config.cloud, push: true });
+  const command = initCommand({ type: type ?? "", stack: hasStack ? stack : null, template: templates.length > 1 ? template : null, name: config.name, ci: config.ci && type !== "empty" ? config.ciProvider : null, cloud: config.cloud, push: true, owner: config.githubOwner || ownerOf(host), host: host?.kind ?? null, license: config.license, public: config.visibility === "public" });
 
   const submit = () =>
     start(async () => {
@@ -105,7 +105,8 @@ export function useAppWizard({ matrix, preset, projectId, projects, hosts }: { m
         cloud: config.cloud,
         git_init: true,
         push: true,
-        private: false,
+        private: config.visibility !== "public",
+        license: config.license,
       }, source), (error) => ({ ok: false as const, error }), "The app may have been created anyway: check the project before trying again.");
       if (r.ok) router.push(r.href);
       else setError(r.error);

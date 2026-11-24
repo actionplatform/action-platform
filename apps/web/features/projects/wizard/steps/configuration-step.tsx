@@ -3,7 +3,7 @@
 import { ExternalLink } from "lucide-react";
 import { Field, Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { CI_PROVIDERS, ownerOf } from "../model";
+import { CI_PROVIDERS, LICENSES, ownerOf } from "../model";
 import { Chip, Option, Section } from "../parts";
 import type { AppWizard } from "../use-app-wizard";
 
@@ -45,6 +45,12 @@ export function ConfigurationStep({ w }: { w: AppWizard }) {
             </div>
           )}
         </Field>
+        <Field label="Licence" hint="Written to LICENSE and the manifest, under the organization's commit identity.">
+          <Select value={config.license} onChange={(v) => setConfig({ ...config, license: v })} options={LICENSES} />
+        </Field>
+        <Field label="Visibility" hint="Who can see the repository on the code host.">
+          <Select value={config.visibility} onChange={(v) => setConfig({ ...config, visibility: v === "public" ? "public" : "private" })} options={[{ value: "private", label: "Private" }, { value: "public", label: "Public" }]} />
+        </Field>
       </div>
 
       <div className="mt-6">
@@ -70,7 +76,7 @@ export function ConfigurationStep({ w }: { w: AppWizard }) {
           )}
           <div className="rounded-md border border-border px-3 py-2 text-sm">
             <div className="font-medium">Repository</div>
-            <div className="text-[13px] text-secondary">{host ? `Created on ${host.name} as ${config.githubOwner || host.defaultOwner || "the token's user"}/${config.directory || "<directory>"} and pushed right away: apps on the platform always live on a code host.` : "Connect a code host in Settings first: the app is created on it and pushed right away."}</div>
+            <div className="text-[13px] text-secondary">{host ? `Created ${config.visibility} on ${host.name} as ${config.githubOwner || host.defaultOwner || "the token's user"}/${config.directory || "<directory>"} and pushed right away: apps on the platform always live on a code host.` : "Connect a code host in Settings first: the app is created on it and pushed right away."}</div>
           </div>
         </div>
       </div>

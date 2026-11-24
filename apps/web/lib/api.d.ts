@@ -2637,6 +2637,8 @@ export interface components {
             description: string;
             package_name?: string | null;
             github_owner?: string | null;
+            author?: string | null;
+            license: string;
             ci?: string | null;
             cloud?: string | null;
             git_init: boolean;
@@ -2655,6 +2657,8 @@ export interface components {
             description: string;
             package_name?: string | null;
             github_owner?: string | null;
+            author?: string | null;
+            license: string;
             ci?: string | null;
             cloud?: string | null;
             git_init: boolean;

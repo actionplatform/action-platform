@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import type { Matrix } from "@/lib/api";
 import { useAppWizard } from "./use-app-wizard";
 
-vi.mock("./actions", () => ({ createAppFromTemplate: vi.fn() }));
+const createAppFromTemplate = vi.fn(async (...args: unknown[]) => ({ ok: true as const, href: `/x/${args.length}` }));
+vi.mock("./actions", () => ({ createAppFromTemplate: (...args: unknown[]) => createAppFromTemplate(...args) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 const matrix: Matrix = {
   projects: [
@@ -48,6 +50,20 @@ describe("useAppWizard", () => {
     expect(result.current.template).toBe("empty");
   });
 
+  it("creates a private repository without a licence unless the user picks one", async () => {
+    const { result } = wizard({ type: "web", stack: "python", template: "fastapi" });
+
+    act(() => result.current.setConfig({ ...result.current.config, name: "Orders" }));
+    expect(result.current.command).toBe('action-platform init web python --name "Orders" --ci github --owner acme --license none');
+    await act(async () => result.current.submit());
+    expect(createAppFromTemplate.mock.calls[0][2]).toMatchObject({ private: true, license: "none", github_owner: "acme" });
+
+    act(() => result.current.setConfig({ ...result.current.config, license: "mit", visibility: "public" }));
+    expect(result.current.command).toContain("--license mit --public");
+    await act(async () => result.current.submit());
+    expect(createAppFromTemplate.mock.calls[1][2]).toMatchObject({ private: false, license: "mit" });
+  });
+
   it("derives directory and package name from the name until edited", () => {
     const { result } = wizard();
 
@@ -90,6 +106,6 @@ describe("useAppWizard", () => {
     expect(result.current.canContinue).toBe(false);
     act(() => result.current.setConfig({ ...result.current.config, name: "Shop" }));
     expect(result.current.canContinue).toBe(true);
-    expect(result.current.command).toBe(`action-platform init web python --name "Shop" --ci github`);
+    expect(result.current.command).toBe(`action-platform init web python --name "Shop" --ci github --owner acme --license none`);
   });
 });
