@@ -1,5 +1,6 @@
 import { sessionCookie } from "./auth";
 import { authApi, type GrantIn, isAuthError, type TokenRow } from "./auth-api";
+import { type NewToken, tokenRequest } from "./new-token";
 import { parseScopes, type Scope } from "./permissions";
 
 export type Reach = { projectId: string | null; appId: string | null };
@@ -91,6 +92,11 @@ function fromRow(r: TokenRow): UserToken {
 
 export async function tokensOfUser(): Promise<UserToken[]> {
   return (await authApi.tokens(await current())).map(fromRow);
+}
+
+export async function issueUserToken(input: NewToken): Promise<{ token: string; scope: Scope[]; expiresAt: Date }> {
+  const issued = await authApi.issueToken(await current(), tokenRequest(input));
+  return { token: issued.token, scope: parseScopes(issued.scope.join(" ")), expiresAt: new Date(issued.expires_at) };
 }
 
 export async function revokeToken(id: string): Promise<boolean> {
