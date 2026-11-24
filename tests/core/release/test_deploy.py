@@ -183,10 +183,11 @@ class OnlyTheChosenTargetsAreBuiltTest(TempCase):
                         "targets": [
                             {
                                 "name": "lambda-dev",
-                                "kind": "aws/lambda",
+                                "kind": "lambda-of-a-plugin",
                                 "run_by": "jenkins",
                                 "observe": False,
                                 "job": "team/lambda",
+                                "version_parameter": "RELEASE_TAG",
                                 "stages": ["dev"],
                             },
                             {
