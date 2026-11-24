@@ -68,6 +68,8 @@ export function unwrap<T>(res: { data?: T; error?: unknown; response: Response }
   return res.data as T;
 }
 
+type Queued = { job: string; status: string; poll: string };
+
 export const api = {
   version: async () => unwrap(await client.GET("/api/version")),
   matrix: async () => unwrap(await client.GET("/api/matrix")),
@@ -75,7 +77,7 @@ export const api = {
   apps: {
     list: async () => unwrap(await client.GET("/api/apps")),
     sync: async (id: string, reset = false) =>
-      unwrap(await client.POST("/api/apps/{id}/sync", { params: { path: { id } }, body: { reset } })),
+      unwrap(await client.POST("/api/apps/{id}/sync", { params: { path: { id } }, body: { reset } })) as unknown as Queued,
     remove: async (id: string) =>
       unwrap(await client.DELETE("/api/apps/{id}", { params: { path: { id } } })),
     get: async (id: string) =>
@@ -120,11 +122,11 @@ export const api = {
     release: async (id: string, level: string, dry_run: boolean, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean; component?: string | null } = {}) =>
       unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run, branch, latest: true, ...extra } })),
     releaseAsync: async (id: string, level: string, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean; component?: string | null } = {}) =>
-      unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run: false, branch, latest: true, ...extra }, headers: { "X-Async": "1" } })) as unknown as { job: string; status: string; poll: string },
-    deploy: async (id: string, stage: string | null, dry_run: boolean) =>
-      unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run, force: false } })),
-    deployAsync: async (id: string, stage: string | null, dry_run: boolean, version: string | null = null, force = false) =>
-      unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run, version, force }, headers: { "X-Async": "1" } })) as unknown as { job: string; status: string; poll: string },
+      unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run: false, branch, latest: true, ...extra } })) as unknown as Queued,
+    preflight: async (id: string, stage: string | null, version: string | null = null, force = false) =>
+      unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run: true, version, force } })),
+    deployAsync: async (id: string, stage: string | null, version: string | null = null, force = false) =>
+      unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run: false, version, force } })) as unknown as Queued,
     diagnose: async (id: string, stage?: string) =>
       unwrap(await client.GET("/api/apps/{id}/diagnose", { params: { path: { id }, query: stage ? { stage } : {} } })),
   },
