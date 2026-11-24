@@ -10,6 +10,7 @@ import json
 from typing import Any, Optional
 
 from sqlalchemy import delete, select
+from sqlalchemy.orm import Session as DbSession
 
 from action_platform.core.exception import ActionPlatformError
 from action_platform.plugins import Credential, Options, registry
@@ -81,6 +82,54 @@ def reseal(database: Database, sealer: Optional[Sealer]) -> int:
         s.commit()
 
     return sealed
+
+
+def merge(rows: list[PluginOption], organization_id: str) -> dict[str, str]:
+    """Raw values, the organization's over the platform's defaults."""
+    merged = {r.key: r.value for r in rows if r.organization_id == PLATFORM}
+    merged.update(
+        {r.key: r.value for r in rows if r.organization_id == organization_id}
+    )
+
+    return merged
+
+
+def opened(
+    db: DbSession, slug: str, organization_id: str, sealer: Optional[Sealer]
+) -> dict[str, Any]:
+    """The organization's values of the plugin over the platform's defaults, secrets opened, read through a session already open."""
+    rows = list(
+        db.scalars(
+            select(PluginOption).where(
+                PluginOption.plugin == slug,
+                PluginOption.organization_id.in_({PLATFORM, organization_id}),
+            )
+        ).all()
+    )
+
+    return {
+        key: decode(raw, sealer) for key, raw in merge(rows, organization_id).items()
+    }
+
+
+class ReadOptions(Options):
+    """A plugin's options as they were read, for a call that only reads them."""
+
+    def __init__(self, slug: str, values: dict[str, Any]) -> None:
+        self.slug = slug
+        self.values = dict(values)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.values.get(key, default)
+
+    def set(self, key: str, value: Any) -> None:
+        raise ActionPlatformError(f"plugin {self.slug}: options are read-only here")
+
+    def delete(self, key: str) -> None:
+        raise ActionPlatformError(f"plugin {self.slug}: options are read-only here")
+
+    def all(self) -> dict[str, Any]:
+        return dict(self.values)
 
 
 class DbOptions(Options):
@@ -192,14 +241,7 @@ class DbOptions(Options):
             )
 
     def _merged(self) -> dict[str, str]:
-        """Raw values, the organization's over the platform's defaults."""
-        rows = self._rows()
-        merged = {r.key: r.value for r in rows if r.organization_id == PLATFORM}
-        merged.update(
-            {r.key: r.value for r in rows if r.organization_id == self.organization_id}
-        )
-
-        return merged
+        return merge(self._rows(), self.organization_id)
 
     def all(self) -> dict[str, Any]:
         """The organization's values over the platform's defaults, secrets opened — for the processes that use them, never for a response."""

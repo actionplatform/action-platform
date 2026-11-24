@@ -251,6 +251,7 @@ class Plugins:
                 "overlays": row.plugin.overlays is not None,
                 "access": type(row.plugin).access is not Plugin.access,
                 "connections": [c.as_dict() for c in row.plugin.connections],
+                "events": listens(row.plugin),
                 "replaces": sorted(
                     slot for slot, by in wired.origins().items() if by == row.slug
                 ),
@@ -351,6 +352,10 @@ class Plugins:
 
         return providers, errors
 
+    def listeners(self) -> list[Loaded]:
+        """The enabled plugins that take the organization's events."""
+        return [row for row in self.enabled() if listens(row.plugin)]
+
     def overlay_roots(self) -> list[tuple[str, Path]]:
         """(slug, directory) for every enabled plugin that ships overlays; the directory holds an `index.json` and `cloud/<name>/`."""
         rows: list[tuple[str, Path]] = []
@@ -385,6 +390,10 @@ class Plugins:
                 getattr(row.plugin, hook)(payload)
             except Exception as e:
                 logger.warning(f"plugin {row.slug}.{hook} failed: {e}")
+
+
+def listens(plugin: Plugin) -> bool:
+    return type(plugin).routes is not Plugin.routes
 
 
 _current: Optional[Plugins] = None
