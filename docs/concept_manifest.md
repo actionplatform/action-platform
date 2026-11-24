@@ -30,8 +30,53 @@ postgres = "aws-rds"
 | `[source_host]` | `kind` (github, gitlab, bitbucket, generic), `repo` (`owner/name`), `base_url` (self-hosted) | `init --push`, `release`, `pr` |
 | `[release]` | `strategy = "semver"`, `changelog = "conventional"` | `release` |
 | `[deploy]` | `target` (aws/lambda, aws/amplify, docker, …) plus target-specific keys | `deploy`, `rollback`, `diagnose`, `destroy` |
+| `[[deploy.targets]]` | one table per target: `name`, `kind`, `run_by`, `stages`, `observe`, and the options below | `deploy`, `readiness`, the Deployments tab |
+| `[[scopes]]` | one table per scope: `name`, `kind`, `criticality` | `scopes`, `readiness`, `deploy`, the Deployments tab |
 | `[services]` | `<service> = "<provider>"`, e.g. `postgres = "aws-rds"` | `service add`, templates |
 | `[components.<name>]` | `path` | `release -c <name>` — see [releases](concept_releases.md) |
+
+## Deploy targets
+
+```toml
+[[deploy.targets]]
+name = "app-prod"
+kind = "docker"
+run_by = "jenkins"
+job = "team/app-prod"
+image = "ghcr.io/acme/app"
+stages = ["prod"]
+version_parameter = "RELEASE_TAG"
+```
+
+| Key | Meaning |
+|---|---|
+| `name` | unique within the app; defaults to `kind` |
+| `kind` | where the version goes: `aws/lambda`, `pypi`, `npm`, `docker`, `packagist`, `go`, or a kind a plugin adds |
+| `run_by` | who deploys: `platform` (default), `github_actions`, `gitlab_ci`, `bitbucket_pipelines`, `jenkins`, `manual` |
+| `stages` | the scopes the target serves; empty means every one. With exactly one entry it is also the scope of every observed build |
+| `observe` | `true` or `false`. `jenkins` and `manual` are observed by default (`observe = false` makes a Jenkins job dispatched); `observe = true` makes a `github_actions`, `gitlab_ci` or `bitbucket_pipelines` target observed. Refused on `run_by = "platform"` |
+| `workflow` | the workflow file a dispatched or observed `github_actions` target runs |
+| `job` | the Jenkins job path, `team/app` or `team/app/main` |
+| `version_parameter` | the Jenkins build parameter that carries the release when the build's ref is not a release tag; required on a dispatched Jenkins target |
+| `stage_parameter` | the Jenkins build parameter that carries the scope of an observed build |
+| `package` | the project on `pypi`, `npm` and `packagist` (`vendor/name`) |
+| `image` | the image on `docker` |
+| `module` | the module path on `go` |
+| `registry` | overrides the registry the scope's criticality pairs with |
+| `component` | limits the target to one [component's](concept_releases.md) tags |
+
+Observed and dispatched targets are explained in [deployments](concept_deployments.md#targets-and-executors).
+
+## Scopes
+
+```toml
+[[scopes]]
+name = "prod"
+kind = "web"
+criticality = "high"
+```
+
+`kind` is `web`, `job`, `worker`, `static` or `library`; `criticality` is `test`, `low`, `medium`, `high` or `critical`. No `[[scopes]]`, no deploy: `action-platform scopes` lists them. What a scope accepts is in [scopes](concept_scopes.md).
 
 `LAST_VERSION` next to it holds the current version; `CHANGELOG.md` is generated.
 
