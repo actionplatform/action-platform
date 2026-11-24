@@ -6,6 +6,7 @@ from typing import Any, Optional
 
 from action_platform.plugins import registry
 from app.core.auth.crypto import Sealer
+from app.core.errors import NotFound
 from app.services.integrations.plugins.options import DbOptions
 
 
@@ -15,6 +16,10 @@ class PluginManager:
         self.sealer = sealer
 
     def options(self, slug: str, organization_id: str = "") -> DbOptions:
+        """The options of a plugin this image runs; any other slug is refused, since only a loaded plugin says which of its keys are secrets to seal."""
+        if slug not in {row["slug"] for row in registry.installed().rows()}:
+            raise NotFound(f"no plugin {slug!r} in this image")
+
         return DbOptions(self.database, slug, organization_id, self.sealer)
 
     def catalog(self) -> dict:
