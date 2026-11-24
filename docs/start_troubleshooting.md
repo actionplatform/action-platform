@@ -55,6 +55,8 @@ What the platform says when it refuses something, what it means and what to do. 
 
 **The wizard offers no organization to own the repository** — the GitHub App is installed on no account, or on one without permission to create repositories. *Install on another organization* under Settings → Git; an app created as private must be made public under GitHub → Developer settings → GitHub Apps → Advanced.
 
+**`cannot read owner/name: the code host refused the connected account`** when adding a repository — the connected account cannot read it, often a private repository of an organization while public ones work. With a GitHub OAuth host, the organization may restrict third-party OAuth apps: an owner approves the app under the organization › Settings › Third-party access. With the GitHub App, install it on that organization with access to the repository (*Install on another organization* under Settings → Git). Otherwise remove the host and connect it again with an account that can read private repositories.
+
 **Import lists no teams or people** — the GitHub App lacks *Organization › Members (read)* (add it under the app's settings on GitHub and accept it in the organization), or the OAuth token has no `read:org`.
 
 **Pull requests and releases are missing on the app** — they arrive with the `import` job queued after every sync, release and push. **Sync** the app, then look at the job on `GET /api/v1/jobs?app=<id>`.
