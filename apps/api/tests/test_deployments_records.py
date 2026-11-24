@@ -337,6 +337,97 @@ class DeploymentRecordsTest(GateCase):
             ],
         )
 
+    def _two_stage_targets(self):
+        from app.repositories.configuration.config_store import ConfigStore
+
+        ConfigStore(self.app.state.db).set(
+            self.registry_id,
+            {
+                "project": {"name": "demo"},
+                "deploy": {
+                    "targets": [
+                        {
+                            "name": f"lambda-{stage}",
+                            "kind": "docker",
+                            "run_by": "jenkins",
+                            "job": "team/app",
+                            "image": "ghcr.io/acme/app",
+                            "stages": [stage],
+                            "version_parameter": "RELEASE_TAG",
+                            "stage_parameter": "STAGE",
+                        }
+                        for stage in ("dev", "prod")
+                    ]
+                },
+            },
+        )
+        self.jenkins()
+
+    def _sync(self, builds):
+        with (
+            mock.patch(
+                "action_platform.providers.ci.jenkins.CIJenkins.runs",
+                return_value=builds,
+            ),
+            mock.patch(
+                "action_platform.providers.deploy.docker.DeployDocker.verify",
+                return_value=False,
+            ),
+        ):
+            return self.client.post(f"{self.base}/sync", headers=self.h()).json()
+
+    def test_a_run_is_recorded_only_on_the_target_serving_its_stage(self):
+        self._two_stage_targets()
+        body = self._sync(
+            [
+                run(3, "main", params={"RELEASE_TAG": "1.0.0", "STAGE": "prod"}),
+                run(2, "main", params={"RELEASE_TAG": "1.0.0", "STAGE": "dev"}),
+                run(1, "main", params={"RELEASE_TAG": "0.9.0", "STAGE": "dev"}),
+            ]
+        )
+
+        self.assertEqual(
+            sorted(
+                (d["target"], d["version"], d["stage"]) for d in body["deployments"]
+            ),
+            [
+                ("lambda-dev", "0.9.0", "dev"),
+                ("lambda-dev", "1.0.0", "dev"),
+                ("lambda-prod", "1.0.0", "prod"),
+            ],
+        )
+
+    def test_the_next_sync_drops_rows_recorded_for_a_stage_the_target_does_not_serve(
+        self,
+    ):
+        from app.core.db.models import Deployment
+
+        self._two_stage_targets()
+        builds = [run(2, "main", params={"RELEASE_TAG": "1.0.0", "STAGE": "dev"})]
+        self._sync(builds)
+
+        with self.app.state.db.session() as s:
+            s.add(
+                Deployment(
+                    id="dup",
+                    app_id="a1",
+                    target="lambda-prod",
+                    kind="docker",
+                    executor="jenkins",
+                    external_ref="jenkins:2",
+                    stage="dev",
+                    version="1.0.0",
+                    status="success",
+                )
+            )
+
+        body = self._sync(builds)
+
+        self.assertEqual(
+            [(d["target"], d["stage"]) for d in body["deployments"]],
+            [("lambda-dev", "dev")],
+        )
+
     def test_an_observed_ci_target_is_imported_on_sync(self):
         from app.repositories.configuration.config_store import ConfigStore
 
