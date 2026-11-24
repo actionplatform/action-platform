@@ -1,23 +1,26 @@
-"""Calls that leave the request: an async sync/release/deploy/push becomes a job, and the code-host import after a call always does."""
+"""Calls that leave the request: every sync, push, release and deploy that is not a dry run becomes a job, and the code-host import after a call always does."""
 
 from __future__ import annotations
 
 import re
 from typing import Any, Optional
 
+from pydantic import TypeAdapter, ValidationError
+
 from app.core.db.models import App, Organization
-from app.core.errors import Conflict
+from app.core.errors import Conflict, Invalid
 from app.services.access.caller import Caller
 from app.services.jobs import JobQueue
 
 ASYNC_PATH = re.compile(r"^apps/([^/]+)/(sync|release|deploy|push)$")
 
 
-def wants_async(headers: dict[str, str]) -> bool:
-    return (
-        "respond-async" in headers.get("prefer", "").lower()
-        or headers.get("x-async") == "1"
-    )
+def dry_run(body: dict[str, Any]) -> bool:
+    """A release or deploy preview, read as the request model reads it: it answers inline and leaves no job; both default to one when `dry_run` is missing."""
+    try:
+        return TypeAdapter(bool).validate_python(body.get("dry_run", True))
+    except ValidationError as e:
+        raise Invalid("dry_run must be true or false") from e
 
 
 class JobDispatcher:
@@ -43,26 +46,24 @@ class JobDispatcher:
             "user_id": caller.user.id,
         }
 
-    def async_job(
+    def job_for(
         self,
         organization: Optional[Organization],
         app: Optional[App],
         caller: Caller,
         path: str,
         method: str,
-        headers: dict[str, str],
         body: Optional[dict[str, Any]],
     ) -> Optional[str]:
-        """The job id when the caller asked for the call to run on the worker; None when it runs inline."""
+        """The job a sync, push, release or deploy becomes; None for every other call and for a release or deploy dry run, which run inline."""
         queued = ASYNC_PATH.match(path)
 
         if not (
-            body is not None
-            and queued
-            and app is not None
-            and organization is not None
-            and wants_async(headers)
+            body is not None and queued and app is not None and organization is not None
         ):
+            return None
+
+        if queued.group(2) in ("release", "deploy") and dry_run(body):
             return None
 
         kind = queued.group(2)

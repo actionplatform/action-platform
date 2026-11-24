@@ -132,8 +132,8 @@ Every route, the credentials contract and the OpenAPI client are in [api](use_ap
 flowchart LR
     C[browser · CLI · MCP] -->|/api/v1/apps/id/deploy| G[gate]
     G --> PL[Planner: caller, role ∩ scope ∩ reach, target app]
-    PL -->|inline| R[route → service → core on the clone]
-    PL -->|Prefer: respond-async| D[JobDispatcher → job row]
+    PL -->|reads, dry runs| R[route → service → core on the clone]
+    PL -->|sync, push, release, deploy| D[JobDispatcher → job row]
     D -->|202 job id| C
     W[worker] -->|claim| D
     W --> H[handlers: kind → service]
@@ -173,7 +173,7 @@ sequenceDiagram
     participant L as core Deployer
     participant T as target (apx-aws-lambda)
     participant X as AWS STS
-    U->>A: POST apps/{id}/deploy {stage, version}  Prefer: respond-async
+    U->>A: POST apps/{id}/deploy {stage, version, dry_run: false}
     A->>A: role ∩ scope ∩ reach · no live deploy for the stage
     A-->>U: 202 {job}
     W->>W: claim · JobContext (credentials, plugin options as AP_AWS_LAMBDA_ROLE_ARN, AP_APP)

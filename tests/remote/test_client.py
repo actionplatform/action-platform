@@ -173,7 +173,6 @@ class RemoteClientTest(TempCase):
             timeout=60,
             client=None,
             organization=None,
-            prefer=None,
         ):
             self.seen.update(
                 method=method,
@@ -182,7 +181,6 @@ class RemoteClientTest(TempCase):
                 token=token,
                 client=client,
                 organization=organization,
-                prefer=prefer,
             )
             path = url.split("?")[0]
 
@@ -193,30 +191,163 @@ class RemoteClientTest(TempCase):
 
         self.patch(client, "_request", fake_request)
 
-    def test_a_queued_deploy_asks_for_an_async_answer(self):
+    def test_a_background_deploy_answers_with_its_job(self):
         remote = client.Remote("https://p.example", "tok")
         self.answer = {"job": "j1", "poll": "/api/v1/jobs/j1", "status": "queued"}
 
         queued = remote.deploy_later("a1", "prod", "1.2.3")
 
         self.assertEqual(queued.job, "j1")
-        self.assertEqual(self.seen["prefer"], "respond-async")
         self.assertEqual(
             self.seen["body"], {"stage": "prod", "dry_run": False, "version": "1.2.3"}
         )
 
-        self.answer = []
-        remote.deploy("a1", "prod")
-        self.assertIsNone(self.seen["prefer"])
+    def test_a_preflight_answers_inline(self):
+        self.answer = [{"target": "api", "ok": True, "version": "1.2.3"}]
+
+        (result,) = client.Remote("https://p.example", "tok").deploy("a1", "prod")
+
+        self.assertEqual((result.target, result.ok), ("api", True))
+        self.assertEqual(
+            self.seen["body"], {"stage": "prod", "dry_run": True, "version": None}
+        )
+
+    def followed(self, *jobs: object) -> list[tuple[str, str]]:
+        """Answer the queued call with job j1, then each GET of it with the next of `jobs`; the calls made, in order."""
+        calls: list[tuple[str, str]] = []
+        states = list(jobs)
+
+        def fake_request(method, url, body=None, token=None, **_):
+            calls.append((method, url.removeprefix("https://p.example/api/v1/")))
+
+            if method == "POST":
+                return {"job": "j1", "poll": "/api/v1/jobs/j1", "status": "queued"}
+
+            state = states.pop(0)
+
+            if isinstance(state, BaseException):
+                raise state
+
+            return {"id": "j1", "kind": "deploy", **state}
+
+        self.patch(client, "_request", fake_request)
+        self.patch(client.time, "sleep", lambda s: None)
+
+        return calls
+
+    def test_a_deploy_runs_as_a_job_and_is_followed_until_it_ends(self):
+        calls = self.followed(
+            {"status": "queued"},
+            {"status": "running"},
+            {
+                "status": "done",
+                "result": [
+                    {
+                        "target": "api",
+                        "ok": True,
+                        "version": "0.60.0-rc.1",
+                        "stage": "dev",
+                    }
+                ],
+            },
+        )
+
+        results = client.Remote("https://p.example", "tok").deploy(
+            "a1", "dev", dry_run=False, version="0.60.0-rc.1"
+        )
+
+        self.assertEqual(
+            [(r.target, r.ok, r.version) for r in results],
+            [("api", True, "0.60.0-rc.1")],
+        )
+        self.assertEqual(
+            calls,
+            [
+                ("POST", "apps/a1/deploy"),
+                ("GET", "jobs/j1"),
+                ("GET", "jobs/j1"),
+                ("GET", "jobs/j1"),
+            ],
+        )
+
+    def test_a_failed_deploy_job_raises_its_error(self):
+        self.followed({"status": "failed", "error": "jenkins said no"})
+
+        with self.assertRaisesRegex(ActionPlatformError, "jenkins said no"):
+            client.Remote("https://p.example", "tok").deploy(
+                "a1", "dev", dry_run=False, version="1.0.0"
+            )
+
+    def test_a_poll_that_fails_is_retried(self):
+        self.followed(
+            client.RemoteError(502, "Bad Gateway"),
+            TimeoutError("timed out"),
+            {
+                "status": "done",
+                "result": [{"target": "api", "ok": True, "version": "1.0.0"}],
+            },
+        )
+
+        (result,) = client.Remote("https://p.example", "tok").deploy(
+            "a1", "dev", dry_run=False, version="1.0.0"
+        )
+
+        self.assertTrue(result.ok)
+
+    def test_a_job_that_cannot_be_read_by_the_deadline_names_its_id(self):
+        self.followed(client.RemoteError(401, "token expired"))
+
+        with self.assertRaisesRegex(ActionPlatformError, "job j1 could not be read"):
+            client.Remote("https://p.example", "tok").deploy(
+                "a1", "dev", dry_run=False, version="1.0.0", wait=0
+            )
+
+    def test_a_deploy_still_running_after_the_wait_answers_with_its_job(self):
+        self.followed({"status": "running"})
+
+        queued = client.Remote("https://p.example", "tok").deploy(
+            "a1", "dev", dry_run=False, version="1.0.0", wait=0
+        )
+
+        self.assertIsInstance(queued, schemas.JobQueued)
+        self.assertEqual((queued.job, queued.status), ("j1", "running"))
+
+    def test_a_release_runs_as_a_job_and_answers_its_preview(self):
+        calls = self.followed({"status": "done", "result": ANSWER})
+
+        preview = client.Remote("https://p.example", "tok").release(
+            "a1", "minor", dry_run=False
+        )
+
+        self.assertEqual((preview.next, preview.dry_run), ("1.1.0", False))
+        self.assertEqual(calls[0], ("POST", "apps/a1/release"))
+
+    def test_a_sync_runs_as_a_job_and_answers_the_entry(self):
+        calls = self.followed(
+            {
+                "status": "done",
+                "result": {
+                    "id": "a1",
+                    "name": "demo",
+                    "url": "https://x/demo.git",
+                    "path": "/w/a1",
+                },
+            }
+        )
+
+        entry = client.Remote("https://p.example", "tok").sync_app("a1")
+
+        self.assertEqual(entry.id, "a1")
+        self.assertEqual(calls, [("POST", "apps/a1/sync"), ("GET", "jobs/j1")])
 
     def test_calls_v1_with_bearer(self):
         remote = client.Remote("https://p.example", "tok")
 
-        remote.release("p1", "minor", dry_run=False)
+        remote.release("p1", "minor")
         self.assertEqual(self.seen["method"], "POST")
         self.assertEqual(self.seen["url"], "https://p.example/api/v1/apps/p1/release")
         self.assertEqual(
-            self.seen["body"], {"level": "minor", "dry_run": False, "branch": None}
+            self.seen["body"], {"level": "minor", "dry_run": True, "branch": None}
         )
         self.assertEqual(self.seen["token"], "tok")
         self.assertEqual(self.seen["client"], "action-platform-cli")
@@ -348,9 +479,7 @@ class RemoteClientTest(TempCase):
         self.assertEqual(project.organization.id, "o1")
         self.assertIs(project.model_extra["tearing_down"], False)
 
-        self.assertIsInstance(
-            remote.release("p1", "minor", dry_run=False), schemas.ReleasePreview
-        )
+        self.assertIsInstance(remote.release("p1", "minor"), schemas.ReleasePreview)
 
         self.answer = {
             "user": {"email": "me@example.com"},

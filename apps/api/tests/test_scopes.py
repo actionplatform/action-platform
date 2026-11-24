@@ -86,7 +86,7 @@ class ScopesTest(GateCase):
 
     def test_a_deploy_needs_an_existing_scope_and_scope_is_an_alias_of_stage(self):
         self.scope("prod", "high")
-        headers = {**self.h(), "Prefer": "respond-async"}
+        headers = self.h()
 
         unknown = self.client.post(
             f"/api/v1/apps/{self.registry_id}/deploy",

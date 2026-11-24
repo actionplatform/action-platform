@@ -17,7 +17,7 @@ import urllib.parse
 import urllib.request
 import webbrowser
 from functools import lru_cache
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from pydantic import TypeAdapter
 
@@ -78,6 +78,9 @@ from action_platform.remote.schemas import (
 CLIENT_ID = "action-platform-cli"
 DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
 MAX_POLL_FAILURES = 5
+JOB_FINISHED = ("done", "failed")
+JOB_POLL_SECONDS = 3.0
+JOB_WAIT_SECONDS = 900.0
 
 
 TOKEN_RE = re.compile(r"[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}")
@@ -106,7 +109,6 @@ def _request(
     timeout: float = 60,
     client: Optional[str] = None,
     organization: Optional[str] = None,
-    prefer: Optional[str] = None,
 ) -> Any:
     data = json.dumps(body).encode() if body is not None else None
     headers = {
@@ -125,9 +127,6 @@ def _request(
 
     if organization:
         headers["x-organization"] = organization
-
-    if prefer:
-        headers["prefer"] = prefer
 
     req = urllib.request.Request(url, data=data, method=method, headers=headers)
 
@@ -194,7 +193,6 @@ class Remote:
         path: str,
         body: Optional[dict] = None,
         organization: Optional[str] = None,
-        prefer: Optional[str] = None,
         **query: Any,
     ) -> Any:
         q = {k: v for k, v in query.items() if v is not None}
@@ -210,7 +208,6 @@ class Remote:
             self.token,
             client=self.client,
             organization=organization,
-            prefer=prefer,
         )
 
     def apps(self, organization: Optional[str] = None) -> list[AppRow]:
@@ -270,8 +267,11 @@ class Remote:
             ),
         )
 
-    def sync_app(self, id: str) -> AppEntry:
-        return _as(AppEntry, self._call("POST", f"apps/{id}/sync"))
+    def sync_app(
+        self, id: str, wait: float = JOB_WAIT_SECONDS
+    ) -> Union[AppEntry, JobQueued]:
+        """The sync runs as a job on the platform's worker, followed until it ends or `wait` seconds pass."""
+        return self._followed(self._queue(f"apps/{id}/sync", {}), AppEntry, wait)
 
     def app(self, id: str) -> AppDetail:
         return _as(AppDetail, self._call("GET", f"apps/{id}"))
@@ -294,14 +294,16 @@ class Remote:
         level: str = "patch",
         dry_run: bool = True,
         branch: Optional[str] = None,
-    ) -> ReleasePreview:
-        return _as(
-            ReleasePreview,
-            self._call(
-                "POST",
-                f"apps/{id}/release",
-                {"level": level, "dry_run": dry_run, "branch": branch},
-            ),
+        wait: float = JOB_WAIT_SECONDS,
+    ) -> Union[ReleasePreview, JobQueued]:
+        """A dry run answers inline; a release runs as a job on the platform's worker, followed until it ends or `wait` seconds pass."""
+        body = {"level": level, "dry_run": dry_run, "branch": branch}
+
+        if dry_run:
+            return _as(ReleasePreview, self._call("POST", f"apps/{id}/release", body))
+
+        return self._followed(
+            self._queue(f"apps/{id}/release", body), ReleasePreview, wait
         )
 
     def releases(self, id: str) -> list[ReleaseRow]:
@@ -420,29 +422,64 @@ class Remote:
         stage: Optional[str] = None,
         dry_run: bool = True,
         version: Optional[str] = None,
-    ) -> list[DeployResult]:
-        return _as(
-            list[DeployResult],
-            self._call(
-                "POST",
-                f"apps/{id}/deploy",
-                {"stage": stage, "dry_run": dry_run, "version": version},
-            ),
+        wait: float = JOB_WAIT_SECONDS,
+    ) -> Union[list[DeployResult], JobQueued]:
+        """A dry run answers inline; a deploy runs as a job on the platform's worker, followed until it ends or `wait` seconds pass."""
+        if dry_run:
+            return _as(
+                list[DeployResult],
+                self._call(
+                    "POST",
+                    f"apps/{id}/deploy",
+                    {"stage": stage, "dry_run": True, "version": version},
+                ),
+            )
+
+        return self._followed(
+            self.deploy_later(id, stage, version), list[DeployResult], wait
         )
 
     def deploy_later(
         self, id: str, stage: Optional[str] = None, version: Optional[str] = None
     ) -> JobQueued:
         """The deploy as a job on the platform's worker; follow it with `job` and `job_logs`."""
-        return _as(
-            JobQueued,
-            self._call(
-                "POST",
-                f"apps/{id}/deploy",
-                {"stage": stage, "dry_run": False, "version": version},
-                prefer="respond-async",
-            ),
+        return self._queue(
+            f"apps/{id}/deploy",
+            {"stage": stage, "dry_run": False, "version": version},
         )
+
+    def _queue(self, path: str, body: dict) -> JobQueued:
+        return _as(JobQueued, self._call("POST", path, body))
+
+    def wait_job(self, id: str, timeout: float = JOB_WAIT_SECONDS) -> Job:
+        """Job `id` once it finished, or as it stands when `timeout` seconds passed; a poll that fails is retried until then."""
+        deadline = time.monotonic() + timeout
+
+        while True:
+            try:
+                job = self.job(id)
+            except (ActionPlatformError, OSError) as e:
+                if time.monotonic() >= deadline:
+                    raise ActionPlatformError(
+                        f"job {id} could not be read: {e}; follow it with job_status"
+                    ) from e
+            else:
+                if job.status in JOB_FINISHED or time.monotonic() >= deadline:
+                    return job
+
+            time.sleep(JOB_POLL_SECONDS)
+
+    def _followed(self, queued: JobQueued, kind: Any, wait: float) -> Any:
+        """The job's result as `kind` when it is done, its error raised when it failed, the queued job while it still runs."""
+        job = self.wait_job(queued.job, wait)
+
+        if job.status == "done":
+            return _as(kind, job.result)
+
+        if job.status == "failed":
+            raise ActionPlatformError(job.error or f"job {job.id} failed")
+
+        return queued.model_copy(update={"status": job.status})
 
     def diagnose(self, id: str, stage: Optional[str] = None) -> list[Diagnosis]:
         return _as(

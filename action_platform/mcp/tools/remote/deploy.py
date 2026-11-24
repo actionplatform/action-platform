@@ -150,11 +150,11 @@ def register(mcp: Any, remote: Remote) -> None:
         background: Annotated[
             bool,
             Field(
-                description="With dry_run=false: run the deploy as a job on the platform's worker and answer with its id at once, instead of waiting for it"
+                description="With dry_run=false: answer with the job id at once instead of following the job until it ends"
             ),
         ] = False,
     ) -> Union[list[schemas.DeployResult], schemas.JobQueued]:
-        """Ship a release to one of the app's scopes. Defaults to preflight; call again with dry_run=false to deploy. Cut the release first (`release`) when none exists; the scope's criticality decides whether the release may go there, and, when `version` is given, a release whose readiness for the scope is blocked is refused (release_readiness says why). With background=true the answer is a job id: follow it with job_logs and job_status."""
+        """Ship a release to one of the app's scopes. Defaults to preflight; call again with dry_run=false to deploy. Cut the release first (`release`) when none exists; the scope's criticality decides whether the release may go there, and, when `version` is given, a release whose readiness for the scope is blocked is refused (release_readiness says why). A deploy always runs as a job on the platform's worker: without background the tool follows it and answers with the results, or with the job id when it still runs after 15 minutes; with background=true it answers with the job id at once. Follow a job with job_logs and job_status."""
         if background and not dry_run:
             return remote.deploy_later(id, stage, version)
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest import mock
 
 from action_platform.testing.fixtures import TempCase
 from tests.test_access import GateCase
@@ -134,7 +135,7 @@ class AsyncRouteTest(GateCase):
         res = self.client.post(
             f"/api/v1/apps/{registry_id}/sync",
             json={},
-            headers={**self.h(), "Prefer": "respond-async"},
+            headers=self.h(),
         )
         self.assertEqual(res.status_code, 202, res.text)
         job_id = res.json()["job"]
@@ -143,7 +144,7 @@ class AsyncRouteTest(GateCase):
         again = self.client.post(
             f"/api/v1/apps/{registry_id}/sync",
             json={},
-            headers={**self.h(), "Prefer": "respond-async"},
+            headers=self.h(),
         )
         self.assertEqual(again.json()["job"], job_id)
 
@@ -162,7 +163,6 @@ class AsyncRouteTest(GateCase):
         registry_id = self.register()
         headers = {
             **self.h(self.token("read,write")),
-            "Prefer": "respond-async",
             "X-Action-Platform-Client": "Claude Code/1",
         }
 
@@ -181,7 +181,7 @@ class AsyncRouteTest(GateCase):
         res = self.client.post(
             f"/api/v1/apps/{registry_id}/sync",
             json={},
-            headers={**self.h(), "Prefer": "respond-async"},
+            headers=self.h(),
         )
         job_id = res.json()["job"]
 
@@ -272,8 +272,8 @@ class AsyncRouteTest(GateCase):
         self.scopes("dev", "prod")
         res = self.client.post(
             f"/api/v1/apps/{registry_id}/deploy",
-            json={"stage": "dev", "dry_run": True},
-            headers={**self.h(), "Prefer": "respond-async"},
+            json={"stage": "dev", "dry_run": False},
+            headers=self.h(),
         )
 
         self.assertEqual(res.status_code, 202, res.text)
@@ -304,29 +304,34 @@ class AsyncRouteTest(GateCase):
 
         self.assertEqual(res.status_code, 413)
 
-    def test_an_inline_sync_leaves_the_host_import_to_the_worker(self):
+    def test_a_sync_is_a_job_the_worker_runs(self):
+        from app.services.jobs.worker import Worker
+
         registry_id = self.register()
 
         res = self.client.post(
             f"/api/v1/apps/{registry_id}/sync", json={}, headers=self.h()
         )
 
-        self.assertEqual(res.status_code, 200, res.text)
-        kinds = [
-            j["kind"]
+        self.assertEqual(res.status_code, 202, res.text)
+        Worker(self.app.state.db, self.app.state.secrets, "test").run(
+            once=True, kinds=["sync"]
+        )
+        jobs = {
+            j["kind"]: j["status"]
             for j in self.client.get(
                 "/api/v1/jobs", params={"app": registry_id}, headers=self.h()
             ).json()
-        ]
-        self.assertIn("import", kinds)
+        }
+        self.assertEqual(jobs, {"sync": "done"})
 
     def test_a_queued_deploy_lists_with_its_stage_and_who_asked(self):
         registry_id = self.register()
         self.scopes("dev", "prod")
         res = self.client.post(
             f"/api/v1/apps/{registry_id}/deploy",
-            json={"stage": "prod", "dry_run": True},
-            headers={**self.h(), "X-Async": "1"},
+            json={"stage": "prod", "dry_run": False},
+            headers=self.h(),
         )
         self.assertEqual(res.status_code, 202, res.text)
 
@@ -344,7 +349,7 @@ class AsyncRouteTest(GateCase):
         self.assertEqual(len(deploys), 1)
         self.assertEqual(
             (deploys[0]["stage"], deploys[0]["dry_run"], deploys[0]["by"]),
-            ("prod", True, "Ana"),
+            ("prod", False, "Ana"),
         )
         self.assertEqual(syncs, [])
 
@@ -445,7 +450,7 @@ class RegistryAdoptionTest(GateCase):
     def test_one_deploy_at_a_time_per_environment(self):
         registry_id = self.register()
         self.scopes("dev", "prod")
-        headers = {**self.h(), "Prefer": "respond-async"}
+        headers = self.h()
         first = self.client.post(
             f"/api/v1/apps/{registry_id}/deploy",
             json={"stage": "dev", "dry_run": False},
@@ -453,7 +458,7 @@ class RegistryAdoptionTest(GateCase):
         )
         again = self.client.post(
             f"/api/v1/apps/{registry_id}/deploy",
-            json={"stage": "dev", "dry_run": True},
+            json={"stage": "dev", "dry_run": False},
             headers=headers,
         )
         other = self.client.post(
@@ -505,6 +510,226 @@ class RegistryAdoptionTest(GateCase):
         with self.app.state.db.session() as s:
             self.assertIsNone(s.get(App, "a1"))
             self.assertIsNone(s.get(Project, "p1"))
+
+
+class ShippingDeployTest(GateCase):
+    def setUp(self):
+        super().setUp()
+        from app.repositories.configuration.config_store import ConfigStore
+
+        self.registry_id = self.register()
+        self.scopes("dev", "prod")
+        ConfigStore(self.app.state.db).set(
+            self.registry_id,
+            {
+                "project": {"name": "demo"},
+                "deploy": {
+                    "targets": [
+                        {"name": "lambda", "kind": "aws/lambda", "stages": ["dev"]}
+                    ]
+                },
+            },
+        )
+
+    def deployments(self) -> list[tuple]:
+        from app.core.db.models import Deployment
+
+        with self.app.state.db.session() as s:
+            return [
+                (d.target, d.stage, d.version, d.status, d.executor, d.job_id, d.actor)
+                for d in s.query(Deployment).all()
+            ]
+
+    def work(self, seen: list) -> None:
+        """Run the queued deploy with the real handler; the deploy itself only notes the deployment rows that already exist."""
+        from app.services.deployments import DeploymentsService
+        from app.services.jobs.worker import Worker
+
+        def deploy(service, id, request):
+            seen.extend(self.deployments())
+
+            return [
+                {
+                    "target": "lambda",
+                    "ok": True,
+                    "version": "1.2.3",
+                    "url": None,
+                    "error": None,
+                    "stage": "dev",
+                }
+            ]
+
+        with mock.patch.object(DeploymentsService, "deploy", deploy):
+            Worker(self.app.state.db, self.app.state.secrets, "test").run(once=True)
+
+    def test_a_deploy_is_always_a_job(self):
+        res = self.client.post(
+            f"/api/v1/apps/{self.registry_id}/deploy",
+            json={"stage": "dev", "version": "1.2.3", "dry_run": False},
+            headers=self.h(),
+        )
+
+        self.assertEqual(res.status_code, 202, res.text)
+        queued = res.json()
+        self.assertEqual(
+            (queued["status"], queued["poll"]),
+            ("queued", f"/api/v1/jobs/{queued['job']}"),
+        )
+        jobs = self.client.get(
+            "/api/v1/jobs/page",
+            params={"app": self.registry_id},
+            headers=self.h(),
+        ).json()["items"]
+        self.assertEqual(
+            [
+                (j["id"], j["kind"], j["dry_run"], j["stage"], j["version"], j["by"])
+                for j in jobs
+            ],
+            [(queued["job"], "deploy", False, "dev", "1.2.3", "Ana")],
+        )
+
+    def test_sync_push_and_release_are_always_jobs(self):
+        for path, body in (
+            ("sync", {}),
+            ("push", {}),
+            ("release", {"level": "patch", "dry_run": False}),
+        ):
+            with self.subTest(path=path):
+                res = self.client.post(
+                    f"/api/v1/apps/{self.registry_id}/{path}",
+                    json=body,
+                    headers=self.h(),
+                )
+
+                self.assertEqual(res.status_code, 202, res.text)
+                self.assertEqual(res.json()["status"], "queued")
+
+    def test_dry_run_is_read_as_the_request_model_reads_it(self):
+        from app.core.errors import Invalid
+        from app.services.access.job_dispatcher import dry_run
+
+        for value in (False, 0, 0.0, "false", "off", "no", "f", "n", "0"):
+            with self.subTest(value=value):
+                self.assertFalse(dry_run({"dry_run": value}))
+
+        for value in (True, 1, "true", "on", "yes"):
+            with self.subTest(value=value):
+                self.assertTrue(dry_run({"dry_run": value}))
+
+        self.assertTrue(dry_run({}))
+
+        with self.assertRaises(Invalid):
+            dry_run({"dry_run": "maybe"})
+
+    def test_a_deploy_spelled_off_is_a_job_and_nonsense_is_refused(self):
+        from app.services.jobs import JobQueue
+
+        off = self.client.post(
+            f"/api/v1/apps/{self.registry_id}/deploy",
+            json={"stage": "dev", "version": "1.2.3", "dry_run": "off"},
+            headers=self.h(),
+        )
+        nonsense = self.client.post(
+            f"/api/v1/apps/{self.registry_id}/deploy",
+            json={"stage": "prod", "version": "1.2.3", "dry_run": "maybe"},
+            headers=self.h(),
+        )
+
+        self.assertEqual(off.status_code, 202, off.text)
+        self.assertEqual(nonsense.status_code, 400, nonsense.text)
+        self.assertEqual(
+            [j.id for j in JobQueue(self.app.state.db).for_app("a1")],
+            [off.json()["job"]],
+        )
+
+    def test_a_dry_run_answers_inline_and_leaves_no_job(self):
+        from app.services.jobs import JobQueue
+
+        with mock.patch(
+            "app.services.deployments.DeploymentsService.deploy",
+            lambda service, id, request: [
+                {"target": "lambda", "ok": True, "version": "1.2.3", "stage": "dev"}
+            ],
+        ):
+            res = self.client.post(
+                f"/api/v1/apps/{self.registry_id}/deploy",
+                json={"stage": "dev", "version": "1.2.3", "dry_run": True},
+                headers=self.h(),
+            )
+
+        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual([r["target"] for r in res.json()], ["lambda"])
+        self.assertEqual(JobQueue(self.app.state.db).for_app("a1"), [])
+
+    def test_the_worker_records_the_deployment_before_it_follows_the_run(self):
+        res = self.client.post(
+            f"/api/v1/apps/{self.registry_id}/deploy",
+            json={"stage": "dev", "version": "1.2.3", "dry_run": False},
+            headers=self.h(),
+        )
+        job_id = res.json()["job"]
+        seen: list = []
+
+        self.work(seen)
+
+        self.assertEqual(
+            seen, [("lambda", "dev", "1.2.3", "running", "platform", job_id, "Ana")]
+        )
+        self.assertEqual(
+            self.deployments(),
+            [("lambda", "dev", "1.2.3", "success", "platform", job_id, "Ana")],
+        )
+
+    def test_a_deploy_that_raises_leaves_its_row_failed(self):
+        from app.services.deployments import DeploymentsService
+        from app.services.jobs import JobQueue
+        from app.services.jobs.worker import Worker
+
+        res = self.client.post(
+            f"/api/v1/apps/{self.registry_id}/deploy",
+            json={"stage": "dev", "version": "1.2.3", "dry_run": False},
+            headers=self.h(),
+        )
+        self.assertEqual(res.status_code, 202, res.text)
+
+        def deploy(service, id, request):
+            raise RuntimeError("connection reset")
+
+        with mock.patch.object(DeploymentsService, "deploy", deploy):
+            Worker(self.app.state.db, self.app.state.secrets, "test").run(once=True)
+
+        job = JobQueue(self.app.state.db).get(res.json()["job"])
+        self.assertEqual(job.status, "queued")
+        self.assertEqual(
+            [(d[3], d[4], d[5]) for d in self.deployments()],
+            [("failure", "platform", job.id)],
+        )
+
+    def test_a_deploy_without_a_version_records_the_release_at_head(self):
+        from app.services.deployments import DeploymentsService
+        from app.services.jobs.worker import Worker
+
+        res = self.client.post(
+            f"/api/v1/apps/{self.registry_id}/deploy",
+            json={"stage": "dev", "dry_run": False},
+            headers=self.h(),
+        )
+        seen: list = []
+
+        def deploy(service, id, request):
+            seen.extend(self.deployments())
+            raise RuntimeError("connection reset")
+
+        with mock.patch.object(DeploymentsService, "deploy", deploy):
+            Worker(self.app.state.db, self.app.state.secrets, "test").run(once=True)
+
+        job_id = res.json()["job"]
+        self.assertEqual(
+            seen, [("lambda", "dev", "1.2.3", "running", "platform", job_id, "Ana")]
+        )
+        self.assertEqual(
+            [(d[2], d[3]) for d in self.deployments()], [("1.2.3", "failure")]
+        )
 
 
 class ConcurrentWorkerTest(GateCase):

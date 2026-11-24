@@ -155,7 +155,7 @@ AP_IMAGE_API=action-platform-api:local AP_IMAGE_WORKER=action-platform-worker:lo
 
 - The worker image carries git, `sam`, the AWS CLI and the toolchains of every web language (Go, Node, JDK + Maven, Ruby); the api image has the same Python packages (`sam` and the AWS CLI come with `apx-aws-lambda`) without the toolchains. The host needs room for both and for the build artifacts of deploys.
 - Domains are set in `.env` (or in Dokploy), not from the app's Settings.
-- Sync, release, readiness, deploy, destroy and import run as jobs on the worker; the rest of the calls run inline. Queued work is in [database](concept_database.md#jobs).
+- Sync, push, release, readiness, deploy, destroy and import always run as jobs on the worker; release and deploy dry runs and the rest of the calls run inline. Queued work is in [database](concept_database.md#jobs).
 
 ## Upgrading
 

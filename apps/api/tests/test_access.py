@@ -260,7 +260,11 @@ class AppsTest(GateCase):
         res = self.client.post(
             f"/api/v1/apps/{registry_id}/sync", json={}, headers=self.h()
         )
-        self.assertIn(res.status_code, (200, 400), res.text)
+        self.assertEqual(res.status_code, 202, res.text)
+
+        from app.services.jobs.worker import Worker
+
+        Worker(self.app.state.db, self.app.state.secrets, "test").run(once=True)
         self.assertEqual(
             (seen["credentials"]["author_name"], seen["credentials"]["author_email"]),
             ("Bot", "bot@acme.io"),

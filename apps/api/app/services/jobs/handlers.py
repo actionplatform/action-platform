@@ -244,13 +244,24 @@ class JobHandlers:
             ci=self._ci_runners(ctx),
         )
         started = now()
+        recorded = request
+
+        if not request.dry_run:
+            with auth.git_auth(credentials):
+                recorded = request.model_copy(
+                    update={
+                        "version": service.release_of(ctx.registry_id, request.version)
+                    }
+                )
+
+            self._record_deploy_start(ctx, payload, recorded, started)
 
         try:
             with auth.git_auth(credentials):
                 results = service.deploy(ctx.registry_id, request)
-        except ActionPlatformError as e:
+        except Exception as e:
             if not request.dry_run:
-                self._record_deploy_failure(ctx, payload, request, started, str(e))
+                self._record_deploy_failure(ctx, payload, recorded, started, str(e))
 
             raise
 
@@ -287,6 +298,28 @@ class JobHandlers:
                 self.configs.config_of(ctx.registry_id),
                 [DeployResult(**r) for r in results],
                 request.stage,
+                payload["job_id"],
+                records.actor_name(payload.get("user_id")),
+                started,
+            )
+
+    def _record_deploy_start(
+        self,
+        ctx: JobContext,
+        payload: dict[str, Any],
+        request: DeployRequest,
+        started: Any,
+    ) -> None:
+        if ctx.app is None or not payload.get("job_id"):
+            return
+
+        with self.database.session() as db:
+            records = DeploymentRecords(db, self.sealer)
+            records.record_start(
+                db.get(App, ctx.app.id),
+                self.configs.config_of(ctx.registry_id),
+                request.stage,
+                request.version,
                 payload["job_id"],
                 records.actor_name(payload.get("user_id")),
                 started,

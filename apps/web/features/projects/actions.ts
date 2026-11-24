@@ -55,13 +55,26 @@ export async function removeApp(projectId: string, appId: string, repository = f
 export async function syncApp(projectId: string, appId: string, registryId: string): Promise<{ ok: true } | { ok: false; error: string }> {
   await requireOrg();
   try {
-    await api.apps.sync(registryId);
+    const queued = await api.apps.sync(registryId);
+    const job = await settled(queued.job);
+    if (!job) return { ok: false, error: `sync still running (job ${queued.job}): reload in a moment` };
+    if (job.status === "failed") return { ok: false, error: job.error ?? "sync failed" };
     await v1.syncImports(projectId, appId).catch(() => null);
     refreshProject(projectId);
     return { ok: true };
   } catch (e) {
     return failed(e, "sync failed");
   }
+}
+
+
+async function settled(id: string, seconds = 60): Promise<{ status: string; error?: string | null } | null> {
+  for (let waited = 0; waited < seconds; waited += 2) {
+    const job = await v1.job(id);
+    if (job.status === "done" || job.status === "failed") return job;
+    await new Promise((done) => setTimeout(done, 2000));
+  }
+  return null;
 }
 
 
