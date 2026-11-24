@@ -32,15 +32,20 @@ class InsightsService:
         with _lock:
             hit = _cache.get(key)
 
-            if hit and not fresh and time.monotonic() - hit[0] < TTL:
-                return hit[1]
+            cached = hit[1] if hit and time.monotonic() - hit[0] < TTL else None
 
-        data = self.insights.dashboard(organization_id, project_id, app_id)
+        if cached is None or fresh:
+            cached = self.insights.dashboard(organization_id, project_id, app_id)
 
-        with _lock:
-            _cache[key] = (time.monotonic(), data)
+            with _lock:
+                _cache[key] = (time.monotonic(), cached)
 
-        return data
+        return {
+            **cached,
+            "in_progress": self.insights.in_progress(
+                organization_id, project_id, app_id
+            ),
+        }
 
     def timeline(self, app_id: str, tag: str) -> dict[str, Any]:
         found = self.insights.timeline(app_id, tag)

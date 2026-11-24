@@ -206,3 +206,58 @@ class InsightsTest(GateCase):
         body = self.client.get("/api/v1/dashboard?fresh=true", headers=self.h()).json()
 
         self.assertEqual(body["events"][0]["title"], "lambda 2.0.0")
+
+    def test_in_progress_lists_active_deployments_and_skips_the_cache(self):
+        from app.core.db.models import Deployment
+        from app.core.shared.clock import now
+
+        self.register()
+        self.seed()
+        self.client.get("/api/v1/dashboard", headers=self.h())
+        moment = now()
+        with self.app.state.db.session() as s:
+            for ref, status, started in (
+                ("r1", "running", moment - timedelta(minutes=2)),
+                ("r2", "queued", None),
+                ("r3", "running", moment - timedelta(seconds=30)),
+                ("r4", "failure", moment - timedelta(seconds=10)),
+            ):
+                s.add(
+                    Deployment(
+                        id=ref,
+                        app_id="a1",
+                        target="lambda",
+                        kind="aws/lambda",
+                        stage="prod",
+                        version="1.2.0",
+                        status=status,
+                        executor="jenkins",
+                        external_ref=f"jenkins:{ref}",
+                        started_at=started,
+                    )
+                )
+
+        body = self.client.get("/api/v1/dashboard", headers=self.h()).json()
+
+        self.assertEqual([d["id"] for d in body["in_progress"]], ["r3", "r1", "r2"])
+        first = body["in_progress"][0]
+        self.assertEqual(first["app"], "demo")
+        self.assertEqual(first["project_id"], "p1")
+        self.assertEqual(first["stage"], "prod")
+        self.assertEqual(first["status"], "running")
+        self.assertIsNone(body["in_progress"][2]["started_at"])
+
+        with self.app.state.db.session() as s:
+            s.get(Deployment, "r3").status = "success"
+
+        body = self.client.get("/api/v1/dashboard", headers=self.h()).json()
+
+        self.assertEqual([d["id"] for d in body["in_progress"]], ["r1", "r2"])
+
+    def test_in_progress_is_empty_without_active_deployments(self):
+        self.register()
+        self.seed()
+
+        body = self.client.get("/api/v1/dashboard?fresh=true", headers=self.h()).json()
+
+        self.assertEqual(body["in_progress"], [])

@@ -133,4 +133,4 @@ A release carries, per stage, whether it can be deployed there. `GET projects/{p
 
 ## Insights
 
-`GET /api/v1/dashboard` — the organization's day (deployments and CI runs by status today, releases this week, apps without CI, the latest events across apps), narrowed to the token's project or app, cached thirty seconds; `?fresh=true` recomputes. `GET /api/v1/projects/{p}/apps/{a}/releases/{tag}/timeline` — one release with the pull requests merged since the previous tag of the same component, the CI runs on the tag (by ref or sha) and the deployments that reference it.
+`GET /api/v1/dashboard` — the organization's day (deployments and CI runs by status today, releases this week, apps without CI, the latest events across apps), narrowed to the token's project or app, cached thirty seconds; `?fresh=true` recomputes. `in_progress` lists the deployments still `queued` or `running`, latest started first, and is never cached. `GET /api/v1/projects/{p}/apps/{a}/releases/{tag}/timeline` — one release with the pull requests merged since the previous tag of the same component, the CI runs on the tag (by ref or sha) and the deployments that reference it.
