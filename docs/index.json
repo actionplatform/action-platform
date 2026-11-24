@@ -7,6 +7,7 @@
       "pages": [
         { "slug": "start_getting_started", "title": "Getting started" },
         { "slug": "start_self_hosting", "title": "Self-hosting" },
+        { "slug": "start_operations", "title": "Operations" },
         { "slug": "start_troubleshooting", "title": "Troubleshooting" }
       ]
     },
