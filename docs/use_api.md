@@ -60,6 +60,17 @@ Routes that are not workspaces live directly under `/api/v1` and are what the we
 | `POST projects/{id}/apps/{id}/imports` (copy releases and pull requests now) | `app.sync` |
 | `GET projects/{id}/apps/{id}/scopes` (the app's scopes with the vocabulary of kinds and criticalities), `POST … {name, kind, criticality}`, `PUT/DELETE …/scopes/{name}` (delete refused while a deploy to it runs) | read: reach; writes: `app.configure` |
 | `GET projects/{id}/apps/{id}/releases/{tag}/readiness` (the checks per scope), `POST … {stage?}` (queue a check for one stage or for `dev` and `prod`; answers the jobs and the rows, now *pending*) | read: reach; `POST`: `app.release` |
+| `GET projects/{id}/apps/{id}/deployments` (the app's targets and every deployment, whoever executed it) | read: reach |
+| `POST projects/{id}/apps/{id}/deployments/sync` (ask the observed pipelines for new runs and verify versions at the destinations) | `app.sync` |
+| `POST projects/{id}/apps/{id}/deployments {target, version, stage?, url?, sha?, ok?}` (record a delivery made outside the platform; answers `201`, `version` is required) | `app.release` |
+| `GET projects/{id}/apps/{id}/ci?page&per` (the runs imported from the app's CI) | read: reach |
+| `PUT projects/{id}/apps/{id}/ci {ci_host_id, job}` (link the app to a CI server and a job) | `app.configure` |
+| `POST projects/{id}/apps/{id}/ci/sync` (import the latest runs) | `app.sync` |
+| `POST projects/{id}/apps/{id}/ci/run {ref}` (start the job on a branch or tag; answers `202`) | `app.flow` |
+| `GET ci-hosts`, `POST ci-hosts/{id}/test` (reach the server with its sealed token; answers `{ok, error}`) | any member (`read`) |
+| `POST ci-hosts {kind, name, base_url, username, token}` (answers `201`), `DELETE ci-hosts/{id}` | `org.manage` |
+| `GET import/github/organizations?host=` (the accounts the host's token sees), `GET import/github/organizations/{login}?host=` (the preview: repositories, projects, teams, people) | `org.manage` |
+| `POST import/github {host_id, organization, repositories, projects, teams, people, role, project_id}` (queue the import job; answers `202` with the job id and the `poll` path) | `org.manage` |
 | `POST teams`, `PUT/DELETE teams/{id}`, `POST teams/members`, `DELETE teams/{id}/members/{user}`, `POST members/role`, `DELETE members/{user}` (never the last owner), `GET/POST invitations`, `DELETE invitations/{id}`, `POST hosts`, `DELETE hosts/{id}`, `PUT hosts/{id}/token`, `PUT hosts/{id}/owner`, `PUT/DELETE oauth/apps/{provider}`, `POST oauth/{provider}/start`, `POST oauth/{provider}/callback`, `DELETE oauth/{provider}/hosts/{login}`, `POST oauth/github/manifest`, `POST oauth/github/manifest/callback`, `POST oauth/github/install`, `PUT settings/git-author`, `POST template-sources`, `DELETE template-sources/{id}` | `org.manage` |
 | `GET access/audit?service=`, `GET access/who?person=&service=`, `POST access/sync {service, apply, reimport, links}`, `POST access/grant {person, service, resource, level, account, apply}`, `POST access/revoke {person, service, resource, apply}`, `POST access/offboard {person, apply, remove_from_platform}` — [service access](concept_service_access.md) over the bundled plugins, with the organization's plugin options; dry runs unless `apply` | `org.manage` |
 
