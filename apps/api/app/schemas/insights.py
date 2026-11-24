@@ -26,6 +26,17 @@ class Event(AppRef):
     url: Optional[str] = None
 
 
+class ActiveDeployment(AppRef):
+    id: str
+    target: str
+    kind: str
+    stage: Optional[str] = None
+    version: str
+    status: str
+    started_at: Optional[datetime] = None
+    url: Optional[str] = None
+
+
 class Dashboard(BaseModel):
     apps: int
     deployments_today: dict[str, int]
@@ -33,6 +44,7 @@ class Dashboard(BaseModel):
     releases_week: int
     without_ci: list[AppRef]
     events: list[Event]
+    in_progress: list[ActiveDeployment] = []
 
 
 class Timeline(BaseModel):

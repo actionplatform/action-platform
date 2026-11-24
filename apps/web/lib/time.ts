@@ -18,3 +18,14 @@ export function relativeTime(date: Date | string, now = Date.now()): string {
   const y = Math.round(mo / 12);
   return `${y} ${y === 1 ? "year" : "years"} ago`;
 }
+
+export function elapsed(start: string | null | undefined, now = Date.now()): string {
+  if (!start) return "—";
+  const s = Math.max(0, Math.floor((now - utc(start).getTime()) / 1000));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ${s % 60}s`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ${m % 60}m`;
+  return `${Math.floor(h / 24)}d ${h % 24}h`;
+}

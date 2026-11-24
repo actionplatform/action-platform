@@ -1,14 +1,19 @@
 "use client";
 
 import { Building2, Check, ChevronsUpDown, Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { switchOrganization } from "@/app/(app)/actions";
 import type { Org } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useScope } from "./scope";
+
+const STAYS = ["/dashboard"];
 
 export function OrgSwitcher({ org, orgs }: { org: Org; orgs: Org[] }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const { switchingTo, setSwitchingTo } = useScope();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
@@ -18,6 +23,27 @@ export function OrgSwitcher({ org, orgs }: { org: Org; orgs: Org[] }) {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, []);
+
+  useEffect(() => {
+    if (switchingTo === org.id) setSwitchingTo(null);
+  }, [org.id, switchingTo, setSwitchingTo]);
+
+  const choose = (id: string) => {
+    setOpen(false);
+    if (id === org.id) return;
+    const next = STAYS.includes(pathname) ? pathname : "/projects";
+    setSwitchingTo(id);
+    start(async () => {
+      try {
+        await switchOrganization(id);
+      } catch (e) {
+        setSwitchingTo(null);
+        throw e;
+      }
+      router.push(next);
+      router.refresh();
+    });
+  };
 
   return (
     <div ref={ref} className="relative">
@@ -42,7 +68,7 @@ export function OrgSwitcher({ org, orgs }: { org: Org; orgs: Org[] }) {
               key={o.id}
               type="button"
               disabled={pending}
-              onClick={() => { setOpen(false); if (o.id !== org.id) start(async () => { await switchOrganization(o.id); router.push("/projects"); router.refresh(); }); }}
+              onClick={() => choose(o.id)}
               className={cn("flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-surface-hover", o.id === org.id && "text-foreground")}
             >
               <span className="flex-1 truncate text-left">{o.name}</span>

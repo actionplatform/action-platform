@@ -20,6 +20,7 @@ from app.core.db.models import (
 from app.core.shared.clock import now
 
 EMBEDDED_CI_HOSTS = ("github", "gitlab", "bitbucket")
+ACTIVE_DEPLOYMENT = ("queued", "running")
 
 
 class Insights:
@@ -120,6 +121,47 @@ class Insights:
             "without_ci": without_ci,
             "events": self._events(ids, names),
         }
+
+    def in_progress(
+        self,
+        organization_id: str,
+        project_id: Optional[str] = None,
+        app_id: Optional[str] = None,
+    ) -> list[dict[str, Any]]:
+        """Deployments still queued or running, the latest started first."""
+        names = {
+            a[0]: {"app_id": a[0], "app": a[1], "project_id": a[2], "project": a[3]}
+            for a in self._apps(organization_id, project_id, app_id)
+        }
+
+        if not names:
+            return []
+
+        return [
+            {
+                **names[d.app_id],
+                "id": d.id,
+                "target": d.target,
+                "kind": d.kind,
+                "stage": d.stage,
+                "version": d.version,
+                "status": d.status,
+                "started_at": d.started_at,
+                "url": d.url,
+            }
+            for d in self.db.scalars(
+                select(Deployment)
+                .where(
+                    Deployment.app_id.in_(list(names)),
+                    Deployment.status.in_(ACTIVE_DEPLOYMENT),
+                )
+                .order_by(
+                    Deployment.started_at.desc().nullslast(),
+                    Deployment.synced_at.desc(),
+                )
+                .limit(100)
+            )
+        ]
 
     def _events(
         self, ids: list[str], names: dict[str, dict], limit: int = 12

@@ -55,7 +55,7 @@ A person of the platform shows as their display name wherever they acted — who
 
 ## Dashboard
 
-The home of an organization: apps, deployments today (and how many verified), deploys and CI runs failed today, releases this week; the latest events across every app — releases, deployments, CI runs, pull requests — each linking to its tab; and the apps that read no CI yet, linking to *Connect CI*. Read from the database, cached thirty seconds on the API.
+The home of an organization: four counters — apps, deployments today (and how many verified or failed), CI runs today (and how many failed), releases this week; **Deployments in progress**, every deployment still `queued` or `running` with its environment, status and the time since it started, refreshed every few seconds while one is active; the latest events across every app — releases, deployments, CI runs, pull requests — each linking to its tab; **Needs attention**, the deployment and CI failures of the day; and **CI coverage**, how many apps read a CI. Counters and events are read from the database and cached thirty seconds on the API; the deployments in progress are read on every request. A deploy the platform's worker runs itself (`run_by = "platform"`) writes its row when it ends, so it is not listed while it runs; one run by a CI shows once its run is synced.
 
 ## Projects
 

@@ -2089,6 +2089,20 @@ export interface components {
             scopes: components["schemas"]["ScopeInfo"][];
             default_scopes: string[];
         };
+        ActiveDeployment: {
+            app_id: string;
+            app: string;
+            project_id: string;
+            project: string;
+            id: string;
+            target: string;
+            kind: string;
+            stage?: string | null;
+            version: string;
+            status: string;
+            started_at?: string | null;
+            url?: string | null;
+        };
         ActiveOrganizationRequest: {
             organization_id: string;
         };
@@ -2404,6 +2418,7 @@ export interface components {
             releases_week: number;
             without_ci: components["schemas"]["app__schemas__insights__AppRef"][];
             events: components["schemas"]["Event"][];
+            in_progress: components["schemas"]["ActiveDeployment"][];
         };
         DeployRequest: {
             stage?: string | null;
