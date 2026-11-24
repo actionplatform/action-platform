@@ -58,6 +58,11 @@ class Accounts(AuthBase):
         if self.db.scalar(select(User).where(User.email == email)):
             raise AuthError("exists", "an account with this email already exists", 409)
 
+        user = self.new_user(name, email, password)
+
+        return user, self.open_session(user)
+
+    def new_user(self, name: str, email: str, password: str) -> User:
         moment = now()
         user = User(
             id=new_id(),
@@ -81,7 +86,7 @@ class Accounts(AuthBase):
         )
         self.db.flush()
 
-        return user, self.open_session(user)
+        return user
 
     def sign_in(
         self,

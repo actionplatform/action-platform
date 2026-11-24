@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { revokeToken } from "@/lib/api-tokens";
+import { issueUserToken, revokeToken } from "@/lib/api-tokens";
+import type { NewToken } from "@/lib/new-token";
 import { failed, type Result } from "@/lib/result";
 import { requireSession } from "@/lib/session";
 import { revokeSession } from "@/lib/sessions";
@@ -23,6 +24,18 @@ export async function revokeBrowserSession(id: string): Promise<Result> {
     if (!(await revokeSession(id))) return { ok: false, error: "session not found" };
     revalidatePath("/organization/sessions");
     return { ok: true, data: null };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
+export async function createApiToken(input: NewToken): Promise<Result<{ token: string; scope: string[]; expiresAt: number }>> {
+  try {
+    await requireSession();
+    if (!input.name.trim()) return { ok: false, error: "name the token" };
+    const issued = await issueUserToken(input);
+    revalidatePath("/organization/sessions");
+    return { ok: true, data: { token: issued.token, scope: issued.scope, expiresAt: issued.expiresAt.getTime() } };
   } catch (e) {
     return failed(e);
   }

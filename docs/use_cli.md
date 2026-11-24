@@ -76,12 +76,15 @@ action-platform deploy-record <target> <version> [--stage|--scope s] [--url u] [
 action-platform-api serve [--reload] [--host] [--port] [--cors]   # JSON API for the web app (:7788, OpenAPI at /docs)
 action-platform mcp [--http] [--remote]                     # MCP server (local tools, or the hosted platform's)
 action-platform login <url> [--scope read,write] [--name label] [--no-browser]   # device flow → bearer token; asks for everything your role allows unless --scope narrows it
+action-platform login <url> --token < token.txt               # no browser: keep a token created in the web app or by `action-platform-api tokens issue` (stdin or AP_TOKEN)
 action-platform whoami                                      # server — account — scope — on Org / project / app
 action-platform logout
 action-platform access audit | who | grant | revoke | offboard | sync   # service access on the logged-in platform; dry runs unless --apply
 action-platform-api db status | migrate [--url …]            # the API's database: revision, migrate on demand
 action-platform-api db backup [--out FILE|-] | restore FILE|- [--force]   # pg_dump / psql; restore refuses a database with tables unless --force
 action-platform-api worker [--once] [--interval 2] [--name]  # run queued jobs against AP_DATABASE_URL
+action-platform-api users list | create | reset-password | disable | enable   # accounts, from inside the API container
+action-platform-api tokens issue EMAIL [--scope …] [--org …]  # a bearer token for automation on stdout
 ```
 
 Credentials from `login` live in `~/.action-platform/credentials.json` (mode 600); `AP_SERVER` + `AP_TOKEN` override them.
@@ -102,6 +105,8 @@ Credentials from `login` live in `~/.action-platform/credentials.json` (mode 600
 ## Tokens and scopes
 
 `action-platform login <server> [--scope …] [--name label]` runs the device flow. Without `--scope` it asks for every scope and every organization; the browser page shows that selection already made, cut to what your role allows, and you can narrow it before approving. `--scope read,write` narrows from the command line instead. In the browser you pick what the token may do — `read` (always), `write` (configuration, branches, pull requests, commits, sync), `release`, `admin` (projects, members, hosts, settings) — and where it may act — one organization or all of them, optionally one project, optionally one app inside it — and the CLI swaps the approved session for a bearer JWT with that scope and reach, valid 90 days, kept in `~/.action-platform/credentials.json`. Scope narrows your role; it never widens it, and the browser only offers what your role can grant. `action-platform whoami` prints server, account, scope and reach; tokens are listed and revoked under **Connected apps** (key icon next to your name in the web app), together with the programs that used them. `AP_SERVER` / `AP_TOKEN` (and `AP_SCOPE` for display) override the file.
+
+Without a browser, `action-platform login <server> --token` keeps a token made elsewhere: **New token** under Organization → Sessions in the web app (name, scope and reach picked there, shown once), or `action-platform-api tokens issue` run by an operator ([operations](start_operations.md#users-and-tokens)). The token is read from `AP_TOKEN` when set, otherwise from stdin (a hidden prompt in a terminal); it is never printed. The CLI checks it against `/api/v1/me` and writes `credentials.json` as the device flow does, so `whoami`, every remote command and `action-platform mcp --remote` use it. A password reset revokes the account's tokens: log in again afterwards.
 
 ## Error reporting
 

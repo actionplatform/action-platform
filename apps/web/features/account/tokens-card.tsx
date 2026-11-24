@@ -1,6 +1,7 @@
 "use client";
 
-import { Bot, KeyRound, Trash2 } from "lucide-react";
+import { Bot, KeyRound, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -21,12 +22,12 @@ export function TokensCard({ tokens, now, scopes }: { tokens: UserToken[]; now: 
 
   return (
     <Panel>
-      <PanelHeader title="API tokens" description={<>Bearer tokens issued by <code className="font-mono">action-platform login</code>. Each token shows which programs have used it — Claude Code, Codex, Cursor, the CLI — and carries a scope on top of your role. Revoke what you no longer recognise.</>} />
+      <PanelHeader title="API tokens" description={<>Bearer tokens issued by <code className="font-mono">action-platform login</code> or created here. Each token shows which programs have used it — Claude Code, Codex, Cursor, the CLI — and carries a scope on top of your role. Revoke what you no longer recognise.</>} aside={<Link href="/organization/sessions/new" className="inline-flex h-8 items-center gap-1.5 rounded-[7px] border border-border px-2.5 text-[13px] hover:bg-surface-hover"><Plus className="size-3.5" strokeWidth={2} aria-hidden="true" /> New token</Link>} />
       {tokens.length === 0 ? (
         <div className="flex flex-col items-center px-6 py-10 text-center">
           <div className="flex size-11 items-center justify-center rounded-lg border border-border"><KeyRound className="size-5 text-secondary" strokeWidth={1.5} /></div>
           <div className="mt-3 text-sm font-medium">No tokens yet</div>
-          <div className="mt-1 max-w-sm text-[13px] text-secondary">Run <code className="font-mono">action-platform login &lt;server&gt; --scope read,write</code> and approve the code here.</div>
+          <div className="mt-1 max-w-sm text-[13px] text-secondary">Run <code className="font-mono">action-platform login &lt;server&gt; --scope read,write</code> and approve the code here, or create a token for a machine without a browser.</div>
         </div>
       ) : (
         <ul className="divide-y divide-border-subtle">

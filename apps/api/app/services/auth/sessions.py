@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from app.services.auth.base import (
     SESSION_REFRESH_AFTER,
@@ -13,6 +13,7 @@ from app.services.auth.base import (
     now,
 )
 from app.services.auth.errors import (
+    AuthError,
     Unauthenticated,
 )
 from app.core.db.models import (
@@ -26,6 +27,9 @@ class Sessions(AuthBase):
     def open_session(
         self, user: User, ip: Optional[str] = None, user_agent: Optional[str] = None
     ) -> Session:
+        if user.disabled_at is not None:
+            raise AuthError("disabled", "this account is disabled", 403)
+
         moment = now()
         active = self.db.scalar(
             select(Member.organization_id)
@@ -67,8 +71,9 @@ class Sessions(AuthBase):
             return None
 
         moment = now()
+        user = self.db.get(User, session.user_id)
 
-        if session.expires_at < moment:
+        if session.expires_at < moment or user is None or user.disabled_at is not None:
             self.db.delete(session)
             self.db.flush()
 
@@ -115,3 +120,16 @@ class Sessions(AuthBase):
         self.db.flush()
 
         return True
+
+    def end_sessions(self, user_id: str, keep: Optional[str] = None) -> int:
+        """Delete every session of the user but `keep`; the count of the ones that were live."""
+        query = delete(Session).where(Session.user_id == user_id)
+
+        if keep:
+            query = query.where(Session.id != keep)
+
+        live = sum(1 for s in self.sessions_of(user_id) if s.id != keep)
+        self.db.execute(query)
+        self.db.flush()
+
+        return live

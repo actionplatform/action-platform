@@ -34,7 +34,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         <div className="flex items-center gap-2 font-semibold"><Logo className="size-5" /> action-platform</div>
         {done ? (
           <>
-            <p className="text-sm">Your password was changed and every open session was signed out.</p>
+            <p className="text-sm">Your password was changed: every open session was signed out and the CLI and MCP servers signed in as you have to log in again.</p>
             <Link href="/login" className={cn(buttonVariants(), "w-full")}>Sign in</Link>
           </>
         ) : (
