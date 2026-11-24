@@ -294,3 +294,16 @@ class DispatchedTarget(DeployTarget):
 
     def url(self, version: str, stage: str | None = None) -> str | None:
         return self.inner.url(version, stage)
+
+
+class UnverifiedTarget(DeployTarget):
+    """A destination of a kind no provider is installed for: the job deploys it, nothing here can ask it."""
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def preflight(self, ctx: Context) -> None:
+        return None
+
+    def deploy(self, ctx: Context) -> DeployResult:
+        raise DeployError(f"{self.name} is deployed by its job, not by a provider")
