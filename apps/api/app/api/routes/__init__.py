@@ -9,6 +9,7 @@ from app.api.routes import (
     deployments,
     identity,
     insights,
+    instance,
     jobs,
     releases,
     service_access,
@@ -87,6 +88,7 @@ routers = [
     identity,
     insights,
     service_access,
+    instance,
 ]
 
 router = APIRouter()

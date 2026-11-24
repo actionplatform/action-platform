@@ -9,6 +9,7 @@ from action_platform.settings import settings
 from app.core.auth.secrets import Secrets
 from app.core.db import Database
 from app.services.jobs.worker import Worker
+from app.services.jobs.workers import Workers
 
 
 def run(
@@ -27,6 +28,11 @@ def run(
         "--kinds",
         help="Only these job kinds, comma-separated (e.g. deploy,destroy); default every kind",
     ),
+    check: bool = typer.Option(
+        False,
+        "--check",
+        help="Exit 0 when the worker called --name wrote a heartbeat in the last minute, 1 otherwise; runs nothing",
+    ),
 ) -> None:
     """Run queued jobs — sync, release, deploy, push, imports — against the API's database and workspaces."""
 
@@ -34,6 +40,9 @@ def run(
         raise ActionPlatformError("no database: set AP_DATABASE_URL")
 
     database = Database(settings.database.url, settings.database.pool_size)
+
+    if check:
+        raise typer.Exit(_check(database, name))
 
     if settings.database.auto_migrate:
         database.migrate()
@@ -56,3 +65,33 @@ def run(
 
     if once:
         typer.echo(f"{done} job(s) done")
+
+
+def _check(database: Database, name: str) -> int:
+    if not name:
+        typer.echo("--check needs --name: the worker to look for", err=True)
+
+        return 2
+
+    try:
+        row = Workers(database).get(name)
+    except Exception as e:
+        typer.echo(f"cannot read the worker table: {e}", err=True)
+
+        return 1
+
+    if row is None:
+        typer.echo(f"worker {name} has not started", err=True)
+
+        return 1
+
+    if not Workers.alive(row):
+        typer.echo(
+            f"worker {name} was last seen at {row.last_seen:%H:%M:%S} UTC", err=True
+        )
+
+        return 1
+
+    typer.echo(f"worker {name} alive")
+
+    return 0

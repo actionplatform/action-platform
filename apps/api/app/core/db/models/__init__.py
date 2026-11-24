@@ -14,7 +14,7 @@ from app.core.db.models.integrations import (
     SourceHost,
     TemplateSource,
 )
-from app.core.db.models.jobs import Job, JobLog
+from app.core.db.models.jobs import Job, JobLog, Worker
 from app.core.db.models.scopes import Scope
 from app.core.db.models.organization import (
     ApiToken,
@@ -74,5 +74,6 @@ __all__ = [
     "TemplateSource",
     "User",
     "Verification",
+    "Worker",
     "now",
 ]

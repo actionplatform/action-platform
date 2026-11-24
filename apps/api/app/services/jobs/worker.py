@@ -11,6 +11,8 @@ from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 import uuid
 from typing import Iterator, Optional
 
+from app.core.shared.clock import now
+
 from action_platform.core.exception import ActionPlatformError
 from action_platform.plugins import registry as plugin_registry
 from action_platform.settings import settings
@@ -25,6 +27,7 @@ from app.services.organization import InvitationSender
 from app.services.jobs import JobQueue, handlers as _handlers  # noqa: F401 — registers the job kinds
 from app.services.jobs.logs import JobLogs
 from app.services.jobs.registry import JobServices, handlers
+from app.services.jobs.workers import BEAT_EVERY, Workers
 
 log = logging.getLogger("action_platform.worker")
 
@@ -57,6 +60,8 @@ class Worker:
         self.queue = JobQueue(database)
         self.logs = JobLogs(database)
         self.name = name or worker_name()
+        self.workers = Workers(database)
+        self.started_at = now()
 
         if registry is None:
             configure_registry(database)
@@ -84,10 +89,41 @@ class Worker:
         """Claim and run jobs until the queue is empty (`once`) or forever; `concurrency` jobs at a time, each on its own thread, `kinds` to take only some."""
         wanted = [k for k in (kinds or list(self.handlers)) if k in self.handlers]
 
-        if concurrency <= 1:
-            return self._run_serial(interval, once, wanted)
+        with self.beating(wanted):
+            if concurrency <= 1:
+                return self._run_serial(interval, once, wanted)
 
-        return self._run_pool(interval, once, concurrency, wanted)
+            return self._run_pool(interval, once, concurrency, wanted)
+
+    def beat(self, kinds: list[str]) -> None:
+        try:
+            self.workers.beat(self.name, kinds, socket.gethostname(), self.started_at)
+        except Exception:
+            log.warning("worker heartbeat failed", exc_info=True)
+
+    @contextmanager
+    def beating(self, kinds: list[str]) -> Iterator[None]:
+        """Say every few seconds that this worker is alive and which kinds it takes, also while a long job holds the loop."""
+        stop = threading.Event()
+        self.beat(kinds)
+
+        try:
+            self.workers.forget_old()
+        except Exception:
+            log.debug("old workers not forgotten", exc_info=True)
+
+        def run() -> None:
+            while not stop.wait(BEAT_EVERY):
+                self.beat(kinds)
+
+        thread = threading.Thread(target=run, name=f"{self.name}:alive", daemon=True)
+        thread.start()
+
+        try:
+            yield
+        finally:
+            stop.set()
+            thread.join(timeout=5)
 
     def _idle(self, interval: float) -> None:
         """Sleep until something is enqueued or `interval` passes — whichever the database allows."""

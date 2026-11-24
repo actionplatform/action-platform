@@ -1,0 +1,77 @@
+"""The instance's health: what anyone may probe, and what an owner sees."""
+
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel
+
+
+class Health(BaseModel):
+    status: str
+    database: bool
+    migrations: bool
+    workers: dict[str, bool]
+
+
+class WorkerRow(BaseModel):
+    name: str
+    host: str
+    kinds: list[str]
+    started_at: datetime
+    last_seen: datetime
+    alive: bool
+
+
+class QueueRow(BaseModel):
+    kind: str
+    group: str
+    queued: int
+    running: int
+    oldest_queued_seconds: Optional[int] = None
+    worker_running: bool
+
+
+class MailFailureOut(BaseModel):
+    at: datetime
+    what: str
+    error: str
+
+
+class SmtpOut(BaseModel):
+    configured: bool
+    host: Optional[str] = None
+    port: Optional[int] = None
+    security: Optional[str] = None
+    sender: Optional[str] = None
+    last_failure: Optional[MailFailureOut] = None
+
+
+class GoogleOut(BaseModel):
+    configured: bool
+    redirect_uri: str
+
+
+class OAuthAppState(BaseModel):
+    provider: str
+    configured: bool
+
+
+class Integrations(BaseModel):
+    smtp: SmtpOut
+    google: GoogleOut
+    sentry_api: bool
+    oauth_apps: list[OAuthAppState]
+
+
+class InstanceHealthOut(Health):
+    version: str
+    api: str
+    workers_seen: list[WorkerRow]
+    queue: list[QueueRow]
+    integrations: Integrations
+
+
+class TestEmailOut(BaseModel):
+    sent: bool
+    to: str
+    error: Optional[str] = None

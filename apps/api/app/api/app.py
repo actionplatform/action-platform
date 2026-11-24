@@ -24,6 +24,7 @@ from app.services.auth.google import GoogleConfig
 from app.core.auth.secrets import Secrets
 from app.core.db import Database
 from app.core.shared.mail import Mailer, mailer_from_env
+from app.services.instance import MailLog
 from app.core.shared.urls import GitUrl
 from app.repositories.workspace.source import configure_registry, get_registry
 
@@ -31,6 +32,7 @@ log = logging.getLogger("action_platform.api")
 
 OPEN_PATHS = {
     "/api/version",
+    "/api/health",
     "/docs",
     "/openapi.json",
     "/redoc",
@@ -86,6 +88,7 @@ def build(
     app.state.verification_uri = f"{base}/device"
     app.state.public_url = base
     app.state.mailer = mailer_from_env(os.environ) if mailer is None else mailer
+    app.state.mail_log = MailLog()
     google = GoogleConfig.from_env(os.environ) if google is None else google
     app.state.google = google if google.configured else None
     expected = settings.api.token if token is None else token
