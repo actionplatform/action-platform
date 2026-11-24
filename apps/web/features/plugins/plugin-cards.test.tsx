@@ -81,4 +81,17 @@ describe("PluginCards", () => {
     expect(screen.getByText("Failed to load")).toBeInTheDocument();
     expect(screen.getByText("ImportError: boto3")).toBeInTheDocument();
   });
+
+  it("a plugin that takes events links its deliveries for those who manage the organization", () => {
+    render(<PluginCards plugins={[{ ...lambda, events: true }]} canManage />);
+    expect(screen.getByRole("link", { name: /deliveries/i })).toHaveAttribute("href", "/plugins/aws-lambda/deliveries");
+    cleanup();
+
+    render(<PluginCards plugins={[{ ...lambda, events: true }]} canManage={false} />);
+    expect(screen.queryByRole("link", { name: /deliveries/i })).toBeNull();
+    cleanup();
+
+    render(<PluginCards plugins={[lambda]} canManage />);
+    expect(screen.queryByRole("link", { name: /deliveries/i })).toBeNull();
+  });
 });

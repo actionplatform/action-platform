@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertCircle, Check, Settings2 } from "lucide-react";
+import { AlertCircle, Check, Send, Settings2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { savePluginOptions } from "./actions";
@@ -30,6 +31,7 @@ export type PluginCardData = {
   options: PluginOption[];
   values: Record<string, unknown>;
   secrets?: string[];
+  events?: boolean;
 };
 
 function stored(plugin: PluginCardData, key: string): boolean {
@@ -131,6 +133,19 @@ export function PluginCards({
                     />{" "}
                     Configure
                   </Button>
+                )}
+                {p.events && p.error === null && canManage && (
+                  <Link
+                    href={`/plugins/${encodeURIComponent(p.slug)}/deliveries`}
+                    className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-border text-sm font-medium hover:border-border-hover hover:bg-surface-hover"
+                  >
+                    <Send
+                      className="size-4"
+                      strokeWidth={1.75}
+                      aria-hidden="true"
+                    />
+                    Deliveries
+                  </Link>
                 )}
                 <div className="flex h-6 items-center text-[13px] text-muted-foreground">
                   {p.version ? `v${p.version}` : ""}

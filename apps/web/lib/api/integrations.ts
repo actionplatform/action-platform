@@ -32,6 +32,7 @@ export const integrations = {
   removeTemplateSource: async (id: string) => unwrap(await client.DELETE("/api/v1/template-sources/{id}", { params: { path: { id } } })),
   plugins: async () => unwrap(await client.GET("/api/v1/plugins")),
   pluginOptions: async (slug: string) => unwrap(await client.GET("/api/v1/plugins/{slug}/options", { params: { path: { slug } } })),
+  pluginDeliveries: async (slug: string) => unwrap(await client.GET("/api/v1/plugins/{slug}/deliveries", { params: { path: { slug } } })),
   setPluginOptions: async (slug: string, options: Record<string, unknown>) =>
     unwrap(await client.PUT("/api/v1/plugins/{slug}/options", { params: { path: { slug } }, body: { options, secrets: [] } })),
 };

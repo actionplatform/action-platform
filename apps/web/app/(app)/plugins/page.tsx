@@ -21,7 +21,7 @@ async function pluginCards(canManage: boolean, issuer: string, organization: str
         action_copy: o.action_copy ? filled(o.action_copy, issuer, organization, (v) => v) : "",
       }));
       const stored = canManage && options.length > 0 ? await v1.pluginOptions(p.slug).catch(() => ({ options: {}, secrets: [] })) : { options: {}, secrets: [] };
-      return { slug: p.slug, name: p.name || p.slug, version: p.version, description: p.description, error: p.error ?? null, options, values: stored.options as Record<string, unknown>, secrets: stored.secrets ?? [] };
+      return { slug: p.slug, name: p.name || p.slug, version: p.version, description: p.description, error: p.error ?? null, options, values: stored.options as Record<string, unknown>, secrets: stored.secrets ?? [], events: !!p.events };
     }),
   );
 }
