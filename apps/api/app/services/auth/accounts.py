@@ -52,7 +52,7 @@ class Accounts(AuthBase):
             ):
                 raise Forbidden("sign-up is closed: an owner has to invite you")
 
-            if invitation.email.lower() != email:
+            if invitation.email is not None and invitation.email.lower() != email:
                 raise Forbidden("this invitation was sent to another address")
 
         if self.db.scalar(select(User).where(User.email == email)):

@@ -41,6 +41,7 @@ Alembic, shipped with the API — one revision per change:
 | `0021` | `app_config.file_hash`: the `platform.toml` last imported from or exported to the clone — a sync that finds the file changed in the repository imports it again |
 | `0022` | `service_connection`: an organization's OAuth connection to a service that is not a code host (Sentry), one per kind, tokens sealed |
 | `0023` | `app_adoption`: where each app stands on the way onto the platform (state, reason, language, CI, version, install branch and pull request), written by the `install` job |
+| `0024` | `invitation`: `email` may be empty when the invitation is bound to a code-host login (`host_kind`, `host_login`); `team_ids` are the teams the person joins on accepting |
 
 A database the web app created has no `alembic_version` table but does have `user`; the API recognises that, stamps it at `0001` and applies only what follows. Nothing is recreated, nothing is copied: pointing the API at the web app's database is the whole data migration.
 

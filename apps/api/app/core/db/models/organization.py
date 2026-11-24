@@ -58,7 +58,10 @@ class Invitation(Base):
     organization_id: Mapped[str] = mapped_column(
         KEY, ForeignKey("organization.id", ondelete="CASCADE"), nullable=False
     )
-    email: Mapped[str] = mapped_column(SHORT, nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(SHORT)
+    host_kind: Mapped[Optional[str]] = mapped_column(SHORT)
+    host_login: Mapped[Optional[str]] = mapped_column(SHORT)
+    team_ids: Mapped[Optional[str]] = mapped_column(Text)
     role: Mapped[Optional[str]] = mapped_column(SHORT)
     status: Mapped[str] = mapped_column(SHORT, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

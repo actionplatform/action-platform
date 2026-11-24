@@ -239,9 +239,25 @@ class ResetPasswordRequest(BaseModel):
     password: str
 
 
+class VerifyLoginStart(BaseModel):
+    origin: str
+
+
+class VerifyLoginStarted(BaseModel):
+    url: str
+
+
+class VerifyLoginCallback(BaseModel):
+    origin: str
+    code: str
+    state: str
+
+
 class OpenInvitation(BaseModel):
     id: str
-    email: str
+    email: Optional[str] = None
+    login: Optional[str] = None
+    host_kind: Optional[str] = None
     role: str
     status: str
     expired: bool
