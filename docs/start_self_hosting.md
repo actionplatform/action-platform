@@ -77,6 +77,8 @@ Regenerate `template.b64` after editing the compose or the toml: `sh deploy/dokp
 
 ## The services
 
+The images are the supported way to run the API. From a checkout of the repository, `pip install ./apps/api` installs it with the `action-platform-api` command (`db migrate`, `serve`, `worker`), the way the images do.
+
 ```mermaid
 flowchart LR
     I((internet)) -->|443| T[traefik · TLS]
