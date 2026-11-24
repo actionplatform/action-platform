@@ -128,11 +128,11 @@ def register(mcp: Any) -> None:
             ),
         ] = None,
         ci: Annotated[
-            str,
+            Optional[str],
             Field(
-                description="github, gitlab, jenkins, bitbucket, or none for no pipeline files"
+                description="github, gitlab, jenkins, bitbucket, or none for no pipeline files; default platform.toml, else the CI the repository already has, else the one of its remote"
             ),
-        ] = "github",
+        ] = None,
         dry_run: Annotated[
             bool, Field(description="true only reports what would be created")
         ] = True,
@@ -154,6 +154,7 @@ def register(mcp: Any) -> None:
             "ci": plan.ci,
             "detected_ci": plan.detected_ci,
             "warnings": plan.warnings,
+            "ci_snippet": plan.ci_snippet,
             "created": plan.created,
             "kept": plan.skipped,
             "hooks_installed": plan.hooks_installed,
