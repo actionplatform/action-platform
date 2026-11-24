@@ -5,7 +5,7 @@ import { ForgotPasswordForm } from "./forgot-password-form";
 
 export default async function ForgotPasswordPage() {
   const status = await setupStatus();
-  if (!status.complete) redirect("/setup");
+  if (!status.hasUser) redirect("/setup");
   if (await getSession()) redirect("/projects");
   if (!status.passwordRecovery) redirect("/login");
 

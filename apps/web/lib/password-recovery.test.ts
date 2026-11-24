@@ -67,3 +67,20 @@ describe("resetPassword", () => {
     expect(await resetPassword("old", "new-password1")).toEqual({ ok: false, error: "this link is invalid or has expired" });
   });
 });
+
+describe("setup", () => {
+  it("is open until the first account exists", async () => {
+    api.status.mockResolvedValue({ configured: true, users: 0, organizations: 0, password_recovery: false, setup: "open" });
+    expect((await setupStatus()).open).toBe(true);
+
+    api.status.mockResolvedValue({ configured: true, users: 1, organizations: 0, password_recovery: false, setup: "closed" });
+    const closed = await setupStatus();
+    expect(closed.open).toBe(false);
+    expect(closed.complete).toBe(false);
+  });
+
+  it("falls back to the user count on an API that does not say", async () => {
+    api.status.mockResolvedValue({ configured: true, users: 0, organizations: 0, password_recovery: false });
+    expect((await setupStatus()).open).toBe(true);
+  });
+});

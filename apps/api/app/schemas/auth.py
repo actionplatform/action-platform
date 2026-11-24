@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -11,6 +11,7 @@ class SignUpRequest(BaseModel):
     email: str
     password: str
     invitation_id: Optional[str] = None
+    setup_token: Optional[str] = None
 
 
 class SignInRequest(BaseModel):
@@ -209,6 +210,7 @@ class AuthStatus(BaseModel):
     organizations: int = 0
     password_recovery: bool = False
     google: bool = False
+    setup: Literal["open", "closed"] = "closed"
 
 
 class GoogleStartRequest(BaseModel):

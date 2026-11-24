@@ -25,7 +25,7 @@ export function isAuthError(e: unknown, ...statuses: number[]): e is ApiError {
 
 export const authApi = {
   status: async () => unwrap(await client.GET("/api/auth/status")),
-  signUp: async (body: { name: string; email: string; password: string; invitation_id?: string | null }, ip: string | null) =>
+  signUp: async (body: { name: string; email: string; password: string; invitation_id?: string | null; setup_token?: string | null }, ip: string | null) =>
     unwrap(await client.POST("/api/auth/sign-up", { body, headers: clientHeaders(ip) })),
   signIn: async (body: { email: string; password: string; ip_address?: string | null; user_agent?: string | null }, ip: string | null) =>
     unwrap(await client.POST("/api/auth/sign-in", { body, headers: clientHeaders(ip) })),

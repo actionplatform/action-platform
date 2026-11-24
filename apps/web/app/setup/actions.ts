@@ -18,12 +18,13 @@ export async function checkApi(): Promise<Result> {
   return { ok: true };
 }
 
-export async function createAdmin(input: { name: string; email: string; password: string }): Promise<Result> {
+export async function createAdmin(input: { setupToken: string; name: string; email: string; password: string }): Promise<Result> {
   const status = await setupStatus();
   if (!status.dbOk) return { ok: false, error: status.error ?? "the API is not ready" };
-  if (status.hasUser) return { ok: false, error: "an account already exists — sign in instead" };
+  if (!status.open) return { ok: false, error: "an account already exists — sign in instead" };
+  if (!input.setupToken.trim()) return { ok: false, error: "enter the setup token" };
 
-  const created = await signUp(input.name, input.email, input.password);
+  const created = await signUp(input.name, input.email, input.password, null, input.setupToken.trim());
   return created.ok ? { ok: true } : created;
 }
 

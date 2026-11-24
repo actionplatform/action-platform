@@ -85,6 +85,8 @@ What the platform says when it refuses something, what it means and what to do. 
 
 **The setup wizard says the API is unreachable or has no auth secret** — the web and the API must share `AP_DATABASE_URL` and `AP_AUTH_SECRET`; the wizard prints the exact values to start the API with when running by hand ([self-hosting](start_self_hosting.md)).
 
+**The setup wizard refuses the setup token** (`403 setup_token`) — print it again in the API container (`docker compose exec api action-platform-api setup token`; on Dokploy in the `ap-api` terminal). It follows the auth secret: a token printed before `BETTER_AUTH_SECRET` changed no longer works, and `AP_SETUP_TOKEN`, when set, replaces it. `setup is closed` from the command means an account exists: sign in at `/login`.
+
 **A job stays `running` for ever** — the worker died mid-job. After thirty minutes the reaper puts it back in the queue with `worker lost`; a job that fails three times ends `failed` with the last error.
 
 **The web shows stale data** — lists poll every few seconds while a job is live; a page reload re-reads everything. An app older than `AP_WORKSPACE_TTL` seconds is re-cloned on the next request; **Sync** forces it now.

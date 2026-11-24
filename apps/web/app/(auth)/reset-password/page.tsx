@@ -4,7 +4,7 @@ import { ResetPasswordForm } from "./reset-password-form";
 
 export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const status = await setupStatus();
-  if (!status.complete) redirect("/setup");
+  if (!status.hasUser) redirect("/setup");
   const { token } = await searchParams;
   if (!token) redirect("/forgot-password");
 

@@ -87,12 +87,13 @@ function AdminStep({ onDone }: { onDone: () => void }) {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
         start(async () => {
-          const r = await createAdmin({ name: String(f.get("name")), email: String(f.get("email")), password: String(f.get("password")) });
+          const r = await createAdmin({ setupToken: String(f.get("setupToken")), name: String(f.get("name")), email: String(f.get("email")), password: String(f.get("password")) });
           if (r.ok) onDone(); else setError(r.error);
         });
       }}
     >
       <p className="text-sm text-muted-foreground">First account, owner of the first organization. Sign-ups after this one are closed.</p>
+      <Field label="Setup token" hint={<>Proves you run this instance. <code className="font-mono">install.sh</code> printed it; otherwise run <code className="font-mono">docker compose exec api action-platform-api setup token</code> in the install directory, or <code className="font-mono">action-platform-api setup token</code> in the terminal of the <code className="font-mono">ap-api</code> container on Dokploy.</>}><input name="setupToken" className={cn(input, "font-mono uppercase")} placeholder="XXXX-XXXX-XXXX-XXXX" autoComplete="off" spellCheck={false} required /></Field>
       <Field label="Name"><input name="name" className={input} required /></Field>
       <Field label="Email"><input name="email" type="email" className={input} required /></Field>
       <Field label="Password"><input name="password" type="password" minLength={8} className={input} required /></Field>
@@ -219,7 +220,7 @@ function HostsStep({ orgId, oauth }: { orgId: string | null; oauth: OAuthInfo })
 
 const input = "mt-1 w-full h-9 rounded-md border border-border bg-background px-3 text-sm";
 
-function Field({ label, hint, className, children }: { label: string; hint?: string; className?: string; children: React.ReactNode }) {
+function Field({ label, hint, className, children }: { label: string; hint?: React.ReactNode; className?: string; children: React.ReactNode }) {
   return (
     <label className={cn("block text-sm", className)}>
       <span className="text-muted-foreground text-xs">{label}</span>

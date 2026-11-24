@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function InvitePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string }> }) {
   const status = await setupStatus();
-  if (!status.complete) redirect("/setup");
+  if (!status.hasUser) redirect("/setup");
   const { id } = await params;
   const invitation = await invitationById(id);
 

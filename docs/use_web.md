@@ -40,10 +40,10 @@ The variables are in [self-hosting › environment](start_self_hosting.md#enviro
 
 ## First run: the setup wizard
 
-`/setup` opens until an organization exists.
+`/setup` creates the first account and organization. Until an account exists it is open; afterwards it only serves the signed-in owner finishing the organization and source host steps, sends everyone else to `/login`, and sends a finished instance to `/projects`.
 
 1. **API** — checks the API is reachable and configured.
-2. **Admin** — the first account. Public sign-up stays closed afterwards.
+2. **Admin** — the first account, after the **setup token** that proves you run the instance: `install.sh` prints it, and `action-platform-api setup token` in the API container prints it again ([self-hosting › first run](start_self_hosting.md#first-run)). Public sign-up stays closed afterwards.
 3. **Organization** — name and slug.
 4. **Source hosts** — connect GitHub / GitLab / Bitbucket, or skip ([Git](#git)).
 

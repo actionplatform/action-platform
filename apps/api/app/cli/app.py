@@ -9,6 +9,7 @@ from action_platform.bootstrap import bootstrap
 from app import api_version
 from app.cli import db as db_cmd
 from app.cli import serve as serve_cmd
+from app.cli import setup as setup_cmd
 from app.cli import tokens as tokens_cmd
 from app.cli import users as users_cmd
 from app.cli import worker as worker_cmd
@@ -25,6 +26,7 @@ app.command("worker")(worker_cmd.run)
 app.add_typer(db_cmd.app, name="db")
 app.add_typer(users_cmd.app, name="users")
 app.add_typer(tokens_cmd.app, name="tokens")
+app.add_typer(setup_cmd.app, name="setup")
 
 
 def main() -> None:

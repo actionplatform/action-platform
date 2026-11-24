@@ -36,6 +36,10 @@ class AuthCase(TempCase):
     def sign_up(
         self, name="Ana", email="ana@example.com", password="password1", **extra
     ):
+        from app.core.auth.secrets import Secrets
+
+        extra.setdefault("setup_token", Secrets("s3cret").setup_token())
+
         return self.client.post(
             "/api/auth/sign-up",
             json={"name": name, "email": email, "password": password, **extra},
@@ -77,6 +81,7 @@ class AccountsTest(AuthCase):
                 "organizations": 0,
                 "password_recovery": False,
                 "google": False,
+                "setup": "closed",
             },
         )
 

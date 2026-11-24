@@ -85,6 +85,7 @@ action-platform-api db backup [--out FILE|-] | restore FILE|- [--force]   # pg_d
 action-platform-api worker [--once] [--interval 2] [--name]  # run queued jobs against AP_DATABASE_URL
 action-platform-api users list | create | reset-password | disable | enable   # accounts, from inside the API container
 action-platform-api tokens issue EMAIL [--scope …] [--org …]  # a bearer token for automation on stdout
+action-platform-api setup token                              # the token the first sign-up needs, until an account exists
 ```
 
 Credentials from `login` live in `~/.action-platform/credentials.json` (mode 600); `AP_SERVER` + `AP_TOKEN` override them.

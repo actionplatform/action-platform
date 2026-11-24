@@ -21,6 +21,7 @@ from app.services.integrations.plugins import DbOptions, reseal
 from app.core.auth.crypto import Sealer
 from app.services.auth.errors import AuthError
 from app.services.auth.google import GoogleConfig
+from app.services.auth.service import AuthService
 from app.core.auth.secrets import Secrets
 from app.core.db import Database
 from app.core.shared.mail import Mailer, mailer_from_env
@@ -83,6 +84,15 @@ def build(
         resealed := reseal(app.state.db, app.state.sealer)
     ):
         log.info("sealed %d plugin secrets stored in plain text", resealed)
+
+    if app.state.secrets and not app.state.db.behind():
+        with app.state.db.session() as db:
+            unclaimed = AuthService(db, app.state.secrets).user_count() == 0
+
+        if unclaimed:
+            log.warning(
+                "no account yet: the first sign-up needs the setup token, printed by `action-platform-api setup token`"
+            )
     base = (settings.api.public_url if public_url is None else public_url).rstrip("/")
     app.state.verification_uri = f"{base}/device"
     app.state.public_url = base

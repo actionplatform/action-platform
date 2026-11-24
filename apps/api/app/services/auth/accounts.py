@@ -4,6 +4,8 @@ from typing import Optional
 
 from sqlalchemy import func, select
 
+from action_platform.settings import settings
+
 from app.services.auth.base import (
     PASSWORD_MIN,
     PROVIDER,
@@ -16,6 +18,7 @@ from app.services.auth.errors import (
     Forbidden,
 )
 from app.core.auth.passwords import hash_password, verify_password
+from app.core.auth.secrets import same_setup_token
 from app.core.db.models import (
     Account,
     Invitation,
@@ -28,8 +31,17 @@ class Accounts(AuthBase):
     def user_count(self) -> int:
         return self.db.scalar(select(func.count()).select_from(User)) or 0
 
+    def setup_token(self) -> str:
+        """`AP_SETUP_TOKEN` when set, otherwise the one derived from the auth secret."""
+        return settings.api.setup_token.strip() or self.secrets.setup_token()
+
     def sign_up(
-        self, name: str, email: str, password: str, invitation_id: Optional[str] = None
+        self,
+        name: str,
+        email: str,
+        password: str,
+        invitation_id: Optional[str] = None,
+        setup_token: Optional[str] = None,
     ) -> tuple[User, Session]:
         email = email.strip().lower()
         name = name.strip()
@@ -44,7 +56,14 @@ class Accounts(AuthBase):
 
         invitation = self.db.get(Invitation, invitation_id) if invitation_id else None
 
-        if self.user_count() > 0:
+        if self.user_count() == 0:
+            if not same_setup_token(setup_token or "", self.setup_token()):
+                raise AuthError(
+                    "setup_token",
+                    "the first account needs the setup token: run `action-platform-api setup token` in the API container",
+                    403,
+                )
+        else:
             if (
                 invitation is None
                 or invitation.status != "pending"

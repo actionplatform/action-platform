@@ -6,7 +6,7 @@ import { LoginForm } from "./login-form";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const status = await setupStatus();
-  if (!status.complete) redirect("/setup");
+  if (!status.hasUser) redirect("/setup");
   const { next, error } = await searchParams;
   const target = safePath(next, "/projects");
   if (await getSession()) redirect(target);

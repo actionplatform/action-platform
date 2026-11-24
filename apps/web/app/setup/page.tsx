@@ -8,17 +8,21 @@ import { SetupWizard } from "./wizard";
 
 type Search = { org?: string; connected?: string; oauth_error?: string; github_app?: string };
 
+export const dynamic = "force-dynamic";
+
 export default async function SetupPage({ searchParams }: { searchParams: Promise<Search> }) {
   const status = await setupStatus();
-  if (status.complete) redirect("/login");
   const query = await searchParams;
+  const session = status.hasUser ? await getSession() : null;
+  if (status.hasUser && !session) redirect("/login");
+  if (status.complete && !query.org) redirect("/projects");
 
   const h = await headers();
   const origin = publicOrigin(h);
 
-  const initialStep = !status.dbOk ? 1 : !status.hasUser ? 2 : query.org ? 4 : 3;
+  const initialStep = !status.dbOk ? 1 : !status.hasUser ? 2 : status.hasOrg ? 4 : 3;
   const none = { configured: false, slug: null as string | null };
-  const apps = (await getSession()) && status.hasOrg ? await oauthApps() : { github: none, gitlab: none, bitbucket: none };
+  const apps = session && status.hasOrg ? await oauthApps() : { github: none, gitlab: none, bitbucket: none };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">

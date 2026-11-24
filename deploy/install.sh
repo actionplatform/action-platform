@@ -61,6 +61,18 @@ backup_database() {
   say "database saved to $DIR/$file"
 }
 
+setup_hint() {
+  if compose up -d --wait api >/dev/null 2>&1 && TOKEN="$(compose exec -T api action-platform-api setup token 2>/dev/null)" && [ -n "$TOKEN" ]; then
+    echo "  Open it and create the first account and organization; the first account asks for this setup token:"
+    echo
+    echo "      $TOKEN"
+    echo
+    echo "  (print it again with: cd $DIR && docker compose exec api action-platform-api setup token)"
+  else
+    echo "  Open it and sign in. A new instance asks for the setup token: cd $DIR && docker compose exec api action-platform-api setup token"
+  fi
+}
+
 main() {
   DOMAIN="${1:-}"
   EMAIL="${2:-}"
@@ -138,7 +150,7 @@ main() {
   URL="$(sed -n 's/^PUBLIC_URL=//p' .env)"
   echo
   say "Action Platform is up: $URL"
-  echo "  Open it, create the first account and organization — that's the whole setup."
+  setup_hint
   echo "  Files: $DIR   (secrets/ holds the secrets, .env the settings and image versions, backups/ the pre-upgrade dumps; docker compose logs -f to watch)"
 }
 
