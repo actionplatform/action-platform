@@ -67,6 +67,15 @@ describe("PluginCards", () => {
     await waitFor(() => expect(screen.getByText(/Command copied/)).toBeInTheDocument());
   });
 
+  it("an optional field shows the default the plugin falls back to", () => {
+    const withDefault = { ...lambda, options: [{ key: "url", label: "Sentry URL", kind: "url", help: "", required: false, default: "https://sentry.io" }] };
+    render(<PluginCards plugins={[withDefault]} canManage />);
+    fireEvent.click(screen.getByRole("button", { name: /configure/i }));
+    const field = screen.getByLabelText("Sentry URL (optional)") as HTMLInputElement;
+    expect(field.value).toBe("");
+    expect(field.placeholder).toBe("https://sentry.io");
+  });
+
   it("a plugin that failed to load says why", () => {
     render(<PluginCards plugins={[{ ...lambda, error: "ImportError: boto3" }]} canManage />);
     expect(screen.getByText("Failed to load")).toBeInTheDocument();

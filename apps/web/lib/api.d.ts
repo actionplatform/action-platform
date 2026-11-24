@@ -2762,6 +2762,7 @@ export interface components {
             action_label: string;
             action_url: string;
             action_copy: string;
+            default: string;
         };
         PluginOptions: {
             options: {
