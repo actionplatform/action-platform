@@ -16,3 +16,4 @@ export { LiveList } from "./apps/live-list";
 export { NewProjectDialog, NewProjectForm } from "./list/new-project-form";
 export { ProjectsView } from "./list/projects-view";
 export { ProjectCardSkeleton } from "./list/project-card-skeleton";
+export { AdoptionView } from "./adoption/adoption-view";
