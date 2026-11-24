@@ -1,4 +1,4 @@
-"""Which workers are alive and which job kinds they take: each worker row is refreshed while the process runs and stale once it stops."""
+"""Worker heartbeats: which workers are alive and what kinds they take."""
 
 from __future__ import annotations
 
@@ -106,7 +106,7 @@ class Workers:
 def lacks_worker(
     status: str, kind: str, run_after: datetime, live: set[str], moment: datetime
 ) -> bool:
-    """A queued job that has been due for a while with no live worker taking its kind."""
+    """Queued, overdue, and no live worker takes its kind."""
     return (
         status == "queued"
         and kind not in live
