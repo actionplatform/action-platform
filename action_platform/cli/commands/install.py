@@ -6,6 +6,7 @@ from pathlib import Path
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 
 from action_platform.core.scaffold import installer as installing
 
@@ -24,11 +25,21 @@ def run(
         "--ci",
         help="github, gitlab, jenkins, bitbucket, or none for no pipeline files (default: platform.toml, else the CI the repository already has, else from the remote)",
     ),
+    version: str | None = typer.Option(
+        None,
+        "--version",
+        help="LAST_VERSION to start from (default: the newest release tag, else the manifest's version, else the newest CHANGELOG entry, else 0.0.0)",
+    ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be created"),
 ) -> None:
     """Install the platform in this repository: platform.toml, code quality, CI files (never overwritten) and git hooks into .git/hooks (always refreshed)."""
     plan = installing.install(
-        Path.cwd(), type_=type_, language=language, ci=ci, dry_run=dry_run
+        Path.cwd(),
+        type_=type_,
+        language=language,
+        ci=ci,
+        dry_run=dry_run,
+        version=version,
     )
     verb = "would create" if dry_run else "created"
     console.print(
@@ -38,8 +49,15 @@ def run(
     for warning in plan.warnings:
         console.print(f"  [yellow]![/yellow] {warning}")
 
+    seeded = {s.file: s for s in plan.seeds}
+
     for rel in plan.created:
-        console.print(f"  [green]+[/green] {rel}  ({verb})")
+        note = (
+            f" {seeded[rel].version} from {escape(seeded[rel].source)}"
+            if rel in seeded
+            else ""
+        )
+        console.print(f"  [green]+[/green] {rel}{note}  ({verb})")
 
     for rel in plan.skipped:
         console.print(f"  [dim]= {rel}  (exists, kept)[/dim]")

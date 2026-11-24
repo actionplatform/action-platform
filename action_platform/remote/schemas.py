@@ -61,6 +61,12 @@ class ServiceAdded(BaseModel):
     provider: str
 
 
+class InstallSeed(BaseModel):
+    file: str
+    version: str
+    source: str
+
+
 class InstallPlan(BaseModel):
     path: str
     language: str
@@ -69,6 +75,7 @@ class InstallPlan(BaseModel):
     detected_ci: list[str] = []
     warnings: list[str] = []
     ci_snippet: str = ""
+    seeds: list[InstallSeed] = []
     created: list[str]
     kept: list[str]
     hooks_installed: bool
@@ -648,6 +655,7 @@ __all__ = [
     "ServiceAdded",
     "InstallPlan",
     "InstallReport",
+    "InstallSeed",
     "ProjectInfo",
     "GitflowRules",
     "BranchStarted",

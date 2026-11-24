@@ -15,8 +15,8 @@ action-platform init web python --cloud docker    # project + deploy overlay
 action-platform init ... --no-push                # keep it local
 action-platform init --list                       # the templates matrix
 action-platform init --source URL[@ref] ...       # templates from another repository (also cloud set, service add)
-action-platform install [--type web] [--language python|none] [--ci github|gitlab|jenkins|bitbucket|none] [--dry-run]
-                                                  # existing repo: platform.toml, LAST_VERSION (newest release tag of all tags, v or not, or 0.0.0),
+action-platform install [--type web] [--language python|none] [--ci github|gitlab|jenkins|bitbucket|none] [--version X.Y.Z] [--dry-run]
+                                                  # existing repo: platform.toml, LAST_VERSION (newest release tag, else the manifest version, else the newest CHANGELOG entry, else 0.0.0),
                                                   # AGENTS.md, .code_quality/, CI files (none with --ci none), hooks — never overwrites; --dry-run plans only
 action-platform plugin install aws-lambda         # deploy target + overlay for aws/lambda (see use_plugins.md)
 action-platform cloud set aws/lambda              # add or switch the deploy target

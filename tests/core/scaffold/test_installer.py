@@ -9,6 +9,7 @@ from unittest import mock
 from action_platform.core.flow.repository import Repository
 from action_platform.core.scaffold import installer
 from action_platform.core.scaffold.installer import InstallError
+from action_platform.core.scaffold.seed import seed
 from tests.support import TempCase, git, install_templates
 
 
@@ -343,7 +344,7 @@ class SeedVersionTest(TempCase):
         for tag in tags:
             git(self.repo, "tag", tag)
 
-        return installer._seed_version(Repository(self.repo))
+        return seed(Repository(self.repo))[0].version
 
     def test_never_released(self):
         self.assertEqual(self.seed(), "0.0.0")
@@ -373,3 +374,133 @@ class SeedVersionTest(TempCase):
         git(self.repo, "checkout", "-q", "develop")
 
         self.assertEqual(self.seed(), "1.4.0")
+
+
+class SeedSourcesTest(TempCase):
+    def setUp(self):
+        super().setUp()
+        self.repo = self.tmp_path / "repo"
+        self.repo.mkdir()
+        git(self.repo, "init", "-q", "-b", "main")
+        git(self.repo, "commit", "-q", "--allow-empty", "-m", "chore: first")
+
+    def seed(self, **kwargs):
+        return seed(Repository(self.repo), **kwargs)
+
+    def test_a_manifest_seeds_when_there_are_no_tags(self):
+        (self.repo / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "3.4.2"\n'
+        )
+
+        found, warnings = self.seed()
+
+        self.assertEqual((found.version, found.source), ("3.4.2", "pyproject.toml"))
+        self.assertEqual(warnings, [])
+
+    def test_package_json_and_cargo_toml(self):
+        (self.repo / "package.json").write_text(
+            '{\n  "name": "x",\n  "version": "1.0.4"\n}\n'
+        )
+        self.assertEqual(self.seed()[0].source, "package.json")
+
+        (self.repo / "package.json").unlink()
+        (self.repo / "Cargo.toml").write_text(
+            '[package]\nname = "x"\nversion = "0.9.1"\n'
+        )
+        self.assertEqual(self.seed()[0].version, "0.9.1")
+
+    def test_a_changelog_heading_seeds_last(self):
+        (self.repo / "CHANGELOG.md").write_text(
+            "# Changelog\n\n## [Unreleased]\n\n## [2.1.0] - 2026-01-01\n\n## [2.0.0]\n"
+        )
+
+        found, _ = self.seed()
+
+        self.assertEqual((found.version, found.source), ("2.1.0", "CHANGELOG.md"))
+
+    def test_tags_and_manifest_disagreeing_take_the_higher_with_a_warning(self):
+        git(self.repo, "tag", "v3.4.1")
+        (self.repo / "pyproject.toml").write_text('[project]\nversion = "3.4.2"\n')
+
+        found, warnings = self.seed()
+
+        self.assertEqual((found.version, found.source), ("3.4.2", "pyproject.toml"))
+        self.assertIn(
+            "pyproject.toml declares 3.4.2 and the newest release is tag v3.4.1",
+            warnings[0],
+        )
+
+        (self.repo / "pyproject.toml").write_text('[project]\nversion = "3.4.1"\n')
+        self.assertEqual(self.seed(), (self.seed()[0], []))
+        self.assertEqual(self.seed()[0].source, "tag v3.4.1")
+
+    def test_component_tags_seed_their_component(self):
+        from action_platform.core.release.components import Component
+
+        for tag in ("v1.0.0", "api/v2.3.0", "api/v2.10.0", "web/v9.0.0"):
+            git(self.repo, "tag", tag)
+
+        found, _ = self.seed(component=Component(name="api", path="apps/api"))
+
+        self.assertEqual(
+            (found.file, found.version, found.source),
+            ("apps/api/LAST_VERSION", "2.10.0", "tag api/v2.10.0"),
+        )
+        self.assertEqual(self.seed()[0].version, "1.0.0")
+
+    def test_an_explicit_version_wins(self):
+        git(self.repo, "tag", "v1.0.0")
+
+        self.assertEqual(self.seed(version="v4.0.0")[0].version, "4.0.0")
+        self.assertEqual(self.seed(version="4.0.0")[0].source, "--version")
+
+        with self.assertRaises(ValueError):
+            self.seed(version="four")
+
+
+class SeedInThePlanTest(InstallCase):
+    def test_the_plan_names_each_seed_and_its_source(self):
+        (self.repo / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "3.4.2"\n'
+        )
+        (self.repo / "platform.toml").write_text(
+            '[project]\nname = "x"\nlanguage = "python"\n\n[components.web]\npath = "apps/web"\n'
+        )
+        git(self.repo, "commit", "-q", "--allow-empty", "-m", "chore: first")
+        git(self.repo, "tag", "web/v0.5.0")
+
+        plan = installer.install(self.repo, dry_run=True)
+
+        self.assertEqual(
+            [str(s) for s in plan.seeds],
+            [
+                "LAST_VERSION 3.4.2 from pyproject.toml",
+                "apps/web/LAST_VERSION 0.5.0 from tag web/v0.5.0",
+            ],
+        )
+        self.assertIn("apps/web/LAST_VERSION", plan.created)
+
+    def test_version_overrides_and_a_bad_one_is_refused(self):
+        plan = installer.install(self.repo, dry_run=True, version="7.1.0")
+        self.assertEqual(str(plan.seeds[0]), "LAST_VERSION 7.1.0 from --version")
+
+        with self.assertRaisesRegex(InstallError, "not a version"):
+            installer.install(self.repo, dry_run=True, version="latest")
+
+    def test_a_changelog_in_another_style_is_named(self):
+        (self.repo / "CHANGELOG.md").write_text(
+            "# Changelog\n\n## [Unreleased]\n\n## [1.0.0]\n"
+        )
+
+        plan = installer.install(self.repo, dry_run=True)
+
+        self.assertIn(
+            "CHANGELOG.md starts with '## [Unreleased]'; release adds its entries above it as '## vX.Y.Z — date'",
+            plan.warnings,
+        )
+        self.assertEqual(str(plan.seeds[0]), "LAST_VERSION 1.0.0 from CHANGELOG.md")
+
+        (self.repo / "CHANGELOG.md").write_text(
+            "# Changelog\n\n## v1.0.0 — 2026-01-01\n"
+        )
+        self.assertEqual(installer.install(self.repo, dry_run=True).warnings, [])

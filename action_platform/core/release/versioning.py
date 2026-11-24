@@ -108,6 +108,24 @@ class VersionFiles:
     def write(self, version: str) -> None:
         self.last.write_text(f"{version}\n")
 
+    def declared(self) -> tuple[str, str] | None:
+        """The version the first manifest under the root declares, with the manifest's name; None when none declares one."""
+        for name, pattern in VERSION_PATTERNS.items():
+            path = self.root / name
+
+            if not path.is_file():
+                continue
+
+            found = pattern.search(path.read_text(errors="replace"))
+
+            if found:
+                value = found.group(0)[len(found.group(1)) : -len(found.group(2))]
+
+                if value.strip():
+                    return value.strip(), name
+
+        return None
+
     def sync(self, version: str) -> list[str]:
         """Write `version` everywhere it is declared. Returns the files touched, relative to the root."""
         touched = []
