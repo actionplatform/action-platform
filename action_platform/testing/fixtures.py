@@ -159,7 +159,10 @@ COOKIECUTTER = {
     "project_slug": "{{ cookiecutter.project_name|lower|replace(' ', '-') }}",
     "description": "tiny",
     "package_name": "{{ cookiecutter.project_slug|replace('-', '_') }}",
-    "github_owner": "acme",
+    "github_owner": "",
+    "author": "",
+    "source_host": ["github", "gitlab", "bitbucket"],
+    "license": ["none", "mit", "apache-2.0"],
     "ci": ["github", "gitlab", "jenkins"],
 }
 
@@ -182,7 +185,11 @@ def template_repo(
         '[project]\nname = "{{ cookiecutter.project_slug }}"\n'
         f'type = "{type_}"\nlanguage = "{stack}"\n'
         'ci = "{{ cookiecutter.ci }}"\n\n'
-        '[source_host]\nkind = "github"\nrepo = "{{ cookiecutter.github_owner }}/{{ cookiecutter.project_slug }}"\n'
+        '{% if cookiecutter.github_owner %}[source_host]\nkind = "{{ cookiecutter.source_host }}"\n'
+        'repo = "{{ cookiecutter.github_owner }}/{{ cookiecutter.project_slug }}"\n{% endif %}'
+    )
+    (slug / "LICENSE").write_text(
+        "{{ cookiecutter.license }} {{ cookiecutter.author or cookiecutter.project_name }}\n"
     )
     (root / "index.json").write_text(
         json.dumps(

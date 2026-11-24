@@ -76,3 +76,40 @@ class PlainRepositoryTest(TempCase):
                 None,
                 self.output,
             )
+
+
+class RenderedOwnerTest(TempCase):
+    def setUp(self):
+        super().setUp()
+        from action_platform.testing.fixtures import template_repo
+
+        self.repo = template_repo(self.tmp_path / "templates")
+        self.leaf = Leaf("web", "python", "fastapi")
+        self.output = self.tmp_path / "out"
+        self.output.mkdir()
+
+    def generate(self, extra: dict):
+        return generate_project(
+            self.repo, self.leaf, "Demo", "gitlab", self.output, extra
+        )
+
+    def test_the_owner_and_host_name_the_repository(self):
+        project = self.generate(
+            {
+                "github_owner": "alice",
+                "source_host": "gitlab",
+                "author": "Alice",
+                "license": "mit",
+            }
+        )
+        data = tomllib.loads((project / "platform.toml").read_text())
+
+        self.assertEqual(data["source_host"], {"kind": "gitlab", "repo": "alice/demo"})
+        self.assertEqual((project / "LICENSE").read_text(), "mit Alice\n")
+
+    def test_without_an_owner_there_is_no_source_host_and_nobody_s_name(self):
+        project = self.generate({})
+        data = tomllib.loads((project / "platform.toml").read_text())
+
+        self.assertNotIn("source_host", data)
+        self.assertEqual((project / "LICENSE").read_text(), "none Demo\n")

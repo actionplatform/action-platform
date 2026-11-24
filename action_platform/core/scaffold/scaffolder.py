@@ -24,7 +24,7 @@ def generate_project(
     output: Path,
     extra: dict | None = None,
 ) -> Path:
-    """Render `leaf` into `output`/<slug>. `extra` overrides cookiecutter defaults (description, package_name, github_owner…)."""
+    """Render `leaf` into `output`/<slug>. `extra` overrides cookiecutter defaults (description, package_name, github_owner, author, license, source_host…); with an owner, [source_host] names `<owner>/<slug>` on `source_host`."""
     context = {**(extra or {}), "project_name": name}
 
     if ci is not None:
@@ -33,7 +33,16 @@ def generate_project(
     if leaf.plain:
         return _copy_repository(repo, leaf, name, ci, output, context)
 
-    return TemplateRenderer().render(repo, leaf.directory, output, context)
+    project = TemplateRenderer().render(repo, leaf.directory, output, context)
+    owner = context.get("github_owner")
+    manifest = Manifest.of(project)
+
+    if owner and manifest.exists:
+        manifest.set_source_host(
+            str(context.get("source_host") or "github"), f"{owner}/{project.name}"
+        )
+
+    return project
 
 
 def _copy_repository(
@@ -104,7 +113,7 @@ def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
             project,
             {
                 "project_name": meta.get("name", project.name),
-                "github_owner": meta.get("github_owner", "actionplatform"),
+                "github_owner": meta.get("github_owner", ""),
                 "language": language,
                 "type": type_,
                 "ci": meta.get("ci", "github"),
@@ -141,7 +150,7 @@ def apply_service(
         project,
         {
             "project_name": meta.get("name", project.name),
-            "github_owner": meta.get("github_owner", "actionplatform"),
+            "github_owner": meta.get("github_owner", ""),
             "provider": provider,
         },
     )
