@@ -1,11 +1,13 @@
 """Typer app assembly."""
 
+import os
 import sys
 
 import typer
 
 from action_platform.core.exception import ActionPlatformError
 from action_platform.bootstrap import bootstrap
+from action_platform.core.destination import NetworkPolicy, guard_networks
 from app import api_version
 from app.cli import db as db_cmd
 from app.cli import serve as serve_cmd
@@ -31,6 +33,7 @@ app.add_typer(setup_cmd.app, name="setup")
 
 def main() -> None:
     bootstrap("api", version=api_version())
+    guard_networks(NetworkPolicy.from_env(os.environ))
 
     try:
         app()

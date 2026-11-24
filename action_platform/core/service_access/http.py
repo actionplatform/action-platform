@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterator, Optional
 
 
+from action_platform.core import destination
 from action_platform.core.service_access.provider import AccessError
 
 LINK = re.compile(r'<([^>]+)>;\s*rel="next"(?:;\s*results="(true|false)")?')
@@ -36,13 +37,24 @@ class Http:
         self.timeout = timeout
 
     def url(self, path: str, query: Optional[dict[str, Any]] = None) -> str:
-        url = path if path.startswith("http") else f"{self.base}/{path.lstrip('/')}"
+        url = (
+            self._on_base(path)
+            if path.startswith("http")
+            else f"{self.base}/{path.lstrip('/')}"
+        )
         q = {k: v for k, v in (query or {}).items() if v is not None}
 
         if q:
             url += ("&" if "?" in url else "?") + urllib.parse.urlencode(q)
 
         return url
+
+    def _on_base(self, url: str) -> str:
+        """An absolute URL — a `Link: rel="next"` included — only on the service's own origin, since the credential headers go with it."""
+        try:
+            return destination.same_origin(url, self.base)
+        except destination.DestinationError as e:
+            raise AccessError(f"{self.service}: {e}") from e
 
     def send(
         self,
@@ -71,7 +83,7 @@ class Http:
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as res:
+            with destination.urlopen(req, timeout=self.timeout) as res:
                 return Response(
                     res.status,
                     _decode(res.read()),
@@ -79,6 +91,8 @@ class Http:
                 )
         except urllib.error.HTTPError as e:
             return Response(e.code, _decode(e.read()), {})
+        except destination.DestinationError as e:
+            raise AccessError(f"{self.service}: {e}") from e
         except urllib.error.URLError as e:
             raise AccessError(
                 f"{self.service}: cannot reach {urllib.parse.urlsplit(self.base).netloc}: {e.reason}"
@@ -119,7 +133,7 @@ class Http:
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as res:
+            with destination.urlopen(req, timeout=self.timeout) as res:
                 charset = res.headers.get_content_charset() or "utf-8"
                 lines: deque[bytes] = deque(res, maxlen=tail_lines or None)
 
@@ -128,6 +142,8 @@ class Http:
             raise AccessError(
                 f"{self.service}: GET {urllib.parse.urlsplit(self.url(path)).path} answered {e.code}: {_detail(_decode(e.read()))}"
             ) from e
+        except destination.DestinationError as e:
+            raise AccessError(f"{self.service}: {e}") from e
         except urllib.error.URLError as e:
             raise AccessError(
                 f"{self.service}: cannot reach {urllib.parse.urlsplit(self.base).netloc}: {e.reason}"

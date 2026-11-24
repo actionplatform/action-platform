@@ -39,7 +39,9 @@ class TextTest(unittest.TestCase):
         self.log = "".join(f"line {i}\n" for i in range(1, 5001))
 
     def opened(self, answer):
-        return mock.patch("urllib.request.urlopen", side_effect=[answer])
+        return mock.patch(
+            "action_platform.core.destination.urlopen", side_effect=[answer]
+        )
 
     def test_a_long_body_comes_back_whole(self):
         with self.opened(Body(self.log.encode())):
@@ -74,7 +76,9 @@ class ErrorDetailTest(unittest.TestCase):
         self.http = Http("jenkins", "https://ci.example", {})
 
     def failing(self, body: str) -> str:
-        with mock.patch("urllib.request.urlopen", side_effect=[refused(404, body)]):
+        with mock.patch(
+            "action_platform.core.destination.urlopen", side_effect=[refused(404, body)]
+        ):
             with self.assertRaises(AccessError) as caught:
                 self.http.call("GET", "job/x/api/json")
 

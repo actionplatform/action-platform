@@ -8,6 +8,7 @@ import urllib.request
 from datetime import datetime, timezone
 from typing import Any, Optional
 
+from action_platform.core import destination
 from action_platform.core.exception import ProviderError
 
 
@@ -32,7 +33,7 @@ def call(
     )
 
     try:
-        with urllib.request.urlopen(req, timeout=60) as res:
+        with destination.urlopen(req, timeout=60) as res:
             raw = res.read()
 
             if res.status not in ok:
@@ -77,7 +78,7 @@ def location(
     )
 
     try:
-        with urllib.request.urlopen(req, timeout=60) as res:
+        with destination.urlopen(req, timeout=60) as res:
             if res.status not in ok:
                 raise ProviderError(f"{method} {url} → {res.status}")
 
@@ -110,12 +111,12 @@ def get_pages(url: str, headers: dict[str, str], limit: int = 20) -> list[Any]:
 
 
 def get_values(url: str, headers: dict[str, str]) -> list[Any]:
-    """Every row of a `values`/`next` paginated listing (Bitbucket)."""
+    """Every row of a `values`/`next` paginated listing (Bitbucket); a `next` off the listing's origin is refused."""
     out: list[Any] = []
     next_url: Optional[str] = url
 
     while next_url:
-        data = call("GET", next_url, headers) or {}
+        data = call("GET", destination.same_origin(next_url, url), headers) or {}
         out.extend(data.get("values", []))
         next_url = data.get("next")
 
