@@ -158,6 +158,20 @@ class AsyncRouteTest(GateCase):
         ).json()
         self.assertEqual([j["id"] for j in listed], [job_id])
 
+    def test_a_token_queues_a_job_on_sqlite(self):
+        registry_id = self.register()
+        headers = {
+            **self.h(self.token("read,write")),
+            "Prefer": "respond-async",
+            "X-Action-Platform-Client": "Claude Code/1",
+        }
+
+        res = self.client.post(
+            f"/api/v1/apps/{registry_id}/sync", json={}, headers=headers
+        )
+
+        self.assertEqual(res.status_code, 202, res.text)
+
     def test_what_the_worker_writes_can_be_followed_line_by_line(self):
         from action_platform.logging import emit, logger
         from app.services.jobs import registry

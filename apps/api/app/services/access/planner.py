@@ -48,6 +48,7 @@ class Planner:
         with self.state.db.session() as db:
             auth = AuthService(db, self.state.secrets, self.state.verification_uri)
             caller = resolve_caller(headers, db, auth)
+            db.commit()
 
             if caller is None:
                 raise Refused(401, "unauthorized")
