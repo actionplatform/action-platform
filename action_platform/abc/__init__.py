@@ -1,6 +1,5 @@
 """Action Platform abstract base classes."""
 
-from action_platform.core.events import EVENT_KINDS, Event
 from action_platform.core.service_access.provider import AccessProvider
 
 from .changelog_renderer import ChangelogRenderer
@@ -19,13 +18,11 @@ from .template_store import TemplateStore
 from .working_copy import WorkingCopy
 
 __all__ = [
-    "EVENT_KINDS",
     "AccessProvider",
     "CIRunner",
     "ChangelogRenderer",
     "Connection",
     "DeployTarget",
-    "Event",
     "ListsPullRequests",
     "Option",
     "Plugin",
