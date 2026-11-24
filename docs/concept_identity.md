@@ -65,7 +65,7 @@ What the account enforces:
 
 The deploy role's ARN is the one setting the plugin asks for (Plugins → AWS Lambda → Configure → *Deploy role ARN*), stored per organization in `plugin_option` and handed to every deploy job as `AP_AWS_LAMBDA_ROLE_ARN` with `AP_APP=<org>/<project>/<app>`.
 
-`[deploy] role_arn = "…"` in a repository still works for a role of its own: the platform registered once per account as an identity provider, a trust policy on `aud` and `sub`, `sts:AssumeRoleWithWebIdentity` with the same token. The same mechanism serves GCP (workload identity federation) and Azure (federated credentials): a plugin for those reads the same token.
+`[deploy] role_arn = "…"` in a repository still works for a role of its own: the platform registered once per account as an identity provider, a trust policy on `aud` and `sub`, `sts:AssumeRoleWithWebIdentity` with the same token.
 
 ## Why not keys
 

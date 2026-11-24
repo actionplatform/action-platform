@@ -1887,22 +1887,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/plugins/{slug}/deliveries": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["plugin_deliveries_api_v1_plugins__slug__deliveries_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/.well-known/openid-configuration": {
         parameters: {
             query?: never;
@@ -3048,22 +3032,6 @@ export interface components {
             } | null;
             note?: string | null;
         };
-        PluginDeliveries: {
-            deliveries: components["schemas"]["PluginDelivery"][];
-        };
-        PluginDelivery: {
-            id: string;
-            event: string;
-            route: string;
-            project: string;
-            app: string;
-            url?: string | null;
-            status: string;
-            attempts: number;
-            error?: string | null;
-            created_at?: string | null;
-            finished_at?: string | null;
-        };
         PluginOption: {
             key: string;
             label: string;
@@ -3090,7 +3058,6 @@ export interface components {
             min_core: string;
             needs: string[];
             options: components["schemas"]["PluginOption"][];
-            events: boolean;
             error?: string | null;
         };
         Plugins: {
@@ -7950,37 +7917,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PluginOptions"];
-                };
-            };
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    plugin_deliveries_api_v1_plugins__slug__deliveries_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Organization"?: string | null;
-            };
-            path: {
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PluginDeliveries"];
                 };
             };
             422: {

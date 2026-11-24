@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
@@ -25,12 +25,8 @@ from app.schemas.deployments import (
     TargetRow,
 )
 from app.services.integrations.hosts.directory import IntegrationsDirectory
-from app.services.integrations.plugins import PluginEvents
 from app.services.workspace.app_context import AppContext
 from app.repositories.releases.store import ReleaseStore
-
-if TYPE_CHECKING:
-    from app.services.deployments.identity import TargetContexts
 
 LIMIT = 50
 
@@ -44,14 +40,6 @@ RUN_STATUS = {
     "unknown": "failure",
 }
 
-EVENTS = {
-    "queued": "deployment.started",
-    "running": "deployment.started",
-    "success": "deployment.succeeded",
-    "failure": "deployment.failed",
-    "verified": "deployment.verified",
-}
-
 
 class DeploymentRecords:
     def __init__(
@@ -59,14 +47,11 @@ class DeploymentRecords:
         db: DbSession,
         sealer: Optional[Sealer],
         context: Optional[AppContext] = None,
-        targets: Optional[TargetContexts] = None,
     ) -> None:
         self.db = db
-        self.sealer = sealer
         self.directory = IntegrationsDirectory(db, sealer)
         self.releases = ReleaseStore(db)
         self.context = context
-        self.target_contexts = targets
 
     def _context(self) -> AppContext:
         if self.context is None:
@@ -153,8 +138,6 @@ class DeploymentRecords:
             )
         )
 
-        before = row.status if row is not None else None
-
         if row is None:
             row = Deployment(
                 id=str(uuid.uuid4()),
@@ -166,9 +149,6 @@ class DeploymentRecords:
             )
             self.db.add(row)
 
-        if before == "verified" and fields.get("status") == "success":
-            fields["status"] = "verified"
-
         for key, value in fields.items():
             setattr(row, key, value)
 
@@ -179,35 +159,8 @@ class DeploymentRecords:
 
         row.synced_at = now()
         self.db.flush()
-        self._announce(app, row, before)
 
         return row
-
-    def _announce(self, app: App, row: Deployment, before: Optional[str]) -> None:
-        """A deployment that reached a new state is an event: started, succeeded, failed or verified — whoever ran it."""
-        kind = EVENTS.get(row.status)
-
-        if kind is None or kind == EVENTS.get(before or ""):
-            return
-
-        PluginEvents(self.db, self.sealer).emit(
-            app,
-            kind,
-            {
-                "target": row.target,
-                "kind": row.kind,
-                "stage": row.stage,
-                "version": row.version,
-                "executor": row.executor,
-                "status": row.status,
-                "url": row.url,
-                "sha": row.sha,
-                "error": row.error,
-            },
-            actor=row.actor,
-            page="deployments",
-            at=row.finished_at or row.started_at,
-        )
 
     def record_platform(
         self,
@@ -463,9 +416,6 @@ class DeploymentRecords:
                 continue
 
             try:
-                if self.target_contexts is not None:
-                    target.attach(self.target_contexts.of(app, row.stage))
-
                 there = target.verify(row.version, row.stage)
             except (NotImplementedError, ActionPlatformError):
                 continue
@@ -474,7 +424,6 @@ class DeploymentRecords:
                 row.status = "verified"
                 row.verified_at = now()
                 row.url = row.url or target.url(row.version, row.stage)
-                self._announce(app, row, "success")
 
         self.db.flush()
 

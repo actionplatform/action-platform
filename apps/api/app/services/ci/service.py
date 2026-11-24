@@ -18,12 +18,9 @@ from app.core.shared.clock import now
 from app.schemas.ci import CiLink, CiRunRow, CiRuns
 from app.schemas.common import page_bounds
 from app.services.integrations.hosts.directory import IntegrationsDirectory
-from app.services.integrations.plugins import PluginEvents
-from app.repositories.releases.store import ReleaseStore
 from app.services.workspace.app_context import AppContext
 
 LIMIT = 50
-FAILED = ("failure", "unstable")
 
 
 class CiService:
@@ -34,7 +31,6 @@ class CiService:
         context: Optional[AppContext] = None,
     ) -> None:
         self.db = db
-        self.sealer = sealer
         self.directory = IntegrationsDirectory(db, sealer)
         self.context = context
 
@@ -143,7 +139,6 @@ class CiService:
 
         for item in remote:
             row = by_number.get((runner.name, item.number))
-            before = row.status if row is not None else None
 
             if row is None:
                 row = CiRun(id=str(uuid.uuid4()), app_id=app.id, source=runner.name)
@@ -154,34 +149,9 @@ class CiService:
 
             row.synced_at = moment
 
-            if row.status in FAILED and before not in FAILED:
-                self._failed(app, row)
-
         self.db.flush()
 
         return len(remote)
-
-    def _failed(self, app: App, row: CiRun) -> None:
-        """A failed run on a release's tag is an event; a failed run on a branch is the pull request's business."""
-        if not row.branch or ReleaseStore(self.db).get(app.id, row.branch) is None:
-            return
-
-        PluginEvents(self.db, self.sealer).emit(
-            app,
-            "ci.failed",
-            {
-                "tag": row.branch,
-                "run": row.number,
-                "name": row.name,
-                "status": row.status,
-                "sha": row.sha,
-                "url": row.url,
-                "source": row.source,
-            },
-            actor=row.trigger,
-            page="ci",
-            at=row.started_at,
-        )
 
     def runs(self, app_id: str, limit: int = LIMIT, offset: int = 0) -> list[CiRun]:
         return list(

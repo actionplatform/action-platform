@@ -50,9 +50,6 @@ class DeployTarget(ABC):
         """What can be verified about a deploy of `ctx.next_version` to `ctx.stage` without building or changing anything: credentials, permissions, the destination's state. Each finding is a Check; an empty list means the target has nothing to say."""
         return []
 
-    def attach(self, ctx: "Context") -> None:
-        """The context `verify` and `url` run in when the platform asks them outside a deploy: the app's `env`, an `identity` for the scope in `stage`. A target that needs neither ignores it."""
-
     def verify(self, version: str, stage: str | None = None) -> bool:
         """Whether `version` is really at the destination — asked after any executor reported success."""
         raise NotImplementedError(f"{self.name} cannot verify")

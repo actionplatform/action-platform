@@ -78,13 +78,12 @@ class AwsLambdaPlugin(Plugin):
 - `options` declares the settings a user fills in: `Option(key, label, kind, help, required)` with `kind` one of `text`, `url`, `secret`, `bool`; `default` names the value the plugin uses while the field is empty (`Option("url", "Sentry URL", "url", default="https://sentry.io")`), and the form shows it as the field's placeholder — the plugin still applies it itself, `surface.options.get(key) or default`. The hosted platform draws the form behind **Configure** on the plugin's card under **Plugins** from this list and stores each value under `key`, per organization; the CLI reads the same keys from the file. A plugin with no `options` shows up as installed and nothing else. `name` is the title shown; the slug when empty.
 - `after_release(ctx)`, `after_deploy(results)`, `after_pull_request(ref)` run after the real thing; an exception is logged and never undoes the action.
 - `access(options)` brings access on the plugin's service — see [Access](#access).
-- `routes(event, options)` and `deliver(event, route, options)` take the organization's events on the hosted platform — see [Events](#events).
 
 ## Providers
 
 | ABC | Entry-point group | Picked by |
 |---|---|---|
-| `abc.DeployTarget` — `preflight`, `create`, `deploy`, `switch_traffic`, `rollback`, `diagnose`, `delete` for a target the platform runs; `verify(version)`, `url(version)` for every kind — when the platform asks them outside a deploy it first calls `attach(ctx)` with the app's `env` (`AP_APP`, the plugin options) and an `identity` for the scope, so a target that needs credentials can answer; `readiness(ctx) -> list[Check]` for what the target can verify about a deploy of `ctx.next_version` to `ctx.stage` without building or changing anything — credentials, permissions, the destination's state — each a `Check(id, ok, detail, level, severity, fix)`; an `error` severity blocks the deploy, a `warning` informs, a raised `DeployError` becomes one failed check; `ctx.observed` is true when someone else deploys the target and the platform only records it, and its checks then never block | `action_platform.deploy_target` | `[deploy] target`, `[[deploy.targets]] kind` |
+| `abc.DeployTarget` — `preflight`, `create`, `deploy`, `switch_traffic`, `rollback`, `diagnose`, `delete` for a target the platform runs; `verify(version)`, `url(version)` for every kind; `readiness(ctx) -> list[Check]` for what the target can verify about a deploy of `ctx.next_version` to `ctx.stage` without building or changing anything — credentials, permissions, the destination's state — each a `Check(id, ok, detail, level, severity, fix)`; an `error` severity blocks the deploy, a `warning` informs, a raised `DeployError` becomes one failed check; `ctx.observed` is true when someone else deploys the target and the platform only records it, and its checks then never block | `action_platform.deploy_target` | `[deploy] target`, `[[deploy.targets]] kind` |
 | `abc.CIRunner` — `test`, `runs(job, limit)`, `run`, `start(job, ref)`, and `trigger`, `wait`, `logs` where the system allows it | `action_platform.ci_runner` | `[ci]`; a CI host's `kind` on the hosted platform |
 | `abc.SourceHost` | `action_platform.source_host` | `[source_host] kind` |
 | `abc.ReleaseStrategy` — `next(current, level, prerelease, taken)`, `is_prerelease` | `action_platform.release_strategy` | `[release] strategy` |
@@ -177,61 +176,6 @@ class VaultPlugin(Plugin):
 `credential(kind)` answers a `Credential` — `token`, `login`, `api_url` (None for the public service), `scopes` (what was granted, when the provider says), `app` (the GitHub App slug when the token comes from one) — or `None`: on a machine, for a kind the plugin did not declare, or while nothing is connected. The token is refreshed before it is handed over and is the caller's for that call only; never log it, never put it in an error. When it lacks a scope or a permission the plugin needs, raise an `AccessError` that names the missing one and the click that grants it (reconnect, accept the app's new permissions). A token option may stay for platforms without the connection; read it first and fall back to the connection.
 
 `access(options)` reads **only** `options`: on the hosted platform they are the calling organization's values of the plugin (secrets opened for that call), so an environment variable would leak one organization's credential into another's. Return `None` while the options do not configure the service and raise `AccessError` naming the missing key when they half do; the audit shows it as a failed service. Keep it cheap — it runs on every access call. Test with `action_platform.testing.access` (`MemoryDirectory`, and `MemoryProvider` as a reference) and the core's `Access`: the first sync imports and changes nothing, a second one is a no-op.
-
-## Events
-
-On the hosted platform a bundled plugin can hear what happens in an organization and pass it on — a chat message, a signed webhook. The API raises the same event from every path: a deploy the worker ran, a Jenkins build or a workflow run imported on Sync, a deployment recorded by hand.
-
-| Kind | Raised when | `payload` |
-|---|---|---|
-| `release.created` | a release is cut on the platform | `tag`, `version`, `component`, `name`, `prerelease`, `changelog` |
-| `deployment.started` | the worker starts a deploy; an observed run is first seen queued or running | `stage`, `version`, `executor`, and for an observed run `target`, `kind`, `status`, `url`, `sha` |
-| `deployment.succeeded`, `deployment.failed` | a deployment reaches that state, whichever executor ran it | `target`, `kind`, `stage`, `version`, `executor`, `status`, `url`, `sha`, `error` |
-| `deployment.verified` | the destination confirms the version is there | as above |
-| `readiness.blocked` | a stage's readiness verdict turns blocked (once, until it clears) | `tag`, `stage`, `checks` (`id`, `detail`, `fix` of each blocking check) |
-| `ci.failed` | a CI run on a release's tag fails | `tag`, `run`, `name`, `status`, `sha`, `url`, `source` |
-
-Something that happened more than a day before the platform saw it — the history a first Sync imports — raises nothing.
-
-Every event comes as one envelope, `action_platform.abc.Event`:
-
-| Field | |
-|---|---|
-| `kind` | one of `EVENT_KINDS` |
-| `organization`, `project`, `app` | the organization's slug, the project's slug, the app's name |
-| `actor` | who did it, when someone did |
-| `payload` | per kind, above |
-| `url` | the platform page that shows it — the release's timeline, the app's deployments or CI runs; None when the platform has no public URL |
-| `id`, `at` | unique per event; when the platform raised it (ISO 8601, UTC) |
-
-```python
-from action_platform.abc import Option, Plugin
-from action_platform.core.exception import ActionPlatformError
-
-
-class ChatPlugin(Plugin):
-    slug = "chat"
-    options = [Option("hook", "Webhook URL", "secret")]
-
-    def routes(self, event, options):
-        return ["chat"] if options.get("hook") else []
-
-    def deliver(self, event, route, options):
-        status = post(options.get("hook"), render(event))
-
-        if 400 <= status < 500:
-            raise ActionPlatformError(f"chat: the webhook answered {status}")
-
-        if status >= 500:
-            raise RuntimeError(f"chat: the webhook answered {status}")
-```
-
-- `routes(event, options)` runs in the API's process the moment the event is recorded, with the organization's options (secrets opened, read-only). It returns where the event goes — one name per destination — and does no I/O; an empty list sends nothing. Filters (which kinds, which projects) belong here.
-- Each route is one `plugin_event` job on the queue. The worker calls `deliver(event, route, options)` with the organization's options read again; one destination failing never resends another.
-- `deliver` raises `ActionPlatformError` when a retry cannot help — the job fails at once. Any other exception is retried with backoff (30 s, then 60 s) up to three attempts.
-- Errors are shown to the organization's admins: name the destination, never the URL or a secret.
-- `GET /api/v1/plugins/{slug}/deliveries` and **Plugins → Deliveries** list the organization's latest deliveries with their status, attempts and error (`org.manage`).
-- Events exist on the hosted platform only: the CLI raises none, so a plugin that should also speak after a local release implements `after_release` too.
 
 Log through `self.logger` (the plugin's own logger, wired at load to the platform's job log) or `action_platform.logging.logger`; a logger of your own named after your package works too — every plugin's package is attached when it is discovered. Long commands should stream: run them through `action_platform.core.process.stream(args, cwd, env)` — every line reaches whoever follows the job (the web's run log, `action-platform logs -f`) as it appears, and the tail comes back for the error — or `emit(line)` from `action_platform.logging` for lines of your own. Output the platform never sees is output nobody can debug.
 

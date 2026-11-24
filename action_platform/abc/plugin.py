@@ -1,10 +1,10 @@
-"""Plugin ABC — what a package installed next to the CLI can add: MCP tools, CLI commands, cloud overlays, a word after a release, a deploy or a pull request, and the organization's events on the hosted platform.
+"""Plugin ABC — what a package installed next to the CLI can add: MCP tools, CLI commands, cloud overlays, and a word after a release, a deploy or a pull request.
 
 Deploy targets and CI runners are not declared here: they keep their own
 entry-point groups (`action_platform.deploy_target`, `action_platform.ci_runner`)
 and a plugin package ships them alongside. Everything a plugin does runs
-in-process; there is no sandbox. The hosted platform runs only the plugins
-its image bundles.
+in-process on the machine that installed it; there is no sandbox, and the
+hosted platform never loads one.
 """
 
 import logging
@@ -17,7 +17,6 @@ from action_platform.logging import attach
 
 if TYPE_CHECKING:
     from action_platform.core.context import Context, DeployResult, PRRef
-    from action_platform.core.events import Event
     from action_platform.core.service_access.provider import AccessProvider
     from action_platform.core.wiring import Wiring
     from action_platform.plugins.options import Options
@@ -122,10 +121,3 @@ class Plugin(ABC):
 
     def after_pull_request(self, ref: "PRRef") -> None:
         """Called once a pull request was opened."""
-
-    def routes(self, event: "Event", options: "Options") -> list[str]:
-        """Where the plugin sends `event` under the organization's `options` — one name per destination (`slack`, `webhook`); the hosted platform queues one delivery for each and none when the list is empty. No I/O here."""
-        return []
-
-    def deliver(self, event: "Event", route: str, options: "Options") -> None:
-        """Send `event` to `route`, on the worker. Raise `ActionPlatformError` when a retry cannot help (a refused URL, a 4xx); any other exception is retried with backoff."""

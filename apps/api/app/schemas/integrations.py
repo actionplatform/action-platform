@@ -128,30 +128,11 @@ class PluginRow(BaseModel):
     min_core: str = ""
     needs: list[str] = []
     options: list[PluginOption] = []
-    events: bool = False
     error: Optional[str] = None
 
 
 class Plugins(BaseModel):
     plugins: list[PluginRow]
-
-
-class PluginDelivery(BaseModel):
-    id: str
-    event: str
-    route: str
-    project: str = ""
-    app: str = ""
-    url: Optional[str] = None
-    status: str
-    attempts: int = 0
-    error: Optional[str] = None
-    created_at: Optional[datetime] = None
-    finished_at: Optional[datetime] = None
-
-
-class PluginDeliveries(BaseModel):
-    deliveries: list[PluginDelivery]
 
 
 class PluginOptions(BaseModel):

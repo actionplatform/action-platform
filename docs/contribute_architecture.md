@@ -157,7 +157,6 @@ The Planner (`services/access/planner.py`) is the one place the gate reads the d
 | `destroy` | `DELETE projects/{p}/apps/{a}?cloud=true` | every stage's stack down through the target, then the app off the platform |
 | `destroy_project` | `DELETE projects/{id}?cloud=true` | the same for each app, then the project |
 | `destroy_organization` | `DELETE organizations/{id}?cloud=true` | every app's stacks down, then the organization and everything it owned |
-| `plugin_event` | a release cut here, a deployment that reached a new state (any executor), a readiness verdict that turned blocked, a failed CI run on a release tag — one per bundled plugin and route its `routes` returns | `Plugin.deliver(event, route, options)` with the organization's options, secrets opened; an `ActionPlatformError` fails it, anything else retries with backoff |
 
 While a job runs, the worker captures the library's log records and every line a plugin emits (`action_platform.logging.capture`) into `job_log`, flushed every half second; `GET jobs/{id}/logs?after=` serves them and the web follows a live run by polling.
 
@@ -270,7 +269,7 @@ erDiagram
     app ||--o{ draft : "pending edits"
     organization ||--o{ plugin_option : "plugin settings"
     job {
-        string kind "sync release readiness deploy push import import_github destroy destroy_project destroy_organization plugin_event"
+        string kind "sync release readiness deploy push import import_github destroy destroy_project destroy_organization"
         string status "queued running done failed"
         text payload
         text result
