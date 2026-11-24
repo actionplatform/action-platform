@@ -182,6 +182,166 @@ class Scopes(Open):
     criticalities: list[str]
 
 
+class ReadinessCheck(Open):
+    id: str
+    ok: bool
+    detail: str = ""
+    level: str = "target"
+    severity: str = "error"
+    fix: Optional[str] = None
+    target: Optional[str] = None
+
+
+class ReadinessRow(Open):
+    stage: str
+    status: str
+    verdict: str
+    ok: Optional[bool] = None
+    checks: list[ReadinessCheck] = Field(default_factory=list)
+    job_id: Optional[str] = None
+    checked_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class ReadinessQueued(Open):
+    jobs: list[str]
+    readiness: list[ReadinessRow]
+
+
+class JobQueued(Open):
+    job: str
+    poll: str
+    status: Optional[str] = None
+
+
+class HostRow(Open):
+    id: str
+    kind: str
+    name: str
+    base_url: Optional[str] = None
+    username: Optional[str] = None
+    default_owner: Optional[str] = None
+    auth_kind: str
+    login: Optional[str] = None
+    created_at: datetime
+
+
+class AppHost(Open):
+    source_host_id: Optional[str] = None
+
+
+class CiHostRow(Open):
+    id: str
+    kind: str
+    name: str
+    base_url: str
+    username: Optional[str] = None
+    created_at: datetime
+
+
+class CiHostTest(Open):
+    ok: bool
+    error: Optional[str] = None
+
+
+class CiLink(Open):
+    kind: str
+    ci_host_id: Optional[str] = None
+    job: str = ""
+
+
+class CiRunRow(Open):
+    id: str
+    source: str
+    number: int
+    status: str
+    name: Optional[str] = None
+    url: Optional[str] = None
+    branch: Optional[str] = None
+    sha: Optional[str] = None
+    trigger: Optional[str] = None
+    started_at: Optional[datetime] = None
+    duration_ms: Optional[int] = None
+    synced_at: datetime
+
+
+class CiRuns(Open):
+    link: CiLink
+    runs: list[CiRunRow]
+    error: Optional[str] = None
+    total: int = 0
+    page: int = 1
+    per: int = 10
+
+
+class CiStarted(Open):
+    id: str
+    url: Optional[str] = None
+    ref: str
+
+
+class ImportOrganization(Open):
+    login: str
+    name: str
+    kind: str
+    avatar: Optional[str] = None
+
+
+class ImportOrganizations(Open):
+    organizations: list[ImportOrganization]
+    install_url: Optional[str] = None
+
+
+class ImportRepository(Open):
+    full_name: str
+    name: str
+    description: Optional[str] = None
+    private: bool
+    archived: bool
+    fork: bool
+    language: Optional[str] = None
+    default_branch: str
+    url: str
+    pushed_at: Optional[str] = None
+    imported_as: Optional[str] = None
+
+
+class ImportProject(Open):
+    number: int
+    title: str
+    description: Optional[str] = None
+    closed: bool
+    url: Optional[str] = None
+    repositories: list[str]
+    exists: bool
+
+
+class ImportTeam(Open):
+    slug: str
+    name: str
+    description: Optional[str] = None
+    members: list[str]
+    repositories: list[str]
+    exists: bool
+
+
+class ImportPerson(Open):
+    login: str
+    name: str
+    email: Optional[str] = None
+    avatar: Optional[str] = None
+    status: str
+
+
+class ImportPreview(Open):
+    organization: str
+    repositories: list[ImportRepository]
+    projects: list[ImportProject] = Field(default_factory=list)
+    teams: list[ImportTeam]
+    people: list[ImportPerson]
+    problems: list[str] = Field(default_factory=list)
+
+
 class Deployments(Open):
     targets: list[DeployTargetRow]
     deployments: list[DeploymentRow]
@@ -480,6 +640,25 @@ __all__ = [
     "DeployTargetRow",
     "DeploymentRow",
     "Deployments",
+    "ReadinessCheck",
+    "ReadinessRow",
+    "ReadinessQueued",
+    "JobQueued",
+    "HostRow",
+    "AppHost",
+    "CiHostRow",
+    "CiHostTest",
+    "CiLink",
+    "CiRunRow",
+    "CiRuns",
+    "CiStarted",
+    "ImportOrganization",
+    "ImportOrganizations",
+    "ImportRepository",
+    "ImportProject",
+    "ImportTeam",
+    "ImportPerson",
+    "ImportPreview",
     "ScopeRow",
     "Scopes",
     "Diagnosis",
