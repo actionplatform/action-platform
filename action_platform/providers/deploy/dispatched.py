@@ -113,7 +113,7 @@ class DispatchedTarget(DeployTarget):
                 started,
                 int(ctx.env.get("AP_DISPATCH_TIMEOUT", TIMEOUT_SECONDS)),
             )
-        except ProviderError as e:
+        except (ProviderError, DeployError) as e:
             return DeployResult(
                 ok=False, target=self.name, version=ctx.next_version, error=str(e)
             )

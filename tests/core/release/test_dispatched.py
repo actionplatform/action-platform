@@ -301,3 +301,21 @@ def test_stages_are_logged_once_each(tmp_path, monkeypatch):
 
     assert lines.count("run 31: stage Migrate SUCCESS") == 1
     assert lines.count("run 31: stage Publish IN_PROGRESS") == 1
+
+
+def test_a_build_cancelled_in_the_queue_fails_only_this_target(tmp_path, monkeypatch):
+    from action_platform.core.exception import DeployError
+
+    monkeypatch.setattr("action_platform.providers.deploy.dispatched.POLL_SECONDS", 0)
+    runner = FakeJenkins(["success"], waits=0)
+
+    def cancelled(job, ref):
+        raise DeployError("the build of team/app-prod was cancelled in the queue")
+
+    runner.run_of = cancelled
+    target = jenkins_config([runner]).dispatched()[0]
+
+    result = target.deploy(context(tmp_path))
+
+    assert result.ok is False
+    assert "cancelled in the queue" in result.error
