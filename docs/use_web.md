@@ -154,10 +154,13 @@ The catalog: the official repository plus the ones the organization added under 
 
 - **GitHub Projects** become projects; their repositories become the apps.
 - **Repositories** become one project each, or all go into one existing project.
-- **Teams** become teams; their members already on the platform join them.
-- **People** join at once when an account with that email exists, or receive an invitation; people without a public email are listed for you to invite by hand.
+- **Teams** become teams; their members already on the platform join them, and the ones invited join on accepting.
+- **People** join at once when an account with their public email exists. Otherwise they are invited: by email when GitHub shows one, else by their GitHub login. A login invitation is accepted on its invitation page by signing in (or creating an account with any email) and then **Verify @login on GitHub** — the platform's GitHub OAuth app proves the account is theirs. Without a GitHub OAuth app on the platform there is nothing to verify with, so those people are listed as *No email* for you to invite by hand.
+- **Roles** come from GitHub: each person shows their GitHub role — organization owner, team maintainer or member — and the role they will get. The mapping above the list sets the platform role for each GitHub role (all *Developer* until you change it); the selector on a person overrides it for them. People already in the organization keep their role.
 
-Repositories already on the platform cannot be picked twice. Teams and people need the GitHub App permission *Organization › Members (read)* or the `read:org` scope; the page says so when GitHub refuses. The import runs in the background and ends with what was created and what was skipped, with the reason. When the repositories went into one project, **Open install pull requests for N repositories** leads to that project's [Adoption](#adoption); otherwise each imported project has its own.
+Invitations carry the teams: a person invited by the import who accepts later — a day or a week after — joins the imported teams GitHub had them in. The invitation link is the only way in (no email is sent); **Organization › Members** lists each pending invitation with its email or `@login`, its role and the teams waiting for it.
+
+Repositories already on the platform cannot be picked twice. Teams and people need the GitHub App permission *Organization › Members (read)* or the `read:org` scope; the page says so when GitHub refuses. The import runs in the background and ends with what was created: projects, apps, teams, who joined, who was invited by email and by login, the teams waiting for each invitee, and what was skipped with the reason. When the repositories went into one project, **Open install pull requests for N repositories** leads to that project's [Adoption](#adoption); otherwise each imported project has its own.
 
 ## Organization
 
