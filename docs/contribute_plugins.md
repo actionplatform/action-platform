@@ -142,7 +142,7 @@ class VaultPlugin(Plugin):
 | `guard(ops, live)` | changes refused before anything is sent, with the reason — at least: never the last administrator; a refused `org`/`global` change holds every other change of that account |
 | `order(op)` | the order changes are sent in; by default organization-wide adds first and removes last |
 
-`Http(service, base, headers)` is the JSON client the bundled plugins share: `call(method, path, body=…, query=…, form=…, ok=…)` answers the decoded body and raises `AccessError` on any status of 400 or more that `ok` does not list; `pages(path)` follows `Link: rel="next"`; `text(path, tail_lines=None)` reads a plain-text body (a console log) as a stream, whole or only its last `tail_lines` lines. An error message names the service, the method and the path, never a header; an HTML error page shows up only as its `<title>`.
+`Http(service, base, headers)` is the JSON client the bundled plugins share: `call(method, path, body=…, query=…, form=…, ok=…)` answers the decoded body and raises `AccessError` on any status of 400 or more that `ok` does not list; `pages(path)` follows `Link: rel="next"`; `text(path, tail_lines=None)` reads a plain-text body (a console log) as a stream, whole or only its last `tail_lines` lines. An error message names the service, the method and the path, never a header; an HTML error page shows up only as its `<title>`. The headers go only to the origin of `base`: an absolute path or a `next` link elsewhere raises `AccessError`, and a redirect elsewhere is followed without them (`action_platform/core/destination.py`).
 
 ### Connections instead of a token
 
