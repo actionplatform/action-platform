@@ -42,6 +42,23 @@ class PlainRepositoryTest(TempCase):
         self.assertEqual((project / "LAST_VERSION").read_text(), "0.0.0\n")
         self.assertFalse((project / ".git").exists())
 
+    def test_a_manifest_without_a_source_host_gets_the_owner_s(self):
+        (self.source / "platform.toml").write_text('[project]\nname = "starter"\n')
+
+        project = generate_project(
+            self.source,
+            Leaf("web", "", "starter", plain=True),
+            "My Shop",
+            None,
+            self.output,
+            {"github_owner": "acme", "source_host": "gitlab"},
+        )
+        data = tomllib.loads((project / "platform.toml").read_text())
+
+        self.assertEqual(
+            data["source_host"], {"kind": "gitlab", "repo": "acme/my-shop"}
+        )
+
     def test_seeds_a_manifest_when_the_repository_has_none(self):
         project = generate_project(
             self.source,

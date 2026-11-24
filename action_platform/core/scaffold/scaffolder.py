@@ -63,7 +63,7 @@ def _copy_repository(
 
     if manifest.exists:
         manifest.rename(slug)
-        _set_owner(manifest, context.get("github_owner"))
+        _set_owner(manifest, context, slug)
         return target
 
     Repository.init(target, branch="main")
@@ -78,7 +78,7 @@ def _copy_repository(
         (target / LAST_VERSION_FILE).write_text("0.0.0\n")
 
     shutil.rmtree(target / ".git", ignore_errors=True)
-    _set_owner(manifest, context.get("github_owner"))
+    _set_owner(manifest, context, slug)
 
     if context.get("description"):
         manifest.set_description(str(context["description"]))
@@ -86,9 +86,19 @@ def _copy_repository(
     return target
 
 
-def _set_owner(manifest: Manifest, owner: str | None) -> None:
-    if owner and manifest.exists:
+def _set_owner(manifest: Manifest, context: dict, slug: str) -> None:
+    """Point [source_host] at the owner, or add it on the chosen host when the copied repository had none."""
+    owner = context.get("github_owner")
+
+    if not owner or not manifest.exists:
+        return
+
+    if "[source_host]" in manifest.text():
         manifest.set_owner(owner)
+    else:
+        manifest.set_source_host(
+            str(context.get("source_host") or "github"), f"{owner}/{slug}"
+        )
 
 
 def apply_cloud(repo: Path, cloud: Cloud, project: Path) -> Path:
