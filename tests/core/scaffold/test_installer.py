@@ -6,6 +6,7 @@ import subprocess
 import unittest
 from unittest import mock
 
+from action_platform.core.flow.repository import Repository
 from action_platform.core.scaffold import installer
 from action_platform.core.scaffold.installer import InstallError
 from tests.support import TempCase, git, install_templates
@@ -315,3 +316,47 @@ class SourceHostTest(unittest.TestCase):
             '[source_host]\nkind = "gitlab"\nrepo = "team/app"\nbase_url = "https://gitlab.example.com"\n',
             text,
         )
+
+
+class SeedVersionTest(TempCase):
+    def setUp(self):
+        super().setUp()
+        self.repo = self.tmp_path / "repo"
+        self.repo.mkdir()
+        git(self.repo, "init", "-q", "-b", "main")
+        git(self.repo, "commit", "-q", "--allow-empty", "-m", "chore: first")
+
+    def seed(self, *tags: str) -> str:
+        for tag in tags:
+            git(self.repo, "tag", tag)
+
+        return installer._seed_version(Repository(self.repo))
+
+    def test_never_released(self):
+        self.assertEqual(self.seed(), "0.0.0")
+        self.assertEqual(self.seed("latest", "api/v1.0.0", "release-2"), "0.0.0")
+
+    def test_unprefixed_tags(self):
+        self.assertEqual(self.seed("1.2.3", "1.10.0", "1.9.9"), "1.10.0")
+
+    def test_mixed_prefixes(self):
+        self.assertEqual(self.seed("v3.4.1", "3.4.2"), "3.4.2")
+
+    def test_a_pre_release_counts_until_a_stable_follows_it(self):
+        self.assertEqual(
+            self.seed("v1.9.0", "v2.0.0-rc.1", "v2.0.0-rc.2"), "2.0.0-rc.2"
+        )
+        self.assertEqual(self.seed("v2.0.0"), "2.0.0")
+
+    def test_pre_releases_compare_numerically(self):
+        self.assertEqual(self.seed("v2.0.0-rc.2", "v2.0.0-rc.10"), "2.0.0-rc.10")
+
+    def test_tags_off_the_current_branch_count(self):
+        git(self.repo, "checkout", "-q", "-b", "develop")
+        git(self.repo, "commit", "-q", "--allow-empty", "-m", "feat: x")
+        git(self.repo, "checkout", "-q", "main")
+        git(self.repo, "commit", "-q", "--allow-empty", "-m", "fix: y")
+        git(self.repo, "tag", "v1.4.0")
+        git(self.repo, "checkout", "-q", "develop")
+
+        self.assertEqual(self.seed(), "1.4.0")

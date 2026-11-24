@@ -12,6 +12,7 @@ from pathlib import Path
 from action_platform.core.flow.repository import Repository
 from action_platform.core.manifest import toml_str
 from action_platform.core.exception import ActionPlatformError
+from action_platform.core.release.versioning import SEMVER_RE
 from action_platform.core.scaffold.catalog import Matrix, load_matrix
 from action_platform.core.scaffold.language import detect_language
 from action_platform.core.wiring import slot, wired
@@ -175,13 +176,24 @@ def install(
 
 
 def _seed_version(repo: Repository) -> str:
-    """LAST_VERSION for a repository joining the platform: its newest vX.Y.Z tag, or 0.0.0 when it never released."""
-    tag = repo.latest_tag(match="v[0-9]*")
+    """LAST_VERSION for a repository joining the platform: its newest release tag among all tags, `v1.2.3` or `1.2.3`, a pre-release only when no stable release follows it; 0.0.0 when it never released."""
+    found = [
+        m for m in (SEMVER_RE.match(t.removeprefix("v")) for t in repo.tags()) if m
+    ]
 
-    if tag and re.fullmatch(r"v?\d+\.\d+\.\d+", tag):
-        return tag.lstrip("v")
+    if not found:
+        return "0.0.0"
 
-    return "0.0.0"
+    return max(found, key=_precedence).group(0)
+
+
+def _precedence(found: re.Match) -> tuple:
+    major, minor, patch, pre = found.groups()
+    identifiers = tuple(
+        (0, int(p), "") if p.isdigit() else (1, 0, p) for p in (pre or "").split(".")
+    )
+
+    return int(major), int(minor), int(patch), pre is None, identifiers
 
 
 def _any_leaf(repo: Path, matrix: Matrix) -> Path:
