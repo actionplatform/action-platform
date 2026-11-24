@@ -96,8 +96,8 @@ class Planner:
                     bool(parsed.get("force")),
                 )
 
-            job_id = JobDispatcher(JobQueue(self.state.db)).async_job(
-                target.organization, target.app, caller, path, method, headers, parsed
+            job_id = JobDispatcher(JobQueue(self.state.db)).job_for(
+                target.organization, target.app, caller, path, method, parsed
             )
 
             if job_id is not None:

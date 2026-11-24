@@ -21,7 +21,7 @@ class OrganizationRemovalTest(GateCase):
         self.client.post(
             f"/api/v1/apps/{registry_id}/sync",
             json={},
-            headers={**self.h(), "Prefer": "respond-async"},
+            headers=self.h(),
         )
         org_id = self.org["id"]
 

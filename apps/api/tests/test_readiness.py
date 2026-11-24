@@ -72,7 +72,7 @@ class ReadinessTest(GateCase):
         self.stored(
             "prod", [Check("aws.permissions", False, "may not lambda:GetLayerVersion")]
         )
-        headers = {**self.h(), "Prefer": "respond-async"}
+        headers = self.h()
 
         refused = self.client.post(
             f"/api/v1/apps/{self.registry_id}/deploy",
