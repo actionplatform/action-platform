@@ -1,4 +1,4 @@
-import { Building2, KeyRound, Users, UsersRound } from "lucide-react";
+import { Building2, KeyRound, ShieldCheck, Users, UsersRound } from "lucide-react";
 
 import type { LucideIcon } from "lucide-react";
 
@@ -10,7 +10,10 @@ export const ORGANIZATION_PAGES: SubPage[] = [
   { href: "/organization/sessions", label: "Sessions", icon: KeyRound },
 ];
 
-export const SETTINGS_PAGES: SubPage[] = [{ href: "/settings", label: "General", icon: Building2, exact: true }];
+export const SETTINGS_PAGES: SubPage[] = [
+  { href: "/settings", label: "General", icon: Building2, exact: true },
+  { href: "/settings/access", label: "Access", icon: ShieldCheck },
+];
 
 export function subNavPages(pages: SubPage[]): { href: string; label: string; exact?: boolean }[] {
   return pages.map(({ href, label, exact }) => ({ href, label, exact }));

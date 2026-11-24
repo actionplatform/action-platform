@@ -1,4 +1,5 @@
 import type { Schemas } from "./api";
+import { serviceAccess } from "./api/access";
 import { integrations } from "./api/integrations";
 import { jobs } from "./api/jobs";
 import { organization } from "./api/organization";
@@ -23,4 +24,10 @@ export type DeploymentsRow = Schemas["Deployments"];
 export type DeploymentRow = Schemas["DeploymentRow"];
 export type TargetRow = Schemas["TargetRow"];
 
-export const v1 = { ...organization, ...projects, ...integrations, ...jobs };
+export type AccessAudit = Schemas["Audit"];
+export type ServiceAuditRow = Schemas["ServiceAudit"];
+export type AccessWho = Schemas["Who"];
+export type AccessPlan = Schemas["Plan"];
+export type AccessChange = Schemas["Change"];
+
+export const v1 = { ...organization, ...projects, ...integrations, ...jobs, ...serviceAccess };

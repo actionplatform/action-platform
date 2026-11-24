@@ -175,7 +175,7 @@ One card per plugin the platform runs, with its version. **Configure** opens the
 
 ## Settings
 
-**Organization** — name, slug, your role, the commit identity and the git-flow rules — **Git** and **Services**.
+**Organization** — name, slug, your role, the commit identity and the git-flow rules — **Git** and **Services**; **Access** is its own page.
 
 ### Commit identity
 
@@ -204,6 +204,14 @@ Tokens are encrypted by the API and never leave it; expiring tokens are refreshe
 ### Services
 
 Services other than code hosts that plugins read through a connection instead of a pasted token. **Sentry**: *Set up OAuth app* shows the callback URL; create the application once in Sentry (User settings → API → Applications → *Create New Application*, Confidential, that callback as the redirect URI) and paste its client id and secret. Then *Connect Sentry* signs the organization in with your Sentry account, asking for the scopes the installed plugins declare. The token is sealed and refreshed before it expires; the card names any scope a plugin needs that was not granted (*Reconnect* asks again). *Disconnect* deletes it.
+
+### Access
+
+**Settings → Access** (`org.manage` only; others see a short notice) manages what members may do on the services the plugins own, through [service access](concept_service_access.md). Read from each service on every load:
+
+- **Per service** — readable or not (a failure shows the plugin's error as it came; when it asks to connect something, a link opens Settings, where Git and Services are connected), whether it is imported, the grants it holds against the grants the mapping wants, the drift a sync would close, members without an account, accounts that belong to no member, and the levels of each resource kind.
+- **Who has access** — by person (email: accounts, teams, live grants, drift) or by service (every account and the member it belongs to).
+- **Change access** — sync, grant, revoke and offboard (optionally removing the person from the organization too). Each first runs as a dry run and shows the plan, a change per row with its status, refused ones highlighted with the reason; **Apply** asks for a confirmation and runs it for real, then shows what was applied or failed. A sync of a service not yet imported only imports it and changes nothing there. Linking members to accounts that are not their email (`links`) is not on the page.
 
 ### CI servers
 

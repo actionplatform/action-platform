@@ -8,7 +8,7 @@ import { Logo } from "@/components/logo";
 import type { Org } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { OrgSwitcher } from "./org-switcher";
-import { ORGANIZATION_PAGES, pageActive, type SubPage } from "./nav";
+import { ORGANIZATION_PAGES, SETTINGS_PAGES, pageActive, type SubPage } from "./nav";
 import { useScope } from "./scope";
 import { UserMenu } from "./user-menu";
 
@@ -18,7 +18,7 @@ const items: { href: string; label: string; icon: typeof FolderGit2; children?: 
   { href: "/templates", label: "Templates", icon: LayoutTemplate },
   { href: "/organization", label: "Organization", icon: Building2, children: ORGANIZATION_PAGES },
   { href: "/plugins", label: "Plugins", icon: Puzzle },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/settings", label: "Settings", icon: Settings, children: SETTINGS_PAGES },
 ];
 
 const appItems = [
