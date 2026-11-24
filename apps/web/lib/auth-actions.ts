@@ -17,10 +17,10 @@ export async function signIn(email: string, password: string): Promise<Result> {
   }
 }
 
-export async function signUp(name: string, email: string, password: string, invitationId: string | null = null): Promise<Result> {
+export async function signUp(name: string, email: string, password: string, invitationId: string | null = null, setupToken: string | null = null): Promise<Result> {
   try {
     const { ip } = await requestClient();
-    const signed = await authApi.signUp({ name, email, password, invitation_id: invitationId }, ip);
+    const signed = await authApi.signUp({ name, email, password, invitation_id: invitationId, setup_token: setupToken }, ip);
     await setSessionCookie(signed.session.cookie, signed.session.expires_at);
     return { ok: true, data: null };
   } catch (e) {

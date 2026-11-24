@@ -2351,6 +2351,7 @@ export interface components {
             organizations: number;
             password_recovery: boolean;
             google: boolean;
+            setup: "open" | "closed";
         };
         Branch: {
             name: string;
@@ -3488,6 +3489,7 @@ export interface components {
             email: string;
             password: string;
             invitation_id?: string | null;
+            setup_token?: string | null;
         };
         Signed: {
             user: components["schemas"]["UserOut"];
