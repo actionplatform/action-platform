@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.33.0 — 2026-11-24
+
+### Features
+- **web:** continue with Google on login and invite pages
+- **web:** forgot password and reset password pages
+
+### Bug Fixes
+- **web:** proxy /api/v1 and /api/auth paths that carry a dot
+
+### Tests
+- **web:** Google sign-in paths and status
+- **web:** password recovery actions and status
+
+### Build
+- **web:** regenerate API types for Google sign-in
+- **web:** regenerate API types for password recovery
+
 ## v0.32.3 — 2026-11-08
 
 ### Bug Fixes
