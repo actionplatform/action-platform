@@ -32,6 +32,13 @@ function Row({ id, checked, disabled, onToggle, children }: { id: string; checke
   );
 }
 
+function AdoptionLink({ project, result }: { project: ProjectOption | undefined; result: ImportSummary | null }) {
+  if (!result || result.apps.length + result.projects.length === 0) return null;
+  const count = project ? result.apps.filter((a) => a.endsWith(`→ ${project.name}`)).length : 0;
+  if (!project || count === 0) return <p className="basis-full text-[13px] text-secondary">To open install pull requests, use Adoption on each imported project.</p>;
+  return <Link href={`/projects/${project.id}/adoption`}><Button variant="outline">Open install pull requests for {count} {count === 1 ? "repository" : "repositories"}</Button></Link>;
+}
+
 function useSelection(all: string[]) {
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const toggle = (key: string) => setPicked((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n; });
@@ -145,6 +152,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
           {!running && (
             <div className="flex flex-wrap gap-2">
               <Link href="/projects"><Button>Open projects</Button></Link>
+              <AdoptionLink project={projects.find((p) => p.id === projectId)} result={job.result} />
               <Button variant="ghost" onClick={() => { setJob(null); setLogin(""); }}>Import another</Button>
             </div>
           )}
