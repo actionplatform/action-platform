@@ -85,7 +85,7 @@ flowchart LR
 
 ### Adding an existing repository
 
-A git URL. With a `platform.toml` the app is registered as it is. Without one, the platform offers to install it: pick the type and CI, and the app opens on Configuration with `platform.toml`, the quality config, the CI files and the hooks as **pending edits** — nothing pushed yet. **Commit changes** puts them on a `chore/<code>` branch with a pull request; **Discard changes** drops them. Pending edits live on the platform, not in a clone: they survive restarts and are applied on top of a fresh clone whenever the app's files are needed.
+A git URL. With a `platform.toml` the app is registered as it is. Without one, the platform offers to install it: pick the type and the CI — **Detect from the repository** (the default) takes the CI the repository already runs, the same rules as [`install`](use_adopting.md), and a repository with two of them asks for one. When the installer found a CI in the repository or has a warning (a second CI next to an existing one), it shows them before anything else, with the stages to paste into a kept `Jenkinsfile`; **Open configuration** goes on. The app opens on Configuration with `platform.toml`, the quality config, the CI files and the hooks as **pending edits** — nothing pushed yet. **Commit changes** puts them on a `chore/<code>` branch with a pull request; **Discard changes** drops them. Pending edits live on the platform, not in a clone: they survive restarts and are applied on top of a fresh clone whenever the app's files are needed.
 
 ## The app page
 

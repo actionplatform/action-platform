@@ -1958,6 +1958,7 @@ export interface components {
             registry_id: string;
             name: string;
             installed?: string[] | null;
+            report?: components["schemas"]["InstallReport"] | null;
         };
         AppComponent: {
             name: string;
@@ -1999,6 +2000,7 @@ export interface components {
             path: string;
             default_branch: string;
             installed?: string[] | null;
+            report?: components["schemas"]["InstallReport"] | null;
         };
         AppHostRequest: {
             source_host_id?: string | null;
@@ -2498,6 +2500,12 @@ export interface components {
             cloud?: string | null;
             pushed: boolean;
         };
+        InstallReport: {
+            ci: string;
+            detected_ci: string[];
+            warnings: string[];
+            ci_snippet: string;
+        };
         InstallSpec: {
             type: string;
             language?: string | null;
@@ -2505,6 +2513,7 @@ export interface components {
         };
         Installed: {
             installed: string[];
+            report?: components["schemas"]["InstallReport"] | null;
         };
         InvitationRow: {
             id: string;

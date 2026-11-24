@@ -19,17 +19,18 @@ export async function pullReleases(projectId: string, appId: string): Promise<{ 
 }
 
 
-export type AddResult = { ok: true; appId: string; installed: string[] | null } | { ok: false; error: string; needsInstall?: boolean };
+export type InstallReport = { ci: string; detected_ci: string[]; warnings: string[]; ci_snippet: string };
+export type AddResult = { ok: true; appId: string; installed: string[] | null; report: InstallReport | null } | { ok: false; error: string; needsInstall?: boolean };
 
 
-export async function addApp(projectId: string, url: string, install: { type: string; ci: string; language: string | null } | null = null): Promise<AddResult> {
+export async function addApp(projectId: string, url: string, install: { type: string; ci: string | null; language: string | null } | null = null): Promise<AddResult> {
   url = url.trim();
   if (!url) return { ok: false, error: "url is required" };
   await requireOrg();
   try {
     const app = await v1.addApp(projectId, url, install);
     revalidatePath(`/projects/${projectId}`);
-    return { ok: true, appId: app.id, installed: app.installed ?? null };
+    return { ok: true, appId: app.id, installed: app.installed ?? null, report: app.report ?? null };
   } catch (e) {
     if (e instanceof ApiError && e.code === "needs_install") return { ok: false, error: e.message, needsInstall: true };
     return failed(e);
