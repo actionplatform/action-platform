@@ -14,7 +14,8 @@
 The platform executes `run_by = "platform"` targets itself and dispatches the
 CI-run ones (`github_actions`, `gitlab_ci`, `bitbucket_pipelines`): it starts
 the workflow on the release tag and follows the run. `jenkins` and `manual`
-targets are observed — their runs become deployment records — and verified.
+targets, and CI-run ones with `observe = true`, are observed — their runs
+become deployment records and are verified, a platform deploy never runs them.
 `stages` limits a target to some scopes. An observed run names its release by
 the tag it built or, with `version_parameter`, by a build parameter; its scope
 comes from `stage_parameter`, else the target's only stage. A dispatched workflow receives the
@@ -38,7 +39,8 @@ EXECUTORS = (
     "jenkins",
     "manual",
 )
-RESERVED = {"name", "kind", "run_by", "stages", "target", "targets"}
+CI_EXECUTORS = ("github_actions", "gitlab_ci", "bitbucket_pipelines")
+RESERVED = {"name", "kind", "run_by", "stages", "observe", "target", "targets"}
 VERSION = re.compile(
     r"^(?:refs/)?(?:tags/)?(?:(?P<component>[A-Za-z0-9_.-]+)/)?v?(?P<version>\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)$"
 )
@@ -51,6 +53,7 @@ class TargetSpec:
     run_by: str = "platform"
     stages: tuple[str, ...] = ()
     options: dict[str, Any] = field(default_factory=dict)
+    observe: bool = False
 
     @property
     def platform(self) -> bool:
@@ -59,7 +62,12 @@ class TargetSpec:
     @property
     def dispatched(self) -> bool:
         """Run by a CI the platform can start and follow: the deploy is a run of the repository's own pipeline."""
-        return self.run_by in ("github_actions", "gitlab_ci", "bitbucket_pipelines")
+        return self.run_by in CI_EXECUTORS and not self.observe
+
+    @property
+    def observed(self) -> bool:
+        """Deployed by someone else — Jenkins, a person, or a CI target with `observe = true`: its runs are recorded and verified, a platform deploy never runs it."""
+        return not self.platform and not self.dispatched
 
     def serves(self, stage: str) -> bool:
         return not self.stages or stage in self.stages
@@ -134,6 +142,16 @@ def parse_targets(cfg: dict) -> list[TargetSpec]:
                 f"[[deploy.targets]] run_by {run_by!r} is not one of {', '.join(EXECUTORS)}"
             )
 
+        observe = raw.get("observe", False)
+
+        if not isinstance(observe, bool):
+            raise ConfigError("[[deploy.targets]] observe is true or false")
+
+        if observe and run_by == "platform":
+            raise ConfigError(
+                '[[deploy.targets]] observe applies to a target another executor runs, not to run_by = "platform"'
+            )
+
         stages = raw.get("stages") or ()
         specs.append(
             TargetSpec(
@@ -142,6 +160,7 @@ def parse_targets(cfg: dict) -> list[TargetSpec]:
                 run_by=run_by,
                 stages=tuple(str(s) for s in stages),
                 options={k: v for k, v in raw.items() if k not in RESERVED},
+                observe=observe,
             )
         )
 
@@ -169,4 +188,10 @@ def version_from_ref(ref: str | None, component: str = "") -> str | None:
     return found.group("version")
 
 
-__all__ = ["EXECUTORS", "TargetSpec", "parse_targets", "version_from_ref"]
+__all__ = [
+    "CI_EXECUTORS",
+    "EXECUTORS",
+    "TargetSpec",
+    "parse_targets",
+    "version_from_ref",
+]

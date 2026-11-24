@@ -286,6 +286,47 @@ class DeploymentRecordsTest(GateCase):
             ],
         )
 
+    def test_an_observed_ci_target_is_imported_on_sync(self):
+        from app.repositories.configuration.config_store import ConfigStore
+
+        ConfigStore(self.app.state.db).set(
+            self.registry_id,
+            {
+                "project": {"name": "demo"},
+                "deploy": {
+                    "targets": [
+                        {
+                            "name": "pypi",
+                            "kind": "pypi",
+                            "run_by": "github_actions",
+                            "observe": True,
+                            "workflow": "publish.yml",
+                            "package": "demo",
+                        }
+                    ]
+                },
+            },
+        )
+        self.github()
+
+        with (
+            mock.patch(
+                "action_platform.providers.ci.github_actions.CIGithubActions.runs",
+                return_value=[run(3, "v1.0.0"), run(2, "main")],
+            ),
+            mock.patch(
+                "action_platform.providers.deploy.pypi.DeployPypi.verify",
+                return_value=True,
+            ),
+        ):
+            body = self.client.post(f"{self.base}/sync", headers=self.h()).json()
+
+        self.assertIsNone(body["error"])
+        self.assertEqual(
+            [(d["version"], d["status"], d["executor"]) for d in body["deployments"]],
+            [("1.0.0", "verified", "github_actions")],
+        )
+
     def test_a_second_sync_updates_instead_of_duplicating(self):
         self.github()
 

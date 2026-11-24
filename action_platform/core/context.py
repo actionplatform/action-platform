@@ -150,6 +150,7 @@ class Context:
     criticality: str = ""
     tag: str = ""
     identity: Optional[Callable[[str], str]] = None
+    observed: bool = False
 
     def identity_token(self, audience: str) -> Optional[str]:
         """A short-lived OIDC token the platform signs for this deploy, for `audience` (`sts.amazonaws.com`…); None when nothing can issue one — a plain machine without a login."""

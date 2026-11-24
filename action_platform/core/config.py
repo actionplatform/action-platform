@@ -126,6 +126,10 @@ class Config:
             for spec in specs
         ]
 
+    def provides(self, kind: str) -> bool:
+        """Whether a provider for deploy target `kind` is installed."""
+        return kind in _providers()
+
     def target(self, name: str) -> DeployTarget:
         """A provider for target `name`, whoever runs it — for verify and url."""
         spec = next((t for t in self.targets if t.name == name), None)

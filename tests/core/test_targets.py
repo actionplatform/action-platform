@@ -101,6 +101,70 @@ class ParseTargetsTest(unittest.TestCase):
         self.assertEqual(config.target("index").name, "index")
 
 
+class ObserveTest(unittest.TestCase):
+    def test_observe_turns_a_ci_target_into_an_observed_one(self):
+        specs = parse_targets(
+            {
+                "targets": [
+                    {"name": "ci", "kind": "pypi", "run_by": "github_actions"},
+                    {
+                        "name": "seen",
+                        "kind": "pypi",
+                        "run_by": "github_actions",
+                        "observe": True,
+                    },
+                    {"name": "jenkins", "kind": "docker", "run_by": "jenkins"},
+                    {"name": "hand", "kind": "npm", "run_by": "manual"},
+                    {"name": "own", "kind": "aws/lambda"},
+                ]
+            }
+        )
+
+        self.assertEqual(
+            [(s.name, s.dispatched, s.observed) for s in specs],
+            [
+                ("ci", True, False),
+                ("seen", False, True),
+                ("jenkins", False, True),
+                ("hand", False, True),
+                ("own", False, False),
+            ],
+        )
+        self.assertNotIn("observe", specs[1].options)
+
+    def test_observe_is_refused_where_it_means_nothing(self):
+        with self.assertRaises(ConfigError):
+            parse_targets({"targets": [{"kind": "aws/lambda", "observe": True}]})
+
+        with self.assertRaises(ConfigError):
+            parse_targets(
+                {
+                    "targets": [
+                        {"kind": "pypi", "run_by": "github_actions", "observe": "yes"}
+                    ]
+                }
+            )
+
+    def test_an_observed_ci_target_is_never_dispatched(self):
+        config = Config.from_dict(
+            {
+                "deploy": {
+                    "targets": [
+                        {
+                            "kind": "pypi",
+                            "run_by": "github_actions",
+                            "observe": True,
+                            "package": "x",
+                        }
+                    ]
+                }
+            }
+        )
+
+        self.assertEqual(config.dispatched(), [])
+        self.assertEqual(config.target("pypi").name, "pypi")
+
+
 class VersionFromRefTest(unittest.TestCase):
     def test_root_tags(self):
         for ref in ("v1.2.3", "refs/tags/v1.2.3", "tags/v1.2.3", "1.2.3"):
