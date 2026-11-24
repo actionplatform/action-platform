@@ -198,6 +198,46 @@ class DeploymentRecords:
 
         return rows
 
+    def record_start(
+        self,
+        app: App,
+        config: Config,
+        stage: Optional[str],
+        version: Optional[str],
+        job_id: str,
+        actor: Optional[str],
+        started_at: datetime,
+    ) -> list[Deployment]:
+        """The worker's deploy is about to run: one `running` row per platform target it will ship to, when the version is known, so the deployment exists before anything is followed."""
+        if not version:
+            return []
+
+        return [
+            self._upsert(
+                app,
+                spec,
+                "platform",
+                job_id,
+                stage=stage,
+                version=version.lstrip("v"),
+                status="running",
+                job_id=job_id,
+                actor=actor,
+                error=None,
+                started_at=started_at,
+                finished_at=None,
+            )
+            for spec in self._shipping(config, stage)
+        ]
+
+    @staticmethod
+    def _shipping(config: Config, stage: Optional[str]) -> list[TargetSpec]:
+        return [
+            spec
+            for spec in config.targets
+            if (spec.platform or spec.dispatched) and (not stage or spec.serves(stage))
+        ]
+
     def record_failure(
         self,
         app: App,
@@ -213,22 +253,21 @@ class DeploymentRecords:
         if not version:
             return
 
-        for spec in config.targets:
-            if (spec.platform or spec.dispatched) and (not stage or spec.serves(stage)):
-                self._upsert(
-                    app,
-                    spec,
-                    "platform",
-                    job_id,
-                    stage=stage,
-                    version=version.lstrip("v"),
-                    status="failure",
-                    job_id=job_id,
-                    actor=actor,
-                    error=error[:4000],
-                    started_at=started_at,
-                    finished_at=now(),
-                )
+        for spec in self._shipping(config, stage):
+            self._upsert(
+                app,
+                spec,
+                "platform",
+                job_id,
+                stage=stage,
+                version=version.lstrip("v"),
+                status="failure",
+                job_id=job_id,
+                actor=actor,
+                error=error[:4000],
+                started_at=started_at,
+                finished_at=now(),
+            )
 
     def record_manual(
         self,
