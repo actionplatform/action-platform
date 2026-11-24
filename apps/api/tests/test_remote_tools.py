@@ -166,6 +166,34 @@ class InvitationToolsTest(RemoteToolsCase):
         )
 
 
+class OwnerInvitationTest(RemoteToolsCase):
+    def test_only_an_owner_invites_an_owner(self):
+        self.join("bob@example.com", role="admin")
+        bob = self.client.post(
+            "/api/auth/sign-in",
+            json={"email": "bob@example.com", "password": "password1"},
+        ).json()["session"]["token"]
+        minted = self.client.post(
+            "/api/v1/tokens", json={"scope": FULL, "name": "t"}, headers=self.h(bob)
+        ).json()["token"]
+
+        self.assertIn(
+            "only an owner",
+            self.refused(
+                self.server(token=minted),
+                "invite_member",
+                email="bob+2@example.com",
+                role="owner",
+            ),
+        )
+        self.assertEqual(
+            self.call(self.server(), "invite_member", email="c@x.io", role="owner")[
+                "role"
+            ],
+            "owner",
+        )
+
+
 class MemberRemovalToolsTest(RemoteToolsCase):
     def test_remove_from_a_team_then_from_the_organization(self):
         bob = self.join("bob@example.com")
