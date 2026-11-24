@@ -37,7 +37,11 @@ TARGETS = {
 
 
 def run(
-    number: int, branch: str, status: str = "success", started: datetime | None = None
+    number: int,
+    branch: str,
+    status: str = "success",
+    started: datetime | None = None,
+    params: dict[str, str] | None = None,
 ) -> Run:
     return Run(
         number=number,
@@ -50,6 +54,7 @@ def run(
         or datetime(2026, 9, 17, 10, 0, tzinfo=timezone.utc)
         + timedelta(seconds=number),
         duration_ms=60_000,
+        params=params or {},
     )
 
 
@@ -212,6 +217,74 @@ class DeploymentRecordsTest(GateCase):
             [(d["version"], d["status"]) for d in ghcr], [("0.21.2", "success")]
         )
         self.assertIsNone(body["error"])
+
+    def test_jenkins_builds_of_a_branch_take_version_and_scope_from_parameters(self):
+        from app.repositories.configuration.config_store import ConfigStore
+
+        ConfigStore(self.app.state.db).set(
+            self.registry_id,
+            {
+                "project": {"name": "demo"},
+                "deploy": {
+                    "targets": [
+                        {
+                            "name": "app",
+                            "kind": "docker",
+                            "run_by": "jenkins",
+                            "job": "team/app-prod",
+                            "image": "ghcr.io/acme/app",
+                            "stages": ["prod"],
+                            "version_parameter": "RELEASE_TAG",
+                        },
+                        {
+                            "name": "app-any",
+                            "kind": "docker",
+                            "run_by": "jenkins",
+                            "job": "team/app",
+                            "image": "ghcr.io/acme/app",
+                            "version_parameter": "RELEASE_TAG",
+                            "stage_parameter": "ENV",
+                        },
+                    ]
+                },
+            },
+        )
+        self.jenkins()
+        builds = {
+            "team/app-prod": [
+                run(12, "main", params={"RELEASE_TAG": "v1.4.0"}),
+                run(11, "main", params={}),
+            ],
+            "team/app": [
+                run(5, "main", params={"RELEASE_TAG": "1.3.0", "ENV": "dev"}),
+                run(4, "main", params={"RELEASE_TAG": "v1.2.0"}),
+            ],
+        }
+
+        with (
+            mock.patch(
+                "action_platform.providers.ci.jenkins.CIJenkins.runs",
+                side_effect=lambda job, limit=50: builds[job],
+            ),
+            mock.patch(
+                "action_platform.providers.deploy.docker.DeployDocker.verify",
+                return_value=False,
+            ),
+        ):
+            body = self.client.post(f"{self.base}/sync", headers=self.h()).json()
+
+        self.assertIsNone(body["error"])
+        self.assertEqual(
+            sorted(
+                (d["target"], d["version"], d["stage"], d["executor"])
+                for d in body["deployments"]
+            ),
+            [
+                ("app", "1.4.0", "prod", "jenkins"),
+                ("app-any", "1.2.0", None, "jenkins"),
+                ("app-any", "1.3.0", "dev", "jenkins"),
+            ],
+        )
 
     def test_a_second_sync_updates_instead_of_duplicating(self):
         self.github()
