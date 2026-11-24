@@ -2,6 +2,8 @@
 
 Three containers — Postgres, the Python API and the web app — plus a reverse proxy in front of the web app. Everything after `docker compose up` happens in the browser.
 
+This page follows `master`, which can describe settings the newest images do not read yet. The page that matches what you run is in the docs of its tag: `https://github.com/actionplatform/action-platform/blob/api/vX.Y.Z/docs/start_self_hosting.md`. What an operator downloads (`install.sh`'s compose files, the release assets below) always comes from the same tag as the images it names.
+
 ## One command
 
 On a fresh Ubuntu/Debian host, as root:
@@ -41,8 +43,10 @@ Dokploy already runs Traefik, so the compose file has no proxy and publishes no 
 
 `deploy/dokploy/` is a Dokploy template: `template.toml` declares the domain and generates `POSTGRES_PASSWORD` / `BETTER_AUTH_SECRET` / `AP_API_TOKEN`, and pins the images in `AP_IMAGE_API` / `AP_IMAGE_WORKER` / `AP_IMAGE_WEB`; `template.b64` is the two files packed for import.
 
+Every stable `api/v…` and `web/v…` [release](https://github.com/actionplatform/action-platform/releases) carries the files to import, built by the image workflow once the images are pushed: `dokploy-template.b64`, `docker-compose.yml`, `docker-compose.dokploy.yml` and `env.example`, taken from the `api/vX.Y.Z` tag and pinned to that release and the newest stable release of the other component. Use the ones of the newest release that has them; release candidates get none. The `template.b64` on `master` is the source they are built from and can name other versions.
+
 1. Project → **Create Service → Compose**, any name, *Create*.
-2. In the service: **Advanced → Import Template** (or *Raw* → *Import*), paste the contents of [`deploy/dokploy/template.b64`](../deploy/dokploy/template.b64), import. Compose, environment and the `web` domain are filled in; the host is `<app>-<random>.<server ip>.traefik.me` until you change it.
+2. In the service: **Advanced → Import Template** (or *Raw* → *Import*), paste the contents of the release's `dokploy-template.b64` (or of [`deploy/dokploy/template.b64`](../deploy/dokploy/template.b64) to run what `master` names), import. Compose, environment and the `web` domain are filled in; the host is `<app>-<random>.<server ip>.traefik.me` until you change it.
 3. **Domains**: edit the host to your domain, HTTPS on. Update `PUBLIC_URL` under *Environment* to match.
 4. **Deploy**. Upgrades: change the `AP_IMAGE_*` tags under *Environment*, then *Redeploy*.
 

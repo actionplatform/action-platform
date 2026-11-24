@@ -49,7 +49,7 @@ The hosted API syncs the workspace before step 1 (fetch, fast-forward, and a mov
 | Workflow | Trigger | Does |
 |---|---|---|
 | `publish.yml` | dispatched by the platform when a release of the root component is deployed to a scope (`version`, `registry`) | `ci-github/publish@v1`: builds the library and uploads through a Trusted Publisher — environment `testpypi` for a `test` scope, `pypi` otherwise. A release alone publishes nothing ([deployments](concept_deployments.md)) |
-| `docker-publish-images.yml` (Package Docker) | tag `api/v*` or `web/v*`, or manual dispatch with a component | builds `deploy/Dockerfile.<component>`, pushes `:X.Y.Z` (and `:latest` for stable) to Docker Hub and GHCR |
+| `docker-publish-images.yml` (Package Docker) | tag `api/v*` or `web/v*`, or manual dispatch with a component | builds `deploy/Dockerfile.<component>`, pushes `:X.Y.Z` (and `:latest` for stable) to Docker Hub and GHCR. For a stable tag it then attaches `docker-compose.yml`, `docker-compose.dokploy.yml`, `env.example` and `dokploy-template.b64` to the release: the files of the `api/vX.Y.Z` tag with the images pinned to this release and the newest stable release of the other component (`deploy/release-assets.sh`) |
 | `code-quality.yml`, `conventional-commit.yml`, `gitflow.yml`, `trivy.yml` | pull requests and pushes | the shared checks from ci-scripts |
 
 Secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` (read & write); variable `DOCKERHUB_NAMESPACE` when the Hub account is not `actionplatformio`. GHCR uses `GITHUB_TOKEN`.
