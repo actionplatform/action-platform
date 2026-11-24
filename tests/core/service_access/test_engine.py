@@ -165,6 +165,20 @@ class Changes(World):
         )
         self.assertEqual(self.access.who("cara@acme.dev").drift, [])
 
+    def test_the_guard_sees_an_account_spelled_differently_in_the_mapping(self):
+        self.vault.grants = [g for g in self.vault.grants if g.account != "bot"]
+        self.imported()
+        mapping = self.directory.load()
+        mapping.people["ana@acme.dev"]["vault"] = "ANA"
+        mapping.grants["ana@acme.dev"] = [spec("vault", "org", "member")]
+        self.directory.save(mapping)
+
+        plan = self.access.sync(apply=True)
+
+        self.assertEqual(
+            [(c.account, c.status) for c in plan.changes], [("ana", "refused")]
+        )
+
     def test_an_offboarding_the_platform_would_refuse_changes_nothing(self):
         self.imported()
         self.directory.keep_on_platform.add("ben@acme.dev")

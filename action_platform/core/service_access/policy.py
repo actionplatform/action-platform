@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Iterable, Optional
 
@@ -58,11 +59,13 @@ def desired(
 def diff(
     want: set[Grant], live: Iterable[Grant], accounts: Optional[set[str]] = None
 ) -> list[Op]:
-    """The changes that turn `live` into `want`; with `accounts`, only those accounts are touched."""
+    """The changes that turn `live` into `want`; with `accounts`, only those accounts are touched. An account the service already knows is named the way the service spells it."""
     if accounts is not None:
         accounts = {a.lower() for a in accounts}
 
     have = {g.key: g for g in live}
+    spelled = {g.account.lower(): g.account for g in have.values()}
+    want = {replace(g, account=spelled.get(g.account.lower(), g.account)) for g in want}
     target = {g.key: g for g in want}
     ops: list[Op] = []
 
