@@ -41,6 +41,7 @@ class LoginCase(TempCase):
             timeout=60,
             client=None,
             organization=None,
+            prefer=None,
         ):
             self.calls.append((method, url))
             answer = next(it)
@@ -172,6 +173,7 @@ class RemoteClientTest(TempCase):
             timeout=60,
             client=None,
             organization=None,
+            prefer=None,
         ):
             self.seen.update(
                 method=method,
@@ -180,6 +182,7 @@ class RemoteClientTest(TempCase):
                 token=token,
                 client=client,
                 organization=organization,
+                prefer=prefer,
             )
             path = url.split("?")[0]
 
@@ -189,6 +192,22 @@ class RemoteClientTest(TempCase):
             return self.answer
 
         self.patch(client, "_request", fake_request)
+
+    def test_a_queued_deploy_asks_for_an_async_answer(self):
+        remote = client.Remote("https://p.example", "tok")
+        self.answer = {"job": "j1", "poll": "/api/v1/jobs/j1", "status": "queued"}
+
+        queued = remote.deploy_later("a1", "prod", "1.2.3")
+
+        self.assertEqual(queued.job, "j1")
+        self.assertEqual(self.seen["prefer"], "respond-async")
+        self.assertEqual(
+            self.seen["body"], {"stage": "prod", "dry_run": False, "version": "1.2.3"}
+        )
+
+        self.answer = []
+        remote.deploy("a1", "prod")
+        self.assertIsNone(self.seen["prefer"])
 
     def test_calls_v1_with_bearer(self):
         remote = client.Remote("https://p.example", "tok")
