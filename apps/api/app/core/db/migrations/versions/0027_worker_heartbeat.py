@@ -34,4 +34,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_table("worker")
+    if sa.inspect(op.get_bind()).has_table("worker"):
+        op.drop_table("worker")
