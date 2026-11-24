@@ -99,7 +99,7 @@ stage_parameter = "ENV"
 ```
 
 - **Version.** The ref the build checked out wins when it is a release tag. Otherwise the value of `version_parameter` is the release: `v1.2.3`, `1.2.3` or `<component>/v1.2.3`. On a target with a `component`, a bare version is that component's; another component's tag is ignored. A build whose parameter names no release is not recorded.
-- **Scope.** The value of `stage_parameter` when the build has it; otherwise the target's single entry in `stages` when it lists exactly one — the one-job-per-environment setup; otherwise the row has no scope.
+- **Scope.** The value of `stage_parameter` when the build has it; otherwise the target's single entry in `stages` when it lists exactly one — the one-job-per-environment setup; otherwise the row has no scope. A run whose scope the target does not list in `stages` is not recorded on it, and the next sync removes the rows an earlier sync recorded that way — two targets on one job that tell scopes apart by `stage_parameter` each keep only the runs of their own scope.
 
 Runs imported from a dispatched target carry no parameters, so their scope comes from a single entry in `stages` alone. Without the keys, a build is recorded only when it checked out a release tag, as before.
 

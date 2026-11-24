@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Optional
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session as DbSession
 
 from action_platform.core.config import Config
@@ -341,6 +341,7 @@ class DeploymentRecords:
             for run in runs:
                 self._from_run(app, spec, runner.name, run)
 
+            self._drop_unserved(app, spec)
             errors[spec.name] = None
 
         self.verify(app, config)
@@ -351,8 +352,12 @@ class DeploymentRecords:
         self, app: App, spec: TargetSpec, source: str, run: Run
     ) -> Optional[Deployment]:
         version = spec.run_version(run.branch, run.params)
+        stage = spec.run_stage(run.params)
 
-        if version is None or (spec.dispatched and self._shipped(app, spec, version)):
+        if version is None or (stage is not None and not spec.serves(stage)):
+            return None
+
+        if spec.dispatched and self._shipped(app, spec, version, stage):
             return None
 
         finished = (
@@ -366,7 +371,7 @@ class DeploymentRecords:
             spec,
             spec.run_by,
             f"{source}:{run.number}",
-            stage=spec.run_stage(run.params),
+            stage=stage,
             version=version,
             sha=run.sha,
             status=RUN_STATUS.get(run.status, "failure"),
@@ -377,17 +382,36 @@ class DeploymentRecords:
             finished_at=finished,
         )
 
-    def _shipped(self, app: App, spec: TargetSpec, version: str) -> bool:
-        return (
-            self.db.scalar(
-                select(Deployment.id).where(
-                    Deployment.app_id == app.id,
-                    Deployment.target == spec.name,
-                    Deployment.executor == "platform",
-                    Deployment.version == version,
-                )
+    def _shipped(
+        self, app: App, spec: TargetSpec, version: str, stage: Optional[str]
+    ) -> bool:
+        query = select(Deployment.id).where(
+            Deployment.app_id == app.id,
+            Deployment.target == spec.name,
+            Deployment.executor == "platform",
+            Deployment.version == version,
+        )
+
+        if stage is not None:
+            query = query.where(
+                (Deployment.stage == stage) | Deployment.stage.is_(None)
             )
-            is not None
+
+        return self.db.scalar(query.limit(1)) is not None
+
+    def _drop_unserved(self, app: App, spec: TargetSpec) -> None:
+        """Rows an earlier sync recorded for runs of a stage the target does not serve."""
+        if not spec.stages:
+            return
+
+        self.db.execute(
+            delete(Deployment).where(
+                Deployment.app_id == app.id,
+                Deployment.target == spec.name,
+                Deployment.executor == spec.run_by,
+                Deployment.stage.is_not(None),
+                Deployment.stage.not_in(spec.stages),
+            )
         )
 
     def verify(self, app: App, config: Config) -> None:
