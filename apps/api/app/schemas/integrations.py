@@ -46,6 +46,20 @@ class OAuthAppRow(BaseModel):
     callback_hint: str
 
 
+class ConnectionRow(BaseModel):
+    kind: str
+    label: str
+    configured: bool
+    connected: bool
+    login: Optional[str] = None
+    base_url: Optional[str] = None
+    scopes: Optional[list[str]] = None
+    asked: list[str]
+    missing: list[str]
+    expires_at: Optional[datetime] = None
+    connected_at: Optional[datetime] = None
+
+
 class OAuthAppRequest(BaseModel):
     client_id: str
     client_secret: str

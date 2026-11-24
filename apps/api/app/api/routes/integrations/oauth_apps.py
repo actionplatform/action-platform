@@ -1,15 +1,17 @@
-"""The OAuth apps (client id and secret per provider) the platform connects hosts with."""
+"""The OAuth apps (client id and secret per provider) the platform connects code hosts and services with."""
 
 from fastapi import APIRouter
 
 from app.api.dependencies import (
     CallerDep,
+    ConnectionProvidersDep,
     HostProvidersDep,
     OrgDep,
     IntegrationsDep,
     allowed,
 )
 from app.schemas import integrations as schemas
+from app.services.integrations.hosts.scopes import scopes_for
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -19,11 +21,14 @@ def oauth_apps(
     caller: CallerDep,
     writes: IntegrationsDep,
     providers: HostProvidersDep,
+    services: ConnectionProvidersDep,
 ) -> list[schemas.OAuthAppRow]:
     rows = []
 
     for provider, app in writes.oauth_apps().items():
-        host = providers.get(provider)
+        host = (
+            services.get(provider) if provider in services else providers.get(provider)
+        )
         rows.append(
             schemas.OAuthAppRow(
                 provider=provider,
@@ -32,7 +37,7 @@ def oauth_apps(
                 client_id=app.client_id if app else None,
                 base_url=app.base_url if app else None,
                 slug=app.slug if app else None,
-                scopes=host.scopes,
+                scopes=scopes_for(provider, host.scopes),
                 callback_hint=host.callback_hint,
             )
         )

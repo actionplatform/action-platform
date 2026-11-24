@@ -10,6 +10,7 @@ export type MemberRow = Schemas["MemberRow"];
 export type InvitationRow = Schemas["InvitationRow"];
 export type HostRow = Schemas["HostRow"];
 export type OAuthAppRow = Schemas["OAuthAppRow"];
+export type ConnectionRow = Schemas["ConnectionRow"];
 export type TemplateSourceRow = Schemas["TemplateSourceRow"];
 export type ImportsRow = Schemas["Imports"];
 export type ReleaseRow = Schemas["ReleaseRow"];

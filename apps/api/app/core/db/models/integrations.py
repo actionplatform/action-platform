@@ -1,4 +1,4 @@
-"""Integrations: code hosts, OAuth apps, template sources, plugin options, signing keys."""
+"""Integrations: code hosts, service connections, OAuth apps, template sources, plugin options, signing keys."""
 
 from datetime import datetime
 from typing import Optional
@@ -35,6 +35,29 @@ class SourceHost(Base):
         DateTime, nullable=False, default=now, server_default=func.now()
     )
     organization: Mapped[Organization] = relationship(foreign_keys=[organization_id])
+
+
+class ServiceConnection(Base):
+    __tablename__ = "service_connection"
+    __table_args__ = (
+        Index("ux_service_connection_org_kind", "organization_id", "kind", unique=True),
+    )
+
+    id: Mapped[str] = mapped_column(KEY, primary_key=True)
+    organization_id: Mapped[str] = mapped_column(
+        KEY, ForeignKey("organization.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(SHORT, nullable=False)
+    login: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    base_url: Mapped[Optional[str]] = mapped_column(Text)
+    scopes: Mapped[Optional[str]] = mapped_column(Text)
+    token_encrypted: Mapped[str] = mapped_column(Text, nullable=False)
+    refresh_token_encrypted: Mapped[Optional[str]] = mapped_column(Text)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    connected_by: Mapped[Optional[str]] = mapped_column(KEY)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=now, server_default=func.now()
+    )
 
 
 class OAuthApp(Base):

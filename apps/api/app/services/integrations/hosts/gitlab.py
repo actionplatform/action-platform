@@ -12,6 +12,7 @@ from app.core.abc import HostProvider
 from app.core.shared.credentials import Credentials, OAuthApp
 from app.core.shared.http import http
 from app.services.integrations.hosts.access import AccessReport, Owner, Probe
+from app.services.integrations.hosts.scopes import scopes_for
 from app.services.integrations.hosts.tokens import TokenResponse
 
 
@@ -38,7 +39,7 @@ class GitlabProvider(HostProvider):
             "redirect_uri": self.callback_url(origin),
             "state": state,
             "response_type": "code",
-            "scope": self.scopes,
+            "scope": scopes_for(self.kind, self.scopes),
         }
 
         return f"{self.web_base(app)}/oauth/authorize?{urlencode(params)}"

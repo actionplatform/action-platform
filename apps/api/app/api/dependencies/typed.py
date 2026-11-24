@@ -11,6 +11,7 @@ from app.api.dependencies.services import (
     get_auth,
     get_commits,
     get_configuration,
+    get_connection_providers,
     get_db,
     get_host_providers,
     get_integrations,
@@ -38,6 +39,7 @@ from app.repositories.organization import OrganizationRepository
 from app.repositories.projects import ProjectsRepository
 from app.services.integrations.hosts.directory import IntegrationsDirectory
 from app.services.integrations.hosts import HostProviders, OAuthState
+from app.services.integrations.connections import ConnectionProviders
 from app.services.jobs import JobQueue
 from app.services.integrations.plugins import PluginManager
 from app.services.projects.organization_import import ImportGateway
@@ -60,6 +62,9 @@ OrganizationRepoDep = Annotated[
 ProjectsRepoDep = Annotated[ProjectsRepository, Depends(get_projects_repository)]
 IntegrationsDep = Annotated[IntegrationsDirectory, Depends(get_integrations)]
 HostProvidersDep = Annotated[HostProviders, Depends(get_host_providers)]
+ConnectionProvidersDep = Annotated[
+    ConnectionProviders, Depends(get_connection_providers)
+]
 AuthDep = Annotated[AuthService, Depends(get_auth)]
 QueueDep = Annotated[JobQueue, Depends(get_queue)]
 PluginsDep = Annotated[PluginManager, Depends(get_plugins)]

@@ -175,7 +175,7 @@ One card per plugin the platform runs, with its version. **Configure** opens the
 
 ## Settings
 
-**Organization** — name, slug, your role, the commit identity and the git-flow rules — and **Git**.
+**Organization** — name, slug, your role, the commit identity and the git-flow rules — **Git** and **Services**.
 
 ### Commit identity
 
@@ -197,7 +197,13 @@ Otherwise register an OAuth app once (*Set up OAuth app* shows the callback URL 
 
 Then **Connect with …** signs the organization in with your account; the wizard offers your user plus every group (GitLab) or workspace (Bitbucket) you can create in. *Add with a token* is the manual path (kind, base URL for self-hosted instances, token, default owner); *Other* is any git server over HTTPS — push and tag only.
 
+A plugin that manages access on the code host (apx-github) reads this connection instead of a token: while such a plugin is installed on the platform, connecting GitHub — in any organization — asks for the scopes it declares (`admin:org` for apx-github) on top of the platform's own, and a GitHub App created from the manifest carries their permissions (Organization *Members: Read and write*). For an app created before the plugin was installed, the account's line names the missing permission: add it in the app's *Permissions & events*, then accept the new permissions on the installation.
+
 Tokens are encrypted by the API and never leave it; expiring tokens are refreshed before use. The list shows each account, where the app is installed and the default owner the wizard pre-selects; apps remember which host they use. *Webhook…* shows the payload URL and generates the secret (shown once) to paste on the host — GitHub: pushes, pull requests, releases, workflow runs; GitLab: push, tag, merge request, release, pipeline; Bitbucket: push, pull requests — after which every event syncs the app within seconds. *Remove host* disconnects an account.
+
+### Services
+
+Services other than code hosts that plugins read through a connection instead of a pasted token. **Sentry**: *Set up OAuth app* shows the callback URL; create the application once in Sentry (User settings → API → Applications → *Create New Application*, Confidential, that callback as the redirect URI) and paste its client id and secret. Then *Connect Sentry* signs the organization in with your Sentry account, asking for the scopes the installed plugins declare. The token is sealed and refreshed before it expires; the card names any scope a plugin needs that was not granted (*Reconnect* asks again). *Disconnect* deletes it.
 
 ### CI servers
 

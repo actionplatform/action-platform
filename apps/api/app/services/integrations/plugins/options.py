@@ -1,5 +1,7 @@
 """The plugin options store backed by the database — what the file backend is on a machine. Rows belong to an organization; the empty organization holds the platform-wide defaults an organization's own values override.
 
+A plugin reads the organization's connections through `credential(kind)` — the code host it connected (GitHub, GitLab, Bitbucket) or a service connected under Settings (Sentry) — only for a kind it declares in `connections`; the token is refreshed when it is about to expire and handed to that call alone.
+
 An option the plugin declares with kind `secret` is sealed at rest (`{"$sealed": "<AES-256-GCM>"}`, the same Sealer as the code hosts' tokens) and is never handed back to a browser: `public()` leaves it out and `stored_secrets()` only says it is set. It is opened for the process that needs it — a deploy job's environment."""
 
 from __future__ import annotations
@@ -10,10 +12,13 @@ from typing import Any, Optional
 from sqlalchemy import delete, select
 
 from action_platform.core.exception import ActionPlatformError
-from action_platform.plugins import Options, registry
+from action_platform.plugins import Credential, Options, registry
 from app.core.auth.crypto import Sealer
 from app.core.db.database import Database
 from app.core.db.models import PluginOption
+from app.repositories.base import HOST_KINDS
+from app.services.integrations.connections.credentials import FreshConnections
+from app.services.integrations.hosts.credentials import FreshCredentials
 
 PLATFORM = ""
 SEALED = "$sealed"
@@ -128,6 +133,50 @@ class DbOptions(Options):
                 )
             )
             s.commit()
+
+    def credential(self, kind: str) -> Optional[Credential]:
+        if self.organization_id == PLATFORM or not registry.installed().declares(
+            self.slug, kind
+        ):
+            return None
+
+        with self.database.session() as s:
+            found = (
+                self._host_credential(s, kind)
+                if kind in HOST_KINDS
+                else FreshConnections(s, self.sealer).credential(
+                    self.organization_id, kind
+                )
+            )
+            s.commit()
+
+        return found
+
+    def _host_credential(self, s: Any, kind: str) -> Optional[Credential]:
+        reads = FreshCredentials(s, self.sealer)
+        hosts = sorted(
+            (h for h in reads.hosts_of(self.organization_id) if h.kind == kind),
+            key=lambda h: h.auth_kind != "oauth",
+        )
+
+        if not hosts:
+            return None
+
+        host = hosts[0]
+        creds = reads.credentials_for(self.organization_id, host.id)
+
+        if creds is None:
+            return None
+
+        app = reads.oauth_app(kind) if host.auth_kind == "oauth" else None
+
+        return Credential(
+            kind=kind,
+            token=creds.token,
+            login=host.login or host.username or "",
+            api_url=host.base_url,
+            app=app.slug if app else None,
+        )
 
     def _rows(self) -> list[PluginOption]:
         with self.database.session() as s:

@@ -5,7 +5,7 @@ from action_platform.core.service_access.provider import AccessProvider
 from .changelog_renderer import ChangelogRenderer
 from .ci_runner import CIRunner
 from .deploy_target import DeployTarget
-from .plugin import Option, Plugin, Surface
+from .plugin import Connection, Option, Plugin, Surface
 from .release_strategy import ReleaseStrategy
 from .source_host import (
     ListsPullRequests,
@@ -21,6 +21,7 @@ __all__ = [
     "AccessProvider",
     "CIRunner",
     "ChangelogRenderer",
+    "Connection",
     "DeployTarget",
     "ListsPullRequests",
     "Option",

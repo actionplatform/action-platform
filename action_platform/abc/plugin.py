@@ -60,6 +60,24 @@ class Option:
         }
 
 
+@dataclass(frozen=True)
+class Connection:
+    """A connection of the organization the plugin reads through `options.credential(kind)` — `github`, `gitlab`, `bitbucket` (the code hosts) or `sentry`. Connecting asks the provider for `scopes` on top of the platform's own; a GitHub App created from the platform's manifest also carries `permissions` (`{"members": "write"}`)."""
+
+    kind: str
+    scopes: tuple[str, ...] = ()
+    permissions: tuple[tuple[str, str], ...] = ()
+    reason: str = ""
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "kind": self.kind,
+            "scopes": list(self.scopes),
+            "permissions": dict(self.permissions),
+            "reason": self.reason,
+        }
+
+
 class Plugin(ABC):
     """Plugin"""
 
@@ -69,6 +87,7 @@ class Plugin(ABC):
     min_core: str = ""
     needs: list[str] = []
     options: list[Option] = []
+    connections: list[Connection] = []
 
     @property
     def title(self) -> str:
@@ -91,7 +110,7 @@ class Plugin(ABC):
         """Declare tools on `surface.mcp`, commands on `surface.cli`, replacements on `surface.core`. No I/O here."""
 
     def access(self, options: "Options") -> Optional["AccessProvider"]:
-        """Access on the plugin's service, built from `options` alone — the organization's values on the hosted platform, the plugin's options file on a machine; None while they do not configure it. Raise `AccessError` when they are incomplete."""
+        """Access on the plugin's service, built from `options` alone — the organization's values on the hosted platform, the plugin's options file on a machine — and `options.credential(kind)` for a connection the plugin declares in `connections`; None while they do not configure it. Raise `AccessError` when they are incomplete."""
         return None
 
     def after_release(self, ctx: "Context") -> None:

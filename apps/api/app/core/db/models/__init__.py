@@ -10,6 +10,7 @@ from app.core.db.models.integrations import (
     OAuthApp,
     PluginOption,
     SigningKey,
+    ServiceConnection,
     SourceHost,
     TemplateSource,
 )
@@ -58,6 +59,7 @@ __all__ = [
     "SHORT",
     "Session",
     "SigningKey",
+    "ServiceConnection",
     "SourceHost",
     "TABLES",
     "Team",

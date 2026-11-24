@@ -10,10 +10,11 @@ from action_platform.plugins.registry import (
     reset,
     use_options,
 )
-from action_platform.plugins.options import FileOptions, Options
+from action_platform.plugins.options import Credential, FileOptions, Options
 from action_platform.plugins.state import OFFICIAL_INDEX, Installed, PluginState
 
 __all__ = [
+    "Credential",
     "FileOptions",
     "Installed",
     "Loaded",

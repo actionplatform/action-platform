@@ -13,7 +13,9 @@ import { cn } from "@/lib/utils";
 
 type Provider = "github" | "gitlab" | "bitbucket";
 
-const META: Record<Provider, { label: string; icon: typeof siGithub; callbackHint: string; baseUrlHint: string }> = {
+export type AppMeta = { label: string; callbackHint: string; baseUrlHint: string };
+
+const META: Record<Provider, AppMeta & { icon: typeof siGithub }> = {
   github: { label: "GitHub", icon: siGithub, callbackHint: "GitHub → Settings → Developer settings → OAuth Apps → New OAuth App", baseUrlHint: "GitHub Enterprise only, e.g. https://ghe.example.com" },
   gitlab: { label: "GitLab", icon: siGitlab, callbackHint: "GitLab → Preferences → Applications (scopes: api, write_repository, read_user)", baseUrlHint: "Self-hosted only, e.g. https://gitlab.example.com" },
   bitbucket: { label: "Bitbucket", icon: siBitbucket, callbackHint: "Bitbucket → Workspace settings → OAuth consumers (account, repositories: write/admin, pull requests: write)", baseUrlHint: "" },
@@ -200,8 +202,8 @@ function CreateGitHubAppDialog({ orgId, returnTo, onClose }: { orgId?: string; r
   );
 }
 
-function OAuthAppDialog({ provider, origin, onClose, onSaved }: { provider: Provider; origin: string; onClose: () => void; onSaved: () => void }) {
-  const m = META[provider];
+export function OAuthAppDialog({ provider, origin, meta, onClose, onSaved }: { provider: Provider | "sentry"; origin: string; meta?: AppMeta; onClose: () => void; onSaved: () => void }) {
+  const m = meta ?? META[provider as Provider];
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [baseUrl, setBaseUrl] = useState("");

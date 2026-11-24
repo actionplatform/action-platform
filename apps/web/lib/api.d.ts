@@ -943,6 +943,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["connections_api_v1_connections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/connections/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["disconnect_api_v1_connections__kind__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects": {
         parameters: {
             query?: never;
@@ -1903,6 +1935,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/access/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["audit_api_v1_access_audit_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access/who": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["who_api_v1_access_who_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["sync_api_v1_access_sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access/grant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["grant_api_v1_access_grant_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["revoke_api_v1_access_revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access/offboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["offboard_api_v1_access_offboard_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2035,6 +2163,11 @@ export interface components {
             last_version?: string | null;
             branch?: string | null;
         };
+        Audit: {
+            organization_members: number;
+            imported?: string[];
+            services: components["schemas"]["ServiceAudit"][];
+        };
         AuthStatus: {
             configured: boolean;
             users: number;
@@ -2064,6 +2197,16 @@ export interface components {
             ip_address?: string | null;
             user_agent?: string | null;
             current: boolean;
+        };
+        Change: {
+            action: "add" | "change" | "remove";
+            service: string;
+            account: string;
+            resource: string;
+            level: string;
+            previous?: string | null;
+            status: "planned" | "applied" | "refused" | "failed";
+            detail?: string | null;
         };
         Changes: {
             files: string[];
@@ -2121,7 +2264,7 @@ export interface components {
         };
         CloudRequest: {
             target: string;
-            source?: components["schemas"]["SourceSpec"] | null;
+            source?: components["schemas"]["SourceSpec"] | string | null;
         };
         Commit: {
             sha: string;
@@ -2150,6 +2293,19 @@ export interface components {
             branch: string;
             pushed: boolean;
             pull_request?: components["schemas"]["CommitPullRequest"] | null;
+        };
+        ConnectionRow: {
+            kind: string;
+            label: string;
+            configured: boolean;
+            connected: boolean;
+            login?: string | null;
+            base_url?: string | null;
+            scopes?: string[] | null;
+            asked: string[];
+            missing: string[];
+            expires_at?: string | null;
+            connected_at?: string | null;
         };
         CreateOrganizationRequest: {
             name: string;
@@ -2391,6 +2547,22 @@ export interface components {
             organization_id?: string | null;
             project_id?: string | null;
             app_id?: string | null;
+        };
+        GrantRequest: {
+            person: string;
+            service: string;
+            resource: string;
+            level: string;
+            account?: string | null;
+            apply: boolean;
+        };
+        GrantRow: {
+            service: string;
+            account: string;
+            resource: string;
+            level: string;
+            person?: string | null;
+            source?: string | null;
         };
         HTTPValidationError: {
             detail?: components["schemas"]["ValidationError"][];
@@ -2721,6 +2893,11 @@ export interface components {
         OAuthStarted: {
             url: string;
         };
+        OffboardRequest: {
+            person: string;
+            apply: boolean;
+            remove_from_platform: boolean;
+        };
         Ok: {
             ok: boolean;
         };
@@ -2753,6 +2930,27 @@ export interface components {
             id: string;
             description: string;
         };
+        PersonOut: {
+            email: string;
+            name: string;
+            role?: string | null;
+            teams?: string[];
+            accounts?: {
+                [key: string]: string;
+            };
+            member: boolean;
+        };
+        Plan: {
+            dry_run: boolean;
+            bootstrap: boolean;
+            imported?: string[];
+            changes?: components["schemas"]["Change"][];
+            errors?: string[];
+            mapping?: {
+                [key: string]: unknown;
+            } | null;
+            note?: string | null;
+        };
         PluginOption: {
             key: string;
             label: string;
@@ -2768,7 +2966,7 @@ export interface components {
             options: {
                 [key: string]: unknown;
             };
-            secrets?: string[];
+            secrets: string[];
         };
         PluginRow: {
             slug: string;
@@ -2946,6 +3144,12 @@ export interface components {
             token: string;
             password: string;
         };
+        RevokeRequest: {
+            person: string;
+            service: string;
+            resource: string;
+            apply: boolean;
+        };
         RoleInfo: {
             id: string;
             label: string;
@@ -2976,10 +3180,24 @@ export interface components {
             kinds: string[];
             criticalities: string[];
         };
+        ServiceAudit: {
+            service: string;
+            ok: boolean;
+            imported: boolean;
+            error?: string | null;
+            levels?: {
+                [key: string]: string[];
+            };
+            live: number;
+            wanted: number;
+            drift?: components["schemas"]["Change"][];
+            members_without_account?: string[];
+            outside_accounts?: string[];
+        };
         ServiceRequest: {
             name: string;
             provider?: string | null;
-            source?: components["schemas"]["SourceSpec"] | null;
+            source?: components["schemas"]["SourceSpec"] | string | null;
         };
         SessionOut: {
             id: string;
@@ -3042,10 +3260,6 @@ export interface components {
             slug?: string | null;
             push: boolean;
             credentials?: components["schemas"]["SourceCredentials"] | null;
-        };
-        SyncRequest: {
-            credentials?: components["schemas"]["SourceCredentials"] | null;
-            reset: boolean;
         };
         TargetRow: {
             name: string;
@@ -3163,6 +3377,13 @@ export interface components {
             secret: string;
             kind: string;
         };
+        Who: {
+            person?: components["schemas"]["PersonOut"] | null;
+            service?: string | null;
+            grants?: components["schemas"]["GrantRow"][];
+            drift?: components["schemas"]["Change"][];
+            errors?: string[];
+        };
         app__schemas__common__AppRef: {
             id: string;
             name: string;
@@ -3173,6 +3394,20 @@ export interface components {
             app: string;
             project_id: string;
             project: string;
+        };
+        app__schemas__projects__SyncRequest: {
+            credentials?: components["schemas"]["SourceCredentials"] | null;
+            reset: boolean;
+        };
+        app__schemas__service_access__SyncRequest: {
+            service?: string | null;
+            apply: boolean;
+            reimport: boolean;
+            links?: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            } | null;
         };
     };
     responses: never;
@@ -5290,6 +5525,64 @@ export interface operations {
             };
         };
     };
+    connections_api_v1_connections_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionRow"][];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_api_v1_connections__kind__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                kind: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     projects_api_v1_projects_get: {
         parameters: {
             query?: {
@@ -6391,7 +6684,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["SyncRequest"] | null;
+                "application/json": components["schemas"]["app__schemas__projects__SyncRequest"] | null;
             };
         };
         responses: {
@@ -7608,6 +7901,201 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Timeline"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    audit_api_v1_access_audit_get: {
+        parameters: {
+            query?: {
+                service?: string | null;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Audit"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    who_api_v1_access_who_get: {
+        parameters: {
+            query?: {
+                person?: string | null;
+                service?: string | null;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Who"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_api_v1_access_sync_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__schemas__service_access__SyncRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    grant_api_v1_access_grant_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GrantRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_api_v1_access_revoke_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevokeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    offboard_api_v1_access_offboard_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OffboardRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plan"];
                 };
             };
             422: {

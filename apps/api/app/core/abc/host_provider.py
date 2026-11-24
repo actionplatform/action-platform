@@ -21,6 +21,7 @@ class Owner:
     actions: str = "none"
     selected: Optional[list[str]] = None
     configure_url: Optional[str] = None
+    permissions: dict[str, str] = field(default_factory=dict)
 
     @property
     def can_create_repos(self) -> bool:

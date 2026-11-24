@@ -5,8 +5,24 @@ from __future__ import annotations
 import json
 import os
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
+
+
+@dataclass(frozen=True)
+class Credential:
+    """A live token of one of the organization's connections, for the call that asked: `api_url` is where the provider's API lives (None for the public one), `scopes` what the token was granted when the provider says (None when it does not), `app` the GitHub App slug when the token comes from one."""
+
+    kind: str
+    token: str
+    login: str = ""
+    api_url: Optional[str] = None
+    scopes: Optional[tuple[str, ...]] = None
+    app: Optional[str] = None
+
+    def __repr__(self) -> str:
+        return f"Credential(kind={self.kind!r}, login={self.login!r})"
 
 
 class Options(ABC):
@@ -29,6 +45,10 @@ class Options(ABC):
     @abstractmethod
     def all(self) -> dict[str, Any]:
         """Every option of the plugin."""
+
+    def credential(self, kind: str) -> Optional[Credential]:
+        """The organization's connection of `kind`, when the plugin declared it in `connections` and the organization connected it; None on a machine."""
+        return None
 
 
 def options_dir() -> Path:

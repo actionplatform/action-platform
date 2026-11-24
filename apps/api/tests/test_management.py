@@ -407,7 +407,7 @@ class HostsAndSettingsTest(GateCase):
 
     def test_oauth_apps_and_start(self):
         rows = self.client.get("/api/v1/oauth/apps", headers=self.h()).json()
-        self.assertEqual([r["configured"] for r in rows], [False, False, False])
+        self.assertEqual([r["configured"] for r in rows], [False, False, False, False])
         self.assertEqual(
             self.client.post(
                 "/api/v1/oauth/github/start",

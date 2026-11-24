@@ -16,7 +16,7 @@ REFRESH_MARGIN = timedelta(seconds=60)
 INVITATION_TTL = timedelta(days=7)
 EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 GIT_URL = re.compile(r"^(https?://|git@|ssh://|file://)")
-PROVIDERS = ("github", "gitlab", "bitbucket")
+PROVIDERS = ("github", "gitlab", "bitbucket", "sentry")
 HOST_KINDS = ("github", "gitlab", "bitbucket", "generic")
 CI_HOST_KINDS = ("jenkins",)
 CI_HOST_LABELS = {"jenkins": "Jenkins"}
