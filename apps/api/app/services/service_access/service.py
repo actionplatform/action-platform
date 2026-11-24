@@ -60,13 +60,24 @@ class OrganizationDirectory(Directory):
     def save(self, mapping: Mapping) -> None:
         self.store.set(MAPPING[1], mapping.as_dict())
 
-    def remove(self, person: Person) -> None:
-        if (
-            self.repo.role_in(person.user_id, self.organization_id) == "owner"
-            and self.repo.role_in(self.caller_id, self.organization_id) != "owner"
-        ):
+    def check_remove(self, person: Person) -> None:
+        if self.repo.role_in(person.user_id, self.organization_id) != "owner":
+            return
+
+        if self.repo.role_in(self.caller_id, self.organization_id) != "owner":
             raise Forbidden("only an owner may remove an owner")
 
+        owners = [
+            m
+            for m, _ in self.repo.members_of(self.organization_id)
+            if m.role == "owner"
+        ]
+
+        if len(owners) <= 1:
+            raise Invalid("the organization needs at least one owner")
+
+    def remove(self, person: Person) -> None:
+        self.check_remove(person)
         self.repo.remove_member(self.organization_id, person.user_id)
 
 

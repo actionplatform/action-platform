@@ -59,6 +59,9 @@ def diff(
     want: set[Grant], live: Iterable[Grant], accounts: Optional[set[str]] = None
 ) -> list[Op]:
     """The changes that turn `live` into `want`; with `accounts`, only those accounts are touched."""
+    if accounts is not None:
+        accounts = {a.lower() for a in accounts}
+
     have = {g.key: g for g in live}
     target = {g.key: g for g in want}
     ops: list[Op] = []

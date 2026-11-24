@@ -267,6 +267,11 @@ class Access:
     ) -> Plan:
         mapping, people = self._ready()
         found = self._person(person, people, mapping)
+        leaving = remove_from_platform and any(p.email == found.email for p in people)
+
+        if leaving:
+            self.directory.check_remove(found)
+
         accounts = dict(mapping.people.get(found.email, {}))
         mapping.people.pop(found.email, None)
         mapping.grants.pop(found.email, None)
@@ -291,7 +296,7 @@ class Access:
         if apply:
             self.directory.save(mapping)
 
-        if remove_from_platform and any(p.email == found.email for p in people):
+        if leaving:
             if apply:
                 self.directory.remove(found)
                 note = "Removed from the organization on the platform."

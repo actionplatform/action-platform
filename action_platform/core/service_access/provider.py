@@ -101,3 +101,6 @@ class Directory(ABC):
     @abstractmethod
     def remove(self, person: Person) -> None:
         """Take the person out of the organization on the platform."""
+
+    def check_remove(self, person: Person) -> None:
+        """Raise when `remove` would refuse the person, before anything else of an offboarding happens."""

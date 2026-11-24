@@ -149,6 +149,32 @@ class Changes(World):
         self.assertEqual(self.directory.removed, ["ben@acme.dev"])
         self.assertNotIn("ben@acme.dev", self.directory.mapping.people)
 
+    def test_an_account_in_mixed_case_is_still_changed(self):
+        self.vault.add("Cara", "org", "member")
+        cara = Person("cara@acme.dev", "u-cara", "Cara", "developer")
+        self.directory.members.append(cara)
+        self.links["cara@acme.dev"] = {"vault": "Cara"}
+        self.imported()
+
+        plan = self.access.grant(
+            "cara@acme.dev", "vault", "repo/api", "read", apply=True
+        )
+
+        self.assertEqual(
+            [(c.account, c.status) for c in plan.changes], [("Cara", "applied")]
+        )
+        self.assertEqual(self.access.who("cara@acme.dev").drift, [])
+
+    def test_an_offboarding_the_platform_would_refuse_changes_nothing(self):
+        self.imported()
+        self.directory.keep_on_platform.add("ben@acme.dev")
+
+        with self.assertRaises(AccessError):
+            self.access.offboard("ben@acme.dev", apply=True, remove_from_platform=True)
+
+        self.assertEqual(self.vault.applied, [])
+        self.assertIn("ben@acme.dev", self.directory.mapping.people)
+
     def test_leaving_the_organization_is_drift(self):
         self.imported()
         self.directory.members = [ANA]

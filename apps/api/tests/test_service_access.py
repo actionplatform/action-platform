@@ -168,3 +168,21 @@ class ServiceAccessApiTest(GateCase):
                 )
 
                 self.assertEqual(answer.status_code, 403)
+
+    def test_offboarding_the_last_owner_from_the_platform_changes_nothing(self):
+        self.configure({"url": "https://v.test", "token": "tok-1"})
+        self.client.post("/api/v1/access/sync", json={"apply": True}, headers=self.h())
+
+        refused = self.client.post(
+            "/api/v1/access/offboard",
+            json={
+                "person": "ana@example.com",
+                "apply": True,
+                "remove_from_platform": True,
+            },
+            headers=self.h(),
+        )
+
+        self.assertEqual(refused.status_code, 400)
+        self.assertIn("at least one owner", refused.json()["detail"])
+        self.assertEqual(Vault.service.applied, [])

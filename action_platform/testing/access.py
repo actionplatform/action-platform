@@ -68,6 +68,7 @@ class MemoryDirectory(Directory):
         self.mapping = mapping or Mapping()
         self.saved = 0
         self.removed: list[str] = []
+        self.keep_on_platform: set[str] = set()
 
     def people(self) -> list[Person]:
         return list(self.members)
@@ -78,6 +79,10 @@ class MemoryDirectory(Directory):
     def save(self, mapping: Mapping) -> None:
         self.mapping = Mapping.of(mapping.as_dict())
         self.saved += 1
+
+    def check_remove(self, person: Person) -> None:
+        if person.email in self.keep_on_platform:
+            raise AccessError(f"{person.email} cannot leave the organization")
 
     def remove(self, person: Person) -> None:
         self.members = [p for p in self.members if p.email != person.email]
