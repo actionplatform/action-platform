@@ -9,6 +9,7 @@ from app.api.dependencies import (
     OrganizationRepoDep,
     allowed,
 )
+from app.core.errors import Forbidden
 from app.schemas import organization as schemas
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
@@ -44,6 +45,10 @@ def invite(
     writes: OrganizationRepoDep,
 ) -> schemas.InvitationRow:
     allowed(caller, org, "org.manage")
+
+    if body.role == "owner" and writes.role_in(caller.user.id, org.id) != "owner":
+        raise Forbidden("only an owner may give or take the owner role")
+
     i = writes.create_invitation(org.id, caller.user.id, body.email, body.role)
 
     return schemas.InvitationRow(
