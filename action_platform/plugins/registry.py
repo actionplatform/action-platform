@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from action_platform.core.service_access.provider import AccessProvider
 
 GROUP = "action_platform.plugins"
+PERMISSION_RANK = {"read": 1, "write": 2, "admin": 3}
 FAILURES: dict[str, str] = {}
 RESERVED = {
     "access": "the core owns access: uninstall it and install the plugin of each service (apx-github, apx-jenkins, apx-sentry, apx-dokploy)"
@@ -249,6 +250,7 @@ class Plugins:
                 "options": [o.as_dict() for o in row.plugin.options],
                 "overlays": row.plugin.overlays is not None,
                 "access": type(row.plugin).access is not Plugin.access,
+                "connections": [c.as_dict() for c in row.plugin.connections],
                 "replaces": sorted(
                     slot for slot, by in wired.origins().items() if by == row.slug
                 ),
@@ -281,6 +283,43 @@ class Plugins:
             row.plugin.register(surface)
         except Exception as e:
             logger.warning(f"plugin {row.slug} failed to register: {e}")
+
+    def declares(self, slug: str, kind: str) -> bool:
+        """Whether the enabled plugin `slug` reads the organization's connection of `kind`."""
+        return any(
+            c.kind == kind
+            for row in self.enabled()
+            if row.slug == slug
+            for c in row.plugin.connections
+        )
+
+    def connection_scopes(self, kind: str) -> list[str]:
+        """The scopes the enabled plugins ask a connection of `kind` for, in the order they first appear."""
+        found: list[str] = []
+
+        for row in self.enabled():
+            for c in row.plugin.connections:
+                if c.kind == kind:
+                    found += [s for s in c.scopes if s not in found]
+
+        return found
+
+    def connection_permissions(self, kind: str) -> dict[str, str]:
+        """The app permissions the enabled plugins ask a connection of `kind` for, the strongest when two ask for the same one."""
+        found: dict[str, str] = {}
+
+        for row in self.enabled():
+            for c in row.plugin.connections:
+                if c.kind != kind:
+                    continue
+
+                for name, level in c.permissions:
+                    if PERMISSION_RANK.get(level, 0) > PERMISSION_RANK.get(
+                        found.get(name, ""), 0
+                    ):
+                        found[name] = level
+
+        return found
 
     def options_for(self, slug: str) -> Options:
         """The plugin's option store — the file backend unless the host process installed another (the API's table)."""

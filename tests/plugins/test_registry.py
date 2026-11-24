@@ -6,11 +6,19 @@ import unittest
 from unittest import mock
 from pathlib import Path
 
-from action_platform.abc import Plugin
+from action_platform.abc import Connection, Plugin
 from action_platform.core.flow import gitflow
 from action_platform.core.wiring import wired
 from action_platform.core.scaffold.catalog import Matrix, with_plugin_clouds
-from action_platform.plugins import Loaded, PluginError, PluginState, Plugins, registry
+from action_platform.plugins import (
+    Credential,
+    FileOptions,
+    Loaded,
+    PluginError,
+    PluginState,
+    Plugins,
+    registry,
+)
 from tests.mcp.support import HAS_MCP
 from tests.support import TempCase
 
@@ -285,3 +293,60 @@ class OptionsTest(TempCase):
         self.assertEqual(
             FileOptions("mem", Path(self.tmp_path)).all(), {"hello": "world"}
         )
+
+
+class Reader(Plugin):
+    slug = "reader"
+    connections = [
+        Connection("github", ("admin:org", "repo"), (("members", "write"),)),
+    ]
+
+
+class Lister(Plugin):
+    slug = "lister"
+    connections = [
+        Connection("github", ("repo", "read:org"), (("members", "read"),)),
+        Connection("sentry", ("org:read",)),
+    ]
+
+
+class ConnectionsTest(TempCase):
+    def setUp(self):
+        super().setUp()
+        self.plugins = Plugins(
+            [Loaded(Reader()), Loaded(Lister())],
+            PluginState(file=Path(self.tmp_path) / "plugins.json"),
+        )
+
+    def test_scopes_are_the_union_of_the_enabled_plugins(self):
+        self.assertEqual(
+            self.plugins.connection_scopes("github"), ["admin:org", "repo", "read:org"]
+        )
+        self.assertEqual(self.plugins.connection_scopes("sentry"), ["org:read"])
+        self.assertEqual(self.plugins.connection_scopes("gitlab"), [])
+
+    def test_the_strongest_permission_wins(self):
+        self.assertEqual(
+            self.plugins.connection_permissions("github"), {"members": "write"}
+        )
+
+    def test_a_disabled_plugin_asks_for_nothing(self):
+        self.plugins.state.set_enabled("reader", False)
+
+        self.assertEqual(self.plugins.connection_scopes("github"), ["repo", "read:org"])
+        self.assertFalse(self.plugins.declares("reader", "github"))
+
+    def test_a_plugin_reads_only_what_it_declares(self):
+        self.assertTrue(self.plugins.declares("lister", "sentry"))
+        self.assertFalse(self.plugins.declares("reader", "sentry"))
+
+    def test_rows_list_the_connections(self):
+        row = next(r for r in self.plugins.rows() if r["slug"] == "reader")
+
+        self.assertEqual(row["connections"][0]["permissions"], {"members": "write"})
+
+    def test_options_hand_no_credential_on_a_machine(self):
+        self.assertIsNone(FileOptions("reader").credential("github"))
+
+    def test_a_credential_never_shows_its_token(self):
+        self.assertNotIn("s3cret", repr(Credential("github", "s3cret", "me")))
