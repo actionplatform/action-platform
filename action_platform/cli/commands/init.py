@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import typer
@@ -11,6 +12,7 @@ from rich.table import Table
 from action_platform.core.wiring import wired
 from action_platform.core.exception import TemplateError
 from action_platform.core.scaffold.catalog import Matrix, load_matrix
+from action_platform.core.scaffold import identity
 from action_platform.logging import logger
 
 CI_PROVIDERS = ["github", "gitlab", "jenkins", "bitbucket"]
@@ -36,12 +38,36 @@ def run(
     output: Path | None = typer.Option(
         None, "--output", "-o", help="Where to create the project"
     ),
+    owner: str | None = typer.Option(
+        None,
+        "--owner",
+        help="Account or organization that owns the repository (default: the account the host's credentials belong to, else asked)",
+    ),
+    author: str | None = typer.Option(
+        None,
+        "--author",
+        help="Author in the manifest and the LICENSE (default: git config user.name)",
+    ),
+    license_: str | None = typer.Option(
+        None,
+        "--license",
+        help="mit, apache-2.0 or none (default: asked; none without a terminal)",
+    ),
+    host: str | None = typer.Option(
+        None,
+        "--host",
+        help="github, gitlab or bitbucket (default: gitlab or bitbucket when --ci names it, else github)",
+    ),
     push: bool = typer.Option(
         True,
         "--push/--no-push",
         help="Create the remote repo via [source_host] and push (default: on)",
     ),
-    private: bool = typer.Option(False, "--private", help="With --push: private repo"),
+    public: bool = typer.Option(
+        False,
+        "--public/--private",
+        help="With --push: a public repository (default: private)",
+    ),
     list_: bool = typer.Option(False, "--list", "-l", help="Show the template matrix"),
     update: bool = typer.Option(False, "--update", help="Refresh the templates cache"),
     source: str | None = typer.Option(
@@ -75,8 +101,34 @@ def run(
     if ci is not None and ci not in CI_PROVIDERS:
         raise TemplateError(f"unknown ci: {ci} (available: {', '.join(CI_PROVIDERS)})")
 
+    host = host or identity.host_for(ci)
+    interactive = sys.stdin.isatty()
+
+    if license_ is None:
+        license_ = choose("license", list(identity.LICENSES)) if interactive else "none"
+
+    identity.check(license_, host)
+    owner = owner or identity.account(host)
+
+    if not owner and push:
+        if not interactive:
+            raise TemplateError(
+                f"no owner for the {host} repository: pass --owner, or --no-push"
+            )
+
+        owner = typer.prompt(f"{host} account or organization that owns the repository")
+
+    extra = {
+        "author": identity.git_author() if author is None else author,
+        "license": license_,
+        "source_host": host,
+    }
+
+    if owner:
+        extra["github_owner"] = owner
+
     project = wired.scaffolder().generate(
-        repo, leaf, name=name, ci=ci, output=output or Path.cwd()
+        repo, leaf, name=name, ci=ci, output=output or Path.cwd(), extra=extra
     )
     logger.info("created %s", project)
 
@@ -85,7 +137,7 @@ def run(
         logger.info("applied cloud %s", cloud)
 
     if push:
-        url = wired.scaffolder().push(project, private=private)
+        url = wired.scaffolder().push(project, private=not public)
         logger.info("pushed to %s", url)
 
 

@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { stackMeta, typeMeta } from "@/lib/catalog";
-import { ownerOf } from "../model";
+import { licenseLabel, ownerOf } from "../model";
 import { CommandPreview, Row, Section } from "../parts";
 import type { AppWizard } from "../use-app-wizard";
 
@@ -23,6 +23,8 @@ export function ReviewStep({ w }: { w: AppWizard }) {
           <Row k="Project" v={w.projects.find((p) => p.id === w.project)?.name ?? "—"} />
           <Row k="Source host" v={host?.name ?? "—"} />
           <Row k="Repository" v={host ? `${config.githubOwner || ownerOf(host) || "<token user>"}/${config.directory}` : "—"} mono />
+          <Row k="Visibility" v={config.visibility === "public" ? "Public" : "Private"} />
+          <Row k="Licence" v={licenseLabel(config.license)} />
           <div className="sm:col-span-2">
             <div className="text-xs text-secondary mb-1">Selected options</div>
             <div className="flex flex-wrap gap-1">

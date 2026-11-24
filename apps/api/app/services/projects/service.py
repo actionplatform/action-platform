@@ -13,6 +13,7 @@ from app.services.projects.apps import AppService
 from app.services.workspace.app_context import AppContext
 from app.services.projects.organization_import.directory import ImportDirectory
 from app.core.errors import Conflict, Invalid
+from app.repositories.base import DEFAULT_GIT_AUTHOR
 
 
 class ProjectService:
@@ -88,6 +89,9 @@ class ProjectService:
         name, email = self.writes.git_author_of(org.id)
         request = body.model_copy(
             update={
+                "author": body.author
+                if body.author is not None
+                else ("" if (name, email) == DEFAULT_GIT_AUTHOR else name),
                 "credentials": SourceCredentials(
                     **{
                         **(creds.as_dict() if creds else {}),

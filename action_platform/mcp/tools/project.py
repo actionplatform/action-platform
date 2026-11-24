@@ -15,6 +15,7 @@ from action_platform.core.scaffold.catalog import (
     with_plugin_clouds,
 )
 from action_platform.core.scaffold.sources import LocalTemplateStore
+from action_platform.core.scaffold import identity
 from action_platform.mcp import schemas
 from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL, tool
 
@@ -86,19 +87,61 @@ def register(mcp: Any) -> None:
             Optional[str], Field(description="Parent directory; default is the cwd.")
         ] = None,
         source: TemplateSourceArg = None,
+        owner: Annotated[
+            Optional[str],
+            Field(
+                description="Account or organization that owns the repository; default the account the host's credentials on this machine belong to. Ask the user when unsure."
+            ),
+        ] = None,
+        author: Annotated[
+            Optional[str],
+            Field(
+                description="Author in the manifest and LICENSE; default git config user.name"
+            ),
+        ] = None,
+        license: Annotated[
+            str,
+            Field(description="mit, apache-2.0 or none (no LICENSE); ask the user"),
+        ] = "none",
+        host: Annotated[
+            Optional[str],
+            Field(
+                description="github, gitlab or bitbucket; default gitlab or bitbucket when ci names it, else github"
+            ),
+        ] = None,
     ) -> schemas.Generated:
         """Generate a project from the templates matrix, optionally with a cloud overlay.
 
         Nothing leaves the machine: use `push_project` afterwards to create
         the remote repository. Call `list_matrix` first when unsure of the
-        type, stack or template names.
+        type, stack or template names. Owner, author and licence are the
+        user's: the answer says which owner was used, empty when none was
+        found — push_project refuses until there is one.
         """
         repo, matrix = load_matrix(source=source)
         leaf = matrix.resolve(type, stack, template)
+        host = host or identity.host_for(ci)
+        identity.check(license, host)
+        owner = owner or identity.account(host)
+        extra = {
+            "author": identity.git_author() if author is None else author,
+            "license": license,
+            "source_host": host,
+        }
+
+        if owner:
+            extra["github_owner"] = owner
+
         project = wired.scaffolder().generate(
-            repo, leaf, name=name, ci=ci, output=_root(output)
+            repo, leaf, name=name, ci=ci, output=_root(output), extra=extra
         )
-        result = {"path": str(project), "template": leaf.directory}
+        result = {
+            "path": str(project),
+            "template": leaf.directory,
+            "owner": owner,
+            "author": extra["author"],
+            "license": license,
+        }
 
         if cloud:
             wired.scaffolder().apply_cloud(repo, matrix.cloud(cloud), project)
@@ -109,12 +152,18 @@ def register(mcp: Any) -> None:
     @tool(mcp, name="push_project", annotations=REACHES_OUT)
     def push(
         project: ProjectDir = None,
-        private: bool = False,
+        private: Annotated[
+            bool,
+            Field(
+                description="false makes the repository public; only on the user's word"
+            ),
+        ] = True,
     ) -> schemas.Pushed:
         """Create the remote repository through [source_host] and push the first commit.
 
-        Creates a public repository on the host unless `private` is true.
-        Confirm with the user before calling: it is visible to others once done.
+        Creates a private repository unless `private` is false. Refuses a
+        project whose platform.toml names no owner ([source_host] repo).
+        Confirm the owner and the visibility with the user before calling.
         """
         return {"remote": wired.scaffolder().push(_root(project), private=private)}
 

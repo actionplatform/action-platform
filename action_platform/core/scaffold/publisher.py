@@ -98,7 +98,11 @@ class Publisher:
             )
 
         if config.source_host is None:
-            raise TemplateError("platform.toml has no [source_host]; cannot push")
+            raise TemplateError(
+                "platform.toml has no [source_host], so the repository has no owner: generate the project "
+                "with an owner (init --owner, init_project owner=…), or add [source_host] with "
+                'kind and repo = "<owner>/<name>" to platform.toml'
+            )
 
         return config
 

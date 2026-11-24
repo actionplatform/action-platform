@@ -219,6 +219,56 @@ class ReadOnlyToolsTest(McpCase):
         self.assertIn("platform.toml", data["created"])
         self.assertFalse((repo / "platform.toml").exists())
 
+    def init_project(self, **arguments):
+        result = asyncio.run(self.server.call_tool("init_project", arguments))
+
+        return result.structured_content.get("result", result.structured_content)
+
+    def test_init_project_takes_the_user_s_owner_and_push_refuses_without_one(self):
+        import tomllib
+
+        from action_platform.core.scaffold import identity
+        from action_platform.testing.fixtures import template_repo
+
+        self.setenv(
+            "ACTION_PLATFORM_TEMPLATES", str(template_repo(self.tmp_path / "t"))
+        )
+        out = self.tmp_path / "out"
+        out.mkdir()
+
+        with (
+            mock.patch.object(identity, "account", return_value=""),
+            mock.patch.object(identity, "git_author", return_value=""),
+        ):
+            data = self.init_project(
+                type="web", stack="python", name="Demo", output=str(out)
+            )
+
+        self.assertEqual(
+            (data["owner"], data["author"], data["license"]), ("", "", "none")
+        )
+        self.assertNotIn(
+            "source_host", tomllib.loads((out / "demo/platform.toml").read_text())
+        )
+
+        with self.assertRaisesRegex(Exception, "has no owner"):
+            asyncio.run(
+                self.server.call_tool("push_project", {"project": str(out / "demo")})
+            )
+
+        with mock.patch.object(identity, "account", return_value="alice"):
+            data = self.init_project(
+                type="web", stack="python", name="Two", output=str(out), license="mit"
+            )
+
+        self.assertEqual(data["owner"], "alice")
+        self.assertEqual(
+            tomllib.loads((out / "two/platform.toml").read_text())["source_host"][
+                "repo"
+            ],
+            "alice/two",
+        )
+
     def test_gitflow_audit_reports_problems(self):
         repo = self.tmp_path / "flow"
         repo.mkdir()

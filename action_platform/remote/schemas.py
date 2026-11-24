@@ -45,6 +45,9 @@ class Generated(BaseModel):
     path: str
     template: str
     cloud: Optional[str] = None
+    owner: str = ""
+    author: str = ""
+    license: str = "none"
 
 
 class Pushed(BaseModel):

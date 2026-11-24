@@ -71,6 +71,10 @@ export function initCommand(input: {
   ci: string | null;
   cloud: string | null;
   push: boolean;
+  owner?: string | null;
+  host?: string | null;
+  license?: string | null;
+  public?: boolean;
 }): string {
   const parts = ["action-platform init", input.type];
   if (input.stack) parts.push(input.stack);
@@ -78,6 +82,10 @@ export function initCommand(input: {
   if (input.name) parts.push(`--name "${input.name}"`);
   if (input.ci) parts.push(`--ci ${input.ci}`);
   if (input.cloud) parts.push(`--cloud ${input.cloud}`);
+  if (input.owner) parts.push(`--owner ${input.owner}`);
+  if (input.host && input.host !== "github") parts.push(`--host ${input.host}`);
+  if (input.license) parts.push(`--license ${input.license}`);
   if (!input.push) parts.push("--no-push");
+  else if (input.public) parts.push("--public");
   return parts.join(" ");
 }

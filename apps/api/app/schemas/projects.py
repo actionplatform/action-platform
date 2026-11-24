@@ -42,11 +42,13 @@ class InitRequest(BaseModel):
     description: str = ""
     package_name: Optional[str] = None
     github_owner: Optional[str] = None
+    author: Optional[str] = None
+    license: str = "none"
     ci: Optional[str] = None
     cloud: Optional[str] = None
     git_init: bool = True
     push: bool = True
-    private: bool = False
+    private: bool = True
     source: Optional[SourceSpec] = None
     credentials: Optional[SourceCredentials] = None
 
@@ -62,7 +64,7 @@ class InitResult(BaseModel):
 
 
 class PushRequest(BaseModel):
-    private: bool = False
+    private: bool = True
     credentials: Optional[SourceCredentials] = None
 
 

@@ -78,8 +78,10 @@ flowchart LR
 1. **Type** — web, library, docs, plugin, empty
 2. **Stack** — filtered by type
 3. **Template** — `Default` marks the stack's default; custom templates carry their source name
-4. **Configure** — name, description, project, source host and repository owner; CI provider, Docker overlay, push to the remote
-5. **Review** — summary plus the equivalent `action-platform init …` command
+4. **Configure** — name, description, project, source host and repository owner, licence (None by default: no `LICENSE`; MIT or Apache 2.0) and visibility (Private by default); CI provider, Docker overlay
+5. **Review** — summary, visibility and licence, plus the equivalent `action-platform init …` command
+
+The author in the manifest and the licence is the organization's commit identity (Settings), left empty while the organization has not set one.
 
 *Create project* generates the app, creates the repository on the code host, pushes `main` and registers it — an app always lives on a code host, so the wizard needs a connected one. A template card under **Templates** opens the wizard at *Configure* with the first three steps filled in.
 

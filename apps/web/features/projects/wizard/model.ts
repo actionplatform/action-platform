@@ -9,6 +9,8 @@ export type Config = {
   ci: boolean;
   ciProvider: string;
   cloud: string | null;
+  license: string;
+  visibility: "private" | "public";
 };
 
 export type ProjectOption = { id: string; name: string };
@@ -16,6 +18,15 @@ export type OwnerOption = { account: string; ok: boolean; why: string | null };
 export type HostOption = { id: string; name: string; kind: string; defaultOwner: string | null; owners: readonly OwnerOption[]; installUrl: string | null; problem: string | null };
 
 export const CI_PROVIDERS = ["github", "gitlab", "jenkins", "bitbucket"];
+export const LICENSES = [
+  { value: "none", label: "None", hint: "No LICENSE file; all rights reserved." },
+  { value: "mit", label: "MIT" },
+  { value: "apache-2.0", label: "Apache 2.0" },
+];
+
+export function licenseLabel(value: string): string {
+  return LICENSES.find((l) => l.value === value)?.label ?? value;
+}
 export const CONTINUE = ["Continue to stack", "Continue to template", "Continue to configuration", "Continue to review", "Create project"];
 
 export function ownerOf(host: HostOption | null): string | null {

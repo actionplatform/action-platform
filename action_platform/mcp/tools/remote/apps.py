@@ -113,7 +113,16 @@ def register(mcp: Any, remote: Remote) -> None:
                 description="Name of a custom template repository from list_matrix; default official"
             ),
         ] = None,
-        private: bool = False,
+        private: Annotated[
+            bool,
+            Field(
+                description="false makes the repository public; only on the user's word"
+            ),
+        ] = True,
+        license: Annotated[
+            str,
+            Field(description="mit, apache-2.0 or none (no LICENSE); ask the user"),
+        ] = "none",
         owner: Annotated[
             Optional[str],
             Field(
@@ -137,6 +146,7 @@ def register(mcp: Any, remote: Remote) -> None:
                 "github_owner": owner,
                 "push": True,
                 "private": private,
+                "license": license,
             },
             org_of(row),
         )

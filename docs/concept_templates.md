@@ -65,7 +65,7 @@ Names are unique per organization and `official` is reserved. A repository that 
 
 ## Adding one
 
-1. In the templates repository, add `projects/<type>/<stack>/<name>/` with a `cookiecutter.json` (`project_name`, `project_slug`, `description`, `package_name`, `github_owner`, `ci`) and a `{{cookiecutter.project_slug}}/` tree.
+1. In the templates repository, add `projects/<type>/<stack>/<name>/` with a `cookiecutter.json` (`project_name`, `project_slug`, `description`, `package_name`, `github_owner`, `author`, `license`, `source_host`, `ci` — owner and author empty, licence `none` by default) and a `{{cookiecutter.project_slug}}/` tree.
 2. Register it in `index.json`.
 3. `ACTION_PLATFORM_TEMPLATES=/path/to/checkout action-platform init <type> <stack> <name> --no-push` to try it.
 

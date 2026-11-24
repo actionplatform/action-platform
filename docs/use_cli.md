@@ -13,6 +13,7 @@ action-platform init                              # interactive: type → stack 
 action-platform init web go gin --ci gitlab       # direct
 action-platform init web python --cloud docker    # project + deploy overlay
 action-platform init ... --no-push                # keep it local
+action-platform init ... --owner acme --author "Acme Inc" --license mit --host gitlab --public
 action-platform init --list                       # the templates matrix
 action-platform init --source URL[@ref] ...       # templates from another repository (also cloud set, service add)
 action-platform install [--type web] [--language python|none] [--ci github|gitlab|jenkins|bitbucket|none] [--version X.Y.Z] [--dry-run]
@@ -24,6 +25,18 @@ action-platform service add postgres --provider aws-rds
 ```
 
 `init` renders a cookiecutter from the matrix, applies the cloud overlay, then by default creates the remote repository through `[source_host]` and pushes the first commit.
+
+Whose project it is comes from you, never from the templates:
+
+| Option | Default |
+|---|---|
+| `--owner` | the account the host's credentials belong to (`ACTION_PLATFORM_GITHUB_TOKEN`/`GH_TOKEN`, else `gh`; `ACTION_PLATFORM_GITLAB_TOKEN`; `ACTION_PLATFORM_BITBUCKET_USERNAME`), else asked; without a terminal `init` stops and asks for `--owner` or `--no-push` |
+| `--author` | `git config user.name`; it goes into the manifest's authors and the LICENSE copyright |
+| `--license mit\|apache-2.0\|none` | asked; `none` without a terminal — no `LICENSE` file |
+| `--host github\|gitlab\|bitbucket` | `gitlab` or `bitbucket` when `--ci` names it, else `github` |
+| `--public` / `--private` | private |
+
+The owner names `[source_host] repo` and, in the templates, the repository URLs, Go module path, npm scope, Composer vendor and Java/Kotlin package (`com.<owner>.<name>`). With no owner (`--no-push`), `platform.toml` has no `[source_host]` and those use `example` until you set one.
 
 ## Git-flow
 

@@ -140,6 +140,7 @@ class InitTest(ApiCase):
         self.assertIn("orders", (path / "README.md").read_text())
         self.assertIn('ci = "gitlab"', (path / "platform.toml").read_text())
         self.assertIn('repo = "acme/orders-api"', (path / "platform.toml").read_text())
+        self.assertEqual((path / "LICENSE").read_text(), "none Orders Api\n")
         self.assertFalse(
             any(p.name.startswith(".init-") for p in path.parent.iterdir())
         )
@@ -150,6 +151,42 @@ class InitTest(ApiCase):
         self.assertTrue(detail["clean"])
         self.assertTrue((path / "orders" / "__init__.py").exists())
         self.assertEqual(self.client.get("/api/apps").json()[0]["name"], "orders-api")
+
+    def test_licence_and_author_are_the_caller_s_and_the_repository_private(self):
+        res = self.client.post(
+            "/api/apps/init",
+            json={
+                "type": "web",
+                "stack": "python",
+                "template": "mini",
+                "name": "Billing",
+                "license": "mit",
+                "author": "Acme Inc",
+                "credentials": {"kind": "gitlab", "token": "t", "owner": "acme"},
+            },
+        )
+
+        self.assertEqual(res.status_code, 201, res.text)
+        path = Path(res.json()["path"])
+        self.assertEqual((path / "LICENSE").read_text(), "mit Acme Inc\n")
+        self.assertIn('kind = "gitlab"', (path / "platform.toml").read_text())
+        self.assertEqual(self.pushed_private, [True])
+
+    def test_an_unknown_licence_is_refused(self):
+        res = self.client.post(
+            "/api/apps/init",
+            json={
+                "type": "web",
+                "stack": "python",
+                "template": "mini",
+                "name": "Billing",
+                "license": "gpl",
+                "credentials": {"kind": "github", "token": "t", "owner": "acme"},
+            },
+        )
+
+        self.assertEqual(res.status_code, 400)
+        self.assertIn("unknown license", res.json()["detail"])
 
     def test_needs_a_host_to_push_to(self):
         res = self.client.post(
