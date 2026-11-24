@@ -5,6 +5,7 @@ from __future__ import annotations
 import shutil
 
 
+from action_platform.core.scaffold import identity
 from action_platform.core.wiring import wired
 from action_platform.core.manifest import write_source_host
 from action_platform.core.files import CONFIG_FILE
@@ -28,11 +29,17 @@ class AppScaffolding(AppsBase):
                 "creating an app on the platform needs a source host to push it to: attach one, or generate it locally with the CLI",
             )
 
+        identity.check(body.license, creds.kind)
         staging = self.registry.workspaces / f".init-{id}"
         staging.mkdir(parents=True, exist_ok=True)
 
-        extra = {"description": body.description}
         owner = body.github_owner or creds.owner
+        extra = {
+            "description": body.description,
+            "author": body.author or "",
+            "license": body.license,
+            "source_host": creds.kind,
+        }
 
         if body.package_name:
             extra["package_name"] = body.package_name

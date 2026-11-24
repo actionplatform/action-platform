@@ -49,8 +49,10 @@ class ApiCase(TempCase):
         """Make `init` push into a bare repository under the temp dir instead of a code host."""
         remotes = self.tmp_path / "remotes"
         remotes.mkdir(exist_ok=True)
+        self.pushed_private: list[bool] = []
 
         def push(path, private=False, branch="main", credentials=None):
+            self.pushed_private.append(private)
             remote = remotes / f"{path.name}.git"
             git(remotes, "init", "-q", "--bare", str(remote))
             repo = Repository.init(path, branch="main")
