@@ -63,7 +63,8 @@ Every delivery is a row in `deployment`, whoever executed it:
 | `status` | `queued` → `running` → `success` or `failure` → `verified` |
 | `executor` | `platform`, `github_actions`, `gitlab_ci`, `bitbucket_pipelines`, `jenkins`, `manual` |
 | `job_id` / `ci_run_id` | the worker job or the CI run that did it — the CI tab shows the pipeline, this row shows the result |
-| `url`, `actor`, `started_at`, `finished_at`, `verified_at` | where to look, who, when |
+| `url`, `actor`, `error`, `started_at`, `finished_at`, `verified_at` | where to look, who, why it failed, when |
+| `release_id` | the release row of that version, linked when the platform knows it |
 
 How a row is born depends on the executor:
 
@@ -191,7 +192,7 @@ A job is one row in `job`: kind, status (`queued` → `running` → `done` or `f
 
 ## History
 
-**Deployment history** lists the app's deployments newest first, one block per target: status, stage, type (Deploy, Preflight, Tear down), version, executor, duration, who, when. For targets the platform runs it is the list of `deploy` and `destroy` jobs; for the others it is what the importers recorded, linked to the run that did it. A row expands into the summary, the full log, the run id, timestamps and **Redeploy**, which queues the same release to the same stage again. A failed row keeps the error and the log; nothing is deleted from the history when a stack goes away. `GET /api/v1/jobs?app=<id>&kind=deploy` is the same list.
+**Deployment history** lists the app's deployments newest first, one block per target: status, stage, type (Deploy, Preflight, Tear down), version, executor, duration, who, when. For targets the platform runs it is the list of `deploy` and `destroy` jobs; for the others it is what the importers recorded, linked to the run that did it. A row expands into the summary, the full log, the run id, timestamps and **Redeploy**, which queues the same release to the same stage again. A failed row keeps the error and the log; nothing is deleted from the history when a stack goes away. `GET /api/v1/jobs?app=<registry id>&kind=deploy` is the same list, and `GET /api/v1/jobs/page?app=<registry id>&kinds=deploy,destroy` its paged form. From a terminal, `action-platform deployments [--app <id or name>] [--sync]` prints each target with what arrived at it (`--sync` asks the observed pipelines first), and `action-platform logs <job> [--follow]` prints what the worker wrote for a job.
 
 ## Redeploy and rollback
 
