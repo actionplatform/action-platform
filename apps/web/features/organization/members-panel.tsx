@@ -1,6 +1,6 @@
 "use client";
 
-import { AtSign, Check, Copy, Link2, Mail, Trash2, UserMinus, UserPlus } from "lucide-react";
+import { AtSign, Check, Copy, Link2, Mail, RefreshCw, Trash2, UserMinus, UserPlus } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,11 @@ import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Cell, DataTable, Inline } from "@/components/ui/data-table";
 import { type Role, type RoleInfo } from "@/lib/permissions";
-import { addMember, changeRole, inviteMember, kickMember, revokeInvitation } from "./actions";
+import { addMember, changeRole, inviteMember, kickMember, resendInvitation, revokeInvitation, type InvitationSent } from "./actions";
+import { invitationEmail, invitationEmailNotice } from "./invitation-email";
 
 type Member = { id: string; userId: string; name: string; email: string; role: string };
-type Pending = { id: string; email: string | null; login: string | null; teams: string[]; role: string | null; inviter: string; expiresAt: string };
+type Pending = { id: string; email: string | null; login: string | null; teams: string[]; role: string | null; inviter: string; expiresAt: string; emailState: string; emailError: string | null };
 
 type RoleOption = { value: string; label: string; hint: string };
 
@@ -63,8 +64,9 @@ export function MembersPanel({ org, members, invitations, me, canManage, origin,
           minWidth={640}
           empty={{ icon: Mail, title: "No invitations" }}
           columns={[
-            { key: "email", label: "Email or login", width: 28, render: (i) => <Inline>{i.email ? <Mail className="size-4 shrink-0 text-secondary" strokeWidth={1.75} /> : <AtSign className="size-4 shrink-0 text-secondary" strokeWidth={1.75} />}<span className="truncate">{i.email ?? i.login}</span></Inline> },
+            { key: "email", label: "Email or login", width: 24, render: (i) => <Inline>{i.email ? <Mail className="size-4 shrink-0 text-secondary" strokeWidth={1.75} /> : <AtSign className="size-4 shrink-0 text-secondary" strokeWidth={1.75} />}<span className="truncate">{i.email ?? i.login}</span></Inline> },
             { key: "role", label: "Role", width: 12, render: (i) => <Cell muted>{i.role ?? "member"}</Cell> },
+            { key: "email-sent", label: "Email", width: 14, hide: "sm", render: (i) => <EmailStatus invitation={i} /> },
             { key: "teams", label: "Teams on joining", width: 16, hide: "md", render: (i) => <Cell muted title={i.teams.join(", ")}>{i.teams.length ? i.teams.join(", ") : "—"}</Cell> },
             { key: "by", label: "Invited by", width: 14, hide: "md", render: (i) => <Cell muted title={i.inviter}>{i.inviter}</Cell> },
             { key: "expires", label: "Expires", width: 12, hide: "sm", render: (i) => <Cell muted>{new Date(i.expiresAt).toLocaleDateString()}</Cell> },
@@ -101,11 +103,23 @@ function CopyLink({ url }: { url: string }) {
   );
 }
 
+function EmailStatus({ invitation }: { invitation: Pending }) {
+  const badge = invitationEmail(invitation.emailState, invitation.emailError);
+  if (!badge) return <Cell muted>—</Cell>;
+  return (
+    <span className="inline-flex min-w-0 flex-col items-start gap-0.5">
+      <Badge tone={badge.tone}>{badge.label}</Badge>
+      {badge.reason && <span className="max-w-full truncate text-[11px] text-secondary" title={badge.reason}>{badge.reason}</span>}
+    </span>
+  );
+}
+
 function InvitationActions({ invitation, origin, canManage, onError }: { invitation: Pending; origin: string; canManage: boolean; onError: (e: string | null) => void }) {
   const [pending, start] = useTransition();
   return (
     <span className="inline-flex items-center gap-1">
       <CopyLink url={inviteUrl(origin, invitation.id)} />
+      {canManage && invitation.emailState !== "off" && <button type="button" title="Send the invitation email again" aria-label={`Resend the invitation to ${invitation.email}`} disabled={pending} onClick={() => start(async () => { onError(null); const r = await resendInvitation(invitation.id); if (!r.ok) onError(r.error); })} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground disabled:opacity-40"><RefreshCw className="size-4" strokeWidth={1.75} /></button>}
       {canManage && <button type="button" title="Revoke invitation" aria-label={`Revoke invitation for ${invitation.email ?? `@${invitation.login}`}`} disabled={pending} onClick={() => start(async () => { onError(null); const r = await revokeInvitation(invitation.id); if (!r.ok) onError(r.error); })} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><Trash2 className="size-4" strokeWidth={1.75} /></button>}
     </span>
   );
@@ -116,23 +130,25 @@ function InviteDialog({ open, onClose, origin, org, roles }: { open: boolean; on
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("developer");
   const [link, setLink] = useState<string | null>(null);
+  const [sent, setSent] = useState<InvitationSent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
-  const close = () => { if (pending) return; onClose(); setLink(null); setEmail(""); setRole("developer"); setError(null); };
+  const close = () => { if (pending) return; onClose(); setLink(null); setSent(null); setEmail(""); setRole("developer"); setError(null); };
 
   return (
     <Dialog
       open={open}
       onClose={close}
       title={`Invite to ${org.name}`}
-      description="No email is sent. Share the invitation link with the person; it lets them sign in or create an account and join."
-      footer={link ? <Button onClick={close}>Done</Button> : <><Button variant="ghost" onClick={close} disabled={pending}>Cancel</Button><Button disabled={pending || !email.trim()} onClick={() => start(async () => { setError(null); const r = await inviteMember(email, role); if (r.ok) setLink(inviteUrl(origin, r.data.id)); else setError(r.error); })}>{pending ? "Creating…" : "Create invitation"}</Button></>}
+      description="Creates a link bound to the email, valid for 7 days. When the instance has email set up, the person also receives it by email; the link can always be shared by hand."
+      footer={link ? <Button onClick={close}>Done</Button> : <><Button variant="ghost" onClick={close} disabled={pending}>Cancel</Button><Button disabled={pending || !email.trim()} onClick={() => start(async () => { setError(null); const r = await inviteMember(email, role); if (r.ok) { setLink(inviteUrl(origin, r.data.id)); setSent(r.data); } else setError(r.error); })}>{pending ? "Creating…" : "Create invitation"}</Button></>}
     >
       {link ? (
         <div className="space-y-3">
           <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2"><Link2 className="size-4 shrink-0 text-secondary" strokeWidth={1.75} /><code className="min-w-0 flex-1 truncate font-mono text-xs">{link}</code></div>
           <CopyLink url={link} />
+          {sent && invitationEmailNotice(sent.emailState, sent.emailError, email.trim().toLowerCase()) && <p className="text-[13px]">{invitationEmailNotice(sent.emailState, sent.emailError, email.trim().toLowerCase())}</p>}
           <p className="text-xs text-muted-foreground">Valid for 7 days, only for {email.trim().toLowerCase()}.</p>
         </div>
       ) : (

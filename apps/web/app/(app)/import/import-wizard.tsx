@@ -19,7 +19,7 @@ const PEOPLE_STATUS: Record<string, { label: string; hint: string; selectable: b
   member: { label: "Member", hint: "already in this organization", selectable: false },
   user: { label: "Has account", hint: "added as a member right away", selectable: true },
   invited: { label: "Invited", hint: "an invitation is already pending", selectable: false },
-  invitable: { label: "Invite", hint: "receives an invitation by email", selectable: true },
+  invitable: { label: "Invite", hint: "receives an invitation, by email when the instance sends email", selectable: true },
   invitable_login: { label: "Invite by login", hint: "invited by GitHub login; they verify it when they accept", selectable: true },
   no_email: { label: "No email", hint: "no public email, and no GitHub OAuth app on the platform to verify a login; invite by hand", selectable: false },
 };
