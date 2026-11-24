@@ -1,5 +1,47 @@
 # Changelog
 
+## v0.33.0 — 2026-11-24
+
+### Features
+- **readiness:** list and check observed targets without blocking on them
+- **deploy:** refuse a deploy whose only targets are observed, naming the executor
+- **deploy:** observe option turns a CI target into an observed one
+- **cli:** action-platform access and the access column in plugin list
+- **mcp:** access_* tools on the remote server
+- **core:** remote client calls for the access routes
+- **api:** access routes over the bundled plugins, gated by org.manage
+- **core:** access contract for plugins and the engine that maps members onto services
+- **api:** observed deployments take version and scope from build parameters
+- **deploy:** version and scope of an observed run from its parameters
+- **ci:** read Jenkins build parameters into Run.params
+
+### Bug Fixes
+- **core:** name an account the way the service spells it, so guards match
+- **core:** mixed-case accounts are diffed, and an offboarding the platform would refuse changes nothing
+- **core:** a refused organization change holds the rest of that account's changes
+- **platform:** declare the prod scope so the pypi target deploys
+
+### Docs
+- **deployments:** observe-only targets in deploy and readiness
+- service access concept and the plugin access contract
+- **deployments:** observed builds with version_parameter and stage_parameter
+- **self-hosting:** AP_GOOGLE_* variables
+- **self-hosting:** AP_SMTP_* variables
+
+### Tests
+- **api:** an observed CI target is imported on sync
+- **api:** Google sign-in start, callback and account linking
+- **api:** forgot and reset password routes
+- **api:** SMTP config and mailer without network
+
+### Build
+- **deploy:** pass AP_GOOGLE_* to the api service
+- **deploy:** pass AP_SMTP_* to the api service
+- **api:** lock action-platform 0.32.1
+
+### CI
+- **trivy:** scan master on push and on demand so fixed alerts close
+
 ## v0.32.1 — 2026-11-08
 
 ### Bug Fixes
