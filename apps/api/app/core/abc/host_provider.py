@@ -119,6 +119,10 @@ class HostProvider(ABC):
     def identity(self, app: "OAuthApp", access_token: str) -> tuple[str, Optional[str]]:
         """(login, display name) of the account behind the token."""
 
+    def subject(self, app: "OAuthApp", access_token: str) -> Optional[str]:
+        """The account's immutable id on the host, None when the host has no id a login invitation can be bound to."""
+        return None
+
     @abstractmethod
     def owner(self, access_token: str, installation_id: Optional[str]) -> Optional[str]:
         """The account new repositories default to right after connecting, None to use the login."""

@@ -6,12 +6,12 @@ Order: bring the repositories in, install the files, describe where releases lan
 
 ## Many repositories or one
 
-**Many, from a GitHub organization.** *Import* (Projects → **Import**, an admin) reads the organization through a connected GitHub host, lists what the token sees and queues one job that creates the projects and apps. Over the API:
+**Many, from a GitHub organization, GitLab group or Bitbucket workspace.** *Import* (Projects → **Import**, an admin) reads it through a connected code host, lists what the token sees and queues one job that creates the projects and apps. Over the API:
 
 ```bash
-GET  /api/v1/import/github/organizations?host=<host id>
-GET  /api/v1/import/github/organizations/acme?host=<host id>      # the preview
-POST /api/v1/import/github
+GET  /api/v1/import/<host id>/organizations
+GET  /api/v1/import/<host id>/organizations/acme      # the preview
+POST /api/v1/import
 {
   "host_id": "<host id>",
   "organization": "acme",
@@ -20,7 +20,7 @@ POST /api/v1/import/github
 }
 ```
 
-`repositories` are `owner/name`. Without `project_id` each repository becomes its own project; with it, all of them become apps of that project. The answer is `202` with a job id and a `poll` path (`/api/v1/jobs/<id>`); the job ends with what it created and what it skipped, with the reason. Repositories already on the platform are skipped. The same body takes `projects`, `teams`, `people` and `role` to bring GitHub Projects, teams and members along — see [web](use_web.md#import).
+`repositories` are full names as the host shows them (`owner/name`; `group/subgroup/name` on GitLab). Without `project_id` each repository becomes its own project; with it, all of them become apps of that project. The answer is `202` with a job id and a `poll` path (`/api/v1/jobs/<id>`); the job ends with what it created and what it skipped, with the reason. Repositories already on the platform are skipped. The same body takes `projects`, `teams`, `people`, `role`, `roles` and `people_roles` to bring the host's projects, teams and members along — see [web](use_web.md#import). The GitHub-only paths (`/api/v1/import/github/organizations?host=`, `POST /api/v1/import/github`) still answer, for any host.
 
 An imported app is registered as it is: its files are not touched. The releases and pull requests already on the code host are imported with it, so the Releases tab starts with your existing tags and there is nothing to re-cut.
 

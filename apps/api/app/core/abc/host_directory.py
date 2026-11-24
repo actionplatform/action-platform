@@ -8,6 +8,12 @@ class HostDirectory(ABC):
     """What a code-host token can see for an import: organizations, repositories, teams, people and projects."""
 
     kind: str
+    label: str
+    limits: tuple[str, ...] = ()
+
+    def hint(self, what: str, login: str) -> str | None:
+        """What to change on the host when reading `what` (repositories, projects, teams, people) failed."""
+        return None
 
     @abstractmethod
     def organizations(self) -> list[dict[str, Any]]:
@@ -27,4 +33,4 @@ class HostDirectory(ABC):
 
     @abstractmethod
     def projects(self, login: str) -> list[dict[str, Any]]:
-        """Projects of `login`: number, title, description, closed, url, repositories (full names)."""
+        """Projects of `login` (GitHub Projects, GitLab subgroups, Bitbucket projects): number (an id or key), title, description, closed, url, repositories (full names)."""

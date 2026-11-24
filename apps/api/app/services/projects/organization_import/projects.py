@@ -1,6 +1,6 @@
 """Host projects → platform projects; the repositories linked to a project become its apps."""
 
-from typing import Optional
+from typing import Optional, Union
 
 from app.core.db.models import Project
 from app.repositories.base import DirectoryError
@@ -8,8 +8,10 @@ from app.services.projects.organization_import.step import ImportStep
 
 
 class ProjectImporter(ImportStep):
-    def run(self, login: str, wanted: dict[int, Optional[str]]) -> dict[str, Project]:
-        """Returns owner/name (lowercase) → the platform project a repository belongs to through a wanted host project. `wanted` maps the host project number to the platform project its apps go into, or None for one named after it."""
+    def run(
+        self, login: str, wanted: dict[Union[int, str], Optional[str]]
+    ) -> dict[str, Project]:
+        """Returns owner/name (lowercase) → the platform project a repository belongs to through a wanted host project. `wanted` maps the host project number (or key) to the platform project its apps go into, or None for one named after it."""
         targets: dict[str, Project] = {}
 
         if not wanted:

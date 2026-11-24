@@ -1,4 +1,4 @@
-"""What a GitHub token sees: organizations, repositories, teams and people."""
+"""What a code-host token sees: the GitHub directory, and the one for each host kind."""
 
 from typing import Any
 
@@ -6,17 +6,37 @@ from action_platform.core.exception import ProviderError
 from app.core.abc import HostDirectory
 from app.core.shared.credentials import Credentials
 from app.core.shared.http import http
+from app.services.projects.organization_import.bitbucket import BitbucketDirectory
+from app.services.projects.organization_import.gitlab import GitlabDirectory
 
 PEOPLE_LOOKUP_LIMIT = 200
 
 
+MEMBERS_HINT = (
+    "Teams and people need the GitHub App permission Organization › Members (read) — "
+    "update it under the app's settings on GitHub and accept it on the organization — "
+    "or a token with the read:org scope."
+)
+
+
+def directory_for(creds: Credentials) -> HostDirectory:
+    kinds = {
+        "github": GithubDirectory,
+        "gitlab": GitlabDirectory,
+        "bitbucket": BitbucketDirectory,
+    }
+
+    if creds.kind not in kinds:
+        raise ProviderError(f"{creds.kind} hosts cannot be imported")
+
+    return kinds[creds.kind](creds)
+
+
 class GithubDirectory(HostDirectory):
     kind = "github"
+    label = "GitHub"
 
     def __init__(self, creds: Credentials) -> None:
-        if creds.kind != "github":
-            raise ProviderError("only GitHub hosts can be imported for now")
-
         self.api = (creds.base_url or "").rstrip("/") or "https://api.github.com"
         self.graphql = (
             "https://api.github.com/graphql"
@@ -37,6 +57,17 @@ class GithubDirectory(HostDirectory):
 
     def is_user(self, login: str) -> bool:
         return self.me()["login"].lower() == login.lower()
+
+    def hint(self, what: str, login: str) -> str | None:
+        return {
+            "repositories": (
+                f"The GitHub App must be installed on {login} with access to its repositories "
+                "(Install the app on GitHub, pick the organization, all repositories); an OAuth token needs the repo scope."
+            ),
+            "projects": "GitHub Projects need the GitHub App permission Organization › Projects (read) or a token with the read:project scope.",
+            "teams": MEMBERS_HINT,
+            "people": MEMBERS_HINT,
+        }.get(what)
 
     def organizations(self) -> list[dict[str, Any]]:
         """The account itself, then every organization the token can see: memberships, `/user/orgs`, and the accounts a GitHub App is installed on."""

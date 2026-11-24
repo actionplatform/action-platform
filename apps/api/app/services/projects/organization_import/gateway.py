@@ -14,7 +14,8 @@ from app.services.projects.organization_import.importer import OrganizationImpor
 from app.services.projects.organization_import.people import RoleMapping
 from app.core.errors import Invalid, NotFound, Upstream
 
-JOB_KIND = "import_github"
+JOB_KIND = "import_organization"
+IMPORTABLE = ("github", "gitlab", "bitbucket")
 
 
 class ImportGateway:
@@ -34,8 +35,8 @@ class ImportGateway:
         if host is None:
             raise NotFound("host not found")
 
-        if host.kind != "github":
-            raise Invalid("only GitHub hosts can be imported for now")
+        if host.kind not in IMPORTABLE:
+            raise Invalid(f"{host.kind} hosts cannot be imported")
 
         try:
             creds = self.writes.credentials_for(org.id, host_id)
@@ -50,12 +51,12 @@ class ImportGateway:
     def organizations(
         self, org: Organization, host_id: str
     ) -> tuple[list[dict[str, Any]], Optional[str]]:
-        """What the host's token can see, and where to install the GitHub App when something is missing."""
+        """What the host's token can see, and on GitHub where to install the GitHub App when something is missing."""
         creds = self.credentials(org, host_id)
-        github_app = self.writes.oauth_app("github")
+        github_app = self.writes.oauth_app("github") if creds.kind == "github" else None
 
         try:
-            rows = client.GithubDirectory(creds).organizations()
+            rows = client.directory_for(creds).organizations()
         except ActionPlatformError as e:
             raise Upstream(str(e)) from e
 

@@ -91,6 +91,11 @@ class PeopleImporter(ImportStep):
                 self.summary.members.append(person["login"])
             elif person["email"]:
                 self._invite(found, key, inviter_id, person, role)
+            elif self.host.kind == "bitbucket" and not person.get("user_id"):
+                self.summary.skip(
+                    person["login"],
+                    "Bitbucket gave no account id to bind the invitation to",
+                )
             elif can_prove:
                 self._invite_login(found, key, inviter_id, person, role)
             else:
@@ -139,6 +144,7 @@ class PeopleImporter(ImportStep):
                 self.host.kind,
                 person["login"],
                 role,
+                host_user_id=person.get("user_id"),
             )
             self.summary.login_invitations.append(f"@{person['login']}")
         except DirectoryError as e:

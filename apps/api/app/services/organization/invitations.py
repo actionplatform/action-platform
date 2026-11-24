@@ -76,10 +76,13 @@ class InvitationProof:
         try:
             token, _, _ = provider.exchange_code(app, origin, code)
             login, _ = provider.identity(app, token)
+            subject = provider.subject(app, token)
         except ActionPlatformError as e:
             raise Upstream(str(e)) from e
 
-        return self.directory.accept_invitation(id, user, verified_login=login)
+        return self.directory.accept_invitation(
+            id, user, verified_login=login, verified_subject=subject
+        )
 
     def _pending_login_invitation(self, id: str) -> Invitation:
         found = self.directory.invitation(id)

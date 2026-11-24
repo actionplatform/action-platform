@@ -1407,6 +1407,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/import/{host_id}/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["organizations_api_v1_import__host_id__organizations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/import/{host_id}/organizations/{login}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["organization_api_v1_import__host_id__organizations__login__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["import_organization_api_v1_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/apps": {
         parameters: {
             query?: never;
@@ -2643,62 +2691,6 @@ export interface components {
             protected: string[];
             types: string[];
         };
-        GithubOrganization: {
-            login: string;
-            name: string;
-            kind: string;
-            avatar?: string | null;
-        };
-        GithubOrganizations: {
-            organizations: components["schemas"]["GithubOrganization"][];
-            install_url?: string | null;
-        };
-        GithubPerson: {
-            login: string;
-            name: string;
-            email?: string | null;
-            avatar?: string | null;
-            role: string;
-            status: string;
-        };
-        GithubPreview: {
-            organization: string;
-            repositories: components["schemas"]["GithubRepository"][];
-            projects: components["schemas"]["GithubProject"][];
-            teams: components["schemas"]["GithubTeam"][];
-            people: components["schemas"]["GithubPerson"][];
-            problems: string[];
-        };
-        GithubProject: {
-            number: number;
-            title: string;
-            description?: string | null;
-            closed: boolean;
-            url?: string | null;
-            repositories: string[];
-            exists: boolean;
-        };
-        GithubRepository: {
-            full_name: string;
-            name: string;
-            description?: string | null;
-            private: boolean;
-            archived: boolean;
-            fork: boolean;
-            language?: string | null;
-            default_branch: string;
-            url: string;
-            pushed_at?: string | null;
-            imported_as?: string | null;
-        };
-        GithubTeam: {
-            slug: string;
-            name: string;
-            description?: string | null;
-            members: string[];
-            repositories: string[];
-            exists: boolean;
-        };
         GoogleCallbackRequest: {
             origin: string;
             code: string;
@@ -2802,9 +2794,59 @@ export interface components {
             project_id?: string | null;
             app_id?: string | null;
         };
+        ImportOrganization: {
+            login: string;
+            name: string;
+            kind: string;
+            avatar?: string | null;
+        };
+        ImportOrganizations: {
+            organizations: components["schemas"]["ImportOrganization"][];
+            install_url?: string | null;
+        };
+        ImportPerson: {
+            login: string;
+            name: string;
+            email?: string | null;
+            avatar?: string | null;
+            role: string;
+            status: string;
+        };
+        ImportPreview: {
+            organization: string;
+            host_kind: string;
+            repositories: components["schemas"]["ImportRepository"][];
+            projects: components["schemas"]["ImportProject"][];
+            teams: components["schemas"]["ImportTeam"][];
+            people: components["schemas"]["ImportPerson"][];
+            problems: string[];
+            limits: string[];
+        };
+        ImportProject: {
+            number: number | string;
+            title: string;
+            description?: string | null;
+            closed: boolean;
+            url?: string | null;
+            repositories: string[];
+            exists: boolean;
+        };
         ImportQueued: {
             job: string;
             poll: string;
+        };
+        ImportRepository: {
+            full_name: string;
+            name: string;
+            description?: string | null;
+            private: boolean;
+            archived: boolean;
+            fork: boolean;
+            language?: string | null;
+            default_branch: string;
+            url: string;
+            pushed_at?: string | null;
+            imported_as?: string | null;
         };
         ImportRequest: {
             host_id: string;
@@ -2821,6 +2863,14 @@ export interface components {
                 [key: string]: string;
             };
             project_id?: string | null;
+        };
+        ImportTeam: {
+            slug: string;
+            name: string;
+            description?: string | null;
+            members: string[];
+            repositories: string[];
+            exists: boolean;
         };
         Imports: {
             releases: components["schemas"]["ReleaseRow"][];
@@ -3243,7 +3293,7 @@ export interface components {
             dry_run: boolean;
         };
         ProjectPick: {
-            number: number;
+            number: number | string;
             project_id?: string | null;
         };
         ProjectRow: {
@@ -6957,7 +7007,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GithubOrganizations"];
+                    "application/json": components["schemas"]["ImportOrganizations"];
                 };
             };
             422: {
@@ -6990,7 +7040,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GithubPreview"];
+                    "application/json": components["schemas"]["ImportPreview"];
                 };
             };
             422: {
@@ -7004,6 +7054,102 @@ export interface operations {
         };
     };
     import_github_api_v1_import_github_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportQueued"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    organizations_api_v1_import__host_id__organizations_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                host_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportOrganizations"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    organization_api_v1_import__host_id__organizations__login__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                host_id: string;
+                login: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportPreview"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_organization_api_v1_import_post: {
         parameters: {
             query?: never;
             header?: {

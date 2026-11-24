@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -329,7 +329,7 @@ class ImportRepository(Open):
 
 
 class ImportProject(Open):
-    number: int
+    number: Union[int, str]
     title: str
     description: Optional[str] = None
     closed: bool
@@ -358,11 +358,13 @@ class ImportPerson(Open):
 
 class ImportPreview(Open):
     organization: str
+    host_kind: str = "github"
     repositories: list[ImportRepository]
     projects: list[ImportProject] = Field(default_factory=list)
     teams: list[ImportTeam]
     people: list[ImportPerson]
     problems: list[str] = Field(default_factory=list)
+    limits: list[str] = Field(default_factory=list)
 
 
 class Deployments(Open):

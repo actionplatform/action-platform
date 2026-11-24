@@ -152,7 +152,7 @@ The Planner (`services/access/planner.py`) is the one place the gate reads the d
 | `readiness` | after a `release` cut here, one per stage; `POST projects/{p}/apps/{a}/releases/{tag}/readiness` | `Readiness.check` at the tag with the app's identity token and env, the verdict and checks stored in `release_readiness`; `POST apps/{id}/deploy` refuses a blocked stage unless `force` |
 | `push` | `POST apps/{id}/push` (async) | push the clone's branch, then import activity |
 | `import` | after a sync, release or push | releases and pull requests copied into the platform's tables |
-| `import_github` | the organization import wizard | repositories, teams, people and projects from a GitHub organization |
+| `import_organization` | the organization import wizard (`import_github` is the earlier name, still run) | repositories, teams, people and projects from a GitHub organization, GitLab group or Bitbucket workspace |
 | `install` | `POST projects/{id}/install` (Adoption) | per app of the project: the installer's plan on a fresh clone, else a commit on `chore/<code>` and a pull request; the state of each app in `app_adoption` |
 | `destroy` | `DELETE projects/{p}/apps/{a}?cloud=true` | every stage's stack down through the target, then the app off the platform |
 | `destroy_project` | `DELETE projects/{id}?cloud=true` | the same for each app, then the project |
@@ -270,7 +270,7 @@ erDiagram
     app ||--o{ draft : "pending edits"
     organization ||--o{ plugin_option : "plugin settings"
     job {
-        string kind "sync release readiness deploy push import import_github destroy destroy_project destroy_organization"
+        string kind "sync release readiness deploy push import import_organization destroy destroy_project destroy_organization"
         string status "queued running done failed"
         text payload
         text result

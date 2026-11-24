@@ -614,7 +614,7 @@ class ImportToolsTest(RemoteToolsCase):
                 self.value = value
 
             @property
-            def repo(self):
+            def path(self):
                 return "acme/web" if self.value == url else None
 
         self.patch(context, "GitUrl", KnownUrl)

@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from app.core.abc import HostDirectory
 from tests.test_access import GateCase
 
 
-class FakeGithub:
+class FakeGithub(HostDirectory):
     kind = "github"
+    label = "GitHub"
 
     def __init__(self, url: str) -> None:
         self.url = url
@@ -121,7 +123,7 @@ class ImportCase(GateCase):
                 self.value = value
 
             @property
-            def repo(self):
+            def path(self):
                 return "acme/web" if self.value == url else None
 
         self.patch(context, "GitUrl", KnownUrl)
