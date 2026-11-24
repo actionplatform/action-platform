@@ -2,14 +2,16 @@
 
 from typing import Any, Optional
 
-from action_platform.core import access
 from app.repositories.workspace.registry import Registry
 from app.services.projects.organization_import.directory import ImportDirectory
 from app.repositories.base import DirectoryError
 from app.core.shared.credentials import Credentials
 from app.services.projects.organization_import import client
 from app.services.projects.organization_import.context import ImportContext
-from app.services.projects.organization_import.people import PeopleImporter
+from app.services.projects.organization_import.people import (
+    PeopleImporter,
+    RoleMapping,
+)
 from app.services.projects.organization_import.preview import ImportPreview
 from app.services.projects.organization_import.projects import ProjectImporter
 from app.services.projects.organization_import.repositories import (
@@ -39,10 +41,10 @@ class OrganizationImport:
         role: str,
         project_id: Optional[str] = None,
         projects: Optional[dict[int, Optional[str]]] = None,
+        roles: Optional[dict[str, str]] = None,
+        people_roles: Optional[dict[str, str]] = None,
     ) -> dict[str, Any]:
-        if role not in access.ROLES:
-            raise DirectoryError(f"role must be one of {', '.join(access.ROLES)}")
-
+        mapping = RoleMapping(role, roles or {}, people_roles or {})
         into = self._project(project_id)
         host = client.GithubDirectory(creds)
         targets = ProjectImporter(self.ctx, host).run(login, projects or {})
@@ -54,11 +56,11 @@ class OrganizationImport:
             into,
             targets,
         )
-        users = PeopleImporter(self.ctx, host).run(
-            inviter_id, login, {p.lower() for p in people}, role
+        found = PeopleImporter(self.ctx, host).run(
+            inviter_id, login, {p.lower() for p in people}, mapping, bool(teams)
         )
         TeamImporter(self.ctx, host).run(
-            login, {t.lower() for t in teams}, by_repo, users
+            login, {t.lower() for t in teams}, by_repo, found
         )
 
         return self.ctx.summary.as_dict()

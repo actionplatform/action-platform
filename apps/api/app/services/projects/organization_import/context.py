@@ -6,7 +6,7 @@ from typing import Any
 from sqlalchemy import select
 
 from action_platform.core.exception import ActionPlatformError
-from app.core.db.models import App, Project, User
+from app.core.db.models import App, Invitation, Project, User
 from app.core.shared.urls import GitUrl
 from app.repositories.workspace.registry import Registry
 from app.services.projects.organization_import.directory import ImportDirectory
@@ -19,10 +19,18 @@ class Summary:
     teams: list[str] = field(default_factory=list)
     members: list[str] = field(default_factory=list)
     invitations: list[str] = field(default_factory=list)
+    login_invitations: list[str] = field(default_factory=list)
+    teams_waiting: dict[str, list[str]] = field(default_factory=dict)
     skipped: list[str] = field(default_factory=list)
 
     def skip(self, what: str, why: str) -> None:
         self.skipped.append(f"{what}: {why}")
+
+    def wait(self, who: str, team: str) -> None:
+        waiting = self.teams_waiting.setdefault(who, [])
+
+        if team not in waiting:
+            waiting.append(team)
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -31,6 +39,11 @@ class Summary:
             "teams": self.teams,
             "members": self.members,
             "invitations": self.invitations,
+            "login_invitations": self.login_invitations,
+            "waiting": [
+                f"{who} → {', '.join(teams)}"
+                for who, teams in self.teams_waiting.items()
+            ],
             "skipped": self.skipped,
         }
 
@@ -85,3 +98,20 @@ class ImportContext:
                 Project.organization_id == self.organization_id, Project.name == name
             )
         )
+
+    def pending_invitations(self, host_kind: str) -> dict[str, Invitation]:
+        """Pending invitations of the organization keyed by email and by host login (both lowercase)."""
+        found: dict[str, Invitation] = {}
+
+        for invitation, _ in self.writes.invitations_of(self.organization_id):
+            if invitation.email:
+                found[invitation.email.lower()] = invitation
+
+            if invitation.host_login and invitation.host_kind == host_kind:
+                found[f"@{invitation.host_login.lower()}"] = invitation
+
+        return found
+
+    def can_prove_login(self, host_kind: str) -> bool:
+        """Whether an invitee can verify a login on this host: the platform has its OAuth app."""
+        return self.writes.oauth_app(host_kind) is not None

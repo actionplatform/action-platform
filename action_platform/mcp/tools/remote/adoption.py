@@ -52,7 +52,7 @@ def register(mcp: Any, remote: Remote) -> None:
     def preview_organization_import(
         host: HostId, login: Login, organization: OrgId = None
     ) -> schemas.ImportPreview:
-        """What importing a GitHub organization would bring (needs org.manage): its repositories (imported_as when already an app), projects, teams (exists when already a team) and people with a status — member, invited, invitable, or no_email (cannot be invited). Show it and let the user pick before import_organization."""
+        """What importing a GitHub organization would bring (needs org.manage): its repositories (imported_as when already an app), projects, teams (exists when already a team) and people with their GitHub role (org_admin, team_maintainer, member) and a status — member, user (has an account), invited, invitable (by email), invitable_login (invited by GitHub login, verified when they accept), or no_email (no email and no GitHub OAuth app to verify a login). Show it and let the user pick before import_organization."""
         return remote.import_preview(host, login, organization)
 
     @tool(mcp, annotations=REACHES_OUT)
@@ -73,6 +73,16 @@ def register(mcp: Any, remote: Remote) -> None:
             ),
         ] = None,
         role: Literal["admin", "deployer", "developer", "viewer"] = "developer",
+        roles: Annotated[
+            Optional[dict[str, Literal["admin", "deployer", "developer", "viewer"]]],
+            Field(
+                description="Platform role per GitHub role (org_admin, team_maintainer, member); a GitHub role left out gets `role`"
+            ),
+        ] = None,
+        people_roles: Annotated[
+            Optional[dict[str, Literal["admin", "deployer", "developer", "viewer"]]],
+            Field(description="Platform role per login, over `roles`"),
+        ] = None,
         project: Annotated[
             Optional[str],
             Field(
@@ -81,7 +91,7 @@ def register(mcp: Any, remote: Remote) -> None:
         ] = None,
         organization: OrgId = None,
     ) -> schemas.JobQueued:
-        """Import the picked repositories, teams and people of a GitHub organization (needs org.manage and an admin-scoped token). Runs as a job: the answer is its id — follow it with job_status, whose result lists the projects, apps, teams, invitations and what was skipped. Show the preview and ask first."""
+        """Import the picked repositories, teams and people of a GitHub organization (needs org.manage and an admin-scoped token). Runs as a job: the answer is its id — follow it with job_status, whose result lists the projects, apps, teams, members, invitations by email and by login, the teams waiting for each invitee, and what was skipped. Show the preview and ask first."""
         return remote.import_organization(
             {
                 "host_id": host,
@@ -90,6 +100,8 @@ def register(mcp: Any, remote: Remote) -> None:
                 "teams": teams or [],
                 "people": people or [],
                 "role": role,
+                "roles": roles or {},
+                "people_roles": people_roles or {},
                 "project_id": project,
             },
             organization,

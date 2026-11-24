@@ -383,6 +383,8 @@ CASES: list[tuple[str, dict[str, Any], str, tuple, dict]] = [
                 "teams": [],
                 "people": [],
                 "role": "developer",
+                "roles": {},
+                "people_roles": {},
                 "project_id": None,
             },
             None,

@@ -23,7 +23,7 @@ class HostDirectory(ABC):
 
     @abstractmethod
     def people(self, login: str) -> list[dict[str, Any]]:
-        """Members of `login`: login, name, email (public one or None), avatar."""
+        """Members of `login`: login, name, email (public one or None), avatar, role (org_admin, team_maintainer or member)."""
 
     @abstractmethod
     def projects(self, login: str) -> list[dict[str, Any]]:

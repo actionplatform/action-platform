@@ -200,8 +200,10 @@ class GithubDirectory(HostDirectory):
     def people(self, login: str) -> list[dict[str, Any]]:
         if self.is_user(login):
             members = [self.me()]
+            roles = {self.me()["login"].lower(): "org_admin"}
         else:
             members = http.get_pages(f"{self.api}/orgs/{login}/members", self.headers)
+            roles = self._roles(login)
 
         rows = []
 
@@ -217,7 +219,29 @@ class GithubDirectory(HostDirectory):
                     "name": profile.get("name") or m["login"],
                     "email": (profile.get("email") or "").strip().lower() or None,
                     "avatar": m.get("avatar_url"),
+                    "role": roles.get(m["login"].lower(), "member"),
                 }
             )
 
         return rows
+
+    def _roles(self, login: str) -> dict[str, str]:
+        """Login (lowercase) → org_admin for the organization's owners, team_maintainer for whoever maintains a team."""
+        roles: dict[str, str] = {}
+
+        try:
+            for t in http.get_pages(f"{self.api}/orgs/{login}/teams", self.headers):
+                for m in http.get_pages(
+                    f"{self.api}/orgs/{login}/teams/{t['slug']}/members?role=maintainer",
+                    self.headers,
+                ):
+                    roles[m["login"].lower()] = "team_maintainer"
+        except ProviderError:
+            pass
+
+        for m in http.get_pages(
+            f"{self.api}/orgs/{login}/members?role=admin", self.headers
+        ):
+            roles[m["login"].lower()] = "org_admin"
+
+        return roles

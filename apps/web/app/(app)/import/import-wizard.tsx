@@ -20,8 +20,16 @@ const PEOPLE_STATUS: Record<string, { label: string; hint: string; selectable: b
   user: { label: "Has account", hint: "added as a member right away", selectable: true },
   invited: { label: "Invited", hint: "an invitation is already pending", selectable: false },
   invitable: { label: "Invite", hint: "receives an invitation by email", selectable: true },
-  no_email: { label: "No email", hint: "no public email on GitHub; invite by hand", selectable: false },
+  invitable_login: { label: "Invite by login", hint: "invited by GitHub login; they verify it when they accept", selectable: true },
+  no_email: { label: "No email", hint: "no public email, and no GitHub OAuth app on the platform to verify a login; invite by hand", selectable: false },
 };
+
+const HOST_ROLES = [
+  { id: "org_admin", label: "Organization owners" },
+  { id: "team_maintainer", label: "Team maintainers" },
+  { id: "member", label: "Members" },
+] as const;
+type HostRole = (typeof HOST_ROLES)[number]["id"];
 
 function Row({ id, checked, disabled, onToggle, children }: { id: string; checked: boolean; disabled?: boolean; onToggle: () => void; children: React.ReactNode }) {
   return (
@@ -55,7 +63,9 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
   const [preview, setPreview] = useState<GithubPreview | null>(null);
   const [projectId, setProjectId] = useState("");
   const [projectTargets, setProjectTargets] = useState<Record<string, string>>({});
-  const [role, setRole] = useState(roles.find((r) => r.id === "developer")?.id ?? roles[0]?.id ?? "developer");
+  const fallback = roles.find((r) => r.id === "developer")?.id ?? roles[0]?.id ?? "developer";
+  const [mapping, setMapping] = useState<Record<HostRole, string>>({ org_admin: fallback, team_maintainer: fallback, member: fallback });
+  const [overrides, setOverrides] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<{ id: string; status: string; result: ImportSummary | null; error: string | null } | null>(null);
   const [loadingOrgs, startOrgs] = useTransition();
@@ -82,7 +92,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
 
   useEffect(() => {
     if (!login) { setPreview(null); return; }
-    setPreview(null); setError(null); repos.reset(); ghProjects.reset(); teams.reset(); people.reset();
+    setPreview(null); setError(null); setOverrides({}); repos.reset(); ghProjects.reset(); teams.reset(); people.reset();
     startPreview(async () => {
       const r = await loadGithubOrganization(hostId, login);
       if (r.ok) setPreview(r.data); else setError(r.error);
@@ -120,7 +130,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
 
   const submit = () => startSubmit(async () => {
     setError(null);
-    const r = await call(() => startGithubImport({ host_id: hostId, organization: login, repositories: [...repos.picked].filter((r) => !linked.has(r)), projects: [...ghProjects.picked].map((n) => ({ number: Number(n), project_id: projectTargets[n] || null })), teams: [...teams.picked], people: [...people.picked], role, project_id: projectId || null }), (error) => ({ ok: false as const, error }), "The import may have started anyway: check Projects before trying again.");
+    const r = await call(() => startGithubImport({ host_id: hostId, organization: login, repositories: [...repos.picked].filter((r) => !linked.has(r)), projects: [...ghProjects.picked].map((n) => ({ number: Number(n), project_id: projectTargets[n] || null })), teams: [...teams.picked], people: [...people.picked], role: mapping.member, roles: { org_admin: mapping.org_admin, team_maintainer: mapping.team_maintainer }, people_roles: Object.fromEntries(Object.entries(overrides).filter(([l]) => people.picked.has(l))), project_id: projectId || null }), (error) => ({ ok: false as const, error }), "The import may have started anyway: check Projects before trying again.");
     if (r.ok) setJob({ id: r.data.job, status: "queued", result: null, error: null }); else setError(r.error);
   });
 
@@ -134,7 +144,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
           {job.error && <div className="rounded-md border border-foreground px-3 py-2">{job.error}</div>}
           {job.result && (
             <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              {([["Projects", job.result.projects], ["Apps", job.result.apps], ["Teams", job.result.teams], ["Members", job.result.members], ["Invitations", job.result.invitations]] as const).filter(([label, rows]) => rows.length > 0 || label !== "Apps").map(([label, rows]) => (
+              {([["Projects", job.result.projects], ["Apps", job.result.apps], ["Teams", job.result.teams], ["Members", job.result.members], ["Invited by email", job.result.invitations], ["Invited by login", job.result.login_invitations ?? []]] as const).filter(([label, rows]) => rows.length > 0 || label !== "Apps").map(([label, rows]) => (
                 <div key={label} className="rounded-md border border-border px-3 py-2">
                   <dt className="text-xs text-secondary">{label}</dt>
                   <dd className="text-lg font-semibold">{rows.length}</dd>
@@ -142,6 +152,12 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
                 </div>
               ))}
             </dl>
+          )}
+          {job.result && (job.result.waiting ?? []).length > 0 && (
+            <div>
+              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-secondary">Teams waiting for invitees</h3>
+              <ul className="space-y-1 text-xs text-secondary">{(job.result.waiting ?? []).map((s) => <li key={s}>{s}</li>)}</ul>
+            </div>
           )}
           {job.result && job.result.skipped.length > 0 && (
             <div>
@@ -272,20 +288,35 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
               title={`People · ${preview.people.length}`}
               aside={
                 <div className="flex items-center gap-3">
-                  <Select size="sm" value={role} onChange={setRole} options={roles.map((r) => ({ value: r.id, label: r.label }))} aria-label="Role for imported people" />
                   {peopleKeys.length > 0 && <button type="button" className="text-xs text-secondary hover:text-foreground" onClick={people.toggleAll}>{people.allPicked ? "Clear" : "Select all"}</button>}
                 </div>
               }
             />
+            <div className="grid gap-3 border-b border-border px-4 py-3 md:grid-cols-3">
+              {HOST_ROLES.map((h) => (
+                <label key={h.id} className="block text-sm">
+                  <span className="mb-1 block text-xs text-secondary">{h.label} on GitHub become</span>
+                  <Select size="sm" value={mapping[h.id]} onChange={(v) => setMapping((m) => ({ ...m, [h.id]: v }))} options={roles.map((r) => ({ value: r.id, label: r.label }))} aria-label={`Platform role for ${h.label.toLowerCase()}`} />
+                </label>
+              ))}
+            </div>
             <ul className="divide-y divide-border">
               {preview.people.map((p) => {
                 const status = PEOPLE_STATUS[p.status] ?? { label: p.status, hint: "", selectable: false };
+                const hostRole = (HOST_ROLES.find((h) => h.id === p.role) ?? HOST_ROLES[2]).id;
+                const picked = people.picked.has(p.login);
                 return (
-                  <Row key={p.login} id={`person-${p.login}`} checked={people.picked.has(p.login)} disabled={!status.selectable} onToggle={() => people.toggle(p.login)}>
+                  <Row key={p.login} id={`person-${p.login}`} checked={picked} disabled={!status.selectable} onToggle={() => people.toggle(p.login)}>
                     <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
                       <UserRound className="size-4 text-secondary" strokeWidth={1.75} aria-hidden="true" />{p.name}
                       <span className="font-mono text-xs text-secondary">@{p.login}</span>
                       <Badge tone={p.status === "member" ? "ok" : "neutral"}>{status.label}</Badge>
+                      {hostRole !== "member" && <Badge>{hostRole === "org_admin" ? "GitHub owner" : "team maintainer"}</Badge>}
+                      {picked && (
+                        <span className="ml-auto" onClick={(e) => e.preventDefault()}>
+                          <Select size="sm" value={overrides[p.login] ?? mapping[hostRole]} onChange={(v) => setOverrides((o) => ({ ...o, [p.login]: v }))} options={roles.map((r) => ({ value: r.id, label: r.label }))} aria-label={`Role for ${p.login}`} />
+                        </span>
+                      )}
                     </div>
                     <div className="text-[13px] text-secondary">{p.email ?? "no public email"} · {status.hint}</div>
                   </Row>
@@ -295,7 +326,7 @@ export function ImportWizard({ hosts, roles, projects, canManage }: { hosts: Hos
           </Panel>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-secondary">{total === 0 ? "Pick projects, repositories, teams or people." : `${ghProjects.picked.size} projects, ${repos.picked.size + [...linked].filter((r) => !repos.picked.has(r)).length} repositories, ${teams.picked.size} teams, ${people.picked.size} people.`} Members of a team join it only once they are members of the organization.</p>
+            <p className="text-sm text-secondary">{total === 0 ? "Pick projects, repositories, teams or people." : `${ghProjects.picked.size} projects, ${repos.picked.size + [...linked].filter((r) => !repos.picked.has(r)).length} repositories, ${teams.picked.size} teams, ${people.picked.size} people.`} People invited join their teams when they accept; people already in the organization keep their role.</p>
             <Button disabled={total === 0 || submitting} onClick={submit}>{submitting ? "Starting…" : "Import"}</Button>
           </div>
         </>

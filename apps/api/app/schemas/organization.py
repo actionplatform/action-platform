@@ -120,7 +120,10 @@ class TeamUpdate(BaseModel):
 
 class InvitationRow(BaseModel):
     id: str
-    email: str
+    email: Optional[str] = None
+    login: Optional[str] = None
+    host_kind: Optional[str] = None
+    teams: list[str] = []
     role: Optional[str] = None
     status: str
     expires_at: datetime
@@ -131,6 +134,7 @@ class InvitationRow(BaseModel):
 class InviteRequest(BaseModel):
     email: str
     role: str
+    team_ids: list[str] = []
 
 
 class GitAuthor(BaseModel):

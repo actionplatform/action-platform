@@ -47,6 +47,10 @@ export const authApi = {
     unwrap(await client.POST("/api/auth/organizations", { body, headers: sessionHeaders(session) })),
   openInvitation: async (id: string) => unwrap(await client.GET("/api/auth/invitations/{id}", { params: { path: { id } } })),
   acceptInvitation: async (session: Session, id: string) => unwrap(await client.POST("/api/auth/invitations/{id}/accept", { params: { path: { id } }, headers: sessionHeaders(session) })),
+  verifyInvitation: async (session: Session, id: string, origin: string) =>
+    unwrap(await client.POST("/api/auth/invitations/{id}/verify", { params: { path: { id } }, body: { origin }, headers: sessionHeaders(session) })),
+  verifyInvitationCallback: async (session: Session, id: string, body: { origin: string; code: string; state: string }) =>
+    unwrap(await client.POST("/api/auth/invitations/{id}/verify/callback", { params: { path: { id } }, body, headers: sessionHeaders(session) })),
   addMember: async (session: Session, body: { organization_id: string; name: string; email: string; password: string; role: string }) =>
     unwrap(await client.POST("/api/auth/members", { body, headers: sessionHeaders(session) })),
   deviceCode: async (body: { client_id?: string | null; scope?: string | null }, ip: string | null) =>

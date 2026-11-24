@@ -1,7 +1,8 @@
-"""Teams → teams, with the members who are already in the organization and the projects of their repositories."""
+"""Teams → teams, with the members who are already in the organization, the invitees who join on accepting, and the projects of their repositories."""
 
-from app.core.db.models import Project, Team, User
+from app.core.db.models import Project, Team
 from app.core.shared.ids import slugify
+from app.services.projects.organization_import.people import People
 from app.services.projects.organization_import.step import ImportStep
 
 
@@ -11,7 +12,7 @@ class TeamImporter(ImportStep):
         login: str,
         wanted: set[str],
         projects_by_repo: dict[str, Project],
-        user_by_login: dict[str, User],
+        people: People,
     ) -> None:
         if not wanted:
             return
@@ -25,7 +26,7 @@ class TeamImporter(ImportStep):
                 continue
 
             team = self._team_for(remote, existing)
-            self._fill(team, remote["members"], user_by_login, members)
+            self._fill(team, remote["members"], people, members)
 
             if not shared:
                 self._assign(team, remote["repositories"], projects_by_repo)
@@ -49,19 +50,27 @@ class TeamImporter(ImportStep):
         self,
         team: Team,
         logins: list[str],
-        user_by_login: dict[str, User],
+        people: People,
         members: set[str],
     ) -> None:
         in_team = {u.id for u in self.writes.team_members_of(team.id)}
 
         for member_login in logins:
-            user = user_by_login.get(member_login.lower())
+            key = member_login.lower()
+            user = people.users.get(key)
 
-            if user is None or user.id not in members or user.id in in_team:
+            if user is not None and user.id in members:
+                if user.id not in in_team:
+                    self.writes.add_team_member(self.organization_id, team.id, user.id)
+                    in_team.add(user.id)
+
                 continue
 
-            self.writes.add_team_member(self.organization_id, team.id, user.id)
-            in_team.add(user.id)
+            invitation = people.invitations.get(key)
+
+            if invitation is not None:
+                self.writes.add_invitation_teams(invitation, [team.id])
+                self.summary.wait(invitation.email or f"@{member_login}", team.name)
 
     def _assign(
         self, team: Team, repositories: list[str], projects_by_repo: dict[str, Project]

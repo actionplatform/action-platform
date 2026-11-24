@@ -255,6 +255,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/invitations/{id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["verify_login_api_auth_invitations__id__verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/invitations/{id}/verify/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["verify_login_callback_api_auth_invitations__id__verify_callback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/device/code": {
         parameters: {
             query?: never;
@@ -2541,6 +2573,7 @@ export interface components {
             name: string;
             email?: string | null;
             avatar?: string | null;
+            role: string;
             status: string;
         };
         GithubPreview: {
@@ -2684,6 +2717,12 @@ export interface components {
             teams: string[];
             people: string[];
             role: string;
+            roles: {
+                [key: string]: string;
+            };
+            people_roles: {
+                [key: string]: string;
+            };
             project_id?: string | null;
         };
         Imports: {
@@ -2761,7 +2800,10 @@ export interface components {
         };
         InvitationRow: {
             id: string;
-            email: string;
+            email?: string | null;
+            login?: string | null;
+            host_kind?: string | null;
+            teams: string[];
             role?: string | null;
             status: string;
             expires_at: string;
@@ -2771,6 +2813,7 @@ export interface components {
         InviteRequest: {
             email: string;
             role: string;
+            team_ids: string[];
         };
         IssueRequest: {
             scope: string;
@@ -2984,7 +3027,9 @@ export interface components {
         };
         OpenInvitation: {
             id: string;
-            email: string;
+            email?: string | null;
+            login?: string | null;
+            host_kind?: string | null;
             role: string;
             status: string;
             expired: boolean;
@@ -3440,6 +3485,17 @@ export interface components {
             type: string;
             input?: unknown;
             ctx?: Record<string, never>;
+        };
+        VerifyLoginCallback: {
+            origin: string;
+            code: string;
+            state: string;
+        };
+        VerifyLoginStart: {
+            origin: string;
+        };
+        VerifyLoginStarted: {
+            url: string;
         };
         VerifyTokenRequest: {
             token: string;
@@ -3972,6 +4028,78 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationOut"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_login_api_auth_invitations__id__verify_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyLoginStart"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerifyLoginStarted"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_login_callback_api_auth_invitations__id__verify_callback_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+                "x-session-cookie"?: string | null;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyLoginCallback"];
+            };
+        };
         responses: {
             200: {
                 headers: {

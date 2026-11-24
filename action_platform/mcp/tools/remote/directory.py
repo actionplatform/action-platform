@@ -130,7 +130,7 @@ def register(mcp: Any, remote: Remote) -> None:
 
     @tool(mcp, annotations=READ_ONLY)
     def list_invitations(organization: OrgId = None) -> list[schemas.Invitation]:
-        """Pending invitations into the organization: email, role, who invited, when it expires and the link that accepts it (needs org.manage)."""
+        """Pending invitations into the organization: email, or the code-host login for one an import made without an email, role, the teams joined on accepting, who invited, when it expires and the link that accepts it (needs org.manage)."""
         return [invitation(row) for row in remote.invitations(organization)]
 
     @tool(mcp, annotations=REACHES_OUT)

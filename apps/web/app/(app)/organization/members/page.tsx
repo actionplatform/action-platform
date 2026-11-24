@@ -20,7 +20,7 @@ export default async function MembersSettingsPage() {
         roles={catalog.roles}
         org={{ name: org.name, slug: org.slug }}
         members={members.map((m) => ({ id: m.id, userId: m.userId, name: m.name, email: m.email, role: m.role }))}
-        invitations={invitations.map((i) => ({ id: i.id, email: i.email, role: i.role, inviter: i.inviter, expiresAt: i.expiresAt.toISOString() }))}
+        invitations={invitations.map((i) => ({ id: i.id, email: i.email, login: i.login, teams: i.teams, role: i.role, inviter: i.inviter, expiresAt: i.expiresAt.toISOString() }))}
         me={session.user.id}
         canManage={canManage}
         origin={origin}

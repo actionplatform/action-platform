@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { type Provider, PROVIDERS } from "@/lib/oauth";
 import { publicOrigin } from "@/lib/origin";
+import { verifyInvitationFinish } from "@/lib/orgs";
+import { failed } from "@/lib/result";
 import { safePath } from "@/lib/safe-path";
 import { getSession } from "@/lib/session";
 import { v1 } from "@/lib/v1";
@@ -12,6 +14,21 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
   const url = new URL(req.url);
   const session = await getSession();
   if (!session) redirect(`/login?next=${encodeURIComponent(url.pathname + url.search)}`);
+
+  const invite = /^invite\.([^.]+)\./.exec(url.searchParams.get("state") ?? "");
+  if (invite) {
+    const back = `/invite/${encodeURIComponent(invite[1])}`;
+    const refused = url.searchParams.get("error_description") ?? url.searchParams.get("error");
+    let error: string | null = refused;
+    if (!refused) {
+      try {
+        await verifyInvitationFinish(invite[1], { origin: publicOrigin(req.headers), code: url.searchParams.get("code") ?? "", state: url.searchParams.get("state") ?? "" });
+      } catch (e) {
+        error = failed(e).error;
+      }
+    }
+    redirect(error ? `${back}?error=${encodeURIComponent(error)}` : "/projects");
+  }
 
   let finished: { return_to: string; query: Record<string, string> };
   try {
