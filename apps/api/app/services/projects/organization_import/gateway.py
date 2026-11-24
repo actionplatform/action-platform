@@ -11,6 +11,7 @@ from app.services.projects.organization_import.directory import ImportDirectory
 from app.services.jobs import JobQueue
 from app.services.projects.organization_import import client
 from app.services.projects.organization_import.importer import OrganizationImport
+from app.services.projects.organization_import.people import RoleMapping
 from app.core.errors import Invalid, NotFound, Upstream
 
 JOB_KIND = "import_github"
@@ -85,6 +86,15 @@ class ImportGateway:
             request.get(k) for k in ("repositories", "projects", "teams", "people")
         ):
             raise Invalid("pick at least one repository, team or person")
+
+        try:
+            RoleMapping(
+                request.get("role") or "developer",
+                request.get("roles") or {},
+                request.get("people_roles") or {},
+            )
+        except ActionPlatformError as e:
+            raise Invalid(str(e)) from e
 
         return self.queue.enqueue(
             JOB_KIND,

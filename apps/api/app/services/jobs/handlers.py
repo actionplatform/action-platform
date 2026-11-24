@@ -479,6 +479,8 @@ class JobHandlers:
                     int(p["number"]): p.get("project_id") or None
                     for p in payload.get("projects") or []
                 },
+                payload.get("roles") or {},
+                payload.get("people_roles") or {},
             )
 
     def install(self, payload: dict[str, Any]) -> Any:

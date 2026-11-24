@@ -80,30 +80,39 @@ class ImportPreview(ImportStep):
     def _people(self, rows: list[dict]) -> list[dict]:
         users = self.ctx.users_by_email([p["email"] for p in rows if p["email"]])
         members = self.ctx.member_ids()
-        pending = {i.email for i, _ in self.writes.invitations_of(self.organization_id)}
+        pending = self.ctx.pending_invitations(self.host.kind)
+        can_prove = self.ctx.can_prove_login(self.host.kind)
 
         return [
             {
                 **p,
+                "role": p.get("role") or "member",
                 "status": self._status(
-                    p, users.get(p["email"] or ""), members, pending
+                    p, users.get(p["email"] or ""), members, pending, can_prove
                 ),
             }
             for p in rows
         ]
 
     @staticmethod
-    def _status(person: dict, user, members: set[str], pending: set[str]) -> str:
+    def _status(
+        person: dict, user, members: set[str], pending: dict, can_prove: bool
+    ) -> str:
         if user and user.id in members:
             return "member"
 
         if user:
             return "user"
 
-        if person["email"] in pending:
+        if (person["email"] and person["email"] in pending) or (
+            f"@{person['login'].lower()}" in pending
+        ):
             return "invited"
 
         if person["email"]:
             return "invitable"
+
+        if can_prove:
+            return "invitable_login"
 
         return "no_email"

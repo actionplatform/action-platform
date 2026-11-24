@@ -18,6 +18,8 @@ class ImportRequest(BaseModel):
     teams: list[str] = []
     people: list[str] = []
     role: str = "developer"
+    roles: dict[str, str] = {}
+    people_roles: dict[str, str] = {}
     project_id: Optional[str] = None
 
 
@@ -76,6 +78,7 @@ class GithubPerson(BaseModel):
     name: str
     email: Optional[str] = None
     avatar: Optional[str] = None
+    role: str = "member"
     status: str
 
 
