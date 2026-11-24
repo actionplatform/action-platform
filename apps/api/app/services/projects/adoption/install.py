@@ -175,7 +175,7 @@ class BulkInstall:
                 raise NotAdoptable(target.problem)
 
             outcome = self._install(target, options)
-        except ActionPlatformError as e:
+        except (ActionPlatformError, subprocess.CalledProcessError) as e:
             outcome = {"state": "failed", "reason": reason_of(e)}
         except Exception as e:
             log.exception("install on %s failed", target.name)
@@ -216,12 +216,9 @@ class BulkInstall:
             flow = wired.gitflow(repo)
             base = flow.resolve_base("chore")
 
-            if (
-                repo.attempt(
-                    ["cat-file", "-e", f"origin/{base}:{CONFIG_FILE}"]
-                ).returncode
-                == 0
-            ):
+            manifest = repo.attempt(["cat-file", "-e", f"origin/{base}:{CONFIG_FILE}"])
+
+            if manifest.returncode == 0:
                 return {"state": "installed", "skipped": True}
 
             if repo.remote_branch_exists(options.branch):
