@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import urllib.error
 import urllib.request
 
@@ -58,6 +59,28 @@ class PipelinePublishedTarget(DeployTarget):
                 else None,
             )
         ]
+
+    @staticmethod
+    def _json(url: str) -> dict | None:
+        """The JSON document at `url`, or None when the destination says it has none."""
+        req = urllib.request.Request(
+            url,
+            method="GET",
+            headers={"user-agent": "action-platform", "accept": "application/json"},
+        )
+
+        try:
+            with urllib.request.urlopen(req, timeout=30) as res:
+                return json.loads(res.read())
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403, 404):
+                return None
+
+            raise ProviderError(f"GET {url} → {e.code}") from e
+        except urllib.error.URLError as e:
+            raise ProviderError(f"cannot reach {url}: {e.reason}") from e
+        except ValueError as e:
+            raise ProviderError(f"GET {url}: not JSON") from e
 
     @staticmethod
     def _exists(url: str, headers: dict[str, str] | None = None) -> bool:
