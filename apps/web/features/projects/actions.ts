@@ -57,7 +57,8 @@ export async function syncApp(projectId: string, appId: string, registryId: stri
   try {
     const queued = await api.apps.sync(registryId);
     const job = await settled(queued.job);
-    if (job?.status === "failed") return { ok: false, error: job.error ?? "sync failed" };
+    if (!job) return { ok: false, error: `sync still running (job ${queued.job}): reload in a moment` };
+    if (job.status === "failed") return { ok: false, error: job.error ?? "sync failed" };
     await v1.syncImports(projectId, appId).catch(() => null);
     refreshProject(projectId);
     return { ok: true };
