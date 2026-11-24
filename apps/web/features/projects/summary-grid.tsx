@@ -3,25 +3,26 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { AppView } from "./model";
-import { targetsOf } from "@/features/deployments";
+import { NameChips } from "@/components/ui/name-chips";
+import { targetNamesOf } from "@/features/deployments";
 
-function SummaryCard({ label, value, badge, icon: Icon }: { label: string; value: ReactNode; badge?: ReactNode; icon: LucideIcon }) {
+export function SummaryCard({ label, value, badge, icon: Icon }: { label: string; value: ReactNode; badge?: ReactNode; icon: LucideIcon }) {
   return (
-    <div className="flex min-h-[104px] flex-col rounded-lg border border-border bg-surface px-[18px] py-[17px]">
+    <div className="flex h-[104px] min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-surface px-[18px] py-[17px]">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         {label}
         <Icon className="size-4" strokeWidth={1.75} />
       </div>
-      <div className="mt-auto flex flex-wrap items-center gap-2 pt-3">
-        <span className="font-mono text-lg font-semibold leading-6">{value}</span>
-        {badge}
+      <div className="mt-auto flex min-w-0 items-center gap-2 pt-3">
+        <div className="min-w-0 truncate font-mono text-lg font-semibold leading-6" title={typeof value === "string" ? value : undefined}>{value}</div>
+        {badge && <span className="shrink-0">{badge}</span>}
       </div>
     </div>
   );
 }
 
 export function SummaryGrid({ view }: { view: AppView }) {
-  const target = targetsOf(view.deploy);
+  const targets = targetNamesOf(view.deploy);
   return (
     <div className="mt-5 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
       <SummaryCard label="Branch" value={view.branch || "—"} icon={GitBranch} />
@@ -29,8 +30,8 @@ export function SummaryGrid({ view }: { view: AppView }) {
       <SummaryCard label="Latest tag" value={view.latestTag ?? <span className="font-sans text-sm font-normal text-secondary">No tags</span>} icon={Tag} />
       <SummaryCard
         label="Deploy"
-        value={target ?? <span className="font-sans text-sm font-normal text-secondary">Not configured</span>}
-        badge={target ? <Badge tone="ok">Configured</Badge> : undefined}
+        value={targets.length ? <NameChips names={targets} noun="deploy target" href={`/projects/${view.projectId}/apps/${view.appId}/configuration`} /> : <span className="font-sans text-sm font-normal text-secondary">Not configured</span>}
+        badge={targets.length ? <Badge tone="ok">Configured</Badge> : undefined}
         icon={Cloud}
       />
     </div>
