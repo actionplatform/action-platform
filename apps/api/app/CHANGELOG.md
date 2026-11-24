@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.40.0 — 2026-11-24
+
+### Features
+- **api:** access routes over the bundled plugins, gated by org.manage
+- **api:** observed deployments take version and scope from build parameters
+- **api:** sign in with Google over OIDC with PKCE
+- **api:** password recovery by emailed single-use link
+- **api:** SMTP mailer configured by AP_SMTP_*
+
+### Bug Fixes
+- **api:** restore platform files with the repository's own CI
+- **core:** mixed-case accounts are diffed, and an offboarding the platform would refuse changes nothing
+
 ## v0.39.4 — 2026-11-08
 
 ## v0.39.3 — 2026-11-08
