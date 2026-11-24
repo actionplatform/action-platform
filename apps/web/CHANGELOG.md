@@ -1,5 +1,43 @@
 # Changelog
 
+## v0.34.0 — 2026-11-24
+
+### Features
+- **web:** import page lists hosts of every kind and shows what each cannot provide
+- **web:** setup wizard asks for the setup token, /setup closed once claimed
+- **web:** Settings Instance page and no-worker state on jobs
+- **web:** invitation Sent, Not sent and Resend in Members
+- **web:** change your password from Organization sessions
+- **web:** verify a login invitation, role mapping and waiting teams in the import
+- **web:** create an API token from Organization, Sessions
+- **web:** dashboard redesign with deployments in progress, needs attention and CI coverage (#597)
+- organization events for plugins, delivered through the job queue (#588)
+- **core:** a generated project's owner, author, licence and host come from its user (#589)
+- bulk adoption — open install pull requests for many apps at once (#584)
+- **web:** the install step shows the detected CI and warnings (#581)
+- **web:** Access page under Settings
+- **web:** service access client in v1
+- **web:** Services under Settings with Connect Sentry
+- **core:** a default value on plugin options (#571)
+- **web:** an icon for the job project type
+
+### Bug Fixes
+- **web:** a sync still running is not reported as done
+- **web:** preflight inline and wait for the sync job
+- **api:** scope the instance health queue to the caller's organization
+- **api:** worker heartbeat migration follows the invitation one as 0026
+- **api:** track the instance service and web modules a Flask ignore rule hid
+- **web:** keep summary cards equal height and collapse deploy targets into chips (#568)
+
+### Tests
+- **web:** /setup redirects once claimed, createAdmin needs the setup token
+
+### Chores
+- drop the node_modules link committed by mistake
+
+### Reverts
+- plugin events and deployment verification context (#588, #583) (#598)
+
 ## v0.33.0 — 2026-11-24
 
 ### Features
