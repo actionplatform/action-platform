@@ -7,6 +7,7 @@ import urllib.error
 import urllib.request
 
 from action_platform.abc.deploy_target import DeployTarget
+from action_platform.core import destination
 from action_platform.core.context import Check, Context, DeployResult
 from action_platform.core.exception import DeployError, ProviderError
 
@@ -91,7 +92,7 @@ class PipelinePublishedTarget(DeployTarget):
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=30) as res:
+            with destination.urlopen(req, timeout=30) as res:
                 return 200 <= res.status < 300
         except urllib.error.HTTPError as e:
             if e.code in (401, 403, 404):

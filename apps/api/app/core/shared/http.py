@@ -7,6 +7,7 @@ import urllib.parse
 import urllib.request
 from typing import Any, Optional
 
+from action_platform.core import destination
 from action_platform.core.exception import ProviderError
 
 TIMEOUT = 15
@@ -74,12 +75,12 @@ class HttpClient:
         return out
 
     def get_values(self, url: str, headers: dict[str, str]) -> list[Any]:
-        """Every row of a `values`/`next` paginated listing (Bitbucket)."""
+        """Every row of a `values`/`next` paginated listing (Bitbucket); a `next` off the listing's origin is refused."""
         out: list[Any] = []
         next_url: Optional[str] = url
 
         while next_url:
-            data = self.get_json(next_url, headers)
+            data = self.get_json(destination.same_origin(next_url, url), headers)
             out.extend(data.get("values", []))
             next_url = data.get("next")
 
@@ -107,7 +108,7 @@ class HttpClient:
         host = urllib.parse.urlparse(request.full_url).netloc
 
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+            with destination.urlopen(request, timeout=self.timeout) as response:
                 return json.loads(response.read() or b"null")
         except urllib.error.HTTPError as e:
             raise ProviderError(f"{e.code} from {host}") from e

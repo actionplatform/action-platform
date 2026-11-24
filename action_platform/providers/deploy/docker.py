@@ -14,6 +14,7 @@ import re
 import urllib.error
 import urllib.request
 
+from action_platform.core import destination
 from action_platform.core.exception import ConfigError, ProviderError
 from action_platform.providers.deploy.pipeline_published import PipelinePublishedTarget
 
@@ -97,7 +98,7 @@ class DeployDocker(PipelinePublishedTarget):
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=30) as res:
+            with destination.urlopen(req, timeout=30) as res:
                 token = json.loads(res.read()).get("token") or ""
         except (urllib.error.URLError, ValueError):
             return {}
@@ -114,7 +115,7 @@ class DeployDocker(PipelinePublishedTarget):
             )
 
             try:
-                with urllib.request.urlopen(req, timeout=30) as res:
+                with destination.urlopen(req, timeout=30) as res:
                     return 200 <= res.status < 300
             except urllib.error.HTTPError as e:
                 if e.code == 404:
