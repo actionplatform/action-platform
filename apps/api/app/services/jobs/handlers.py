@@ -10,7 +10,6 @@ from action_platform.abc.ci_runner import CIRunner
 from action_platform.core.context import DeployResult
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.scopes import shape_of
-from action_platform.providers.ci import build_ci_runner
 from action_platform.settings import settings
 from app.core.auth.crypto import Sealer
 from app.core.db.database import Database
@@ -29,7 +28,7 @@ from app.schemas import (
 from app.services.activity import ActivityService
 from app.services.ci import CiService
 from app.services.projects.apps import AppService
-from app.services.deployments import DeployEnv, DeploymentRecords
+from app.services.deployments import AppCiRunners, DeployEnv, DeploymentRecords
 from app.services.integrations.hosts.directory import IntegrationsDirectory
 from app.services.projects.organization_import.directory import ImportDirectory
 from app.services.deployments.identity import AppIdentity
@@ -103,28 +102,8 @@ class JobHandlers:
         return SourceCredentials(**creds.as_dict()) if creds else None
 
     def _ci_runners(self, ctx: JobContext) -> list[CIRunner]:
-        """The app's connected CI server with its own credentials, for the targets it runs — a Jenkins job a deploy starts."""
-        app, organization = ctx.app, ctx.organization
-
-        if app is None or organization is None or not app.ci_host_id:
-            return []
-
         with self.database.session() as db:
-            creds = IntegrationsDirectory(db, self.sealer).ci_credentials_for(
-                organization.id, app.ci_host_id
-            )
-
-        if creds is None:
-            return []
-
-        return [
-            build_ci_runner(
-                creds.kind,
-                base_url=creds.base_url,
-                token=creds.token,
-                username=creds.username,
-            )
-        ]
+            return AppCiRunners(db, self.sealer).of(ctx.app)
 
     def release(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
