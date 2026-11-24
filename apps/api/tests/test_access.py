@@ -40,9 +40,16 @@ class GateCase(TempCase):
         self.repo = platform_repo(self.tmp_path)
         git(self.repo, "checkout", "-q", "main")
         self.url = self.repo.as_uri()
+        from app.core.auth.secrets import Secrets
+
         signed = self.client.post(
             "/api/auth/sign-up",
-            json={"name": "Ana", "email": "ana@example.com", "password": "password1"},
+            json={
+                "name": "Ana",
+                "email": "ana@example.com",
+                "password": "password1",
+                "setup_token": Secrets("s3cret").setup_token(),
+            },
         ).json()
         self.session = signed["session"]["token"]
         self.user_id = signed["user"]["id"]

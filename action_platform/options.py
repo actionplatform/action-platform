@@ -168,6 +168,7 @@ class ApiConfig:
     allow_unauthenticated: bool = False
     auth_secret: str = ""
     public_url: str = ""
+    setup_token: str = ""
     forwarded_allow_ips: str = "*"
     trusted_proxies: str = (
         "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fc00::/7"
@@ -180,6 +181,7 @@ class ApiConfig:
             allow_unauthenticated=env.get("AP_ALLOW_UNAUTHENTICATED", "") == "1",
             auth_secret=secret("AP_AUTH_SECRET", "BETTER_AUTH_SECRET", env=env),
             public_url=env.get("AP_PUBLIC_URL") or env.get("PUBLIC_URL", ""),
+            setup_token=secret("AP_SETUP_TOKEN", env=env),
             forwarded_allow_ips=env.get("AP_FORWARDED_ALLOW_IPS", "*"),
             trusted_proxies=env.get("AP_TRUSTED_PROXIES", cls.trusted_proxies),
         )

@@ -7,7 +7,7 @@ from urllib.parse import quote, unquote
 from action_platform.core.exception import ConfigError
 
 SALT = b"action-platform"
-PURPOSES = ("api-token", "oauth-state", "source-host", "sign-in-state")
+PURPOSES = ("api-token", "oauth-state", "source-host", "sign-in-state", "setup")
 
 
 def hkdf(secret: bytes, salt: bytes, info: bytes, length: int) -> bytes:
@@ -39,6 +39,12 @@ class Secrets:
 
         return hkdf(self.secret, SALT, purpose.encode(), length)
 
+    def setup_token(self) -> str:
+        """The one-time token the first sign-up needs: the same in every process that shares the secret, short enough to type."""
+        code = base64.b32encode(self.subkey("setup", 10)).decode()
+
+        return "-".join(code[i : i + 4] for i in range(0, 16, 4))
+
     def signature(self, value: str) -> str:
         return base64.b64encode(
             hmac.new(self.secret, value.encode(), hashlib.sha256).digest()
@@ -55,3 +61,12 @@ class Secrets:
             return None
 
         return value if hmac.compare_digest(signature, self.signature(value)) else None
+
+
+def same_setup_token(given: str, expected: str) -> bool:
+    def normal(value: str) -> str:
+        return "".join(c for c in value.upper() if c.isalnum())
+
+    return bool(normal(expected)) and hmac.compare_digest(
+        normal(given), normal(expected)
+    )

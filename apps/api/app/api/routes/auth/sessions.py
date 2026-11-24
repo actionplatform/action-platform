@@ -40,6 +40,7 @@ def status(
         organizations=organizations,
         password_recovery=request.app.state.mailer is not None,
         google=request.app.state.google is not None,
+        setup="open" if configured and users == 0 else "closed",
     )
 
 
@@ -49,7 +50,7 @@ def sign_up(
     auth: AuthDep,
 ) -> schemas.Signed:
     user, session = auth.sign_up(
-        body.name, body.email, body.password, body.invitation_id
+        body.name, body.email, body.password, body.invitation_id, body.setup_token
     )
 
     return signed(auth, user, session)
