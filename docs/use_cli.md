@@ -3,7 +3,7 @@
 ```bash
 pipx install action-platform          # library + CLI
 pip install "action-platform[mcp]"    # + MCP server
-pip install ./apps/api    # + the JSON API the web app uses
+pip install ./apps/api    # + the JSON API the web app uses (from a checkout of the repository)
 ```
 
 ## Scaffold
@@ -40,15 +40,15 @@ See [git-flow](concept_git_flow.md).
 
 ```bash
 action-platform release [patch|minor|major|X.Y.Z] [--dry-run] [--rc|--stable] [--component web]
-action-platform scopes                                    # the repository's [[scopes]]; none means it does not deploy
-action-platform readiness [--version X.Y.Z] [--target name] [--scope name]
-action-platform deploy [--version X.Y.Z] [--target name] [--scope name] [--dry-run]   # a dispatched Jenkins target needs the app's connected server: deploy it from the platform
-action-platform rollback [--target name] [--to X.Y.Z] [--stage …]
+action-platform scopes                                    # the repository's [[scopes]]: name, kind, criticality; none means it does not deploy
+action-platform readiness [--version X.Y.Z] [--target name] [--stage|--scope name]
+action-platform deploy [--version X.Y.Z] [--target name] [--stage|--scope name] [--dry-run]   # a dispatched Jenkins target needs the app's connected server: deploy it from the platform
+action-platform rollback [X.Y.Z] [--target name] [--stage|--scope name]
 action-platform diagnose [--target name]
 action-platform destroy [--target name]
-action-platform deployments [--app id|name] [--sync]      # on the hosted platform: every target, what arrived at each
+action-platform deployments [--app id|name] [--sync]      # on the hosted platform: every target, what arrived at each; --sync asks the observed pipelines first
 action-platform logs <job-id> [--follow]                  # on the hosted platform: what the worker wrote for a job, live with -f
-action-platform deploy-record <target> <version> [--stage s] [--url u] [--failed]
+action-platform deploy-record <target> <version> [--stage|--scope s] [--url u] [--failed] [--app id|name]   # on the hosted platform: write down a delivery made outside it
 ```
 
 `release` plans first (refuses a dirty tree, an existing version or tag), then bumps `LAST_VERSION`, prepends `CHANGELOG.md`, syncs `pyproject.toml` / `package.json` / `Cargo.toml` / `composer.json` / `pom.xml`, `__version__` and version constants, commits `chore(release): X.Y.Z`, tags, pushes, publishes the release on the source host and triggers CI runners. A push the remote refuses undoes the commit and the tag. Off `main`/`master` the version is `X.Y.Z-rc.N`. `--component <name>` releases one [component](concept_releases.md).

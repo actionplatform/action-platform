@@ -72,7 +72,7 @@ How a row is born depends on the executor:
 | `platform` | the worker writes it as the `deploy` job runs |
 | `github_actions`, `gitlab_ci`, `bitbucket_pipelines` | the worker writes it as the `deploy` job dispatches the workflow and follows the run; a run of the same workflow started outside the platform on a release tag is imported on **Sync** unless the platform already recorded that version; with `observe = true`, every run on a release tag is imported and none is dispatched |
 | `jenkins` | the builds of the target's `job` — version from the build's tag or parameter, scope from a parameter or the target's only stage ([below](#observed-builds)); with `observe = false`, the worker writes it as the `deploy` job starts the build and follows it |
-| `manual` | `POST /api/v1/apps/{id}/deployments`, `action-platform deploy record` |
+| `manual` | `POST /api/v1/projects/{p}/apps/{a}/deployments`, `action-platform deploy-record`, the `record_deployment` tool |
 
 ## Observed builds
 
@@ -195,7 +195,7 @@ A job is one row in `job`: kind, status (`queued` → `running` → `done` or `f
 
 ## Redeploy and rollback
 
-Deploying an older release to a stage is the rollback: pick it in the Deploy card, or **Redeploy** on its row in the history. There is no separate state to restore; the tag is the state. `action-platform rollback --stage prod` from the CLI is the target's own undo — on `aws/lambda` a CloudFormation `rollback-stack` to the previous stack state, which cannot name a version; `--to X.Y.Z` is refused there and a deploy of that release does the job.
+Deploying an older release to a stage is the rollback: pick it in the Deploy card, or **Redeploy** on its row in the history. There is no separate state to restore; the tag is the state. `action-platform rollback --stage prod` from the CLI is the target's own undo — on `aws/lambda` a CloudFormation `rollback-stack` to the previous stack state, which cannot name a version; naming a version is refused there and a deploy of that release does the job.
 
 ## Leaving the cloud
 
