@@ -231,17 +231,14 @@ class Workspaces:
         if (root / CONFIG_FILE).exists() or not (root / ".git").exists():
             return []
 
-        ci = (
-            "gitlab"
-            if "gitlab" in entry.url
-            else "bitbucket"
-            if "bitbucket" in entry.url
-            else "github"
-        )
-
         try:
-            plan = install(root, type_="web", ci=ci, name=entry.name)
+            plan = install(root, type_="web", name=entry.name)
         except InstallError:
-            plan = install(root, type_="web", language="none", ci=ci, name=entry.name)
+            try:
+                plan = install(root, type_="web", language="none", name=entry.name)
+            except InstallError:
+                plan = install(
+                    root, type_="web", language="none", ci="none", name=entry.name
+                )
 
         return plan.created

@@ -23,7 +23,7 @@ action-platform pr                      # target from the rules, body from the c
 action-platform release --dry-run       # shows the next version and changelog; drop --dry-run on main to publish
 ```
 
-Bring an existing repository in with `action-platform install` instead of `init`: it adds `platform.toml`, `LAST_VERSION` (from the newest `vX.Y.Z` tag, or `0.0.0`), `AGENTS.md`, the quality config, the CI files and the hooks, never overwriting a file you have.
+Bring an existing repository in with `action-platform install` instead of `init`: it adds `platform.toml`, `LAST_VERSION` (from the newest `vX.Y.Z` tag, or `0.0.0`), `AGENTS.md`, the quality config, the CI files and the hooks, never overwriting a file you have. The CI files are for the CI the repository already runs — `[project] ci` in an existing `platform.toml`, else a `Jenkinsfile`, `.gitlab-ci.yml`, `bitbucket-pipelines.yml` or `.github/workflows/` — and only without any of them for the remote's host; a repository with more than one needs `--ci`, and `--ci` naming another CI is applied with a warning that a second CI will run. `[source_host]` is filled for GitHub, GitLab (with `base_url` when self-hosted) and Bitbucket remotes.
 
 ## First project, hosted
 

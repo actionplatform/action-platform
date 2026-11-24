@@ -27,6 +27,13 @@ CI_FILES = {
     "none": [],
 }
 
+CI_MARKERS = {
+    "jenkins": "Jenkinsfile",
+    "gitlab": ".gitlab-ci.yml",
+    "bitbucket": "bitbucket-pipelines.yml",
+    "github": ".github/workflows",
+}
+
 AGENTS = """# AGENTS.md
 
 Rules an AI agent (or a new contributor) follows in this repo. Added by `action-platform install`; keep it current.
@@ -54,6 +61,8 @@ class Plan:
     hooks_installed: bool = False
     hooks_preserved: list[str] = field(default_factory=list)
     hooks_skipped: str | None = None
+    detected_ci: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 @slot("installer")
@@ -85,7 +94,16 @@ class Installer:
         if not self.repo.exists():
             raise InstallError(f"{self.root} is not a git repository")
 
-        ci = self.requested_ci or _existing_ci(self.root) or _ci_for_remote(self.repo)
+        detected = _ci_in_repository(self.root)
+        ci = self.requested_ci or _existing_ci(self.root)
+
+        if not ci and len(detected) > 1:
+            raise InstallError(
+                f"the repository already runs more than one CI ({', '.join(CI_MARKERS[d] for d in detected)}); "
+                "pass --ci with the one the platform's checks belong to, or --ci none"
+            )
+
+        ci = ci or (detected[0] if detected else _ci_for_remote(self.repo))
         language = (
             ""
             if self.requested_language == "none"
@@ -101,7 +119,18 @@ class Installer:
             if language
             else _any_leaf(repo, matrix)
         )
-        plan = Plan(root=self.root, language=language, type=self.type, ci=ci)
+        plan = Plan(
+            root=self.root,
+            language=language,
+            type=self.type,
+            ci=ci,
+            detected_ci=detected,
+            warnings=[
+                f"{CI_MARKERS[d]} found; installing {ci} CI files runs a second CI next to it"
+                for d in detected
+                if d != ci and ci != "none"
+            ],
+        )
 
         _write(
             plan,
@@ -198,6 +227,23 @@ def _ci_for_remote(repo: Repository) -> str:
     return "github"
 
 
+def _ci_in_repository(root: Path) -> list[str]:
+    """The CIs the repository already has, from their files."""
+    found = [
+        kind
+        for kind, marker in CI_MARKERS.items()
+        if kind != "github" and (root / marker).is_file()
+    ]
+    workflows = root / CI_MARKERS["github"]
+
+    if workflows.is_dir() and any(
+        p.suffix in (".yml", ".yaml") for p in workflows.iterdir()
+    ):
+        found.append("github")
+
+    return found
+
+
 def _existing_ci(root: Path) -> str | None:
     path = root / CONFIG_FILE
 
@@ -213,21 +259,46 @@ def _existing_ci(root: Path) -> str | None:
 def _platform_toml(
     repo: Repository, type_: str, language: str, ci: str, name: str | None = None
 ) -> str:
-    remote = repo.remote_url()
-    slug = ""
-
-    if "github.com" in remote:
-        slug = remote.split("github.com", 1)[1].strip(":/").removesuffix(".git")
-
+    kind, slug, base_url = _source_host(repo.remote_url())
     name = name or (slug.rsplit("/", 1)[-1] if slug else repo.path.name)
     text = f"[project]\nname = {toml_str(name)}\ntype = {toml_str(type_)}\nci = {toml_str(ci)}\nlanguage = {toml_str(language)}\n"
 
     if slug:
-        text += f'\n[source_host]\nkind = "github"\nrepo = {toml_str(slug)}\n'
+        text += f"\n[source_host]\nkind = {toml_str(kind)}\nrepo = {toml_str(slug)}\n"
+
+        if base_url:
+            text += f"base_url = {toml_str(base_url)}\n"
 
     text += '\n[release]\nstrategy = "semver"\nchangelog = "conventional"\n'
 
     return text
+
+
+def _source_host(remote: str) -> tuple[str, str, str]:
+    """The source host a remote URL points at — kind, `owner/name` path and, for a self-hosted GitLab, its base URL; empty when it is none the platform knows."""
+    found = re.match(
+        r"^(?:[a-z+]+://)?(?:[^@/]+@)?(?P<host>[^:/]+)(?::\d+)?[:/](?P<path>.+?)(?:\.git)?/?$",
+        remote.strip(),
+    )
+
+    if not found:
+        return "", "", ""
+
+    host, path = found.group("host").lower(), found.group("path").strip("/")
+
+    if host == "github.com":
+        return "github", path, ""
+
+    if host == "bitbucket.org":
+        return "bitbucket", path, ""
+
+    if host == "gitlab.com":
+        return "gitlab", path, ""
+
+    if "gitlab" in host:
+        return "gitlab", path, f"https://{host}"
+
+    return "", "", ""
 
 
 def _write(plan: Plan, rel: str, content: str, dry_run: bool) -> None:

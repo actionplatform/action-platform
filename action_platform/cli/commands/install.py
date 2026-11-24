@@ -22,7 +22,7 @@ def run(
     ci: str | None = typer.Option(
         None,
         "--ci",
-        help="github, gitlab, jenkins, bitbucket, or none for no pipeline files (default: platform.toml, else from the remote)",
+        help="github, gitlab, jenkins, bitbucket, or none for no pipeline files (default: platform.toml, else the CI the repository already has, else from the remote)",
     ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be created"),
 ) -> None:
@@ -34,6 +34,9 @@ def run(
     console.print(
         f"[bold]{plan.root.name}[/bold] — {plan.language} {plan.type}, ci {plan.ci}"
     )
+
+    for warning in plan.warnings:
+        console.print(f"  [yellow]![/yellow] {warning}")
 
     for rel in plan.created:
         console.print(f"  [green]+[/green] {rel}  ({verb})")

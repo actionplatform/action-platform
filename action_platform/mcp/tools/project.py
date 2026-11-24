@@ -152,6 +152,8 @@ def register(mcp: Any) -> None:
             "language": plan.language,
             "type": plan.type,
             "ci": plan.ci,
+            "detected_ci": plan.detected_ci,
+            "warnings": plan.warnings,
             "created": plan.created,
             "kept": plan.skipped,
             "hooks_installed": plan.hooks_installed,

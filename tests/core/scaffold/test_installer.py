@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import subprocess
+import unittest
+from unittest import mock
 
 from action_platform.core.scaffold import installer
 from action_platform.core.scaffold.installer import InstallError
@@ -209,3 +211,107 @@ class CiFollowsTheRemoteTest(TempCase):
 
         self.assertEqual(plan.ci, "bitbucket")
         self.assertIn("bitbucket-pipelines.yml", plan.created)
+
+
+class ExistingCiTest(InstallCase):
+    def setUp(self):
+        super().setUp()
+        (self.repo / ".github/workflows/code-quality.yml").unlink()
+        (self.repo / ".github/workflows").rmdir()
+        (self.repo / ".github").rmdir()
+
+    def test_a_jenkinsfile_keeps_github_workflows_out(self):
+        (self.repo / "Jenkinsfile").write_text("pipeline {}\n")
+
+        plan = installer.install(self.repo, dry_run=True)
+
+        self.assertEqual(plan.ci, "jenkins")
+        self.assertEqual(plan.detected_ci, ["jenkins"])
+        self.assertEqual(plan.warnings, [])
+        self.assertEqual((self.repo / "Jenkinsfile").read_text(), "pipeline {}\n")
+        self.assertFalse(any(".github" in f for f in plan.created))
+
+    def test_gitlab_and_bitbucket_files_are_detected(self):
+        (self.repo / ".gitlab-ci.yml").write_text("stages: []\n")
+        self.assertEqual(installer.install(self.repo, dry_run=True).ci, "gitlab")
+
+        (self.repo / ".gitlab-ci.yml").unlink()
+        (self.repo / "bitbucket-pipelines.yml").write_text("pipelines: {}\n")
+        self.assertEqual(installer.install(self.repo, dry_run=True).ci, "bitbucket")
+
+    def test_two_cis_need_a_choice(self):
+        (self.repo / "Jenkinsfile").write_text("pipeline {}\n")
+        (self.repo / ".github/workflows").mkdir(parents=True)
+        (self.repo / ".github/workflows/deploy.yaml").write_text("on: push\n")
+
+        with self.assertRaisesRegex(InstallError, "Jenkinsfile, .github/workflows"):
+            installer.install(self.repo, dry_run=True)
+
+        plan = installer.install(self.repo, ci="jenkins", dry_run=True)
+        self.assertEqual(plan.ci, "jenkins")
+        self.assertEqual(
+            plan.warnings,
+            [
+                ".github/workflows found; installing jenkins CI files runs a second CI next to it"
+            ],
+        )
+
+    def test_the_flag_wins_with_a_warning(self):
+        (self.repo / "Jenkinsfile").write_text("pipeline {}\n")
+
+        plan = installer.install(self.repo, ci="github", dry_run=True)
+
+        self.assertEqual(plan.ci, "github")
+        self.assertIn(".github/workflows/gitflow.yml", plan.created)
+        self.assertIn("Jenkinsfile found", plan.warnings[0])
+        self.assertEqual(
+            installer.install(self.repo, ci="none", dry_run=True).warnings, []
+        )
+
+    def test_platform_toml_ci_wins_over_files(self):
+        (self.repo / ".github/workflows").mkdir(parents=True)
+        (self.repo / ".github/workflows/build.yml").write_text("on: push\n")
+        (self.repo / "Jenkinsfile").write_text("pipeline {}\n")
+        (self.repo / "platform.toml").write_text(
+            '[project]\nname = "x"\nci = "jenkins"\nlanguage = "python"\n'
+        )
+
+        plan = installer.install(self.repo, dry_run=True)
+
+        self.assertEqual(plan.ci, "jenkins")
+        self.assertFalse(any(".github" in f for f in plan.created))
+
+
+class SourceHostTest(unittest.TestCase):
+    def test_remotes(self):
+        cases = {
+            "git@github.com:acme/app.git": ("github", "acme/app", ""),
+            "https://github.com/acme/app": ("github", "acme/app", ""),
+            "https://gitlab.com/acme/group/app.git": (
+                "gitlab",
+                "acme/group/app",
+                "",
+            ),
+            "git@gitlab.example.com:team/app.git": (
+                "gitlab",
+                "team/app",
+                "https://gitlab.example.com",
+            ),
+            "ssh://git@bitbucket.org/acme/app.git": ("bitbucket", "acme/app", ""),
+            "https://git.example.com/acme/app.git": ("", "", ""),
+            "": ("", "", ""),
+        }
+
+        for remote, expected in cases.items():
+            self.assertEqual(installer._source_host(remote), expected, remote)
+
+    def test_platform_toml_names_a_self_hosted_gitlab(self):
+        repo = mock.Mock()
+        repo.remote_url.return_value = "https://gitlab.example.com/team/app.git"
+
+        text = installer._platform_toml(repo, "web", "python", "gitlab")
+
+        self.assertIn(
+            '[source_host]\nkind = "gitlab"\nrepo = "team/app"\nbase_url = "https://gitlab.example.com"\n',
+            text,
+        )
