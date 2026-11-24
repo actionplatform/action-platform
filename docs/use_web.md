@@ -178,6 +178,8 @@ People, roles and invitations. **Add member** creates the account or attaches an
 
 Everything signed in as you (also the key icon next to your name): API tokens across organizations — scope, reach, the programs using them, last used, expiry — and browser sessions, each revocable at once. **New token** creates a bearer token for a machine with no browser to approve a login: a name, the scopes your role allows and the reach (one organization or all, optionally one project or app); it is shown once, valid 90 days (30 with Admin), and goes to `action-platform login <url> --token` or `AP_TOKEN`.
 
+The **Password** card changes your own password: the current one and a new one of at least 8 characters, typed twice. A wrong current password changes nothing. This browser stays signed in; every other browser session ends and every API token of yours is revoked, so the CLI and the MCP servers signed in as you have to log in again. An account that has only ever used Google has no current password to give: use *Forgot your password?* or ask an operator ([operations](start_operations.md#users-and-tokens)).
+
 ## Plugins
 
 One card per plugin the platform runs, with its version. **Configure** opens the settings the plugin declares, kept per organization; a plugin that failed to load shows the error. There is no marketplace: a plugin ships inside the platform's image ([plugins](use_plugins.md)).
