@@ -32,7 +32,23 @@ The git hooks the CLI installs ask the core (`action-platform gitflow-check`) wh
 
 ## On the hosted platform
 
-The API image bundles the plugins the platform runs: `apx-aws-lambda` is a dependency of the API, discovered through its entry point like any other. Bundling — not a marketplace — is the deliberate choice for the hosted platform: an image is reviewed and versioned as a whole, API and worker always run the same plugin code, and nothing installs or restarts at runtime. Adding a plugin to the platform is a dependency bump and a new image. `GET /api/v1/plugins` lists what the image carries (and what failed to load); a plugin's options are the only thing set at runtime, per organization.
+The API image bundles the plugins the platform runs: `apx-aws-lambda` and `apx-dokploy` are dependencies of the API, discovered through their entry points like any other. Bundling — not a marketplace — is the deliberate choice for the hosted platform: an image is reviewed and versioned as a whole, API and worker always run the same plugin code, and nothing installs or restarts at runtime. Adding a plugin to the platform is a dependency bump and a new image. `GET /api/v1/plugins` lists what the image carries (and what failed to load); a plugin's options are the only thing set at runtime, per organization.
+
+A self-hosted platform that needs a plugin the official image does not carry builds its own `api` image on top of it — in the compose, for example:
+
+```yaml
+  api:
+    image: my-ap-api:0.41.0-plugins
+    pull_policy: build
+    build:
+      dockerfile_inline: |
+        FROM actionplatformio/action-platform-api:0.41.0
+        USER root
+        RUN pip install --no-cache-dir apx-github==0.1.0 apx-jenkins==0.1.0 apx-sentry==0.1.0
+        USER app
+```
+
+Write the base tag literally in `FROM` and keep it equal to the `worker` and `migrate` images. A plugin's `secret` options are sealed only by an API that carries the plugin, so build the image before filling them in.
 
 ## Options
 
