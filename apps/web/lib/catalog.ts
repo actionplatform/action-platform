@@ -1,4 +1,4 @@
-import { BookOpen, Bot, Cloud, Cog, FileBox, GitFork, Globe, type LucideIcon, Package, Puzzle } from "lucide-react";
+import { BookOpen, Bot, Cloud, Cog, FileBox, GitFork, Globe, type LucideIcon, Package, Puzzle, Timer } from "lucide-react";
 import type { Matrix } from "./api";
 
 export type Leaf = Matrix["projects"][number];
@@ -9,6 +9,7 @@ export const TYPE_ICONS: Record<string, LucideIcon> = {
   web: Globe,
   library: Package,
   automation: Cog,
+  job: Timer,
   worker: Cog,
   bot: Bot,
   docs: BookOpen,
