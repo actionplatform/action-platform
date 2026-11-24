@@ -80,6 +80,12 @@ A clone is kept only while the organization can still read the repository. It is
 | a refresh fails (token revoked, access removed, repository gone) | that source's clone |
 | the organization is deleted | every clone of the organization |
 
+## How a template is rendered
+
+Every cookiecutter template, official or not, renders in a separate process, in a temporary directory of its own, with a sandboxed Jinja environment (no access to Python internals from a template or from the values typed in the wizard). That process gets only `PATH` and the locale from the environment, with a `HOME` and `TMPDIR` of its own: no API secret, database URL or source host token reaches it. The result is copied into the project afterwards.
+
+Only the official repository (`ACTION_PLATFORM_TEMPLATES` or its clone) and the overlays of installed plugins run cookiecutter hooks. A template from any other repository renders text only and is refused when it has `hooks/` (`pre_prompt`, `pre_gen_project`, `post_gen_project`), or `_extensions`, `_jinja2_env_vars`, `template` or `templates` in its `cookiecutter.json`. In every template, plain repositories and plain overlays, a symlink must point at a file inside the same template; one that leaves it, or points at a directory, is refused. `{% include %}` reads only files of the template itself.
+
 ## Adding one
 
 1. In the templates repository, add `projects/<type>/<stack>/<name>/` with a `cookiecutter.json` (`project_name`, `project_slug`, `description`, `package_name`, `github_owner`, `author`, `license`, `source_host`, `ci` — owner and author empty, licence `none` by default) and a `{{cookiecutter.project_slug}}/` tree.
