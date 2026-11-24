@@ -21,6 +21,7 @@ class Lambda(Plugin):
             action_label="Connect AWS",
             action_url="https://console.aws.amazon.com/?issuer={issuer}",
             action_copy="connect {issuer} {organization}",
+            default="arn:aws:iam::0:role/deploy",
         )
     ]
 
@@ -109,6 +110,7 @@ class PluginsApiTest(GateCase):
                     "action_label": "Connect AWS",
                     "action_url": "https://console.aws.amazon.com/?issuer={issuer}",
                     "action_copy": "connect {issuer} {organization}",
+                    "default": "arn:aws:iam::0:role/deploy",
                 }
             ],
         )

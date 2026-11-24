@@ -102,6 +102,7 @@ class PluginOption(BaseModel):
     action_label: str = ""
     action_url: str = ""
     action_copy: str = ""
+    default: str = ""
 
 
 class PluginRow(BaseModel):
