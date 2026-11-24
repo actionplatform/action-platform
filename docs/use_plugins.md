@@ -52,7 +52,7 @@ Write the base tag literally in `FROM` and keep it equal to the `worker` and `mi
 
 ## Options
 
-A plugin keeps what it needs to remember in its own options store, WordPress-style: `surface.options.get("channel")`, `set`, `delete`, `all` — a JSON file per plugin on a machine (`~/.action-platform/plugins/<slug>.json`; `AP_HOME` moves it), the `plugin_option` table on the hosted platform, one set per organization: `GET/PUT /api/v1/plugins/{slug}/options` reads and replaces the caller's organization's values (`org.manage`), and rows with an empty organization are platform-wide defaults an organization's values override. A deploy job carries only its organization's options.
+A plugin keeps what it needs to remember in its own options store, WordPress-style: `surface.options.get("channel")`, `set`, `delete`, `all` — a JSON file per plugin on a machine (`~/.action-platform/plugins/<slug>.json`; `AP_HOME` moves it), the `plugin_option` table on the hosted platform, one set per organization: `GET/PUT /api/v1/plugins/{slug}/options` reads and replaces the caller's organization's values (`org.manage`; `Remote.plugin_options` and `Remote.set_plugin_options` from the CLI side; a slug the image does not run is refused), and rows with an empty organization are platform-wide defaults an organization's values override. A deploy job carries only its organization's options.
 
 ## Index
 
