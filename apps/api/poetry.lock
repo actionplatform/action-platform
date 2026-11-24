@@ -132,14 +132,14 @@ dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
 
 [[package]]
 name = "apx-github"
-version = "0.1.0"
+version = "0.2.0"
 description = "Action Platform plugin for GitHub: organization access and read-only checks of branch protection and repository settings."
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "apx_github-0.1.0-py3-none-any.whl", hash = "sha256:049ebf97c6160d0e7ffad9e9c555989771bd2ef798134f4c57b2cb389ac27de8"},
-    {file = "apx_github-0.1.0.tar.gz", hash = "sha256:fe62bd3f316e78057745d859dea49f7cf9c413f5977a618c67a8c32c1385c484"},
+    {file = "apx_github-0.2.0-py3-none-any.whl", hash = "sha256:3693244927fd1a33f2ad4fbb25edbb759f775cde75318a202f021dc71478a227"},
+    {file = "apx_github-0.2.0.tar.gz", hash = "sha256:76cb42112b7e00bb6216de6f4f8e2ba778950481e3b831e135fc8ef28d2f45e7"},
 ]
 
 [package.dependencies]
@@ -168,14 +168,14 @@ dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
 
 [[package]]
 name = "apx-sentry"
-version = "0.1.0"
+version = "0.2.0"
 description = "Sentry for Action Platform: organization and team access, and read-only tools for a release's new issues and the errors after a deploy."
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "apx_sentry-0.1.0-py3-none-any.whl", hash = "sha256:ac3257798a4eb4544bb23c50e62616f50092071e57556f93ffa5df454e2790bc"},
-    {file = "apx_sentry-0.1.0.tar.gz", hash = "sha256:78b7ebb0d98558c7a0d2d36f6d892673c3d4f0698f053f4c991a22b604230152"},
+    {file = "apx_sentry-0.2.0-py3-none-any.whl", hash = "sha256:c38d24734f71cd8dd3353f48ecc19d1d05e7deeb0728b55775733c645a0f754b"},
+    {file = "apx_sentry-0.2.0.tar.gz", hash = "sha256:38afa44d43b3767151550a490fa39c365c022b4c24b69b614492d3c690850a8e"},
 ]
 
 [package.dependencies]
@@ -3584,4 +3584,4 @@ packaging = ">=24.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "bc2b71b23e76665d49e3bfe9d1969a6dee03c9642d1fbe0f5250130f0b229f52"
+content-hash = "cfb86427e9554fbf614aa92f531b0a973c0b36ca7882d13d3410dd56a10f18f8"
