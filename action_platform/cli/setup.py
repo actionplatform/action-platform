@@ -2,6 +2,7 @@
 
 import typer
 
+from action_platform.cli.commands import access as access_cmd
 from action_platform.cli.commands import branch as branch_cmd
 from action_platform.cli.commands import cloud as cloud_cmd
 from action_platform.cli.commands import deploy as deploy_cmd
@@ -46,4 +47,5 @@ app.command("whoami")(login_cmd.whoami)
 app.add_typer(cloud_cmd.app, name="cloud")
 app.add_typer(service_cmd.app, name="service")
 app.add_typer(plugin_cmd.app, name="plugin")
+app.add_typer(access_cmd.app, name="access")
 registry.installed().register(None, app)

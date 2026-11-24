@@ -30,7 +30,7 @@ def list_() -> None:
 
     table = Table(box=None, pad_edge=False)
 
-    for column in ("slug", "version", "enabled", "package", "description"):
+    for column in ("slug", "version", "enabled", "access", "package", "description"):
         table.add_column(column)
 
     for row in rows:
@@ -38,6 +38,7 @@ def list_() -> None:
             row["slug"],
             row["version"],
             "yes" if row["enabled"] else "no",
+            "yes" if row.get("access") else "",
             row["package"],
             row["description"],
         )
