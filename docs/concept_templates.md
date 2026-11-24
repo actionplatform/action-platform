@@ -6,9 +6,11 @@ action-platform init --list
 
 | Type | Stacks | Ready with |
 |------|--------|-----------|
-| `web` | python (FastAPI, FastMCP), go (Gin), node (Fastify, React), java (Spring), kotlin (Spring), ruby (Sinatra) | `/health` (never `/ping` — API Gateway keeps that path on `execute-api`), versioned API, tests, lint, CI |
+| `web` | python (FastAPI, FastMCP, remote MCP with OAuth bearer auth), go (Gin), node (Fastify, React), java (Spring), kotlin (Spring), ruby (Sinatra) | `/health` (never `/ping` — API Gateway keeps that path on `execute-api`), versioned API, tests, lint, CI |
 | `library` | python, go, php, node, java, rust | packaging, version test, publish workflow |
-| `docs` | mkdocs | Material theme, strict build in CI |
+| `automation` | python (basic, scheduled) | `python -m app` entrypoints, tests per task |
+| `job` | python | runs once and exits with a status code, logs to stdout, config from env, tests; cron, Dokploy and Jenkinsfile schedule examples |
+| `docs` | mkdocs, markdown | mkdocs: Material theme, strict build in CI; markdown: plain pages, `AGENTS.md`/`CLAUDE.md`, an example agent skill, link and format checks in CI, no build |
 | `plugin` | chrome | Manifest V3, popup, background, tests, store zip |
 | `empty` | — | `platform.toml` + code quality only |
 
