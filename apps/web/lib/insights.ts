@@ -3,6 +3,7 @@ import { v1 } from "./v1";
 
 export type Dashboard = Schemas["Dashboard"];
 export type DashboardEvent = Schemas["Event"];
+export type ActiveDeployment = Schemas["ActiveDeployment"];
 export type Timeline = Schemas["Timeline"];
 
 export async function dashboardOf(): Promise<Dashboard> {

@@ -38,6 +38,7 @@
   --status-ok: #4ade80;
   --status-warn: #facc15;
   --status-bad: #f87171;
+  --status-run: #60a5fa;
 }
 
 @theme inline {
@@ -59,6 +60,7 @@
   --color-status-ok: var(--status-ok);
   --color-status-warn: var(--status-warn);
   --color-status-bad: var(--status-bad);
+  --color-status-run: var(--status-run);
     --color-card: var(--surface);
   --color-muted: var(--surface-hover);
   --font-sans: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
