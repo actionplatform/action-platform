@@ -345,7 +345,7 @@ class DeploymentRecords:
     def _from_run(
         self, app: App, spec: TargetSpec, source: str, run: Run
     ) -> Optional[Deployment]:
-        version = version_from_ref(run.branch, spec.component)
+        version = spec.run_version(run.branch, run.params)
 
         if version is None or (spec.dispatched and self._shipped(app, spec, version)):
             return None
@@ -361,6 +361,7 @@ class DeploymentRecords:
             spec,
             spec.run_by,
             f"{source}:{run.number}",
+            stage=spec.run_stage(run.params),
             version=version,
             sha=run.sha,
             status=RUN_STATUS.get(run.status, "failure"),

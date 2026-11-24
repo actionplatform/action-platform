@@ -17,7 +17,7 @@ flowchart LR
 
 ## One rule
 
-**A deployment always references a release.** Whatever runs anywhere — the worker, a workflow, a Jenkins job, a person's terminal — it ships a tag `vX.Y.Z` (or `<component>/vX.Y.Z` for a component), never a branch or a working tree. A pipeline that publishes from a branch without a tag is a CI run, not a deployment, and the platform does not record it as one. What runs in the cloud is therefore always reproducible from the tag alone. Cutting a release is in [releases](concept_releases.md).
+**A deployment always references a release.** Whatever runs anywhere — the worker, a workflow, a Jenkins job, a person's terminal — it ships a tag `vX.Y.Z` (or `<component>/vX.Y.Z` for a component), never a branch or a working tree. A pipeline that publishes from a branch without naming a release — neither the tag it built nor a version parameter (below) — is a CI run, not a deployment, and the platform does not record it as one. What runs in the cloud is therefore always reproducible from the tag alone. Cutting a release is in [releases](concept_releases.md).
 
 ## Targets and executors
 
@@ -50,7 +50,7 @@ job = "team/app/publish"
 image = "ghcr.io/actionplatform/api"
 ```
 
-`run_by = "platform"` is the target the worker deploys itself through a plugin (below). `github_actions`, `gitlab_ci` and `bitbucket_pipelines` are *dispatched*: the deploy starts the target's `workflow` on the release tag with two inputs, `version` and `registry` — the registry the kind pairs with the scope's criticality: a `test` scope publishes to TestPyPI or the npm `next` dist-tag, any other to the registry itself; the scope's name is yours — follows the run in the job log until it ends, then asks the destination whether the version arrived — the pipeline publishes with its own credentials (trusted publishing, OIDC), the platform decides when and to which scope, and no registry token reaches it (strategy: [ADR 0010](https://github.com/actionplatform/strategy/blob/main/adr/0010-library-publishing.md)). `jenkins` is *observed*: the platform reads the builds of the job named on the target, turns each one that shipped a tag into a deployment record, and verifies the version at the destination. `stages`, when present, limits a target to some scopes; `registry` on the target overrides the pairing. The single `[deploy] target = "aws/lambda"` form is still read as one target named after its kind, run by the platform.
+`run_by = "platform"` is the target the worker deploys itself through a plugin (below). `github_actions`, `gitlab_ci` and `bitbucket_pipelines` are *dispatched*: the deploy starts the target's `workflow` on the release tag with two inputs, `version` and `registry` — the registry the kind pairs with the scope's criticality: a `test` scope publishes to TestPyPI or the npm `next` dist-tag, any other to the registry itself; the scope's name is yours — follows the run in the job log until it ends, then asks the destination whether the version arrived — the pipeline publishes with its own credentials (trusted publishing, OIDC), the platform decides when and to which scope, and no registry token reaches it (strategy: [ADR 0010](https://github.com/actionplatform/strategy/blob/main/adr/0010-library-publishing.md)). `jenkins` is *observed*: the platform reads the builds of the job named on the target, turns each one that shipped a release into a deployment record, and verifies the version at the destination. `stages`, when present, limits a target to some scopes; `registry` on the target overrides the pairing. The single `[deploy] target = "aws/lambda"` form is still read as one target named after its kind, run by the platform.
 
 ## The record
 
@@ -71,8 +71,37 @@ How a row is born depends on the executor:
 |---|---|
 | `platform` | the worker writes it as the `deploy` job runs |
 | `github_actions`, `gitlab_ci`, `bitbucket_pipelines` | the worker writes it as the `deploy` job dispatches the workflow and follows the run; a run of the same workflow started outside the platform on a release tag is imported on **Sync** unless the platform already recorded that version |
-| `jenkins` | the builds of the target's `job` — version from the build's tag or parameter |
+| `jenkins` | the builds of the target's `job` — version from the build's tag or parameter, scope from a parameter or the target's only stage ([below](#observed-builds)) |
 | `manual` | `POST /api/v1/apps/{id}/deployments`, `action-platform deploy record` |
+
+## Observed builds
+
+A Jenkins job that deploys on a release often checks out a branch and receives the release as a build parameter, so the build's git ref names no release. Two optional keys on an observed target read the parameters instead:
+
+```toml
+[[deploy.targets]]
+name = "app-prod"
+kind = "docker"
+run_by = "jenkins"
+job = "team/app-prod"
+image = "ghcr.io/acme/app"
+stages = ["prod"]
+version_parameter = "RELEASE_TAG"
+
+[[deploy.targets]]
+name = "app"
+kind = "docker"
+run_by = "jenkins"
+job = "team/app"
+image = "ghcr.io/acme/app"
+version_parameter = "RELEASE_TAG"
+stage_parameter = "ENV"
+```
+
+- **Version.** The ref the build checked out wins when it is a release tag. Otherwise the value of `version_parameter` is the release: `v1.2.3`, `1.2.3` or `<component>/v1.2.3`. On a target with a `component`, a bare version is that component's; another component's tag is ignored. A build whose parameter names no release is not recorded.
+- **Scope.** The value of `stage_parameter` when the build has it; otherwise the target's single entry in `stages` when it lists exactly one — the one-job-per-environment setup; otherwise the row has no scope.
+
+Runs imported from a dispatched target carry no parameters, so their scope comes from a single entry in `stages` alone. Without the keys, a build is recorded only when it checked out a release tag, as before.
 
 ## Verified at the destination
 

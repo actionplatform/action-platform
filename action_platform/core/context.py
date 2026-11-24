@@ -92,6 +92,7 @@ class Run:
     started_at: Optional[datetime] = None
     duration_ms: int | None = None
     name: str | None = None
+    params: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
