@@ -1,5 +1,6 @@
 import type { Schemas } from "./api";
 import { serviceAccess } from "./api/access";
+import { instance } from "./api/instance";
 import { integrations } from "./api/integrations";
 import { jobs } from "./api/jobs";
 import { organization } from "./api/organization";
@@ -16,6 +17,7 @@ export type TemplateSourceRow = Schemas["TemplateSourceRow"];
 export type ImportsRow = Schemas["Imports"];
 export type ReleaseRow = Schemas["ReleaseRow"];
 export type PullRequestRow = Schemas["PullRequestRow"];
+export type InstanceHealthRow = Schemas["InstanceHealthOut"];
 export type JobRow = Schemas["JobOut"];
 export type CiHostRow = Schemas["CiHostRow"];
 export type CiRunRow = Schemas["CiRunRow"];
@@ -30,4 +32,4 @@ export type AccessWho = Schemas["Who"];
 export type AccessPlan = Schemas["Plan"];
 export type AccessChange = Schemas["Change"];
 
-export const v1 = { ...organization, ...projects, ...integrations, ...jobs, ...serviceAccess };
+export const v1 = { ...organization, ...projects, ...integrations, ...instance, ...jobs, ...serviceAccess };
