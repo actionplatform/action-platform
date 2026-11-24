@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import unittest
 from unittest import mock
 
@@ -37,7 +38,59 @@ class ToolSurfaceTest(McpCase):
                 "install_hooks",
                 "propose_pull_request",
                 "open_pull_request",
+                "list_scopes",
+                "readiness",
+                "job_logs",
+                "record_deployment",
             },
+        )
+
+    def test_cloud_and_service_name_what_the_matrix_offers(self):
+        tools = self.tools()
+
+        self.assertIn(
+            "docker",
+            tools["cloud_set"].input_schema["properties"]["cloud"]["description"],
+        )
+        self.assertIn(
+            "postgres",
+            tools["service_add"].input_schema["properties"]["service"]["description"],
+        )
+
+    def test_a_plugin_cloud_joins_the_cloud_description(self):
+        import json
+
+        from action_platform.core import extensions
+        from action_platform.mcp import build
+
+        overlays = self.tmp_path / "overlays"
+        overlays.mkdir()
+        (overlays / "index.json").write_text(
+            json.dumps({"clouds": [{"id": "dokploy", "description": "Dokploy"}]})
+        )
+        plugins = mock.Mock()
+        plugins.overlay_roots.return_value = [("dokploy", overlays)]
+
+        with mock.patch.object(extensions, "current", return_value=plugins):
+            server_ = build()
+
+        tools = {t.name: t for t in asyncio.run(server_.list_tools())}
+        description = tools["cloud_set"].input_schema["properties"]["cloud"][
+            "description"
+        ]
+
+        self.assertIn("dokploy", description)
+        self.assertIn("docker", description)
+
+    def test_without_a_matrix_on_this_machine_list_matrix_is_named(self):
+        from action_platform.mcp import build
+
+        self.setenv("ACTION_PLATFORM_TEMPLATES", str(self.tmp_path / "missing"))
+        tools = {t.name: t for t in asyncio.run(build().list_tools())}
+
+        self.assertIn(
+            "list_matrix",
+            tools["service_add"].input_schema["properties"]["service"]["description"],
         )
 
     def test_irreversible_tools_are_flagged(self):
@@ -55,6 +108,10 @@ class ToolSurfaceTest(McpCase):
         self.assertTrue(tools["gitflow_rules"].annotations.read_only_hint)
         self.assertFalse(tools["install_platform"].annotations.open_world_hint)
         self.assertFalse(tools["install_hooks"].annotations.destructive_hint)
+        self.assertTrue(tools["list_scopes"].annotations.read_only_hint)
+        self.assertTrue(tools["readiness"].annotations.read_only_hint)
+        self.assertTrue(tools["job_logs"].annotations.read_only_hint)
+        self.assertTrue(tools["record_deployment"].annotations.open_world_hint)
 
     def test_dry_run_is_the_default_where_it_matters(self):
         tools = self.tools()
@@ -88,6 +145,59 @@ class ReadOnlyToolsTest(McpCase):
 
         self.assertEqual(data["type"], "web")
         self.assertEqual(data["github_owner"], "acme")
+
+    def test_list_scopes_reads_platform_toml(self):
+        project = self.tmp_path / "p"
+        project.mkdir()
+        (project / "platform.toml").write_text(
+            '[project]\nname = "x"\n\n[[scopes]]\nname = "dev"\ncriticality = "test"\n\n'
+            '[[scopes]]\nname = "prod"\nkind = "job"\ncriticality = "high"\n'
+        )
+
+        data = self.call("list_scopes", project=str(project))
+
+        self.assertEqual(
+            data["items"],
+            [
+                {"name": "dev", "kind": "web", "criticality": "test"},
+                {"name": "prod", "kind": "job", "criticality": "high"},
+            ],
+        )
+        self.assertIn("critical", data["criticalities"])
+
+    def test_readiness_answers_with_a_verdict_and_the_checks(self):
+        from action_platform.core.context import Check
+        from action_platform.core.facade import ActionPlatform
+
+        project = self.tmp_path / "p"
+        project.mkdir()
+        (project / "platform.toml").write_text('[project]\nname = "x"\n')
+        checks = [
+            Check("aws.credentials", True, "ok"),
+            Check("aws.permissions", False, "may not deploy", fix="grant it"),
+        ]
+
+        with mock.patch.object(
+            ActionPlatform, "check_readiness", return_value=checks
+        ) as check:
+            data = self.call(
+                "readiness", project=str(project), scope="prod", version="1.2.3"
+            )
+
+        check.assert_called_once_with("prod", version="1.2.3", target=None)
+        self.assertEqual(
+            (data["stage"], data["verdict"], data["ok"]), ("prod", "blocked", False)
+        )
+        self.assertEqual(data["checks"][1]["fix"], "grant it")
+
+        with mock.patch.object(
+            ActionPlatform,
+            "check_readiness",
+            return_value=[Check("lockfile", False, "none", severity="warning")],
+        ):
+            data = self.call("readiness", project=str(project), scope="prod")
+
+        self.assertEqual(data["verdict"], "ok")
 
     def test_gitflow_rules(self):
         rules = self.call("gitflow_rules")

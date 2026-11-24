@@ -677,3 +677,96 @@ class ImportToolsTest(RemoteToolsCase):
         ):
             with self.subTest(tool=tool):
                 self.assertIn("org.manage", self.refused(server, tool, **args))
+
+
+class LocalHostedToolsTest(AppToolsCase):
+    """The local server's tools that reach the platform the CLI is logged in to."""
+
+    def setUp(self):
+        super().setUp()
+        from app.repositories.configuration.config_store import ConfigStore
+
+        from action_platform.mcp import build
+        from action_platform.remote.client import Remote
+
+        ConfigStore(self.app.state.db).set(
+            self.registry_id,
+            {
+                "project": {"name": "demo"},
+                "deploy": {
+                    "targets": [
+                        {
+                            "name": "pypi",
+                            "kind": "pypi",
+                            "run_by": "github_actions",
+                            "workflow": "publish.yml",
+                            "package": "demo",
+                        }
+                    ]
+                },
+            },
+        )
+        self.scope = FULL
+        self.patch(
+            Remote,
+            "from_credentials",
+            classmethod(lambda cls, server=None: cls(SERVER, self.token(self.scope))),
+        )
+        self.local = build()
+        self.checkout = self.tmp_path / "checkout"
+        self.checkout.mkdir()
+        (self.checkout / "platform.toml").write_text('[project]\nname = "demo"\n')
+
+    def test_record_deployment_finds_the_checkout_on_the_platform(self):
+        row = self.call(
+            self.local,
+            "record_deployment",
+            target="pypi",
+            version="1.0.0",
+            url="https://pypi.org/p/demo",
+            project=str(self.checkout),
+        )
+
+        self.assertEqual(
+            (row["target"], row["version"], row["executor"], row["status"]),
+            ("pypi", "1.0.0", "manual", "success"),
+        )
+        self.assertIn(
+            "nope",
+            self.refused(
+                self.local, "record_deployment", target="pypi", version="1", app="nope"
+            ),
+        )
+
+    def test_record_deployment_refuses_a_target_the_app_does_not_have(self):
+        self.assertIn(
+            "nope",
+            self.refused(
+                self.local,
+                "record_deployment",
+                target="nope",
+                version="1.0.0",
+                app="demo",
+            ),
+        )
+
+    def test_record_deployment_needs_app_release(self):
+        self.scope = "read,write"
+
+        self.assertIn(
+            "app.release",
+            self.refused(
+                self.local, "record_deployment", target="pypi", version="1", app="demo"
+            ),
+        )
+
+    def test_job_logs_reads_the_hosted_job(self):
+        from app.services.jobs import JobQueue
+
+        job = JobQueue(self.app.state.db).enqueue(
+            "deploy", {}, organization_id=self.org["id"], app_id="a1"
+        )
+
+        logs = self.call(self.local, "job_logs", job_id=job.id)
+
+        self.assertEqual((logs["lines"], logs["finished"]), ([], False))

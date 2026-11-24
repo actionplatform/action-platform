@@ -168,11 +168,20 @@ class DeploymentRow(Open):
     verified_at: Optional[str] = None
 
 
-class ScopeRow(Open):
-    id: str
+class ScopeSpecRow(Open):
     name: str
     kind: str
     criticality: str
+
+
+class ScopeSpecs(Open):
+    items: list[ScopeSpecRow]
+    kinds: list[str]
+    criticalities: list[str]
+
+
+class ScopeRow(ScopeSpecRow):
+    id: str
     created_at: datetime
 
 
@@ -659,6 +668,8 @@ __all__ = [
     "ImportTeam",
     "ImportPerson",
     "ImportPreview",
+    "ScopeSpecRow",
+    "ScopeSpecs",
     "ScopeRow",
     "Scopes",
     "Diagnosis",
