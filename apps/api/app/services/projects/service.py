@@ -12,7 +12,7 @@ from app.services.activity import ActivityService
 from app.services.projects.apps import AppService
 from app.services.workspace.app_context import AppContext
 from app.services.projects.organization_import.directory import ImportDirectory
-from app.core.errors import Invalid
+from app.core.errors import Conflict, Invalid
 
 
 class ProjectService:
@@ -45,6 +45,21 @@ class ProjectService:
 
         credentials = credentials_for(self.writes, org, None, {"url": url})
         entry = self.apps.add(url, None, SourceCredentials(**credentials), install)
+        existing = self.writes.app_by_registry_id(entry["id"])
+
+        if existing is not None:
+            app, owner = existing
+
+            if owner.organization_id != org.id:
+                raise Conflict(f"{entry['name']} is already on the platform")
+
+            if owner.id != project.id:
+                raise Conflict(
+                    f"{entry['name']} is already an app of project {owner.name}"
+                )
+
+            return app, entry
+
         app = self.writes.create_app(project.id, entry["id"], entry["name"], host_id)
         self.activity.sync_all(
             app.id, self.writes.credentials_for(org.id, host_id), GitUrl(url).repo
