@@ -8,6 +8,7 @@ from pathlib import Path
 from action_platform.core.context import PRRef
 from action_platform.core.flow.workflow import GitFlow
 from action_platform.testing.fixtures import git, template_repo
+from app.core.db.models import RegistryEntry
 from tests.test_access import GateCase
 
 ARCHIVED = """#!/bin/sh
@@ -198,6 +199,10 @@ class AdoptionTest(GateCase):
         self.assertEqual(result["done"]["state"], "installed")
         self.assertEqual(result["_summary"]["opened"], 1)
         self.assertEqual(result["_summary"]["failed"], 2)
+
+        with self.app.state.db.session() as s:
+            self.assertEqual(s.get(RegistryEntry, "r-shop").branch, "chore/platform")
+            self.assertEqual(s.get(RegistryEntry, "r-vault").branch, "")
 
         states = self.states()
         self.assertEqual(states["shop"]["state"], "pr_open")

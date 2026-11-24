@@ -266,12 +266,20 @@ class BulkInstall:
                 Config.from_toml(root / CONFIG_FILE), target.credentials
             )
             ref = flow.open_pr(config=config)
+            self._follow(target.registry_id, options.branch)
 
             return {
                 "state": "pr_open",
                 "pull_request": {"number": ref.number, "url": ref.url},
                 "plan": plan_view(plan, base, options.branch),
             }
+
+    def _follow(self, registry_id: str, branch: str) -> None:
+        """The app moves to the install branch, as after a commit from its page: its pending install files are in the pull request now."""
+        if self.registry.drafts is not None:
+            self.registry.drafts.clear(registry_id)
+
+        self.registry.set_branch(registry_id, branch)
 
     def _record(self, app_id: str, result: dict[str, Any]) -> None:
         plan = result.get("plan") or {}
