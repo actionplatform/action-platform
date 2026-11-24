@@ -42,6 +42,7 @@ from action_platform.remote.schemas import (
     Diagnosis,
     GitflowReport,
     Initialized,
+    InvitationRow,
     Job,
     JobLogs,
     ManifestText,
@@ -50,6 +51,7 @@ from action_platform.remote.schemas import (
     MemberRow,
     Ok,
     OrganizationRow,
+    PluginOptions,
     ProjectRow,
     PullRequestOpened,
     PullRequestPlan,
@@ -548,6 +550,51 @@ class Remote:
                 "projects/team",
                 {"project_id": project_id, "team_id": team_id},
                 organization,
+            ),
+        )
+
+    def remove_team_member(
+        self, team_id: str, user_id: str, organization: Optional[str] = None
+    ) -> None:
+        self._call("DELETE", f"teams/{team_id}/members/{user_id}", None, organization)
+
+    def remove_member(self, user_id: str, organization: Optional[str] = None) -> None:
+        self._call("DELETE", f"members/{user_id}", None, organization)
+
+    def invitations(self, organization: Optional[str] = None) -> list[InvitationRow]:
+        return _as(
+            list[InvitationRow], self._call("GET", "invitations", None, organization)
+        )
+
+    def invite(
+        self, email: str, role: str, organization: Optional[str] = None
+    ) -> InvitationRow:
+        return _as(
+            InvitationRow,
+            self._call(
+                "POST", "invitations", {"email": email, "role": role}, organization
+            ),
+        )
+
+    def cancel_invitation(self, id: str, organization: Optional[str] = None) -> None:
+        self._call("DELETE", f"invitations/{id}", None, organization)
+
+    def plugin_options(
+        self, slug: str, organization: Optional[str] = None
+    ) -> PluginOptions:
+        return _as(
+            PluginOptions,
+            self._call("GET", f"plugins/{slug}/options", None, organization),
+        )
+
+    def set_plugin_options(
+        self, slug: str, options: dict[str, Any], organization: Optional[str] = None
+    ) -> PluginOptions:
+        """Replaces the plugin's options: a key left out is deleted, except a secret, which an empty value keeps and `None` deletes."""
+        return _as(
+            PluginOptions,
+            self._call(
+                "PUT", f"plugins/{slug}/options", {"options": options}, organization
             ),
         )
 

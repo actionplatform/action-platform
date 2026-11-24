@@ -256,6 +256,25 @@ class MemberRow(Open):
     role_label: Optional[str] = None
 
 
+class InvitationRow(Open):
+    id: str
+    email: str
+    role: Optional[str] = None
+    status: str
+    expires_at: datetime
+    created_at: datetime
+    inviter: str
+
+
+class Invitation(InvitationRow):
+    link: str
+
+
+class PluginOptions(Open):
+    options: dict[str, Any] = Field(default_factory=dict)
+    secrets: list[str] = Field(default_factory=list)
+
+
 class Created(Open):
     id: str
     name: str
@@ -471,6 +490,9 @@ __all__ = [
     "ProjectRow",
     "TeamRow",
     "MemberRow",
+    "InvitationRow",
+    "Invitation",
+    "PluginOptions",
     "Created",
     "Ok",
     "CurrentContext",
