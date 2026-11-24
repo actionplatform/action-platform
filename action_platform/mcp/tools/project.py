@@ -1,7 +1,5 @@
 """Create and shape a project: init, cloud overlay, services, platform.toml."""
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Annotated, Any, Optional
 
@@ -10,7 +8,13 @@ from pydantic import Field
 from action_platform.core.wiring import wired
 from action_platform.core.scaffold import installer as installing
 from action_platform.core.manifest import Manifest
-from action_platform.core.scaffold.catalog import load_matrix
+from action_platform.core.exception import ActionPlatformError
+from action_platform.core.scaffold.catalog import (
+    Matrix,
+    load_matrix,
+    with_plugin_clouds,
+)
+from action_platform.core.scaffold.sources import LocalTemplateStore
 from action_platform.mcp import schemas
 from action_platform.mcp.annotations import READ_ONLY, REACHES_OUT, WRITES_LOCAL, tool
 
@@ -31,7 +35,37 @@ def _root(project: Optional[str]) -> Path:
     return Path(project).resolve() if project else Path.cwd()
 
 
+def offered() -> Matrix:
+    """The matrix this machine already has — the templates directory or the cached clone, never a fetch — with the clouds of the enabled plugins."""
+    config = LocalTemplateStore().config
+    root = Path(config.dir).expanduser() if config.dir else config.cache
+
+    try:
+        matrix = Matrix.from_json(root / "index.json")
+    except ActionPlatformError:
+        matrix = Matrix()
+
+    return with_plugin_clouds(matrix)
+
+
+def described(kind: str, names: list[str]) -> str:
+    if not names:
+        return f"A {kind} from list_matrix"
+
+    return f"One of {', '.join(sorted(names))}; list_matrix describes each and lists more from a custom `source`"
+
+
 def register(mcp: Any) -> None:
+    matrix = offered()
+    Cloud = Annotated[
+        str, Field(description=described("cloud", [c.name for c in matrix.clouds]))
+    ]
+    ServiceName = Annotated[
+        str,
+        Field(description=described("service", [x.name for x in matrix.services])),
+    ]
+    providers = sorted({p for x in matrix.services for p in x.providers})
+
     @tool(mcp, annotations=WRITES_LOCAL)
     def init_project(
         type: Annotated[str, Field(description="web, library, docs, plugin, empty")],
@@ -43,7 +77,10 @@ def register(mcp: Any) -> None:
         ] = "github",
         cloud: Annotated[
             Optional[str],
-            Field(description="Deploy overlay: aws/lambda, aws/amplify, docker"),
+            Field(
+                description="Deploy overlay. "
+                + described("cloud", [c.name for c in matrix.clouds])
+            ),
         ] = None,
         output: Annotated[
             Optional[str], Field(description="Parent directory; default is the cwd.")
@@ -83,7 +120,7 @@ def register(mcp: Any) -> None:
 
     @tool(mcp, annotations=WRITES_LOCAL)
     def cloud_set(
-        cloud: Annotated[str, Field(description="aws/lambda, aws/amplify, docker")],
+        cloud: Cloud,
         project: ProjectDir = None,
         source: TemplateSourceArg = None,
     ) -> schemas.CloudSet:
@@ -100,10 +137,17 @@ def register(mcp: Any) -> None:
 
     @tool(mcp, annotations=WRITES_LOCAL)
     def service_add(
-        service: Annotated[str, Field(description="postgres, ...")],
+        service: ServiceName,
         provider: Annotated[
             Optional[str],
-            Field(description="docker, aws-rds, ...; default is the first listed"),
+            Field(
+                description=(
+                    f"One of the service's providers ({', '.join(providers)})"
+                    if providers
+                    else "One of the service's providers in list_matrix"
+                )
+                + "; default is the first listed"
+            ),
         ] = None,
         project: ProjectDir = None,
         source: TemplateSourceArg = None,
