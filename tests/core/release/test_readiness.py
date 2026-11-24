@@ -1,11 +1,13 @@
 from pathlib import Path
+from unittest import mock
 
 from action_platform.abc import DeployTarget
 from action_platform.core.config import Config
 from action_platform.core.context import Check, Context, DeployResult
-from action_platform.core.exception import DeployError
+from action_platform.core.exception import DeployError, ProviderError
 from action_platform.core.release.deploy import Deployer
 from action_platform.core.release.readiness import Readiness
+from action_platform.providers.deploy import DeployPypi
 from action_platform.testing.fixtures import TempCase, git, platform_repo
 
 
@@ -138,3 +140,66 @@ class ReadinessTest(TempCase):
         self.assertTrue(dev["scope.release-shape"].ok)
         self.assertTrue(hotfix["scope.release-shape"].ok)
         self.assertEqual(prod["deploy.stage"].detail, "prod · web · high")
+
+
+class ObservedReadinessTest(TempCase):
+    def setUp(self):
+        super().setUp()
+        self.repo = platform_repo(Path(self.tmp_path))
+
+    def check(self, targets: list[dict]) -> dict[str, Check]:
+        config = Config.from_dict(
+            {
+                "scopes": [{"name": "prod", "criticality": "high"}],
+                "deploy": {"targets": targets},
+            }
+        )
+        readiness = Readiness(config, self.repo, Deployer(config, self.repo))
+
+        return {c.id: c for c in readiness.check("prod", version="1.2.3")}
+
+    def test_jenkins_targets_are_listed_and_a_published_version_does_not_block(self):
+        with mock.patch.object(DeployPypi, "_exists", return_value=True):
+            checks = self.check(
+                [
+                    {
+                        "name": "index",
+                        "kind": "pypi",
+                        "run_by": "jenkins",
+                        "job": "team/app-prod",
+                        "package": "x",
+                    }
+                ]
+            )
+
+        self.assertTrue(checks["deploy.targets"].ok)
+        self.assertEqual(checks["deploy.targets"].detail, "index (observed, jenkins)")
+        self.assertTrue(checks["destination.version"].ok)
+        self.assertEqual(checks["destination.version"].target, "index")
+        self.assertFalse(any(c.blocking for c in checks.values()))
+
+    def test_an_observed_target_never_blocks(self):
+        with mock.patch.object(
+            DeployPypi, "_exists", side_effect=ProviderError("down")
+        ):
+            checks = self.check([{"kind": "pypi", "run_by": "manual", "package": "x"}])
+
+        self.assertFalse(checks["destination.reachable"].ok)
+        self.assertFalse(any(c.blocking for c in checks.values()))
+
+    def test_a_kind_without_a_provider_adds_no_target_checks(self):
+        checks = self.check(
+            [{"name": "svc", "kind": "acme/cluster", "run_by": "jenkins", "job": "j"}]
+        )
+
+        self.assertTrue(checks["deploy.targets"].ok)
+        self.assertEqual(
+            {c.level for c in checks.values() if c.id != "scope.release-shape"},
+            {"static"},
+        )
+
+    def test_no_target_at_all_still_blocks(self):
+        checks = self.check([])
+
+        self.assertFalse(checks["deploy.targets"].ok)
+        self.assertIn("no deploy target configured", checks["deploy.targets"].detail)

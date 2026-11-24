@@ -31,7 +31,9 @@ class PypiTest(unittest.TestCase):
 
     def test_readiness_refuses_a_version_already_published(self):
         target = DeployPypi(package="action-platform")
-        ctx = mock.Mock(spec=Context, next_version="0.18.0", stage="prod")
+        ctx = mock.Mock(
+            spec=Context, next_version="0.18.0", stage="prod", observed=False
+        )
 
         with mock.patch.object(DeployPypi, "_exists", return_value=True):
             taken = target.readiness(ctx)
@@ -42,6 +44,19 @@ class PypiTest(unittest.TestCase):
         self.assertFalse(taken[0].ok)
         self.assertIn("already at", taken[0].detail)
         self.assertTrue(free[0].ok)
+
+    def test_readiness_of_an_observed_target_expects_the_version_there(self):
+        target = DeployPypi(package="action-platform")
+        ctx = mock.Mock(
+            spec=Context, next_version="0.18.0", stage="prod", observed=True
+        )
+
+        with mock.patch.object(DeployPypi, "_exists", return_value=True):
+            there = target.readiness(ctx)
+
+        self.assertTrue(there[0].ok)
+        self.assertIn("already at", there[0].detail)
+        self.assertIsNone(there[0].fix)
 
     def test_never_deploys(self):
         with self.assertRaises(DeployError):

@@ -5,15 +5,17 @@ Static checks look at the repository at the release tag: targets declared, tag w
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 from pathlib import Path
 
 from action_platform.abc.deploy_target import DeployTarget
 from action_platform.core.config import Config
 from action_platform.core.context import Check, Context
-from action_platform.core.exception import ActionPlatformError
+from action_platform.core.exception import ActionPlatformError, DeployError
+from action_platform.core.release.deploy import missing_target
 from action_platform.core.release.versioning import VERSION_PATTERNS
 from action_platform.core.scopes import ScopeSpec, shape_check, shape_of
-from action_platform.core.targets import VERSION
+from action_platform.core.targets import VERSION, TargetSpec
 from action_platform.core.wiring import slot, wired
 from action_platform.logging import logger
 
@@ -66,7 +68,11 @@ class Readiness:
             checks.append(shape_check(scope, shipped, shape or shape_of(shipped)))
 
         try:
-            targets = self.deployer.targets(target, stage)
+            targets = self.deployer.runnable(target, stage)
+            observed = self.deployer.observed(target, stage)
+
+            if not targets and not observed:
+                raise DeployError(missing_target(target, stage))
         except ActionPlatformError as e:
             checks.append(
                 Check(
@@ -84,7 +90,10 @@ class Readiness:
             Check(
                 "deploy.targets",
                 True,
-                ", ".join(t.name for t in targets),
+                ", ".join(
+                    [t.name for t in targets]
+                    + [f"{t.name} (observed, {t.run_by})" for t in observed]
+                ),
                 level="static",
             )
         )
@@ -100,7 +109,36 @@ class Readiness:
             for t in targets:
                 checks.extend(self._target(t, ctx))
 
+            for spec in observed:
+                checks.extend(self._observed(spec, replace(ctx, observed=True)))
+
         return checks
+
+    def _observed(self, spec: TargetSpec, ctx: Context) -> list[Check]:
+        """An observed target's own checks, when its kind has a provider: they inform and never block, since the platform does not run it."""
+        if not self.config.provides(spec.kind):
+            return []
+
+        try:
+            target = self.config.target(spec.name)
+        except ActionPlatformError as e:
+            return [
+                Check(
+                    "target.readiness",
+                    False,
+                    str(e),
+                    level="target",
+                    severity="warning",
+                    target=spec.name,
+                )
+            ]
+
+        found = self._target(target, ctx)
+
+        for check in found:
+            check.severity = "warning"
+
+        return found
 
     def _scope(self, stage: str) -> ScopeSpec | None:
         try:

@@ -44,16 +44,17 @@ class PipelinePublishedTarget(DeployTarget):
             ]
 
         where = self.url(version, ctx.stage) or self.name
+        blocked = published and not ctx.observed
 
         return [
             Check(
                 "destination.version",
-                not published,
+                not blocked,
                 f"{version} is already at {where}"
                 if published
                 else f"{version} is not yet at {self.name}",
                 fix="publishing the same version twice fails; cut a new release"
-                if published
+                if blocked
                 else None,
             )
         ]
