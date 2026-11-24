@@ -43,6 +43,7 @@ class DokployTemplateTest(unittest.TestCase):
             "AP_SMTP_FROM",
             "AP_GOOGLE_CLIENT_ID",
             "AP_GOOGLE_CLIENT_SECRET",
+            "AP_PLATFORM_CONNECTIONS",
         ):
             self.assertIn(f"${{{key}", self.compose)
             self.assertRegex(self.toml, rf'(?m)^{key} = ""$')
