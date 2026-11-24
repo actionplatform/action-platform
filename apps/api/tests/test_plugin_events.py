@@ -189,6 +189,43 @@ class PluginEventsTest(GateCase):
         )
         self.assertEqual(events[0]["payload"]["version"], "0.21.2")
 
+    def test_a_verified_observed_deploy_is_announced_once_per_state(self):
+        self.jenkins()
+        self.configure(
+            {
+                "hook": "https://hooks.test/x",
+                "events": "deployment.succeeded,deployment.verified",
+            }
+        )
+
+        with (
+            mock.patch(
+                "action_platform.providers.ci.jenkins.CIJenkins.runs",
+                return_value=[run(42, "api/v0.21.2", started=recent())],
+            ),
+            mock.patch(
+                "action_platform.providers.ci.github_actions.CIGithubActions.runs",
+                return_value=[],
+            ),
+            mock.patch(
+                "action_platform.providers.deploy.docker.DeployDocker.verify",
+                return_value=True,
+            ),
+        ):
+            for _ in range(2):
+                body = self.client.post(
+                    "/api/v1/projects/p1/apps/a1/deployments/sync", headers=self.h()
+                ).json()
+
+        self.assertEqual(
+            [j["event"]["kind"] for j in self.queued()],
+            ["deployment.succeeded", "deployment.verified"],
+        )
+        self.assertEqual(
+            [d["status"] for d in body["deployments"] if d["target"] == "ghcr"],
+            ["verified"],
+        )
+
     def test_history_older_than_a_day_is_not_news(self):
         self.jenkins()
         old = datetime.now(timezone.utc) - timedelta(days=3)

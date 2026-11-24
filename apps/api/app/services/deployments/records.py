@@ -166,6 +166,9 @@ class DeploymentRecords:
             )
             self.db.add(row)
 
+        if before == "verified" and fields.get("status") == "success":
+            fields["status"] = "verified"
+
         for key, value in fields.items():
             setattr(row, key, value)
 
