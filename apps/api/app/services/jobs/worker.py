@@ -6,12 +6,10 @@ import os
 import socket
 import threading
 import time
-from contextlib import contextmanager
-from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 import uuid
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
+from contextlib import contextmanager
 from typing import Iterator, Optional
-
-from app.core.shared.clock import now
 
 from action_platform.core.exception import ActionPlatformError
 from action_platform.plugins import registry as plugin_registry
@@ -20,6 +18,7 @@ from app.core.auth.crypto import Sealer
 from app.core.auth.secrets import Secrets
 from app.core.db.database import Database
 from app.core.db.models import Job
+from app.core.shared.clock import now
 from app.repositories.workspace.registry import Registry
 from app.repositories.workspace.source import configure_registry, get_registry
 from app.services.integrations import plugins
@@ -103,7 +102,7 @@ class Worker:
 
     @contextmanager
     def beating(self, kinds: list[str]) -> Iterator[None]:
-        """Say every few seconds that this worker is alive and which kinds it takes, also while a long job holds the loop."""
+        """Heartbeat in the background while the loop runs."""
         stop = threading.Event()
         self.beat(kinds)
 
