@@ -43,6 +43,7 @@ Alembic, shipped with the API — one revision per change:
 | `0023` | `app_adoption`: where each app stands on the way onto the platform (state, reason, language, CI, version, install branch and pull request), written by the `install` job |
 | `0024` | `user.disabled_at`: an operator turned the account off; it cannot sign in or use its sessions and tokens |
 | `0025` | `invitation`: `email` may be empty when the invitation is bound to a code-host login (`host_kind`, `host_login`); `team_ids` are the teams the person joins on accepting |
+| `0028` | `invitation.emailed_at` and `email_error`: when the invitation email last went out and why the last send failed |
 
 A database the web app created has no `alembic_version` table but does have `user`; the API recognises that, stamps it at `0001` and applies only what follows. Nothing is recreated, nothing is copied: pointing the API at the web app's database is the whole data migration.
 
