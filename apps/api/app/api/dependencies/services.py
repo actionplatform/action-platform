@@ -28,6 +28,7 @@ from app.services.deployments import (
     AppCiRunners,
     DeploymentRecords,
     DeploymentsService,
+    TargetContexts,
 )
 from app.services.workspace.app_context import AppContext
 from app.services.releases import ReleasesService
@@ -161,7 +162,14 @@ def get_deployment_records(
     db: DbSession = Depends(get_db),
     context: AppContext = Depends(get_app_context),
 ) -> DeploymentRecords:
-    return DeploymentRecords(db, request.app.state.sealer, context)
+    state = request.app.state
+
+    return DeploymentRecords(
+        db,
+        state.sealer,
+        context,
+        TargetContexts(state.db, state.sealer, state.public_url),
+    )
 
 
 def get_flow(
