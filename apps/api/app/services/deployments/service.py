@@ -6,6 +6,7 @@ from typing import Callable, Optional
 from sqlalchemy import select
 
 from action_platform.abc.ci_runner import CIRunner
+from action_platform.core.exception import ActionPlatformError
 from action_platform.core.facade import ActionPlatform
 from app.core.db.models import App
 from app.repositories.configuration.config_store import ConfigStore
@@ -76,6 +77,13 @@ class DeploymentsService:
             }
             for r in results
         ]
+
+    def release_of(self, id: str, version: Optional[str]) -> Optional[str]:
+        """The version a deploy will ship: the one named, else the release the clone's HEAD sits on; None when there is none to ship."""
+        try:
+            return self._tool(id).deployer.release_tag(version)[1]
+        except ActionPlatformError:
+            return version
 
     def destroy(self, id: str, stages: tuple[str, ...] | None = None) -> None:
         """Every scope's stack down — the app's scopes unless `stages` names them."""

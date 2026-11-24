@@ -241,16 +241,24 @@ class JobHandlers:
             ci=self._ci_runners(ctx),
         )
         started = now()
+        recorded = request
 
         if not request.dry_run:
-            self._record_deploy_start(ctx, payload, request, started)
+            with auth.git_auth(credentials):
+                recorded = request.model_copy(
+                    update={
+                        "version": service.release_of(ctx.registry_id, request.version)
+                    }
+                )
+
+            self._record_deploy_start(ctx, payload, recorded, started)
 
         try:
             with auth.git_auth(credentials):
                 results = service.deploy(ctx.registry_id, request)
         except Exception as e:
             if not request.dry_run:
-                self._record_deploy_failure(ctx, payload, request, started, str(e))
+                self._record_deploy_failure(ctx, payload, recorded, started, str(e))
 
             raise
 

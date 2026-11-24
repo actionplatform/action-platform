@@ -703,6 +703,32 @@ class ShippingDeployTest(GateCase):
             [("failure", "platform", job.id)],
         )
 
+    def test_a_deploy_without_a_version_records_the_release_at_head(self):
+        from app.services.deployments import DeploymentsService
+        from app.services.jobs.worker import Worker
+
+        res = self.client.post(
+            f"/api/v1/apps/{self.registry_id}/deploy",
+            json={"stage": "dev", "dry_run": False},
+            headers=self.h(),
+        )
+        seen: list = []
+
+        def deploy(service, id, request):
+            seen.extend(self.deployments())
+            raise RuntimeError("connection reset")
+
+        with mock.patch.object(DeploymentsService, "deploy", deploy):
+            Worker(self.app.state.db, self.app.state.secrets, "test").run(once=True)
+
+        job_id = res.json()["job"]
+        self.assertEqual(
+            seen, [("lambda", "dev", "1.2.3", "running", "platform", job_id, "Ana")]
+        )
+        self.assertEqual(
+            [(d[2], d[3]) for d in self.deployments()], [("1.2.3", "failure")]
+        )
+
 
 class ConcurrentWorkerTest(GateCase):
     def test_several_jobs_run_at_once_and_kinds_filter_what_is_taken(self):
