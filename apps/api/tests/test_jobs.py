@@ -602,6 +602,44 @@ class ShippingDeployTest(GateCase):
                 self.assertEqual(res.status_code, 202, res.text)
                 self.assertEqual(res.json()["status"], "queued")
 
+    def test_dry_run_is_read_as_the_request_model_reads_it(self):
+        from app.core.errors import Invalid
+        from app.services.access.job_dispatcher import dry_run
+
+        for value in (False, 0, 0.0, "false", "off", "no", "f", "n", "0"):
+            with self.subTest(value=value):
+                self.assertFalse(dry_run({"dry_run": value}))
+
+        for value in (True, 1, "true", "on", "yes"):
+            with self.subTest(value=value):
+                self.assertTrue(dry_run({"dry_run": value}))
+
+        self.assertTrue(dry_run({}))
+
+        with self.assertRaises(Invalid):
+            dry_run({"dry_run": "maybe"})
+
+    def test_a_deploy_spelled_off_is_a_job_and_nonsense_is_refused(self):
+        from app.services.jobs import JobQueue
+
+        off = self.client.post(
+            f"/api/v1/apps/{self.registry_id}/deploy",
+            json={"stage": "dev", "version": "1.2.3", "dry_run": "off"},
+            headers=self.h(),
+        )
+        nonsense = self.client.post(
+            f"/api/v1/apps/{self.registry_id}/deploy",
+            json={"stage": "prod", "version": "1.2.3", "dry_run": "maybe"},
+            headers=self.h(),
+        )
+
+        self.assertEqual(off.status_code, 202, off.text)
+        self.assertEqual(nonsense.status_code, 400, nonsense.text)
+        self.assertEqual(
+            [j.id for j in JobQueue(self.app.state.db).for_app("a1")],
+            [off.json()["job"]],
+        )
+
     def test_a_dry_run_answers_inline_and_leaves_no_job(self):
         from app.services.jobs import JobQueue
 

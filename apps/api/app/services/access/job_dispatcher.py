@@ -5,8 +5,10 @@ from __future__ import annotations
 import re
 from typing import Any, Optional
 
+from pydantic import TypeAdapter, ValidationError
+
 from app.core.db.models import App, Organization
-from app.core.errors import Conflict
+from app.core.errors import Conflict, Invalid
 from app.services.access.caller import Caller
 from app.services.jobs import JobQueue
 
@@ -14,10 +16,11 @@ ASYNC_PATH = re.compile(r"^apps/([^/]+)/(sync|release|deploy|push)$")
 
 
 def dry_run(body: dict[str, Any]) -> bool:
-    """A release or deploy preview: it answers inline and leaves no job; both default to one when `dry_run` is missing."""
-    value = body.get("dry_run", True)
-
-    return value is not False and str(value).lower() not in ("false", "0")
+    """A release or deploy preview, read as the request model reads it: it answers inline and leaves no job; both default to one when `dry_run` is missing."""
+    try:
+        return TypeAdapter(bool).validate_python(body.get("dry_run", True))
+    except ValidationError as e:
+        raise Invalid("dry_run must be true or false") from e
 
 
 class JobDispatcher:
