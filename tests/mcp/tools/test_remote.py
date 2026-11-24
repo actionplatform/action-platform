@@ -650,6 +650,7 @@ class RemoteToolsTest(TempCase):
                 "github_owner": None,
                 "push": True,
                 "private": True,
+                "license": "none",
             },
         )
 
