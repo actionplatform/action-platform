@@ -319,3 +319,60 @@ def test_a_build_cancelled_in_the_queue_fails_only_this_target(tmp_path, monkeyp
 
     assert result.ok is False
     assert "cancelled in the queue" in result.error
+
+
+def test_a_jenkins_job_dispatches_a_kind_with_no_provider(tmp_path, monkeypatch):
+    monkeypatch.setattr("action_platform.providers.deploy.dispatched.POLL_SECONDS", 0)
+    runner = FakeJenkins(["running", "success"])
+    config = Config.from_dict(
+        {
+            "project": {"name": "app"},
+            "deploy": {
+                "targets": [
+                    {
+                        "name": "amplify-dev",
+                        "kind": "aws/amplify",
+                        "run_by": "jenkins",
+                        "observe": False,
+                        "job": "team/app-dev",
+                        "version_parameter": "RELEASE_TAG",
+                        "stages": ["dev"],
+                    }
+                ]
+            },
+        }
+    )
+    config.ci = [runner]
+    target = config.dispatched()[0]
+
+    result = target.deploy(context(tmp_path))
+
+    assert runner.started == [("team/app-dev", "", {"RELEASE_TAG": "v1.2.0"})]
+    assert result.ok is True
+    assert target.diagnose(context(tmp_path)).status == "unknown"
+
+
+def test_a_workflow_still_needs_a_provider_for_its_kind():
+    import pytest
+
+    from action_platform.core.exception import ConfigError
+
+    config = Config.from_dict(
+        {
+            "project": {"name": "app"},
+            "source_host": {"kind": "github", "repo": "acme/app"},
+            "deploy": {
+                "targets": [
+                    {
+                        "name": "site",
+                        "kind": "aws/amplify",
+                        "run_by": "github_actions",
+                        "workflow": "deploy.yml",
+                    }
+                ]
+            },
+        }
+    )
+
+    with pytest.raises(ConfigError, match="no provider installed"):
+        config.dispatched()

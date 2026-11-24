@@ -21,7 +21,10 @@ from action_platform.core.targets import TargetSpec, parse_targets
 from action_platform.options import SourceTokens
 from action_platform.providers.ci.factory import build_ci_runner
 from action_platform.providers.deploy import BUILTIN_DEPLOY_TARGETS
-from action_platform.providers.deploy.dispatched import DispatchedTarget
+from action_platform.providers.deploy.dispatched import (
+    DispatchedTarget,
+    UnverifiedTarget,
+)
 from action_platform.providers.source import build_source_host
 
 
@@ -100,7 +103,7 @@ class Config:
         """The targets a CI runs for the platform — `run_by = "github_actions"`, a Jenkins job with `observe = false` and the like — each wrapped so a deploy starts the run and follows it."""
         return [
             DispatchedTarget(
-                _build_target(spec),
+                _dispatched_inner(spec),
                 self._runner_for(spec),
                 spec.job if spec.run_by == "jenkins" else spec.workflow,
                 str(spec.options.get("registry") or ""),
@@ -248,6 +251,14 @@ def _build_target(spec: TargetSpec) -> DeployTarget:
         target.name = spec.name
 
     return target
+
+
+def _dispatched_inner(spec: TargetSpec) -> DeployTarget:
+    """The provider a dispatched target verifies with; a job that takes the release as a parameter is started and followed without one."""
+    if spec.version_parameter and spec.kind not in _providers():
+        return UnverifiedTarget(spec.name)
+
+    return _build_target(spec)
 
 
 def _build_deploy_targets(cfg: dict) -> list[DeployTarget]:
