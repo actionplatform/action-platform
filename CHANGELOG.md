@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.36.0 — 2026-11-25
+
+### Features
+- **mcp:** protection_status and apply_protection, with the CLI
+- **api:** apply and reconcile branch protection on the code host
+- **core:** git-flow protection policy and host providers
+- **api:** activity of one app, filtered by kind
+
+### Bug Fixes
+- protection keeps release pushes, never widens GitLab access, needs CI for merge checks
+- **web:** Scopes and CI are app tabs again; Settings is one page with in-page tabs
+- **api:** name where CI runs live now in the GitHub permission hint
+- **api:** a failing app lock puts the job back instead of stopping the worker
+
+### Docs
+- **web:** branch protection on the app and organization settings
+- git-flow enforced on the code host
+- app tabs Overview, Releases, Deployments, Activity, Settings
+- jobs of the same app take turns across workers
+- readiness per scope lives on the release page
+- bring the docs level with 0.43
+
+### Tests
+- **api:** per-app job lock, deferral and readiness retry verdicts
+
+### Build
+- **deploy:** dokploy template with the protection worker kinds
+
 ## v0.35.0 — 2026-11-24
 
 ### Features
