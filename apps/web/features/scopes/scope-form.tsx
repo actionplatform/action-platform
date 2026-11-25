@@ -39,7 +39,7 @@ export function ScopeForm({ projectId, appId, base, vocabulary, scope = null, ca
     const body = { name: name.trim(), kind, criticality };
     const r = editing ? await updateScope(projectId, appId, scope!.name, body) : await createScope(projectId, appId, body);
     if (!r.ok) { setError(r.error); return; }
-    router.push(`${base}/scopes`);
+    router.push(`${base}/settings/scopes`);
     router.refresh();
   });
 

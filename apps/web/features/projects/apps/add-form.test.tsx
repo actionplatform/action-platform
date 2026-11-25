@@ -35,7 +35,7 @@ describe("AddForm", () => {
     expect(push).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: /Open configuration/ }));
-    expect(push).toHaveBeenCalledWith("/projects/p1/apps/a1/configuration");
+    expect(push).toHaveBeenCalledWith("/projects/p1/apps/a1/settings/configuration");
   });
 
   it("goes straight to configuration when nothing was found", async () => {
@@ -45,7 +45,7 @@ describe("AddForm", () => {
 
     await installThrough();
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/projects/p1/apps/a1/configuration"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/projects/p1/apps/a1/settings/configuration"));
   });
 
   it("a refusal shows inside the install dialog", async () => {

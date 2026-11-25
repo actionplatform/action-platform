@@ -1,5 +1,6 @@
 import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
+import { APP_REDIRECTS } from "./lib/app-routes";
 import { version } from "./package.json";
 
 
@@ -24,6 +25,7 @@ const config: NextConfig = {
       { source: "/settings/api", destination: "/organization/sessions", permanent: true },
       { source: "/settings/developers", destination: "/organization/sessions", permanent: true },
       { source: "/account", destination: "/organization/sessions", permanent: false },
+      ...APP_REDIRECTS,
     ];
   },
   async headers() {

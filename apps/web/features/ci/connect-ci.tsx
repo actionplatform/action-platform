@@ -15,9 +15,9 @@ import { linkCi } from "./actions";
 
 const EMBEDDED = "__embedded__";
 
-type Props = { projectId: string; appId: string; state: CiState; hosts: CiHost[]; sourceKind: string | null; backHref: string };
+type Props = { projectId: string; appId: string; state: CiState; hosts: CiHost[]; sourceKind: string | null; backHref: string; canEdit?: boolean };
 
-export function ConnectCi({ projectId, appId, state, hosts, sourceKind, backHref }: Props) {
+export function ConnectCi({ projectId, appId, state, hosts, sourceKind, backHref, canEdit = true }: Props) {
   const router = useRouter();
   const [hostId, setHostId] = useState(state.link.ciHostId ?? EMBEDDED);
   const [job, setJob] = useState(state.link.job);
@@ -31,7 +31,7 @@ export function ConnectCi({ projectId, appId, state, hosts, sourceKind, backHref
     onDone: () => router.push(backHref),
   });
 
-  const blocker = hosts.length === 0 && !embeddedLabel ? "Add a CI server under Settings first, or connect a GitHub source host." : hostId === EMBEDDED && !embeddedLabel ? "The source host has no CI of its own — pick a server." : null;
+  const blocker = !canEdit ? "Your role cannot change the CI of this app." : hosts.length === 0 && !embeddedLabel ? "Add a CI server under Settings first, or connect a GitHub source host." : hostId === EMBEDDED && !embeddedLabel ? "The source host has no CI of its own — pick a server." : null;
 
   return (
     <ActionForm
