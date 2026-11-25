@@ -84,7 +84,7 @@ Criticality is the policy: `test` and `low` accept any release; `medium`, `high`
 ### 7. Release, read readiness, deploy
 
 1. **Releases** → **New release** on `develop`: a branch other than `main`/`master` cuts a release candidate `X.Y.Z-rc.N`. **Preview changelog** is the dry run, **Create** tags, pushes and publishes it ([releases](concept_releases.md)).
-2. Right after the release, the worker checks it for every scope; the **Ready** column on the Releases list counts the scopes that are ready (green), blocked (red) or still checking (grey); open it for each scope's state. **Timeline & readiness** lists each check with its fix and **Re-check** runs them again. A blocked release answers a deploy with `409`; fix the check, or tick *Deploy anyway* if you may manage the organization ([readiness](concept_deployments.md#readiness)).
+2. Right after the release, the worker checks it for every scope; the release's **Timeline & readiness** page shows each scope's state, lists each check with its fix and **Re-check** runs them again. A blocked release answers a deploy with `409`; fix the check, or tick *Deploy anyway* if you may manage the organization ([readiness](concept_deployments.md#readiness)).
 3. Deployments → **New deployment**: Release `X.Y.Z-rc.N`, Scope `dev`, **Run preflight** (checks only), then **Deploy to dev**. The deploy log follows the worker.
 4. Merge to `main`, then **New release** there for the stable `X.Y.Z`, and deploy it to `prod`. A candidate aimed at `prod` is refused by the `scope.release-shape` check.
 
