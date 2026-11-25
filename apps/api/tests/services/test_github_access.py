@@ -4,12 +4,14 @@ import unittest
 
 from app.services.integrations.hosts.access import AccessReport, Owner
 from app.services.integrations.hosts.github import MANIFEST_PERMISSIONS, GithubProvider
-from app.services.integrations.hosts.scopes import permissions_for
 
 
 class GithubAccessTest(unittest.TestCase):
     def test_manifest_asks_to_write_actions(self):
         self.assertEqual(MANIFEST_PERMISSIONS["actions"], "write")
+
+    def test_manifest_asks_to_write_members(self):
+        self.assertEqual(MANIFEST_PERMISSIONS["members"], "write")
 
     def test_installation_without_actions_is_reported(self):
         report = AccessReport(kind="github", login="ada")
@@ -21,7 +23,7 @@ class GithubAccessTest(unittest.TestCase):
                 administration="write",
                 contents="write",
                 actions="none",
-                permissions=permissions_for("github", {}),
+                permissions={"members": "write"},
             )
         )
 
@@ -41,10 +43,29 @@ class GithubAccessTest(unittest.TestCase):
                 administration="write",
                 contents="write",
                 actions="write",
-                permissions=permissions_for("github", {}),
+                permissions={"members": "write"},
             )
         )
 
         GithubProvider._check(report, "ada")
 
         self.assertEqual(report.problems, [])
+
+    def test_an_organization_installation_without_members_write_is_reported(self):
+        report = AccessReport(kind="github", login="ada")
+        report.installations.append(
+            Owner(
+                account="acme",
+                kind="org",
+                repositories="all",
+                administration="write",
+                contents="write",
+                actions="write",
+                permissions={"members": "read"},
+            )
+        )
+
+        GithubProvider._check(report, "ada")
+
+        self.assertEqual(len(report.problems), 1)
+        self.assertIn('"Members" is read', report.problems[0])

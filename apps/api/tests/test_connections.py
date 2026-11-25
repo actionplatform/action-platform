@@ -240,7 +240,7 @@ class ConnectionsTest(GateCase):
             404,
         )
 
-    def test_an_installation_without_a_permission_a_plugin_needs_is_named(self):
+    def test_a_plugin_asking_what_the_platform_asks_is_named_once(self):
         from app.core.abc import AccessReport, Owner
         from app.services.integrations.hosts import GithubProvider
 
@@ -259,8 +259,8 @@ class ConnectionsTest(GateCase):
         GithubProvider._check(report, "ana")
 
         self.assertEqual(
-            [p for p in report.problems if "members" in p],
+            [p for p in report.problems if "embers" in p],
             [
-                'acme: permission "members" is read; a plugin on this platform needs "write". Add it in the app\'s Permissions & events, then accept the new permissions on the installation.'
+                'acme: organization permission "Members" is read; it must be "Read and write" to manage the organization\'s members and teams under Access. Change it in the app\'s Permissions & events, then accept the new permissions on the installation.'
             ],
         )

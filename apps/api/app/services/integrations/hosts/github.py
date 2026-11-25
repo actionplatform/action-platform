@@ -26,7 +26,7 @@ MANIFEST_PERMISSIONS = {
     "actions": "write",
     "pull_requests": "write",
     "metadata": "read",
-    "members": "read",
+    "members": "write",
 }
 API_VERSION = "2022-11-28"
 
@@ -34,7 +34,7 @@ API_VERSION = "2022-11-28"
 class GithubProvider(HostProvider):
     kind = "github"
     label = "GitHub"
-    scopes = "repo workflow read:org delete_repo"
+    scopes = "repo workflow read:org delete_repo admin:org"
     callback_hint = "GitHub → Settings → Developer settings → OAuth Apps"
 
     def web_base(self, app: OAuthApp) -> str:
@@ -250,12 +250,22 @@ class GithubProvider(HostProvider):
                     f'{i.account}: repository permission "Actions" is {i.actions}; it must be "Read and write" — the CI tab lists runs and a deploy dispatches the publish workflow. Change it in the app\'s Permissions & events, then accept the new permissions on the installation.'
                 )
 
+            members = i.permissions.get("members", "none")
+
+            if i.kind == "org" and members != "write":
+                report.problems.append(
+                    f'{i.account}: organization permission "Members" is {members}; it must be "Read and write" to manage the organization\'s members and teams under Access. Change it in the app\'s Permissions & events, then accept the new permissions on the installation.'
+                )
+
             for name, level in permissions_for("github", {}).items():
                 held = i.permissions.get(name, "none")
 
-                if i.kind == "org" and PERMISSION_RANK.get(
-                    held, 0
-                ) < PERMISSION_RANK.get(level, 0):
+                if (
+                    i.kind == "org"
+                    and PERMISSION_RANK.get(held, 0) < PERMISSION_RANK.get(level, 0)
+                    and PERMISSION_RANK.get(level, 0)
+                    > PERMISSION_RANK.get(MANIFEST_PERMISSIONS.get(name, ""), 0)
+                ):
                     report.problems.append(
                         f'{i.account}: permission "{name}" is {held}; a plugin on this platform needs "{level}". Add it in the app\'s Permissions & events, then accept the new permissions on the installation.'
                     )
