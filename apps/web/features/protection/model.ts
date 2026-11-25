@@ -30,7 +30,8 @@ export function summaryOf(p: Protection | null): Summary {
     return { tone: "neutral", label: "Not enforced", detail: "The code host does not enforce git-flow for this app; hooks and CI checks only." };
   }
   if (!state) return { tone: "warning", label: "Pending", detail: "Enforced but not applied yet: the next hourly check applies it, or Apply now in Settings." };
-  if (state.error) return { tone: "danger", label: "Not active", detail: state.error };
+  if (state.error && !state.active) return { tone: "danger", label: "Not active", detail: state.error };
+  if (state.error) return { tone: "warning", label: "Not kept", detail: `Rules are on the host, but the platform cannot keep them: ${state.error}` };
   const n = counts(state);
   if (state.drift.length > 0) return { tone: "warning", label: "Drifted", detail: `${state.drift.length} difference(s) from the policy; the next check puts them back.` };
   return { tone: n.inactive > 0 ? "warning" : "success", label: n.inactive > 0 ? "Partly active" : "Active", detail: `${n.native} enforced by ${state.host}, ${n.check} by required checks, ${n.inactive} not active.` };

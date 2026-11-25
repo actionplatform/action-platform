@@ -37,6 +37,7 @@ class ProtectionSweep:
             self.queue.enqueue(SWEEP, {}, run_after=now() + after)
 
     def run(self) -> dict[str, int]:
+        self.schedule()
         queued = 0
 
         with self.database.session() as db:
@@ -58,8 +59,6 @@ class ProtectionSweep:
                 dedupe_key="reconcile",
             )
             queued += 1
-
-        self.schedule()
 
         return {"apps": queued}
 

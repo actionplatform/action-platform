@@ -226,9 +226,7 @@ class ProtectionService:
 
         if reason is not None:
             state = provider.status(policy)
-
-            if not state.active:
-                state.error = state.error or reason
+            state.error = state.error or reason
 
             return state
 

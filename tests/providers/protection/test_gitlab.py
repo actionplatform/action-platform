@@ -49,6 +49,26 @@ class GitlabSimulator:
 
         return self.rule
 
+    def patch(self, name, body):
+        row = self.branches[name]
+
+        if "allow_force_push" in body:
+            row["allow_force_push"] = body["allow_force_push"]
+
+        for item in body.get("allowed_to_push") or []:
+            if item.get("_destroy"):
+                row["push_access_levels"] = [
+                    level
+                    for level in row["push_access_levels"]
+                    if level["id"] != item["id"]
+                ]
+            else:
+                row["push_access_levels"].append(
+                    {"id": 99, "access_level": 40, "user_id": item.get("user_id")}
+                )
+
+        return row
+
     def protect(self, body):
         name = body["name"]
         levels = []
@@ -69,7 +89,7 @@ class GitlabSimulator:
         self.branches[name] = row
         path = f"{PROJECT}/protected_branches/{name}"
         self.host.routes[("GET", path)] = lambda _: self.branches[name]
-        self.host.routes[("DELETE", path)] = lambda _: self.branches.pop(name)
+        self.host.routes[("PATCH", path)] = lambda b: self.patch(name, b)
 
         return row
 
@@ -128,11 +148,39 @@ class PremiumTest(unittest.TestCase):
         fixed = provider.apply(policy())
         self.assertEqual(fixed.drift, [])
         self.assertIn(
-            (f"{PROJECT}/protected_branches/main", None), sim.host.sent("DELETE")
+            (
+                f"{PROJECT}/protected_branches/main",
+                {"allowed_to_push": [{"id": 3, "_destroy": True}]},
+            ),
+            sim.host.sent("PATCH"),
         )
+        self.assertEqual(sim.host.sent("DELETE"), [])
 
 
 class FreeTest(unittest.TestCase):
+    def test_free_never_widens_an_existing_branch(self):
+        sim = GitlabSimulator(premium=False)
+        sim.protect({"name": "main", "push_access_level": 0, "allow_force_push": True})
+        state = GitlabProtection("acme/orders", "t", send=sim.host).apply(policy())
+
+        self.assertEqual(
+            sim.host.sent("PATCH"),
+            [(f"{PROJECT}/protected_branches/main", {"allow_force_push": False})],
+        )
+        self.assertEqual(
+            sim.branches["main"]["push_access_levels"][0]["access_level"], 0
+        )
+        self.assertEqual(state.bypass, "Maintainers (GitLab Free)")
+
+    def test_no_ci_checks_leave_pipelines_alone(self):
+        sim = GitlabSimulator(premium=False)
+        state = GitlabProtection("acme/orders", "t", send=sim.host).apply(
+            policy(checks=())
+        )
+
+        self.assertEqual(sim.host.sent("PUT"), [])
+        self.assertNotIn("pipelines must succeed is off", state.drift)
+
     def test_free_keeps_maintainers_and_says_so(self):
         sim = GitlabSimulator(premium=False)
         state = GitlabProtection("acme/orders", "t", send=sim.host).apply(policy())
@@ -147,7 +195,7 @@ class FreeTest(unittest.TestCase):
         self.assertEqual(state.rule("force_push").mode, NATIVE)
         self.assertEqual(state.rule("required_checks").mode, NATIVE)
         self.assertEqual(state.rule("branch_names").mode, CHECK)
-        self.assertIsNone(state.bypass)
+        self.assertEqual(state.bypass, "Maintainers (GitLab Free)")
         self.assertTrue(state.active)
 
     def test_no_ci_checks_leaves_names_inactive(self):

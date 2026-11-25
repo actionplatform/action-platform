@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 
@@ -156,9 +155,7 @@ class JobHandlers:
 
         with self.database.session() as db:
             row = db.get(AppProtection, ctx.app.id)
-            protected = bool(
-                row and row.enforced and json.loads(row.state or "{}").get("active")
-            )
+            protected = bool(row and row.enforced)
 
         key = GithubAppKey.from_env(os.environ)
 

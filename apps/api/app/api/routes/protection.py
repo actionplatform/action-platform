@@ -12,7 +12,9 @@ from app.api.dependencies import (
     app_of,
     project_of,
 )
+from app.core.errors import Conflict
 from app.schemas import protection as schemas
+from app.services.jobs.locks import AppLocks
 from app.services.protection.sweep import RECONCILE, SWEEP, reconcile_payload
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
@@ -82,11 +84,17 @@ def apply_protection(
     caller: CallerDep,
     writes: ProjectsRepoDep,
     protection: ProtectionDep,
+    queue: QueueDep,
 ) -> schemas.Protection:
     allowed(caller, org, "app.configure", whole_org=False)
     project = project_of(writes, org, project_id)
     app = app_of(writes, caller, project, app_id)
-    protection.apply(org.id, app, _actor(caller))
+
+    with AppLocks(queue.database).hold(app.id) as held:
+        if not held:
+            raise Conflict("the app is busy with another job; try again in a moment")
+
+        protection.apply(org.id, app, _actor(caller))
 
     return schemas.Protection(**protection.view(org.id, app))
 
