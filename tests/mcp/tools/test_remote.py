@@ -798,6 +798,7 @@ CONCERNS = {
         "access_offboard",
         "access_sync",
     },
+    "github": {"github_branch_protection", "github_repo_settings"},
 }
 
 

@@ -1,4 +1,4 @@
-"""Access on the services the organization's plugins own: who has what, drift, grant, revoke, offboard, sync. Reads are safe; every change is a dry run until `apply` is true."""
+"""Access on the organization's services — GitHub, built in, and those its plugins own: who has what, drift, grant, revoke, offboard, sync. Reads are safe; every change is a dry run until `apply` is true."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ Person = Annotated[
 Service = Annotated[
     str,
     Field(
-        description="A service a plugin brings access for, as access_audit names it (github, jenkins, sentry, dokploy…)"
+        description="A service as access_audit names it: github, built in, or one a plugin brings access for (jenkins, sentry, dokploy…)"
     ),
 ]
 Apply = Annotated[

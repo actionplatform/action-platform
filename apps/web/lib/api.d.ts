@@ -2175,6 +2175,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/access/github/branch-protection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["github_branch_protection_api_v1_access_github_branch_protection_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/access/github/repo-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["github_repo_settings_api_v1_access_github_repo_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -2409,6 +2441,10 @@ export interface components {
             protected: boolean;
             stable: boolean;
             problem?: string | null;
+        };
+        BranchProtection: {
+            org: string;
+            repos: components["schemas"]["RepoProtection"][];
         };
         BranchResult: {
             branch: string;
@@ -3212,6 +3248,10 @@ export interface components {
             inviter: string;
             organization: components["schemas"]["OrganizationOut"];
         };
+        OrgSettings: {
+            org: string;
+            repos: components["schemas"]["RepoSettings"][];
+        };
         OrganizationOut: {
             id: string;
             name: string;
@@ -3458,6 +3498,29 @@ export interface components {
             repositories: string[];
             job?: string | null;
         };
+        RepoProtection: {
+            repo: string;
+            default_branch: string;
+            archived: boolean;
+            protected?: boolean | null;
+            rule_types?: string[];
+            required_reviews?: number | null;
+            required_status_checks?: string[];
+            force_pushes_allowed?: boolean | null;
+            note: string;
+        };
+        RepoSettings: {
+            repo: string;
+            visibility: string;
+            default_branch: string;
+            archived: boolean;
+            delete_branch_on_merge?: boolean | null;
+            allow_auto_merge?: boolean | null;
+            secret_scanning?: string | null;
+            secret_scanning_push_protection?: string | null;
+            dependabot_alerts?: boolean | null;
+            dependabot_security_updates?: string | null;
+        };
         ResetPasswordRequest: {
             token: string;
             password: string;
@@ -3566,6 +3629,7 @@ export interface components {
             url: string;
             ref: string;
             credentials?: components["schemas"]["SourceCredentials"] | null;
+            organization_id?: string | null;
         };
         SourceStatus: {
             name: string;
@@ -8742,6 +8806,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Plan"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    github_branch_protection_api_v1_access_github_branch_protection_get: {
+        parameters: {
+            query?: {
+                repo?: string | null;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BranchProtection"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    github_repo_settings_api_v1_access_github_repo_settings_get: {
+        parameters: {
+            query?: {
+                repo?: string | null;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgSettings"];
                 };
             };
             422: {

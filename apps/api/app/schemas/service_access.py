@@ -5,10 +5,13 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from action_platform.core.service_access.models import Audit, Plan, Who
+from action_platform.providers.access.github import BranchProtection, OrgSettings
 
 __all__ = [
     "Audit",
+    "BranchProtection",
     "GrantRequest",
+    "OrgSettings",
     "OffboardRequest",
     "Plan",
     "RevokeRequest",

@@ -1,6 +1,6 @@
 # Plugins
 
-A plugin — an *apx*, Action Platform extension; every package is named `apx-<slug>` — is a Python package installed next to the CLI. It can add MCP tools and CLI commands, ship cloud overlays and deploy targets, bring a release strategy or a changelog format, and replace any process of the core — git-flow rules, the releaser, the deployer, the installer, the scaffolder — with its own subclass. Everything runs in-process on the machine that installed it. The hosted platform installs nothing at runtime: its API and workers load only the plugins bundled in the image — `apx-aws-lambda` and `apx-dokploy` today, see [On the hosted platform](#on-the-hosted-platform) — and the web app none.
+A plugin — an *apx*, Action Platform extension; every package is named `apx-<slug>` — is a Python package installed next to the CLI. It can add MCP tools and CLI commands, ship cloud overlays and deploy targets, bring a release strategy or a changelog format, and replace any process of the core — git-flow rules, the releaser, the deployer, the installer, the scaffolder — with its own subclass. Everything runs in-process on the machine that installed it. The hosted platform installs nothing at runtime: its API and workers load only the plugins bundled in the image — `apx-aws-lambda`, `apx-dokploy`, `apx-jenkins` and `apx-sentry` today, see [On the hosted platform](#on-the-hosted-platform) — and the web app none.
 
 ```bash
 action-platform plugin search aws-lambda
@@ -32,7 +32,9 @@ The git hooks the CLI installs ask the core (`action-platform gitflow-check`) wh
 
 ## On the hosted platform
 
-The API image bundles the plugins the platform runs: `apx-aws-lambda`, `apx-dokploy`, `apx-github`, `apx-jenkins` and `apx-sentry` are dependencies of the API, discovered through their entry points like any other. Bundling — not a marketplace — is the deliberate choice for the hosted platform: an image is reviewed and versioned as a whole, API and worker always run the same plugin code, and nothing installs or restarts at runtime. Adding a plugin to the platform is a dependency bump and a new image. `GET /api/v1/plugins` lists what the image carries (and what failed to load); a plugin's options are the only thing set at runtime, per organization.
+The API image bundles the plugins the platform runs: `apx-aws-lambda`, `apx-dokploy`, `apx-jenkins` and `apx-sentry` are dependencies of the API, discovered through their entry points like any other. Bundling — not a marketplace — is the deliberate choice for the hosted platform: an image is reviewed and versioned as a whole, API and worker always run the same plugin code, and nothing installs or restarts at runtime. Adding a plugin to the platform is a dependency bump and a new image. `GET /api/v1/plugins` lists what the image carries (and what failed to load); a plugin's options are the only thing set at runtime, per organization.
+
+GitHub access — organization members, teams, repository permissions, and the read-only branch protection and repository settings checks — is part of the platform, not a plugin: it runs on the organization's GitHub connection ([service access](concept_service_access.md)). The slug `github` is reserved for it: an `apx-github` still installed next to the core is not loaded, and `GET /api/v1/plugins` lists it with the reason; uninstall it.
 
 A self-hosted platform that needs a plugin the official image does not carry builds its own `api` image on top of it — in the compose, for example:
 

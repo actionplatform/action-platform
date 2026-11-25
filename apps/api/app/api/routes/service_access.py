@@ -1,4 +1,4 @@
-"""Access on the services the bundled plugins own — who, audit, sync, grant, revoke, offboard — for the caller's organization; every route needs `org.manage`, every change is a dry run unless `apply`."""
+"""Access on the organization's services — GitHub, built in, and those the bundled plugins own — who, audit, sync, grant, revoke, offboard, and the read-only GitHub checks, for the caller's organization; every route needs `org.manage`, every change is a dry run unless `apply`."""
 
 from typing import Optional
 
@@ -86,3 +86,25 @@ def offboard(
     repo: OrganizationRepoDep,
 ) -> schemas.Plan:
     return _service(request, org, caller, repo).offboard(body)
+
+
+@router.get("/github/branch-protection")
+def github_branch_protection(
+    request: Request,
+    org: OrgDep,
+    caller: CallerDep,
+    directory: OrganizationRepoDep,
+    repo: Optional[str] = None,
+) -> schemas.BranchProtection:
+    return _service(request, org, caller, directory).github_branch_protection(repo)
+
+
+@router.get("/github/repo-settings")
+def github_repo_settings(
+    request: Request,
+    org: OrgDep,
+    caller: CallerDep,
+    directory: OrganizationRepoDep,
+    repo: Optional[str] = None,
+) -> schemas.OrgSettings:
+    return _service(request, org, caller, directory).github_repo_settings(repo)

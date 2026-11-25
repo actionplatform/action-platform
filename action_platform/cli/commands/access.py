@@ -1,4 +1,4 @@
-"""`action-platform access …` — access on the services the platform's plugins own, through the platform the CLI is logged in to; JSON on stdout."""
+"""`action-platform access …` — access on the organization's services (GitHub, built in, and those the platform's plugins own), through the platform the CLI is logged in to; JSON on stdout."""
 
 from __future__ import annotations
 

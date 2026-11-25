@@ -1,4 +1,4 @@
-"""Access on the services a team uses — GitHub, Jenkins, Sentry, Dokploy… — mapped from the organization's members, roles and teams. Each service's plugin brings an `AccessProvider`; the engine reads live state, diffs it against the mapping and applies the changes."""
+"""Access on the services a team uses — GitHub, Jenkins, Sentry, Dokploy… — mapped from the organization's members, roles and teams. GitHub's `AccessProvider` is built in (`action_platform.providers.access.github`), every other service's plugin brings its own; the engine reads live state, diffs it against the mapping and applies the changes."""
 
 from action_platform.core.service_access.engine import Access
 from action_platform.core.service_access.http import Http, Response

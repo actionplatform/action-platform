@@ -24,7 +24,8 @@ GROUP = "action_platform.plugins"
 PERMISSION_RANK = {"read": 1, "write": 2, "admin": 3}
 FAILURES: dict[str, str] = {}
 RESERVED = {
-    "access": "the core owns access: uninstall it and install the plugin of each service (apx-github, apx-jenkins, apx-sentry, apx-dokploy)"
+    "access": "the core owns access: uninstall it and install the plugin of each service (apx-jenkins, apx-sentry, apx-dokploy)",
+    "github": "GitHub access is part of the platform, on the organization's GitHub connection: uninstall apx-github",
 }
 
 

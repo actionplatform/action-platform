@@ -7,6 +7,7 @@ from action_platform.cli.commands import branch as branch_cmd
 from action_platform.cli.commands import cloud as cloud_cmd
 from action_platform.cli.commands import deploy as deploy_cmd
 from action_platform.cli.commands import gitflow as gitflow_cmd
+from action_platform.cli.commands import github as github_cmd
 from action_platform.cli.commands import init as init_cmd
 from action_platform.cli.commands import mcp as mcp_cmd
 from action_platform.cli.commands import plugin as plugin_cmd
@@ -48,4 +49,5 @@ app.add_typer(cloud_cmd.app, name="cloud")
 app.add_typer(service_cmd.app, name="service")
 app.add_typer(plugin_cmd.app, name="plugin")
 app.add_typer(access_cmd.app, name="access")
+app.add_typer(github_cmd.app, name="github")
 registry.installed().register(None, app)

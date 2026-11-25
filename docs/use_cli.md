@@ -78,6 +78,7 @@ action-platform login <url> --token < token.txt               # no browser: keep
 action-platform whoami                                      # server — account — scope — on Org / project / app
 action-platform logout
 action-platform access audit | who | grant | revoke | offboard | sync   # service access on the logged-in platform; dry runs unless --apply
+action-platform github branch-protection | repo-settings [--repo <name>]   # read-only checks of the GitHub organization's repositories, on the logged-in platform
 action-platform-api db status | migrate [--url …]            # the API's database: revision, migrate on demand
 action-platform-api db backup [--out FILE|-] | restore FILE|- [--force]   # pg_dump / psql; restore refuses a database with tables unless --force
 action-platform-api worker [--once] [--interval 2] [--name]  # run queued jobs against AP_DATABASE_URL

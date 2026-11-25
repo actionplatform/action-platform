@@ -131,24 +131,6 @@ action-platform = ">=0.33"
 dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
 
 [[package]]
-name = "apx-github"
-version = "0.2.1"
-description = "Action Platform plugin for GitHub: organization access and read-only checks of branch protection and repository settings."
-optional = false
-python-versions = ">=3.11"
-groups = ["main"]
-files = [
-    {file = "apx_github-0.2.1-py3-none-any.whl", hash = "sha256:3d6bfc679d6b700d8faeff6cffa754c2b0c960d5dde21b891b3af9c36435c96d"},
-    {file = "apx_github-0.2.1.tar.gz", hash = "sha256:e589a06ad35d63883817e5e4262c80969c8dba9aadd7f962950cf10a7163cd31"},
-]
-
-[package.dependencies]
-action-platform = ">=0.33"
-
-[package.extras]
-dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
-
-[[package]]
 name = "apx-jenkins"
 version = "0.1.0"
 description = "Jenkins for Action Platform: access management through Role-based Authorization Strategy, and read-only tools for jobs, builds and the queue."
@@ -3584,4 +3566,4 @@ packaging = ">=24.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "23e2f2345dc670ded9d33bce4a4e94bf6a81d24271b50a7deffd271d0aa4c25c"
+content-hash = "bf93776b579c1a460632051485a901ad8e9ca046740561d7ad07f162e50441c8"
