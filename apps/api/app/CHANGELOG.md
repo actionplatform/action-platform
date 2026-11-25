@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.45.0 — 2026-11-25
+
+### Features
+- **api:** apply and reconcile branch protection on the code host
+
+### Bug Fixes
+- protection keeps release pushes, never widens GitLab access, needs CI for merge checks
+
 ## v0.44.0 — 2026-11-25
 
 ### Features
