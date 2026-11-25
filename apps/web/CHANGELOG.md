@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.34.2 — 2026-11-24
+
+### Features
+- **web:** the releases list drops the Ready column
+
 ## v0.34.1 — 2026-11-24
 
 ### Features
