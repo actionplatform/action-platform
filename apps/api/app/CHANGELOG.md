@@ -1,5 +1,70 @@
 # Changelog
 
+## v0.42.0 — 2026-11-24
+
+### Breaking Changes
+- **api:** sync, push, release and deploy always run as jobs
+
+### Features
+- **api:** import GitLab groups and Bitbucket workspaces through neutral routes
+- **api:** setup token required by the first sign-up
+- **api:** worker heartbeat, /api/health, owner instance health and test email
+- **api:** email invitations when SMTP is configured, with resend and import support
+- **api:** change your own password while signed in
+- **api:** organization import invites by login, maps host roles and keeps team memberships
+- **api:** invitations bound to a code-host login, carrying the teams joined on accepting
+- **api:** users and tokens operator commands, disabled accounts
+- **web:** dashboard redesign with deployments in progress, needs attention and CI coverage (#597)
+- organization events for plugins, delivered through the job queue (#588)
+- **core:** a generated project's owner, author, licence and host come from its user (#589)
+- **api:** db backup and db restore operator commands
+- bulk adoption — open install pull requests for many apps at once (#584)
+- **web:** the install step shows the detected CI and warnings (#581)
+- verify deployments with the app's env and identity (#583)
+- **api:** Connect Sentry and the organization's connections handed to plugins
+- **core:** a default value on plugin options (#571)
+
+### Bug Fixes
+- **api:** record a deploy without a version as the release at HEAD
+- **api:** resolve plugin endpoint and credential as one connection
+- **api:** read dry_run as the request model does
+- **api:** record a deploy as running before the worker follows it
+- **api:** invitation host user migration is 0028 after the worker heartbeat
+- **api:** refuse integration requests to internal networks unless allowed
+- **core:** credential headers stay on the approved origin across redirects and pages
+- **api:** invitation host user migration follows 0026
+- **api:** bind Bitbucket and GitLab login invitations to the immutable account id
+- **api:** guard the worker heartbeat downgrade like its upgrade
+- **api:** scope the instance health queue to the caller's organization
+- **api:** worker heartbeat migration follows the invitation one as 0026
+- **api:** worker heartbeat migration follows 0024_user_disabled
+- **api:** track the instance service and web modules a Flask ignore rule hid
+- **api:** invitation email migration follows 0025 as 0026
+- **api:** match a repository URL to its host by origin, not substring
+- **api:** git offers a connection's token only to its origin
+- **api:** delete an organization's template clones when its access is revoked
+- **api:** read a template source only as the organization that added it
+- **api:** invitation migration follows user.disabled_at as 0025
+- **api:** migration 0024 adopts an invitation table the web already created
+- **api:** only an owner invites an owner, with team_ids too
+- **api:** record an observed run only on the target serving its stage
+- **api:** disabled_at migration tolerates a schema the web created
+- **api:** latest activity picks each kind by the event's own time (#592)
+- **api:** adding a repository that is already an app answers it, not a 500 (#573)
+- **api:** commit a token's bookkeeping before the gate queues a job
+- **api:** one refresh at a time per service connection
+- **api:** only an owner invites someone as owner
+- **api:** refuse plugin options for a slug the image does not run
+
+### Docs
+- **api:** shorten the worker heartbeat docstrings
+
+### Style
+- **api:** sort the worker imports
+
+### Reverts
+- plugin events and deployment verification context (#588, #583) (#598)
+
 ## v0.41.2 — 2026-11-24
 
 ### Bug Fixes
