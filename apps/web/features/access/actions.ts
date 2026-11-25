@@ -53,7 +53,7 @@ export async function runOperation(op: Operation, apply: boolean): Promise<Resul
         plan = await v1.accessOffboard({ person: op.person.trim(), apply, remove_from_platform: !!op.removeFromPlatform });
         break;
     }
-    if (apply) revalidatePath("/settings/access");
+    if (apply) revalidatePath("/settings");
     return { ok: true, data: plan };
   } catch (e) {
     return failed(e);

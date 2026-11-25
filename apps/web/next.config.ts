@@ -16,6 +16,8 @@ const config: NextConfig = {
       { source: "/settings/people", destination: "/organization/members", permanent: true },
       { source: "/settings/people/teams", destination: "/organization/teams", permanent: true },
       { source: "/settings/people/teams/:team", destination: "/organization/teams/:team", permanent: true },
+      { source: "/settings/access", destination: "/settings?tab=access", permanent: true },
+      { source: "/settings/instance", destination: "/settings?tab=instance", permanent: true },
       { source: "/settings/hosts", destination: "/settings", permanent: true },
       { source: "/settings/integrations", destination: "/settings", permanent: true },
       { source: "/integrations", destination: "/settings", permanent: true },

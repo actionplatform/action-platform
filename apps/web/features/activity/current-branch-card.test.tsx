@@ -28,7 +28,7 @@ const ci = (runs: Partial<CiState["runs"][number]>[] = [], kind = "github_action
   per: 100,
 });
 
-const props = { newHref: "/projects/p1/apps/a1/pull-requests/new", ciSettingsHref: "/projects/p1/apps/a1/settings/ci" };
+const props = { newHref: "/projects/p1/apps/a1/pull-requests/new", ciSettingsHref: "/projects/p1/apps/a1/settings?tab=ci" };
 
 describe("CurrentBranchCard", () => {
   afterEach(cleanup);

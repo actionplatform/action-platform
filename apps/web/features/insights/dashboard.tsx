@@ -75,7 +75,7 @@ function Coverage({ data }: { data: Dashboard }) {
               {missing.slice(0, MISSING_SHOWN).map((a) => (
                 <li key={a.app_id} className="flex min-w-0 items-center gap-2 text-sm">
                   <TriangleAlert className="size-3.5 shrink-0 text-status-warn" strokeWidth={1.75} aria-hidden />
-                  <Link href={`/projects/${a.project_id}/apps/${a.app_id}/settings/ci`} className="min-w-0 truncate hover:underline underline-offset-4">{a.app}</Link>
+                  <Link href={`/projects/${a.project_id}/apps/${a.app_id}/settings?tab=ci`} className="min-w-0 truncate hover:underline underline-offset-4">{a.app}</Link>
                   <span className="min-w-0 truncate text-[13px] text-secondary">{a.project}</span>
                 </li>
               ))}

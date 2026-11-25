@@ -34,8 +34,8 @@ describe("AddForm", () => {
     expect(screen.getByText("stage('Check') {}")).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole("button", { name: /Open configuration/ }));
-    expect(push).toHaveBeenCalledWith("/projects/p1/apps/a1/settings/configuration");
+    fireEvent.click(screen.getByRole("button", { name: /Open settings/ }));
+    expect(push).toHaveBeenCalledWith("/projects/p1/apps/a1/settings?tab=general");
   });
 
   it("goes straight to configuration when nothing was found", async () => {
@@ -45,7 +45,7 @@ describe("AddForm", () => {
 
     await installThrough();
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/projects/p1/apps/a1/settings/configuration"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/projects/p1/apps/a1/settings?tab=general"));
   });
 
   it("a refusal shows inside the install dialog", async () => {

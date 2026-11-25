@@ -26,7 +26,7 @@ async function Content({ kind, query, view, hasHost }: { kind: EventKind | null;
   }
   if (kind === "ci_run") {
     const state = await ciOf(view.projectId, view.appId, page, per);
-    return <RunsTable projectId={view.projectId} appId={view.appId} state={state} canSync={!!view.can["app.sync"]} connectHref={view.can["app.configure"] ? appPath(view.projectId, view.appId, "settings/ci") : null} />;
+    return <RunsTable projectId={view.projectId} appId={view.appId} state={state} canSync={!!view.can["app.sync"]} connectHref={view.can["app.configure"] ? appPath(view.projectId, view.appId, "settings?tab=ci") : null} />;
   }
   const events = await appActivityOf(view.projectId, view.appId, kind);
   return (

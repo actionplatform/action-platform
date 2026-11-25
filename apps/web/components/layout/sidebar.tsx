@@ -1,15 +1,15 @@
 "use client";
 
-import { Activity, ArrowLeft, Building2, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Puzzle, Rocket, Settings, X } from "lucide-react";
+import { Activity, ArrowLeft, Building2, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Puzzle, Rocket, Settings, Target, Workflow, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/logo";
-import { APP_SETTINGS_PAGES, type AppTab, appPath } from "@/lib/app-routes";
+import { appPath } from "@/lib/app-routes";
 import type { Org } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { OrgSwitcher } from "./org-switcher";
-import { ORGANIZATION_PAGES, SETTINGS_PAGES, pageActive, type SubPage } from "./nav";
+import { ORGANIZATION_PAGES, pageActive, type SubPage } from "./nav";
 import { useScope } from "./scope";
 import { UserMenu } from "./user-menu";
 
@@ -19,15 +19,17 @@ const items: { href: string; label: string; icon: typeof FolderGit2; children?: 
   { href: "/templates", label: "Templates", icon: LayoutTemplate },
   { href: "/organization", label: "Organization", icon: Building2, children: ORGANIZATION_PAGES },
   { href: "/plugins", label: "Plugins", icon: Puzzle },
-  { href: "/settings", label: "Settings", icon: Settings, children: SETTINGS_PAGES },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export const appItems: { tab: string; label: string; icon: typeof FolderGit2; children?: AppTab[] }[] = [
+export const appItems: { tab: string; label: string; icon: typeof FolderGit2 }[] = [
   { tab: "", label: "Overview", icon: LayoutDashboard },
   { tab: "releases", label: "Releases", icon: Rocket },
+  { tab: "scopes", label: "Scopes", icon: Target },
   { tab: "deployments", label: "Deployments", icon: Cloud },
+  { tab: "ci", label: "CI", icon: Workflow },
   { tab: "activity", label: "Activity", icon: Activity },
-  { tab: "settings", label: "Settings", icon: Settings, children: APP_SETTINGS_PAGES },
+  { tab: "settings", label: "Settings", icon: Settings },
 ];
 
 const link = "mx-3 my-0.5 flex h-10 min-h-10 items-center gap-3 rounded-[7px] border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground";
@@ -70,38 +72,19 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
             <span className="truncate">{scope.projectName}</span>
           </Link>
           <div className="mx-5 mb-1 mt-3 truncate font-mono text-xs text-muted-foreground">{scope.appName}</div>
-          {appItems.map(({ tab, label, icon: Icon, children }) => {
+          {appItems.map(({ tab, label, icon: Icon }) => {
             const href = appPath(scope.projectId, scope.appId, tab);
             const active = tab ? pageActive(pathname, href) : pathname === href;
             return (
-              <div key={label}>
-                <Link
-                  href={href}
-                  aria-current={active && !children ? "page" : undefined}
-                  className={cn(link, active ? on : off)}
-                >
-                  <Icon className="size-[18px]" strokeWidth={1.75} />
-                  {label}
-                </Link>
-                {children && active && (
-                  <div className="mb-1 ml-[38px] border-l border-border-subtle">
-                    {children.map((page) => {
-                      const pageHref = appPath(scope.projectId, scope.appId, page.tab);
-                      const current = pageActive(pathname, pageHref, page.exact);
-                      return (
-                        <Link
-                          key={page.tab}
-                          href={pageHref}
-                          aria-current={current ? "page" : undefined}
-                          className={cn("-ml-px flex h-9 items-center border-l pl-4 pr-3 text-[13px] transition-colors", current ? "border-foreground text-foreground" : "border-transparent text-secondary hover:text-foreground")}
-                        >
-                          {page.label}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <Link
+                key={label}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={cn(link, active ? on : off)}
+              >
+                <Icon className="size-[18px]" strokeWidth={1.75} />
+                {label}
+              </Link>
             );
           })}
         </nav>

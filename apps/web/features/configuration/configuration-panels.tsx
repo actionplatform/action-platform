@@ -4,6 +4,7 @@ import { Check, Cloud, ExternalLink, GitCommitHorizontal, Save, Upload } from "l
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
+import { NameChips } from "@/components/ui/name-chips";
 import { Hint } from "@/components/ui/hint";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -26,6 +27,7 @@ export function ConfigurationPanels({ view, clouds }: { view: AppView; clouds: C
       {!view.can["app.configure"] && <div className="rounded-lg border border-border bg-surface px-4 py-3 text-[13px] text-secondary">Your role can view the configuration but not change it.</div>}
       {view.workingTree === "dirty" && view.can["app.configure"] && <CommitBar view={view} />}
       <DeployTargetPanel view={view} clouds={clouds} />
+      <ServicesPanel view={view} />
       <ManifestPanel view={view} />
     </div>
   );
@@ -177,6 +179,17 @@ function DeployTargetPanel({ view, clouds }: { view: AppView; clouds: CloudOptio
         </ActionField>
       </ActionFields>
     </ActionForm>
+  );
+}
+
+function ServicesPanel({ view }: { view: AppView }) {
+  return (
+    <Panel>
+      <PanelHeader title="Services" />
+      <PanelBody className="text-sm">
+        {view.services.length > 0 ? <NameChips names={view.services} noun="service" max={6} /> : <p className="text-secondary">No services. Add one with <span className="font-mono">action-platform service add</span>.</p>}
+      </PanelBody>
+    </Panel>
   );
 }
 
