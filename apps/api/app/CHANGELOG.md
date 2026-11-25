@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.43.1 — 2026-11-25
+
+### Bug Fixes
+- **api:** a failing app lock puts the job back instead of stopping the worker
+- **api:** a readiness the worker will retry stays pending
+- **api:** jobs of one app take turns on its clone
+
 ## v0.43.0 — 2026-11-24
 
 ### Features
