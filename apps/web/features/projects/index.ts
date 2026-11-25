@@ -5,7 +5,7 @@ export { DangerIcon, DeleteAppDialog } from "./delete-app-dialog";
 export { DeleteRepositoryOption } from "./delete-repository-option";
 export { HealthCard } from "./health-card";
 export type { AppView } from "./model";
-export { SettingsTab } from "./settings-tab";
+export { DangerZone, RepositoryPanel } from "./settings-tab";
 export { SourceCard } from "./source-card";
 export { PendingChangesBanner, SummaryGrid } from "./summary-grid";
 export { Wizard } from "./wizard/wizard";

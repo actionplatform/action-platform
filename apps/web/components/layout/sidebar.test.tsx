@@ -24,25 +24,32 @@ function renderApp(pathname: string) {
 describe("Sidebar inside an app", () => {
   afterEach(cleanup);
 
-  it("lists Overview, Releases, Deployments, Activity and Settings", () => {
+  it("lists Overview, Releases, Scopes, Deployments, CI, Activity and Settings", () => {
     const menu = renderApp("/projects/p1/apps/a1");
     const links = menu.getAllByRole("link").slice(1).map((a) => [a.textContent, a.getAttribute("href")]);
     expect(links).toEqual([
       ["Overview", "/projects/p1/apps/a1"],
       ["Releases", "/projects/p1/apps/a1/releases"],
+      ["Scopes", "/projects/p1/apps/a1/scopes"],
       ["Deployments", "/projects/p1/apps/a1/deployments"],
+      ["CI", "/projects/p1/apps/a1/ci"],
       ["Activity", "/projects/p1/apps/a1/activity"],
       ["Settings", "/projects/p1/apps/a1/settings"],
     ]);
     expect(menu.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
   });
 
-  it("opens the settings pages under Settings", () => {
-    const menu = renderApp("/projects/p1/apps/a1/settings/scopes/new");
-    expect(menu.getByRole("link", { name: "General" })).toHaveAttribute("href", "/projects/p1/apps/a1/settings");
-    expect(menu.getByRole("link", { name: "Scopes" })).toHaveAttribute("aria-current", "page");
-    expect(menu.getByRole("link", { name: "Configuration" })).toHaveAttribute("href", "/projects/p1/apps/a1/settings/configuration");
-    expect(menu.getByRole("link", { name: "CI" })).toHaveAttribute("href", "/projects/p1/apps/a1/settings/ci");
-    expect(menu.getByRole("link", { name: "General" })).not.toHaveAttribute("aria-current");
+  it("keeps Scopes and CI tabs of their own", () => {
+    for (const [path, name] of [["/projects/p1/apps/a1/scopes/new", "Scopes"], ["/projects/p1/apps/a1/ci", "CI"]]) {
+      cleanup();
+      const menu = renderApp(path);
+      expect(menu.getByRole("link", { name })).toHaveAttribute("aria-current", "page");
+    }
+  });
+
+  it("has no sub-navigation under Settings", () => {
+    const menu = renderApp("/projects/p1/apps/a1/settings");
+    expect(menu.getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
+    expect(menu.getAllByRole("link")).toHaveLength(8);
   });
 });

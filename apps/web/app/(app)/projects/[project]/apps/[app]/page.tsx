@@ -29,7 +29,7 @@ export default async function OverviewPage({ params, searchParams }: { params: P
       {opened && <div className="mt-4"><OpenedBanner number={Number(opened)} url={highlighted?.url ?? null} branch={highlighted?.head ?? view.branch} base={highlighted?.base ?? "main"} /></div>}
       <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
         <div className="space-y-4">
-          <CurrentBranchCard view={view} ci={ci} pulls={pulls} newHref={appPath(view.projectId, view.appId, "pull-requests/new")} ciSettingsHref={appPath(view.projectId, view.appId, "settings/ci")} />
+          <CurrentBranchCard view={view} ci={ci} pulls={pulls} newHref={appPath(view.projectId, view.appId, "pull-requests/new")} ciSettingsHref={appPath(view.projectId, view.appId, "settings?tab=ci")} />
           <HealthCard view={view} />
           <CommitsCard commits={view.commits} repositoryUrl={view.repositoryUrl} />
         </div>

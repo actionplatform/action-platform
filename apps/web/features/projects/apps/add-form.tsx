@@ -33,7 +33,7 @@ export function AddForm({ projectId, types, stacks }: { projectId: string; types
   const [report, setReport] = useState<{ appId: string; report: InstallReport } | null>(null);
   const [pending, start] = useTransition();
 
-  const configuration = (appId: string) => `/projects/${projectId}/apps/${appId}/settings/configuration`;
+  const configuration = (appId: string) => `/projects/${projectId}/apps/${appId}/settings?tab=general`;
   const finish = (r: Awaited<ReturnType<typeof addApp>>, installed: boolean) => {
     if (r.ok) {
       setUrl("");
@@ -82,8 +82,8 @@ export function AddForm({ projectId, types, stacks }: { projectId: string; types
         open={!!report}
         onClose={close}
         title="Platform installed — review before committing"
-        description={<>The files are drafts on the app. Check what the installer found, then commit them from Configuration.</>}
-        footer={report && <Button onClick={() => router.push(configuration(report.appId))}>Open configuration <ArrowRight className="size-4" /></Button>}
+        description={<>The files are drafts on the app. Check what the installer found, then commit them from Settings.</>}
+        footer={report && <Button onClick={() => router.push(configuration(report.appId))}>Open settings <ArrowRight className="size-4" /></Button>}
       >
         {report && (
           <div className="space-y-3 text-sm">

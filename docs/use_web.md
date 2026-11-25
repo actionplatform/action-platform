@@ -97,7 +97,7 @@ Each app runs on its own: one that fails — archived, no permission to push, a 
 
 ## The app page
 
-The header carries the name, the branch, **Last synced** and **Sync** (or **Push to remote** while there is none). Tabs: Overview, Releases, Deployments, Activity, Settings — the path of a change, from its branch to where it runs. The CI is not a tab of its own: its result shows where it decides something — the current branch on Overview, each release on Releases — and its runs are a filter of Activity.
+The header carries the name, the branch, **Last synced** and **Sync** (or **Push to remote** while there is none). Tabs: Overview, Releases, Scopes, Deployments, CI, Activity, Settings — the path of a change, from its branch to where it runs. CI runs are also a filter of Activity.
 
 ### Overview
 
@@ -129,12 +129,18 @@ What happened to the app, newest first: releases, deployments, CI runs and pull 
 
 ### Settings
 
-**General**, **Scopes**, **Configuration** and **CI** — on a phone, tabs at the top.
+One page with two tabs at the top, `?tab=general` and `?tab=ci`, no sub-menu in the sidebar.
 
-- **General**: the remote repository, the source host whose token pushes and opens pull requests, and the danger zone.
-- **Scopes**: A deploy always lands on a **scope**: a named destination of the app with a kind (`web`, `job`, `worker`, `static`, `library`) and a criticality (`test`, `low`, `medium`, `high`, `critical`). No scope, no deploy — an app starts with none. The page lists the app's scopes — name, kind, criticality, what each accepts; **New scope** opens its own page: Name, Kind, Criticality (a switch with the definition of each level). A scope's menu edits or deletes it (refused while a deploy to it is running). Criticality decides which releases a scope takes: `test` and `low` take candidates, stable and hotfix releases; `medium` and above take stable and hotfix. Where the release goes — target, region, credentials — stays in Configuration. The model: [scopes](concept_scopes.md).
-- **Configuration**: **Deploy target** picks a cloud overlay for the app's type and language and applies it — the files become pending changes and `[deploy] target` is recorded. Services (`action-platform service add`) stay on the CLI until the web has something real to show for them. Both are forms with a summary strip and a confirmation. **Manifest** edits `platform.toml` as the platform keeps it; **Export** writes the mirror into the repository. Pending changes are committed from the bar on top to a `chore/<code>` branch with a pull request, or discarded.
+- **General**: **Repository** (the remote repository, how releases are named, the source host whose token pushes and opens pull requests), **Deploy & services** and the **Danger zone**. **Deploy target** picks a cloud overlay for the app's type and language and applies it — the files become pending changes and `[deploy] target` is recorded; it is a form with a summary strip and a confirmation. **Services** lists the app's services (`action-platform service add` adds one on the CLI). **Configuration** edits `platform.toml` as the platform keeps it; **Export** writes the mirror into the repository. Pending changes are committed from the bar on top to a `chore/<code>` branch with a pull request, or discarded.
 - **CI**: the runner — a **CI server** the organization connected under Settings (Jenkins), or the one embedded in the source host (GitHub Actions, GitLab CI, Bitbucket Pipelines, with the host's own token) — and the **job**: the path in the Jenkins URL (`team/app`, `team/app/main` for a multibranch branch), a workflow file such as `ci.yml` for GitHub Actions (empty means every workflow), nothing for GitLab and Bitbucket. Only `app.configure` saves it.
+
+### Scopes
+
+A deploy always lands on a **scope**: a named destination of the app with a kind (`web`, `job`, `worker`, `static`, `library`) and a criticality (`test`, `low`, `medium`, `high`, `critical`). No scope, no deploy — an app starts with none. The page lists the app's scopes — name, kind, criticality, what each accepts; **New scope** opens its own page: Name, Kind, Criticality (a switch with the definition of each level). A scope's menu edits or deletes it (refused while a deploy to it is running). Criticality decides which releases a scope takes: `test` and `low` take candidates, stable and hotfix releases; `medium` and above take stable and hotfix. Where the release goes — target, region, credentials — stays in Settings. The model: [scopes](concept_scopes.md).
+
+### CI
+
+The tab lists the runs imported from the app's CI — status, run, branch, commit, trigger, when, duration, linked to the server — ten per page, paged on the API; **Sync** imports the latest. **Connect CI** (later **Change CI**) opens the **CI** tab of the app's Settings.
 
 ### Deleting
 
@@ -191,7 +197,7 @@ One card per plugin the platform runs, with its version. **Configure** opens the
 
 ## Settings
 
-**Organization** — name, slug, your role, the commit identity and the git-flow rules — **Git** and **Services**; **Access** is its own page.
+**Organization** — name, slug, your role, the commit identity and the git-flow rules — **Git** and **Services**; **Access** and **Instance** are tabs of the same page (`?tab=access`, `?tab=instance`), with no sub-menu; a tab the viewer may not use is not listed.
 
 ### Commit identity
 
@@ -223,7 +229,7 @@ Services other than code hosts that plugins read through a connection instead of
 
 ### Access
 
-**Settings → Access** (`org.manage` only; others see a short notice) manages what members may do on the organization's GitHub (through the GitHub connection under Git) and on the services the plugins own, through [service access](concept_service_access.md). Read from each service on every load:
+The **Access** tab of Settings (`org.manage` only; hidden from others) manages what members may do on the organization's GitHub (through the GitHub connection under Git) and on the services the plugins own, through [service access](concept_service_access.md). Read from each service on every load:
 
 - **Per service** — readable or not (a failure shows the plugin's error as it came; when it asks to connect something, a link opens Settings, where Git and Services are connected), whether it is imported, the grants it holds against the grants the mapping wants, the drift a sync would close, members without an account, accounts that belong to no member, and the levels of each resource kind.
 - **Who has access** — by person (email: accounts, teams, live grants, drift) or by service (every account and the member it belongs to).
@@ -235,7 +241,7 @@ Build servers of their own, per organization: name, base URL, username and API t
 
 ### Instance
 
-**Settings → Instance** (owners only; others see a short notice) answers "is this instance OK?": database and migrations, whether a worker runs for each kind of job, every worker with its last heartbeat, the queue of your organization per kind with the age of the oldest waiting job, and what is configured — email, Google sign-in, error reporting on the API and the code-host OAuth apps. It refreshes every ten seconds. **Send test email** sends a message to you and shows the SMTP server's error text when it fails. For Google sign-in it shows the redirect URI to add to the OAuth client, with a copy button. A job that waits with no worker taking its kind shows "No worker running" in the deployments table and in its log; see [observability](concept_observability.md#instance-health).
+The **Instance** tab of Settings (owners only; hidden from others) answers "is this instance OK?": database and migrations, whether a worker runs for each kind of job, every worker with its last heartbeat, the queue of your organization per kind with the age of the oldest waiting job, and what is configured — email, Google sign-in, error reporting on the API and the code-host OAuth apps. It refreshes every ten seconds. **Send test email** sends a message to you and shows the SMTP server's error text when it fails. For Google sign-in it shows the redirect URI to add to the OAuth client, with a copy button. A job that waits with no worker taking its kind shows "No worker running" in the deployments table and in its log; see [observability](concept_observability.md#instance-health).
 
 ### Delete organization
 
@@ -253,9 +259,9 @@ The approval page (`/device`) names the client, shows the code to compare with t
 
 ## Old paths
 
-`/settings/people` → `/organization/members` · `/settings/people/teams` → `/organization/teams` · `/integrations`, `/integrations/hosts`, `/settings/integrations` → `/settings` · `/integrations/cloud` → `/plugins` · `/settings/developers`, `/account` → `/organization/sessions`.
+`/settings/people` → `/organization/members` · `/settings/people/teams` → `/organization/teams` · `/integrations`, `/integrations/hosts`, `/settings/integrations` → `/settings` · `/integrations/cloud` → `/plugins` · `/settings/developers`, `/account` → `/organization/sessions` · `/settings/access`, `/settings/instance` → `/settings?tab=access`, `/settings?tab=instance`.
 
-Inside an app: `…/ci` → `…/activity?kind=ci_run` · `…/ci/connect` → `…/settings/ci` · `…/scopes`, `…/scopes/new`, `…/scopes/<name>` → `…/settings/scopes/…` · `…/configuration` → `…/settings/configuration` · `…/activity/new` → `…/pull-requests/new`.
+Inside an app: `…/settings/ci` and `…/ci/connect` → `…/settings?tab=ci` · `…/settings/scopes`, `…/settings/scopes/new`, `…/settings/scopes/<name>` → `…/scopes/…` · `…/settings/configuration` and `…/configuration` → `…/settings?tab=general` · `…/activity/new` → `…/pull-requests/new`.
 
 ## Hardening
 
