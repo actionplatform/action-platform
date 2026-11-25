@@ -35,11 +35,11 @@ export function ScopesTable({ scopes, projectId, appId, canEdit, newHref }: { sc
         empty={{ icon: Target, title: "No scopes yet", text: "No scope, no deploy: create one with New scope." }}
         minWidth={640}
         columns={[
-          { key: "name", label: "Scope", width: 30, render: (s) => <span className="font-mono font-medium">{s.name}</span> },
-          { key: "kind", label: "Kind", width: 16, render: (s) => <Cell mono>{s.kind}</Cell> },
-          { key: "criticality", label: "Criticality", width: 18, render: (s) => <CriticalityBadge value={s.criticality} /> },
-          { key: "accepts", label: "Accepts", width: 30, hide: "sm", render: (s) => <Cell muted>{(ACCEPTS[s.criticality as Criticality] ?? []).join(" · ")}</Cell> },
-          { key: "actions", label: "", width: 6, align: "right", render: (s) => actions(s).length > 0 ? <Menu label={`Actions for ${s.name}`} items={actions(s)} trigger={({ toggle, open, id }) => <Button size="icon" variant="ghost" aria-label={`Actions for ${s.name}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle}><MoreHorizontal className="size-4" strokeWidth={1.75} /></Button>} /> : null },
+          { key: "name", label: "Scope", width: 32, render: (s) => <Cell mono className="font-medium">{s.name}</Cell> },
+          { key: "kind", label: "Kind", width: 14, render: (s) => <Cell muted>{s.kind}</Cell> },
+          { key: "criticality", label: "Criticality", width: 16, render: (s) => <CriticalityBadge value={s.criticality} /> },
+          { key: "accepts", label: "Accepted releases", width: 32, wrap: true, hide: "sm", render: (s) => <Cell muted wrap>{(ACCEPTS[s.criticality as Criticality] ?? []).join(", ")}</Cell> },
+          { key: "actions", label: "Actions", width: "56px", actions: true, render: (s) => actions(s).length > 0 ? <Menu label={`Actions for ${s.name}`} items={actions(s)} trigger={({ toggle, open, id }) => <Button size="icon" variant="ghost" aria-label={`Actions for ${s.name}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle}><MoreHorizontal className="size-4" strokeWidth={1.75} /></Button>} /> : null },
         ]}
       />
       <ConfirmDialog
