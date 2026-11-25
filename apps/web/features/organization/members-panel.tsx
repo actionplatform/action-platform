@@ -3,7 +3,7 @@
 import { AtSign, Check, Copy, Link2, Mail, RefreshCw, Trash2, UserMinus, UserPlus } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
@@ -49,10 +49,10 @@ export function MembersPanel({ org, members, invitations, me, canManage, origin,
         action={canManage ? <><Button size="sm" variant="outline" onClick={() => setInviting(true)}><Link2 className="size-3.5" strokeWidth={2} /> Copy invite link</Button><Button size="sm" onClick={() => setAdding(true)}><UserPlus className="size-3.5" strokeWidth={2} /> Add member</Button></> : undefined}
         empty={{ icon: UserPlus, title: "No members yet", text: "Add a member or share the invite link." }}
         columns={[
-          { key: "member", label: "Member", width: 34, render: (m) => <Inline><span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-background text-[11px] font-semibold">{initials(m.name || m.email)}</span><span className="truncate font-medium">{m.name}</span>{m.userId === me && <Badge className="h-5 shrink-0 px-1.5 text-[11px]">You</Badge>}</Inline> },
+          { key: "member", label: "Member", width: 34, render: (m) => <Inline><span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-background text-[11px] font-semibold">{initials(m.name || m.email)}</span><Cell className="font-medium">{m.name}</Cell>{m.userId === me && <Badge className="h-5 shrink-0 px-1.5 text-[11px]">You</Badge>}</Inline> },
           { key: "email", label: "Email", width: 36, hide: "md", render: (m) => <Cell muted title={m.email}>{m.email}</Cell> },
           { key: "role", label: "Role", width: 22, render: role },
-          { key: "actions", label: "", width: 8, align: "right", render: (m) => canManage ? <button type="button" title="Remove member" aria-label={`Remove ${m.name}`} disabled={pending || m.userId === me} onClick={() => setRemoving(m)} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground disabled:opacity-40"><UserMinus className="size-4" strokeWidth={1.75} /></button> : null },
+          { key: "actions", label: "Actions", width: 8, actions: true, render: (m) => canManage ? <button type="button" title="Remove member" aria-label={`Remove ${m.name}`} disabled={pending || m.userId === me} onClick={() => setRemoving(m)} className={buttonVariants({ variant: "ghost", size: "icon" })}><UserMinus className="size-4" strokeWidth={1.75} /></button> : null },
         ]}
       />
       {invitations.length > 0 && (
@@ -64,13 +64,13 @@ export function MembersPanel({ org, members, invitations, me, canManage, origin,
           minWidth={640}
           empty={{ icon: Mail, title: "No invitations" }}
           columns={[
-            { key: "email", label: "Email or login", width: 24, render: (i) => <Inline>{i.email ? <Mail className="size-4 shrink-0 text-secondary" strokeWidth={1.75} /> : <AtSign className="size-4 shrink-0 text-secondary" strokeWidth={1.75} />}<span className="truncate">{i.email ?? i.login}</span></Inline> },
+            { key: "email", label: "Email or login", width: 24, render: (i) => <Inline>{i.email ? <Mail className="size-4 shrink-0 text-secondary" strokeWidth={1.75} /> : <AtSign className="size-4 shrink-0 text-secondary" strokeWidth={1.75} />}<Cell>{i.email ?? i.login}</Cell></Inline> },
             { key: "role", label: "Role", width: 12, render: (i) => <Cell muted>{i.role ?? "member"}</Cell> },
             { key: "email-sent", label: "Email", width: 14, hide: "sm", render: (i) => <EmailStatus invitation={i} /> },
             { key: "teams", label: "Teams on joining", width: 16, hide: "md", render: (i) => <Cell muted title={i.teams.join(", ")}>{i.teams.length ? i.teams.join(", ") : "—"}</Cell> },
             { key: "by", label: "Invited by", width: 14, hide: "md", render: (i) => <Cell muted title={i.inviter}>{i.inviter}</Cell> },
             { key: "expires", label: "Expires", width: 12, hide: "sm", render: (i) => <Cell muted>{new Date(i.expiresAt).toLocaleDateString()}</Cell> },
-            { key: "actions", label: "", width: 18, align: "right", render: (i) => <InvitationActions invitation={i} origin={origin} canManage={canManage} onError={setError} /> },
+            { key: "actions", label: "Actions", width: 18, actions: true, render: (i) => <InvitationActions invitation={i} origin={origin} canManage={canManage} onError={setError} /> },
           ]}
         />
       )}
@@ -119,8 +119,8 @@ function InvitationActions({ invitation, origin, canManage, onError }: { invitat
   return (
     <span className="inline-flex items-center gap-1">
       <CopyLink url={inviteUrl(origin, invitation.id)} />
-      {canManage && invitation.emailState !== "off" && <button type="button" title="Send the invitation email again" aria-label={`Resend the invitation to ${invitation.email}`} disabled={pending} onClick={() => start(async () => { onError(null); const r = await resendInvitation(invitation.id); if (!r.ok) onError(r.error); })} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground disabled:opacity-40"><RefreshCw className="size-4" strokeWidth={1.75} /></button>}
-      {canManage && <button type="button" title="Revoke invitation" aria-label={`Revoke invitation for ${invitation.email ?? `@${invitation.login}`}`} disabled={pending} onClick={() => start(async () => { onError(null); const r = await revokeInvitation(invitation.id); if (!r.ok) onError(r.error); })} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><Trash2 className="size-4" strokeWidth={1.75} /></button>}
+      {canManage && invitation.emailState !== "off" && <button type="button" title="Send the invitation email again" aria-label={`Resend the invitation to ${invitation.email}`} disabled={pending} onClick={() => start(async () => { onError(null); const r = await resendInvitation(invitation.id); if (!r.ok) onError(r.error); })} className={buttonVariants({ variant: "ghost", size: "icon" })}><RefreshCw className="size-4" strokeWidth={1.75} /></button>}
+      {canManage && <button type="button" title="Revoke invitation" aria-label={`Revoke invitation for ${invitation.email ?? `@${invitation.login}`}`} disabled={pending} onClick={() => start(async () => { onError(null); const r = await revokeInvitation(invitation.id); if (!r.ok) onError(r.error); })} className={buttonVariants({ variant: "ghost", size: "icon" })}><Trash2 className="size-4" strokeWidth={1.75} /></button>}
     </span>
   );
 }

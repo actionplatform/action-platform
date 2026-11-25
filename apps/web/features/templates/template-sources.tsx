@@ -4,7 +4,7 @@ import { BookMarked, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { Cell, DataTable, Inline } from "@/components/ui/data-table";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { addSource, removeSource } from "./actions";
@@ -21,8 +21,8 @@ export function TemplateSources({ sources, canManage }: { sources: SourceRow[]; 
   const [removing, setRemoving] = useState<SourceRow | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const remove = (s: SourceRow) => canManage && !s.official ? <button type="button" title="Remove repository" aria-label={`Remove ${s.name}`} disabled={pending} onClick={() => setRemoving(s)} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><Trash2 className="size-4" strokeWidth={1.75} /></button> : null;
-  const kind = (s: SourceRow) => (s.official ? <Badge tone="inverse">Official</Badge> : <Badge>{s.projects === 1 && s.clouds === 0 && s.services === 0 ? "Repository" : "Catalog"}</Badge>);
+  const remove = (s: SourceRow) => canManage && !s.official ? <button type="button" title="Remove repository" aria-label={`Remove ${s.name}`} disabled={pending} onClick={() => setRemoving(s)} className={buttonVariants({ variant: "ghost", size: "icon" })}><Trash2 className="size-4" strokeWidth={1.75} /></button> : null;
+  const kind = (s: SourceRow) => (s.official ? <Badge tone="inverse" className="shrink-0">Official</Badge> : <Badge className="shrink-0">{s.projects === 1 && s.clouds === 0 && s.services === 0 ? "Repository" : "Catalog"}</Badge>);
   const where = (s: SourceRow) => { const link = webUrl(s.url); const shown = s.url.replace(/^https?:\/\//, "").replace(/\.git$/, ""); return <Inline className="font-mono text-xs text-secondary">{link ? <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex min-w-0 items-center gap-1 hover:text-foreground"><span className="truncate">{shown}</span> <ExternalLink className="size-3 shrink-0" strokeWidth={1.75} /></a> : <span className="truncate">{s.url}</span>}<span aria-hidden>@</span><span className="shrink-0">{s.ref}</span></Inline>; };
 
   return (
@@ -37,10 +37,10 @@ export function TemplateSources({ sources, canManage }: { sources: SourceRow[]; 
         action={canManage ? <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus className="size-3.5" strokeWidth={2} /> Add repository</Button> : undefined}
         empty={{ icon: BookMarked, title: "No template repository", text: "Add a git repository; new apps start as a copy of it." }}
         columns={[
-          { key: "name", label: "Name", width: 28, render: (s) => <Inline><span className="truncate font-mono">{s.name}</span>{kind(s)}{!s.ok && <Badge tone="bad">Unavailable</Badge>}</Inline> },
+          { key: "name", label: "Name", width: 28, render: (s) => <Inline><Cell mono>{s.name}</Cell>{kind(s)}{!s.ok && <Badge tone="bad" className="shrink-0">Unavailable</Badge>}</Inline> },
           { key: "url", label: "Repository", width: 38, hide: "sm", render: where },
           { key: "contents", label: "Contents", width: 28, hide: "md", render: (s) => <Cell muted title={s.ok ? undefined : s.error ?? undefined}>{s.ok ? `${s.projects} projects · ${s.clouds} clouds` : s.error}</Cell> },
-          { key: "actions", label: "", width: 6, align: "right", render: remove },
+          { key: "actions", label: "Actions", width: 6, actions: true, render: remove },
         ]}
       />
       <AddSourceDialog open={adding} onClose={() => setAdding(false)} />

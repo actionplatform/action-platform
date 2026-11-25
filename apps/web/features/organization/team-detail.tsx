@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
@@ -46,9 +46,9 @@ function MembersPanel({ team, members, candidates, canManage }: { team: { id: st
         action={canManage ? <Button size="sm" variant="outline" disabled={candidates.length === 0} onClick={() => { setUserId(candidates[0]?.userId ?? ""); setAdding(true); }}><Plus className="size-3.5" strokeWidth={2} /> Add member</Button> : undefined}
         empty={{ icon: Users, title: "Nobody here yet", text: "Members must belong to the organization first." }}
         columns={[
-          { key: "name", label: "Member", width: 45, render: (m) => <Inline><span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border text-[11px] font-semibold uppercase">{m.name.slice(0, 2)}</span><span className="truncate font-medium">{m.name}</span></Inline> },
+          { key: "name", label: "Member", width: 45, render: (m) => <Inline><span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border text-[11px] font-semibold uppercase">{m.name.slice(0, 2)}</span><Cell className="font-medium">{m.name}</Cell></Inline> },
           { key: "email", label: "Email", width: 45, hide: "sm", render: (m) => <Cell muted title={m.email}>{m.email}</Cell> },
-          { key: "actions", label: "", width: 10, align: "right", render: (m) => canManage ? <button type="button" title="Remove from team" aria-label={`Remove ${m.name} from team`} disabled={pending} onClick={() => start(async () => { setError(null); const r = await removeMemberFromTeam(team.id, m.id); if (!r.ok) setError(r.error); })} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><UserMinus className="size-4" strokeWidth={1.75} /></button> : null },
+          { key: "actions", label: "Actions", width: 10, actions: true, render: (m) => canManage ? <button type="button" title="Remove from team" aria-label={`Remove ${m.name} from team`} disabled={pending} onClick={() => start(async () => { setError(null); const r = await removeMemberFromTeam(team.id, m.id); if (!r.ok) setError(r.error); })} className={buttonVariants({ variant: "ghost", size: "icon" })}><UserMinus className="size-4" strokeWidth={1.75} /></button> : null },
         ]}
       />
       <Dialog
@@ -85,9 +85,9 @@ function ProjectsPanel({ team, projects, candidates, canManage }: { team: { id: 
         action={canManage ? <Button size="sm" variant="outline" disabled={candidates.length === 0} onClick={() => { setProjectId(candidates[0]?.id ?? ""); setAdding(true); }}><Plus className="size-3.5" strokeWidth={2} /> Assign project</Button> : undefined}
         empty={{ icon: FolderGit2, title: "No projects assigned", text: "A project belongs to one team at a time." }}
         columns={[
-          { key: "name", label: "Project", width: 45, render: (p) => <Inline><FolderGit2 className="size-4 shrink-0 text-secondary" strokeWidth={1.75} /><Link href={`/projects/${p.id}`} className="truncate font-medium hover:underline underline-offset-4">{p.name}</Link></Inline> },
+          { key: "name", label: "Project", width: 45, render: (p) => <Inline><FolderGit2 className="size-4 shrink-0 text-secondary" strokeWidth={1.75} /><Link href={`/projects/${p.id}`} className="truncate font-medium hover:underline underline-offset-4" title={p.name}>{p.name}</Link></Inline> },
           { key: "slug", label: "Slug", width: 40, hide: "sm", render: (p) => <Cell mono muted>{p.slug}</Cell> },
-          { key: "actions", label: "", width: 15, align: "right", render: (p) => <span className="inline-flex items-center gap-1"><Link href={`/projects/${p.id}`} title="Open project" aria-label={`Open ${p.name}`} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><ArrowUpRight className="size-4" strokeWidth={1.75} /></Link>{canManage && <button type="button" title="Unassign" aria-label={`Unassign ${p.name}`} disabled={pending} onClick={() => start(async () => { setError(null); const r = await setProjectTeam(team.id, p.id, false); if (!r.ok) setError(r.error); })} className="inline-flex size-8 items-center justify-center rounded-md text-secondary hover:bg-surface-hover hover:text-foreground"><X className="size-4" strokeWidth={1.75} /></button>}</span> },
+          { key: "actions", label: "Actions", width: 15, actions: true, render: (p) => <span className="inline-flex items-center gap-1"><Link href={`/projects/${p.id}`} title="Open project" aria-label={`Open ${p.name}`} className={buttonVariants({ variant: "ghost", size: "icon" })}><ArrowUpRight className="size-4" strokeWidth={1.75} /></Link>{canManage && <button type="button" title="Unassign" aria-label={`Unassign ${p.name}`} disabled={pending} onClick={() => start(async () => { setError(null); const r = await setProjectTeam(team.id, p.id, false); if (!r.ok) setError(r.error); })} className={buttonVariants({ variant: "ghost", size: "icon" })}><X className="size-4" strokeWidth={1.75} /></button>}</span> },
         ]}
       />
       <Dialog

@@ -3,7 +3,7 @@
 import { ExternalLink, RefreshCw, Workflow } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Cell, DataTable, Inline } from "@/components/ui/data-table";
 import { CI_LABELS, type CiRun, type CiState, duration } from "@/lib/ci-kinds";
 import { call } from "@/lib/call";
@@ -58,13 +58,13 @@ export function RunsTable({ projectId, appId, state: initial, connectHref, canSy
         minWidth={880}
         columns={[
           { key: "status", label: "Status", width: 10, render: (r) => <Inline><RunIcon status={r.status} /><RunBadge status={r.status} /></Inline> },
-          { key: "run", label: "Run", width: 47, render: (r) => <Inline>{r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate font-medium hover:underline underline-offset-4" title={name(r)}>{name(r)}</a> : <span className="min-w-0 truncate font-medium" title={name(r)}>{name(r)}</span>}{r.name && r.name !== `#${r.number}` && <span className="shrink-0 font-mono text-xs text-muted-foreground">#{r.number}</span>}</Inline> },
+          { key: "run", label: "Run", width: 45, render: (r) => <Inline>{r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate font-medium hover:underline underline-offset-4" title={name(r)}>{name(r)}</a> : <span className="min-w-0 truncate font-medium" title={name(r)}>{name(r)}</span>}{r.name && r.name !== `#${r.number}` && <span className="shrink-0 font-mono text-xs text-muted-foreground">#{r.number}</span>}</Inline> },
           { key: "branch", label: "Branch", width: 8, hide: "md", render: (r) => <Cell mono muted title={r.branch ?? undefined}>{r.branch ?? "—"}</Cell> },
           { key: "sha", label: "Commit", width: 7, hide: "md", render: (r) => r.sha ? <span className="inline-flex h-6 items-center rounded border border-border bg-background px-1.5 font-mono text-xs">{r.sha.slice(0, 7)}</span> : <Cell muted>—</Cell> },
           { key: "trigger", label: "Trigger", width: 10, hide: "md", render: (r) => <Cell muted title={r.trigger ?? undefined}>{r.trigger ?? "—"}</Cell> },
           { key: "when", label: "Started", width: 10, hide: "sm", render: (r) => <Cell muted>{r.startedAt ? relativeTime(r.startedAt) : "—"}</Cell> },
-          { key: "duration", label: "Duration", width: 5, hide: "sm", render: (r) => <Cell mono muted>{duration(r.durationMs)}</Cell> },
-          { key: "open", label: "", width: 3, align: "right", render: (r) => r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" aria-label={`Open run ${r.number}`} className="inline-flex text-secondary hover:text-foreground"><ExternalLink className="size-4" strokeWidth={1.75} /></a> : null },
+          { key: "duration", label: "Duration", width: 7, numeric: true, hide: "sm", render: (r) => <Cell muted>{duration(r.durationMs)}</Cell> },
+          { key: "open", label: "Actions", width: 3, actions: true, render: (r) => r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" aria-label={`Open run ${r.number}`} className={buttonVariants({ variant: "ghost", size: "icon" })}><ExternalLink className="size-4" strokeWidth={1.75} /></a> : null },
         ]}
       />
     </div>
