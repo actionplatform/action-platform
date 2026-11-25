@@ -300,4 +300,31 @@ class Reserved(unittest.TestCase):
             found = Plugins.find()
 
         self.assertEqual(found, [])
-        self.assertIn("apx-github", registry.FAILURES["access"])
+        self.assertIn("apx-jenkins", registry.FAILURES["access"])
+
+    def test_the_github_plugin_is_not_loaded_beside_the_built_in_github(self):
+        registered: list = []
+
+        class OldGitHub(Plugin):
+            slug = "github"
+
+            def register(self, surface):
+                registered.append(surface)
+
+            def access(self, options):
+                return MemoryProvider("github")
+
+        ep = mock.Mock(dist=mock.Mock(version="0.2.1"), load=lambda: OldGitHub)
+        ep.name = "github"
+        ep.dist.name = "apx-github"
+        self.addCleanup(registry.FAILURES.pop, "github", None)
+
+        with mock.patch.object(registry, "entry_points", lambda group: [ep]):
+            plugins = Plugins(Plugins.find(), PluginState())
+
+        plugins.register(mock.Mock(), mock.Mock(), mock.Mock())
+
+        self.assertEqual(plugins.found, [])
+        self.assertEqual(plugins.access_providers(), ({}, {}))
+        self.assertEqual(registered, [])
+        self.assertIn("uninstall apx-github", registry.FAILURES["github"])
