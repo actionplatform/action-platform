@@ -139,7 +139,7 @@ def register(mcp: Any, remote: Remote) -> None:
         role: Annotated[Role, Field(description="The role they get on accepting")],
         organization: OrgId = None,
     ) -> schemas.Invitation:
-        """Invite a person into the organization with a role (needs org.manage). No email is sent: hand them `link`, where they sign in or sign up with that email to join. Inviting the same email again answers with the pending invitation."""
+        """Invite a person into the organization with a role (needs org.manage). The platform emails `link` when it has SMTP; otherwise hand it to them. There they sign in or sign up with that email to join. Inviting the same email again answers with the pending invitation."""
         return invitation(remote.invite(email, role, organization))
 
     @tool(mcp, annotations=DESTRUCTIVE)

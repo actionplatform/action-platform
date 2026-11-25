@@ -71,7 +71,7 @@ def register(mcp: Any, remote: Remote) -> None:
         people: Annotated[
             Optional[list[str]],
             Field(
-                description="Logins to invite; no email is sent, list_invitations has the links"
+                description="Logins to invite; emailed when the platform has SMTP, list_invitations has the links"
             ),
         ] = None,
         role: Literal["admin", "deployer", "developer", "viewer"] = "developer",
