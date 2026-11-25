@@ -397,6 +397,7 @@ class DeploymentRecords:
             return None
 
         if spec.dispatched and self._shipped(app, spec, version, stage):
+            self._drop_observed_copy(app, spec, f"{source}:{run.number}")
             return None
 
         finished = (
@@ -437,6 +438,16 @@ class DeploymentRecords:
             )
 
         return self.db.scalar(query.limit(1)) is not None
+
+    def _drop_observed_copy(self, app: App, spec: TargetSpec, ref: str) -> None:
+        self.db.execute(
+            delete(Deployment).where(
+                Deployment.app_id == app.id,
+                Deployment.target == spec.name,
+                Deployment.executor == spec.run_by,
+                Deployment.external_ref == ref,
+            )
+        )
 
     def _drop_unserved(self, app: App, spec: TargetSpec) -> None:
         """Rows an earlier sync recorded for runs of a stage the target does not serve."""
