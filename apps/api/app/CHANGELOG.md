@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.42.1 — 2026-11-24
+
+### Bug Fixes
+- **api:** a run the platform recorded drops its observed copy on sync
+- **api:** a release fetches its clone with the source host's credentials
+
+### Docs
+- **changelog:** drop the features #598 reverted from the latest releases
+
 ## v0.42.0 — 2026-11-24
 
 ### Breaking Changes
