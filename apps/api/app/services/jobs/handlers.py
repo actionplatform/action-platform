@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 
 from typing import Any, Optional
 
@@ -54,6 +56,10 @@ from app.services.jobs.queue import MAX_ATTEMPTS, JobQueue
 from app.services.workspace.snapshot import SnapshotService
 from app.services.workspace import git_auth as auth
 from app.services.workspace.state import GitStateService
+from app.services.workspace.app_context import AppContext
+from app.services.protection import ProtectionService, ProtectionSweep
+from app.services.integrations.hosts.github_app_key import GithubAppKey
+from app.core.db.models import AppProtection
 
 log = logging.getLogger(__name__)
 
@@ -123,7 +129,7 @@ class JobHandlers:
 
     def release(self, payload: dict[str, Any]) -> Any:
         ctx = self.context(payload)
-        request = ReleaseRequest(**ctx.body)
+        request = self._as_platform(ctx, ReleaseRequest(**ctx.body))
         result = ReleasesService(self.registry).release(ctx.registry_id, request)
 
         if not request.dry_run and ctx.app is not None:
@@ -135,6 +141,63 @@ class JobHandlers:
         self.import_activity(payload)
 
         return result
+
+    def _as_platform(self, ctx: JobContext, request: ReleaseRequest) -> ReleaseRequest:
+        """On a GitHub repository whose branches the platform protects, the release is pushed with the GitHub App's installation token: the app is the only bypass actor."""
+        creds = request.credentials
+
+        if (
+            ctx.app is None
+            or creds is None
+            or creds.kind != "github"
+            or request.dry_run
+        ):
+            return request
+
+        with self.database.session() as db:
+            row = db.get(AppProtection, ctx.app.id)
+            protected = bool(
+                row and row.enforced and json.loads(row.state or "{}").get("active")
+            )
+
+        key = GithubAppKey.from_env(os.environ)
+
+        if not protected or key is None:
+            return request
+
+        repo = AppContext(self.registry, self.configs).repo_of(ctx.app)
+        token = key.token(repo)
+
+        return request.model_copy(
+            update={
+                "credentials": creds.model_copy(
+                    update={"token": token, "username": "x-access-token"}
+                )
+            }
+        )
+
+    def protection(self, payload: dict[str, Any]) -> Any:
+        ctx = self.context(payload)
+
+        if ctx.app is None or ctx.organization is None:
+            return {"skipped": "no app"}
+
+        with self.database.session() as db:
+            service = ProtectionService.from_env(
+                db, self.sealer, AppContext(self.registry, self.configs)
+            )
+
+            if ctx.body.get("action") == "apply":
+                state = service.apply(
+                    ctx.organization.id, ctx.app, payload.get("actor") or "platform"
+                )
+            else:
+                state = service.reconcile(ctx.organization.id, ctx.app)
+
+        return state.as_dict() if state is not None else {"skipped": "not enforced"}
+
+    def protection_sweep(self, payload: dict[str, Any]) -> Any:
+        return ProtectionSweep(self.database, JobQueue(self.database)).run()
 
     def _snapshot(self, registry_id: str) -> None:
         try:
@@ -564,3 +627,5 @@ register("import", lambda s: JobHandlers.of(s).import_activity)
 register("import_organization", lambda s: JobHandlers.of(s).import_organization)
 register("import_github", lambda s: JobHandlers.of(s).import_organization)
 register("install", lambda s: JobHandlers.of(s).install)
+register("protection", lambda s: JobHandlers.of(s).protection)
+register("protection_sweep", lambda s: JobHandlers.of(s).protection_sweep)

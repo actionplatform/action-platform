@@ -16,6 +16,11 @@ from app.core.db.models.integrations import (
 )
 from app.core.db.models.jobs import Job, JobLog, Worker
 from app.core.db.models.scopes import Scope
+from app.core.db.models.protection import (
+    AppProtection,
+    ProtectionDefault,
+    ProtectionEvent,
+)
 from app.core.db.models.organization import (
     ApiToken,
     ApiTokenClient,
@@ -41,6 +46,7 @@ __all__ = [
     "App",
     "AppAdoption",
     "AppConfig",
+    "AppProtection",
     "AppSnapshot",
     "CiHost",
     "CiRun",
@@ -58,6 +64,8 @@ __all__ = [
     "OrganizationSetting",
     "PluginOption",
     "Project",
+    "ProtectionDefault",
+    "ProtectionEvent",
     "PullRequest",
     "RegistryEntry",
     "Release",

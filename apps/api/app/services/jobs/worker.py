@@ -7,6 +7,7 @@ import socket
 import threading
 import time
 import uuid
+from datetime import timedelta
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from contextlib import contextmanager
 from typing import Any, Iterator, Optional
@@ -28,6 +29,8 @@ from app.services.jobs.locks import AppLocks
 from app.services.jobs.logs import JobLogs
 from app.services.jobs.registry import JobServices, handlers
 from app.services.jobs.workers import BEAT_EVERY, Workers
+from app.services.protection import ProtectionSweep
+from app.services.protection.sweep import SWEEP
 
 log = logging.getLogger("action_platform.worker")
 
@@ -40,6 +43,7 @@ ASYNC_ROUTES = {
 
 
 HEARTBEAT_SECONDS = 60.0
+FIRST_SWEEP = timedelta(minutes=5)
 
 
 def worker_name() -> str:
@@ -90,11 +94,20 @@ class Worker:
         """Claim and run jobs until the queue is empty (`once`) or forever; `concurrency` jobs at a time, each on its own thread, `kinds` to take only some."""
         wanted = [k for k in (kinds or list(self.handlers)) if k in self.handlers]
 
+        if not once and SWEEP in wanted:
+            self._schedule_sweep()
+
         with self.beating(wanted):
             if concurrency <= 1:
                 return self._run_serial(interval, once, wanted)
 
             return self._run_pool(interval, once, concurrency, wanted)
+
+    def _schedule_sweep(self) -> None:
+        try:
+            ProtectionSweep(self.database, self.queue).schedule(FIRST_SWEEP)
+        except Exception:
+            log.warning("protection sweep not scheduled", exc_info=True)
 
     def beat(self, kinds: list[str]) -> None:
         try:

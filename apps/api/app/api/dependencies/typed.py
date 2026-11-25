@@ -22,6 +22,7 @@ from app.api.dependencies.services import (
     get_snapshot,
     get_deployments,
     get_ci,
+    get_protection,
     get_deployment_records,
     get_releases,
     get_import_gateway,
@@ -51,6 +52,7 @@ from app.services.configuration.commit import CommitService
 from app.services.configuration.service import ConfigurationService
 from app.services.activity.flow import FlowService
 from app.services.ci import CiService
+from app.services.protection import ProtectionService
 from app.services.deployments import DeploymentRecords, DeploymentsService
 from app.services.releases import ReleasesService
 from app.services.workspace.snapshot import SnapshotService
@@ -81,6 +83,7 @@ GitStateDep = Annotated[GitStateService, Depends(get_git_state)]
 ReleasesDep = Annotated[ReleasesService, Depends(get_releases)]
 DeploymentsDep = Annotated[DeploymentsService, Depends(get_deployments)]
 CiDep = Annotated[CiService, Depends(get_ci)]
+ProtectionDep = Annotated[ProtectionService, Depends(get_protection)]
 DeploymentRecordsDep = Annotated[DeploymentRecords, Depends(get_deployment_records)]
 FlowDep = Annotated[FlowService, Depends(get_flow)]
 ConfigurationDep = Annotated[ConfigurationService, Depends(get_configuration)]
