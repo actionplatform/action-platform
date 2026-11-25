@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.35.0 — 2026-11-25
+
+### Features
+- **web:** CI result of each release on the releases list
+- **web:** app Activity as a timeline of the app's events
+- **web:** current branch card on Overview with CI and pull request
+- **web:** app menu Overview, Releases, Deployments, Activity, Settings
+
 ## v0.34.2 — 2026-11-24
 
 ### Features
