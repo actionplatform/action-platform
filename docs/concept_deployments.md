@@ -62,7 +62,7 @@ Every delivery is a row in `deployment`, whoever executed it:
 | `version`, `sha` | the release — required |
 | `status` | `queued` → `running` → `success` or `failure` → `verified` |
 | `executor` | `platform`, `github_actions`, `gitlab_ci`, `bitbucket_pipelines`, `jenkins`, `manual` |
-| `job_id` / `ci_run_id` | the worker job or the CI run that did it — the CI tab shows the pipeline, this row shows the result |
+| `job_id` / `ci_run_id` | the worker job or the CI run that did it — the app's Activity (CI runs) shows the pipeline, this row shows the result |
 | `url`, `actor`, `error`, `started_at`, `finished_at`, `verified_at` | where to look, who, why it failed, when |
 | `release_id` | the release row of that version, linked when the platform knows it |
 
@@ -128,7 +128,7 @@ version_parameter = "RELEASE_TAG"
 stages = ["prod-container"]
 ```
 
-- **Start.** A deploy calls the job's `buildWithParameters` with `version_parameter` set to the release tag and nothing else, with the credentials of the Jenkins server connected to the app (Settings › CI hosts, then the app's CI tab) — never the source host's token. `version_parameter` is required.
+- **Start.** A deploy calls the job's `buildWithParameters` with `version_parameter` set to the release tag and nothing else, with the credentials of the Jenkins server connected to the app (Settings › CI hosts, then the app's Settings › CI) — never the source host's token. `version_parameter` is required.
 - **Follow.** The job log shows the queue item becoming a build number, each pipeline stage as its status changes (`wfapi/describe`) and the build's result. A build cancelled in the queue fails the deploy at once.
 - **Result.** The build's result is the deploy's: `SUCCESS` records `success`, anything else `failure`, and the row links to the build. The destination is asked later, on **Sync**, when the kind can answer.
 - **One build, several scopes.** Dispatched targets on the same `job` without a `stage_parameter` are one build: a deploy to any of their scopes starts the job once and records a deployment for each target on its own scope.

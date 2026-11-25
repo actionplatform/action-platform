@@ -45,14 +45,14 @@ In a project, **New app** (type, stack, template, then name, source host, reposi
 
 ### 4. Connect CI
 
-The app's **CI** tab → **Connect CI** picks the runner and the job:
+The app's **Settings › CI** picks the runner and the job:
 
 | Runner | Job |
 |---|---|
 | **CI server** the organization added under Settings → **CI servers** (Jenkins: base URL, user, API token) | the path in the Jenkins URL: `team/app`, or `team/app/main` for a multibranch branch |
 | the one embedded in the source host: GitHub Actions, GitLab CI, Bitbucket Pipelines (the host's own token, nothing to add under CI servers) | a workflow file such as `ci.yml` for GitHub Actions (empty is every workflow); nothing for GitLab and Bitbucket |
 
-Connected, the tab lists the runs (**Sync** imports the latest) and **Run** starts the job on a branch or tag. This is the *observed* side: the platform reads what the CI does. A deploy can also be *dispatched* through CI — a workflow or Jenkins job the platform starts on a release tag — and that is declared as a deploy target, not here: [observed and dispatched deployments](concept_deployments.md#targets-and-executors).
+Connected, the app's **Activity › CI runs** lists the runs (**Sync** imports the latest), Overview shows the latest run of the current branch and Releases the run of each release, and **Run CI** on Overview starts the job on a branch or tag. This is the *observed* side: the platform reads what the CI does. A deploy can also be *dispatched* through CI — a workflow or Jenkins job the platform starts on a release tag — and that is declared as a deploy target, not here: [observed and dispatched deployments](concept_deployments.md#targets-and-executors).
 
 ### 5. Configure a deploy target
 
@@ -72,7 +72,7 @@ Dokploy never builds. The overlay adds a workflow that publishes `ghcr.io/<owner
 
 ### 6. Create scopes
 
-An app starts with none, and **no scope, no deploy**. The app's **Scopes** tab → **New scope** takes a name, a kind and a criticality. Make two:
+An app starts with none, and **no scope, no deploy**. The app's **Settings › Scopes** → **New scope** takes a name, a kind and a criticality. Make two:
 
 | Scope | Kind | Criticality | Takes |
 |---|---|---|---|

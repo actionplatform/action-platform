@@ -180,7 +180,7 @@ An app has no scopes until someone creates them.
 
 Three ways, all producing the same name, kind and criticality (kind defaults to `web`, criticality to `low`):
 
-- **Web**: the app's **Scopes** tab, **New scope**.
+- **Web**: the app's **Settings › Scopes**, **New scope**.
 - **MCP**: the `create_scope` tool on the hosted platform.
 - **`platform.toml`**: `[[scopes]]` for a repository that deploys on its own (below).
 
@@ -200,7 +200,7 @@ POST   projects/{p}/apps/{a}/releases/{tag}/readiness    {stage?}: queue the che
 
 ## Web
 
-- **Scopes** tab on the app: the table of scopes — name, kind, criticality, what each accepts — and **New scope** (Name, Kind, Criticality). A scope's menu edits or deletes it.
+- **Settings › Scopes** on the app: the table of scopes — name, kind, criticality, what each accepts — and **New scope** (Name, Kind, Criticality). A scope's menu edits or deletes it.
 - **Deploy**: pick the release and the scope; the form refuses a release the scope does not accept and a blocked readiness unless *Deploy anyway* is ticked.
 - **Releases**: the release page lists the verdict and the checks per scope.
 - Criticality badge tones: `test` and `low` neutral, `medium` warning, `high` and `critical` danger.
