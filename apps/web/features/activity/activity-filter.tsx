@@ -8,6 +8,7 @@ export const ACTIVITY_FILTERS: { kind: EventKind | null; label: string }[] = [
   { kind: "deployment", label: "Deployments" },
   { kind: "ci_run", label: "CI runs" },
   { kind: "pull_request", label: "Pull requests" },
+  { kind: "protection", label: "Branch protection" },
 ];
 
 export function ActivityFilter({ base, current }: { base: string; current: EventKind | null }) {
