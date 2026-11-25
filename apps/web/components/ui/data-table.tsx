@@ -56,11 +56,12 @@ function textOf(node: ReactNode): string | undefined {
 export function Cell({ children, className, mono, muted, title, wrap }: { children: ReactNode; className?: string; mono?: boolean; muted?: boolean; title?: string; wrap?: boolean }) {
   const [node, setNode] = useState<HTMLSpanElement | null>(null);
   const [cut, setCut] = useState(false);
-  const full = title ?? textOf(children);
+  const [rendered, setRendered] = useState("");
+  const full = title ?? textOf(children) ?? (rendered || undefined);
 
   useEffect(() => {
     if (!node || wrap) { setCut(false); return; }
-    const check = () => setCut(node.scrollWidth > node.clientWidth);
+    const check = () => { setCut(node.scrollWidth > node.clientWidth); setRendered(node.textContent ?? ""); };
     check();
     if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(check);

@@ -112,6 +112,17 @@ describe("Cell", () => {
     restore();
   });
 
+  it("reads the full value of rich content from what it rendered", async () => {
+    const restore = overflowing(400, 120);
+    render(<Cell><a href="/x">feature/645-table-density</a></Cell>);
+    const link = await screen.findByRole("link", { name: "feature/645-table-density" });
+    const cell = link.parentElement!;
+    expect(cell).toHaveAttribute("tabindex", "0");
+    act(() => { fireEvent.focus(cell); });
+    expect(screen.getByRole("tooltip")).toHaveTextContent("feature/645-table-density");
+    restore();
+  });
+
   it("never truncates a wrapping cell", () => {
     const restore = overflowing(400, 120);
     render(<Cell wrap>candidate, stable, hotfix</Cell>);
