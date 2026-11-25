@@ -1,4 +1,4 @@
-"""The two contracts access runs on: an `AccessProvider` reads and changes access on one service and comes from the plugin that owns the service; a `Directory` says who belongs to the organization and keeps its mapping."""
+"""The two contracts access runs on: an `AccessProvider` reads and changes access on one service and comes from the platform (GitHub) or from the plugin that owns the service; a `Directory` says who belongs to the organization and keeps its mapping."""
 
 from __future__ import annotations
 
