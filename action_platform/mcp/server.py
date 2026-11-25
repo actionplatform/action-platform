@@ -66,8 +66,8 @@ checkout is); list_organizations, list_projects, list_teams and
 list_members describe the organization; create_project, create_team,
 add_team_member, assign_project_team, set_member_role, invite_member,
 cancel_invitation, remove_team_member and remove_member change it when the
-role and the token's scope allow. invite_member sends no email: hand the
-person its link. Every app is a repository the platform has cloned:
+role and the token's scope allow. invite_member emails the link when the
+platform has SMTP; otherwise hand the person its link. Every app is a repository the platform has cloned:
 sync_app before auditing, editing or releasing so the clone is current.
 
 Work follows git-flow: start_branch, then write_manifest / set_cloud /
