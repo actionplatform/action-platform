@@ -1,9 +1,10 @@
-"""The organization as the access engine sees it — members with role and teams from the database, the mapping kept in the plugin options table under `access` — and the providers of every bundled plugin the organization's options configure."""
+"""The organization as the access engine sees it — members with role and teams from the database, the mapping kept in the plugin options table under `access` — GitHub's provider from the organization's GitHub connection, which wins over any plugin's, and the providers of every bundled plugin the organization's options configure."""
 
 from __future__ import annotations
 
 from typing import Any, Optional
 
+from action_platform.core.exception import ActionPlatformError
 from action_platform.core.service_access import (
     Access,
     Audit,
@@ -14,11 +15,13 @@ from action_platform.core.service_access import (
     Who,
 )
 from action_platform.plugins import registry
+from action_platform.providers.access.github import BranchProtection, OrgSettings
 from app.core.auth.crypto import Sealer
 from app.core.db.database import Database
 from app.core.errors import Forbidden, Invalid
 from app.repositories.organization import OrganizationRepository
 from app.services.integrations.plugins.options import DbOptions
+from app.services.service_access.github import KIND as GITHUB, GitHubConnection
 
 MAPPING = ("access", "mapping")
 
@@ -98,10 +101,22 @@ class ServiceAccess:
 
     def engine(self) -> Access:
         providers, errors = registry.installed().access_providers(self._options)
+        providers.pop(GITHUB, None)
+        errors.pop(GITHUB, None)
+
+        try:
+            github = GitHubConnection(
+                self.database, self.sealer, self.organization_id
+            ).provider()
+        except ActionPlatformError as e:
+            errors[GITHUB] = str(e)
+        else:
+            if github is not None:
+                providers[GITHUB] = github
 
         if not providers and not errors:
             raise Invalid(
-                "no service to manage: no plugin on this platform brings access, or none is configured under Plugins"
+                "no service to manage: connect GitHub under Settings → Git, or configure a plugin that brings access under Plugins"
             )
 
         directory = OrganizationDirectory(
@@ -141,6 +156,15 @@ class ServiceAccess:
         return self.engine().offboard(
             body.person, body.apply, body.remove_from_platform
         )
+
+    def github_branch_protection(self, repo: Optional[str] = None) -> BranchProtection:
+        return self._github().branch_protection(repo)
+
+    def github_repo_settings(self, repo: Optional[str] = None) -> OrgSettings:
+        return self._github().repo_settings(repo)
+
+    def _github(self) -> GitHubConnection:
+        return GitHubConnection(self.database, self.sealer, self.organization_id)
 
     def _options(self, slug: str) -> DbOptions:
         return DbOptions(self.database, slug, self.organization_id, self.sealer)
