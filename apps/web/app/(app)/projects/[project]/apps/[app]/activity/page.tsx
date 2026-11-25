@@ -1,23 +1,56 @@
-import { pullRequestsPage } from "@/lib/pull-requests";
+import { Activity } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Panel } from "@/components/ui/panel";
+import { appPath } from "@/lib/app-routes";
+import { ciOf } from "@/lib/ci";
+import { appActivityOf, type EventKind, eventKind } from "@/lib/insights";
 import { pageQuery } from "@/lib/page";
-import { OpenedBanner, PullRequestsTable } from "@/features/activity";
+import { pullRequestsPage } from "@/lib/pull-requests";
+import { ActivityFilter, PullRequestsTable } from "@/features/activity";
+import { RunsTable } from "@/features/ci";
+import { EventRow } from "@/features/insights";
+import type { AppView } from "@/features/projects";
 import { loadApp } from "@/features/projects/load";
+
+const EMPTY: Record<string, string> = {
+  all: "Releases, deployments, CI runs and pull requests of this app land here as it syncs.",
+  release: "Releases land here when one is cut or the next sync imports them.",
+  deployment: "Deployments land here when a release reaches a scope.",
+};
+
+async function Content({ kind, query, view, hasHost }: { kind: EventKind | null; query: Record<string, string | string[] | undefined>; view: AppView; hasHost: boolean }) {
+  const { page, per } = pageQuery(query);
+  if (kind === "pull_request") {
+    const pulls = await pullRequestsPage(view.projectId, view.appId, page, per);
+    return <PullRequestsTable page={pulls} currentBranch={view.branch} repositoryUrl={view.repositoryUrl} hasHost={hasHost} />;
+  }
+  if (kind === "ci_run") {
+    const state = await ciOf(view.projectId, view.appId, page, per);
+    return <RunsTable projectId={view.projectId} appId={view.appId} state={state} canSync={!!view.can["app.sync"]} connectHref={view.can["app.configure"] ? appPath(view.projectId, view.appId, "settings/ci") : null} />;
+  }
+  const events = await appActivityOf(view.projectId, view.appId, kind);
+  return (
+    <Panel>
+      {events.length === 0 ? (
+        <EmptyState icon={Activity} title="Nothing yet" text={EMPTY[kind ?? "all"]} />
+      ) : (
+        <ul className="divide-y divide-border-subtle">{events.map((e, i) => <EventRow key={`${e.kind}-${i}`} event={e} scoped />)}</ul>
+      )}
+    </Panel>
+  );
+}
 
 export default async function ActivityPage({ params, searchParams }: { params: Promise<{ project: string; app: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { project, app } = await params;
   const query = await searchParams;
-  const opened = Array.isArray(query.opened) ? query.opened[0] : query.opened;
+  const kind = eventKind(query.kind);
   const loaded = await loadApp(project, app);
   if (!loaded.ok) return null;
   const { view, currentHost } = loaded;
-  const { page, per } = pageQuery(query);
-  const pulls = await pullRequestsPage(view.projectId, view.appId, page, per);
-  const highlighted = opened ? pulls.items.find((p) => String(p.number) === opened) : null;
-  const canFlow = !!view.can["app.flow"] && !!view.repositoryUrl;
   return (
     <div className="space-y-4">
-      {opened && <OpenedBanner number={Number(opened)} url={highlighted?.url ?? null} branch={highlighted?.head ?? view.branch} base={highlighted?.base ?? "main"} />}
-      <PullRequestsTable page={pulls} currentBranch={view.branch} repositoryUrl={view.repositoryUrl} hasHost={!!currentHost && !!view.repository} newHref={canFlow ? `/projects/${view.projectId}/apps/${view.appId}/activity/new` : null} />
+      <ActivityFilter base={appPath(view.projectId, view.appId, "activity")} current={kind} />
+      <Content kind={kind} query={query} view={view} hasHost={!!currentHost && !!view.repository} />
     </div>
   );
 }

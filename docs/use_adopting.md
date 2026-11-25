@@ -82,7 +82,7 @@ kind = "worker"
 criticality = "critical"
 ```
 
-The same list is under Deployments › Scopes, `POST …/apps/{id}/scopes` and the `create_scope` tool; `action-platform scopes` prints the file's. `kind` is `web`, `job`, `worker`, `static` or `library`; `criticality` is `test` to `critical` and decides which releases the scope takes (candidates only reach `test` and `low`).
+The same list is under the app's Settings › Scopes, `POST …/apps/{id}/scopes` and the `create_scope` tool; `action-platform scopes` prints the file's. `kind` is `web`, `job`, `worker`, `static` or `library`; `criticality` is `test` to `critical` and decides which releases the scope takes (candidates only reach `test` and `low`).
 
 Several targets may observe the same pipeline job. A job that deploys two places is two targets, each with a single-entry `stages` — one build then yields one deployment per target, each on its own scope. Parts shipped together by one deploy, such as the functions of one stack, can each be a scope observed from the same job.
 

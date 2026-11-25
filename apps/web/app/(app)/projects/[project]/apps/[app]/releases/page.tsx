@@ -1,3 +1,4 @@
+import { ciOf, runOfRelease } from "@/lib/ci";
 import { pageQuery } from "@/lib/page";
 import { releasesPage } from "@/lib/releases";
 import { loadApp } from "@/features/projects/load";
@@ -9,7 +10,8 @@ export default async function ReleasesPage({ params, searchParams }: { params: P
   const loaded = await loadApp(project, app);
   if (!loaded.ok) return null;
   const { view } = loaded;
-  const releases = await releasesPage(view.projectId, view.appId, page, per);
+  const [releases, ci] = await Promise.all([releasesPage(view.projectId, view.appId, page, per), ciOf(view.projectId, view.appId, 1, 100).catch(() => null)]);
   const canRelease = !!view.can["app.release"] && !!view.repositoryUrl;
-  return <ReleasesTable page={releases} repositoryUrl={view.repositoryUrl} base={`/projects/${view.projectId}/apps/${view.appId}`} newHref={canRelease ? `/projects/${view.projectId}/apps/${view.appId}/releases/new` : null} />;
+  const runs = ci && ci.link.kind !== "none" ? Object.fromEntries(releases.items.map((r) => [r.tag, runOfRelease(ci.runs, r)])) : undefined;
+  return <ReleasesTable page={releases} repositoryUrl={view.repositoryUrl} base={`/projects/${view.projectId}/apps/${view.appId}`} newHref={canRelease ? `/projects/${view.projectId}/apps/${view.appId}/releases/new` : null} ci={runs} />;
 }

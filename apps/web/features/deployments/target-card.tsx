@@ -25,7 +25,7 @@ export function TargetCard({ view, base }: { view: AppView; base: string }) {
     <Panel className="flex h-full flex-col">
       <PanelHeader
         title="Target"
-        aside={<Link href={`${base}/configuration`} className="inline-flex items-center gap-1 text-[13px] text-secondary hover:text-foreground focus-visible:outline-none focus-visible:text-foreground">Open configuration <ExternalLink className="size-3" strokeWidth={1.75} /></Link>}
+        aside={<Link href={`${base}/settings/configuration`} className="inline-flex items-center gap-1 text-[13px] text-secondary hover:text-foreground focus-visible:outline-none focus-visible:text-foreground">Open configuration <ExternalLink className="size-3" strokeWidth={1.75} /></Link>}
       />
       <div className="divide-y divide-border-subtle py-1">
         <Row icon={Cloud} label="Target" value={target ?? "Not configured"} mono={!!target} muted={!target} />

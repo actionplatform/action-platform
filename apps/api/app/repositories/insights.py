@@ -21,6 +21,7 @@ from app.core.shared.clock import now
 
 EMBEDDED_CI_HOSTS = ("github", "gitlab", "bitbucket")
 ACTIVE_DEPLOYMENT = ("queued", "running")
+EVENT_KINDS = ("deployment", "release", "pull_request", "ci_run")
 
 
 class Insights:
@@ -163,88 +164,118 @@ class Insights:
             )
         ]
 
+    def app_events(
+        self,
+        organization_id: str,
+        project_id: str,
+        app_id: str,
+        kinds: tuple[str, ...] = EVENT_KINDS,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        """The latest events of one app, newest first, only of `kinds`."""
+        apps = self._apps(organization_id, project_id, app_id)
+        names = {
+            a[0]: {"app_id": a[0], "app": a[1], "project_id": a[2], "project": a[3]}
+            for a in apps
+        }
+
+        if not names:
+            return []
+
+        return self._events(list(names), names, limit, kinds)
+
     def _events(
-        self, ids: list[str], names: dict[str, dict], limit: int = 12
+        self,
+        ids: list[str],
+        names: dict[str, dict],
+        limit: int = 12,
+        kinds: tuple[str, ...] = EVENT_KINDS,
     ) -> list[dict[str, Any]]:
         events: list[dict[str, Any]] = []
 
-        for d in self.db.scalars(
-            select(Deployment)
-            .where(Deployment.app_id.in_(ids))
-            .order_by(
-                func.coalesce(
-                    Deployment.finished_at, Deployment.started_at, Deployment.synced_at
-                ).desc()
-            )
-            .limit(limit)
-        ):
-            events.append(
-                {
-                    **names[d.app_id],
-                    "kind": "deployment",
-                    "at": d.finished_at or d.started_at or d.synced_at,
-                    "title": f"{d.target} {d.version}",
-                    "status": d.status,
-                    "detail": d.stage,
-                    "url": d.url,
-                }
-            )
+        if "deployment" in kinds:
+            for d in self.db.scalars(
+                select(Deployment)
+                .where(Deployment.app_id.in_(ids))
+                .order_by(
+                    func.coalesce(
+                        Deployment.finished_at,
+                        Deployment.started_at,
+                        Deployment.synced_at,
+                    ).desc()
+                )
+                .limit(limit)
+            ):
+                events.append(
+                    {
+                        **names[d.app_id],
+                        "kind": "deployment",
+                        "at": d.finished_at or d.started_at or d.synced_at,
+                        "title": f"{d.target} {d.version}",
+                        "status": d.status,
+                        "detail": d.stage,
+                        "url": d.url,
+                    }
+                )
 
-        for r in self.db.scalars(
-            select(Release)
-            .where(Release.app_id.in_(ids))
-            .order_by(func.coalesce(Release.published_at, Release.synced_at).desc())
-            .limit(limit)
-        ):
-            events.append(
-                {
-                    **names[r.app_id],
-                    "kind": "release",
-                    "at": r.published_at or r.synced_at,
-                    "title": r.tag,
-                    "status": "prerelease" if r.prerelease else "release",
-                    "detail": r.name,
-                    "url": r.url,
-                }
-            )
+        if "release" in kinds:
+            for r in self.db.scalars(
+                select(Release)
+                .where(Release.app_id.in_(ids))
+                .order_by(func.coalesce(Release.published_at, Release.synced_at).desc())
+                .limit(limit)
+            ):
+                events.append(
+                    {
+                        **names[r.app_id],
+                        "kind": "release",
+                        "at": r.published_at or r.synced_at,
+                        "title": r.tag,
+                        "status": "prerelease" if r.prerelease else "release",
+                        "detail": r.name,
+                        "url": r.url,
+                    }
+                )
 
-        for p in self.db.scalars(
-            select(PullRequest)
-            .where(PullRequest.app_id.in_(ids))
-            .order_by(
-                func.coalesce(PullRequest.merged_at, PullRequest.updated_at).desc()
-            )
-            .limit(limit)
-        ):
-            events.append(
-                {
-                    **names[p.app_id],
-                    "kind": "pull_request",
-                    "at": p.merged_at or p.updated_at,
-                    "title": f"#{p.number} {p.title}",
-                    "status": p.state,
-                    "detail": f"{p.head} → {p.base}",
-                    "url": p.url,
-                }
-            )
+        if "pull_request" in kinds:
+            for p in self.db.scalars(
+                select(PullRequest)
+                .where(PullRequest.app_id.in_(ids))
+                .order_by(
+                    func.coalesce(PullRequest.merged_at, PullRequest.updated_at).desc()
+                )
+                .limit(limit)
+            ):
+                events.append(
+                    {
+                        **names[p.app_id],
+                        "kind": "pull_request",
+                        "at": p.merged_at or p.updated_at,
+                        "title": f"#{p.number} {p.title}",
+                        "status": p.state,
+                        "detail": f"{p.head} → {p.base}",
+                        "url": p.url,
+                    }
+                )
 
-        for c in self.db.scalars(
-            select(CiRun)
-            .where(CiRun.app_id.in_(ids))
-            .order_by(func.coalesce(CiRun.started_at, CiRun.synced_at).desc())
-            .limit(limit)
-        ):
-            events.append(
-                {
-                    **names[c.app_id],
-                    "kind": "ci_run",
-                    "at": c.started_at or c.synced_at,
-                    "title": c.name or f"#{c.number}",
-                    "status": c.status,
-                    "detail": c.branch,
-                    "url": c.url,
-                }
-            )
+        if "ci_run" in kinds:
+            for c in self.db.scalars(
+                select(CiRun)
+                .where(CiRun.app_id.in_(ids))
+                .order_by(func.coalesce(CiRun.started_at, CiRun.synced_at).desc())
+                .limit(limit)
+            ):
+                events.append(
+                    {
+                        **names[c.app_id],
+                        "kind": "ci_run",
+                        "at": c.started_at or c.synced_at,
+                        "title": c.name or f"#{c.number}",
+                        "status": c.status,
+                        "detail": c.branch,
+                        "url": c.url,
+                    }
+                )
 
         events.sort(key=lambda e: e["at"] or datetime.min, reverse=True)
 

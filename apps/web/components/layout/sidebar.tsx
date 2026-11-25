@@ -1,10 +1,11 @@
 "use client";
 
-import { Activity, ArrowLeft, Building2, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Puzzle, Rocket, Settings, SlidersHorizontal, Target, Workflow, X } from "lucide-react";
+import { Activity, ArrowLeft, Building2, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Puzzle, Rocket, Settings, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/logo";
+import { APP_SETTINGS_PAGES, type AppTab, appPath } from "@/lib/app-routes";
 import type { Org } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { OrgSwitcher } from "./org-switcher";
@@ -21,15 +22,12 @@ const items: { href: string; label: string; icon: typeof FolderGit2; children?: 
   { href: "/settings", label: "Settings", icon: Settings, children: SETTINGS_PAGES },
 ];
 
-const appItems = [
+export const appItems: { tab: string; label: string; icon: typeof FolderGit2; children?: AppTab[] }[] = [
   { tab: "", label: "Overview", icon: LayoutDashboard },
-  { tab: "activity", label: "Activity", icon: Activity },
-  { tab: "ci", label: "CI", icon: Workflow },
   { tab: "releases", label: "Releases", icon: Rocket },
-  { tab: "scopes", label: "Scopes", icon: Target },
   { tab: "deployments", label: "Deployments", icon: Cloud },
-  { tab: "configuration", label: "Configuration", icon: SlidersHorizontal },
-  { tab: "settings", label: "Settings", icon: Settings },
+  { tab: "activity", label: "Activity", icon: Activity },
+  { tab: "settings", label: "Settings", icon: Settings, children: APP_SETTINGS_PAGES },
 ];
 
 const link = "mx-3 my-0.5 flex h-10 min-h-10 items-center gap-3 rounded-[7px] border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground";
@@ -72,20 +70,38 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
             <span className="truncate">{scope.projectName}</span>
           </Link>
           <div className="mx-5 mb-1 mt-3 truncate font-mono text-xs text-muted-foreground">{scope.appName}</div>
-          {appItems.map(({ tab, label, icon: Icon }) => {
-            const base = `/projects/${scope.projectId}/apps/${scope.appId}`;
-            const href = tab ? `${base}/${tab}` : base;
-            const active = tab ? pathname.startsWith(href) : pathname === base;
+          {appItems.map(({ tab, label, icon: Icon, children }) => {
+            const href = appPath(scope.projectId, scope.appId, tab);
+            const active = tab ? pageActive(pathname, href) : pathname === href;
             return (
-              <Link
-                key={label}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={cn(link, active ? on : off)}
-              >
-                <Icon className="size-[18px]" strokeWidth={1.75} />
-                {label}
-              </Link>
+              <div key={label}>
+                <Link
+                  href={href}
+                  aria-current={active && !children ? "page" : undefined}
+                  className={cn(link, active ? on : off)}
+                >
+                  <Icon className="size-[18px]" strokeWidth={1.75} />
+                  {label}
+                </Link>
+                {children && active && (
+                  <div className="mb-1 ml-[38px] border-l border-border-subtle">
+                    {children.map((page) => {
+                      const pageHref = appPath(scope.projectId, scope.appId, page.tab);
+                      const current = pageActive(pathname, pageHref, page.exact);
+                      return (
+                        <Link
+                          key={page.tab}
+                          href={pageHref}
+                          aria-current={current ? "page" : undefined}
+                          className={cn("-ml-px flex h-9 items-center border-l pl-4 pr-3 text-[13px] transition-colors", current ? "border-foreground text-foreground" : "border-transparent text-secondary hover:text-foreground")}
+                        >
+                          {page.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

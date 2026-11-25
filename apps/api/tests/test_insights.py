@@ -162,6 +162,55 @@ class InsightsTest(GateCase):
             404,
         )
 
+    def test_app_activity_lists_every_kind_newest_first(self):
+        self.register()
+        self.seed()
+
+        body = self.client.get(
+            "/api/v1/projects/p1/apps/a1/activity", headers=self.h()
+        ).json()
+
+        kinds = [e["kind"] for e in body["events"]]
+        self.assertEqual(kinds[0], "ci_run")
+        self.assertEqual(
+            set(kinds), {"ci_run", "deployment", "release", "pull_request"}
+        )
+        self.assertEqual(len(kinds), 8)
+        self.assertTrue(all(e["app_id"] == "a1" for e in body["events"]))
+
+    def test_app_activity_filters_one_kind(self):
+        self.register()
+        self.seed()
+
+        body = self.client.get(
+            "/api/v1/projects/p1/apps/a1/activity?kind=release", headers=self.h()
+        ).json()
+
+        self.assertEqual([e["title"] for e in body["events"]], ["v1.1.0", "v1.0.0"])
+
+        limited = self.client.get(
+            "/api/v1/projects/p1/apps/a1/activity?kind=pull_request&limit=1",
+            headers=self.h(),
+        ).json()
+
+        self.assertEqual([e["title"] for e in limited["events"]], ["#2 New"])
+
+    def test_app_activity_refuses_an_unknown_kind_and_app(self):
+        self.register()
+
+        self.assertEqual(
+            self.client.get(
+                "/api/v1/projects/p1/apps/a1/activity?kind=audit", headers=self.h()
+            ).status_code,
+            400,
+        )
+        self.assertEqual(
+            self.client.get(
+                "/api/v1/projects/p1/apps/nope/activity", headers=self.h()
+            ).status_code,
+            404,
+        )
+
     def test_latest_events_follow_the_event_time_not_the_sync(self):
         from app.core.db.models import Deployment
         from app.core.shared.clock import now

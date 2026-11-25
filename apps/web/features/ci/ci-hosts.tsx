@@ -38,7 +38,7 @@ export function CiHosts({ hosts, canManage }: Props) {
       open={open}
       onToggle={() => setOpen((v) => !v)}
       count={hosts.length}
-      empty={{ icon: Server, title: "No CI server yet", text: "Add one above, then point an app at a job from its CI tab." }}
+      empty={{ icon: Server, title: "No CI server yet", text: "Add one above, then point an app at a job from its Settings → CI." }}
       form={
         <form method="post" action={action} className="space-y-3">
           <input type="hidden" name="kind" value={kind} />

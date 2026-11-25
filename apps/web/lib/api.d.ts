@@ -2063,6 +2063,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/apps/{app_id}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["app_activity_api_v1_projects__project_id__apps__app_id__activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/apps/{app_id}/releases/{tag}/timeline": {
         parameters: {
             query?: never;
@@ -2335,6 +2351,9 @@ export interface components {
             branch?: string | null;
             pull_request?: components["schemas"]["AdoptionPullRequest"] | null;
             checked_at?: string | null;
+        };
+        AppActivity: {
+            events: components["schemas"]["Event"][];
         };
         AppAdded: {
             id: string;
@@ -8578,6 +8597,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Dashboard"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    app_activity_api_v1_projects__project_id__apps__app_id__activity_get: {
+        parameters: {
+            query?: {
+                kind?: string | null;
+                limit?: number;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppActivity"];
                 };
             };
             422: {

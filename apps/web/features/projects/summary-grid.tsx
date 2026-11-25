@@ -30,7 +30,7 @@ export function SummaryGrid({ view }: { view: AppView }) {
       <SummaryCard label="Latest tag" value={view.latestTag ?? <span className="font-sans text-sm font-normal text-secondary">No tags</span>} icon={Tag} />
       <SummaryCard
         label="Deploy"
-        value={targets.length ? <NameChips names={targets} noun="deploy target" href={`/projects/${view.projectId}/apps/${view.appId}/configuration`} /> : <span className="font-sans text-sm font-normal text-secondary">Not configured</span>}
+        value={targets.length ? <NameChips names={targets} noun="deploy target" href={`/projects/${view.projectId}/apps/${view.appId}/settings/configuration`} /> : <span className="font-sans text-sm font-normal text-secondary">Not configured</span>}
         badge={targets.length ? <Badge tone="ok">Configured</Badge> : undefined}
         icon={Cloud}
       />
@@ -42,9 +42,9 @@ export function PendingChangesBanner({ view, base }: { view: AppView; base: stri
   const pending = view.changes.length;
   if (pending === 0) return null;
   return (
-    <Link href={`${base}/configuration`} className="mt-4 flex items-center gap-3 rounded-lg border border-border bg-surface px-[18px] py-3 text-sm transition-colors hover:border-border-hover hover:bg-surface-hover">
+    <Link href={`${base}/settings/configuration`} className="mt-4 flex items-center gap-3 rounded-lg border border-border bg-surface px-[18px] py-3 text-sm transition-colors hover:border-border-hover hover:bg-surface-hover">
       <TriangleAlert className="size-4 shrink-0 text-secondary" strokeWidth={1.75} />
-      <span><span className="font-medium">{pending} {pending === 1 ? "file" : "files"} to commit</span> <span className="text-secondary">— changes made in Configuration are waiting on a branch and a pull request.</span></span>
+      <span><span className="font-medium">{pending} {pending === 1 ? "file" : "files"} to commit</span> <span className="text-secondary">— changes made in Settings → Configuration are waiting on a branch and a pull request.</span></span>
       <ArrowRight className="ml-auto size-4 shrink-0 text-secondary" strokeWidth={1.75} />
     </Link>
   );

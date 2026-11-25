@@ -97,11 +97,15 @@ Each app runs on its own: one that fails — archived, no permission to push, a 
 
 ## The app page
 
-The header carries the name, the branch, **Last synced** and **Sync** (or **Push to remote** while there is none). Tabs: Overview, Activity, CI, Releases, Deployments, Configuration, Settings.
+The header carries the name, the branch, **Last synced** and **Sync** (or **Push to remote** while there is none). Tabs: Overview, Releases, Deployments, Activity, Settings — the path of a change, from its branch to where it runs. The CI is not a tab of its own: its result shows where it decides something — the current branch on Overview, each release on Releases — and its runs are a filter of Activity.
 
 ### Overview
 
-Branch, version, latest tag and deploy target; git-flow health of the branch and its commits; last commits, remote branches with their kind, tags; source and automation. Actions live in the other tabs.
+Branch, version, latest tag and deploy target; the **current branch** card; git-flow health of the branch and its commits; last commits, remote branches with their kind, tags; source and automation.
+
+The current branch card shows the latest imported CI run on the branch the app is on, with its status and a link to the run on the CI server (or **Connect CI** when the app reads none), **Run CI** to start the job on a branch or tag — a `workflow_dispatch`, a GitLab pipeline, a Bitbucket pipeline or a Jenkins build; the run shows after the next sync — and **Open pull request**. That button is enabled only when your role can work on the branch (`app.flow`), the app has a remote, the branch is a `<kind>/<code>` one with commits beyond its base, the tree is clean and no pull request from it is open; otherwise the card says which of these stops it, or links the open pull request. **Change branch** opens the same page to switch branch or start a new one.
+
+**Open pull request** opens its own page: the branch the app is on (switch, or **New branch** for a `<kind>/<code>` one), **Prepare** audits git-flow and drafts the title and body from the commits, **Open pull request** confirms and opens it on the host; Overview then shows a banner with the link to review and merge.
 
 ### Sync
 
@@ -109,13 +113,9 @@ Fetches the remote and rebuilds the clone on the branch the app is on — the re
 
 ### Releases
 
-The tab lists the app's releases — version, tag, author, commit, published — ten per page, paged on the API, with the page size to choose (10, 25, 50, 100); a row's menu opens **Timeline & readiness** — the readiness checks per stage with what failed and how to fix it, a **Re-check** button, then the pull requests merged since the previous tag, the release, the CI runs on the tag and the deployments that shipped it —, opens the release on the host, copies the tag or the SHA, shows the changelog. Readiness runs on the worker right after the release is cut; it looks at configuration, manifests, credentials, permissions and the destination's state and builds nothing — see [deployments › readiness](concept_deployments.md#readiness). **New release** opens its own page: Branch and Version (Patch / Minor / Major as a switch, the resulting version under each), Name and Markdown notes (they go into `CHANGELOG.md` and the release on the code host); a strip shows current → next, tag and kind. **Preview changelog** is the dry run; **Create X.Y.Z** asks to confirm (a Major asks twice) and shows the **release log** while the worker bumps, tags, pushes and publishes.
+The tab lists the app's releases — version, tag, CI, author, commit, published — ten per page, paged on the API, with the page size to choose (10, 25, 50, 100); a row's menu opens **Timeline & readiness** — the readiness checks per stage with what failed and how to fix it, a **Re-check** button, then the pull requests merged since the previous tag, the release, the CI runs on the tag and the deployments that shipped it —, opens the release on the host, copies the tag or the SHA, shows the changelog. The CI column is the newest imported run on the tag, the version or the release commit, among the app's latest hundred runs; a release with none shows a dash. Readiness runs on the worker right after the release is cut; it looks at configuration, manifests, credentials, permissions and the destination's state and builds nothing — see [deployments › readiness](concept_deployments.md#readiness). **New release** opens its own page: Branch and Version (Patch / Minor / Major as a switch, the resulting version under each), Name and Markdown notes (they go into `CHANGELOG.md` and the release on the code host); a strip shows current → next, tag and kind. **Preview changelog** is the dry run; **Create X.Y.Z** asks to confirm (a Major asks twice) and shows the **release log** while the worker bumps, tags, pushes and publishes.
 
 Refused when the tag exists, the branch is not on the remote, the tree is dirty or the branch policy fails. Off `main`/`master` it is an `-rc.N` pre-release. The model: [releases](concept_releases.md).
-
-### Scopes
-
-A deploy always lands on a **scope**: a named destination of the app with a kind (`web`, `job`, `worker`, `static`, `library`) and a criticality (`test`, `low`, `medium`, `high`, `critical`). No scope, no deploy — an app starts with none. The tab lists the app's scopes — name, kind, criticality, what each accepts; **New scope** opens its own page: Name, Kind, Criticality (a switch with the definition of each level). A scope's menu edits or deletes it (refused while a deploy to it is running). Criticality decides which releases a scope takes: `test` and `low` take candidates, stable and hotfix releases; `medium` and above take stable and hotfix. Where the release goes — target, region, credentials — stays in Configuration. The model: [scopes](concept_scopes.md).
 
 ### Deployments
 
@@ -125,15 +125,16 @@ The tab lists the platform's deploys and tear-downs — status, stage, type, ver
 
 ### Activity
 
-The tab lists the app's pull requests — state, title, head → base, author, when — ten per page, paged on the API, from the code host's import. **New pull request** opens its own page: the branch the app is on (switch, or **New branch** for a `<kind>/<code>` one), **Prepare** audits git-flow and drafts the title and body from the commits, **Open pull request** confirms and opens it on the host; the list then shows a banner with the link to review and merge.
+What happened to the app, newest first: releases, deployments, CI runs and pull requests, the same events as the organization's [activity](#dashboard) for this app alone. Nothing is opened or started from here; **Sync** under CI runs only imports. Filters: **All** and **Releases**, **Deployments** (the latest fifty events of the kind); **CI runs**, the runs imported from the app's CI — status, run, branch, commit, trigger, when, duration, linked to the server — ten per page, with **Sync** to import the latest and **Connect CI** / **Change CI** for who can configure the app; **Pull requests**, state, title, head → base, author, when, ten per page from the code host's import.
 
-### CI
+### Settings
 
-The tab lists the runs imported from the app's CI — status, run, branch, commit, trigger, when, duration, linked to the server — ten per page, paged on the API; **Sync** imports the latest. **Connect CI** (later **Change CI**) opens its own page: the runner — a **CI server** the organization connected under Settings (Jenkins), or the one embedded in the source host (GitHub Actions, GitLab CI, Bitbucket Pipelines, with the host's own token) — and the **job**: the path in the Jenkins URL (`team/app`, `team/app/main` for a multibranch branch), a workflow file such as `ci.yml` for GitHub Actions (empty means every workflow), nothing for GitLab and Bitbucket. **Run** starts the job on a branch or tag — a `workflow_dispatch`, a GitLab pipeline, a Bitbucket pipeline or a Jenkins build — and the run shows after the next sync.
+**General**, **Scopes**, **Configuration** and **CI** — on a phone, tabs at the top.
 
-### Configuration
-
-**Deploy target** picks a cloud overlay for the app's type and language and applies it — the files become pending changes and `[deploy] target` is recorded. Services (`action-platform service add`) stay on the CLI until the web has something real to show for them. Both are forms with a summary strip and a confirmation. **Manifest** edits `platform.toml` as the platform keeps it; **Export** writes the mirror into the repository. Pending changes are committed from the bar on top to a `chore/<code>` branch with a pull request, or discarded.
+- **General**: the remote repository, the source host whose token pushes and opens pull requests, and the danger zone.
+- **Scopes**: A deploy always lands on a **scope**: a named destination of the app with a kind (`web`, `job`, `worker`, `static`, `library`) and a criticality (`test`, `low`, `medium`, `high`, `critical`). No scope, no deploy — an app starts with none. The page lists the app's scopes — name, kind, criticality, what each accepts; **New scope** opens its own page: Name, Kind, Criticality (a switch with the definition of each level). A scope's menu edits or deletes it (refused while a deploy to it is running). Criticality decides which releases a scope takes: `test` and `low` take candidates, stable and hotfix releases; `medium` and above take stable and hotfix. Where the release goes — target, region, credentials — stays in Configuration. The model: [scopes](concept_scopes.md).
+- **Configuration**: **Deploy target** picks a cloud overlay for the app's type and language and applies it — the files become pending changes and `[deploy] target` is recorded. Services (`action-platform service add`) stay on the CLI until the web has something real to show for them. Both are forms with a summary strip and a confirmation. **Manifest** edits `platform.toml` as the platform keeps it; **Export** writes the mirror into the repository. Pending changes are committed from the bar on top to a `chore/<code>` branch with a pull request, or discarded.
+- **CI**: the runner — a **CI server** the organization connected under Settings (Jenkins), or the one embedded in the source host (GitHub Actions, GitLab CI, Bitbucket Pipelines, with the host's own token) — and the **job**: the path in the Jenkins URL (`team/app`, `team/app/main` for a multibranch branch), a workflow file such as `ci.yml` for GitHub Actions (empty means every workflow), nothing for GitLab and Bitbucket. Only `app.configure` saves it.
 
 ### Deleting
 
@@ -230,7 +231,7 @@ Services other than code hosts that plugins read through a connection instead of
 
 ### CI servers
 
-Build servers of their own, per organization: name, base URL, username and API token (Jenkins → your user → Security → API Token). *Test* reaches the server with the sealed token. GitHub Actions needs nothing here. Apps pick a server and a job from their CI tab; removing a server leaves the imported runs and disconnects the apps that pointed at it. The same server is what a deploy uses to start a dispatched Jenkins target (`observe = false`, [deployments](concept_deployments.md#dispatched-jenkins-jobs)): give its user *Overall/Read* plus *Job/Read* and *Job/Build* on the deploy jobs only — nothing more is called.
+Build servers of their own, per organization: name, base URL, username and API token (Jenkins → your user → Security → API Token). *Test* reaches the server with the sealed token. GitHub Actions needs nothing here. Apps pick a server and a job under their Settings › CI; removing a server leaves the imported runs and disconnects the apps that pointed at it. The same server is what a deploy uses to start a dispatched Jenkins target (`observe = false`, [deployments](concept_deployments.md#dispatched-jenkins-jobs)): give its user *Overall/Read* plus *Job/Read* and *Job/Build* on the deploy jobs only — nothing more is called.
 
 ### Instance
 
@@ -253,6 +254,8 @@ The approval page (`/device`) names the client, shows the code to compare with t
 ## Old paths
 
 `/settings/people` → `/organization/members` · `/settings/people/teams` → `/organization/teams` · `/integrations`, `/integrations/hosts`, `/settings/integrations` → `/settings` · `/integrations/cloud` → `/plugins` · `/settings/developers`, `/account` → `/organization/sessions`.
+
+Inside an app: `…/ci` → `…/activity?kind=ci_run` · `…/ci/connect` → `…/settings/ci` · `…/scopes`, `…/scopes/new`, `…/scopes/<name>` → `…/settings/scopes/…` · `…/configuration` → `…/settings/configuration` · `…/activity/new` → `…/pull-requests/new`.
 
 ## Hardening
 

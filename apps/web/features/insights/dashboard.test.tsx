@@ -147,7 +147,7 @@ describe("lower panels", () => {
     view(data({ apps: 10, without_ci }));
     expect(screen.getByText("5 of 10 apps")).toBeInTheDocument();
     expect(screen.getByRole("progressbar", { name: "CI coverage" })).toHaveAttribute("aria-valuenow", "50");
-    expect(screen.getByRole("link", { name: "app-0" })).toHaveAttribute("href", "/projects/p1/apps/w0/ci/connect");
+    expect(screen.getByRole("link", { name: "app-0" })).toHaveAttribute("href", "/projects/p1/apps/w0/settings/ci");
     expect(screen.getByText("+2 more")).toBeInTheDocument();
   });
 

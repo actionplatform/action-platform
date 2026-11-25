@@ -45,7 +45,7 @@ describe("SummaryGrid", () => {
     const { container } = render(<SummaryGrid view={view(10)} />);
     expect(screen.getByText("+8")).toBeInTheDocument();
     const link = screen.getByRole("link", { name: /10 deploy targets/ });
-    expect(link).toHaveAttribute("href", "/projects/p1/apps/a1/configuration");
+    expect(link).toHaveAttribute("href", "/projects/p1/apps/a1/settings/configuration");
     expect(link.getAttribute("aria-label")).toContain(names[9]);
     const cards = Array.from(container.querySelectorAll("div.h-\\[104px\\]"));
     expect(cards).toHaveLength(4);

@@ -13,7 +13,7 @@ export default async function NewScopePage({ params }: { params: Promise<{ proje
   const scopes = await scopesOf(view.projectId, view.appId);
   return (
     <div className="space-y-4">
-      <Link href={`${base}/scopes`} className="inline-flex items-center gap-1.5 text-[13px] text-secondary hover:text-foreground"><ArrowLeft className="size-3.5" strokeWidth={1.75} /> Scopes</Link>
+      <Link href={`${base}/settings/scopes`} className="inline-flex items-center gap-1.5 text-[13px] text-secondary hover:text-foreground"><ArrowLeft className="size-3.5" strokeWidth={1.75} /> Scopes</Link>
       <ScopeForm projectId={view.projectId} appId={view.appId} base={base} vocabulary={scopes} canEdit={!!view.can["app.configure"]} />
     </div>
   );

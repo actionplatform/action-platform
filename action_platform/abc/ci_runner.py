@@ -33,7 +33,7 @@ class CIRunner(ABC):
         raise NotImplementedError(f"{self.name} cannot trigger runs")
 
     def start(self, job: str, ref: str, params: dict | None = None) -> "RunRef":
-        """Start a run of `job` on `ref` (a branch or tag) from outside a release — what the CI tab's Run button does."""
+        """Start a run of `job` on `ref` (a branch or tag) from outside a release — what Run CI on an app's Overview does."""
         raise NotImplementedError(f"{self.name} cannot start runs")
 
     def run_of(self, job: str, ref: "RunRef") -> "Run | None":
