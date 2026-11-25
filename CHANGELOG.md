@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.35.0 — 2026-11-24
+
+### Features
+- **plugins:** reserve the github slug for the built-in GitHub access
+- **cli:** github branch-protection and repo-settings through the platform
+- **mcp:** github_branch_protection and github_repo_settings remote tools
+- **api:** connecting GitHub asks for what GitHub access needs
+- **api:** GitHub access from the organization's GitHub connection, winning over any plugin
+- **access:** GitHub access provider and repository checks in the platform
+
+### Bug Fixes
+- **mcp:** invitation tools say the link is emailed when the platform has SMTP
+
+### Docs
+- **access:** GitHub access is part of the platform
+- **changelog:** drop the features #598 reverted from the latest releases
+
+### Tests
+- **api:** an app keeps credentials across a code host reconnect
+- **api:** a stale observed copy of a platform deploy goes away on sync
+- **api:** the release checkout runs inside the request's credentials
+
+### Build
+- **api:** drop apx-github from the image
+- **api:** apx-github 0.2.1 in the image
+
 ## v0.34.0 — 2026-11-24
 
 ### Breaking Changes
