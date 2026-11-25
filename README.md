@@ -22,7 +22,7 @@ Three doors, one core:
 |---|---|
 | **Web app** | Organizations › teams › projects › apps, with roles (`owner`, `admin`, `deployer`, `developer`, `viewer`). Create an app from a template or import any repository, connect GitHub / GitLab / Bitbucket, edit `platform.toml`, open pull requests, cut releases, see whether each one can reach `dev` and `prod`, deploy it, follow the CI runs and every deployment — wherever it ran — from a dashboard, a release timeline and paged tables. One command to self-host. |
 | **CLI** | `pipx install action-platform` and the same verbs on your machine: `init`, `branch`, `pr`, `release`, `readiness`, `deploy`, `rollback`, `diagnose`, `deployments`. |
-| **MCP server** | The same operations as tools for Claude Code, Codex, Cursor — locally, or against your hosted platform after `action-platform login`: 69 remote tools that know who you are, which app the current directory is, what your token may do, and can manage projects, teams and members. |
+| **MCP server** | The same operations as tools for Claude Code, Codex, Cursor — locally, or against your hosted platform after `action-platform login`: 71 remote tools that know who you are, which app the current directory is, what your token may do, and can manage projects, teams and members. |
 
 ## Self-host in one command
 

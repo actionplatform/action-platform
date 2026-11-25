@@ -143,7 +143,7 @@ A green pipeline says the job finished, not that the version is there. Every tar
 
 A stage is a **scope** — a name, a kind and a criticality you create under Deployments › Scopes ([scopes](concept_scopes.md)). No scope, no deploy: nothing is called `dev` or `prod` unless you name it so. Each scope is a separate deployment of the same repository — on `aws/lambda`, a separate CloudFormation stack named `ap-<org>-<project>-<app>-<scope>` — with its own history, its own URL and its own last deployed version. A scope receives whatever release its criticality accepts: one may run `1.4.0` while another is still on `1.3.2`, and nothing forces an order between them.
 
-One deploy at a time per stage. While a deploy or a preflight to a stage is queued or running, the API refuses another for the same stage with `409` (`a deploy to prod is already running; wait for it to finish`), the web disables the button and says why, and the CLI prints the same message. The other stage is free. The rule exists because the stack and the platform's clone are touched by one job at a time; two `sam deploy` on the same stack would corrupt its state.
+One deploy at a time per stage. While a deploy to a stage is queued or running, the API refuses another for the same stage with `409` (`a deploy to prod is already running; wait for it to finish`), the web disables the button and says why, and the CLI prints the same message. The other stage is free. The rule exists because the stack and the platform's clone are touched by one job at a time; two `sam deploy` on the same stack would corrupt its state.
 
 ## What is deployed
 
@@ -173,7 +173,7 @@ Each check carries an id (`aws.permissions`, `manifest.pyproject.toml`), a level
 
 ## Preflight
 
-**Run preflight** (`dry_run: true`, the default of the API body; `--dry-run` on the CLI) runs the target's checks and stops: the credentials can be obtained, the template renders, the toolchain is there. Nothing in the cloud changes. It runs as a job like a deploy, occupies the stage the same way, and shows in the history as *Preflight*. Run it after connecting a new target or a new account; a deploy runs the same checks first anyway. Readiness is the same idea moved earlier — to the release, for every stage, stored — with more to say (permissions, the destination's state, the manifests).
+**Run preflight** (`dry_run: true`, the default of the API body; `--dry-run` on the CLI) runs the target's checks and stops: the credentials can be obtained, the template renders, the toolchain is there. Nothing in the cloud changes. It answers on the request: no job is queued, the stage is not occupied and nothing is added to the history. Run it after connecting a new target or a new account; a deploy runs the same checks first anyway. Readiness is the same idea moved earlier — to the release, for every stage, stored — with more to say (permissions, the destination's state, the manifests).
 
 ## A deploy as a job
 
@@ -192,7 +192,7 @@ A job is one row in `job`: kind, status (`queued` → `running` → `done` or `f
 
 ## History
 
-**Deployment history** lists the app's deployments newest first, one block per target: status, stage, type (Deploy, Preflight, Tear down), version, executor, duration, who, when. For targets the platform runs it is the list of `deploy` and `destroy` jobs; for the others it is what the importers recorded, linked to the run that did it. A row expands into the summary, the full log, the run id, timestamps and **Redeploy**, which queues the same release to the same stage again. A failed row keeps the error and the log; nothing is deleted from the history when a stack goes away. `GET /api/v1/jobs?app=<registry id>&kind=deploy` is the same list, and `GET /api/v1/jobs/page?app=<registry id>&kinds=deploy,destroy` its paged form. From a terminal, `action-platform deployments [--app <id or name>] [--sync]` prints each target with what arrived at it (`--sync` asks the observed pipelines first), and `action-platform logs <job> [--follow]` prints what the worker wrote for a job.
+**Deployment history** lists the app's deployments newest first, one block per target: status, stage, type (Deploy, Tear down), version, executor, duration, who, when. For targets the platform runs it is the list of `deploy` and `destroy` jobs; for the others it is what the importers recorded, linked to the run that did it. A row expands into the summary, the full log, the run id, timestamps and **Redeploy**, which queues the same release to the same stage again. A failed row keeps the error and the log; nothing is deleted from the history when a stack goes away. `GET /api/v1/jobs?app=<registry id>&kind=deploy` is the same list, and `GET /api/v1/jobs/page?app=<registry id>&kinds=deploy,destroy` its paged form. From a terminal, `action-platform deployments [--app <id or name>] [--sync]` prints each target with what arrived at it (`--sync` asks the observed pipelines first), and `action-platform logs <job> [--follow]` prints what the worker wrote for a job.
 
 ## Redeploy and rollback
 
