@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.42.2 — 2026-11-24
+
+### Bug Fixes
+- **api:** an app whose host was removed takes the reconnected host for its credentials
+
 ## v0.42.1 — 2026-11-24
 
 ### Bug Fixes
