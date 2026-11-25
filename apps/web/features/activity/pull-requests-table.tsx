@@ -19,7 +19,7 @@ function StateIcon({ state, draft }: { state: PullRequest["state"]; draft: boole
 
 const when = (r: StoredPullRequest) => (r.state === "merged" && r.mergedAt ? `merged ${relativeTime(r.mergedAt)}` : r.state === "closed" ? `closed ${relativeTime(r.updatedAt)}` : `opened ${relativeTime(r.createdAt)}`);
 
-export function PullRequestsTable({ page, currentBranch, repositoryUrl, newHref, hasHost }: { page: Paged<StoredPullRequest>; currentBranch: string; repositoryUrl: string | null; newHref: string | null; hasHost: boolean }) {
+export function PullRequestsTable({ page, currentBranch, repositoryUrl, hasHost }: { page: Paged<StoredPullRequest>; currentBranch: string; repositoryUrl: string | null; hasHost: boolean }) {
   const rows = page.items;
   const source = rows[0]?.source ?? null;
   return (
@@ -30,9 +30,7 @@ export function PullRequestsTable({ page, currentBranch, repositoryUrl, newHref,
       rowKey={(r) => String(r.number)}
       noun={["pull request", "pull requests"]}
       meta={source ? SOURCE[source] ?? source : undefined}
-      newHref={newHref}
-      newLabel="New pull request"
-      empty={{ icon: GitPullRequest, title: "No pull requests yet", text: hasHost ? "Open the first one with New pull request. Sync imports existing ones from the code host." : "Connect a code host and push the repository to track pull requests." }}
+      empty={{ icon: GitPullRequest, title: "No pull requests yet", text: hasHost ? "Open the first one from the current branch on Overview. Sync imports existing ones from the code host." : "Connect a code host and push the repository to track pull requests." }}
       action={repositoryUrl && rows.length > 0 ? <a href={`${repositoryUrl}/pulls`} target="_blank" rel="noopener noreferrer" className="hidden whitespace-nowrap text-[13px] text-secondary hover:text-foreground lg:block">View all on {SOURCE[source ?? ""] ?? "the host"}</a> : undefined}
       minWidth={760}
       columns={[

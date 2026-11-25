@@ -1,5 +1,4 @@
 import { GitCommitHorizontal } from "lucide-react";
-import Link from "next/link";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import type { Commit } from "@/lib/api";
 
@@ -8,13 +7,13 @@ function formatDate(d: string): string {
   return Number.isNaN(t.getTime()) ? d : t.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-export function CommitsCard({ commits, repositoryUrl, base, limit = 8, title = "Recent commits" }: { commits: Commit[]; repositoryUrl: string | null; base: string; limit?: number; title?: string }) {
+export function CommitsCard({ commits, repositoryUrl, limit = 8, title = "Recent commits" }: { commits: Commit[]; repositoryUrl: string | null; limit?: number; title?: string }) {
   const rows = commits.slice(0, limit);
   const hashLink = (sha: string) => (repositoryUrl ? `${repositoryUrl}/commit/${sha}` : null);
 
   return (
     <Panel>
-      <PanelHeader title={title} aside={commits.length > limit ? <Link href={`${base}/activity`} className="text-[13px] text-secondary hover:text-foreground focus-visible:outline-none focus-visible:text-foreground">View all</Link> : null} />
+      <PanelHeader title={title} />
       {rows.length === 0 ? (
         <div className="flex flex-col items-center px-4 py-10 text-center">
           <GitCommitHorizontal className="size-5 text-secondary" strokeWidth={1.5} />

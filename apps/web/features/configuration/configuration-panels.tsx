@@ -68,7 +68,7 @@ function CommitBar({ view }: { view: AppView }) {
     });
     if (r.ok) {
       if (r.data.pull_request) {
-        router.push(`/projects/${view.projectId}/apps/${view.appId}/activity?opened=${r.data.pull_request.number}`);
+        router.push(`/projects/${view.projectId}/apps/${view.appId}?opened=${r.data.pull_request.number}`);
         return;
       }
       setDone({ branch: r.data.branch, url: null });

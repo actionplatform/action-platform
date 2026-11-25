@@ -31,7 +31,7 @@ export function PullRequestCard({ view }: { view: AppView }) {
   const action = useAction<Proposal, Opened>({
     preview: () => proposePullRequest(view.projectId, view.registryId),
     run: () => openPullRequest(view.projectId, view.appId, view.registryId, { base, title: title.trim(), body, draft }),
-    onDone: (r) => router.push(`/projects/${view.projectId}/apps/${view.appId}/activity?opened=${r.number}`),
+    onDone: (r) => router.push(`/projects/${view.projectId}/apps/${view.appId}?opened=${r.number}`),
   });
 
   useEffect(() => {
