@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.36.1 — 2026-11-25
+
+### Bug Fixes
+- **web:** Scopes and CI are app tabs again; Settings is one page with in-page tabs
+
 ## v0.36.0 — 2026-11-25
 
 ### Features
