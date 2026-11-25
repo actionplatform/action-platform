@@ -210,14 +210,24 @@ class Worker:
 
             return
 
-        with self.locks.hold(job.app_id) as held:
-            if not held:
-                log.info("job %s %s waits: its app is busy", job.kind, job.id)
-                self.queue.defer(job.id, self.name)
+        try:
+            with self.locks.hold(job.app_id) as held:
+                if not held:
+                    log.info("job %s %s waits: its app is busy", job.kind, job.id)
+                    self.queue.defer(job.id, self.name)
 
-                return
+                    return
 
-            self._run(job, handler)
+                self._run(job, handler)
+        except Exception:
+            log.exception("job %s %s: app lock failed", job.kind, job.id)
+            self._defer_quietly(job)
+
+    def _defer_quietly(self, job: Job) -> None:
+        try:
+            self.queue.defer(job.id, self.name)
+        except Exception:
+            log.warning("job %s not deferred", job.id, exc_info=True)
 
     def _run(self, job: Job, handler: Any) -> None:
         payload = {

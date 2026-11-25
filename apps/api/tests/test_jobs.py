@@ -819,6 +819,29 @@ class AppLockTest(TempCase):
         )
         self.assertEqual(queue.claim("w").attempts, 1)
 
+    def test_a_lock_that_fails_puts_the_job_back_without_stopping_the_worker(self):
+        from contextlib import contextmanager
+
+        from app.services.jobs import JobQueue
+        from app.services.jobs.worker import Worker
+
+        db = self.database()
+        queue = JobQueue(db)
+        job = queue.enqueue("readiness", {}, app_id="a1")
+        worker = Worker(db, None, "w", registry=mock.Mock())
+        worker.handlers = {"readiness": lambda payload: {"ok": True}}
+
+        @contextmanager
+        def broken(app_id):
+            raise RuntimeError("connection lost")
+            yield
+
+        worker.locks.hold = broken
+        worker.handle(queue.claim("w"))
+        back = queue.get(job.id)
+
+        self.assertEqual((back.status, back.attempts), ("queued", 0))
+
 
 class AppSerialWorkerTest(GateCase):
     def test_jobs_of_one_app_take_turns_while_other_apps_run_alongside(self):
