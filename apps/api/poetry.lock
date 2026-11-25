@@ -2,7 +2,7 @@
 
 [[package]]
 name = "action-platform"
-version = "0.33.0"
+version = "0.34.0"
 description = "Your platform team, as a CLI."
 optional = false
 python-versions = ">=3.10.0"
@@ -132,14 +132,14 @@ dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
 
 [[package]]
 name = "apx-github"
-version = "0.2.0"
+version = "0.2.1"
 description = "Action Platform plugin for GitHub: organization access and read-only checks of branch protection and repository settings."
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "apx_github-0.2.0-py3-none-any.whl", hash = "sha256:3693244927fd1a33f2ad4fbb25edbb759f775cde75318a202f021dc71478a227"},
-    {file = "apx_github-0.2.0.tar.gz", hash = "sha256:76cb42112b7e00bb6216de6f4f8e2ba778950481e3b831e135fc8ef28d2f45e7"},
+    {file = "apx_github-0.2.1-py3-none-any.whl", hash = "sha256:3d6bfc679d6b700d8faeff6cffa754c2b0c960d5dde21b891b3af9c36435c96d"},
+    {file = "apx_github-0.2.1.tar.gz", hash = "sha256:e589a06ad35d63883817e5e4262c80969c8dba9aadd7f962950cf10a7163cd31"},
 ]
 
 [package.dependencies]
@@ -3584,4 +3584,4 @@ packaging = ">=24.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "cfb86427e9554fbf614aa92f531b0a973c0b36ca7882d13d3410dd56a10f18f8"
+content-hash = "23e2f2345dc670ded9d33bce4a4e94bf6a81d24271b50a7deffd271d0aa4c25c"
