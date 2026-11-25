@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Cell, DataTable, Inline } from "@/components/ui/data-table";
 import { Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
+import type { CiRun } from "@/lib/ci-kinds";
 import type { Paged } from "@/lib/page";
 import type { StoredRelease } from "@/lib/releases";
+import { RunBadge } from "@/features/ci";
 
 type Row = { tag: string; component: string | null; version: string; name: string | null; body: string | null; url: string | null; author: string | null; sha: string | null; prerelease: boolean; draft: boolean; date: string | null; source: string };
 
@@ -26,7 +28,7 @@ export function toRows(stored: StoredRelease[], repositoryUrl: string | null): R
   return stored.map((r) => ({ tag: r.tag, component: r.tag.includes("/") ? r.tag.slice(0, r.tag.lastIndexOf("/")) : null, version: r.version || r.tag.split("/").pop()!.replace(/^v/, ""), name: r.name, body: r.body, url: r.url ?? (repositoryUrl ? `${repositoryUrl}/releases/tag/${r.tag}` : null), author: r.author, sha: r.sha, prerelease: r.prerelease, draft: r.draft, date: r.publishedAt ? r.publishedAt.toISOString() : null, source: r.source }));
 }
 
-export function ReleasesTable({ page, repositoryUrl, newHref, base }: { page: Paged<StoredRelease>; repositoryUrl: string | null; newHref?: string | null; base?: string }) {
+export function ReleasesTable({ page, repositoryUrl, newHref, base, ci }: { page: Paged<StoredRelease>; repositoryUrl: string | null; newHref?: string | null; base?: string; ci?: Record<string, CiRun | null> }) {
   const router = useRouter();
   const rows = toRows(page.items, repositoryUrl);
   const latest = new Set(rows.filter((r, i) => !r.draft && rows.findIndex((o) => !o.draft && o.component === r.component) === i).map((r) => r.tag));
@@ -62,7 +64,8 @@ export function ReleasesTable({ page, repositoryUrl, newHref, base }: { page: Pa
         columns={[
           { key: "version", label: "Version", width: 22, render: (r) => <Inline>{base ? <Link href={`${base}/releases/${encodeURIComponent(r.tag)}`} className="font-mono font-medium hover:underline underline-offset-4">{r.version}</Link> : r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" className="font-mono font-medium hover:underline underline-offset-4">{r.version}</a> : <span className="font-mono font-medium">{r.version}</span>}{r.component && <Badge className="shrink-0">{r.component}</Badge>}{latest.has(r.tag) && <Badge tone="ok" className="shrink-0">Latest</Badge>}{r.prerelease && <Badge className="shrink-0">Pre-release</Badge>}{r.draft && <Badge className="shrink-0">Draft</Badge>}</Inline> },
           { key: "tag", label: "Tag", width: 14, hide: "sm", render: tagChip },
-          { key: "author", label: "By", width: 14, hide: "md", render: (r) => <Cell muted title={r.author ?? undefined}>{r.author ?? "—"}</Cell> },
+          ...(ci ? [{ key: "ci", label: "CI", width: 10, hide: "sm" as const, render: (r: Row) => { const run = ci[r.tag]; if (!run) return <Cell muted>—</Cell>; return run.url ? <a href={run.url} target="_blank" rel="noopener noreferrer" aria-label={`CI run ${run.number} on ${r.tag}`}><RunBadge status={run.status} /></a> : <RunBadge status={run.status} />; } }] : []),
+          { key: "author", label: "By", width: ci ? 10 : 14, hide: "md", render: (r) => <Cell muted title={r.author ?? undefined}>{r.author ?? "—"}</Cell> },
           { key: "sha", label: "Commit", width: 10, hide: "md", render: (r) => r.sha ? <span className="inline-flex h-6 items-center rounded border border-border bg-background px-1.5 font-mono text-xs">{r.sha.slice(0, 7)}</span> : <Cell muted>—</Cell> },
           { key: "date", label: "Published", width: 14, hide: "sm", render: (r) => <Cell muted>{formatDate(r.date)}</Cell> },
           { key: "actions", label: "", width: 4, align: "right", render: (r) => <Menu label={`Actions for ${r.tag}`} items={actions(r)} trigger={({ toggle, open, id }) => <Button size="icon" variant="ghost" aria-label={`Actions for ${r.tag}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle}><MoreHorizontal className="size-4" strokeWidth={1.75} /></Button>} /> },

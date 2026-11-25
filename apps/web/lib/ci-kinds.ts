@@ -43,3 +43,7 @@ export function duration(ms: number | null): string {
   if (m < 60) return `${m}m ${s % 60}s`;
   return `${Math.floor(m / 60)}h ${m % 60}m`;
 }
+
+export function runOfRelease(runs: CiRun[], release: { tag: string; version: string; sha: string | null }): CiRun | null {
+  return runs.find((r) => r.branch === release.tag || (!!release.version && r.branch === release.version) || (!!release.sha && r.sha === release.sha)) ?? null;
+}
