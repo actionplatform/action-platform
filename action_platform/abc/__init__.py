@@ -2,6 +2,7 @@
 
 from action_platform.core.service_access.provider import AccessProvider
 
+from .branch_protection import BranchProtection
 from .changelog_renderer import ChangelogRenderer
 from .ci_runner import CIRunner
 from .deploy_target import DeployTarget
@@ -19,6 +20,7 @@ from .working_copy import WorkingCopy
 
 __all__ = [
     "AccessProvider",
+    "BranchProtection",
     "CIRunner",
     "ChangelogRenderer",
     "Connection",
