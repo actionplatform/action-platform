@@ -53,6 +53,7 @@ describe("protection model", () => {
   it("never claims protection the host did not accept", () => {
     expect(summaryOf(protection({ state: { ...protection().state!, error: "GitHub refused rulesets", active: false } })).label).toBe("Not active");
     expect(summaryOf(protection({ state: null })).label).toBe("Pending");
+    expect(summaryOf(protection({ state: { ...protection().state!, error: "no GitHub App key" } })).label).toBe("Not kept");
     expect(summaryOf(protection({ enforce: false })).label).toBe("Not enforced");
     expect(summaryOf(protection()).label).toBe("Partly active");
   });

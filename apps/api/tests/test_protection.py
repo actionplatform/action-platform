@@ -43,11 +43,31 @@ class GitlabHost:
 
         return self.rule
 
+    def patch(self, name, body):
+        row = self.branches[name]
+
+        if "allow_force_push" in body:
+            row["allow_force_push"] = body["allow_force_push"]
+
+        for item in body.get("allowed_to_push") or []:
+            if item.get("_destroy"):
+                row["push_access_levels"] = [
+                    level
+                    for level in row["push_access_levels"]
+                    if level["id"] != item["id"]
+                ]
+            else:
+                row["push_access_levels"].append(
+                    {"id": 99, "access_level": 40, "user_id": item.get("user_id")}
+                )
+
+        return row
+
     def protect(self, body):
         name = body["name"]
-        levels = [{"access_level": body["push_access_level"], "user_id": None}]
+        levels = [{"id": 1, "access_level": body["push_access_level"], "user_id": None}]
         levels += [
-            {"access_level": 40, "user_id": i["user_id"]}
+            {"id": 2, "access_level": 40, "user_id": i["user_id"]}
             for i in body.get("allowed_to_push") or []
         ]
         self.branches[name] = {
@@ -57,7 +77,7 @@ class GitlabHost:
         }
         path = f"{PROJECT}/protected_branches/{name}"
         self.host.routes[("GET", path)] = lambda _: self.branches[name]
-        self.host.routes[("DELETE", path)] = lambda _: self.branches.pop(name)
+        self.host.routes[("PATCH", path)] = lambda b: self.patch(name, b)
 
         return self.branches[name]
 
@@ -238,7 +258,9 @@ class ProtectionTest(GateCase):
         self.assertEqual(view["source"], "organization")
 
         self.run_jobs()
-        self.assertTrue(self.client.get(BASE, headers=self.h()).json()["state"]["active"])
+        self.assertTrue(
+            self.client.get(BASE, headers=self.h()).json()["state"]["active"]
+        )
 
         self.client.put(BASE, json={"enforce": False}, headers=self.h())
         self.assertFalse(self.client.get(BASE, headers=self.h()).json()["enforce"])
@@ -289,9 +311,7 @@ class GithubProtectionTest(GateCase):
 
         self.setenv("AP_GITHUB_APP_ID", "4242")
         self.setenv("AP_GITHUB_APP_PRIVATE_KEY", "pem")
-        handlers = JobHandlers(
-            self.app.state.db, self.app.state.sealer, get_registry()
-        )
+        handlers = JobHandlers(self.app.state.db, self.app.state.sealer, get_registry())
         with self.app.state.db.session() as s:
             app = s.get(App, "a1")
             s.expunge(app)

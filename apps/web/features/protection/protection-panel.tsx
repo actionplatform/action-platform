@@ -50,7 +50,7 @@ export function ProtectionPanel({ projectId, appId, initial, canEdit }: { projec
     <Panel>
       <PanelHeader
         title={<><ShieldCheck className="size-4 text-secondary" strokeWidth={1.75} /> Branch protection</>}
-        description="Git-flow enforced by the code host itself: no direct push, force push or deletion on the protected branches, merges only through a pull request whose checks pass. Only the platform's own identity pushes release commits."
+        description="Git-flow enforced by the code host itself: no direct push, force push or deletion on the protected branches, merges only through a pull request whose checks pass. Each rule below says whether the host enforces it, and who may still push."
         aside={<Badge tone={summary.tone}>{summary.label}</Badge>}
       />
       <PanelBody className="space-y-4 text-sm">
@@ -71,7 +71,7 @@ export function ProtectionPanel({ projectId, appId, initial, canEdit }: { projec
           <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div><dt className="text-xs text-secondary">Protected branches</dt><dd className="mt-0.5 font-mono">{state.branches.join(", ") || "—"}</dd></div>
             <div><dt className="text-xs text-secondary">Required checks</dt><dd className="mt-0.5 truncate font-mono" title={state.checks.join(", ")}>{state.checks.join(", ") || "none"}</dd></div>
-            <div><dt className="text-xs text-secondary">May push</dt><dd className="mt-0.5 truncate">{state.bypass ?? "nobody"}</dd></div>
+            <div><dt className="text-xs text-secondary">May push</dt><dd className="mt-0.5 truncate">{state.bypass ?? "—"}</dd></div>
           </dl>
         )}
 

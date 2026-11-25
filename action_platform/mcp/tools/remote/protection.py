@@ -32,7 +32,7 @@ def register(mcp: Any, remote: Remote) -> None:
         enforce: Annotated[
             Optional[bool],
             Field(
-                description="true turns enforcement on for this app (kept and reapplied when the host drifts), false off; null leaves the setting and applies once"
+                description="true turns enforcement on for this app and queues a job that applies the rules (job_id; kept and reapplied when the host drifts), false off; null leaves the setting and applies once, now"
             ),
         ] = None,
     ) -> schemas.Protection:
@@ -41,9 +41,6 @@ def register(mcp: Any, remote: Remote) -> None:
         organization = org_of(project)
 
         if enforce is not None:
-            remote.set_protection(project.id, app.id, enforce, organization)
-
-            if not enforce:
-                return remote.protection(project.id, app.id, False, organization)
+            return remote.set_protection(project.id, app.id, enforce, organization)
 
         return remote.apply_protection(project.id, app.id, organization)

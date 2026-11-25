@@ -69,6 +69,16 @@ class ApplyTest(unittest.TestCase):
         self.assertIn("Premium", state.rule("required_checks").detail)
         self.assertEqual(state.bypass, "AP Bot")
 
+    def test_no_ci_checks_add_no_merge_checks(self):
+        sim = BitbucketSimulator()
+        state = BitbucketProtection("acme/orders", "t", send=sim.host).apply(
+            policy(checks=())
+        )
+
+        kinds = {b["kind"] for _, b in sim.host.sent("POST")}
+        self.assertEqual(kinds, {"push", "force", "delete"})
+        self.assertEqual(state.drift, [])
+
     def test_an_added_user_is_drift_and_put_back(self):
         sim = BitbucketSimulator()
         provider = BitbucketProtection("acme/orders", "t", send=sim.host)

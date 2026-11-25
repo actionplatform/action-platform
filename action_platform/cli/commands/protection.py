@@ -37,7 +37,7 @@ def apply(
     enforce: Optional[bool] = typer.Option(
         None,
         "--enforce/--no-enforce",
-        help="Keep the rules enforced (reapplied on drift), or stop; omitted applies once",
+        help="Keep the rules enforced (a job applies them, then reapplies on drift), or stop; omitted applies once, now",
     ),
 ) -> None:
     """Apply the git-flow rules to the app's protected branches on the code host."""
@@ -46,11 +46,8 @@ def apply(
     organization = org_of(project)
 
     if enforce is not None:
-        remote.set_protection(project.id, row.id, enforce, organization)
+        _print(remote.set_protection(project.id, row.id, enforce, organization))
 
-        if not enforce:
-            _print(remote.protection(project.id, row.id, False, organization))
-
-            return
+        return
 
     _print(remote.apply_protection(project.id, row.id, organization))

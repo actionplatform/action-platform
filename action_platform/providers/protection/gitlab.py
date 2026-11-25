@@ -24,6 +24,7 @@ from action_platform.providers.protection.http import HostRefused, Send, sender
 NO_ONE = 0
 DEVELOPER = 30
 MAINTAINER = 40
+FREE_PUSHERS = "Maintainers (GitLab Free)"
 FREE_PUSH = (
     "GitLab Free cannot let one account push and refuse everyone else: Maintainers "
     "keep push access so the platform can push release commits. GitLab Premium "
@@ -110,6 +111,31 @@ class GitlabProtection(BranchProtection):
 
         return out
 
+    def _change(self, row: dict[str, Any]) -> dict[str, Any]:
+        """The PATCH that leaves only the platform's account in a protected branch's push access, in place."""
+        me = self.identity()
+
+        if me is None or self._pushers(row) == {("user", me.id)}:
+            return {}
+
+        entries: list[dict[str, Any]] = [
+            {"id": level["id"], "_destroy": True}
+            for level in row.get("push_access_levels") or []
+            if level.get("id") is not None
+            and str(level.get("user_id") or "") != me.id
+            and (
+                level.get("access_level")
+                or level.get("user_id")
+                or level.get("group_id")
+                or level.get("deploy_key_id")
+            )
+        ]
+
+        if ("user", me.id) not in self._pushers(row):
+            entries.append({"user_id": int(me.id)})
+
+        return {"allowed_to_push": entries}
+
     def _wanted_pushers(self) -> set[tuple[str, str]]:
         me = self.identity()
 
@@ -143,7 +169,7 @@ class GitlabProtection(BranchProtection):
             "gitlab",
             policy.branches,
             policy.checks,
-            bypass=me.name if me and self.premium() else None,
+            bypass=me.name if me and self.premium() else FREE_PUSHERS,
         )
 
     def status(self, policy: Policy) -> ProtectionState:
@@ -178,7 +204,11 @@ class GitlabProtection(BranchProtection):
             state.drift.append(f"{b} allows force push")
 
         wanted = self._wanted_pushers()
-        loose = [r["name"] for r in rows_present if self._pushers(r) != wanted]
+        loose = (
+            [r["name"] for r in rows_present if self._pushers(r) != wanted]
+            if self.premium()
+            else []
+        )
 
         for b in loose:
             state.drift.append(f"{b}: push access differs from the policy")
@@ -216,7 +246,7 @@ class GitlabProtection(BranchProtection):
             project.get("only_allow_merge_if_pipeline_succeeds")
         ) and not project.get("allow_merge_on_skipped_pipeline")
 
-        if not succeeds:
+        if policy.checks and not succeeds:
             state.drift.append("pipelines must succeed is off")
 
         if not policy.checks:
@@ -261,35 +291,36 @@ class GitlabProtection(BranchProtection):
                     "cannot read the account the platform pushes with (GET /user); nothing was applied"
                 )
 
-            wanted = self._wanted_pushers()
-
             for b, row in self._branches(policy).items():
-                if (
-                    row is not None
-                    and not row.get("allow_force_push")
-                    and self._pushers(row) == wanted
-                ):
+                if row is None:
+                    self.send(
+                        "POST",
+                        f"/projects/{self.id}/protected_branches",
+                        self.protected(b),
+                    )
                     continue
 
-                if row is not None:
+                change = self._change(row) if premium else {}
+
+                if row.get("allow_force_push"):
+                    change["allow_force_push"] = False
+
+                if change:
                     self.send(
-                        "DELETE",
+                        "PATCH",
                         f"/projects/{self.id}/protected_branches/{urllib.parse.quote(b, safe='')}",
-                        None,
+                        change,
                     )
 
+            if policy.checks:
                 self.send(
-                    "POST", f"/projects/{self.id}/protected_branches", self.protected(b)
+                    "PUT",
+                    f"/projects/{self.id}",
+                    {
+                        "only_allow_merge_if_pipeline_succeeds": True,
+                        "allow_merge_on_skipped_pipeline": False,
+                    },
                 )
-
-            self.send(
-                "PUT",
-                f"/projects/{self.id}",
-                {
-                    "only_allow_merge_if_pipeline_succeeds": True,
-                    "allow_merge_on_skipped_pipeline": False,
-                },
-            )
 
             if premium:
                 current = self.send("GET", f"/projects/{self.id}/push_rule", None)
@@ -317,4 +348,4 @@ def refusal(e: HostRefused) -> str:
     return f"GitLab answered {e.status or 'an error'}: {detail}"
 
 
-__all__ = ["FREE_PUSH", "GitlabProtection", "refusal"]
+__all__ = ["FREE_PUSH", "FREE_PUSHERS", "GitlabProtection", "refusal"]

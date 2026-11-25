@@ -79,7 +79,7 @@ class BitbucketProtection(BranchProtection):
         me = self.identity()
         base = {"branch_match_kind": "glob", "pattern": branch}
 
-        return {
+        rules: dict[str, dict[str, Any]] = {
             "push": {
                 **base,
                 "kind": "push",
@@ -88,13 +88,17 @@ class BitbucketProtection(BranchProtection):
             },
             "force": {**base, "kind": "force"},
             "delete": {**base, "kind": "delete"},
-            "require_passing_builds_to_merge": {
+        }
+
+        if policy.checks:
+            rules["require_passing_builds_to_merge"] = {
                 **base,
                 "kind": "require_passing_builds_to_merge",
                 "value": self.builds(policy),
-            },
-            "enforce_merge_checks": {**base, "kind": "enforce_merge_checks"},
-        }
+            }
+            rules["enforce_merge_checks"] = {**base, "kind": "enforce_merge_checks"}
+
+        return rules
 
     def _restrictions(self) -> dict[tuple[str, str], dict[str, Any]]:
         rows: list[dict[str, Any]] = []
