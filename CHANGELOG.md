@@ -22,7 +22,6 @@
 - **cli:** login --token keeps a token minted without a browser
 - **api:** users and tokens operator commands, disabled accounts
 - **web:** dashboard redesign with deployments in progress, needs attention and CI coverage (#597)
-- organization events for plugins, delivered through the job queue (#588)
 - **core:** a generated project's owner, author, licence and host come from its user (#589)
 - **deploy:** daily pg_dump service with retention
 - bulk adoption — open install pull requests for many apps at once (#584)
@@ -32,7 +31,6 @@
 - **mcp:** cloud and service parameters list what the matrix and plugins offer
 - **mcp:** remote tools for readiness, jobs, scopes, CI, hosts and imports
 - **core:** Remote methods for readiness, scopes, CI, hosts, imports and queued deploys
-- verify deployments with the app's env and identity (#583)
 - **api:** Connect Sentry and the organization's connections handed to plugins
 - **plugins:** a plugin declares the connections it reads and takes their credential
 - **core:** plain-text reads on Http, HTML error pages out of its messages (#572)
@@ -170,9 +168,6 @@
 
 ### Chores
 - drop the node_modules link committed by mistake
-
-### Reverts
-- plugin events and deployment verification context (#588, #583) (#598)
 
 ## v0.33.0 — 2026-11-24
 

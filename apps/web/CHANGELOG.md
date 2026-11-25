@@ -11,7 +11,6 @@
 - **web:** verify a login invitation, role mapping and waiting teams in the import
 - **web:** create an API token from Organization, Sessions
 - **web:** dashboard redesign with deployments in progress, needs attention and CI coverage (#597)
-- organization events for plugins, delivered through the job queue (#588)
 - **core:** a generated project's owner, author, licence and host come from its user (#589)
 - bulk adoption — open install pull requests for many apps at once (#584)
 - **web:** the install step shows the detected CI and warnings (#581)
@@ -34,9 +33,6 @@
 
 ### Chores
 - drop the node_modules link committed by mistake
-
-### Reverts
-- plugin events and deployment verification context (#588, #583) (#598)
 
 ## v0.33.0 — 2026-11-24
 
