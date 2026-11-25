@@ -77,6 +77,10 @@ Routes that are not workspaces live directly under `/api/v1` and are what the we
 | `GET projects/{id}/apps/{id}/ci?page&per` (the runs imported from the app's CI) | read: reach |
 | `PUT projects/{id}/apps/{id}/ci {ci_host_id, job}` (link the app to a CI server and a job) | `app.configure` |
 | `POST projects/{id}/apps/{id}/ci/sync` (import the latest runs) | `app.sync` |
+| `GET projects/{id}/apps/{id}/protection?refresh` (whether git-flow is enforced on the code host — `enforce`, decided by the `app` or the `organization` default — and the last state per rule: `native`, `check` or `inactive` with the reason, `drift`, `bypass`; `refresh=true` reads the host first) | — |
+| `PUT projects/{id}/apps/{id}/protection {enforce}` (`true`/`false` for this app, `null` back to the organization's default; enabling queues a `protection` job that applies the rules, its id in `job_id`) | `app.configure` |
+| `POST projects/{id}/apps/{id}/protection/apply` (apply the rules on the code host now and answer the state) | `app.configure` |
+| `GET`/`PUT settings/protection {enforce}` (the organization's default for apps whose `platform.toml` does not say; turning it on queues a sweep) | `PUT`: `org.manage` |
 | `POST projects/{id}/apps/{id}/ci/run {ref}` (start the job on a branch or tag; answers `202`) | `app.flow` |
 | `GET ci-hosts`, `POST ci-hosts/{id}/test` (reach the server with its sealed token; answers `{ok, error}`) | any member (`read`) |
 | `POST ci-hosts {kind, name, base_url, username, token}` (answers `201`), `DELETE ci-hosts/{id}` | `org.manage` |
