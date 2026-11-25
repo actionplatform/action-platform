@@ -64,6 +64,7 @@ from action_platform.remote.schemas import (
     OrganizationRow,
     PluginOptions,
     ProjectRow,
+    Protection,
     PullRequestOpened,
     PullRequestPlan,
     ReadinessQueued,
@@ -617,6 +618,54 @@ class Remote:
                 "POST",
                 f"projects/{project}/apps/{app}/ci/run",
                 {"ref": ref},
+                organization,
+            ),
+        )
+
+    def protection(
+        self,
+        project: str,
+        app: str,
+        refresh: bool = False,
+        organization: Optional[str] = None,
+    ) -> Protection:
+        return _as(
+            Protection,
+            self._call(
+                "GET",
+                f"projects/{project}/apps/{app}/protection",
+                None,
+                organization,
+                refresh="true" if refresh else None,
+            ),
+        )
+
+    def set_protection(
+        self,
+        project: str,
+        app: str,
+        enforce: Optional[bool],
+        organization: Optional[str] = None,
+    ) -> Protection:
+        return _as(
+            Protection,
+            self._call(
+                "PUT",
+                f"projects/{project}/apps/{app}/protection",
+                {"enforce": enforce},
+                organization,
+            ),
+        )
+
+    def apply_protection(
+        self, project: str, app: str, organization: Optional[str] = None
+    ) -> Protection:
+        return _as(
+            Protection,
+            self._call(
+                "POST",
+                f"projects/{project}/apps/{app}/protection/apply",
+                None,
                 organization,
             ),
         )

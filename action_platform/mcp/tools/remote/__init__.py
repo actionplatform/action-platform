@@ -17,6 +17,7 @@ from action_platform.mcp.tools.remote import (
     github,
     jobs,
     matrix,
+    protection,
 )
 from action_platform.remote.client import Remote
 
@@ -29,6 +30,7 @@ MODULES = (
     deploy,
     jobs,
     ci,
+    protection,
     adoption,
     matrix,
     access,

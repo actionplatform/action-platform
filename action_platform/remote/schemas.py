@@ -652,8 +652,41 @@ class Version(Open):
     database: Optional[str] = None
 
 
+class ProtectionRule(Open):
+    rule: str
+    label: str
+    mode: str
+    detail: str = ""
+
+
+class ProtectionState(Open):
+    host: str
+    active: bool
+    branches: list[str] = []
+    checks: list[str] = []
+    rules: list[ProtectionRule] = []
+    drift: list[str] = []
+    error: Optional[str] = None
+    changed_by: Optional[str] = None
+    bypass: Optional[str] = None
+
+
+class Protection(Open):
+    enforce: bool
+    source: str
+    organization_default: bool
+    branches: list[str] = []
+    state: Optional[ProtectionState] = None
+    checked_at: Optional[datetime] = None
+    applied_at: Optional[datetime] = None
+    job_id: Optional[str] = None
+
+
 __all__ = [
     "Open",
+    "Protection",
+    "ProtectionRule",
+    "ProtectionState",
     "MatrixProject",
     "MatrixCloud",
     "MatrixService",
