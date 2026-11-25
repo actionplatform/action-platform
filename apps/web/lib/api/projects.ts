@@ -48,6 +48,8 @@ export const projects = {
     unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/releases/{tag}/readiness", { params: { path: { project_id: projectId, app_id: appId, tag } } })),
   checkReadiness: async (projectId: string, appId: string, tag: string, stage: string | null = null) =>
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/releases/{tag}/readiness", { params: { path: { project_id: projectId, app_id: appId, tag } }, body: { stage } })),
+  appActivity: async (projectId: string, appId: string, kind: string | null = null, limit = 50) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/activity", { params: { path: { project_id: projectId, app_id: appId }, query: { kind, limit } } })),
   timeline: async (projectId: string, appId: string, tag: string) =>
     unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/releases/{tag}/timeline", { params: { path: { project_id: projectId, app_id: appId, tag } } })),
   adoption: async (projectId: string) =>
