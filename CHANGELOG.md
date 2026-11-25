@@ -1,5 +1,179 @@
 # Changelog
 
+## v0.34.0 — 2026-11-24
+
+### Breaking Changes
+- **api:** sync, push, release and deploy always run as jobs
+
+### Features
+- **mcp:** organization import tools cover GitLab and Bitbucket hosts
+- **api:** import GitLab groups and Bitbucket workspaces through neutral routes
+- **deploy:** install.sh prints the setup token, AP_SETUP_TOKEN passed to the api
+- **api:** setup token required by the first sign-up
+- **deploy:** worker healthchecks in both compose files
+- **api:** worker heartbeat, /api/health, owner instance health and test email
+- **core:** origin of a URL, the unit a credential is approved for
+- **deploy:** the light worker gets the SMTP and Google settings
+- **api:** email invitations when SMTP is configured, with resend and import support
+- **api:** change your own password while signed in
+- **mcp:** import_organization takes the role mapping; invitations show login and teams
+- **api:** organization import invites by login, maps host roles and keeps team memberships
+- **api:** invitations bound to a code-host login, carrying the teams joined on accepting
+- **cli:** login --token keeps a token minted without a browser
+- **api:** users and tokens operator commands, disabled accounts
+- **web:** dashboard redesign with deployments in progress, needs attention and CI coverage (#597)
+- organization events for plugins, delivered through the job queue (#588)
+- **core:** a generated project's owner, author, licence and host come from its user (#589)
+- **deploy:** daily pg_dump service with retention
+- bulk adoption — open install pull requests for many apps at once (#584)
+- **core:** seed LAST_VERSION from tags, manifest or CHANGELOG, per component (#582)
+- **web:** the install step shows the detected CI and warnings (#581)
+- **mcp:** local list_scopes, readiness, job_logs and record_deployment
+- **mcp:** cloud and service parameters list what the matrix and plugins offer
+- **mcp:** remote tools for readiness, jobs, scopes, CI, hosts and imports
+- **core:** Remote methods for readiness, scopes, CI, hosts, imports and queued deploys
+- verify deployments with the app's env and identity (#583)
+- **api:** Connect Sentry and the organization's connections handed to plugins
+- **plugins:** a plugin declares the connections it reads and takes their credential
+- **core:** plain-text reads on Http, HTML error pages out of its messages (#572)
+- **core:** a default value on plugin options (#571)
+- **mcp:** remote tools to invite, cancel invitations and remove members
+- **core:** public Remote methods for members, invitations and plugin options
+- **deploy:** pinned compose files and Dokploy template for a release
+- **deploy:** install.sh pins api/web releases, dumps before upgrade
+- **install:** show the detected CI and warnings in the CLI and MCP plan
+- **api:** deploys and readiness reach Jenkins with the app's connected server
+- **deploy:** targets on one Jenkins job share its build
+- **deploy:** start a Jenkins job with the release parameter and follow it
+- **ci:** Jenkins follows a queued build to its number and reads its stages
+- **targets:** a Jenkins target with observe = false is dispatched
+- **deploy:** packagist and go registry targets
+- **deploy:** JSON fetch for registry targets
+
+### Bug Fixes
+- **mcp:** keep polling a job through a failed read
+- **api:** record a deploy without a version as the release at HEAD
+- **api:** resolve plugin endpoint and credential as one connection
+- **api:** read dry_run as the request model does
+- **mcp:** follow the job of sync, release and deploy
+- **core:** credential headers stay on the approved origin across redirects and pages
+- **api:** bind Bitbucket and GitLab login invitations to the immutable account id
+- **scaffold:** render templates in an isolated process without credentials
+- **deploy:** rebuild the dokploy template after the rebase
+- **api:** scope the instance health queue to the caller's organization
+- **api:** worker heartbeat migration follows the invitation one as 0026
+- **api:** track the instance service and web modules a Flask ignore rule hid
+- **api:** invitation email migration follows 0025 as 0026
+- **api:** match a repository URL to its host by origin, not substring
+- **api:** git offers a connection's token only to its origin
+- **core:** keep each owner's template source clones in a directory of its own
+- **api:** invitation migration follows user.disabled_at as 0025
+- **api:** record an observed run only on the target serving its stage
+- **api:** disabled_at migration tolerates a schema the web created
+- **api:** latest activity picks each kind by the event's own time (#592)
+- **api:** adding a repository that is already an app answers it, not a 500 (#573)
+- **api:** commit a token's bookkeeping before the gate queues a job
+- **deploy:** build only the targets that serve the chosen name and scope (#570)
+- **api:** only an owner invites someone as owner
+- **api:** refuse plugin options for a slug the image does not run
+- **deploy:** optional SMTP and Google variables in the Dokploy template
+- **deploy:** unique Dokploy service names on dokploy-network
+- **deploy:** require explicit image tags and drop pull_policy always
+- **deploy:** dispatch a Jenkins job whose target kind has no provider (#556)
+- **api:** link an observed deployment only to the CI run of the same build
+- **api:** a deploy run on the request reaches Jenkins with the app's connected server too
+- **install:** seed LAST_VERSION from the newest release tag of all tags
+- **deploy:** a build cancelled in the queue fails its target, not the whole deploy
+- **manifest:** render arrays of tables such as [[deploy.targets]]
+- **install:** use the CI the repository already has, refuse to guess between two
+- **worker:** keep a running job's lock fresh so a long deploy is not reaped
+
+### Docs
+- **deployments:** record fields, jobs paging and the deployments and logs commands
+- **mcp:** invitation emails, plugin tools on the local server
+- **api:** password reset, Google sign-in, push, jobs and open paths in the reference
+- describe the scopes that exist, not the planned ones
+- describe the setup token in getting started
+- take getting started from sign-in to a verified deployment
+- plugin options as one connection and AP_PLATFORM_CONNECTIONS
+- request origin policy and AP_ALLOW_PRIVATE_NETWORKS
+- login invitations on Bitbucket and GitLab are bound to the account id
+- import GitLab groups and Bitbucket workspaces
+- **readme:** the first account asks for the setup token
+- first run and the setup token
+- **templates:** describe how templates are rendered and what custom sources may not do
+- list install among the light worker's kinds
+- instance health, worker check and the Instance page
+- git credentials are scoped to the connection's origin
+- invitation emails, resend and import
+- **templates:** state who owns a template clone and when it is deleted
+- change your own password and what it signs out
+- login invitations, pending team memberships and the import role mapping
+- headless login and operator commands
+- **operations:** service connections are sealed with the auth secret
+- link the operations runbook and the db commands
+- **operations:** backup, restore and secret rotation runbook
+- **mcp:** deploy_app passes the checked release to deploy
+- Access page in the web guide
+- **web:** plugin scopes are asked of every organization that connects GitHub
+- **database:** migration 0022
+- plugins read the organization's connections instead of a pasted token
+- **web:** sign-in with password, Google and recovery
+- **troubleshooting:** self-hosting errors and the worker image
+- **self-hosting:** services, images and bundled plugins as deployed
+- **self-hosting:** Dokploy service names and isolated deployment
+- **self-hosting:** release assets and docs at the tag you run
+- **plugins:** the API image carries the access plugins
+- **self-hosting:** pinned install, upgrade with a dump, rollback
+- **templates:** the job type, remote MCP and markdown knowledge templates
+- link the adopting guide from the index, getting started and README
+- **adopting:** guide for repositories, tags and pipelines that already exist
+- **api:** deployments, CI and organization import routes
+- **manifest:** deploy targets and scopes tables, deploy-record name
+- 15 skills, apx-dokploy bundled, a plugin in a self-hosted api image
+- **api:** tagged paths reach the API through the web proxy
+- **mcp:** start a dispatched Jenkins deploy as a job
+- dispatched Jenkins targets in the web, CLI, MCP and self-hosting guides
+- **install:** how LAST_VERSION is seeded
+- **getting-started:** how install picks the CI and the source host
+- **deployments:** dispatched Jenkins jobs
+- **deployments:** packagist and go targets
+
+### Tests
+- **api:** the github access fixture grants what installed plugins ask for
+- **api:** the access check counts the permissions plugins ask for
+- **api:** setup stays closed without an auth secret, quiet once claimed
+- **scaffold:** cover malicious templates reaching secrets, hooks and files
+- **api:** job log answer carries kind and no_worker
+- **api:** migration test expects the worker table and follows the head
+- **api:** prove template sources stay inside their organization and die with revocation
+- **api:** drop the password change module docstring
+- **mcp:** import_organization sends the role mapping
+- **deploy:** backup service in both compose files
+- **api:** db backup and restore commands and refusals
+- **core:** the client's fake request takes prefer
+- **api:** migrations reach 0022 with service_connection
+- **deploy:** Dokploy template offers every optional variable empty
+- **deploy:** Dokploy service names and template.b64 freshness
+- **deploy:** release assets come from the api tag with pinned images
+- **deploy:** version resolution and env writing of install.sh
+
+### Build
+- **deploy:** pass AP_PLATFORM_CONNECTIONS to the API and workers
+- **api:** apx-github and apx-sentry 0.2.0 in the image
+- **deploy:** postgresql-client in the api and worker images
+- **api:** bundle apx-github, apx-jenkins and apx-sentry for access on their services
+- **api:** bundle apx-dokploy 0.6.0 for access on Dokploy
+
+### CI
+- **images:** attach pinned compose files to stable api and web releases
+
+### Chores
+- drop the node_modules link committed by mistake
+
+### Reverts
+- plugin events and deployment verification context (#588, #583) (#598)
+
 ## v0.33.0 — 2026-11-24
 
 ### Features
