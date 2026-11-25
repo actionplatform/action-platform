@@ -459,6 +459,26 @@ class RemoteClientTest(TempCase):
                 )
                 self.assertEqual(self.seen["body"], body)
 
+    def test_github_checks_reach_the_access_routes(self):
+        remote = client.Remote("https://p.example", "tok")
+        self.answer = {"org": "acme", "repos": []}
+
+        protection = remote.github_branch_protection("api", organization="acme")
+
+        self.assertEqual(protection.org, "acme")
+        self.assertEqual(
+            self.seen["url"],
+            "https://p.example/api/v1/access/github/branch-protection?repo=api",
+        )
+        self.assertEqual(self.seen["organization"], "acme")
+
+        settings = remote.github_repo_settings()
+
+        self.assertEqual(settings.repos, [])
+        self.assertEqual(
+            self.seen["url"], "https://p.example/api/v1/access/github/repo-settings"
+        )
+
     def test_answers_come_back_as_the_schemas(self):
         remote = client.Remote("https://p.example", "tok")
         self.rows = [

@@ -14,6 +14,7 @@ from action_platform.mcp.tools.remote import (
     deploy,
     directory,
     flow,
+    github,
     jobs,
     matrix,
 )
@@ -31,6 +32,7 @@ MODULES = (
     adoption,
     matrix,
     access,
+    github,
 )
 
 

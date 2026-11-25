@@ -24,6 +24,7 @@ from pydantic import TypeAdapter
 from action_platform import __version__
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.service_access.models import Audit, Plan, Who
+from action_platform.providers.access.github.models import BranchProtection, OrgSettings
 from action_platform.remote.credentials import Credentials, load, save
 from action_platform.remote.schemas import (
     AppAdded,
@@ -985,6 +986,26 @@ class Remote:
         }
 
         return _as(Plan, self._call("POST", "access/offboard", body, organization))
+
+    def github_branch_protection(
+        self, repo: Optional[str] = None, organization: Optional[str] = None
+    ) -> BranchProtection:
+        return _as(
+            BranchProtection,
+            self._call(
+                "GET", "access/github/branch-protection", None, organization, repo=repo
+            ),
+        )
+
+    def github_repo_settings(
+        self, repo: Optional[str] = None, organization: Optional[str] = None
+    ) -> OrgSettings:
+        return _as(
+            OrgSettings,
+            self._call(
+                "GET", "access/github/repo-settings", None, organization, repo=repo
+            ),
+        )
 
 
 SCOPES = ("read", "write", "release", "admin")
