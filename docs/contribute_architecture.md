@@ -52,6 +52,7 @@ action_platform/
   logging.py      the `action_platform` logger and the log sink: `capture(sink)` routes records and `emit(line)` to whoever follows the job
   providers/
     source/       rest (urllib helper), github, gitlab, bitbucket, generic; build_source_host(kind, …)
+    protection/   git-flow on the code host: github (rulesets), gitlab (protected branches, push rules), bitbucket (branch restrictions); build_branch_protection(kind, …)
   abc/            SourceHost, CIRunner, DeployTarget, WorkingCopy, TemplateStore contracts
   remote/         client (urllib): device-flow login, scoped token exchange, every /api/v1 call; credentials file
   mcp/            server (local or --remote), tools/{matrix,project,flow,lifecycle,remote}, prompts, annotations
@@ -116,6 +117,7 @@ The API and the web app are one deployable each, cut into the same contexts — 
 | Auth | accounts, sessions, device flow, API tokens | `auth/` | `auth/` | — | `auth.py` | `auth.py` | `account/` |
 | Service access | access on the services the bundled plugins own, mapped from members, roles and teams | `service_access.py` | `service_access/` | — (organization repository, plugin options) | `service_access.py` | — | — |
 | Identity | the platform as OIDC issuer: JWKS and the short-lived tokens the clouds trust | `identity.py` | `identity/` | — | `identity.py` | — | — |
+| Protection | git-flow enforced on the code host: the policy, each rule's state, drift events, the organization's default | `protection.py` | `protection/` | `protection/` | `protection.py` | `protection.py` | `protection/` |
 | Jobs | the queue, the worker, kind → handler | `jobs.py` | `jobs/` | — | `jobs.py` | `jobs.py` | — |
 
 Two folders are not contexts but the glue between them: `services/access` (who calls, what it targets, whether the call becomes a job — the gate's decisions) and `services/workspace` (the disposable clone every app context works on). A context reaches another only through that context's package `__init__` — `AccessDirectory`, `ImportDirectory` and `IntegrationsDirectory` are the compositions that span repositories of several contexts on one session, and they live in the context that needs them.
@@ -154,6 +156,8 @@ The Planner (`services/access/planner.py`) is the one place the gate reads the d
 | `import` | after a sync, release or push | releases and pull requests copied into the platform's tables |
 | `import_organization` | the organization import wizard (`import_github` is the earlier name, still run) | repositories, teams, people and projects from a GitHub organization, GitLab group or Bitbucket workspace |
 | `install` | `POST projects/{id}/install` (Adoption) | per app of the project: the installer's plan on a fresh clone, else a commit on `chore/<code>` and a pull request; the state of each app in `app_adoption` |
+| `protection` | `PUT projects/{p}/apps/{a}/protection` turning it on; the sweep, per enforced app | `apply`: the git-flow rules on the code host through `action_platform.providers.protection`; `reconcile`: read the host, apply again on drift, the event in `protection_event` (the app's Activity) |
+| `protection_sweep` | the worker on start, then itself every hour | a `protection` job for every app whose `[gitflow.protection]` (or the organization's default) enforces the rules |
 | `destroy` | `DELETE projects/{p}/apps/{a}?cloud=true` | every stage's stack down through the target, then the app off the platform |
 | `destroy_project` | `DELETE projects/{id}?cloud=true` | the same for each app, then the project |
 | `destroy_organization` | `DELETE organizations/{id}?cloud=true` | every app's stacks down, then the organization and everything it owned |

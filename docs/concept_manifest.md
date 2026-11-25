@@ -20,6 +20,9 @@ target = "aws/lambda"
 
 [services]
 postgres = "aws-rds"
+
+[gitflow.protection]
+enforce = true
 ```
 
 ## Tables
@@ -34,6 +37,7 @@ postgres = "aws-rds"
 | `[[scopes]]` | one table per scope: `name`, `kind`, `criticality` | `scopes`, `readiness`, `deploy`, the Deployments tab |
 | `[services]` | `<service> = "<provider>"`, e.g. `postgres = "aws-rds"` | `service add`, templates |
 | `[components.<name>]` | `path` | `release -c <name>` — see [releases](concept_releases.md) |
+| `[gitflow.protection]` | `enforce` (`true`/`false`; absent follows the organization's default), `branches` (default: whichever of `main`, `master`, `develop` exist) | the platform, which applies and keeps the rules on the code host — see [git-flow](concept_git_flow.md#enforced-on-the-code-host) |
 
 ## Deploy targets
 
