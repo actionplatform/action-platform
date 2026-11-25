@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.38.0 — 2026-11-25
+
+### Features
+- **web:** branch protection on Settings, Overview and Activity
+
+### Bug Fixes
+- protection keeps release pushes, never widens GitLab access, needs CI for merge checks
+
 ## v0.37.0 — 2026-11-25
 
 ### Features
