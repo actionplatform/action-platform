@@ -41,10 +41,10 @@ class ReleasesService:
         )
 
     def release(self, id: str, body: ReleaseRequest) -> dict:
-        platform = self._tool(id, fresh=not body.dry_run)
-        auth.apply(platform.config, body.credentials)
-
         with auth.git_auth(body.credentials):
+            platform = self._tool(id, fresh=not body.dry_run)
+            auth.apply(platform.config, body.credentials)
+
             if body.branch:
                 self._switch(platform.repo_root, body.branch)
 
