@@ -15,12 +15,10 @@
 - **api:** invitations bound to a code-host login, carrying the teams joined on accepting
 - **api:** users and tokens operator commands, disabled accounts
 - **web:** dashboard redesign with deployments in progress, needs attention and CI coverage (#597)
-- organization events for plugins, delivered through the job queue (#588)
 - **core:** a generated project's owner, author, licence and host come from its user (#589)
 - **api:** db backup and db restore operator commands
 - bulk adoption — open install pull requests for many apps at once (#584)
 - **web:** the install step shows the detected CI and warnings (#581)
-- verify deployments with the app's env and identity (#583)
 - **api:** Connect Sentry and the organization's connections handed to plugins
 - **core:** a default value on plugin options (#571)
 
@@ -61,9 +59,6 @@
 
 ### Style
 - **api:** sort the worker imports
-
-### Reverts
-- plugin events and deployment verification context (#588, #583) (#598)
 
 ## v0.41.2 — 2026-11-24
 
