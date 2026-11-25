@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.44.0 — 2026-11-25
+
+### Features
+- **api:** activity of one app, filtered by kind
+
+### Bug Fixes
+- **api:** name where CI runs live now in the GitHub permission hint
+
 ## v0.43.1 — 2026-11-25
 
 ### Bug Fixes
