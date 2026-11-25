@@ -101,7 +101,7 @@ The header carries the name, the branch, **Last synced** and **Sync** (or **Push
 
 ### Overview
 
-Branch, version, latest tag and deploy target; the **current branch** card; git-flow health of the branch and its commits; last commits, remote branches with their kind, tags; source and automation.
+Branch, version, latest tag and deploy target; the **current branch** card; git-flow health of the branch and its commits, with a line saying whether the code host enforces git-flow for the app — **Active**, **Partly active**, **Drifted**, **Pending**, **Not active** with the host's reason, or **Not enforced** — and a link to Settings; last commits, remote branches with their kind, tags; source and automation.
 
 The current branch card shows the latest imported CI run on the branch the app is on, with its status and a link to the run on the CI server (or **Connect CI** when the app reads none), **Run CI** to start the job on a branch or tag — a `workflow_dispatch`, a GitLab pipeline, a Bitbucket pipeline or a Jenkins build; the run shows after the next sync — and **Open pull request**. That button is enabled only when your role can work on the branch (`app.flow`), the app has a remote, the branch is a `<kind>/<code>` one with commits beyond its base, the tree is clean and no pull request from it is open; otherwise the card says which of these stops it, or links the open pull request. **Change branch** opens the same page to switch branch or start a new one.
 
@@ -125,13 +125,13 @@ The tab lists the platform's deploys and tear-downs — status, stage, type, ver
 
 ### Activity
 
-What happened to the app, newest first: releases, deployments, CI runs and pull requests, the same events as the organization's [activity](#dashboard) for this app alone. Nothing is opened or started from here; **Sync** under CI runs only imports. Filters: **All** and **Releases**, **Deployments** (the latest fifty events of the kind); **CI runs**, the runs imported from the app's CI — status, run, branch, commit, trigger, when, duration, linked to the server — ten per page, with **Sync** to import the latest and **Connect CI** / **Change CI** for who can configure the app; **Pull requests**, state, title, head → base, author, when, ten per page from the code host's import.
+What happened to the app, newest first: releases, deployments, CI runs and pull requests, the same events as the organization's [activity](#dashboard) for this app alone. Nothing is opened or started from here; **Sync** under CI runs only imports. Filters: **All** and **Releases**, **Deployments** (the latest fifty events of the kind); **CI runs**, the runs imported from the app's CI — status, run, branch, commit, trigger, when, duration, linked to the server — ten per page, with **Sync** to import the latest and **Connect CI** / **Change CI** for who can configure the app; **Pull requests**, state, title, head → base, author, when, ten per page from the code host's import; **Branch protection**, the rules applied on the code host, a drift put back by the hourly check (what differed and, when the host says, who changed it) or a refusal with its reason.
 
 ### Settings
 
 One page with two tabs at the top, `?tab=general` and `?tab=ci`, no sub-menu in the sidebar.
 
-- **General**: **Repository** (the remote repository, how releases are named, the source host whose token pushes and opens pull requests), **Deploy & services** and the **Danger zone**. **Deploy target** picks a cloud overlay for the app's type and language and applies it — the files become pending changes and `[deploy] target` is recorded; it is a form with a summary strip and a confirmation. **Services** lists the app's services (`action-platform service add` adds one on the CLI). **Configuration** edits `platform.toml` as the platform keeps it; **Export** writes the mirror into the repository. Pending changes are committed from the bar on top to a `chore/<code>` branch with a pull request, or discarded.
+- **General**: **Repository** (the remote repository, how releases are named, the source host whose token pushes and opens pull requests), **Branch protection** (whether the code host enforces git-flow — **Default** follows the organization, **On**, **Off**; only `app.configure` changes it — the protected branches, the required checks, who may still push, and each rule as *Enforced by the host*, *Required check* or *Not active* with the reason; **Apply now** applies the rules, **Check host** reads them again; see [git-flow on the code host](concept_git_flow.md#enforced-on-the-code-host)), **Deploy & services** and the **Danger zone**. **Deploy target** picks a cloud overlay for the app's type and language and applies it — the files become pending changes and `[deploy] target` is recorded; it is a form with a summary strip and a confirmation. **Services** lists the app's services (`action-platform service add` adds one on the CLI). **Configuration** edits `platform.toml` as the platform keeps it; **Export** writes the mirror into the repository. Pending changes are committed from the bar on top to a `chore/<code>` branch with a pull request, or discarded.
 - **CI**: the runner — a **CI server** the organization connected under Settings (Jenkins), or the one embedded in the source host (GitHub Actions, GitLab CI, Bitbucket Pipelines, with the host's own token) — and the **job**: the path in the Jenkins URL (`team/app`, `team/app/main` for a multibranch branch), a workflow file such as `ci.yml` for GitHub Actions (empty means every workflow), nothing for GitLab and Bitbucket. Only `app.configure` saves it.
 
 ### Scopes
@@ -197,7 +197,7 @@ One card per plugin the platform runs, with its version. **Configure** opens the
 
 ## Settings
 
-**Organization** — name, slug, your role, the commit identity and the git-flow rules — **Git** and **Services**; **Access** and **Instance** are tabs of the same page (`?tab=access`, `?tab=instance`), with no sub-menu; a tab the viewer may not use is not listed.
+**Organization** — name, slug, your role, the commit identity, the git-flow rules and the **branch protection default** (On or Off for apps whose own setting is Default; `org.manage` changes it) — **Git** and **Services**; **Access** and **Instance** are tabs of the same page (`?tab=access`, `?tab=instance`), with no sub-menu; a tab the viewer may not use is not listed.
 
 ### Commit identity
 
