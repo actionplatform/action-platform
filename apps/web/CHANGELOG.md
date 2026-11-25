@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.36.0 — 2026-11-25
+
+### Features
+- **web:** table standard on apps, instance, access, roles, commits and installations
+- **web:** table standard on releases, deployments, CI, members, teams and templates
+- **web:** scopes show accepted releases and criticality by meaning
+- **web:** info badge tinted like the other status tones
+- **web:** shared table styles with per-column width, alignment and wrapping
+
+### Bug Fixes
+- **web:** scopes actions column within the table's minimum width
+- **web:** full value of a cut table cell with rich content
+
 ## v0.35.0 — 2026-11-25
 
 ### Features
