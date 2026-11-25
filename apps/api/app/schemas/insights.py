@@ -47,6 +47,10 @@ class Dashboard(BaseModel):
     in_progress: list[ActiveDeployment] = []
 
 
+class AppActivity(BaseModel):
+    events: list[Event]
+
+
 class Timeline(BaseModel):
     release: ReleaseRow
     previous: Optional[ReleaseRow] = None

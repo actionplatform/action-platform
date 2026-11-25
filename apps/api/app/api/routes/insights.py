@@ -1,4 +1,6 @@
-"""The organization's dashboard and a release's timeline."""
+"""The organization's dashboard, an app's activity and a release's timeline."""
+
+from typing import Optional
 
 from fastapi import APIRouter, Request
 
@@ -29,6 +31,24 @@ def dashboard(
     )
 
     return schemas.Dashboard(**data)
+
+
+@router.get("/projects/{project_id}/apps/{app_id}/activity")
+def app_activity(
+    project_id: str,
+    app_id: str,
+    org: OrgDep,
+    caller: CallerDep,
+    writes: ProjectsRepoDep,
+    db: DbDep,
+    kind: Optional[str] = None,
+    limit: int = 50,
+) -> schemas.AppActivity:
+    project = project_of(writes, org, project_id)
+    app = app_of(writes, caller, project, app_id)
+    events = InsightsService(db).app_activity(org.id, project.id, app.id, kind, limit)
+
+    return schemas.AppActivity(events=[schemas.Event(**e) for e in events])
 
 
 @router.get("/projects/{project_id}/apps/{app_id}/releases/{tag:path}/timeline")
