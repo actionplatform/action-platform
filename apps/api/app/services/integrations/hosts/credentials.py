@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session as DbSession
 
 from action_platform.core.exception import ProviderError
 from app.core.auth.crypto import Sealer
-from app.core.db.models import SourceHost
+from app.core.db.models import App, RegistryEntry, SourceHost
 from app.core.shared.clock import now
 from app.core.shared.credentials import Credentials, CredentialsError
 from app.repositories.base import REFRESH_MARGIN
@@ -42,6 +42,27 @@ class FreshCredentials(HostsReads, OAuthAppsReads):
             self._refresh_host(host)
 
         return super().credentials_for(organization_id, host_id)
+
+    def app_host_id(self, organization_id: str, app: App) -> Optional[str]:
+        """The app's host, or the connected host its repository's URL belongs to once that one is gone; the app keeps the new link."""
+        if app.source_host_id and self.host(organization_id, app.source_host_id):
+            return app.source_host_id
+
+        entry = self.db.get(RegistryEntry, app.registry_id)
+        host_id = (
+            self.host_id_for_url(organization_id, entry.url)
+            if entry is not None and entry.url
+            else None
+        )
+
+        if host_id is not None:
+            row = self.db.get(App, app.id)
+
+            if row is not None:
+                row.source_host_id = host_id
+                self.db.flush()
+
+        return host_id
 
     @staticmethod
     def _expiring(host: SourceHost) -> bool:
