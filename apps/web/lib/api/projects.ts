@@ -30,6 +30,12 @@ export const projects = {
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/imports", { params: { path: { project_id: projectId, app_id: appId } } })),
   linkCi: async (projectId: string, appId: string, ciHostId: string | null, job: string) =>
     unwrap(await client.PUT("/api/v1/projects/{project_id}/apps/{app_id}/ci", { params: { path: { project_id: projectId, app_id: appId } }, body: { ci_host_id: ciHostId, job } })),
+  protection: async (projectId: string, appId: string, refresh = false) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/protection", { params: { path: { project_id: projectId, app_id: appId }, query: { refresh } } })),
+  setProtection: async (projectId: string, appId: string, enforce: boolean | null) =>
+    unwrap(await client.PUT("/api/v1/projects/{project_id}/apps/{app_id}/protection", { params: { path: { project_id: projectId, app_id: appId } }, body: { enforce } })),
+  applyProtection: async (projectId: string, appId: string) =>
+    unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/protection/apply", { params: { path: { project_id: projectId, app_id: appId } } })),
   deployments: async (projectId: string, appId: string) =>
     unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/deployments", { params: { path: { project_id: projectId, app_id: appId } } })),
   syncDeployments: async (projectId: string, appId: string) =>

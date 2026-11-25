@@ -14,13 +14,15 @@ import { ciHostsOf } from "@/lib/ci";
 import { CiHosts } from "@/features/ci";
 import { ConnectHosts, ConnectServices, SourceHosts } from "@/features/integrations";
 import { DeleteOrganizationCard, GitflowCard, IdentityCard } from "@/features/organization";
+import { ProtectionDefaultCard } from "@/features/protection";
+import { protectionDefaultOf } from "@/lib/protection";
 
 export type GeneralQuery = { connected?: string; oauth_error?: string; github_app?: string };
 
 export async function GeneralSection({ query }: { query: GeneralQuery }) {
   const { session, org } = await requireOrg();
   const canManage = !!session.grants["org.manage"];
-  const [author, hosts, apps, ciHosts, projects, services] = await Promise.all([gitAuthorOf(), hostsOf(org.id), oauthApps(), ciHostsOf(), v1.projects(org.id).catch(() => []), v1.connections().catch(() => [])]);
+  const [author, hosts, apps, ciHosts, projects, services, protectionDefault] = await Promise.all([gitAuthorOf(), hostsOf(org.id), oauthApps(), ciHostsOf(), v1.projects(org.id).catch(() => []), v1.connections().catch(() => []), protectionDefaultOf()]);
   const access = Object.fromEntries(await Promise.all(hosts.filter((h) => h.kind !== "generic").map(async (h) => [h.id, await hostAccess(org.id, h.id)] as const)));
   const origin = publicOrigin(await headers());
   const connected = { github: [] as string[], gitlab: [] as string[], bitbucket: [] as string[] };
@@ -43,6 +45,7 @@ export async function GeneralSection({ query }: { query: GeneralQuery }) {
       </Panel>
       <IdentityCard author={author} canManage={canManage} />
       <GitflowCard rules={rules} />
+      <ProtectionDefaultCard initial={protectionDefault} canManage={canManage} />
       <Panel>
         <PanelHeader title="Git" description="GitHub, GitLab, Bitbucket — the accounts the organization pushes and releases with." />
         <div className="space-y-3 p-4">

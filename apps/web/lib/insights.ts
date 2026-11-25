@@ -10,7 +10,7 @@ export async function dashboardOf(): Promise<Dashboard> {
   return v1.dashboard();
 }
 
-export const EVENT_KINDS = ["release", "deployment", "ci_run", "pull_request"] as const;
+export const EVENT_KINDS = ["release", "deployment", "ci_run", "pull_request", "protection"] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
 
 export function eventKind(value: string | string[] | undefined): EventKind | null {

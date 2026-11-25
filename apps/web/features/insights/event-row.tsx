@@ -1,12 +1,12 @@
-import { Activity, Cloud, GitPullRequest, Tag, Workflow } from "lucide-react";
+import { Activity, Cloud, GitPullRequest, ShieldCheck, Tag, Workflow } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import type { DashboardEvent } from "@/lib/insights";
 import { relativeTime } from "@/lib/time";
 
-const ICON: Record<string, typeof Activity> = { deployment: Cloud, release: Tag, pull_request: GitPullRequest, ci_run: Workflow };
-const TONE: Record<string, "success" | "danger" | "neutral" | "warning" | "info"> = { verified: "success", success: "success", failure: "danger", running: "info", queued: "info", merged: "success", open: "neutral" };
-const TAB: Record<string, string> = { deployment: "deployments", release: "releases", ci_run: "activity?kind=ci_run", pull_request: "activity?kind=pull_request" };
+const ICON: Record<string, typeof Activity> = { deployment: Cloud, release: Tag, pull_request: GitPullRequest, ci_run: Workflow, protection: ShieldCheck };
+const TONE: Record<string, "success" | "danger" | "neutral" | "warning" | "info"> = { verified: "success", success: "success", failure: "danger", running: "info", queued: "info", merged: "success", open: "neutral", applied: "success", enabled: "success", drift: "warning", failed: "danger", disabled: "neutral" };
+const TAB: Record<string, string> = { deployment: "deployments", release: "releases", ci_run: "activity?kind=ci_run", pull_request: "activity?kind=pull_request", protection: "activity?kind=protection" };
 
 export function eventHref(e: Pick<DashboardEvent, "kind" | "project_id" | "app_id">): string {
   return `/projects/${e.project_id}/apps/${e.app_id}/${TAB[e.kind] ?? ""}`;

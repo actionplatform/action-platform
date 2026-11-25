@@ -9,6 +9,7 @@ describe("eventHref", () => {
     expect(at("deployment")).toBe("/projects/p1/apps/a1/deployments");
     expect(at("ci_run")).toBe("/projects/p1/apps/a1/activity?kind=ci_run");
     expect(at("pull_request")).toBe("/projects/p1/apps/a1/activity?kind=pull_request");
+    expect(at("protection")).toBe("/projects/p1/apps/a1/activity?kind=protection");
   });
 });
 

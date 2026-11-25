@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Check, CircleDashed, GitCommitHorizontal, ShieldCheck, TriangleAlert, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Panel, PanelHeader } from "@/components/ui/panel";
@@ -26,7 +27,7 @@ function Check_({ icon: Icon, label, value }: { icon: LucideIcon; label: string;
   );
 }
 
-export function HealthCard({ view }: { view: AppView }) {
+export function HealthCard({ view, footer }: { view: AppView; footer?: ReactNode }) {
   const status = statusOf(view);
   const tone = status === "ready" ? "ok" : status === "blocked" || status === "warning" ? "inverse" : "neutral";
   const Icon = status === "ready" ? Check : status === "blocked" || status === "warning" ? TriangleAlert : CircleDashed;
@@ -43,6 +44,7 @@ export function HealthCard({ view }: { view: AppView }) {
           {view.health.problems.map((p) => <li key={p} className="flex gap-2"><TriangleAlert className="mt-0.5 size-3.5 shrink-0" strokeWidth={1.75} />{p}</li>)}
         </ul>
       )}
+      {footer}
       <div className="border-t border-border px-4 py-2.5 text-xs text-muted-foreground">Last check completed on <span className="font-mono">{view.branch || "—"}</span></div>
     </Panel>
   );

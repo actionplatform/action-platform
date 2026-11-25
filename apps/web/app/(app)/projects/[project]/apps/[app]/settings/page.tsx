@@ -1,11 +1,13 @@
 import { api } from "@/lib/api";
 import { ciHostsOf, ciOf } from "@/lib/ci";
+import { protectionOf } from "@/lib/protection";
 import { requireOrg } from "@/lib/session";
 import { PageTabs, pickTab } from "@/components/layout/page-tabs";
 import { ConnectCi } from "@/features/ci";
 import { ConfigurationPanels } from "@/features/configuration";
 import { DangerZone, RepositoryPanel } from "@/features/projects";
 import { loadApp } from "@/features/projects/load";
+import { ProtectionPanel } from "@/features/protection";
 
 const TABS = [{ id: "general", label: "General" }, { id: "ci", label: "CI" }];
 
@@ -27,7 +29,7 @@ export default async function SettingsPage({ params, searchParams }: { params: P
   }
 
   await requireOrg();
-  const matrix = await api.matrix();
+  const [matrix, protection] = await Promise.all([api.matrix(), protectionOf(view.projectId, view.appId)]);
   const clouds = matrix.clouds.filter((c) => (c.types.length === 0 || c.types.includes(view.type ?? "")) && (c.languages.length === 0 || c.languages.includes(view.language ?? "")));
 
   return (
@@ -35,6 +37,7 @@ export default async function SettingsPage({ params, searchParams }: { params: P
       <PageTabs label="App settings" tabs={TABS} active={tab} />
       <div className="space-y-4">
         <RepositoryPanel view={view} hosts={loaded.hosts} currentHost={loaded.currentHost} />
+        {protection && <ProtectionPanel projectId={view.projectId} appId={view.appId} initial={protection} canEdit={!!view.can["app.configure"]} />}
         <ConfigurationPanels view={view} clouds={clouds.map((c) => ({ name: c.name, description: c.description, source: c.source }))} />
         <DangerZone view={view} />
       </div>
