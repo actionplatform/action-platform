@@ -93,7 +93,7 @@ A disabled plugin's providers disappear from every lookup.
 
 ## Access
 
-A plugin that owns a service can also own who has access to it. It returns an `AccessProvider` from `Plugin.access(options)`, and the platform's [service access](concept_service_access.md) — `access_audit`, `access_sync`, `access_grant`, `access_revoke`, `access_offboard`, `access_who` — runs over every installed plugin that does.
+A plugin that owns a service can also own who has access to it. It returns an `AccessProvider` from `Plugin.access(options)`, and the platform's [service access](concept_service_access.md) — `access_audit`, `access_sync`, `access_grant`, `access_revoke`, `access_offboard`, `access_who` — runs over every installed plugin that does. GitHub is the platform's own service (`action_platform/providers/access/github/`, on the organization's GitHub connection): the slug `github` is reserved, and a provider a plugin returns under the name `github` is never used.
 
 ```python
 from action_platform.abc import AccessProvider, Option, Plugin
