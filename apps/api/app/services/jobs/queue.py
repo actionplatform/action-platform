@@ -77,6 +77,7 @@ class Listener:
 
 STALE_AFTER = timedelta(minutes=30)
 BACKOFF = timedelta(seconds=30)
+BUSY_AGAIN = timedelta(seconds=5)
 LIVE = ("queued", "running")
 
 
@@ -273,6 +274,24 @@ class JobQueue:
                 update(Job)
                 .where(Job.id == id, Job.status == "running", Job.locked_by == worker)
                 .values(locked_at=moment, updated_at=moment)
+            )
+
+    def defer(self, id: str, worker: str, delay: timedelta = BUSY_AGAIN) -> None:
+        """Job `id` found its app busy: back to the queue for a later turn, without spending an attempt."""
+        moment = now()
+
+        with self.database.session() as s:
+            s.execute(
+                update(Job)
+                .where(Job.id == id, Job.status == "running", Job.locked_by == worker)
+                .values(
+                    status="queued",
+                    attempts=Job.attempts - 1,
+                    run_after=moment + delay,
+                    locked_at=None,
+                    locked_by=None,
+                    updated_at=moment,
+                )
             )
 
     def finish(self, id: str, result: Any) -> None:

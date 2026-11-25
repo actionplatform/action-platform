@@ -9,7 +9,7 @@ import time
 import uuid
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import Any, Iterator, Optional
 
 from action_platform.core.exception import ActionPlatformError
 from action_platform.plugins import registry as plugin_registry
@@ -24,6 +24,7 @@ from app.repositories.workspace.source import configure_registry, get_registry
 from app.services.integrations import plugins
 from app.services.organization import InvitationSender
 from app.services.jobs import JobQueue, handlers as _handlers  # noqa: F401 — registers the job kinds
+from app.services.jobs.locks import AppLocks
 from app.services.jobs.logs import JobLogs
 from app.services.jobs.registry import JobServices, handlers
 from app.services.jobs.workers import BEAT_EVERY, Workers
@@ -58,6 +59,7 @@ class Worker:
         self.sealer = Sealer(secrets) if secrets else None
         self.queue = JobQueue(database)
         self.logs = JobLogs(database)
+        self.locks = AppLocks(database)
         self.name = name or worker_name()
         self.workers = Workers(database)
         self.started_at = now()
@@ -201,13 +203,28 @@ class Worker:
             thread.join(timeout=5)
 
     def handle(self, job: Job) -> None:
-        payload = {**json.loads(job.payload or "{}"), "job_id": job.id}
         handler = self.handlers.get(job.kind)
 
         if handler is None:
             self.queue.fail(job.id, f"no handler for {job.kind}", retry=False)
 
             return
+
+        with self.locks.hold(job.app_id) as held:
+            if not held:
+                log.info("job %s %s waits: its app is busy", job.kind, job.id)
+                self.queue.defer(job.id, self.name)
+
+                return
+
+            self._run(job, handler)
+
+    def _run(self, job: Job, handler: Any) -> None:
+        payload = {
+            **json.loads(job.payload or "{}"),
+            "job_id": job.id,
+            "attempt": job.attempts,
+        }
 
         with self.logs.record(job.id), self.holding(job.id):
             log.info("job %s %s starts (attempt %s)", job.kind, job.id, job.attempts)
