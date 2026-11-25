@@ -428,6 +428,67 @@ class DeploymentRecordsTest(GateCase):
             [("lambda-dev", "dev")],
         )
 
+    def test_a_run_the_platform_recorded_drops_its_observed_copy(self):
+        from app.core.db.models import Deployment
+        from app.repositories.configuration.config_store import ConfigStore
+
+        ConfigStore(self.app.state.db).set(
+            self.registry_id,
+            {
+                "project": {"name": "demo"},
+                "deploy": {
+                    "targets": [
+                        {
+                            "name": "lambda-dev",
+                            "kind": "docker",
+                            "run_by": "jenkins",
+                            "job": "team/app",
+                            "image": "ghcr.io/acme/app",
+                            "stages": ["dev"],
+                            "observe": False,
+                            "version_parameter": "RELEASE_TAG",
+                        }
+                    ]
+                },
+            },
+        )
+        self.jenkins()
+
+        with self.app.state.db.session() as s:
+            s.add_all(
+                [
+                    Deployment(
+                        id="shipped",
+                        app_id="a1",
+                        target="lambda-dev",
+                        kind="docker",
+                        executor="platform",
+                        external_ref="job-1",
+                        stage="dev",
+                        version="1.0.0",
+                        status="success",
+                    ),
+                    Deployment(
+                        id="stale",
+                        app_id="a1",
+                        target="lambda-dev",
+                        kind="docker",
+                        executor="jenkins",
+                        external_ref="jenkins:2",
+                        stage="dev",
+                        version="1.0.0",
+                        status="running",
+                    ),
+                ]
+            )
+
+        body = self._sync([run(2, "main", params={"RELEASE_TAG": "v1.0.0"})])
+
+        self.assertEqual(
+            [(d["id"], d["status"]) for d in body["deployments"]],
+            [("shipped", "success")],
+        )
+
     def test_an_observed_ci_target_is_imported_on_sync(self):
         from app.repositories.configuration.config_store import ConfigStore
 
