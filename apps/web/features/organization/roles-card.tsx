@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
+import { TBody, Td, Th, Tr } from "@/components/ui/table";
 import type { AccessCatalog } from "@/lib/permissions";
 
 export function RolesCard({ access }: { access: AccessCatalog }) {
@@ -40,26 +41,26 @@ export function RolesCard({ access }: { access: AccessCatalog }) {
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
-            <tr className="bg-background/60 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-              <th className="px-6 py-2.5 font-medium">Permission</th>
-              {roles.map((r) => <th key={r.id} className="w-[110px] px-3 py-2.5 text-center font-medium" title={r.description}>{r.label}</th>)}
+            <tr>
+              <Th>Permission</Th>
+              {roles.map((r) => <Th key={r.id} align="center" className="w-[110px]" title={r.description}>{r.label}</Th>)}
             </tr>
           </thead>
-          <tbody className="divide-y divide-border-subtle border-t border-border-subtle">
+          <TBody>
             {access.permissions.map((p) => (
-              <tr key={p.id} className="transition-colors hover:bg-surface-hover/60">
-                <td className="px-6 py-3.5">
+              <Tr key={p.id}>
+                <Td>
                   <div className="font-mono text-[13px]">{p.id}</div>
                   <div className="mt-0.5 text-[13px] text-secondary">{p.description}</div>
-                </td>
+                </Td>
                 {roles.map((r) => (
-                  <td key={r.id} className="px-3 py-3.5 text-center">
+                  <Td key={r.id} align="center">
                     {r.permissions.includes(p.id) ? <Check aria-label="allowed" className="mx-auto size-4" strokeWidth={2.5} /> : <span aria-label="not allowed" className="text-muted-foreground">—</span>}
-                  </td>
+                  </Td>
                 ))}
-              </tr>
+              </Tr>
             ))}
-          </tbody>
+          </TBody>
         </table>
       </div>
     </Panel>

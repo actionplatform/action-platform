@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import { Panel, PanelHeader } from "@/components/ui/panel";
-import { Table, Td, Th } from "@/components/ui/table";
+import { TBody, Table, Td, Th, Tr } from "@/components/ui/table";
 import type { InstanceHealthRow } from "@/lib/v1";
 import { sendTestEmail, type TestEmail } from "./actions";
 import { ageText, problems } from "./health";
@@ -82,18 +82,18 @@ export function InstanceView({ health }: { health: InstanceHealthRow }) {
           <p className="p-4 text-sm text-secondary">Nothing queued or running.</p>
         ) : (
           <Table>
-            <thead><tr><Th>Kind</Th><Th>Queued</Th><Th>Running</Th><Th>Oldest queued</Th><Th>Worker</Th></tr></thead>
-            <tbody>
+            <thead><tr><Th>Kind</Th><Th numeric>Queued</Th><Th numeric>Running</Th><Th numeric>Oldest queued</Th><Th>Worker</Th></tr></thead>
+            <TBody>
               {health.queue.map((q) => (
-                <tr key={q.kind}>
-                  <Td className="font-mono">{q.kind}</Td>
-                  <Td>{q.queued}</Td>
-                  <Td>{q.running}</Td>
-                  <Td>{ageText(q.oldest_queued_seconds)}</Td>
+                <Tr key={q.kind}>
+                  <Td className="font-mono text-[13px]">{q.kind}</Td>
+                  <Td numeric>{q.queued}</Td>
+                  <Td numeric>{q.running}</Td>
+                  <Td numeric>{ageText(q.oldest_queued_seconds)}</Td>
                   <Td><Yes ok={q.worker_running} yes="Running" no="None" /></Td>
-                </tr>
+                </Tr>
               ))}
-            </tbody>
+            </TBody>
           </Table>
         )}
       </Panel>
@@ -105,16 +105,16 @@ export function InstanceView({ health }: { health: InstanceHealthRow }) {
         ) : (
           <Table>
             <thead><tr><Th>Name</Th><Th>Takes</Th><Th>Last seen</Th><Th>State</Th></tr></thead>
-            <tbody>
+            <TBody>
               {health.workers_seen.map((w) => (
-                <tr key={w.name}>
-                  <Td className="font-mono">{w.name}</Td>
+                <Tr key={w.name}>
+                  <Td className="font-mono text-[13px] [overflow-wrap:anywhere]">{w.name}</Td>
                   <Td className="font-mono text-xs [overflow-wrap:anywhere]">{w.kinds.join(", ")}</Td>
                   <Td>{new Date(w.last_seen + "Z").toLocaleTimeString()}</Td>
                   <Td><Yes ok={w.alive} yes="Alive" no="Silent" /></Td>
-                </tr>
+                </Tr>
               ))}
-            </tbody>
+            </TBody>
           </Table>
         )}
       </Panel>

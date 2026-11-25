@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { Panel, PanelHeader } from "@/components/ui/panel";
+import { TBody, Td, Th, Tr } from "@/components/ui/table";
 import { SegmentedControl } from "@/components/ui/segmented";
 import { Select } from "@/components/ui/select";
 import { call } from "@/lib/call";
@@ -67,20 +68,20 @@ export function AccessLookup({ services }: { services: string[] }) {
             )}
             {grants.length > 0 ? (
               <div className="overflow-x-auto rounded-lg border border-border">
-                <table className="w-full min-w-[640px] text-left">
-                  <thead className="text-xs text-secondary"><tr className="border-b border-border"><th className="px-4 py-2 font-medium">Service</th><th className="px-4 py-2 font-medium">Account</th><th className="px-4 py-2 font-medium">Member</th><th className="px-4 py-2 font-medium">Resource</th><th className="px-4 py-2 font-medium">Level</th><th className="px-4 py-2 font-medium">Why</th></tr></thead>
-                  <tbody>
+                <table className="w-full min-w-[640px]">
+                  <thead><tr><Th>Service</Th><Th>Account</Th><Th>Member</Th><Th>Resource</Th><Th>Level</Th><Th>Why</Th></tr></thead>
+                  <TBody>
                     {grants.map((g, i) => (
-                      <tr key={`${g.service}:${g.account}:${g.resource}:${i}`} className="border-b border-border last:border-0">
-                        <td className="px-4 py-2 font-mono">{g.service}</td>
-                        <td className="px-4 py-2 font-mono">{g.account}</td>
-                        <td className="px-4 py-2">{g.person ?? <span className="text-secondary">belongs to no member</span>}</td>
-                        <td className="px-4 py-2 font-mono">{g.resource}</td>
-                        <td className="px-4 py-2 font-mono">{g.level}</td>
-                        <td className="px-4 py-2 text-secondary">{g.source ?? ""}</td>
-                      </tr>
+                      <Tr key={`${g.service}:${g.account}:${g.resource}:${i}`}>
+                        <Td className="whitespace-nowrap font-mono">{g.service}</Td>
+                        <Td className="font-mono [overflow-wrap:anywhere]">{g.account}</Td>
+                        <Td>{g.person ?? <span className="text-secondary">belongs to no member</span>}</Td>
+                        <Td className="font-mono [overflow-wrap:anywhere]">{g.resource}</Td>
+                        <Td className="whitespace-nowrap font-mono">{g.level}</Td>
+                        <Td className="text-secondary">{g.source ?? ""}</Td>
+                      </Tr>
                     ))}
-                  </tbody>
+                  </TBody>
                 </table>
               </div>
             ) : (

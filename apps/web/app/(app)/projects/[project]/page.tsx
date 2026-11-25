@@ -6,7 +6,8 @@ import { PageHeader } from "@/components/layout/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Table, Td, Th } from "@/components/ui/table";
+import { Cell } from "@/components/ui/data-table";
+import { TBody, Table, Td, Th, Tr } from "@/components/ui/table";
 import { api, type AppRow } from "@/lib/api";
 import { appsOf, projectById } from "@/lib/projects";
 
@@ -57,32 +58,34 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
       <Card className="hidden md:block">
         <Table>
           <thead>
-            <tr><Th>name</Th><Th>type</Th><Th>language</Th><Th>branch</Th><Th>version</Th><Th>repository</Th><Th /></tr>
+            <tr><Th>Name</Th><Th>Type</Th><Th>Language</Th><Th>Branch</Th><Th>Version</Th><Th>Repository</Th>{manage && <Th className="w-14"><span className="sr-only">Actions</span></Th>}</tr>
           </thead>
-          <tbody>
+          <TBody>
             {apps.length === 0 && (
-              <tr><Td colSpan={7} className="text-muted-foreground text-center py-8">No apps yet. Create one from a template or add a repository.</Td></tr>
+              <tr><Td colSpan={manage ? 7 : 6} className="py-8 text-center text-secondary">No apps yet. Create one from a template or add a repository.</Td></tr>
             )}
             {apps.map((a) => {
               const r = rows.get(a.registryId);
               return (
-                <tr key={a.id} className="hover:bg-surface-hover">
+                <Tr key={a.id}>
                   <Td>
-                    <Link href={`/projects/${project.id}/apps/${a.id}`} className="font-medium hover:underline underline-offset-4">{a.name}</Link>
-                    {tearing.has(a.id) && <Badge tone="warning" className="ml-2">tearing down</Badge>}
-                    {r && !r.exists && <Badge tone="bad" className="ml-2">missing</Badge>}
-                    {!r && <Badge className="ml-2">not on API</Badge>}
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <Link href={`/projects/${project.id}/apps/${a.id}`} className="font-medium [overflow-wrap:anywhere] hover:underline underline-offset-4">{a.name}</Link>
+                      {tearing.has(a.id) && <Badge tone="warning">tearing down</Badge>}
+                      {r && !r.exists && <Badge tone="bad">missing</Badge>}
+                      {!r && <Badge>not on API</Badge>}
+                    </span>
                   </Td>
-                  <Td>{r?.type ?? "—"}</Td>
-                  <Td>{r?.language ?? "—"}</Td>
-                  <Td><code className="font-mono text-xs">{r?.branch ?? "—"}</code></Td>
-                  <Td>{r?.last_version ?? "—"}</Td>
-                  <Td className="text-muted-foreground font-mono text-xs">{r?.url || "no remote"}</Td>
-                  <Td className="text-right">{manage && !tearing.has(a.id) && <RemoveButton projectId={project.id} appId={a.id} name={a.name} repositoryUrl={r?.url || null} />}</Td>
-                </tr>
+                  <Td className="whitespace-nowrap text-secondary">{r?.type ?? "—"}</Td>
+                  <Td className="whitespace-nowrap text-secondary">{r?.language ?? "—"}</Td>
+                  <Td className="max-w-0 w-[16%]"><Cell mono muted>{r?.branch ?? "—"}</Cell></Td>
+                  <Td className="whitespace-nowrap font-mono text-[13px]">{r?.last_version ?? "—"}</Td>
+                  <Td className="max-w-0 w-[30%]"><Cell mono muted>{r?.url || "no remote"}</Cell></Td>
+                  {manage && <Td align="right" className="py-1">{!tearing.has(a.id) && <RemoveButton projectId={project.id} appId={a.id} name={a.name} repositoryUrl={r?.url || null} />}</Td>}
+                </Tr>
               );
             })}
-          </tbody>
+          </TBody>
         </Table>
       </Card>
     </>

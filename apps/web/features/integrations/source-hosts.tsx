@@ -12,6 +12,7 @@ import { Field, Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { RegistryCard } from "@/components/ui/registry-card";
 import { Select } from "@/components/ui/select";
+import { TBody, Td, Th } from "@/components/ui/table";
 import type { HostAccess, Owner } from "@/lib/host-access";
 import { HOST_KINDS, type HostKind, type SourceHost } from "@/lib/source-host-kinds";
 import { cn } from "@/lib/utils";
@@ -245,12 +246,12 @@ function HostDetails({ host, access, mobile = false }: { host: SourceHost; acces
               {access.installations.length > 0 && !mobile && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-[13px]">
-                    <thead><tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground"><th className="py-1.5 pr-4 font-medium">Account</th><th className="py-1.5 pr-4 font-medium">Repositories</th><th className="py-1.5 pr-4 font-medium">Administration</th><th className="py-1.5 pr-4 font-medium">Contents</th><th className="py-1.5 font-medium">Can create</th></tr></thead>
-                    <tbody className="divide-y divide-border-subtle">
+                    <thead><tr><Th className="first:pl-0">Account</Th><Th>Repositories</Th><Th>Administration</Th><Th>Contents</Th><Th align="center" className="last:pr-0">Can create</Th></tr></thead>
+                    <TBody>
                       {access.installations.map((i) => (
-                        <tr key={i.account} className="align-top">
-                          <td className="py-2 pr-4 font-mono">{i.account}</td>
-                          <td className="py-2 pr-4">
+                        <tr key={i.account}>
+                          <Td className="align-top font-mono first:pl-0 [overflow-wrap:anywhere]">{i.account}</Td>
+                          <Td className="align-top">
                             {i.repositories === "all" ? "all" : (
                               <div>
                                 <div className="flex items-center gap-2">
@@ -264,13 +265,13 @@ function HostDetails({ host, access, mobile = false }: { host: SourceHost; acces
                                 )}
                               </div>
                             )}
-                          </td>
-                          <td className="py-2 pr-4">{i.administration}</td>
-                          <td className="py-2 pr-4">{i.contents}</td>
-                          <td className="py-2">{i.canCreateRepos && i.repositories === "all" ? <Check className="size-4" strokeWidth={2.5} /> : <span className="text-muted-foreground">—</span>}</td>
+                          </Td>
+                          <Td className="align-top whitespace-nowrap">{i.administration}</Td>
+                          <Td className="align-top whitespace-nowrap">{i.contents}</Td>
+                          <Td align="center" className="align-top last:pr-0">{i.canCreateRepos && i.repositories === "all" ? <Check aria-label="can create" className="mx-auto size-4" strokeWidth={2.5} /> : <span aria-label="cannot create" className="text-muted-foreground">—</span>}</Td>
                         </tr>
                       ))}
-                    </tbody>
+                    </TBody>
                   </table>
                 </div>
               )}
