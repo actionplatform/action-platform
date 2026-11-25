@@ -247,7 +247,7 @@ class GithubProvider(HostProvider):
 
             if i.actions != "write":
                 report.problems.append(
-                    f'{i.account}: repository permission "Actions" is {i.actions}; it must be "Read and write" — the CI tab lists runs and a deploy dispatches the publish workflow. Change it in the app\'s Permissions & events, then accept the new permissions on the installation.'
+                    f'{i.account}: repository permission "Actions" is {i.actions}; it must be "Read and write" — the Activity of an app lists its CI runs and a deploy dispatches the publish workflow. Change it in the app\'s Permissions & events, then accept the new permissions on the installation.'
                 )
 
             members = i.permissions.get("members", "none")
