@@ -99,12 +99,13 @@ class JobHandlers:
     def _app_credentials(
         self, organization: Optional[Organization], app: Optional[App]
     ) -> Optional[SourceCredentials]:
-        if app is None or organization is None or not app.source_host_id:
+        if app is None or organization is None:
             return None
 
         with self.database.session() as db:
-            creds = IntegrationsDirectory(db, self.sealer).credentials_for(
-                organization.id, app.source_host_id
+            directory = IntegrationsDirectory(db, self.sealer)
+            creds = directory.credentials_for(
+                organization.id, directory.app_host_id(organization.id, app)
             )
 
         return SourceCredentials(**creds.as_dict()) if creds else None

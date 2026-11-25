@@ -39,7 +39,7 @@ def credentials_for(
     parsed: dict[str, Any],
 ) -> dict[str, Any]:
     if app is not None:
-        host_id = app.source_host_id
+        host_id = directory.app_host_id(organization.id, app)
     elif isinstance(parsed.get("url"), str):
         host_id = directory.host_id_for_url(organization.id, parsed["url"])
     else:
