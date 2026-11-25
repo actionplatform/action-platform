@@ -12,6 +12,7 @@ from action_platform.cli.commands import init as init_cmd
 from action_platform.cli.commands import mcp as mcp_cmd
 from action_platform.cli.commands import plugin as plugin_cmd
 from action_platform.cli.commands import pr as pr_cmd
+from action_platform.cli.commands import protection as protection_cmd
 from action_platform.cli.commands import install as install_cmd
 from action_platform.cli.commands import login as login_cmd
 from action_platform.cli.commands import release as release_cmd
@@ -50,4 +51,5 @@ app.add_typer(service_cmd.app, name="service")
 app.add_typer(plugin_cmd.app, name="plugin")
 app.add_typer(access_cmd.app, name="access")
 app.add_typer(github_cmd.app, name="github")
+app.add_typer(protection_cmd.app, name="protection")
 registry.installed().register(None, app)
