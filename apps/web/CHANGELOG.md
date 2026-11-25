@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.34.1 — 2026-11-24
+
+### Features
+- **web:** access empty state names the GitHub connection
+
+### Bug Fixes
+- **web:** collapse the releases Ready column into a one-line summary
+
+### Docs
+- **changelog:** drop the features #598 reverted from the latest releases
+
 ## v0.34.0 — 2026-11-24
 
 ### Features
