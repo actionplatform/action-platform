@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.43.0 — 2026-11-24
+
+### Features
+- **api:** connecting GitHub asks for what GitHub access needs
+- **api:** GitHub access from the organization's GitHub connection, winning over any plugin
+
 ## v0.42.2 — 2026-11-24
 
 ### Bug Fixes
