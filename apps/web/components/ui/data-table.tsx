@@ -7,7 +7,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { Button } from "./button";
 import { Hint } from "./hint";
 import { Select } from "./select";
-import { type Align, TABLE_CLASS, alignClass } from "./table";
+import { type Align, HIDE_BELOW, HIDE_COL_BELOW, type Hide, TABLE_CLASS, alignClass, widthOf } from "./table";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -15,10 +15,8 @@ export const PER_PAGE = [10, 25, 50, 100] as const;
 
 export const TABLE = { toolbar: 56, header: 36, row: 44, footer: 56, rows: 10, padding: 16, gap: 16, radius: 10 } as const;
 
-export type Hide = "sm" | "md" | "lg" | "xl";
-export type Column<T> = { key: string; label: string; width: number | string; align?: Align; numeric?: boolean; wrap?: boolean; actions?: boolean; hide?: Hide; render: (row: T, index: number) => ReactNode };
-
-const HIDE: Record<Hide, string> = { sm: "hidden sm:table-cell", md: "hidden md:table-cell", lg: "hidden lg:table-cell", xl: "hidden xl:table-cell" };
+export type { Hide };
+export type Column<T> = { key: string; label: string; width: number | string; align?: Align; numeric?: boolean; actions?: boolean; hideBelow?: Hide; render: (row: T, index: number) => ReactNode };
 
 export type PageState = { total: number; page: number; per: number };
 
@@ -35,7 +33,6 @@ type Props<T> = {
   newLabel?: string;
   empty: { icon: LucideIcon; title: string; text?: ReactNode };
   pageKey?: string;
-  minWidth?: number;
   rowClassName?: (row: T) => string | undefined;
   description?: ReactNode;
 };
@@ -53,21 +50,21 @@ function textOf(node: ReactNode): string | undefined {
   return undefined;
 }
 
-export function Cell({ children, className, mono, muted, title, wrap }: { children: ReactNode; className?: string; mono?: boolean; muted?: boolean; title?: string; wrap?: boolean }) {
+export function Cell({ children, className, mono, muted, title }: { children: ReactNode; className?: string; mono?: boolean; muted?: boolean; title?: string }) {
   const [node, setNode] = useState<HTMLSpanElement | null>(null);
   const [cut, setCut] = useState(false);
   const [rendered, setRendered] = useState("");
   const full = title ?? textOf(children) ?? (rendered || undefined);
 
   useEffect(() => {
-    if (!node || wrap) { setCut(false); return; }
+    if (!node) { setCut(false); return; }
     const check = () => { setCut(node.scrollWidth > node.clientWidth); setRendered(node.textContent ?? ""); };
     check();
     if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(check);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [node, wrap, full]);
+  }, [node, full]);
 
   const reachable = cut && !!full;
   const span = (
@@ -75,7 +72,7 @@ export function Cell({ children, className, mono, muted, title, wrap }: { childr
       ref={setNode}
       tabIndex={reachable ? 0 : undefined}
       suppressHydrationWarning
-      className={cn("block min-w-0", wrap ? "whitespace-normal [overflow-wrap:anywhere]" : "truncate", mono && "font-mono text-[13px]", muted && "text-secondary", reachable && "rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground", className)}
+      className={cn("block min-w-0 truncate", mono && "font-mono text-[13px]", muted && "text-secondary", reachable && "rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground", className)}
     >
       {children}
     </span>
@@ -83,16 +80,14 @@ export function Cell({ children, className, mono, muted, title, wrap }: { childr
   return reachable ? <Hint text={full} className="flex w-full min-w-0">{span}</Hint> : span;
 }
 
-export function Inline({ children, className, wrap }: { children: ReactNode; className?: string; wrap?: boolean }) {
-  return <span className={cn("flex min-w-0 items-center gap-2", wrap ? "flex-wrap gap-y-1" : "whitespace-nowrap", className)}>{children}</span>;
+export function Inline({ children, className }: { children: ReactNode; className?: string }) {
+  return <span className={cn("flex min-w-0 items-center gap-2 whitespace-nowrap", className)}>{children}</span>;
 }
 
-export function widthOf(width: number | string): string {
-  return typeof width === "number" ? `${width}%` : width;
-}
+export { widthOf };
 
 export function columnClass<T>(c: Column<T>): string | undefined {
-  return cn(alignClass(c.actions ? "right" : c.align, c.numeric), c.actions && "py-1", c.hide && HIDE[c.hide]) || undefined;
+  return cn(alignClass(c.actions ? "right" : c.align, c.numeric), c.actions && "py-1", c.hideBelow && HIDE_BELOW[c.hideBelow]) || undefined;
 }
 
 function usePageNav(key = "") {
@@ -109,7 +104,7 @@ function usePageNav(key = "") {
   };
 }
 
-export function DataTable<T>({ title, rows, paging: paged, rowKey, columns, noun, meta, action, newHref, newLabel = "New", empty, pageKey, minWidth = 720, rowClassName, description }: Props<T>) {
+export function DataTable<T>({ title, rows, paging: paged, rowKey, columns, noun, meta, action, newHref, newLabel = "New", empty, pageKey, rowClassName, description }: Props<T>) {
   const nav = usePageNav(pageKey);
   const paging = paged ?? { total: rows.length, page: 1, per: rows.length };
   const pages = Math.max(1, Math.ceil(paging.total / Math.max(1, paging.per)));
@@ -170,9 +165,9 @@ export function DataTable<T>({ title, rows, paging: paged, rowKey, columns, noun
         })}
       </ul>
 
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full table-fixed text-sm" style={{ minWidth }}>
-          <colgroup>{columns.map((c) => <col key={c.key} className={c.hide ? HIDE[c.hide].replace("table-cell", "table-column") : undefined} style={{ width: widthOf(c.width) }} />)}</colgroup>
+      <div className="hidden md:block">
+        <table className="w-full table-fixed text-sm">
+          <colgroup>{columns.map((c) => <col key={c.key} className={c.hideBelow ? HIDE_COL_BELOW[c.hideBelow] : undefined} style={{ width: widthOf(c.width) }} />)}</colgroup>
           <thead>
             <tr style={{ height: TABLE.header }}>
               {columns.map((c) => <th key={c.key} scope="col" className={cn(TABLE_CLASS.head, columnClass(c))}>{c.actions ? <span className="sr-only">{c.label || "Actions"}</span> : c.label}</th>)}
@@ -190,7 +185,7 @@ export function DataTable<T>({ title, rows, paging: paged, rowKey, columns, noun
             )}
             {rows.map((row, i) => (
               <tr key={rowKey(row)} className={cn(TABLE_CLASS.row, rowClassName?.(row))} style={{ height: TABLE.row }}>
-                {columns.map((c) => <td key={c.key} className={cn(TABLE_CLASS.cell, "overflow-hidden", c.wrap ? "whitespace-normal" : "whitespace-nowrap", columnClass(c))}>{c.render(row, offset + i)}</td>)}
+                {columns.map((c) => <td key={c.key} className={cn(TABLE_CLASS.cell, columnClass(c))}>{c.render(row, offset + i)}</td>)}
               </tr>
             ))}
             {paging.total > 0 && Array.from({ length: slots }).map((_, i) => (

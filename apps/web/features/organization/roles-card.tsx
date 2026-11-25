@@ -4,8 +4,9 @@ import { Check, Info } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Panel, PanelHeader } from "@/components/ui/panel";
+import { Cell } from "@/components/ui/data-table";
 import { Select } from "@/components/ui/select";
-import { TBody, Td, Th, Tr } from "@/components/ui/table";
+import { TBody, Table, Td, Th, Tr } from "@/components/ui/table";
 import type { AccessCatalog } from "@/lib/permissions";
 
 export function RolesCard({ access }: { access: AccessCatalog }) {
@@ -15,7 +16,7 @@ export function RolesCard({ access }: { access: AccessCatalog }) {
   return (
     <Panel>
       <PanelHeader title={<>Roles and permissions <Info className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-label="Roles are assigned per member under Members" /></>} description="Define what each role can do within this workspace." aside={<Badge className="h-6 shrink-0 px-2.5">{roles.length} roles</Badge>} />
-      <div className="md:hidden">
+      <div className="lg:hidden">
         <div className="border-b border-border-subtle px-4 py-3">
           <label className="block">
             <span className="mb-1 block text-xs text-secondary">Viewing role</span>
@@ -29,8 +30,8 @@ export function RolesCard({ access }: { access: AccessCatalog }) {
             return (
               <li key={p.id} className="flex items-start gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
-                  <div className="font-mono text-[13px]">{p.id}</div>
-                  <div className="mt-0.5 text-[13px] text-secondary">{p.description}</div>
+                  <div className="truncate font-mono text-[13px]">{p.id}</div>
+                  <div className="mt-0.5 truncate text-[13px] text-secondary">{p.description}</div>
                 </div>
                 {allowed ? <Check aria-label="allowed" className="mt-0.5 size-4 shrink-0" strokeWidth={2.5} /> : <span aria-label="not allowed" className="mt-0.5 shrink-0 text-muted-foreground">—</span>}
               </li>
@@ -38,20 +39,19 @@ export function RolesCard({ access }: { access: AccessCatalog }) {
           })}
         </ul>
       </div>
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[720px] text-sm">
+      <div className="hidden lg:block">
+        <Table columns={[{ width: 100 - 12 * roles.length }, ...roles.map(() => ({ width: 12 }))]}>
           <thead>
             <tr>
               <Th>Permission</Th>
-              {roles.map((r) => <Th key={r.id} align="center" className="w-[110px]" title={r.description}>{r.label}</Th>)}
+              {roles.map((r) => <Th key={r.id} align="center" title={r.description}>{r.label}</Th>)}
             </tr>
           </thead>
           <TBody>
             {access.permissions.map((p) => (
               <Tr key={p.id}>
                 <Td>
-                  <div className="font-mono text-[13px]">{p.id}</div>
-                  <div className="mt-0.5 text-[13px] text-secondary">{p.description}</div>
+                  <Cell title={`${p.id} — ${p.description}`}><span className="font-mono text-[13px]">{p.id}</span> <span className="text-[13px] text-secondary">{p.description}</span></Cell>
                 </Td>
                 {roles.map((r) => (
                   <Td key={r.id} align="center">
@@ -61,7 +61,7 @@ export function RolesCard({ access }: { access: AccessCatalog }) {
               </Tr>
             ))}
           </TBody>
-        </table>
+        </Table>
       </div>
     </Panel>
   );

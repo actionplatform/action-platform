@@ -45,12 +45,11 @@ export function MembersPanel({ org, members, invitations, me, canManage, origin,
         rowKey={(m) => m.id}
         noun={["member", "members"]}
         meta={<span className="font-mono">{org.slug}</span>}
-        minWidth={640}
         action={canManage ? <><Button size="sm" variant="outline" onClick={() => setInviting(true)}><Link2 className="size-3.5" strokeWidth={2} /> Copy invite link</Button><Button size="sm" onClick={() => setAdding(true)}><UserPlus className="size-3.5" strokeWidth={2} /> Add member</Button></> : undefined}
         empty={{ icon: UserPlus, title: "No members yet", text: "Add a member or share the invite link." }}
         columns={[
           { key: "member", label: "Member", width: 34, render: (m) => <Inline><span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-background text-[11px] font-semibold">{initials(m.name || m.email)}</span><Cell className="font-medium">{m.name}</Cell>{m.userId === me && <Badge className="h-5 shrink-0 px-1.5 text-[11px]">You</Badge>}</Inline> },
-          { key: "email", label: "Email", width: 36, hide: "md", render: (m) => <Cell muted title={m.email}>{m.email}</Cell> },
+          { key: "email", label: "Email", width: 36, hideBelow: "lg", render: (m) => <Cell muted title={m.email}>{m.email}</Cell> },
           { key: "role", label: "Role", width: 22, render: role },
           { key: "actions", label: "Actions", width: 8, actions: true, render: (m) => canManage ? <button type="button" title="Remove member" aria-label={`Remove ${m.name}`} disabled={pending || m.userId === me} onClick={() => setRemoving(m)} className={buttonVariants({ variant: "ghost", size: "icon" })}><UserMinus className="size-4" strokeWidth={1.75} /></button> : null },
         ]}
@@ -61,15 +60,14 @@ export function MembersPanel({ org, members, invitations, me, canManage, origin,
           rows={invitations}
           rowKey={(i) => i.id}
           noun={["invitation", "invitations"]}
-          minWidth={640}
           empty={{ icon: Mail, title: "No invitations" }}
           columns={[
             { key: "email", label: "Email or login", width: 24, render: (i) => <Inline>{i.email ? <Mail className="size-4 shrink-0 text-secondary" strokeWidth={1.75} /> : <AtSign className="size-4 shrink-0 text-secondary" strokeWidth={1.75} />}<Cell>{i.email ?? i.login}</Cell></Inline> },
             { key: "role", label: "Role", width: 12, render: (i) => <Cell muted>{i.role ?? "member"}</Cell> },
-            { key: "email-sent", label: "Email", width: 14, hide: "sm", render: (i) => <EmailStatus invitation={i} /> },
-            { key: "teams", label: "Teams on joining", width: 16, hide: "md", render: (i) => <Cell muted title={i.teams.join(", ")}>{i.teams.length ? i.teams.join(", ") : "—"}</Cell> },
-            { key: "by", label: "Invited by", width: 14, hide: "md", render: (i) => <Cell muted title={i.inviter}>{i.inviter}</Cell> },
-            { key: "expires", label: "Expires", width: 12, hide: "sm", render: (i) => <Cell muted>{new Date(i.expiresAt).toLocaleDateString()}</Cell> },
+            { key: "email-sent", label: "Email", width: 14, hideBelow: "md", render: (i) => <EmailStatus invitation={i} /> },
+            { key: "teams", label: "Teams on joining", width: 16, hideBelow: "lg", render: (i) => <Cell muted title={i.teams.join(", ")}>{i.teams.length ? i.teams.join(", ") : "—"}</Cell> },
+            { key: "by", label: "Invited by", width: 14, hideBelow: "lg", render: (i) => <Cell muted title={i.inviter}>{i.inviter}</Cell> },
+            { key: "expires", label: "Expires", width: 12, hideBelow: "md", render: (i) => <Cell muted>{new Date(i.expiresAt).toLocaleDateString()}</Cell> },
             { key: "actions", label: "Actions", width: 18, actions: true, render: (i) => <InvitationActions invitation={i} origin={origin} canManage={canManage} onError={setError} /> },
           ]}
         />

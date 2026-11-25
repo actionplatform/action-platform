@@ -1,13 +1,13 @@
 import { Badge } from "@/components/ui/badge";
-import { TBody, Td, Th, Tr } from "@/components/ui/table";
+import { Cell } from "@/components/ui/data-table";
+import { TBody, Table, Td, Th, Tr } from "@/components/ui/table";
 import type { AccessChange } from "@/lib/v1";
 
 const TONE = { planned: "neutral", applied: "success", refused: "danger", failed: "danger" } as const;
 
 export function ChangeTable({ changes }: { changes: AccessChange[] }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[640px] text-[13px]">
+    <Table className="text-[13px]" columns={[{ width: 12 }, { width: 22 }, { width: 26 }, { width: 14 }, { width: 26 }]}>
         <thead>
           <tr>
             <Th>Change</Th>
@@ -20,18 +20,19 @@ export function ChangeTable({ changes }: { changes: AccessChange[] }) {
         <TBody>
           {changes.map((c, i) => (
             <Tr key={`${c.service}:${c.account}:${c.resource}:${i}`} className={c.status === "refused" ? "bg-status-bad/5" : undefined}>
-              <Td className="whitespace-nowrap capitalize">{c.action}</Td>
-              <Td className="font-mono [overflow-wrap:anywhere]">{c.account}</Td>
-              <Td className="font-mono [overflow-wrap:anywhere]">{c.service}/{c.resource}</Td>
-              <Td className="whitespace-nowrap font-mono">{c.previous ? `${c.previous} → ${c.level}` : c.level}</Td>
+              <Td className="capitalize"><Cell>{c.action}</Cell></Td>
+              <Td><Cell mono>{c.account}</Cell></Td>
+              <Td><Cell mono>{c.service}/{c.resource}</Cell></Td>
+              <Td><Cell mono>{c.previous ? `${c.previous} → ${c.level}` : c.level}</Cell></Td>
               <Td>
-                <Badge tone={TONE[c.status]}>{c.status}</Badge>
-                {c.detail && <div className={c.status === "refused" || c.status === "failed" ? "mt-1 text-status-bad" : "mt-1 text-secondary"}>{c.detail}</div>}
+                <Cell title={c.detail ? `${c.status}: ${c.detail}` : c.status}>
+                  <Badge tone={TONE[c.status]}>{c.status}</Badge>
+                  {c.detail && <span className={c.status === "refused" || c.status === "failed" ? "ml-2 text-status-bad" : "ml-2 text-secondary"}>{c.detail}</span>}
+                </Cell>
               </Td>
             </Tr>
           ))}
         </TBody>
-      </table>
-    </div>
+    </Table>
   );
 }

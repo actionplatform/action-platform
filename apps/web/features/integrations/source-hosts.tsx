@@ -12,7 +12,8 @@ import { Field, Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { RegistryCard } from "@/components/ui/registry-card";
 import { Select } from "@/components/ui/select";
-import { TBody, Td, Th } from "@/components/ui/table";
+import { Cell } from "@/components/ui/data-table";
+import { TBody, Table, Td, Th } from "@/components/ui/table";
 import type { HostAccess, Owner } from "@/lib/host-access";
 import { HOST_KINDS, type HostKind, type SourceHost } from "@/lib/source-host-kinds";
 import { cn } from "@/lib/utils";
@@ -244,36 +245,30 @@ function HostDetails({ host, access, mobile = false }: { host: SourceHost; acces
                 </div>
               )}
               {access.installations.length > 0 && !mobile && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-[13px]">
-                    <thead><tr><Th className="first:pl-0">Account</Th><Th>Repositories</Th><Th>Administration</Th><Th>Contents</Th><Th align="center" className="last:pr-0">Can create</Th></tr></thead>
-                    <TBody>
-                      {access.installations.map((i) => (
-                        <tr key={i.account}>
-                          <Td className="align-top font-mono first:pl-0 [overflow-wrap:anywhere]">{i.account}</Td>
-                          <Td className="align-top">
-                            {i.repositories === "all" ? "all" : (
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span>{i.selected?.length ?? 0} selected</span>
-                                  {i.configureUrl && <a href={i.configureUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-secondary hover:text-foreground">Configure <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
-                                </div>
-                                {i.selected && i.selected.length > 0 && (
-                                  <div className="mt-1.5 flex flex-wrap gap-1">
-                                    {i.selected.map((r) => <span key={r} className="inline-flex h-5 items-center rounded-[5px] border border-border bg-surface px-1.5 font-mono text-[11px]">{r.split("/")[1] ?? r}</span>)}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </Td>
-                          <Td className="align-top whitespace-nowrap">{i.administration}</Td>
-                          <Td className="align-top whitespace-nowrap">{i.contents}</Td>
-                          <Td align="center" className="align-top last:pr-0">{i.canCreateRepos && i.repositories === "all" ? <Check aria-label="can create" className="mx-auto size-4" strokeWidth={2.5} /> : <span aria-label="cannot create" className="text-muted-foreground">—</span>}</Td>
-                        </tr>
-                      ))}
-                    </TBody>
-                  </table>
-                </div>
+                <Table className="text-[13px]" columns={[{ width: 24 }, { width: 38 }, { width: 14, hideBelow: "lg" }, { width: 12, hideBelow: "lg" }, { width: 12 }]}>
+                  <thead><tr><Th>Account</Th><Th>Repositories</Th><Th hideBelow="lg">Administration</Th><Th hideBelow="lg">Contents</Th><Th align="center">Can create</Th></tr></thead>
+                  <TBody>
+                    {access.installations.map((i) => (
+                      <tr key={i.account}>
+                        <Td><Cell mono>{i.account}</Cell></Td>
+                        <Td>
+                          {i.repositories === "all" ? "all" : (
+                            <Cell title={`${i.selected?.length ?? 0} selected${i.selected?.length ? `: ${i.selected.map((r) => r.split("/")[1] ?? r).join(", ")}` : ""}`}>
+                              <span className="inline-flex items-center gap-2 align-middle">
+                                <span>{i.selected?.length ?? 0} selected</span>
+                                {i.configureUrl && <a href={i.configureUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-secondary hover:text-foreground">Configure <ExternalLink className="size-3" strokeWidth={1.75} /></a>}
+                                {(i.selected ?? []).map((r) => <span key={r} className="inline-flex h-5 items-center rounded-[5px] border border-border bg-surface px-1.5 font-mono text-[11px]">{r.split("/")[1] ?? r}</span>)}
+                              </span>
+                            </Cell>
+                          )}
+                        </Td>
+                        <Td hideBelow="lg"><Cell>{i.administration}</Cell></Td>
+                        <Td hideBelow="lg"><Cell>{i.contents}</Cell></Td>
+                        <Td align="center">{i.canCreateRepos && i.repositories === "all" ? <Check aria-label="can create" className="mx-auto size-4" strokeWidth={2.5} /> : <span aria-label="cannot create" className="text-muted-foreground">—</span>}</Td>
+                      </tr>
+                    ))}
+                  </TBody>
+                </Table>
               )}
               {access.problems.length > 0 && mobile && (
                 <ul className="space-y-2">

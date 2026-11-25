@@ -33,13 +33,12 @@ export function TemplateSources({ sources, canManage }: { sources: SourceRow[]; 
         rows={sources}
         rowKey={(s) => s.name}
         noun={["repository", "repositories"]}
-        minWidth={720}
         action={canManage ? <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus className="size-3.5" strokeWidth={2} /> Add repository</Button> : undefined}
         empty={{ icon: BookMarked, title: "No template repository", text: "Add a git repository; new apps start as a copy of it." }}
         columns={[
           { key: "name", label: "Name", width: 28, render: (s) => <Inline><Cell mono>{s.name}</Cell>{kind(s)}{!s.ok && <Badge tone="bad" className="shrink-0">Unavailable</Badge>}</Inline> },
-          { key: "url", label: "Repository", width: 38, hide: "sm", render: where },
-          { key: "contents", label: "Contents", width: 28, hide: "md", render: (s) => <Cell muted title={s.ok ? undefined : s.error ?? undefined}>{s.ok ? `${s.projects} projects · ${s.clouds} clouds` : s.error}</Cell> },
+          { key: "url", label: "Repository", width: 38, hideBelow: "md", render: where },
+          { key: "contents", label: "Contents", width: 28, hideBelow: "lg", render: (s) => <Cell muted title={s.ok ? undefined : s.error ?? undefined}>{s.ok ? `${s.projects} projects · ${s.clouds} clouds` : s.error}</Cell> },
           { key: "actions", label: "Actions", width: 6, actions: true, render: remove },
         ]}
       />
