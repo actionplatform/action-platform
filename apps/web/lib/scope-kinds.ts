@@ -6,11 +6,11 @@ export type ScopeRequest = Schemas["ScopeRequest"];
 export type Criticality = "test" | "low" | "medium" | "high" | "critical";
 export type Shape = "candidate" | "stable" | "hotfix";
 
-export const CRITICALITY: Record<Criticality, { label: string; tone: "neutral" | "warning" | "danger" | "success"; hint: string }> = {
+export const CRITICALITY: Record<Criticality, { label: string; tone: "neutral" | "info" | "warning" | "danger"; hint: string }> = {
   test: { label: "Test", tone: "neutral", hint: "No production use." },
   low: { label: "Low", tone: "neutral", hint: "Little impact; downtime is tolerable." },
-  medium: { label: "Medium", tone: "warning", hint: "Affects processes, but a manual alternative exists." },
-  high: { label: "High", tone: "danger", hint: "Affects important operations and many users." },
+  medium: { label: "Medium", tone: "info", hint: "Affects processes, but a manual alternative exists." },
+  high: { label: "High", tone: "warning", hint: "Affects important operations and many users." },
   critical: { label: "Critical", tone: "danger", hint: "Essential to the business: stops operations, causes financial loss or legal risk." },
 };
 

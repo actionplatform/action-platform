@@ -1,5 +1,7 @@
 import { GitCommitHorizontal } from "lucide-react";
+import { Cell } from "@/components/ui/data-table";
 import { Panel, PanelHeader } from "@/components/ui/panel";
+import { TBody, Td, Th, Tr } from "@/components/ui/table";
 import type { Commit } from "@/lib/api";
 
 function formatDate(d: string): string {
@@ -22,18 +24,19 @@ export function CommitsCard({ commits, repositoryUrl, limit = 8, title = "Recent
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto"><table className="hidden w-full min-w-[640px] text-sm md:table">
-            <thead><tr className="text-left text-xs text-muted-foreground"><th className="px-4 py-2 font-medium">Commit</th><th className="py-2 font-medium">Message</th><th className="py-2 font-medium">Author</th><th className="py-2 pr-4 font-medium">Date</th></tr></thead>
-            <tbody className="divide-y divide-border-subtle border-t border-border-subtle">
+          <div className="overflow-x-auto"><table className="hidden w-full min-w-[640px] table-fixed text-sm md:table">
+            <colgroup><col className="w-[120px]" /><col /><col className="w-[18%]" /><col className="w-[128px]" /></colgroup>
+            <thead><tr><Th>Commit</Th><Th>Message</Th><Th>Author</Th><Th>Date</Th></tr></thead>
+            <TBody>
               {rows.map((c) => (
-                <tr key={c.sha}>
-                  <td className="px-4 py-2.5"><Hash sha={c.sha} href={hashLink(c.sha)} /></td>
-                  <td className="max-w-0 truncate py-2.5 pr-4">{c.subject}</td>
-                  <td className="whitespace-nowrap py-2.5 pr-4 text-secondary">{c.author}</td>
-                  <td className="whitespace-nowrap py-2.5 pr-4 text-secondary" suppressHydrationWarning>{formatDate(c.date)}</td>
-                </tr>
+                <Tr key={c.sha}>
+                  <Td><Hash sha={c.sha} href={hashLink(c.sha)} /></Td>
+                  <Td><Cell>{c.subject}</Cell></Td>
+                  <Td><Cell muted>{c.author}</Cell></Td>
+                  <Td className="whitespace-nowrap text-secondary" suppressHydrationWarning>{formatDate(c.date)}</Td>
+                </Tr>
               ))}
-            </tbody>
+            </TBody>
           </table></div>
           <ul className="divide-y divide-border-subtle md:hidden">
             {rows.map((c) => (

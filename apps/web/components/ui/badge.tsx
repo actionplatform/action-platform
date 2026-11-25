@@ -15,7 +15,7 @@ export function Badge({ className, tone = "neutral", ...props }: Props) {
         tone === "success" && "border-status-ok/30 bg-status-ok/10 text-status-ok",
         tone === "warning" && "border-status-warn/30 bg-status-warn/10 text-status-warn",
         tone === "danger" && "border-status-bad/30 bg-status-bad/10 text-status-bad",
-        tone === "info" && "border-status-run/70 text-status-run",
+        tone === "info" && "border-status-run/30 bg-status-run/10 text-status-run",
         className,
       )}
       {...props}
