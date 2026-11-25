@@ -317,6 +317,38 @@ class AppsTest(GateCase):
         self.assertEqual(seen["env"]["AP_GIT_USER"], "x-access-token")
         self.assertEqual(seen["env"]["GIT_AUTHOR_NAME"], "Bot")
 
+    def test_an_app_whose_host_was_removed_takes_the_reconnected_host(self):
+        from app.core.db.models import App, RegistryEntry, SourceHost
+        from app.services.integrations.hosts.directory import IntegrationsDirectory
+
+        registry_id = self.register()
+        sealer = self.app.state.sealer
+
+        with self.app.state.db.session() as s:
+            s.add(
+                SourceHost(
+                    id="h2",
+                    organization_id=self.org["id"],
+                    kind="github",
+                    name="GitHub",
+                    auth_kind="oauth",
+                    token_encrypted=sealer.seal("gho_new"),
+                )
+            )
+            s.get(RegistryEntry, registry_id).url = "https://github.com/acme/app"
+            s.get(App, "a1").source_host_id = "removed"
+
+        with self.app.state.db.session() as s:
+            directory = IntegrationsDirectory(s, sealer)
+            app = s.get(App, "a1")
+            host_id = directory.app_host_id(self.org["id"], app)
+            creds = directory.credentials_for(self.org["id"], host_id)
+
+        with self.app.state.db.session() as s:
+            linked = s.get(App, "a1").source_host_id
+
+        self.assertEqual((host_id, creds.token, linked), ("h2", "gho_new", "h2"))
+
     def test_source_host_token_is_decrypted_from_the_web_apps_ciphertext(self):
         from app.core.auth.crypto import Sealer
         from app.core.db.models import SourceHost
