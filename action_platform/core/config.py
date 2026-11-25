@@ -15,6 +15,7 @@ from action_platform.abc.release_strategy import ReleaseStrategy
 from action_platform.abc.source_host import SourceHost
 from action_platform.core import module
 from action_platform.core.exception import ConfigError
+from action_platform.core.flow.protection import ProtectionSpec
 from action_platform.core.release import strategies
 from action_platform.core.release.components import parse as parse_components
 from action_platform.core.scopes import ScopeSpec, parse_scopes
@@ -66,6 +67,7 @@ class Config:
         self._components_spec: dict = {}
         self._release_spec: dict = {}
         self._scopes_spec: list = []
+        self._gitflow_spec: dict = {}
 
     @property
     def components(self):
@@ -76,6 +78,11 @@ class Config:
     def targets(self) -> list[TargetSpec]:
         """Every deploy target platform.toml declares, whoever runs it."""
         return parse_targets(self._deploy_spec)
+
+    @property
+    def protection(self) -> ProtectionSpec:
+        """`[gitflow.protection]`: whether the code host enforces git-flow, and on which branches."""
+        return ProtectionSpec.parse(self._gitflow_spec)
 
     @property
     def scopes(self) -> list[ScopeSpec]:
@@ -241,6 +248,7 @@ class Config:
         config._components_spec = data.get("components", {})
         config._release_spec = data.get("release", {})
         config._scopes_spec = data.get("scopes", [])
+        config._gitflow_spec = data.get("gitflow", {})
 
         return config
 
