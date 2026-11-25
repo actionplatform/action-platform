@@ -742,8 +742,8 @@ class ConcurrentWorkerTest(GateCase):
 
         self.register()
         queue = JobQueue(self.app.state.db)
-        for _ in range(4):
-            queue.enqueue("slow", {}, organization_id=self.org["id"], app_id="a1")
+        for n in range(4):
+            queue.enqueue("slow", {}, organization_id=self.org["id"], app_id=f"a{n}")
         queue.enqueue("other", {}, organization_id=self.org["id"], app_id="a1")
 
         peak = {"now": 0, "max": 0}
@@ -777,6 +777,108 @@ class ConcurrentWorkerTest(GateCase):
             self.assertEqual(
                 s.query(Job).filter_by(kind="other").one().status, "queued"
             )
+
+
+class AppLockTest(TempCase):
+    def database(self):
+        from app.core.db import Database
+
+        db = Database(f"sqlite:///{self.tmp_path / 'l.db'}")
+        db.migrate()
+
+        return db
+
+    def test_one_holder_per_app(self):
+        from app.services.jobs.locks import AppLocks
+
+        locks = AppLocks(self.database())
+
+        with locks.hold("a1") as first:
+            with locks.hold("a1") as second, locks.hold("a2") as other:
+                self.assertEqual((first, second, other), (True, False, True))
+
+            with locks.hold(None) as appless:
+                self.assertTrue(appless)
+
+        with locks.hold("a1") as again:
+            self.assertTrue(again)
+
+    def test_a_deferred_job_keeps_its_attempts(self):
+        from datetime import timedelta
+
+        from app.services.jobs import JobQueue
+
+        queue = JobQueue(self.database())
+        job = queue.enqueue("readiness", {}, app_id="a1")
+        queue.claim("w")
+        queue.defer(job.id, "w", timedelta(0))
+        back = queue.get(job.id)
+
+        self.assertEqual(
+            (back.status, back.attempts, back.locked_by), ("queued", 0, None)
+        )
+        self.assertEqual(queue.claim("w").attempts, 1)
+
+
+class AppSerialWorkerTest(GateCase):
+    def test_jobs_of_one_app_take_turns_while_other_apps_run_alongside(self):
+        import threading
+        import time
+        from datetime import timedelta
+
+        from app.core.db.models import Job
+        from app.services.jobs import JobQueue
+        from app.services.jobs.worker import Worker
+
+        self.register()
+        queue = JobQueue(self.app.state.db)
+
+        for app_id in ("a1", "a1", "a1", "a2", "a2"):
+            queue.enqueue(
+                "readiness",
+                {"app": app_id},
+                organization_id=self.org["id"],
+                app_id=app_id,
+            )
+
+        guard = threading.Lock()
+        running: dict[str, int] = {"a1": 0, "a2": 0, "all": 0}
+        peak: dict[str, int] = {"a1": 0, "a2": 0, "all": 0}
+
+        def readiness(payload):
+            app_id = payload["app"]
+
+            with guard:
+                for key in (app_id, "all"):
+                    running[key] += 1
+                    peak[key] = max(peak[key], running[key])
+            time.sleep(0.2)
+            with guard:
+                for key in (app_id, "all"):
+                    running[key] -= 1
+
+            return {"ok": True}
+
+        worker = Worker(self.app.state.db, self.app.state.secrets, "test")
+        worker.handlers = {"readiness": readiness}
+        defer = worker.queue.defer
+        worker.queue.defer = lambda id, name: defer(id, name, timedelta(0))
+
+        deadline = time.monotonic() + 10
+
+        while time.monotonic() < deadline:
+            worker.run(once=True, concurrency=3, kinds=["readiness"])
+
+            with self.app.state.db.session() as s:
+                if s.query(Job).filter(Job.status != "done").count() == 0:
+                    break
+
+        with self.app.state.db.session() as s:
+            jobs = s.query(Job).filter_by(kind="readiness").all()
+
+        self.assertEqual({(j.status, j.attempts) for j in jobs}, {("done", 1)})
+        self.assertEqual((peak["a1"], peak["a2"]), (1, 1))
+        self.assertEqual(peak["all"], 2)
 
 
 class PersonLabelTest(unittest.TestCase):

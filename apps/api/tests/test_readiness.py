@@ -168,6 +168,59 @@ class ReadinessTest(GateCase):
         )
         self.assertEqual(rows[0]["checks"][0]["id"], "deploy.targets")
 
+    def readiness_payload(self, attempt: int) -> dict:
+        return {
+            "path": f"apps/{self.registry_id}/readiness",
+            "method": "POST",
+            "body": {"tag": "v1.2.3", "stage": "prod"},
+            "registry_id": self.registry_id,
+            "organization_id": self.org["id"],
+            "app_id": "a1",
+            "job_id": "j9",
+            "attempt": attempt,
+            "user_id": self.user_id,
+        }
+
+    def verdict_after(self, error: Exception, attempt: int) -> str:
+        from app.repositories.workspace.source import get_registry
+        from app.services.jobs.handlers import JobHandlers
+        from app.services.releases.readiness import ReadinessService
+
+        handlers = JobHandlers(self.app.state.db, self.app.state.sealer, get_registry())
+
+        with mock.patch.object(ReadinessService, "check", side_effect=error):
+            with self.assertRaises(type(error)):
+                handlers.readiness(self.readiness_payload(attempt))
+
+        rows = self.client.get(
+            f"{self.base}/releases/v1.2.3/readiness", headers=self.h()
+        ).json()
+
+        return rows[0]["verdict"]
+
+    def test_an_error_the_worker_retries_leaves_the_readiness_pending(self):
+        import subprocess
+
+        error = subprocess.CalledProcessError(128, ["git", "checkout"])
+
+        self.assertEqual(self.verdict_after(error, 1), "pending")
+
+    def test_the_last_attempt_stores_the_error_as_blocking(self):
+        import subprocess
+
+        from app.services.jobs import MAX_ATTEMPTS
+
+        error = subprocess.CalledProcessError(128, ["git", "checkout"])
+
+        self.assertEqual(self.verdict_after(error, MAX_ATTEMPTS), "blocked")
+
+    def test_a_refusal_blocks_at_once(self):
+        from action_platform.core.exception import ActionPlatformError
+
+        self.assertEqual(
+            self.verdict_after(ActionPlatformError("no targets"), 1), "blocked"
+        )
+
     def test_a_release_cut_here_queues_its_readiness(self):
         self.scopes("dev", "prod")
         from app.core.db.models import Job
