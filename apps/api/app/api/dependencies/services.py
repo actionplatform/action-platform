@@ -29,6 +29,7 @@ from app.services.configuration.commit import CommitService
 from app.services.configuration.service import ConfigurationService
 from app.services.activity.flow import FlowService
 from app.services.ci import CiService
+from app.services.protection import ProtectionService
 from app.services.deployments import (
     AppCiRunners,
     DeployEnv,
@@ -174,6 +175,14 @@ def get_ci(
     context: AppContext = Depends(get_app_context),
 ) -> CiService:
     return CiService(db, request.app.state.sealer, context)
+
+
+def get_protection(
+    request: Request,
+    db: DbSession = Depends(get_db),
+    context: AppContext = Depends(get_app_context),
+) -> ProtectionService:
+    return ProtectionService.from_env(db, request.app.state.sealer, context)
 
 
 def get_deployment_records(

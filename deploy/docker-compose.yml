@@ -173,6 +173,9 @@ services:
       AP_SMTP_SECURITY: ${AP_SMTP_SECURITY:-starttls}
       AP_GOOGLE_CLIENT_ID: ${AP_GOOGLE_CLIENT_ID:-}
       AP_GOOGLE_CLIENT_SECRET: ${AP_GOOGLE_CLIENT_SECRET:-}
+      AP_GITHUB_APP_ID: ${AP_GITHUB_APP_ID:-}
+      AP_GITHUB_APP_SLUG: ${AP_GITHUB_APP_SLUG:-}
+      AP_GITHUB_APP_PRIVATE_KEY: ${AP_GITHUB_APP_PRIVATE_KEY:-}
     secrets: [postgres_password, better_auth_secret, api_token]
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://127.0.0.1:7788/api/version || exit 1"]
@@ -193,7 +196,7 @@ services:
         condition: service_completed_successfully
       api:
         condition: service_started
-    command: ["action-platform-api", "worker", "--concurrency", "${AP_WORKER_CONCURRENCY:-2}", "--kinds", "sync,release,push,import,import_github,install", "--name", "worker"]
+    command: ["action-platform-api", "worker", "--concurrency", "${AP_WORKER_CONCURRENCY:-2}", "--kinds", "sync,release,push,import,import_github,install,protection,protection_sweep", "--name", "worker"]
     healthcheck:
       test: ["CMD", "action-platform-api", "worker", "--check", "--name", "worker"]
       interval: 30s
@@ -227,6 +230,9 @@ services:
       AP_SMTP_SECURITY: ${AP_SMTP_SECURITY:-starttls}
       AP_GOOGLE_CLIENT_ID: ${AP_GOOGLE_CLIENT_ID:-}
       AP_GOOGLE_CLIENT_SECRET: ${AP_GOOGLE_CLIENT_SECRET:-}
+      AP_GITHUB_APP_ID: ${AP_GITHUB_APP_ID:-}
+      AP_GITHUB_APP_SLUG: ${AP_GITHUB_APP_SLUG:-}
+      AP_GITHUB_APP_PRIVATE_KEY: ${AP_GITHUB_APP_PRIVATE_KEY:-}
     secrets: [postgres_password, better_auth_secret, api_token]
 
   worker-deploy:

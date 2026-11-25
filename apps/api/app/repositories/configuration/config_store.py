@@ -13,7 +13,15 @@ from action_platform.core.manifest.manifest import dump_toml
 from action_platform.core.files import CONFIG_FILE
 from app.core.db.models import AppConfig
 
-TABLES = ("project", "source_host", "release", "deploy", "services", "components")
+TABLES = (
+    "project",
+    "source_host",
+    "release",
+    "deploy",
+    "services",
+    "components",
+    "gitflow",
+)
 
 
 class ConfigStore:

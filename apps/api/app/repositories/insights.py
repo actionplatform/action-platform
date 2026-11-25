@@ -13,6 +13,7 @@ from app.core.db.models import (
     CiRun,
     Deployment,
     Project,
+    ProtectionEvent,
     PullRequest,
     Release,
     SourceHost,
@@ -21,7 +22,7 @@ from app.core.shared.clock import now
 
 EMBEDDED_CI_HOSTS = ("github", "gitlab", "bitbucket")
 ACTIVE_DEPLOYMENT = ("queued", "running")
-EVENT_KINDS = ("deployment", "release", "pull_request", "ci_run")
+EVENT_KINDS = ("deployment", "release", "pull_request", "ci_run", "protection")
 
 
 class Insights:
@@ -274,6 +275,25 @@ class Insights:
                         "status": c.status,
                         "detail": c.branch,
                         "url": c.url,
+                    }
+                )
+
+        if "protection" in kinds:
+            for p in self.db.scalars(
+                select(ProtectionEvent)
+                .where(ProtectionEvent.app_id.in_(ids))
+                .order_by(ProtectionEvent.at.desc())
+                .limit(limit)
+            ):
+                events.append(
+                    {
+                        **names[p.app_id],
+                        "kind": "protection",
+                        "at": p.at,
+                        "title": p.title,
+                        "status": p.kind,
+                        "detail": " · ".join(x for x in (p.detail, p.actor) if x),
+                        "url": None,
                     }
                 )
 

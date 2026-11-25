@@ -1,7 +1,7 @@
 import json
 import logging
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any, Optional
 
 from sqlalchemy import func, select, text, update
@@ -94,6 +94,7 @@ class JobQueue:
         organization_id: Optional[str] = None,
         app_id: Optional[str] = None,
         dedupe_key: Optional[str] = None,
+        run_after: Optional[datetime] = None,
     ) -> Job:
         with self.database.session() as s:
             if dedupe_key:
@@ -126,7 +127,7 @@ class JobQueue:
                 app_id=app_id,
                 dedupe_key=dedupe_key,
                 payload=json.dumps(payload),
-                run_after=now(),
+                run_after=run_after or now(),
             )
             s.add(job)
             s.flush()

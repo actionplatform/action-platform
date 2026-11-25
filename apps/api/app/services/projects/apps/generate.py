@@ -9,6 +9,7 @@ from action_platform.core.scaffold import identity
 from action_platform.core.wiring import wired
 from action_platform.core.manifest import write_source_host
 from action_platform.core.files import CONFIG_FILE
+from action_platform.core.flow.protection import enforce_by_default
 from app.services.workspace import git_auth as auth
 from app.repositories.workspace.registry import Entry
 from app.schemas import InitRequest, PushRequest
@@ -67,6 +68,7 @@ class AppScaffolding(AppsBase):
             f"{owner or 'me'}/{slug}",
             creds.base_url,
         )
+        enforce_by_default(path / CONFIG_FILE)
 
         try:
             with auth.git_auth(creds):
