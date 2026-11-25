@@ -64,7 +64,7 @@ export function ServiceAudits({ audit }: { audit: AccessAudit }) {
   if (audit.services.length === 0) {
     return (
       <Panel>
-        <EmptyState icon={ShieldCheck} title="No service to manage" text="No enabled plugin manages access for this organization yet." />
+        <EmptyState icon={ShieldCheck} title="No service to manage" text="Connect GitHub under Settings → Git, or configure a plugin that manages access under Plugins." />
       </Panel>
     );
   }
