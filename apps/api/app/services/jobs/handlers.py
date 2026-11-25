@@ -50,7 +50,7 @@ from app.services.releases import (
 )
 from app.repositories.releases import ReadinessStore
 from app.repositories.scopes import ScopeStore
-from app.services.jobs.queue import JobQueue
+from app.services.jobs.queue import MAX_ATTEMPTS, JobQueue
 from app.services.workspace.snapshot import SnapshotService
 from app.services.workspace import git_auth as auth
 from app.services.workspace.state import GitStateService
@@ -214,9 +214,12 @@ class JobHandlers:
                 )
         except Exception as e:
             with self.database.session() as db:
-                ReadinessStore(db).failed(
-                    db.get(Release, release_id), stage, str(e), payload.get("job_id")
-                )
+                store, release = ReadinessStore(db), db.get(Release, release_id)
+
+                if retried(e, payload):
+                    store.queued(release, stage, payload.get("job_id"))
+                else:
+                    store.failed(release, stage, str(e), payload.get("job_id"))
 
             raise
 
@@ -539,6 +542,14 @@ class JobHandlers:
                 dry_run=bool(body.get("dry_run", True)),
             ),
         )
+
+
+def retried(error: Exception, payload: dict[str, Any]) -> bool:
+    """The worker runs the job again: an unexpected error with attempts left, not a refusal."""
+    if isinstance(error, ActionPlatformError):
+        return False
+
+    return int(payload.get("attempt") or MAX_ATTEMPTS) < MAX_ATTEMPTS
 
 
 register("sync", lambda s: JobHandlers.of(s).sync)
