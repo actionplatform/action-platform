@@ -10,10 +10,9 @@ import { Cell, DataTable, Inline } from "@/components/ui/data-table";
 import { Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
 import type { Paged } from "@/lib/page";
-import type { StoredRelease, Verdict } from "@/lib/releases";
-import { ReadinessSummary } from "@/features/readiness";
+import type { StoredRelease } from "@/lib/releases";
 
-type Row = { tag: string; component: string | null; version: string; name: string | null; body: string | null; url: string | null; author: string | null; sha: string | null; prerelease: boolean; draft: boolean; date: string | null; source: string; readiness: Record<string, Verdict> };
+type Row = { tag: string; component: string | null; version: string; name: string | null; body: string | null; url: string | null; author: string | null; sha: string | null; prerelease: boolean; draft: boolean; date: string | null; source: string };
 
 function formatDate(d: string | null): string {
   if (!d) return "—";
@@ -24,7 +23,7 @@ function formatDate(d: string | null): string {
 const SOURCE: Record<string, string> = { github: "GitHub", gitlab: "GitLab", bitbucket: "Bitbucket", git: "Git tags", platform: "Platform" };
 
 export function toRows(stored: StoredRelease[], repositoryUrl: string | null): Row[] {
-  return stored.map((r) => ({ tag: r.tag, component: r.tag.includes("/") ? r.tag.slice(0, r.tag.lastIndexOf("/")) : null, version: r.version || r.tag.split("/").pop()!.replace(/^v/, ""), name: r.name, body: r.body, url: r.url ?? (repositoryUrl ? `${repositoryUrl}/releases/tag/${r.tag}` : null), author: r.author, sha: r.sha, prerelease: r.prerelease, draft: r.draft, date: r.publishedAt ? r.publishedAt.toISOString() : null, source: r.source, readiness: r.readiness }));
+  return stored.map((r) => ({ tag: r.tag, component: r.tag.includes("/") ? r.tag.slice(0, r.tag.lastIndexOf("/")) : null, version: r.version || r.tag.split("/").pop()!.replace(/^v/, ""), name: r.name, body: r.body, url: r.url ?? (repositoryUrl ? `${repositoryUrl}/releases/tag/${r.tag}` : null), author: r.author, sha: r.sha, prerelease: r.prerelease, draft: r.draft, date: r.publishedAt ? r.publishedAt.toISOString() : null, source: r.source }));
 }
 
 export function ReleasesTable({ page, repositoryUrl, newHref, base }: { page: Paged<StoredRelease>; repositoryUrl: string | null; newHref?: string | null; base?: string }) {
@@ -63,7 +62,6 @@ export function ReleasesTable({ page, repositoryUrl, newHref, base }: { page: Pa
         columns={[
           { key: "version", label: "Version", width: 22, render: (r) => <Inline>{base ? <Link href={`${base}/releases/${encodeURIComponent(r.tag)}`} className="font-mono font-medium hover:underline underline-offset-4">{r.version}</Link> : r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" className="font-mono font-medium hover:underline underline-offset-4">{r.version}</a> : <span className="font-mono font-medium">{r.version}</span>}{r.component && <Badge className="shrink-0">{r.component}</Badge>}{latest.has(r.tag) && <Badge tone="ok" className="shrink-0">Latest</Badge>}{r.prerelease && <Badge className="shrink-0">Pre-release</Badge>}{r.draft && <Badge className="shrink-0">Draft</Badge>}</Inline> },
           { key: "tag", label: "Tag", width: 14, hide: "sm", render: tagChip },
-          { key: "readiness", label: "Ready", width: 22, render: (r) => <ReadinessSummary readiness={r.readiness} /> },
           { key: "author", label: "By", width: 14, hide: "md", render: (r) => <Cell muted title={r.author ?? undefined}>{r.author ?? "—"}</Cell> },
           { key: "sha", label: "Commit", width: 10, hide: "md", render: (r) => r.sha ? <span className="inline-flex h-6 items-center rounded border border-border bg-background px-1.5 font-mono text-xs">{r.sha.slice(0, 7)}</span> : <Cell muted>—</Cell> },
           { key: "date", label: "Published", width: 14, hide: "sm", render: (r) => <Cell muted>{formatDate(r.date)}</Cell> },
