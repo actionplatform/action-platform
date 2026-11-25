@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { Panel, PanelHeader } from "@/components/ui/panel";
-import { TBody, Td, Th, Tr } from "@/components/ui/table";
+import { Cell } from "@/components/ui/data-table";
+import { TBody, Table, Td, Th, Tr } from "@/components/ui/table";
 import { SegmentedControl } from "@/components/ui/segmented";
 import { Select } from "@/components/ui/select";
 import { call } from "@/lib/call";
@@ -67,22 +68,22 @@ export function AccessLookup({ services }: { services: string[] }) {
               </div>
             )}
             {grants.length > 0 ? (
-              <div className="overflow-x-auto rounded-lg border border-border">
-                <table className="w-full min-w-[640px]">
-                  <thead><tr><Th>Service</Th><Th>Account</Th><Th>Member</Th><Th>Resource</Th><Th>Level</Th><Th>Why</Th></tr></thead>
+              <div className="rounded-lg border border-border">
+                <Table columns={[{ width: 12 }, { width: 22 }, { width: 18, hideBelow: "lg" }, { width: 22 }, { width: 12 }, { width: 14, hideBelow: "lg" }]}>
+                  <thead><tr><Th>Service</Th><Th>Account</Th><Th hideBelow="lg">Member</Th><Th>Resource</Th><Th>Level</Th><Th hideBelow="lg">Why</Th></tr></thead>
                   <TBody>
                     {grants.map((g, i) => (
                       <Tr key={`${g.service}:${g.account}:${g.resource}:${i}`}>
-                        <Td className="whitespace-nowrap font-mono">{g.service}</Td>
-                        <Td className="font-mono [overflow-wrap:anywhere]">{g.account}</Td>
-                        <Td>{g.person ?? <span className="text-secondary">belongs to no member</span>}</Td>
-                        <Td className="font-mono [overflow-wrap:anywhere]">{g.resource}</Td>
-                        <Td className="whitespace-nowrap font-mono">{g.level}</Td>
-                        <Td className="text-secondary">{g.source ?? ""}</Td>
+                        <Td><Cell mono>{g.service}</Cell></Td>
+                        <Td><Cell mono>{g.account}</Cell></Td>
+                        <Td hideBelow="lg"><Cell title={g.person ?? "belongs to no member"}>{g.person ?? <span className="text-secondary">belongs to no member</span>}</Cell></Td>
+                        <Td><Cell mono>{g.resource}</Cell></Td>
+                        <Td><Cell mono>{g.level}</Cell></Td>
+                        <Td hideBelow="lg"><Cell muted>{g.source ?? ""}</Cell></Td>
                       </Tr>
                     ))}
                   </TBody>
-                </table>
+                </Table>
               </div>
             ) : (
               !who.errors?.length && <p className="text-secondary">No grants found.</p>

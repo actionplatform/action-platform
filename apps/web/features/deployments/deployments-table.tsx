@@ -84,15 +84,14 @@ export function DeploymentsTable({ page, registryId, canDeploy, newHref }: { pag
         newHref={canDeploy ? newHref : null}
         newLabel="New deployment"
         empty={{ icon: Cloud, title: "No deployments yet", text: "Run a preflight or deploy from New deployment; every run lands here." }}
-        minWidth={880}
         columns={[
           { key: "status", label: "Status", width: 14, render: (job) => { const s = statusOf(job); return <Badge tone={s.tone}>{s.label}</Badge>; } },
           { key: "stage", label: "Stage", width: 9, render: (job) => <Cell mono>{job.stage ?? "—"}</Cell> },
-          { key: "type", label: "Type", width: 9, hide: "sm", render: (job) => <Cell muted>{type(job)}</Cell> },
+          { key: "type", label: "Type", width: 9, hideBelow: "md", render: (job) => <Cell muted>{type(job)}</Cell> },
           { key: "version", label: "Version", width: 15, render: (job) => <Cell mono>{versionOf(job) ?? "—"}</Cell> },
-          { key: "duration", label: "Duration", width: 10, numeric: true, hide: "sm", render: (job) => <Cell muted>{duration(job, now)}</Cell> },
-          { key: "by", label: "By", width: 20, hide: "md", render: (job) => <Cell muted title={job.by ?? undefined}>{job.by ?? "—"}</Cell> },
-          { key: "started", label: "Started", width: 18, hide: "sm", render: (job) => <Cell muted>{when(job.created_at)}</Cell> },
+          { key: "duration", label: "Duration", width: 10, numeric: true, hideBelow: "md", render: (job) => <Cell muted>{duration(job, now)}</Cell> },
+          { key: "by", label: "By", width: 20, hideBelow: "lg", render: (job) => <Cell muted title={job.by ?? undefined}>{job.by ?? "—"}</Cell> },
+          { key: "started", label: "Started", width: 18, hideBelow: "md", render: (job) => <Cell muted>{when(job.created_at)}</Cell> },
           { key: "actions", label: "Actions", width: 5, actions: true, render: (job) => <Menu label="Run actions" items={actions(job)} trigger={({ toggle, open, id }) => <Button size="icon" variant="ghost" aria-label="More actions" aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle}><MoreHorizontal className="size-4" strokeWidth={1.75} /></Button>} /> },
         ]}
       />

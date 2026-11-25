@@ -6,6 +6,7 @@ import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
+import { Cell } from "@/components/ui/data-table";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import { TBody, Table, Td, Th, Tr } from "@/components/ui/table";
 import type { InstanceHealthRow } from "@/lib/v1";
@@ -81,12 +82,12 @@ export function InstanceView({ health }: { health: InstanceHealthRow }) {
         {health.queue.length === 0 ? (
           <p className="p-4 text-sm text-secondary">Nothing queued or running.</p>
         ) : (
-          <Table>
+          <Table columns={[{ width: 30 }, { width: 18 }, { width: 18 }, { width: 20 }, { width: 14 }]}>
             <thead><tr><Th>Kind</Th><Th numeric>Queued</Th><Th numeric>Running</Th><Th numeric>Oldest queued</Th><Th>Worker</Th></tr></thead>
             <TBody>
               {health.queue.map((q) => (
                 <Tr key={q.kind}>
-                  <Td className="font-mono text-[13px]">{q.kind}</Td>
+                  <Td><Cell mono>{q.kind}</Cell></Td>
                   <Td numeric>{q.queued}</Td>
                   <Td numeric>{q.running}</Td>
                   <Td numeric>{ageText(q.oldest_queued_seconds)}</Td>
@@ -103,13 +104,13 @@ export function InstanceView({ health }: { health: InstanceHealthRow }) {
         {health.workers_seen.length === 0 ? (
           <p className="p-4 text-sm text-secondary">No worker has ever started against this database.</p>
         ) : (
-          <Table>
+          <Table columns={[{ width: 32 }, { width: 32 }, { width: 20 }, { width: 16 }]}>
             <thead><tr><Th>Name</Th><Th>Takes</Th><Th>Last seen</Th><Th>State</Th></tr></thead>
             <TBody>
               {health.workers_seen.map((w) => (
                 <Tr key={w.name}>
-                  <Td className="font-mono text-[13px] [overflow-wrap:anywhere]">{w.name}</Td>
-                  <Td className="font-mono text-xs [overflow-wrap:anywhere]">{w.kinds.join(", ")}</Td>
+                  <Td><Cell mono>{w.name}</Cell></Td>
+                  <Td><Cell mono>{w.kinds.join(", ")}</Cell></Td>
                   <Td>{new Date(w.last_seen + "Z").toLocaleTimeString()}</Td>
                   <Td><Yes ok={w.alive} yes="Alive" no="Silent" /></Td>
                 </Tr>

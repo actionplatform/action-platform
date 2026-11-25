@@ -2,7 +2,7 @@ import { Target } from "lucide-react";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Cell, type Column, DataTable } from "./data-table";
-import { Td, Th } from "./table";
+import { Table, Td, Th } from "./table";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }), usePathname: () => "/", useSearchParams: () => new URLSearchParams() }));
 
@@ -12,7 +12,7 @@ const rows: Row[] = [{ id: "1", name: "production-eu-west-with-a-long-name", cou
 
 const columns: Column<Row>[] = [
   { key: "name", label: "Name", width: 60, render: (r) => <Cell>{r.name}</Cell> },
-  { key: "notes", label: "Notes", width: 20, wrap: true, render: () => <Cell wrap>candidate, stable, hotfix</Cell> },
+  { key: "notes", label: "Notes", width: 20, hideBelow: "lg", render: () => <Cell>candidate, stable, hotfix</Cell> },
   { key: "count", label: "Runs", width: 14, numeric: true, render: (r) => r.count },
   { key: "actions", label: "Actions", width: "56px", actions: true, render: (r) => <button type="button">Open {r.name}</button> },
 ];
@@ -54,11 +54,33 @@ describe("DataTable columns", () => {
     }
   });
 
-  it("lets a wrapping column grow and keeps the others on one line", () => {
+  it("keeps every cell on one line", () => {
     const t = table();
-    expect(within(t).getByText("candidate, stable, hotfix").closest("td")).toHaveClass("whitespace-normal");
-    expect(within(t).getByText("candidate, stable, hotfix")).not.toHaveClass("truncate");
-    expect(within(t).getAllByText(rows[0].name)[0].closest("td")).toHaveClass("whitespace-nowrap");
+    for (const td of t.querySelectorAll("td")) {
+      expect(td).toHaveClass("whitespace-nowrap", "overflow-hidden");
+      expect(td).not.toHaveClass("whitespace-normal");
+    }
+    expect(within(t).getByText("candidate, stable, hotfix")).toHaveClass("truncate");
+  });
+
+  it("hides a secondary column below its breakpoint in header, column and cells", () => {
+    const t = table();
+    const header = within(t).getByRole("columnheader", { name: "Notes" });
+    const cell = within(t).getByText("candidate, stable, hotfix").closest("td")!;
+    const col = t.querySelectorAll("col")[1];
+    for (const el of [header, cell]) expect(el).toHaveClass("hidden", "lg:table-cell");
+    expect(col).toHaveClass("hidden", "lg:table-column");
+    expect(within(t).getByRole("columnheader", { name: "Name" })).not.toHaveClass("hidden");
+    expect(within(t).getByRole("columnheader", { name: "Actions" })).not.toHaveClass("hidden");
+  });
+
+  it("has no scroll container around the table", () => {
+    const t = table();
+    expect(t).toHaveClass("table-fixed", "w-full");
+    expect(t.style.minWidth).toBe("");
+    for (let el: HTMLElement | null = t.parentElement; el && el.tagName !== "BODY"; el = el.parentElement) {
+      expect(el.className).not.toMatch(/overflow-(x|y)-(auto|scroll)|overflow-(auto|scroll)|max-h-/);
+    }
   });
 
   it("keeps the actions column narrow, right-aligned and labelled for screen readers", () => {
@@ -122,23 +144,25 @@ describe("Cell", () => {
     expect(screen.getByRole("tooltip")).toHaveTextContent("feature/645-table-density");
     restore();
   });
-
-  it("never truncates a wrapping cell", () => {
-    const restore = overflowing(400, 120);
-    render(<Cell wrap>candidate, stable, hotfix</Cell>);
-    const cell = screen.getByText("candidate, stable, hotfix");
-    expect(cell).not.toHaveAttribute("tabindex");
-    expect(cell).toHaveClass("whitespace-normal");
-    restore();
-  });
 });
 
 describe("Th and Td", () => {
   it("share the header and cell styles and align by prop", () => {
-    render(<table><thead><tr><Th numeric>Queued</Th><Th align="center">Role</Th></tr></thead><tbody><tr><Td numeric>3</Td><Td align="center">x</Td></tr></tbody></table>);
+    render(<Table columns={[{ width: 50 }, { width: 50 }]}><thead><tr><Th numeric>Queued</Th><Th align="center">Role</Th></tr></thead><tbody><tr><Td numeric>3</Td><Td align="center">x</Td></tr></tbody></Table>);
     expect(screen.getByText("Queued")).toHaveClass("text-right", "tabular-nums", "font-medium", "text-secondary");
     expect(screen.getByText("3")).toHaveClass("text-right", "tabular-nums", "px-3");
     expect(screen.getByText("Role")).toHaveClass("text-center");
     expect(screen.getByText("x")).toHaveClass("text-center");
+  });
+
+  it("keep one line and hide below a breakpoint", () => {
+    render(<Table columns={[{ width: 50 }, { width: 50, hideBelow: "md" }]}><thead><tr><Th>A</Th><Th hideBelow="md">B</Th></tr></thead><tbody><tr><Td>1</Td><Td hideBelow="md">2</Td></tr></tbody></Table>);
+    expect(screen.getByText("1")).toHaveClass("whitespace-nowrap", "overflow-hidden");
+    expect(screen.getByText("2")).toHaveClass("hidden", "md:table-cell");
+    expect(screen.getByText("B")).toHaveClass("hidden", "md:table-cell");
+    const table = screen.getByRole("table");
+    expect(table).toHaveClass("table-fixed");
+    expect(table.parentElement?.className ?? "").not.toMatch(/overflow-x/);
+    expect(table.querySelectorAll("col")[1]).toHaveClass("hidden", "md:table-column");
   });
 });

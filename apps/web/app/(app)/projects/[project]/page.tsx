@@ -56,9 +56,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
       </div>
 
       <Card className="hidden md:block">
-        <Table>
+        <Table columns={[{ width: 24 }, { width: 9, hideBelow: "lg" }, { width: 11, hideBelow: "lg" }, { width: 14 }, { width: 12 }, { width: 24, hideBelow: "lg" }, ...(manage ? [{ width: "56px" }] : [])]}>
           <thead>
-            <tr><Th>Name</Th><Th>Type</Th><Th>Language</Th><Th>Branch</Th><Th>Version</Th><Th>Repository</Th>{manage && <Th className="w-14"><span className="sr-only">Actions</span></Th>}</tr>
+            <tr><Th>Name</Th><Th hideBelow="lg">Type</Th><Th hideBelow="lg">Language</Th><Th>Branch</Th><Th>Version</Th><Th hideBelow="lg">Repository</Th>{manage && <Th><span className="sr-only">Actions</span></Th>}</tr>
           </thead>
           <TBody>
             {apps.length === 0 && (
@@ -69,18 +69,20 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
               return (
                 <Tr key={a.id}>
                   <Td>
-                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <Link href={`/projects/${project.id}/apps/${a.id}`} className="font-medium [overflow-wrap:anywhere] hover:underline underline-offset-4">{a.name}</Link>
-                      {tearing.has(a.id) && <Badge tone="warning">tearing down</Badge>}
-                      {r && !r.exists && <Badge tone="bad">missing</Badge>}
-                      {!r && <Badge>not on API</Badge>}
-                    </span>
+                    <Cell title={[a.name, tearing.has(a.id) && "tearing down", r && !r.exists && "missing", !r && "not on API"].filter(Boolean).join(" · ")}>
+                      <span className="inline-flex items-center gap-2 align-middle">
+                        <Link href={`/projects/${project.id}/apps/${a.id}`} className="font-medium hover:underline underline-offset-4">{a.name}</Link>
+                        {tearing.has(a.id) && <Badge tone="warning">tearing down</Badge>}
+                        {r && !r.exists && <Badge tone="bad">missing</Badge>}
+                        {!r && <Badge>not on API</Badge>}
+                      </span>
+                    </Cell>
                   </Td>
-                  <Td className="whitespace-nowrap text-secondary">{r?.type ?? "—"}</Td>
-                  <Td className="whitespace-nowrap text-secondary">{r?.language ?? "—"}</Td>
-                  <Td className="max-w-0 w-[16%]"><Cell mono muted>{r?.branch ?? "—"}</Cell></Td>
-                  <Td className="whitespace-nowrap font-mono text-[13px]">{r?.last_version ?? "—"}</Td>
-                  <Td className="max-w-0 w-[30%]"><Cell mono muted>{r?.url || "no remote"}</Cell></Td>
+                  <Td hideBelow="lg"><Cell muted>{r?.type ?? "—"}</Cell></Td>
+                  <Td hideBelow="lg"><Cell muted>{r?.language ?? "—"}</Cell></Td>
+                  <Td><Cell mono muted>{r?.branch ?? "—"}</Cell></Td>
+                  <Td><Cell mono>{r?.last_version ?? "—"}</Cell></Td>
+                  <Td hideBelow="lg"><Cell mono muted>{r?.url || "no remote"}</Cell></Td>
                   {manage && <Td align="right" className="py-1">{!tearing.has(a.id) && <RemoveButton projectId={project.id} appId={a.id} name={a.name} repositoryUrl={r?.url || null} />}</Td>}
                 </Tr>
               );

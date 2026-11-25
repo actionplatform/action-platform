@@ -10,10 +10,11 @@ import { call } from "@/lib/call";
 import { relativeTime } from "@/lib/time";
 import { syncCi } from "./actions";
 import { RunBadge, RunIcon } from "./run-badge";
+import { RunCiButton } from "./run-ci-button";
 
-type Props = { projectId: string; appId: string; state: CiState; connectHref: string | null; canSync: boolean };
+type Props = { projectId: string; appId: string; state: CiState; connectHref: string | null; canSync: boolean; canRun?: boolean; defaultRef?: string };
 
-export function RunsTable({ projectId, appId, state: initial, connectHref, canSync }: Props) {
+export function RunsTable({ projectId, appId, state: initial, connectHref, canSync, canRun = false, defaultRef = "" }: Props) {
   const router = useRouter();
   const [state, setState] = useState(initial);
   const [error, setError] = useState<string | null>(initial.error);
@@ -48,6 +49,7 @@ export function RunsTable({ projectId, appId, state: initial, connectHref, canSy
         action={
           connected ? (
             <>
+              {canRun && <RunCiButton projectId={projectId} appId={appId} link={state.link} defaultRef={defaultRef} />}
               {canSync && <Button size="sm" variant="outline" onClick={sync} disabled={pending}><RefreshCw className={`size-3.5 ${status === "syncing" ? "animate-spin" : ""}`} strokeWidth={2} /> {status === "syncing" ? "Syncing…" : status === "done" ? "Synced" : "Sync"}</Button>}
             </>
           ) : undefined
@@ -55,15 +57,14 @@ export function RunsTable({ projectId, appId, state: initial, connectHref, canSy
         newHref={connectHref}
         newLabel={connected ? "Change CI" : "Connect CI"}
         empty={{ icon: Workflow, title: connected ? "No runs yet" : "No CI connected", text: connected ? "Sync to import the latest runs from the CI." : "Connect a runner — a CI server of the organization, or the one in the source host — to read its runs here." }}
-        minWidth={880}
         columns={[
           { key: "status", label: "Status", width: 10, render: (r) => <Inline><RunIcon status={r.status} /><RunBadge status={r.status} /></Inline> },
           { key: "run", label: "Run", width: 45, render: (r) => <Inline>{r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate font-medium hover:underline underline-offset-4" title={name(r)}>{name(r)}</a> : <span className="min-w-0 truncate font-medium" title={name(r)}>{name(r)}</span>}{r.name && r.name !== `#${r.number}` && <span className="shrink-0 font-mono text-xs text-muted-foreground">#{r.number}</span>}</Inline> },
-          { key: "branch", label: "Branch", width: 8, hide: "md", render: (r) => <Cell mono muted title={r.branch ?? undefined}>{r.branch ?? "—"}</Cell> },
-          { key: "sha", label: "Commit", width: 7, hide: "md", render: (r) => r.sha ? <span className="inline-flex h-6 items-center rounded border border-border bg-background px-1.5 font-mono text-xs">{r.sha.slice(0, 7)}</span> : <Cell muted>—</Cell> },
-          { key: "trigger", label: "Trigger", width: 10, hide: "md", render: (r) => <Cell muted title={r.trigger ?? undefined}>{r.trigger ?? "—"}</Cell> },
-          { key: "when", label: "Started", width: 10, hide: "sm", render: (r) => <Cell muted>{r.startedAt ? relativeTime(r.startedAt) : "—"}</Cell> },
-          { key: "duration", label: "Duration", width: 7, numeric: true, hide: "sm", render: (r) => <Cell muted>{duration(r.durationMs)}</Cell> },
+          { key: "branch", label: "Branch", width: 8, hideBelow: "lg", render: (r) => <Cell mono muted title={r.branch ?? undefined}>{r.branch ?? "—"}</Cell> },
+          { key: "sha", label: "Commit", width: 7, hideBelow: "lg", render: (r) => r.sha ? <span className="inline-flex h-6 items-center rounded border border-border bg-background px-1.5 font-mono text-xs">{r.sha.slice(0, 7)}</span> : <Cell muted>—</Cell> },
+          { key: "trigger", label: "Trigger", width: 10, hideBelow: "lg", render: (r) => <Cell muted title={r.trigger ?? undefined}>{r.trigger ?? "—"}</Cell> },
+          { key: "when", label: "Started", width: 10, hideBelow: "md", render: (r) => <Cell muted>{r.startedAt ? relativeTime(r.startedAt) : "—"}</Cell> },
+          { key: "duration", label: "Duration", width: 7, numeric: true, hideBelow: "md", render: (r) => <Cell muted>{duration(r.durationMs)}</Cell> },
           { key: "open", label: "Actions", width: 3, actions: true, render: (r) => r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" aria-label={`Open run ${r.number}`} className={buttonVariants({ variant: "ghost", size: "icon" })}><ExternalLink className="size-4" strokeWidth={1.75} /></a> : null },
         ]}
       />

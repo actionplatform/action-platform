@@ -32,13 +32,12 @@ export function PullRequestsTable({ page, currentBranch, repositoryUrl, hasHost 
       meta={source ? SOURCE[source] ?? source : undefined}
       empty={{ icon: GitPullRequest, title: "No pull requests yet", text: hasHost ? "Open the first one from the current branch on Overview. Sync imports existing ones from the code host." : "Connect a code host and push the repository to track pull requests." }}
       action={repositoryUrl && rows.length > 0 ? <a href={`${repositoryUrl}/pulls`} target="_blank" rel="noopener noreferrer" className="hidden whitespace-nowrap text-[13px] text-secondary hover:text-foreground lg:block">View all on {SOURCE[source ?? ""] ?? "the host"}</a> : undefined}
-      minWidth={760}
       columns={[
         { key: "state", label: "State", width: 8, render: (r) => <Inline><StateIcon state={r.state} draft={r.draft} /><Badge tone={r.state === "merged" ? "inverse" : r.state === "open" ? "ok" : "neutral"}>{r.state === "merged" ? "Merged" : r.state === "open" ? (r.draft ? "Draft" : "Open") : "Closed"}</Badge></Inline> },
         { key: "title", label: "Title", width: 59, render: (r) => <Inline><a href={r.url} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate font-medium hover:underline underline-offset-4" title={r.title}>{r.title}</a><span className="shrink-0 font-mono text-xs text-muted-foreground">#{r.number}</span>{r.head === currentBranch && <Badge tone="ok" className="shrink-0">Current branch</Badge>}</Inline> },
-        { key: "branches", label: "Branches", width: 12, hide: "md", render: (r) => <Cell mono muted title={`${r.head} → ${r.base}`}>{r.head} → {r.base}</Cell> },
-        { key: "author", label: "By", width: 9, hide: "md", render: (r) => <Cell muted title={r.author ?? undefined}>{r.author ?? "—"}</Cell> },
-        { key: "when", label: "When", width: 12, hide: "sm", render: (r) => <Cell muted>{when(r)}</Cell> },
+        { key: "branches", label: "Branches", width: 12, hideBelow: "lg", render: (r) => <Cell mono muted title={`${r.head} → ${r.base}`}>{r.head} → {r.base}</Cell> },
+        { key: "author", label: "By", width: 9, hideBelow: "lg", render: (r) => <Cell muted title={r.author ?? undefined}>{r.author ?? "—"}</Cell> },
+        { key: "when", label: "When", width: 12, hideBelow: "md", render: (r) => <Cell muted>{when(r)}</Cell> },
       ]}
     />
   );

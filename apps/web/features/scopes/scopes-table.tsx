@@ -33,12 +33,11 @@ export function ScopesTable({ scopes, projectId, appId, canEdit, newHref }: { sc
         newHref={canEdit ? newHref : null}
         newLabel="New scope"
         empty={{ icon: Target, title: "No scopes yet", text: "No scope, no deploy: create one with New scope." }}
-        minWidth={640}
         columns={[
           { key: "name", label: "Scope", width: 32, render: (s) => <Cell mono className="font-medium">{s.name}</Cell> },
           { key: "kind", label: "Kind", width: 14, render: (s) => <Cell muted>{s.kind}</Cell> },
           { key: "criticality", label: "Criticality", width: 16, render: (s) => <CriticalityBadge value={s.criticality} /> },
-          { key: "accepts", label: "Accepted releases", width: 32, wrap: true, hide: "sm", render: (s) => <Cell muted wrap>{(ACCEPTS[s.criticality as Criticality] ?? []).join(", ")}</Cell> },
+          { key: "accepts", label: "Accepted releases", width: 32, hideBelow: "md", render: (s) => <Cell muted>{(ACCEPTS[s.criticality as Criticality] ?? []).join(", ")}</Cell> },
           { key: "actions", label: "Actions", width: 6, actions: true, render: (s) => actions(s).length > 0 ? <Menu label={`Actions for ${s.name}`} items={actions(s)} trigger={({ toggle, open, id }) => <Button size="icon" variant="ghost" aria-label={`Actions for ${s.name}`} aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle}><MoreHorizontal className="size-4" strokeWidth={1.75} /></Button>} /> : null },
         ]}
       />
