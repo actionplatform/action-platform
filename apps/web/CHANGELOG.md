@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.37.0 — 2026-11-25
+
+### Features
+- **web:** single-line table rows, no scroll, columns hide per breakpoint; Run CI on the CI tab
+
 ## v0.36.1 — 2026-11-25
 
 ### Bug Fixes
