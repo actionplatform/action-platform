@@ -202,7 +202,7 @@ POST   projects/{p}/apps/{a}/releases/{tag}/readiness    {stage?}: queue the che
 
 - **Scopes** tab on the app: the table of scopes — name, kind, criticality, what each accepts — and **New scope** (Name, Kind, Criticality). A scope's menu edits or deletes it.
 - **Deploy**: pick the release and the scope; the form refuses a release the scope does not accept and a blocked readiness unless *Deploy anyway* is ticked.
-- **Releases**: the *Ready* column shows the verdict per scope; the release page lists the checks per scope.
+- **Releases**: the release page lists the verdict and the checks per scope.
 - Criticality badge tones: `test` and `low` neutral, `medium` warning, `high` and `critical` danger.
 
 ## CLI and MCP
