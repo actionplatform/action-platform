@@ -396,6 +396,26 @@ class GithubProtectionTest(GateCase):
         self.assertEqual(policy.identity.id, "4242")
         minted.assert_called_once_with("acme/demo", installation)
 
+    def test_checks_named_in_the_table_are_required(self):
+        from app.repositories.configuration.config_store import ConfigStore
+
+        self.store_app()
+        ConfigStore(self.app.state.db).set(
+            self.registry_id,
+            {
+                "source_host": {"kind": "github", "repo": "acme/demo"},
+                "gitflow": {"protection": {"checks": ["jenkins/ci"]}},
+            },
+        )
+        installation = Installation(
+            "77", "acme", True, {"administration": "write", "contents": "write"}
+        )
+
+        _, build, _ = self.apply(installation=installation)
+
+        policy = build.return_value.apply.call_args.args[0]
+        self.assertIn("jenkins/ci", policy.checks)
+
     def release(self, state: dict):
         from app.core.db.models import App, AppProtection
         from app.schemas import ReleaseRequest, SourceCredentials

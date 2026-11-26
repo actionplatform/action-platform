@@ -294,7 +294,7 @@ class ProtectionService:
         extra = self._ci_contexts(organization_id, app, provider)
         policy = Policy(
             branches=branches,
-            checks=tuple(dict.fromkeys(declared + extra)),
+            checks=tuple(dict.fromkeys(declared + spec.checks + extra)),
             identity=identity if creds.kind == "github" else provider.identity(),
         )
 
