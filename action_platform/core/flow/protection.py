@@ -61,10 +61,11 @@ BITBUCKET_STEP = re.compile(r"^\s+name:\s*[\"']?([^\"'#]+?)[\"']?\s*(#.*)?$")
 
 @dataclass(frozen=True)
 class ProtectionSpec:
-    """`[gitflow.protection]`: `enforce` (None when the table does not say) and the branches to protect (empty: the git-flow ones the repository has)."""
+    """`[gitflow.protection]`: `enforce` (None when the table does not say), the branches to protect (empty: the git-flow ones the repository has) and the status checks always required, on top of those the CI declares or reports."""
 
     enforce: Optional[bool] = None
     branches: tuple[str, ...] = ()
+    checks: tuple[str, ...] = ()
 
     @classmethod
     def parse(cls, gitflow: Any) -> "ProtectionSpec":
@@ -84,17 +85,21 @@ class ProtectionSpec:
         if enforce is not None and not isinstance(enforce, bool):
             raise ConfigError("[gitflow.protection] enforce must be true or false")
 
-        branches = table.get("branches") or []
-
-        if not isinstance(branches, list) or not all(
-            isinstance(b, str) and b.strip() for b in branches
-        ):
-            raise ConfigError("[gitflow.protection] branches must be a list of names")
-
-        return cls(enforce, tuple(b.strip() for b in branches))
+        return cls(enforce, _names(table, "branches"), _names(table, "checks"))
 
     def resolved(self, default: bool) -> bool:
         return default if self.enforce is None else self.enforce
+
+
+def _names(table: dict, key: str) -> tuple[str, ...]:
+    names = table.get(key) or []
+
+    if not isinstance(names, list) or not all(
+        isinstance(n, str) and n.strip() for n in names
+    ):
+        raise ConfigError(f"[gitflow.protection] {key} must be a list of names")
+
+    return tuple(dict.fromkeys(n.strip() for n in names))
 
 
 @dataclass(frozen=True)

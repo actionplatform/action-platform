@@ -51,6 +51,13 @@ class SpecTest(unittest.TestCase):
 
         self.assertEqual(spec, ProtectionSpec(True, ("main",)))
 
+    def test_checks_are_names_kept_once(self):
+        spec = ProtectionSpec.parse(
+            {"protection": {"checks": [" jenkins/ci", "jenkins/ci", "lint"]}}
+        )
+
+        self.assertEqual(spec.checks, ("jenkins/ci", "lint"))
+
     def test_absent_follows_the_default(self):
         spec = Config.from_dict({}).protection
 
@@ -64,6 +71,9 @@ class SpecTest(unittest.TestCase):
 
         with self.assertRaises(ConfigError):
             ProtectionSpec.parse({"protection": {"branches": "main"}})
+
+        with self.assertRaises(ConfigError):
+            ProtectionSpec.parse({"protection": {"checks": "jenkins/ci"}})
 
     def test_branches_default_to_the_git_flow_ones_present(self):
         self.assertEqual(
