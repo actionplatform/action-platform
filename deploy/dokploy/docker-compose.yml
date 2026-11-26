@@ -131,7 +131,7 @@ services:
         condition: service_completed_successfully
       ap-api:
         condition: service_started
-    command: ["action-platform-api", "worker", "--concurrency", "${AP_WORKER_CONCURRENCY:-2}", "--kinds", "sync,release,push,import,import_github,install,protection,protection_sweep", "--name", "worker"]
+    command: ["action-platform-api", "worker", "--concurrency", "${AP_WORKER_CONCURRENCY:-2}", "--kinds", "sync,release,push,import,import_github,import_organization,install,protection,protection_sweep", "--name", "worker"]
     healthcheck:
       test: ["CMD", "action-platform-api", "worker", "--check", "--name", "worker"]
       interval: 30s
