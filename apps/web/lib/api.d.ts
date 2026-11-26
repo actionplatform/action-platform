@@ -3268,6 +3268,7 @@ export interface components {
             client_id?: string | null;
             base_url?: string | null;
             slug?: string | null;
+            has_app_key: boolean;
             scopes: string;
             callback_hint: string;
         };
@@ -3432,6 +3433,10 @@ export interface components {
         ProtectionDefault: {
             enforce: boolean;
         };
+        ProtectionFix: {
+            label: string;
+            url: string;
+        };
         ProtectionRequest: {
             enforce?: boolean | null;
         };
@@ -3451,6 +3456,7 @@ export interface components {
             error?: string | null;
             changed_by?: string | null;
             bypass?: string | null;
+            fix?: components["schemas"]["ProtectionFix"] | null;
         };
         PullRequestPage: {
             items: components["schemas"]["PullRequestRow"][];

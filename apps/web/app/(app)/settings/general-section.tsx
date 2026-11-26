@@ -58,6 +58,7 @@ export async function GeneralSection({ query }: { query: GeneralQuery }) {
             orgId={org.id}
             returnTo="/settings"
             githubApp={apps.github.slug ?? null}
+            githubAppKey={!apps.github.configured || !!apps.github.has_app_key}
             error={query.oauth_error ?? null}
           />
         </div>
