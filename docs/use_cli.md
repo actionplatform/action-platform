@@ -91,6 +91,30 @@ action-platform-api setup token                              # the token the fir
 
 Credentials from `login` live in `~/.action-platform/credentials.json` (mode 600); `AP_SERVER` + `AP_TOKEN` override them.
 
+### Profiles
+
+One login per folder. `--profile <name>` (or `AP_PROFILE=<name>`) keeps credentials, `plugins.json` and plugin options in `~/.action-platform/<name>/`; without it nothing moves.
+
+```bash
+action-platform --profile abc login https://abc.example.com
+action-platform --profile xpto login https://xpto.example.com
+AP_PROFILE=abc action-platform whoami
+```
+
+```
+~/.action-platform/
+├── credentials.json     # no profile
+├── plugins.json
+├── plugins/
+├── abc/
+│   ├── credentials.json
+│   ├── plugins.json
+│   └── plugins/
+└── xpto/
+```
+
+Names take letters, digits, `-` and `_`; `plugins`, `workspaces` and `hooks` are taken. Set `AP_PROFILE` in the MCP server's environment to give an agent session one profile.
+
 ## Environment
 
 | Variable | Used by |
@@ -100,6 +124,7 @@ Credentials from `login` live in `~/.action-platform/credentials.json` (mode 600
 | `ACTION_PLATFORM_BITBUCKET_TOKEN`, `ACTION_PLATFORM_BITBUCKET_USERNAME` | Bitbucket |
 | `ACTION_PLATFORM_TEMPLATES`, `ACTION_PLATFORM_TEMPLATES_REPO` | local checkout / repository of the templates matrix |
 | `AP_HOME` | where the API keeps its workspaces and the CLI its credentials (default `~/.action-platform`) |
+| `AP_PROFILE` | the CLI's credentials and plugin settings under `~/.action-platform/<profile>` (same as `--profile`) |
 | `AP_SERVER`, `AP_TOKEN` | use this platform and token instead of the credentials file |
 | `AP_GIT_AUTHOR_NAME`, `AP_GIT_AUTHOR_EMAIL` | identity for commits when the request carries none (default `Action Platform <cloud@actionplatform.io>`) |
 | `AP_SENTRY_DSN` | error reporting, see [observability](concept_observability.md) |

@@ -1,5 +1,7 @@
 """Typer app assembly."""
 
+import os
+
 import typer
 
 from action_platform.cli.commands import access as access_cmd
@@ -17,6 +19,7 @@ from action_platform.cli.commands import install as install_cmd
 from action_platform.cli.commands import login as login_cmd
 from action_platform.cli.commands import release as release_cmd
 from action_platform.cli.commands import service as service_cmd
+from action_platform.core import home
 from action_platform.plugins import registry
 
 app = typer.Typer(
@@ -25,6 +28,21 @@ app = typer.Typer(
     no_args_is_help=True,
     pretty_exceptions_enable=False,
 )
+
+
+@app.callback()
+def main(
+    profile: str = typer.Option(
+        "",
+        "--profile",
+        envvar="AP_PROFILE",
+        help="Keep credentials and plugin settings in ~/.action-platform/<profile>",
+    ),
+) -> None:
+    if profile:
+        os.environ["AP_PROFILE"] = profile
+        home.profile()
+
 
 app.command("init")(init_cmd.run)
 app.command("install")(install_cmd.run)
