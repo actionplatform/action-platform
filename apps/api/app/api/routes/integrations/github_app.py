@@ -54,7 +54,7 @@ def github_manifest(
 ) -> schemas.Manifest:
     allowed(caller, org, "org.manage")
 
-    if writes.oauth_app("github") is not None:
+    if writes.app_key("github") is not None:
         raise HTTPException(409, "a GitHub app is already configured")
 
     return_to = body.return_to or "/settings"
