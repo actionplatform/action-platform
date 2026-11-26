@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.46.1 — 2026-11-26
+
+### Bug Fixes
+- **api:** timestamps carry a UTC offset
+- **api:** the GitHub App manifest asks for commit statuses read
+- **api:** required checks include the app's configured checks
+
 ## v0.46.0 — 2026-11-25
 
 ### Features
