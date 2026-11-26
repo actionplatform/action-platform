@@ -27,6 +27,7 @@ MANIFEST_PERMISSIONS = {
     "pull_requests": "write",
     "metadata": "read",
     "members": "write",
+    "statuses": "read",
 }
 API_VERSION = "2022-11-28"
 
