@@ -2,10 +2,18 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any, Optional, Union
+from datetime import datetime, timezone
+from typing import Annotated, Any, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
+
+
+def _utc(value: datetime) -> datetime:
+    """Naive timestamps from older servers are UTC."""
+    return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
+
+
+UtcDateTime = Annotated[datetime, AfterValidator(_utc)]
 
 
 class Open(BaseModel):
@@ -195,7 +203,7 @@ class ScopeSpecs(Open):
 
 class ScopeRow(ScopeSpecRow):
     id: str
-    created_at: datetime
+    created_at: UtcDateTime
 
 
 class Scopes(Open):
@@ -221,8 +229,8 @@ class ReadinessRow(Open):
     ok: Optional[bool] = None
     checks: list[ReadinessCheck] = Field(default_factory=list)
     job_id: Optional[str] = None
-    checked_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    checked_at: Optional[UtcDateTime] = None
+    updated_at: Optional[UtcDateTime] = None
 
 
 class ReadinessQueued(Open):
@@ -245,7 +253,7 @@ class HostRow(Open):
     default_owner: Optional[str] = None
     auth_kind: str
     login: Optional[str] = None
-    created_at: datetime
+    created_at: UtcDateTime
 
 
 class AppHost(Open):
@@ -258,7 +266,7 @@ class CiHostRow(Open):
     name: str
     base_url: str
     username: Optional[str] = None
-    created_at: datetime
+    created_at: UtcDateTime
 
 
 class CiHostTest(Open):
@@ -282,9 +290,9 @@ class CiRunRow(Open):
     branch: Optional[str] = None
     sha: Optional[str] = None
     trigger: Optional[str] = None
-    started_at: Optional[datetime] = None
+    started_at: Optional[UtcDateTime] = None
     duration_ms: Optional[int] = None
-    synced_at: datetime
+    synced_at: UtcDateTime
 
 
 class CiRuns(Open):
@@ -449,8 +457,8 @@ class InvitationRow(Open):
     teams: list[str] = Field(default_factory=list)
     role: Optional[str] = None
     status: str
-    expires_at: datetime
-    created_at: datetime
+    expires_at: UtcDateTime
+    created_at: UtcDateTime
     inviter: str
 
 
@@ -677,8 +685,8 @@ class Protection(Open):
     organization_default: bool
     branches: list[str] = []
     state: Optional[ProtectionState] = None
-    checked_at: Optional[datetime] = None
-    applied_at: Optional[datetime] = None
+    checked_at: Optional[UtcDateTime] = None
+    applied_at: Optional[UtcDateTime] = None
     job_id: Optional[str] = None
 
 
