@@ -119,10 +119,13 @@ class ConnectionsTest(GateCase):
         ).json()
 
         self.assertIn(
-            "scope=repo+workflow+read%3Aorg+delete_repo+admin%3Aorg", started["url"]
+            "scope=repo+workflow+read%3Aorg+delete_repo+admin%3Aorg+read%3Aproject",
+            started["url"],
         )
+        permissions = manifest["manifest"]["default_permissions"]
         self.assertEqual(
-            manifest["manifest"]["default_permissions"]["members"], "write"
+            (permissions["members"], permissions["organization_projects"]),
+            ("write", "read"),
         )
 
     def test_a_connection_is_listed_and_handed_to_the_plugin_that_declares_it(self):
