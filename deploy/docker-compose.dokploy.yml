@@ -120,9 +120,6 @@ services:
       AP_SMTP_SECURITY: ${AP_SMTP_SECURITY:-starttls}
       AP_GOOGLE_CLIENT_ID: ${AP_GOOGLE_CLIENT_ID:-}
       AP_GOOGLE_CLIENT_SECRET: ${AP_GOOGLE_CLIENT_SECRET:-}
-      AP_GITHUB_APP_ID: ${AP_GITHUB_APP_ID:-}
-      AP_GITHUB_APP_SLUG: ${AP_GITHUB_APP_SLUG:-}
-      AP_GITHUB_APP_PRIVATE_KEY: ${AP_GITHUB_APP_PRIVATE_KEY:-}
 
   ap-worker:
     image: ${AP_IMAGE_WORKER:?set AP_IMAGE_WORKER in .env, e.g. actionplatformio/action-platform-worker:X.Y.Z}
@@ -167,9 +164,6 @@ services:
       AP_SMTP_SECURITY: ${AP_SMTP_SECURITY:-starttls}
       AP_GOOGLE_CLIENT_ID: ${AP_GOOGLE_CLIENT_ID:-}
       AP_GOOGLE_CLIENT_SECRET: ${AP_GOOGLE_CLIENT_SECRET:-}
-      AP_GITHUB_APP_ID: ${AP_GITHUB_APP_ID:-}
-      AP_GITHUB_APP_SLUG: ${AP_GITHUB_APP_SLUG:-}
-      AP_GITHUB_APP_PRIVATE_KEY: ${AP_GITHUB_APP_PRIVATE_KEY:-}
 
   ap-worker-deploy:
     image: ${AP_IMAGE_WORKER:?set AP_IMAGE_WORKER in .env, e.g. actionplatformio/action-platform-worker:X.Y.Z}
