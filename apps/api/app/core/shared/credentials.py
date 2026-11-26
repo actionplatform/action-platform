@@ -1,6 +1,6 @@
 """Code-host credentials and the OAuth apps they come from."""
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Optional
 
 from action_platform.core.exception import ActionPlatformError
@@ -54,7 +54,7 @@ class Credentials:
 @dataclass(frozen=True)
 class AppKey:
     app_id: str
-    private_key: str
+    private_key: str = field(repr=False)
     slug: Optional[str] = None
 
 

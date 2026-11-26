@@ -61,7 +61,7 @@ class Installation:
 @dataclass(frozen=True)
 class GithubApp:
     app_id: str
-    private_key: str
+    private_key: str = field(repr=False)
     slug: str = ""
 
     @classmethod
