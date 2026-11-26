@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
 
+from app.schemas.common import UtcDateTime
 from app.schemas.projects import InstallReport
 
 
@@ -59,7 +59,7 @@ class AppDetail(BaseModel):
     branch: str
     latest_tag: Optional[str] = None
     clean: bool
-    snapshot_at: Optional[datetime] = None
+    snapshot_at: Optional[UtcDateTime] = None
 
 
 class GitflowReport(BaseModel):

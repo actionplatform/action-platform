@@ -1,12 +1,10 @@
 """Projects and the apps registered in them, with what was imported for each."""
 
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
 
-from app.schemas.common import Named
-from app.schemas.common import SourceCredentials, SourceSpec
+from app.schemas.common import Named, SourceCredentials, SourceSpec, UtcDateTime
 
 
 class InstallSpec(BaseModel):
@@ -83,7 +81,7 @@ class AppInProject(BaseModel):
     name: str
     registry_id: str
     source_host_id: Optional[str] = None
-    last_synced_at: Optional[datetime] = None
+    last_synced_at: Optional[UtcDateTime] = None
 
 
 class ProjectRow(BaseModel):
@@ -94,8 +92,8 @@ class ProjectRow(BaseModel):
     team: Optional[Named] = None
     apps: list[AppInProject]
     organization: Optional[Named] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: Optional[UtcDateTime] = None
+    updated_at: Optional[UtcDateTime] = None
     tearing_down: bool = False
 
 
@@ -150,9 +148,9 @@ class ReleaseRow(BaseModel):
     sha: Optional[str] = None
     prerelease: bool
     draft: bool
-    published_at: Optional[datetime] = None
+    published_at: Optional[UtcDateTime] = None
     source: str
-    synced_at: datetime
+    synced_at: UtcDateTime
     readiness: dict[str, str] = {}
 
 
@@ -161,7 +159,7 @@ class ScopeRow(BaseModel):
     name: str
     kind: str
     criticality: str
-    created_at: datetime
+    created_at: UtcDateTime
 
 
 class ScopeRequest(BaseModel):
@@ -193,8 +191,8 @@ class ReadinessRow(BaseModel):
     ok: Optional[bool] = None
     checks: list[ReadinessCheck] = []
     job_id: Optional[str] = None
-    checked_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    checked_at: Optional[UtcDateTime] = None
+    updated_at: Optional[UtcDateTime] = None
 
 
 class ReadinessRequest(BaseModel):
@@ -216,9 +214,9 @@ class PullRequestRow(BaseModel):
     base: str
     state: str
     draft: bool
-    created_at: datetime
-    updated_at: datetime
-    merged_at: Optional[datetime] = None
+    created_at: UtcDateTime
+    updated_at: UtcDateTime
+    merged_at: Optional[UtcDateTime] = None
     source: str
 
 
@@ -272,4 +270,4 @@ class AdoptionRow(BaseModel):
     version: Optional[str] = None
     branch: Optional[str] = None
     pull_request: Optional[AdoptionPullRequest] = None
-    checked_at: Optional[datetime] = None
+    checked_at: Optional[UtcDateTime] = None

@@ -1,7 +1,22 @@
 """Shapes many routes share."""
 
-from pydantic import BaseModel
-from typing import Optional
+from datetime import datetime, timezone
+from typing import Annotated, Optional
+
+from pydantic import BaseModel, PlainSerializer
+
+
+def utc(value: datetime) -> datetime:
+    """A timestamp with its UTC offset; naive values are UTC."""
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+
+    return value.astimezone(timezone.utc)
+
+
+UtcDateTime = Annotated[
+    datetime, PlainSerializer(utc, return_type=datetime, when_used="json")
+]
 
 
 class Named(BaseModel):

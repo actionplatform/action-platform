@@ -1,9 +1,10 @@
 """The instance's health: what anyone may probe, and what an owner sees."""
 
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
+
+from app.schemas.common import UtcDateTime
 
 
 class Health(BaseModel):
@@ -16,8 +17,8 @@ class Health(BaseModel):
 class WorkerRow(BaseModel):
     name: str
     kinds: list[str]
-    started_at: datetime
-    last_seen: datetime
+    started_at: UtcDateTime
+    last_seen: UtcDateTime
     alive: bool
 
 
