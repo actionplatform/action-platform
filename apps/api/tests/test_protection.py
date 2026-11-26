@@ -8,6 +8,7 @@ from unittest import mock
 
 from action_platform.providers.protection.gitlab import GitlabProtection
 from action_platform.testing.hosts import FakeHost, refused
+from app.services.integrations.hosts.github_app import GithubApp, Installation
 from tests.test_access import GateCase
 
 try:
@@ -290,27 +291,118 @@ class GithubProtectionTest(GateCase):
             self.registry_id, {"source_host": {"kind": "github", "repo": "acme/demo"}}
         )
 
-    def test_without_the_app_key_nothing_reaches_github(self):
-        self.setenv("AP_GITHUB_APP_ID", "")
-        self.setenv("AP_GITHUB_APP_PRIVATE_KEY", "")
+    def store_app(self, key: str | None = "pem") -> None:
+        from app.core.db.models import OAuthApp
 
-        with mock.patch("action_platform.providers.protection.http.rest.call") as call:
+        sealer = self.app.state.sealer
+        with self.app.state.db.session() as s:
+            s.add(
+                OAuthApp(
+                    provider="github",
+                    client_id="Iv1.abc",
+                    client_secret_encrypted=sealer.seal("secret"),
+                    slug="ap-acme",
+                    app_id="4242" if key else None,
+                    private_key_encrypted=sealer.seal(key) if key else None,
+                )
+            )
+
+    def apply(self, installation=None, token="ghs_installation"):
+        from action_platform.core.flow.protection import ProtectionState
+
+        provider = mock.Mock()
+        provider.contexts.return_value = ()
+        provider.apply.return_value = ProtectionState("github")
+        provider.status.return_value = ProtectionState("github")
+
+        with (
+            mock.patch(
+                "app.services.protection.service.build_branch_protection",
+                return_value=provider,
+            ) as build,
+            mock.patch.object(GithubApp, "installation", return_value=installation),
+            mock.patch.object(GithubApp, "token", return_value=token) as minted,
+        ):
             res = self.client.post(f"{BASE}/apply", headers=self.h())
 
-        state = res.json()["state"]
-        self.assertFalse(state["active"])
-        self.assertIn("AP_GITHUB_APP_PRIVATE_KEY", state["error"])
-        self.assertEqual(call.call_count, 0)
+        self.assertEqual(res.status_code, 200, res.text)
 
-    def test_release_on_a_protected_repository_pushes_as_the_app(self):
+        return res.json()["state"], build, minted
+
+    def test_without_a_github_app_connection_nothing_is_applied(self):
+        state, build, minted = self.apply()
+
+        self.assertFalse(state["active"])
+        self.assertIn("no GitHub App connection", state["error"])
+        self.assertEqual(
+            state["fix"], {"label": "Create the GitHub App", "url": "/settings"}
+        )
+        build.return_value.apply.assert_not_called()
+        minted.assert_not_called()
+
+    def test_an_app_without_its_private_key_asks_to_create_it_again(self):
+        self.store_app(key=None)
+
+        state, build, _ = self.apply()
+
+        self.assertIn("private key", state["error"])
+        self.assertEqual(state["fix"]["label"], "Create the GitHub App again")
+        build.return_value.apply.assert_not_called()
+
+    def test_an_app_not_installed_on_the_repository_offers_the_install(self):
+        self.store_app()
+
+        state, build, minted = self.apply(installation=None)
+
+        self.assertIn("not installed on acme/demo", state["error"])
+        self.assertEqual(
+            state["fix"]["url"], "https://github.com/apps/ap-acme/installations/new"
+        )
+        build.return_value.apply.assert_not_called()
+        minted.assert_not_called()
+
+    def test_a_missing_permission_is_named_with_the_installation_link(self):
+        self.store_app()
+        installation = Installation(
+            "77", "acme", True, {"administration": "read", "contents": "write"}
+        )
+
+        state, build, _ = self.apply(installation=installation)
+
+        self.assertIn('"Administration" is read (needs write)', state["error"])
+        self.assertNotIn("Contents", state["error"].split("Rulesets")[0])
+        self.assertEqual(
+            state["fix"]["url"],
+            "https://github.com/organizations/acme/settings/installations/77",
+        )
+        build.return_value.apply.assert_not_called()
+
+    def test_applies_with_the_installation_token_and_the_app_as_bypass_actor(self):
+        self.store_app()
+        installation = Installation(
+            "77", "acme", True, {"administration": "write", "contents": "write"}
+        )
+
+        state, build, minted = self.apply(installation=installation)
+
+        self.assertIsNone(state.get("error"))
+        self.assertIsNone(state["fix"])
+        self.assertEqual(
+            build.call_args.args[:3], ("github", "acme/demo", "ghs_installation")
+        )
+        identity = build.call_args.kwargs["app"]
+        self.assertEqual((identity.kind, identity.id), ("github_app", "4242"))
+        policy = build.return_value.apply.call_args.args[0]
+        self.assertEqual(policy.identity.id, "4242")
+        minted.assert_called_once_with("acme/demo", installation)
+
+    def release(self, state: dict):
         from app.core.db.models import App, AppProtection
         from app.schemas import ReleaseRequest, SourceCredentials
         from app.services.jobs.context import JobContext
         from app.repositories.workspace.source import get_registry
         from app.services.jobs.handlers import JobHandlers
 
-        self.setenv("AP_GITHUB_APP_ID", "4242")
-        self.setenv("AP_GITHUB_APP_PRIVATE_KEY", "pem")
         handlers = JobHandlers(self.app.state.db, self.app.state.sealer, get_registry())
         with self.app.state.db.session() as s:
             app = s.get(App, "a1")
@@ -321,26 +413,146 @@ class GithubProtectionTest(GateCase):
             dry_run=False,
             credentials=SourceCredentials(kind="github", token="ghu_user"),
         )
+        untouched = handlers._as_platform(ctx, request)
 
-        with mock.patch(
-            "app.services.integrations.hosts.github_app_key.GithubAppKey.token",
-            return_value="ghs_installation",
-        ) as token:
-            untouched = handlers._as_platform(ctx, request)
+        with self.app.state.db.session() as s:
+            s.add(AppProtection(app_id="a1", state=json.dumps(state), enforced=True))
 
-            with self.app.state.db.session() as s:
-                s.add(
-                    AppProtection(
-                        app_id="a1", state=json.dumps({"active": True}), enforced=True
-                    )
-                )
+        return untouched, handlers, ctx, request
 
+    def test_release_on_a_protected_repository_pushes_as_the_app(self):
+        self.store_app()
+        installation = Installation(
+            "77", "acme", True, {"administration": "write", "contents": "write"}
+        )
+        untouched, handlers, ctx, request = self.release({"active": True})
+
+        with (
+            mock.patch.object(GithubApp, "installation", return_value=installation),
+            mock.patch.object(
+                GithubApp, "token", return_value="ghs_installation"
+            ) as token,
+        ):
             swapped = handlers._as_platform(ctx, request)
 
         self.assertEqual(untouched.credentials.token, "ghu_user")
         self.assertEqual(swapped.credentials.token, "ghs_installation")
         self.assertEqual(swapped.credentials.username, "x-access-token")
         self.assertEqual(token.call_args.args[0], "acme/demo")
+
+    def test_release_refuses_when_active_rules_and_no_app_to_push_as(self):
+        from action_platform.core.exception import ProviderError
+
+        self.store_app(key=None)
+        _, handlers, ctx, request = self.release({"active": True})
+
+        with self.assertRaisesRegex(ProviderError, "private key"):
+            handlers._as_platform(ctx, request)
+
+    def test_release_without_rules_on_the_host_keeps_the_user_token(self):
+        _, handlers, ctx, request = self.release({"active": False})
+
+        self.assertEqual(
+            handlers._as_platform(ctx, request).credentials.token, "ghu_user"
+        )
+
+
+class GithubAppTest(unittest.TestCase):
+    def app(self):
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
+
+        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        pem = key.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption(),
+        ).decode()
+
+        return GithubApp("4242", pem, "ap-acme"), key.public_key()
+
+    def test_jwt_is_signed_with_the_stored_key_and_issued_by_the_app(self):
+        import base64
+
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+
+        github, public = self.app()
+        header, claims, signature = github.jwt(1_000_000).split(".")
+        public.verify(
+            base64.urlsafe_b64decode(signature + "=" * (-len(signature) % 4)),
+            f"{header}.{claims}".encode(),
+            padding.PKCS1v15(),
+            hashes.SHA256(),
+        )
+        body = json.loads(base64.urlsafe_b64decode(claims + "=" * (-len(claims) % 4)))
+        self.assertEqual(body["iss"], "4242")
+
+    def test_installation_reads_permissions_and_a_404_means_not_installed(self):
+        from action_platform.core.exception import ProviderError
+
+        github, _ = self.app()
+        answer = {
+            "id": 77,
+            "account": {"login": "acme", "type": "Organization"},
+            "permissions": {"administration": "write", "contents": "read"},
+        }
+
+        with mock.patch(
+            "app.services.integrations.hosts.github_app.http.get_json",
+            return_value=answer,
+        ) as get:
+            found = github.installation("acme/demo")
+
+        self.assertIn("/repos/acme/demo/installation", get.call_args.args[0])
+        self.assertEqual(
+            found.missing({"contents": "write"}), [("contents", "write", "read")]
+        )
+        self.assertEqual(
+            found.review_url,
+            "https://github.com/organizations/acme/settings/installations/77",
+        )
+
+        with mock.patch(
+            "app.services.integrations.hosts.github_app.http.get_json",
+            side_effect=ProviderError("404 from api.github.com"),
+        ):
+            self.assertIsNone(github.installation("acme/demo"))
+
+    def test_token_is_scoped_to_the_repository(self):
+        github, _ = self.app()
+
+        with mock.patch(
+            "app.services.integrations.hosts.github_app.http.post_json",
+            return_value={"token": "ghs_x"},
+        ) as post:
+            token = github.token("acme/demo", Installation("77", "acme", True))
+
+        self.assertEqual(token, "ghs_x")
+        self.assertTrue(
+            post.call_args.args[0].endswith("/app/installations/77/access_tokens")
+        )
+        self.assertEqual(post.call_args.args[1], {"repositories": ["demo"]})
+
+
+class StoredAppKeyTest(GateCase):
+    def test_manifest_key_is_kept_sealed_and_dropped_when_another_app_is_saved(self):
+        from app.core.db.models import OAuthApp
+        from app.services.integrations.hosts.directory import IntegrationsDirectory
+
+        with self.app.state.db.session() as s:
+            writes = IntegrationsDirectory(s, self.app.state.sealer)
+            writes.save_oauth_app(
+                "github", "Iv1.a", "s", None, "ap", app_id="1", private_key="pem"
+            )
+            self.assertNotEqual(s.get(OAuthApp, "github").private_key_encrypted, "pem")
+            self.assertEqual(writes.app_key("github").private_key, "pem")
+
+            writes.save_oauth_app("github", "Iv1.a", "s2", None)
+            self.assertEqual(writes.app_key("github").app_id, "1")
+
+            writes.save_oauth_app("github", "Iv1.other", "s3", None)
+            self.assertIsNone(writes.app_key("github"))
 
 
 if __name__ == "__main__":

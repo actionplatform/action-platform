@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import logging
-import os
-
 from typing import Any, Optional
 
 from action_platform.abc.ci_runner import CIRunner
 from action_platform.core.context import DeployResult
-from action_platform.core.exception import ActionPlatformError
+from action_platform.core.exception import ActionPlatformError, ProviderError
 from action_platform.core.scopes import shape_of
 from action_platform.settings import settings
 from app.core.auth.crypto import Sealer
@@ -57,7 +56,6 @@ from app.services.workspace import git_auth as auth
 from app.services.workspace.state import GitStateService
 from app.services.workspace.app_context import AppContext
 from app.services.protection import ProtectionService, ProtectionSweep
-from app.services.integrations.hosts.github_app_key import GithubAppKey
 from app.core.db.models import AppProtection
 
 log = logging.getLogger(__name__)
@@ -153,17 +151,29 @@ class JobHandlers:
         ):
             return request
 
+        context = AppContext(self.registry, self.configs)
+
         with self.database.session() as db:
             row = db.get(AppProtection, ctx.app.id)
-            protected = bool(row and row.enforced)
 
-        key = GithubAppKey.from_env(os.environ)
+            if row is None or not row.enforced:
+                return request
 
-        if not protected or key is None:
+            active = bool(json.loads(row.state or "{}").get("active"))
+            repo = context.repo_of(ctx.app)
+            acting, reason = ProtectionService(db, self.sealer, context).github_access(
+                repo
+            )
+
+        if acting is None:
+            if active:
+                raise ProviderError(
+                    f"the release cannot be pushed to the protected branches of {repo}: {reason}"
+                )
+
             return request
 
-        repo = AppContext(self.registry, self.configs).repo_of(ctx.app)
-        token = key.token(repo)
+        token = acting[0]
 
         return request.model_copy(
             update={
@@ -180,7 +190,7 @@ class JobHandlers:
             return {"skipped": "no app"}
 
         with self.database.session() as db:
-            service = ProtectionService.from_env(
+            service = ProtectionService(
                 db, self.sealer, AppContext(self.registry, self.configs)
             )
 
