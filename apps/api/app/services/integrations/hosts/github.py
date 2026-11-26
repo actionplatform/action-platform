@@ -28,6 +28,7 @@ MANIFEST_PERMISSIONS = {
     "metadata": "read",
     "members": "write",
     "statuses": "read",
+    "organization_projects": "read",
 }
 API_VERSION = "2022-11-28"
 
@@ -35,7 +36,7 @@ API_VERSION = "2022-11-28"
 class GithubProvider(HostProvider):
     kind = "github"
     label = "GitHub"
-    scopes = "repo workflow read:org delete_repo admin:org"
+    scopes = "repo workflow read:org delete_repo admin:org read:project"
     callback_hint = "GitHub → Settings → Developer settings → OAuth Apps"
 
     def web_base(self, app: OAuthApp) -> str:
