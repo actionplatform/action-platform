@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.39.1 — 2026-11-26
+
+### Bug Fixes
+- **web:** instance workers' last seen reads offset timestamps
+
 ## v0.39.0 — 2026-11-25
 
 ### Features
