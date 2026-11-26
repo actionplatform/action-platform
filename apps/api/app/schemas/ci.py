@@ -1,9 +1,10 @@
 """CI servers and the runs of an app."""
 
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
+
+from app.schemas.common import UtcDateTime
 
 
 class CiHostRow(BaseModel):
@@ -12,7 +13,7 @@ class CiHostRow(BaseModel):
     name: str
     base_url: str
     username: Optional[str] = None
-    created_at: datetime
+    created_at: UtcDateTime
 
 
 class AddCiHostRequest(BaseModel):
@@ -44,9 +45,9 @@ class CiRunRow(BaseModel):
     branch: Optional[str] = None
     sha: Optional[str] = None
     trigger: Optional[str] = None
-    started_at: Optional[datetime] = None
+    started_at: Optional[UtcDateTime] = None
     duration_ms: Optional[int] = None
-    synced_at: datetime
+    synced_at: UtcDateTime
 
 
 class CiRuns(BaseModel):

@@ -1,9 +1,10 @@
 """Code hosts, OAuth apps, the OAuth flow, GitHub Apps."""
 
-from datetime import datetime
 from typing import Any, Optional
 
 from pydantic import BaseModel
+
+from app.schemas.common import UtcDateTime
 
 
 class HostRow(BaseModel):
@@ -15,7 +16,7 @@ class HostRow(BaseModel):
     default_owner: Optional[str] = None
     auth_kind: str
     login: Optional[str] = None
-    created_at: datetime
+    created_at: UtcDateTime
 
 
 class AddHostRequest(BaseModel):
@@ -57,8 +58,8 @@ class ConnectionRow(BaseModel):
     scopes: Optional[list[str]] = None
     asked: list[str]
     missing: list[str]
-    expires_at: Optional[datetime] = None
-    connected_at: Optional[datetime] = None
+    expires_at: Optional[UtcDateTime] = None
+    connected_at: Optional[UtcDateTime] = None
 
 
 class OAuthAppRequest(BaseModel):

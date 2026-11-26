@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
+
+from app.schemas.common import UtcDateTime
 
 
 class DeployRequest(BaseModel):
@@ -55,10 +56,10 @@ class DeploymentRow(BaseModel):
     url: Optional[str] = None
     actor: Optional[str] = None
     error: Optional[str] = None
-    started_at: Optional[datetime] = None
-    finished_at: Optional[datetime] = None
-    verified_at: Optional[datetime] = None
-    synced_at: datetime
+    started_at: Optional[UtcDateTime] = None
+    finished_at: Optional[UtcDateTime] = None
+    verified_at: Optional[UtcDateTime] = None
+    synced_at: UtcDateTime
 
 
 class Deployments(BaseModel):

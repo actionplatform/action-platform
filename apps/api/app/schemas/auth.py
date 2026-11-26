@@ -1,9 +1,8 @@
-from datetime import datetime
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from app.schemas.common import Named
+from app.schemas.common import Named, UtcDateTime
 
 
 class SignUpRequest(BaseModel):
@@ -32,9 +31,9 @@ class SessionOut(BaseModel):
     id: str
     token: str
     cookie: str
-    expires_at: datetime
-    created_at: datetime
-    updated_at: datetime
+    expires_at: UtcDateTime
+    created_at: UtcDateTime
+    updated_at: UtcDateTime
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
     active_organization_id: Optional[str] = None
@@ -66,9 +65,9 @@ class IdentityOut(BaseModel):
 
 class BrowserSessionOut(BaseModel):
     id: str
-    created_at: datetime
-    updated_at: datetime
-    expires_at: datetime
+    created_at: UtcDateTime
+    updated_at: UtcDateTime
+    expires_at: UtcDateTime
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
     current: bool
@@ -141,7 +140,7 @@ class DeviceRequestOut(BaseModel):
     requested: list[str]
     grant: GrantOut
     client_id: Optional[str] = None
-    expires_at: datetime
+    expires_at: UtcDateTime
 
 
 class DeviceDecision(BaseModel):
@@ -165,13 +164,13 @@ class TokenIssued(BaseModel):
     id: str
     token: str
     scope: list[str]
-    expires_at: datetime
+    expires_at: UtcDateTime
 
 
 class TokenClientOut(BaseModel):
     name: str
-    first_seen_at: datetime
-    last_seen_at: datetime
+    first_seen_at: UtcDateTime
+    last_seen_at: UtcDateTime
 
 
 class TokenOut(BaseModel):
@@ -181,9 +180,9 @@ class TokenOut(BaseModel):
     organization: Optional[Named] = None
     project: Optional[Named] = None
     app: Optional[Named] = None
-    created_at: datetime
-    expires_at: datetime
-    last_used_at: Optional[datetime] = None
+    created_at: UtcDateTime
+    expires_at: UtcDateTime
+    last_used_at: Optional[UtcDateTime] = None
     clients: list[TokenClientOut]
 
 

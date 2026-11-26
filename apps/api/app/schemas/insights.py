@@ -1,11 +1,11 @@
 """The organization's dashboard and a release's timeline."""
 
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
 
 from app.schemas.ci import CiRunRow
+from app.schemas.common import UtcDateTime
 from app.schemas.deployments import DeploymentRow
 from app.schemas.projects import PullRequestRow, ReleaseRow
 
@@ -19,7 +19,7 @@ class AppRef(BaseModel):
 
 class Event(AppRef):
     kind: str
-    at: Optional[datetime] = None
+    at: Optional[UtcDateTime] = None
     title: str
     status: Optional[str] = None
     detail: Optional[str] = None
@@ -33,7 +33,7 @@ class ActiveDeployment(AppRef):
     stage: Optional[str] = None
     version: str
     status: str
-    started_at: Optional[datetime] = None
+    started_at: Optional[UtcDateTime] = None
     url: Optional[str] = None
 
 

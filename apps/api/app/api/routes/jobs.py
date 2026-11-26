@@ -1,6 +1,5 @@
 """Jobs the API queued for the worker."""
 
-from datetime import datetime
 from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, Request
@@ -13,7 +12,7 @@ from app.api.dependencies import (
 )
 from app.core.db.models.auth import User
 from app.core.shared import people
-from app.schemas.common import page_bounds
+from app.schemas.common import UtcDateTime, page_bounds
 from app.services.jobs import JobQueue
 from app.services.jobs.logs import JobLogs
 
@@ -31,12 +30,12 @@ class JobOut(BaseModel):
     dry_run: Optional[bool] = None
     version: Optional[str] = None
     by: Optional[str] = None
-    started_at: Optional[datetime] = None
+    started_at: Optional[UtcDateTime] = None
     result: Optional[Any] = None
     error: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-    finished_at: Optional[datetime] = None
+    created_at: UtcDateTime
+    updated_at: UtcDateTime
+    finished_at: Optional[UtcDateTime] = None
 
 
 class JobPage(BaseModel):
@@ -99,7 +98,7 @@ def job(
 
 class LogLine(BaseModel):
     seq: int
-    at: datetime
+    at: UtcDateTime
     line: str
 
 

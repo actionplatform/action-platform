@@ -1,11 +1,10 @@
 """The organization as its members see it: identity, access, members, teams, invitations, settings, template sources."""
 
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
 
-from app.schemas.common import AppRef, Named
+from app.schemas.common import AppRef, Named, UtcDateTime
 
 
 class OrganizationRow(BaseModel):
@@ -68,7 +67,7 @@ class Issued(BaseModel):
     token_type: str = "Bearer"
     id: str
     scope: str
-    expires_at: datetime
+    expires_at: UtcDateTime
     organization: Optional[dict] = None
     organizations: Optional[list[dict]] = None
     project: Optional[Named] = None
@@ -126,10 +125,10 @@ class InvitationRow(BaseModel):
     teams: list[str] = []
     role: Optional[str] = None
     status: str
-    expires_at: datetime
-    created_at: datetime
+    expires_at: UtcDateTime
+    created_at: UtcDateTime
     inviter: str
-    emailed_at: Optional[datetime] = None
+    emailed_at: Optional[UtcDateTime] = None
     email_error: Optional[str] = None
     email_state: str = "off"
 
@@ -151,7 +150,7 @@ class TemplateSourceRow(BaseModel):
     url: str
     ref: str
     source_host_id: Optional[str] = None
-    created_at: datetime
+    created_at: UtcDateTime
 
 
 class AddTemplateSource(BaseModel):

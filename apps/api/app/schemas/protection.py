@@ -1,9 +1,10 @@
 """Git-flow enforced on the code host: each rule's state, the app's setting and the organization's default."""
 
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
+
+from app.schemas.common import UtcDateTime
 
 
 class ProtectionRule(BaseModel):
@@ -37,8 +38,8 @@ class Protection(BaseModel):
     organization_default: bool
     branches: list[str] = []
     state: Optional[ProtectionState] = None
-    checked_at: Optional[datetime] = None
-    applied_at: Optional[datetime] = None
+    checked_at: Optional[UtcDateTime] = None
+    applied_at: Optional[UtcDateTime] = None
     job_id: Optional[str] = None
 
 
