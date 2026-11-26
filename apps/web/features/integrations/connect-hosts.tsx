@@ -127,7 +127,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
                     {p === "github" && !githubAppKey && (
                       <div className="rounded-[6px] border border-border bg-background p-3 text-[13px] leading-5 text-secondary">
                         <p>The platform does not hold this GitHub App&apos;s private key, so it cannot act as the app. Branch protection needs it: the app is the only one allowed to push to protected branches.</p>
-                        <p className="mt-1.5">Create the app again here: GitHub creates a new app and the platform keeps its key. Install it on the organization, then delete the old app on GitHub.</p>
+                        <p className="mt-1.5">Create the app again here: GitHub creates a new app and the platform keeps its key. Install it on the organization; installing signs your account in with the new app, and any other connected account connects again. Then delete the old app on GitHub.</p>
                         <Button variant="outline" className="mt-2 h-9 w-full" onClick={() => setCreateGh(true)}><Sparkles className="size-4" strokeWidth={1.75} aria-hidden="true" /> Create GitHub App again</Button>
                       </div>
                     )}
