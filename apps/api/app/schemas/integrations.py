@@ -42,6 +42,7 @@ class OAuthAppRow(BaseModel):
     client_id: Optional[str] = None
     base_url: Optional[str] = None
     slug: Optional[str] = None
+    has_app_key: bool = False
     scopes: str
     callback_hint: str
 

@@ -52,6 +52,13 @@ class Credentials:
 
 
 @dataclass(frozen=True)
+class AppKey:
+    app_id: str
+    private_key: str
+    slug: Optional[str] = None
+
+
+@dataclass(frozen=True)
 class OAuthApp:
     client_id: str
     client_secret: str

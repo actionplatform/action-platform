@@ -6,7 +6,7 @@ from typing import Optional
 
 from app.core.db.models import OAuthApp as OAuthAppRow
 from app.core.shared.clock import now
-from app.core.shared.credentials import OAuthApp
+from app.core.shared.credentials import AppKey, OAuthApp
 from app.repositories.base import (
     PROVIDERS,
     DirectoryBase,
@@ -28,6 +28,19 @@ class OAuthAppsReads(DirectoryBase):
 
         return OAuthApp.from_env(provider)
 
+    def app_key(self, provider: str) -> Optional[AppKey]:
+        row = self.db.get(OAuthAppRow, provider)
+
+        if (
+            row is None
+            or self.sealer is None
+            or not row.app_id
+            or not row.private_key_encrypted
+        ):
+            return None
+
+        return AppKey(row.app_id, self.sealer.open(row.private_key_encrypted), row.slug)
+
     def oauth_apps(self) -> dict[str, Optional[OAuthApp]]:
         return {provider: self.oauth_app(provider) for provider in PROVIDERS}
 
@@ -40,6 +53,8 @@ class OAuthAppsWrites(OAuthAppsReads):
         client_secret: str,
         base_url: Optional[str],
         slug: Optional[str] = None,
+        app_id: Optional[str] = None,
+        private_key: Optional[str] = None,
     ) -> OAuthApp:
         if provider not in PROVIDERS:
             raise DirectoryError("unknown provider")
@@ -54,10 +69,17 @@ class OAuthAppsWrites(OAuthAppsReads):
             raise DirectoryError("client id and secret are required")
 
         row = self.db.get(OAuthAppRow, provider) or OAuthAppRow(provider=provider)
-        row.client_id = client_id
         row.client_secret_encrypted = self.sealer.seal(client_secret)
         row.base_url = (base_url or "").strip() or None
-        row.slug = slug or row.slug
+        same_app = row.client_id == client_id
+        row.client_id = client_id
+        row.slug = slug or (row.slug if same_app else None)
+        row.app_id = app_id or (row.app_id if same_app else None)
+        row.private_key_encrypted = (
+            self.sealer.seal(private_key)
+            if private_key
+            else (row.private_key_encrypted if same_app else None)
+        )
         row.updated_at = now()
         self.db.add(row)
         self.db.flush()
