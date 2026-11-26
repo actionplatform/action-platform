@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.37.0 — 2026-11-26
+
+### Features
+- **cli:** profiles keep one login per folder under ~/.action-platform
+- **api:** keep the GitHub App's id and private key from the manifest
+- **web:** drop the app CI page and tab
+
+### Bug Fixes
+- **cli:** naive timestamps read as UTC
+- **api:** timestamps carry a UTC offset
+- **api:** required checks include the app's configured checks
+- **core:** [gitflow.protection] checks names status checks always required
+- **api:** allow creating the GitHub App again when no key is held
+- **api:** branch protection acts through the organization's GitHub App
+
+### Docs
+- **cli:** profiles and AP_PROFILE
+- [gitflow.protection] checks and the commit statuses permission
+- say accounts reconnect after the GitHub App is created again
+- branch protection on the organization's GitHub App connection
+
+### Build
+- **deploy:** rebuild the Dokploy template without the GitHub App key variables
+- **deploy:** drop the GitHub App key variables
+
 ## v0.36.0 — 2026-11-25
 
 ### Features
