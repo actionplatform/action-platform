@@ -15,6 +15,7 @@ function redirect(path: string): string | null {
 describe("app redirects", () => {
   it("send the old app tabs to their new homes", () => {
     expect(redirect("/projects/p1/apps/a1/settings/ci")).toBe("/projects/p1/apps/a1/settings?tab=ci");
+    expect(redirect("/projects/p1/apps/a1/ci")).toBe("/projects/p1/apps/a1/activity?kind=ci_run");
     expect(redirect("/projects/p1/apps/a1/ci/connect")).toBe("/projects/p1/apps/a1/settings?tab=ci");
     expect(redirect("/projects/p1/apps/a1/settings/configuration")).toBe("/projects/p1/apps/a1/settings?tab=general");
     expect(redirect("/projects/p1/apps/a1/settings/scopes")).toBe("/projects/p1/apps/a1/scopes");
@@ -25,7 +26,7 @@ describe("app redirects", () => {
   });
 
   it("leave the tabs that stay where they are", () => {
-    for (const tab of ["", "/activity", "/releases", "/ci", "/scopes", "/scopes/new", "/deployments", "/settings", "/pull-requests/new"]) {
+    for (const tab of ["", "/activity", "/releases", "/scopes", "/scopes/new", "/deployments", "/settings", "/pull-requests/new"]) {
       expect(redirect(`/projects/p1/apps/a1${tab}`)).toBeNull();
     }
   });

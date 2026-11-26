@@ -10,11 +10,10 @@ import { call } from "@/lib/call";
 import { relativeTime } from "@/lib/time";
 import { syncCi } from "./actions";
 import { RunBadge, RunIcon } from "./run-badge";
-import { RunCiButton } from "./run-ci-button";
 
-type Props = { projectId: string; appId: string; state: CiState; connectHref: string | null; canSync: boolean; canRun?: boolean; defaultRef?: string };
+type Props = { projectId: string; appId: string; state: CiState; connectHref: string | null; canSync: boolean };
 
-export function RunsTable({ projectId, appId, state: initial, connectHref, canSync, canRun = false, defaultRef = "" }: Props) {
+export function RunsTable({ projectId, appId, state: initial, connectHref, canSync }: Props) {
   const router = useRouter();
   const [state, setState] = useState(initial);
   const [error, setError] = useState<string | null>(initial.error);
@@ -47,11 +46,8 @@ export function RunsTable({ projectId, appId, state: initial, connectHref, canSy
         noun={["run", "runs"]}
         meta={connected ? <>{CI_LABELS[state.link.kind] ?? state.link.kind}{state.link.job && <span className="font-mono"> · {state.link.job}</span>}</> : undefined}
         action={
-          connected ? (
-            <>
-              {canRun && <RunCiButton projectId={projectId} appId={appId} link={state.link} defaultRef={defaultRef} />}
-              {canSync && <Button size="sm" variant="outline" onClick={sync} disabled={pending}><RefreshCw className={`size-3.5 ${status === "syncing" ? "animate-spin" : ""}`} strokeWidth={2} /> {status === "syncing" ? "Syncing…" : status === "done" ? "Synced" : "Sync"}</Button>}
-            </>
+          connected && canSync ? (
+            <Button size="sm" variant="outline" onClick={sync} disabled={pending}><RefreshCw className={`size-3.5 ${status === "syncing" ? "animate-spin" : ""}`} strokeWidth={2} /> {status === "syncing" ? "Syncing…" : status === "done" ? "Synced" : "Sync"}</Button>
           ) : undefined
         }
         newHref={connectHref}
