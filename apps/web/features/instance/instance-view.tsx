@@ -9,6 +9,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { Cell } from "@/components/ui/data-table";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import { TBody, Table, Td, Th, Tr } from "@/components/ui/table";
+import { utc } from "@/lib/time";
 import type { InstanceHealthRow } from "@/lib/v1";
 import { sendTestEmail, type TestEmail } from "./actions";
 import { ageText, problems } from "./health";
@@ -111,7 +112,7 @@ export function InstanceView({ health }: { health: InstanceHealthRow }) {
                 <Tr key={w.name}>
                   <Td><Cell mono>{w.name}</Cell></Td>
                   <Td><Cell mono>{w.kinds.join(", ")}</Cell></Td>
-                  <Td>{new Date(w.last_seen + "Z").toLocaleTimeString()}</Td>
+                  <Td>{utc(w.last_seen).toLocaleTimeString()}</Td>
                   <Td><Yes ok={w.alive} yes="Alive" no="Silent" /></Td>
                 </Tr>
               ))}
