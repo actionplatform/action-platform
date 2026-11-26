@@ -495,10 +495,8 @@
 - **scopes:** any stable release serves any scope — no latest rule
 - **scopes:** test accepts any release
 - **scopes:** a stable release serves any scope
-- architecture decisions move to the strategy repository
 - **scopes:** mermaid labels quoted, fence closed
 - **scopes:** mermaid diagrams — the model, what each criticality accepts, the gate, the data model, the rollout
-- **adr:** the criticality table in ADR 0009
 - **scopes:** a hotfix release may be deployed to any scope
 - **scopes:** only the rules asked for — release shape and latest by criticality; no approvals, no promotion ladder
 - **scopes:** an app has any number of scopes, each with its own kind and criticality
@@ -537,7 +535,7 @@
 - **deploy:** the worker image builds native gems and wheels
 
 ### Docs
-- release readiness — the concept, the API, the CLI, the web, the plugin contract and ADR 0008
+- release readiness — the concept, the API, the CLI, the web and the plugin contract
 
 ### Build
 - **api:** apx-aws-lambda>=0.3.9 — a ROLLBACK_COMPLETE stack no longer blocks the deploy
