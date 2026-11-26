@@ -63,7 +63,13 @@ class HostConnector:
             raise HostConnectError(str(e)) from e
 
         self.writes.save_oauth_app(
-            "github", app["client_id"], app["client_secret"], None, app.get("slug")
+            "github",
+            app["client_id"],
+            app["client_secret"],
+            None,
+            app.get("slug"),
+            app_id=str(app["id"]) if app.get("id") else None,
+            private_key=app.get("pem") or None,
         )
 
         return app.get("slug") or "created"

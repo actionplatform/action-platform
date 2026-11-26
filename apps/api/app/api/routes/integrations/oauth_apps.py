@@ -37,6 +37,7 @@ def oauth_apps(
                 client_id=app.client_id if app else None,
                 base_url=app.base_url if app else None,
                 slug=app.slug if app else None,
+                has_app_key=writes.app_key(provider) is not None,
                 scopes=scopes_for(provider, host.scopes),
                 callback_hint=host.callback_hint,
             )

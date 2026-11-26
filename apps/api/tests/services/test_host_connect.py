@@ -32,8 +32,8 @@ class FakeWrites:
         self.connected.append(args)
         self.usernames.append(username)
 
-    def save_oauth_app(self, *args):
-        self.saved.append(args)
+    def save_oauth_app(self, *args, **kwargs):
+        self.saved.append(args + tuple(kwargs.values()))
 
 
 class FinishTest(unittest.TestCase):
@@ -81,13 +81,32 @@ class CreateGithubAppTest(unittest.TestCase):
         with mock.patch.object(
             GithubProvider,
             "convert_manifest",
-            return_value={"client_id": "i", "client_secret": "s", "slug": "ap"},
+            return_value={
+                "id": 4242,
+                "client_id": "i",
+                "client_secret": "s",
+                "slug": "ap",
+                "pem": "-----BEGIN RSA PRIVATE KEY-----",
+            },
         ):
             self.assertEqual(
                 HostConnector(writes, host_providers()).create_github_app("c"), "ap"
             )
 
-        self.assertEqual(writes.saved, [("github", "i", "s", None, "ap")])
+        self.assertEqual(
+            writes.saved,
+            [
+                (
+                    "github",
+                    "i",
+                    "s",
+                    None,
+                    "ap",
+                    "4242",
+                    "-----BEGIN RSA PRIVATE KEY-----",
+                )
+            ],
+        )
 
     def test_refused_manifest_raises(self):
         writes = FakeWrites()

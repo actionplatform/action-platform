@@ -68,6 +68,8 @@ class OAuthApp(Base):
     client_secret_encrypted: Mapped[str] = mapped_column(Text, nullable=False)
     base_url: Mapped[Optional[str]] = mapped_column(Text)
     slug: Mapped[Optional[str]] = mapped_column(Text)
+    app_id: Mapped[Optional[str]] = mapped_column(Text)
+    private_key_encrypted: Mapped[Optional[str]] = mapped_column(Text)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=now, server_default=func.now()
     )
