@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.39.0 — 2026-11-25
+
+### Features
+- **web:** show the fix for a protection that cannot act as the GitHub App
+
+### Docs
+- say accounts reconnect after the GitHub App is created again
+
 ## v0.38.1 — 2026-11-25
 
 ### Features
