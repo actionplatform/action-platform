@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.38.1 — 2026-11-25
+
+### Features
+- **web:** drop the app CI page and tab
+
 ## v0.38.0 — 2026-11-25
 
 ### Features
