@@ -53,7 +53,7 @@ describe("protection model", () => {
   it("never claims protection the host did not accept", () => {
     expect(summaryOf(protection({ state: { ...protection().state!, error: "GitHub refused rulesets", active: false } })).label).toBe("Not active");
     expect(summaryOf(protection({ state: null })).label).toBe("Pending");
-    expect(summaryOf(protection({ state: { ...protection().state!, error: "no GitHub App key" } })).label).toBe("Not kept");
+    expect(summaryOf(protection({ state: { ...protection().state!, error: "the GitHub App lacks a permission" } })).label).toBe("Not kept");
     expect(summaryOf(protection({ enforce: false })).label).toBe("Not enforced");
     expect(summaryOf(protection()).label).toBe("Partly active");
   });
@@ -77,6 +77,17 @@ describe("ProtectionPanel", () => {
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("no longer enforced"));
     expect(setProtection).toHaveBeenCalledWith("p", "a", false);
     expect(screen.getByRole("radio", { name: "Off" })).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("offers the action that removes the reason, never a token field", () => {
+    const failed = { ...protection().state!, active: false, error: "the GitHub App ap-acme is not installed on acme/demo", fix: { label: "Install ap-acme", url: "https://github.com/apps/ap-acme/installations/new" } };
+    render(<ProtectionPanel projectId="p" appId="a" initial={protection({ state: failed })} canEdit />);
+    expect(screen.getByRole("link", { name: "Install ap-acme" })).toHaveAttribute("href", "https://github.com/apps/ap-acme/installations/new");
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    cleanup();
+    const missing = { ...failed, fix: { label: "Create the GitHub App", url: "/settings" } };
+    render(<ProtectionPanel projectId="p" appId="a" initial={protection({ state: missing })} canEdit />);
+    expect(screen.getByRole("link", { name: "Create the GitHub App" })).toHaveAttribute("href", "/settings");
   });
 
   it("hides the switch and Apply from someone who cannot configure", () => {

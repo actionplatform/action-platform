@@ -1,6 +1,7 @@
 "use client";
 
-import { RefreshCw, ShieldCheck, TriangleAlert } from "lucide-react";
+import { ExternalLink, RefreshCw, Settings2, ShieldCheck, TriangleAlert } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +66,7 @@ export function ProtectionPanel({ projectId, appId, initial, canEdit }: { projec
           {busy === "setting" && <p className="text-[13px] text-secondary">Saving…</p>}
           {notice && <p role="status" className="text-[13px] text-foreground">{notice}</p>}
           {error && <p role="alert" className="text-[13px] text-status-bad">{error}</p>}
+          {state?.error && state.fix && <FixLink label={state.fix.label} url={state.fix.url} />}
         </div>
 
         {state && (
@@ -110,4 +112,11 @@ export function ProtectionPanel({ projectId, appId, initial, canEdit }: { projec
       </PanelBody>
     </Panel>
   );
+}
+
+const FIX_CLASS = "inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-3 text-[13px] text-foreground transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground";
+
+function FixLink({ label, url }: { label: string; url: string }) {
+  if (url.startsWith("/")) return <Link href={url} className={FIX_CLASS}><Settings2 className="size-3.5" strokeWidth={1.75} aria-hidden />{label}</Link>;
+  return <a href={url} target="_blank" rel="noreferrer" className={FIX_CLASS}><ExternalLink className="size-3.5" strokeWidth={1.75} aria-hidden />{label}</a>;
 }
