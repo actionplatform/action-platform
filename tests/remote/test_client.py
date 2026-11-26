@@ -571,3 +571,19 @@ class LoginWithTokenTest(LoginCase):
             client.login_with_token("https://p.example", "session-token")
 
         self.assertIsNone(credentials.load())
+
+
+class NaiveTimestampTest(TempCase):
+    def test_naive_reads_as_utc(self):
+        row = schemas.ScopeRow.model_validate(
+            {
+                "id": "s1",
+                "name": "dev",
+                "kind": "dev",
+                "criticality": "low",
+                "created_at": "2026-11-25T15:19:06.451527",
+            }
+        )
+
+        self.assertIsNotNone(row.created_at.tzinfo)
+        self.assertTrue(row.model_dump(mode="json")["created_at"].endswith("Z"))
