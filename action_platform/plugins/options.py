@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import json
-import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
+
+from action_platform.core.home import home
 
 
 @dataclass(frozen=True)
@@ -52,10 +53,7 @@ class Options(ABC):
 
 
 def options_dir() -> Path:
-    base = os.environ.get("AP_HOME") or os.environ.get("XDG_CONFIG_HOME")
-    root = Path(base) / "action-platform" if base else Path.home() / ".action-platform"
-
-    return root / "plugins"
+    return home() / "plugins"
 
 
 class FileOptions(Options):

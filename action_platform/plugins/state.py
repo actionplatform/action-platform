@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from action_platform.core.home import home
 
 OFFICIAL_INDEX = (
     "https://raw.githubusercontent.com/actionplatform/plugins-index/main/plugins"
@@ -16,10 +16,7 @@ OFFICIAL_INDEX = (
 
 def path() -> Path:
     """`plugins.json` under the user's config directory."""
-    base = os.environ.get("AP_HOME") or os.environ.get("XDG_CONFIG_HOME")
-    root = Path(base) / "action-platform" if base else Path.home() / ".action-platform"
-
-    return root / "plugins.json"
+    return home() / "plugins.json"
 
 
 @dataclass

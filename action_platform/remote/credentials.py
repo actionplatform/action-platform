@@ -8,12 +8,11 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Optional
 
+from action_platform.core.home import home
+
 
 def path() -> Path:
-    base = os.environ.get("AP_HOME") or os.environ.get("XDG_CONFIG_HOME")
-    root = Path(base) / "action-platform" if base else Path.home() / ".action-platform"
-
-    return root / "credentials.json"
+    return home() / "credentials.json"
 
 
 @dataclass
