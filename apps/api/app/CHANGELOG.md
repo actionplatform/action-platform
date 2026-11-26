@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.46.0 — 2026-11-25
+
+### Features
+- **api:** keep the GitHub App's id and private key from the manifest
+
+### Bug Fixes
+- **api:** keep the GitHub App private key out of reprs
+- **api:** allow creating the GitHub App again when no key is held
+- **api:** branch protection acts through the organization's GitHub App
+
 ## v0.45.0 — 2026-11-25
 
 ### Features
