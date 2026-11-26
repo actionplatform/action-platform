@@ -24,7 +24,7 @@ function renderApp(pathname: string) {
 describe("Sidebar inside an app", () => {
   afterEach(cleanup);
 
-  it("lists Overview, Releases, Scopes, Deployments, CI, Activity and Settings", () => {
+  it("lists Overview, Releases, Scopes, Deployments, Activity and Settings", () => {
     const menu = renderApp("/projects/p1/apps/a1");
     const links = menu.getAllByRole("link").slice(1).map((a) => [a.textContent, a.getAttribute("href")]);
     expect(links).toEqual([
@@ -32,15 +32,14 @@ describe("Sidebar inside an app", () => {
       ["Releases", "/projects/p1/apps/a1/releases"],
       ["Scopes", "/projects/p1/apps/a1/scopes"],
       ["Deployments", "/projects/p1/apps/a1/deployments"],
-      ["CI", "/projects/p1/apps/a1/ci"],
       ["Activity", "/projects/p1/apps/a1/activity"],
       ["Settings", "/projects/p1/apps/a1/settings"],
     ]);
     expect(menu.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
   });
 
-  it("keeps Scopes and CI tabs of their own", () => {
-    for (const [path, name] of [["/projects/p1/apps/a1/scopes/new", "Scopes"], ["/projects/p1/apps/a1/ci", "CI"]]) {
+  it("keeps Scopes a tab of its own", () => {
+    for (const [path, name] of [["/projects/p1/apps/a1/scopes/new", "Scopes"]]) {
       cleanup();
       const menu = renderApp(path);
       expect(menu.getByRole("link", { name })).toHaveAttribute("aria-current", "page");
@@ -50,6 +49,6 @@ describe("Sidebar inside an app", () => {
   it("has no sub-navigation under Settings", () => {
     const menu = renderApp("/projects/p1/apps/a1/settings");
     expect(menu.getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
-    expect(menu.getAllByRole("link")).toHaveLength(8);
+    expect(menu.getAllByRole("link")).toHaveLength(7);
   });
 });

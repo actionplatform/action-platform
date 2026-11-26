@@ -97,7 +97,7 @@ Each app runs on its own: one that fails — archived, no permission to push, a 
 
 ## The app page
 
-The header carries the name, the branch, **Last synced** and **Sync** (or **Push to remote** while there is none). Tabs: Overview, Releases, Scopes, Deployments, CI, Activity, Settings — the path of a change, from its branch to where it runs. CI runs are also a filter of Activity.
+The header carries the name, the branch, **Last synced** and **Sync** (or **Push to remote** while there is none). Tabs: Overview, Releases, Scopes, Deployments, Activity, Settings — the path of a change, from its branch to where it runs. CI runs are a filter of Activity; the old CI address redirects there.
 
 ### Overview
 
@@ -137,10 +137,6 @@ One page with two tabs at the top, `?tab=general` and `?tab=ci`, no sub-menu in 
 ### Scopes
 
 A deploy always lands on a **scope**: a named destination of the app with a kind (`web`, `job`, `worker`, `static`, `library`) and a criticality (`test`, `low`, `medium`, `high`, `critical`). No scope, no deploy — an app starts with none. The page lists the app's scopes — name, kind, criticality, what each accepts; **New scope** opens its own page: Name, Kind, Criticality (a switch with the definition of each level). A scope's menu edits or deletes it (refused while a deploy to it is running). Criticality decides which releases a scope takes: `test` and `low` take candidates, stable and hotfix releases; `medium` and above take stable and hotfix. Where the release goes — target, region, credentials — stays in Settings. The model: [scopes](concept_scopes.md).
-
-### CI
-
-The tab lists the runs imported from the app's CI — status, run, branch, commit, trigger, when, duration, linked to the server — ten per page, paged on the API; **Sync** imports the latest. **Connect CI** (later **Change CI**) opens the **CI** tab of the app's Settings.
 
 ### Deleting
 

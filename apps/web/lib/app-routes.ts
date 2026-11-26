@@ -10,6 +10,7 @@ const APP = "/projects/:project/apps/:app";
 
 export const APP_REDIRECTS: { source: string; destination: string; permanent: boolean }[] = [
   { source: `${APP}/settings/ci`, destination: `${APP}/settings?tab=ci`, permanent: true },
+  { source: `${APP}/ci`, destination: `${APP}/activity?kind=ci_run`, permanent: true },
   { source: `${APP}/ci/connect`, destination: `${APP}/settings?tab=ci`, permanent: true },
   { source: `${APP}/settings/configuration`, destination: `${APP}/settings?tab=general`, permanent: true },
   { source: `${APP}/settings/scopes`, destination: `${APP}/scopes`, permanent: true },
