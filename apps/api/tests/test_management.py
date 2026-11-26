@@ -486,11 +486,25 @@ class HostsAndSettingsTest(GateCase):
             headers=self.h(),
         )
         self.assertEqual(bad.status_code, 400)
+        manifest_request = {
+            "origin": "https://ap.example.com",
+            "host": "ap.example.com",
+        }
         self.assertEqual(
             self.client.post(
-                "/api/v1/oauth/github/manifest",
-                json={"origin": "https://ap.example.com", "host": "ap.example.com"},
-                headers=self.h(),
+                "/api/v1/oauth/github/manifest", json=manifest_request, headers=self.h()
+            ).status_code,
+            200,
+        )
+        from app.services.integrations.hosts.directory import IntegrationsDirectory
+
+        with self.app.state.db.session() as s:
+            IntegrationsDirectory(s, self.app.state.sealer).save_oauth_app(
+                "github", "gh-cid", "gh-sec", None, "ap", app_id="1", private_key="pem"
+            )
+        self.assertEqual(
+            self.client.post(
+                "/api/v1/oauth/github/manifest", json=manifest_request, headers=self.h()
             ).status_code,
             409,
         )
