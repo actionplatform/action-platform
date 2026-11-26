@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -31,7 +30,12 @@ from app.core.errors import Invalid
 from app.repositories.protection import ProtectionStore
 from app.schemas.common import SourceCredentials
 from app.services.integrations.hosts.directory import IntegrationsDirectory
-from app.services.integrations.hosts.github_app_key import GithubAppKey
+from app.services.integrations.hosts.github_app import (
+    SETTINGS,
+    Fix,
+    GithubApp,
+    Installation,
+)
 from app.services.workspace.app_context import AppContext
 from app.services.workspace.checkout import Workspaces
 from app.services.workspace.git_auth import git_auth
@@ -39,11 +43,8 @@ from app.services.workspace.state import GitStateService
 
 GIT_ERRORS = (ActionPlatformError, subprocess.CalledProcessError, OSError)
 CI_FILES = (".github/workflows", ".gitlab-ci.yml", "bitbucket-pipelines.yml")
-NO_GITHUB_KEY = (
-    "the platform cannot push as its GitHub App: set AP_GITHUB_APP_ID and "
-    "AP_GITHUB_APP_PRIVATE_KEY (the app's private key) so release commits still "
-    "land on a protected branch; nothing was applied"
-)
+NEEDS = {"administration": "write", "contents": "write"}
+PERMISSION_LABEL = {"administration": "Administration", "contents": "Contents"}
 
 Build = Callable[..., BranchProtection]
 
@@ -54,21 +55,14 @@ class ProtectionService:
         db: DbSession,
         sealer: Optional[Sealer],
         context: AppContext,
-        github_app: Optional[GithubAppKey] = None,
         build: Optional[Build] = None,
     ) -> None:
         self.db = db
         self.store = ProtectionStore(db)
         self.directory = IntegrationsDirectory(db, sealer)
         self.context = context
-        self.github_app = github_app
         self.build = build or build_branch_protection
-
-    @classmethod
-    def from_env(
-        cls, db: DbSession, sealer: Optional[Sealer], context: AppContext
-    ) -> "ProtectionService":
-        return cls(db, sealer, context, GithubAppKey.from_env(os.environ))
+        self.fix: Optional[Fix] = None
 
     def spec(self, app: App) -> ProtectionSpec:
         try:
@@ -143,7 +137,9 @@ class ProtectionService:
         """What the host enforces now; stored for the pages."""
         provider, policy, reason = self.target(organization_id, app)
         state = self._read(provider, policy, reason, app)
-        self.store.save(app.id, state.as_dict(), self.enforced(organization_id, app))
+        self.store.save(
+            app.id, self._stored(state), self.enforced(organization_id, app)
+        )
 
         return state
 
@@ -160,7 +156,10 @@ class ProtectionService:
             state = provider.apply(policy)
 
         self.store.save(
-            app.id, state.as_dict(), self.enforced(organization_id, app), applied=True
+            app.id,
+            self._stored(state),
+            self.enforced(organization_id, app),
+            applied=True,
         )
         self._record_apply(app, state, actor)
 
@@ -209,6 +208,14 @@ class ProtectionService:
             actor,
         )
 
+    def _stored(self, state: ProtectionState) -> dict[str, Any]:
+        data = state.as_dict()
+
+        if self.fix is not None and state.error is not None:
+            data["fix"] = self.fix.as_dict()
+
+        return data
+
     def _kind(self, organization_id: str, app: App) -> str:
         creds = self.credentials(organization_id, app)
 
@@ -245,9 +252,12 @@ class ProtectionService:
         self, organization_id: str, app: App
     ) -> tuple[Optional[BranchProtection], Optional[Policy], Optional[str]]:
         """The host's provider, the policy for this repository, and why nothing may be applied (None when it may)."""
+        self.fix = None
         creds = self.credentials(organization_id, app)
 
         if creds is None or not creds.token:
+            self.fix = Fix("Connect a code host", SETTINGS)
+
             return None, None, "no code host is connected for this app"
 
         if creds.kind not in PROTECTION_KINDS:
@@ -265,13 +275,18 @@ class ProtectionService:
         with git_auth(creds):
             branches, declared = self._repository(app, spec, creds.kind)
 
-        identity, reason = (
-            self._github_identity(repo) if creds.kind == "github" else (None, None)
-        )
+        token, identity, reason = creds.token, None, None
+
+        if creds.kind == "github":
+            acting, reason = self.github_access(repo)
+
+            if acting is not None:
+                token, identity = acting
+
         provider = self.build(
             creds.kind,
             repo,
-            creds.token,
+            token,
             base_url=creds.base_url,
             username=creds.username,
             app=identity,
@@ -285,23 +300,61 @@ class ProtectionService:
 
         return provider, policy, reason
 
-    def _github_identity(self, repo: str) -> tuple[Optional[Identity], Optional[str]]:
-        if self.github_app is None:
-            return None, NO_GITHUB_KEY
+    def github_app(self) -> Optional[GithubApp]:
+        key = self.directory.app_key("github")
+
+        return GithubApp.of(key) if key else None
+
+    def github_access(
+        self, repo: str
+    ) -> tuple[Optional[tuple[str, Identity]], Optional[str]]:
+        """The installation token and identity of the organization's GitHub App on `repo`, or why the platform cannot act as it there."""
+        github = self.github_app()
+
+        if github is None:
+            if self.directory.oauth_app("github") is None:
+                self.fix = Fix("Create the GitHub App", SETTINGS)
+
+                return None, (
+                    "the organization has no GitHub App connection; create it under "
+                    "Settings → Git, install it on the repository's owner, then apply"
+                )
+
+            self.fix = Fix("Create the GitHub App again", SETTINGS)
+
+            return None, (
+                "the platform does not hold the private key of the organization's "
+                "GitHub App (it was set up before the platform kept it), so it "
+                "cannot act as the app; create the GitHub App again under "
+                "Settings → Git and install it on the repository's owner"
+            )
 
         try:
-            self.github_app.installation(repo)
+            installation = github.installation(repo)
         except ActionPlatformError as e:
-            return None, f"the platform's GitHub App is not installed on {repo}: {e}"
+            return None, f"the GitHub App {github.name} cannot be reached: {e}"
 
-        return (
-            Identity(
-                "github_app",
-                self.github_app.app_id,
-                self.github_app.slug or self.github_app.app_id,
-            ),
-            None,
-        )
+        if installation is None:
+            self.fix = Fix(f"Install {github.name}", github.install_url)
+
+            return None, (
+                f"the GitHub App {github.name} is not installed on {repo}; install it "
+                f"on {repo.partition('/')[0]} with access to this repository"
+            )
+
+        missing = installation.missing(NEEDS)
+
+        if missing:
+            self.fix = Fix("Review the app's permissions", installation.review_url)
+
+            return None, _missing_reason(github, installation, missing)
+
+        try:
+            token = github.token(repo, installation)
+        except ActionPlatformError as e:
+            return None, f"GitHub issued no installation token for {repo}: {e}"
+
+        return (token, Identity("github_app", github.app_id, github.name)), None
 
     def _repository(
         self, app: App, spec: ProtectionSpec, kind: str
@@ -369,3 +422,20 @@ def ci_checks(root: Path, branch: str, kind: str) -> tuple[str, ...]:
                 continue
 
         return declared_checks(base, kind)
+
+
+def _missing_reason(
+    github: GithubApp, installation: Installation, missing: list[tuple[str, str, str]]
+) -> str:
+    held = ", ".join(
+        f'"{PERMISSION_LABEL.get(name, name)}" is {have} (needs {need})'
+        for name, need, have in missing
+    )
+
+    return (
+        f"the GitHub App {github.name} on {installation.account} lacks a permission: "
+        f"{held}. Rulesets need Administration: write and the release push needs "
+        "Contents: write. Open the installation on GitHub and accept the new "
+        "permissions; if the app itself does not request them, add them under the "
+        "app's Permissions & events first"
+    )

@@ -182,7 +182,7 @@ def get_protection(
     db: DbSession = Depends(get_db),
     context: AppContext = Depends(get_app_context),
 ) -> ProtectionService:
-    return ProtectionService.from_env(db, request.app.state.sealer, context)
+    return ProtectionService(db, request.app.state.sealer, context)
 
 
 def get_deployment_records(

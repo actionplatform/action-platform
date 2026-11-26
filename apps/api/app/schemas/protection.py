@@ -13,6 +13,11 @@ class ProtectionRule(BaseModel):
     detail: str = ""
 
 
+class ProtectionFix(BaseModel):
+    label: str
+    url: str
+
+
 class ProtectionState(BaseModel):
     host: str
     active: bool
@@ -23,6 +28,7 @@ class ProtectionState(BaseModel):
     error: Optional[str] = None
     changed_by: Optional[str] = None
     bypass: Optional[str] = None
+    fix: Optional[ProtectionFix] = None
 
 
 class Protection(BaseModel):
