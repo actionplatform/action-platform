@@ -3,24 +3,21 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-import inspect
-from typing import Any, Callable, Iterable, Iterator, Optional, TypeVar
+from typing import Callable, Iterable, Iterator, Optional, TypeVar
 
-from action_platform.abc.ci_runner import CIRunner
+from action_platform.abc.ci_runner import CIRunner, LogChunk
 from action_platform.core.context import Run
 from action_platform.core.exception import ActionPlatformError
 from app.core.db.models import App
 from app.core.errors import Invalid, NotFound, Upstream
 from app.schemas import ci as schemas
-from app.services.ci.redact import redact
+from action_platform.core.redact import redact
 from app.services.ci.service import CiService
 from app.services.workspace.app_context import AppContext
 
 MAX_LOG_BYTES = 256 * 1024
 DOWNLOAD_WINDOW = 1024 * 1024
 MAX_PENDING_LINE = 64 * 1024
-MAX_DOWNLOAD_READS = 100_000
-WINDOW_PARAMETERS = ("limit", "max_bytes", "window")
 RUNS_PER_JOB = 25
 MAX_RUNS = 100
 MAX_FAILURES = 200
@@ -60,16 +57,6 @@ def upstream(read: Callable[[], T]) -> T:
         raise Upstream(str(e)) from e
 
 
-def window_parameter(runner: CIRunner) -> Optional[str]:
-    """The name under which the runner's `log` takes the most it may read at once, when it takes one."""
-    try:
-        parameters = inspect.signature(runner.log).parameters
-    except (TypeError, ValueError):
-        return None
-
-    return next((p for p in WINDOW_PARAMETERS if p in parameters), None)
-
-
 def read_log(
     runner: CIRunner,
     job: str,
@@ -77,12 +64,8 @@ def read_log(
     start: int,
     node: Optional[str],
     limit: int,
-):
-    """One chunk of the log, bounded by the runner itself when it can be told how much to read."""
-    name = window_parameter(runner)
-    extra: dict[str, Any] = {name: limit} if name else {}
-
-    return runner.log(job, number, start, node, **extra)
+) -> LogChunk:
+    return runner.log(job, number, start, node, limit)
 
 
 def masked_lines(chunks: Iterable[str]) -> Iterator[bytes]:
@@ -404,42 +387,25 @@ class Pipelines:
     def log_download(
         self, organization_id: str, app: App, job: str, number: int
     ) -> Iterator[bytes]:
-        """The whole console as it stands, read window by window from the CI and handed on as each arrives — never held whole."""
+        """The whole console as it stands, read window by window through the runner's `log_stream` and handed on as each arrives — never held whole."""
         self.job_of(organization_id, app, job)
         runner = self.runner(organization_id, app)
 
-        if supports(runner, "log_stream"):
-            stream = upstream(lambda: iter(runner.log_stream(job, number)))
-            first = upstream(lambda: next(stream, ""))
-
-            def streamed() -> Iterator[str]:
-                if first:
-                    yield text_of(first)
-
-                for piece in stream:
-                    yield text_of(piece)
-
-            return masked_lines(streamed())
-
-        first = upstream(
-            lambda: read_log(runner, job, number, 0, None, DOWNLOAD_WINDOW)
+        stream = upstream(
+            lambda: iter(runner.log_stream(job, number, 0, None, DOWNLOAD_WINDOW))
         )
+        first = upstream(lambda: next(stream, None))
 
-        def windows() -> Iterator[str]:
-            chunk, start = first, 0
+        def texts() -> Iterator[str]:
+            if first is None:
+                return
 
-            for _ in range(MAX_DOWNLOAD_READS):
-                if not chunk.text or chunk.next_start <= start:
-                    if chunk.text:
-                        yield chunk.text
+            yield text_of(first.text)
 
-                    return
+            for chunk in stream:
+                yield text_of(chunk.text)
 
-                yield chunk.text
-                start = chunk.next_start
-                chunk = read_log(runner, job, number, start, None, DOWNLOAD_WINDOW)
-
-        return masked_lines(windows())
+        return masked_lines(texts())
 
     def tests(
         self, organization_id: str, app: App, job: str, number: int

@@ -10,6 +10,7 @@ from unittest import mock
 from action_platform.abc.ci_runner import (
     Artifact,
     CIRunner,
+    LOG_WINDOW,
     Executor,
     LogChunk,
     PendingInput,
@@ -21,7 +22,7 @@ from action_platform.abc.ci_runner import (
 from action_platform.core.context import Cause, Change, Run
 from action_platform.core.exception import ProviderError
 from app.services.ci.pipelines import MAX_LOG_BYTES, capped
-from app.services.ci.redact import redact
+from action_platform.core.redact import redact
 from tests.test_access import GateCase
 
 try:
@@ -94,7 +95,12 @@ class FakeRunner(CIRunner):
         return [PendingInput(id="Approve", message="Ship to prod?")]
 
     def log(
-        self, job: str, number: int, start: int = 0, node: str | None = None
+        self,
+        job: str,
+        number: int,
+        start: int = 0,
+        node: str | None = None,
+        limit: int | None = None,
     ) -> LogChunk:
         self.calls.append(("log", job, number, start, node))
 
@@ -508,9 +514,9 @@ class Windowed(FakeRunner):
         number: int,
         start: int = 0,
         node: str | None = None,
-        limit: int = 1024,
+        limit: int | None = None,
     ) -> LogChunk:
-        piece = self.data[start : start + limit]
+        piece = self.data[start : start + (limit or LOG_WINDOW)]
         self.reads.append((start, len(piece)))
 
         return LogChunk(
@@ -525,12 +531,23 @@ class Streamed(FakeRunner):
         super().__init__()
         self.pieces = 0
 
-    def log_stream(self, job: str, number: int) -> Iterator[bytes]:
+    def log_stream(
+        self,
+        job: str,
+        number: int,
+        start: int = 0,
+        node: str | None = None,
+        limit: int | None = None,
+    ) -> Iterator[LogChunk]:
         data = BIG.encode()
 
-        for at in range(0, len(data), 100_000):
+        for at in range(start, len(data), 100_000):
             self.pieces += 1
-            yield data[at : at + 100_000]
+            yield LogChunk(
+                text=data[at : at + 100_000].decode(),
+                next_start=at + 100_000,
+                more=at + 100_000 < len(data),
+            )
 
 
 @unittest.skipUnless(TestClient, "fastapi is not installed")
