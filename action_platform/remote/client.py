@@ -296,10 +296,16 @@ class Remote:
         level: str = "patch",
         dry_run: bool = True,
         branch: Optional[str] = None,
+        component: Optional[str] = None,
         wait: float = JOB_WAIT_SECONDS,
     ) -> Union[ReleasePreview, JobQueued]:
         """A dry run answers inline; a release runs as a job on the platform's worker, followed until it ends or `wait` seconds pass."""
-        body = {"level": level, "dry_run": dry_run, "branch": branch}
+        body = {
+            "level": level,
+            "dry_run": dry_run,
+            "branch": branch,
+            "component": component,
+        }
 
         if dry_run:
             return _as(ReleasePreview, self._call("POST", f"apps/{id}/release", body))
