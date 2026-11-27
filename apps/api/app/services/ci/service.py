@@ -104,19 +104,23 @@ class CiService:
 
         return embedded_ci_kind(host.kind if host else None)
 
+    def host_runner(self, organization_id: str, ci_host_id: str) -> CIRunner:
+        """The runner of one CI server of the organization, with the platform's own credential for it."""
+        creds = self.directory.ci_credentials_for(organization_id, ci_host_id)
+
+        if creds is None:
+            raise ProviderError("the app's CI host is gone; connect it again")
+
+        return build_ci_runner(
+            creds.kind,
+            base_url=creds.base_url,
+            token=creds.token,
+            username=creds.username,
+        )
+
     def runner_for(self, organization_id: str, app: App, repo: str) -> CIRunner:
         if app.ci_host_id:
-            creds = self.directory.ci_credentials_for(organization_id, app.ci_host_id)
-
-            if creds is None:
-                raise ProviderError("the app's CI host is gone; connect it again")
-
-            return build_ci_runner(
-                creds.kind,
-                base_url=creds.base_url,
-                token=creds.token,
-                username=creds.username,
-            )
+            return self.host_runner(organization_id, app.ci_host_id)
 
         creds = self.directory.credentials_for(organization_id, app.source_host_id)
         kind = embedded_ci_kind(creds.kind if creds else None)
