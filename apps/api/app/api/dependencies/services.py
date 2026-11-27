@@ -28,7 +28,7 @@ from app.services.projects.view import ProjectView
 from app.services.configuration.commit import CommitService
 from app.services.configuration.service import ConfigurationService
 from app.services.activity.flow import FlowService
-from app.services.ci import CiService
+from app.services.ci import CiActivity, CiService, Pipelines
 from app.services.protection import ProtectionService
 from app.services.deployments import (
     AppCiRunners,
@@ -175,6 +175,20 @@ def get_ci(
     context: AppContext = Depends(get_app_context),
 ) -> CiService:
     return CiService(db, request.app.state.sealer, context)
+
+
+def get_pipelines(
+    ci: CiService = Depends(get_ci),
+    context: AppContext = Depends(get_app_context),
+) -> Pipelines:
+    return Pipelines(ci, context)
+
+
+def get_ci_activity(
+    pipelines: Pipelines = Depends(get_pipelines),
+    projects: ProjectsRepository = Depends(get_projects_repository),
+) -> CiActivity:
+    return CiActivity(pipelines, projects)
 
 
 def get_protection(

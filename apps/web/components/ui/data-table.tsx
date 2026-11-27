@@ -3,7 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode, useEffect, useState } from "react";
+import { type MouseEvent, type ReactNode, useEffect, useState } from "react";
 import { Button } from "./button";
 import { Hint } from "./hint";
 import { Select } from "./select";
@@ -34,8 +34,11 @@ type Props<T> = {
   empty: { icon: LucideIcon; title: string; text?: ReactNode };
   pageKey?: string;
   rowClassName?: (row: T) => string | undefined;
+  rowHref?: (row: T) => string;
   description?: ReactNode;
 };
+
+const INTERACTIVE = "a, button, input, select, textarea, [role='menu'], [role='menuitem']";
 
 export function NewLink({ href, label }: { href: string; label: string }) {
   return <Link href={href} className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md border border-border px-3 text-sm font-medium hover:border-border-hover hover:bg-surface-hover"><Plus className="size-3.5" strokeWidth={2} /> {label}</Link>;
@@ -104,8 +107,13 @@ function usePageNav(key = "") {
   };
 }
 
-export function DataTable<T>({ title, rows, paging: paged, rowKey, columns, noun, meta, action, newHref, newLabel = "New", empty, pageKey, rowClassName, description }: Props<T>) {
+export function DataTable<T>({ title, rows, paging: paged, rowKey, columns, noun, meta, action, newHref, newLabel = "New", empty, pageKey, rowClassName, rowHref, description }: Props<T>) {
   const nav = usePageNav(pageKey);
+  const router = useRouter();
+  const open = (row: T) => (e: MouseEvent) => {
+    if (!rowHref || (e.target as HTMLElement).closest(INTERACTIVE)) return;
+    router.push(rowHref(row));
+  };
   const paging = paged ?? { total: rows.length, page: 1, per: rows.length };
   const pages = Math.max(1, Math.ceil(paging.total / Math.max(1, paging.per)));
   const offset = (paging.page - 1) * paging.per;
@@ -145,7 +153,7 @@ export function DataTable<T>({ title, rows, paging: paged, rowKey, columns, noun
           const trailing = rest.filter((c) => c.actions);
           const fields = rest.filter((c) => !c.actions);
           return (
-            <li key={rowKey(row)} className={cn("px-4 py-3", rowClassName?.(row))}>
+            <li key={rowKey(row)} onClick={open(row)} className={cn("px-4 py-3", rowHref && "cursor-pointer hover:bg-surface-hover", rowClassName?.(row))}>
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1 text-sm">{head.render(row, offset + i)}</div>
                 {trailing.length > 0 && <div className="flex shrink-0 items-center gap-1">{trailing.map((c) => <span key={c.key}>{c.render(row, offset + i)}</span>)}</div>}
@@ -184,7 +192,7 @@ export function DataTable<T>({ title, rows, paging: paged, rowKey, columns, noun
               </tr>
             )}
             {rows.map((row, i) => (
-              <tr key={rowKey(row)} className={cn(TABLE_CLASS.row, rowClassName?.(row))} style={{ height: TABLE.row }}>
+              <tr key={rowKey(row)} onClick={open(row)} className={cn(TABLE_CLASS.row, rowHref && "cursor-pointer", rowClassName?.(row))} style={{ height: TABLE.row }}>
                 {columns.map((c) => <td key={c.key} className={cn(TABLE_CLASS.cell, columnClass(c))}>{c.render(row, offset + i)}</td>)}
               </tr>
             ))}

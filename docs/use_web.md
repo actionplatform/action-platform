@@ -119,9 +119,22 @@ Refused when the tag exists, the branch is not on the remote, the tree is dirty 
 
 ### Deployments
 
-The tab lists the platform's deploys and tear-downs — status, stage, type, version, duration, who, when — ten per page, paged on the API; a row's menu opens the run — target, version, attempts, started, finished, who; the endpoint with copy and open; the **run log**, following the worker line by line while it runs; the deployment output as JSON — and **Redeploy** in its footer. What arrived at every target of the app, whoever shipped it, is in `GET /api/v1/projects/{p}/apps/{a}/deployments`, `action-platform deployments` and the `list_deployments` tool.
+The tab lists the platform's deploys and tear-downs — status, stage, type, version, duration, who, when — ten per page, paged on the API. A row (or *View details* in its menu) opens the deployment's own page, `…/deployments/<id>`: status, stage, type, version linked to its release, who, started, finished, duration, attempts; the failure with its log; the endpoint with copy and open; each target's result and error; the **CI run** the deploy dispatched, found by the link in the result or by the version it shipped for that stage within the deploy's time — the same view as a [pipeline](#pipelines) run: stage graph, per-stage log, live console; the **platform log**, following the worker line by line while it runs; the deployment output as JSON — and **Redeploy** for who may deploy (`app.release`). *Deployments* above the page goes back to the list. What arrived at every target of the app, whoever shipped it, is in `GET /api/v1/projects/{p}/apps/{a}/deployments`, `action-platform deployments` and the `list_deployments` tool.
 
 **New deployment** opens its own page: Release (with its shape — candidate, stable, hotfix) and Scope (with its criticality and what it accepts), a strip with target · release · scope · version, and the **readiness** of that release for that scope — *ready*, *blocked* with the failing checks and their fixes, or *not checked yet* — then **Run preflight** (checks only) → **Deploy to <env>**. A blocked release does not deploy until *Deploy anyway* is ticked; the API refuses it the same way (`409`) without `force`. The job runs on the worker and the row lands in the list at once; the form shows the **deploy log** as the worker writes it — `sam build`, `sam deploy`, the core's steps, or for a dispatched Jenkins target the queue item, the build number, each pipeline stage and the result — and keeps it after the run ends. One deploy at a time per environment: the button waits while one is live. A failure shows a compact alert with *View logs* and *Copy error*. Every deployment ships a release — a tag, never a branch. The model: [deployments](concept_deployments.md).
+
+### Pipelines
+
+Every pipeline of the app, read live from its CI with the platform's own credential — no member needs an account on the CI server. The jobs are the app's CI job (Settings → CI) and each job or workflow a deploy target runs on the same CI (`job` or `workflow` on a `[[deploy.targets]]` entry); their latest runs are listed together, newest first — status, run, job (CI or CD), ref, trigger, started, duration — filtered by **Job** and **Status** in the URL (`?job=&status=`). A row opens the run page:
+
+- the header: status, ref, commit, start, duration, who or what started it, the queue's reason while it waits, and the input it waits on, if any (shown only: the platform does not answer it);
+- **Stages**, parallel branches stacked under the stage they run in; selecting one scopes the log to it;
+- **Log**: the console with its colours, followed live while the run goes (read by offset every two seconds), with search (*Only matching*), *Timestamps* when the CI writes them, *Follow* and **Download** of the whole console. One read answers at most 256 KB, the newest end kept; the download streams the rest;
+- **Tests**: totals and the failures, each with its message and stack trace;
+- **Artifacts**: the files the run archived, downloaded through the platform;
+- **Parameters and changes**: the run's parameters and the commits it built, linked to the repository.
+
+A part the CI cannot answer is not shown. Logs, tests and artifacts are passed through, never stored; known secret shapes (tokens, keys, `Authorization` headers) are masked on the way, on top of what the CI masks.
 
 ### Activity
 
@@ -169,7 +182,7 @@ Repositories already on the platform cannot be picked twice. On GitHub, teams an
 
 ## Organization
 
-Three pages — on a phone, three tabs.
+Four pages — on a phone, four tabs.
 
 ### Teams
 
@@ -184,6 +197,10 @@ People, roles and invitations. **Add member** creates the account or attaches an
 Everything signed in as you (also the key icon next to your name): API tokens across organizations — scope, reach, the programs using them, last used, expiry — and browser sessions, each revocable at once. **New token** creates a bearer token for a machine with no browser to approve a login: a name, the scopes your role allows and the reach (one organization or all, optionally one project or app); it is shown once, valid 90 days (30 with Admin), and goes to `action-platform login <url> --token` or `AP_TOKEN`.
 
 The **Password** card changes your own password: the current one and a new one of at least 8 characters, typed twice. A wrong current password changes nothing. This browser stays signed in; every other browser session ends and every API token of yours is revoked, so the CLI and the MCP servers signed in as you have to log in again. An account that has only ever used Google has no current password to give: use *Forgot your password?* or ask an operator ([operations](start_operations.md#users-and-tokens)).
+
+### CI activity
+
+What the organization's CI servers are doing now, one panel per server: the **Queue** (since when each run waits, and why) and the **Executors** (busy or idle, and the run each one executes). A run of one of your apps links to its pipeline; any other job on the same server shows as *Another job on this server*, without its name.
 
 ## Plugins
 

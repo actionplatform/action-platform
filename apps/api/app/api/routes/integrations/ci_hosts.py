@@ -4,7 +4,13 @@ from fastapi import APIRouter
 
 from action_platform.core.exception import ActionPlatformError
 from action_platform.providers.ci import build_ci_runner
-from app.api.dependencies import CallerDep, IntegrationsDep, OrgDep, allowed
+from app.api.dependencies import (
+    CallerDep,
+    CiActivityDep,
+    IntegrationsDep,
+    OrgDep,
+    allowed,
+)
 from app.schemas import ci as schemas
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
@@ -85,3 +91,14 @@ def test_ci_host(
         return {"ok": False, "error": str(e)}
 
     return {"ok": True, "error": None}
+
+
+@router.get("/ci-hosts/activity")
+def ci_activity(
+    org: OrgDep,
+    caller: CallerDep,
+    activity: CiActivityDep,
+) -> schemas.CiActivity:
+    return activity.of(
+        org.id, lambda app, project: caller.within_reach(app.id, project.id)
+    )

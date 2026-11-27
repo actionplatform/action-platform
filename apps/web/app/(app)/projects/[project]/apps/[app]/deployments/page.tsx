@@ -12,5 +12,5 @@ export default async function DeploymentsPage({ params, searchParams }: { params
   const base = `/projects/${view.projectId}/apps/${view.appId}`;
   const jobs = await v1.jobsPage(view.registryId, "deploy,destroy", page, per).catch(() => ({ items: [], total: 0, page, per }));
   const canDeploy = !!view.can["app.release"] && !!view.repositoryUrl;
-  return <DeploymentsTable page={jobs} registryId={view.registryId} canDeploy={canDeploy} newHref={`${base}/deployments/new`} />;
+  return <DeploymentsTable page={jobs} registryId={view.registryId} canDeploy={canDeploy} base={base} newHref={`${base}/deployments/new`} />;
 }

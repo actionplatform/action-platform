@@ -24,7 +24,7 @@ function renderApp(pathname: string) {
 describe("Sidebar inside an app", () => {
   afterEach(cleanup);
 
-  it("lists Overview, Releases, Scopes, Deployments, Activity and Settings", () => {
+  it("lists Overview, Releases, Scopes, Deployments, Pipelines, Activity and Settings", () => {
     const menu = renderApp("/projects/p1/apps/a1");
     const links = menu.getAllByRole("link").slice(1).map((a) => [a.textContent, a.getAttribute("href")]);
     expect(links).toEqual([
@@ -32,6 +32,7 @@ describe("Sidebar inside an app", () => {
       ["Releases", "/projects/p1/apps/a1/releases"],
       ["Scopes", "/projects/p1/apps/a1/scopes"],
       ["Deployments", "/projects/p1/apps/a1/deployments"],
+      ["Pipelines", "/projects/p1/apps/a1/pipelines"],
       ["Activity", "/projects/p1/apps/a1/activity"],
       ["Settings", "/projects/p1/apps/a1/settings"],
     ]);
@@ -49,6 +50,6 @@ describe("Sidebar inside an app", () => {
   it("has no sub-navigation under Settings", () => {
     const menu = renderApp("/projects/p1/apps/a1/settings");
     expect(menu.getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
-    expect(menu.getAllByRole("link")).toHaveLength(7);
+    expect(menu.getAllByRole("link")).toHaveLength(8);
   });
 });

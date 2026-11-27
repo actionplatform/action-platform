@@ -1,4 +1,4 @@
-import { KeyRound, Users, UsersRound } from "lucide-react";
+import { Gauge, KeyRound, Users, UsersRound } from "lucide-react";
 
 import type { LucideIcon } from "lucide-react";
 
@@ -8,6 +8,7 @@ export const ORGANIZATION_PAGES: SubPage[] = [
   { href: "/organization/teams", label: "Teams", icon: UsersRound },
   { href: "/organization/members", label: "Members", icon: Users },
   { href: "/organization/sessions", label: "Sessions", icon: KeyRound },
+  { href: "/organization/ci", label: "CI activity", icon: Gauge },
 ];
 
 export function subNavPages(pages: SubPage[]): { href: string; label: string; exact?: boolean }[] {
