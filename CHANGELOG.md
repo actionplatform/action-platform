@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.38.0 — 2026-11-27
+
+### Breaking Changes
+- **ci:** move the Jenkins runner to apx-jenkins; extend the CIRunner contract; ci_* tools (#678)
+
+### Bug Fixes
+- **deploy:** rebuild the Dokploy template with the worker kinds (#671)
+- **deploy:** let the worker take import_organization jobs (#671)
+- **api:** ask GitHub for organization projects so the import can read them (#667)
+
+### Docs
+- **changelog:** drop references readers cannot open (#673)
+- **readme:** drop the Decisions link readers cannot open (#673)
+- fix the CI anchor and drop links to private ADRs (#669)
+
 ## v0.37.0 — 2026-11-26
 
 ### Features
