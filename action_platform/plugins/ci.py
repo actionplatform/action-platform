@@ -12,6 +12,7 @@ from typing import Any, Callable, Optional
 
 from action_platform.abc.ci_runner import CIRunner
 from action_platform.core.exception import ConfigError, ProviderError
+from action_platform.core.redact import redact
 from action_platform.plugins.options import FileOptions, Options
 from action_platform.providers.ci.factory import CI_RUNNERS, build_ci_runner, ci_kinds
 
@@ -90,12 +91,20 @@ def _ask(call: Callable[..., Any], *args: Any) -> Any:
         raise ProviderError(str(e)) from e
 
 
+def _masked(run: dict[str, Any]) -> dict[str, Any]:
+    run["params"] = {k: redact(str(v)) for k, v in run["params"].items()}
+    run["parameters"] = run["params"]
+
+    return run
+
+
 def runs(ci: CIRunner, job: str, limit: int = 20) -> list[dict[str, Any]]:
-    return plain(_ask(ci.runs, job, limit))
+    """The latest runs of `job`, parameters masked."""
+    return [_masked(r) for r in plain(_ask(ci.runs, job, limit))]
 
 
 def run(ci: CIRunner, job: str, number: int = 0) -> dict[str, Any]:
-    """Run `number` of `job`, the latest when 0."""
+    """Run `number` of `job`, the latest when 0, its parameters masked."""
     if number <= 0:
         latest = _ask(ci.runs, job, 1)
 
@@ -104,13 +113,22 @@ def run(ci: CIRunner, job: str, number: int = 0) -> dict[str, Any]:
 
         number = latest[0].number
 
-    return plain(_ask(ci.run, job, number))
+    return _masked(plain(_ask(ci.run, job, number)))
 
 
 def log(
-    ci: CIRunner, job: str, number: int, start: int = 0, node: Optional[str] = None
+    ci: CIRunner,
+    job: str,
+    number: int,
+    start: int = 0,
+    node: Optional[str] = None,
+    limit: Optional[int] = None,
 ) -> dict[str, Any]:
-    return plain(_ask(ci.log, job, number, start, node or None))
+    """One window of a run's log, secrets masked."""
+    found = plain(_ask(ci.log, job, number, start, node or None, limit))
+    found["text"] = redact(found["text"])
+
+    return found
 
 
 def queue(ci: CIRunner) -> list[dict[str, Any]]:

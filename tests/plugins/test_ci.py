@@ -36,12 +36,12 @@ class Server(CIRunner):
             status="success",
             branch="main",
             started_at=STARTED,
-            params={"REF": "v1.0.0"},
+            params={"REF": "v1.0.0", "GH": "ghp_" + "a" * 36},
             causes=[Cause("Started by user ana", "ana")],
             changes=[Change("abc1234", "ana", "feat: x")],
         )
 
-    def log(self, job, number, start=0, node=None):
+    def log(self, job, number, start=0, node=None, limit=None):
         return next(c for c in self.chunks if c.next_start > start)
 
     def queue(self):
@@ -107,7 +107,7 @@ class Answers(unittest.TestCase):
     def test_a_run_carries_parameters_causes_and_changes(self):
         run = ci.run(self.ci, "team/app", 7)
 
-        self.assertEqual(run["parameters"], {"REF": "v1.0.0"})
+        self.assertEqual(run["parameters"], {"REF": "v1.0.0", "GH": "****"})
         self.assertEqual(
             run["causes"], [{"description": "Started by user ana", "user": "ana"}]
         )
@@ -124,6 +124,11 @@ class Answers(unittest.TestCase):
             {"text": "two\n", "next_start": 8, "more": False},
         )
         self.assertEqual(ci.queue(self.ci)[0]["job"], "team/app")
+
+    def test_the_log_is_masked(self):
+        self.ci.chunks = [LogChunk("token ghp_" + "b" * 36 + "\n", 50, False)]
+
+        self.assertEqual(ci.log(self.ci, "team/app", 7)["text"], "token ****\n")
 
     def test_what_the_ci_cannot_answer_is_a_provider_error(self):
         with self.assertRaisesRegex(ProviderError, "cannot list executors"):
@@ -177,3 +182,43 @@ class Tools(McpCase):
         self.assertEqual(len(self.call("ci_runs", job="team/app")), 2)
         self.assertTrue(self.call("ci_log", job="team/app", number=7)["more"])
         self.assertEqual(self.call("ci_queue")[0]["job"], "team/app")
+
+
+class Windowed(CIRunner):
+    name = "windowed"
+
+    def __init__(self, console: bytes, building: bool = False):
+        self.console, self.building, self.reads = console, building, []
+
+    def log(self, job, number, start=0, node=None, limit=None):
+        window = self.console[start : start + (limit or 4)]
+        self.reads.append(len(window))
+        end = start + len(window)
+
+        return LogChunk(window.decode(), end, self.building or end < len(self.console))
+
+
+class Silent(CIRunner):
+    name = "silent"
+
+
+class Stream(unittest.TestCase):
+    def test_the_stream_reads_window_by_window(self):
+        runner = Windowed(b"x" * 10_000)
+
+        chunks = list(runner.log_stream("job", 1, limit=1000))
+
+        self.assertEqual(len(chunks), 10)
+        self.assertEqual(max(runner.reads), 1000)
+        self.assertEqual("".join(c.text for c in chunks), "x" * 10_000)
+
+    def test_a_running_build_ends_where_it_stands(self):
+        runner = Windowed(b"abcdef", building=True)
+
+        self.assertEqual(
+            "".join(c.text for c in runner.log_stream("job", 1, limit=4)), "abcdef"
+        )
+
+    def test_without_a_log_the_stream_is_not_implemented(self):
+        with self.assertRaises(NotImplementedError):
+            list(Silent().log_stream("job", 1))

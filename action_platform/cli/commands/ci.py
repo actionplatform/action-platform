@@ -53,13 +53,16 @@ def log(
     ),
     kind: str = Kind,
 ) -> None:
-    """A run's log, or one stage's; --follow tails it until the run ends."""
+    """A run's log, or one stage's, window by window with secrets masked; --follow tails it until the run ends."""
     runner = ci.runner(kind)
 
     while True:
         chunk = ci.log(runner, job, number, start, node)
         typer.echo(chunk["text"], nl=False)
         start = chunk["next_start"]
+
+        if chunk["more"] and chunk["text"]:
+            continue
 
         if not (follow and chunk["more"]):
             return

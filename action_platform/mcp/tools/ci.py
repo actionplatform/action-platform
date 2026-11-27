@@ -6,6 +6,7 @@ from typing import Annotated, Any
 
 from pydantic import Field
 
+from action_platform.abc.ci_runner import LOG_WINDOW
 from action_platform.mcp.annotations import READ_ONLY, tool
 from action_platform.plugins import ci
 
@@ -38,7 +39,7 @@ def register(mcp: Any) -> None:
         number: Annotated[int, Field(description="Run number; 0 for the latest")] = 0,
         kind: Kind = "",
     ) -> dict[str, Any]:
-        """One run: status, timing, its parameters, what started it and the commits it built."""
+        """One run: status, timing, its parameters (secrets masked), what started it and the commits it built."""
         return ci.run(ci.runner(kind), job, number)
 
     @tool(mcp, annotations=READ_ONLY)
@@ -55,10 +56,16 @@ def register(mcp: Any) -> None:
                 description="One stage or step, by the id its stages give; empty for the whole console"
             ),
         ] = "",
+        limit: Annotated[
+            int,
+            Field(
+                description="At most this many bytes per read", ge=1024, le=LOG_WINDOW
+            ),
+        ] = 64 * 1024,
         kind: Kind = "",
     ) -> dict[str, Any]:
-        """A run's log from an offset: `text`, `next_start` to resume from and `more` while the run still writes."""
-        return ci.log(ci.runner(kind), job, number, start, node)
+        """A window of a run's log from an offset, secrets masked: `text`, `next_start` to resume from and `more` while there is more to read or the run still writes."""
+        return ci.log(ci.runner(kind), job, number, start, node, limit)
 
     @tool(mcp, annotations=READ_ONLY)
     def ci_queue(kind: Kind = "") -> list[dict[str, Any]]:
