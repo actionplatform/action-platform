@@ -6,6 +6,7 @@ import typer
 
 from action_platform.cli.commands import access as access_cmd
 from action_platform.cli.commands import branch as branch_cmd
+from action_platform.cli.commands import ci as ci_cmd
 from action_platform.cli.commands import cloud as cloud_cmd
 from action_platform.cli.commands import deploy as deploy_cmd
 from action_platform.cli.commands import gitflow as gitflow_cmd
@@ -68,6 +69,7 @@ app.add_typer(cloud_cmd.app, name="cloud")
 app.add_typer(service_cmd.app, name="service")
 app.add_typer(plugin_cmd.app, name="plugin")
 app.add_typer(access_cmd.app, name="access")
+app.add_typer(ci_cmd.app, name="ci")
 app.add_typer(github_cmd.app, name="github")
 app.add_typer(protection_cmd.app, name="protection")
 registry.installed().register(None, app)
