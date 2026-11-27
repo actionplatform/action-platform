@@ -115,9 +115,7 @@ class CiTest(GateCase):
             {"kind": "jenkins", "ci_host_id": host_id, "job": "team/app/main"},
         )
 
-        with mock.patch(
-            "tests.support.ServerRunner.runs", return_value=RUNS
-        ) as runs:
+        with mock.patch("tests.support.ServerRunner.runs", return_value=RUNS) as runs:
             res = self.client.post(f"{base}/sync", headers=self.h())
 
         self.assertEqual(res.status_code, 200, res.text)
