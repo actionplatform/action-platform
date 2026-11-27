@@ -2,7 +2,7 @@
 
 [[package]]
 name = "action-platform"
-version = "0.34.0"
+version = "0.38.0"
 description = "Your platform team, as a CLI."
 optional = false
 python-versions = ">=3.10.0"
@@ -132,18 +132,18 @@ dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
 
 [[package]]
 name = "apx-jenkins"
-version = "0.1.0"
-description = "Jenkins for Action Platform: access management through Role-based Authorization Strategy, and read-only tools for jobs, builds and the queue."
+version = "0.2.0"
+description = "Jenkins for Action Platform: the CI runner deploys and Run CI go through, access management through Role-based Authorization Strategy, and read-only tools for jobs."
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "apx_jenkins-0.1.0-py3-none-any.whl", hash = "sha256:d7fd363548e7500a619216890c54d423f20fa79abd7e85653ba3ac2b59e5c036"},
-    {file = "apx_jenkins-0.1.0.tar.gz", hash = "sha256:027d0bac09fc4b05ff2f6ca48fac0a497e065ef15250a29f0773986af4b1af63"},
+    {file = "apx_jenkins-0.2.0-py3-none-any.whl", hash = "sha256:90584f8f00e9fbc0daec12e1368d05ae0908ac9d3b34c09a148f6b362c917514"},
+    {file = "apx_jenkins-0.2.0.tar.gz", hash = "sha256:492f85eced4d9b09939d099c2b4140b8f6aaff171f8b2911713b85de9f14cf2e"},
 ]
 
 [package.dependencies]
-action-platform = ">=0.33"
+action-platform = ">=0.38"
 
 [package.extras]
 dev = ["action-platform[mcp]", "pytest (>=8)", "ruff (>=0.6)"]
@@ -3566,4 +3566,4 @@ packaging = ">=24.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "bf93776b579c1a460632051485a901ad8e9ca046740561d7ad07f162e50441c8"
+content-hash = "b646659f2310d370c37aeea8e7d4fc0ba7a5f90d81c391fa57ed828f784897fd"

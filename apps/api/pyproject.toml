@@ -6,7 +6,7 @@ readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.12,<3.14"
 dependencies = [
-  "action-platform",
+  "action-platform>=0.38.0",
   "fastapi>=0.115",
   "uvicorn>=0.30",
   "sqlalchemy>=2.0",
@@ -18,7 +18,7 @@ dependencies = [
   "typer>=0.15",
   "apx-aws-lambda>=1.3.0",
   "apx-dokploy>=0.6.0",
-  "apx-jenkins>=0.1.0",
+  "apx-jenkins>=0.2.0",
   "apx-sentry>=0.2.0",
 ]
 
