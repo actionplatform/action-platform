@@ -67,9 +67,6 @@ class FactoryTest(unittest.TestCase):
 
     def test_build(self):
         self.assertEqual(
-            build_ci_runner("jenkins", base_url="https://ci").name, "jenkins"
-        )
-        self.assertEqual(
             build_ci_runner("github_actions", repo="a/b").name, "github_actions"
         )
         self.assertEqual(build_ci_runner("none").runs("x"), [])

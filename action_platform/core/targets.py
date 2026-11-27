@@ -7,16 +7,17 @@
     [[deploy.targets]]
     name = "pypi"
     kind = "pypi"
-    run_by = "github_actions"      # platform | github_actions | jenkins | manual
+    run_by = "github_actions"      # platform | github_actions | gitlab_ci | bitbucket_pipelines | <a CI server> | manual
     workflow = "python-publish-pypi.yml"
     package = "action-platform"
 
 The platform executes `run_by = "platform"` targets itself and dispatches the
-CI-run ones (`github_actions`, `gitlab_ci`, `bitbucket_pipelines`, and `jenkins`
-with `observe = false`): it starts the workflow or job on the release and
-follows the run. `manual` targets, `jenkins` ones by default, and CI-run ones
-with `observe = true` are observed — their runs become deployment records and
-are verified, a platform deploy never runs them.
+CI-run ones (`github_actions`, `gitlab_ci`, `bitbucket_pipelines`, and a CI
+server a plugin brings, named by its runner, with `observe = false`): it starts
+the workflow or job on the release and follows the run. `manual` targets, CI
+servers by default, and CI-run ones with `observe = true` are observed — their
+runs become deployment records and are verified, a platform deploy never runs
+them.
 `stages` limits a target to some scopes. An observed run names its release by
 the tag it built or, with `version_parameter`, by a build parameter; its scope
 comes from `stage_parameter`, else the target's only stage. A dispatched workflow receives the
@@ -32,16 +33,9 @@ from typing import Any
 
 from action_platform.core.exception import ConfigError
 
-EXECUTORS = (
-    "platform",
-    "github_actions",
-    "gitlab_ci",
-    "bitbucket_pipelines",
-    "jenkins",
-    "manual",
-)
-CI_EXECUTORS = ("github_actions", "gitlab_ci", "bitbucket_pipelines", "jenkins")
-OBSERVED_BY_DEFAULT = ("jenkins",)
+EMBEDDED_EXECUTORS = ("github_actions", "gitlab_ci", "bitbucket_pipelines")
+EXECUTORS = ("platform", *EMBEDDED_EXECUTORS, "manual")
+SERVER_NAME = re.compile(r"^[a-z][a-z0-9_-]*$")
 RESERVED = {"name", "kind", "run_by", "stages", "observe", "target", "targets"}
 VERSION = re.compile(
     r"^(?:refs/)?(?:tags/)?(?:(?P<component>[A-Za-z0-9_.-]+)/)?v?(?P<version>\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)$"
@@ -62,21 +56,26 @@ class TargetSpec:
         return self.run_by == "platform"
 
     @property
+    def server(self) -> bool:
+        """Run by a CI server of its own — a runner a plugin brings, connected with its own credentials — rather than the platform, a person or the source host's CI."""
+        return self.run_by not in EXECUTORS
+
+    @property
     def dispatched(self) -> bool:
         """Run by a CI the platform can start and follow: the deploy is a run of the repository's own pipeline."""
-        return self.run_by in CI_EXECUTORS and not self.observing
+        return (self.run_by in EMBEDDED_EXECUTORS or self.server) and not self.observing
 
     @property
     def observing(self) -> bool:
-        """`observe` as written, else true for the executors the platform only reads unless told otherwise (Jenkins)."""
+        """`observe` as written, else true for a CI server, which the platform only reads unless told otherwise."""
         if self.observe is not None:
             return self.observe
 
-        return self.run_by in OBSERVED_BY_DEFAULT
+        return self.server
 
     @property
     def observed(self) -> bool:
-        """Deployed by someone else — Jenkins, a person, or a CI target with `observe = true`: its runs are recorded and verified, a platform deploy never runs it."""
+        """Deployed by someone else — a CI server, a person, or a CI target with `observe = true`: its runs are recorded and verified, a platform deploy never runs it."""
         return not self.platform and not self.dispatched
 
     def serves(self, stage: str) -> bool:
@@ -147,9 +146,9 @@ def parse_targets(cfg: dict) -> list[TargetSpec]:
 
         run_by = str(raw.get("run_by") or "platform")
 
-        if run_by not in EXECUTORS:
+        if run_by not in EXECUTORS and not SERVER_NAME.match(run_by):
             raise ConfigError(
-                f"[[deploy.targets]] run_by {run_by!r} is not one of {', '.join(EXECUTORS)}"
+                f"[[deploy.targets]] run_by {run_by!r} is not one of {', '.join(EXECUTORS)} nor the name of a CI server's runner"
             )
 
         observe = raw.get("observe")
@@ -199,9 +198,8 @@ def version_from_ref(ref: str | None, component: str = "") -> str | None:
 
 
 __all__ = [
-    "CI_EXECUTORS",
+    "EMBEDDED_EXECUTORS",
     "EXECUTORS",
-    "OBSERVED_BY_DEFAULT",
     "TargetSpec",
     "parse_targets",
     "version_from_ref",

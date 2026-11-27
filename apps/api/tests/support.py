@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import unittest
+from unittest import mock
 
+from action_platform.abc.ci_runner import CIRunner
+from action_platform.core.exception import ProviderError
 from action_platform.core.flow.repository import Repository
 from action_platform.core.scaffold.scaffolder import Scaffolder
 from action_platform.testing.fixtures import TempCase, git, platform_repo
@@ -12,6 +15,35 @@ try:
     from fastapi.testclient import TestClient
 except ImportError:
     TestClient = None
+
+
+class ServerRunner(CIRunner):
+    """The runner a CI server's plugin registers, standing in for it: built from the CI host's url and credentials, answering what a test patches on it."""
+
+    name = "jenkins"
+
+    def __init__(self, base_url: str, token=None, username=None) -> None:
+        if not base_url:
+            raise ProviderError("jenkins needs a base_url")
+
+        self.base_url = base_url.rstrip("/")
+        self.token = token
+        self.username = username
+
+    def test(self) -> None:
+        return None
+
+    def runs(self, job: str, limit: int = 50):
+        return []
+
+
+def plug_ci_server(case: unittest.TestCase) -> None:
+    patch = mock.patch(
+        "action_platform.core.module.load_ci_runners",
+        return_value={ServerRunner.name: ServerRunner},
+    )
+    patch.start()
+    case.addCleanup(patch.stop)
 
 
 @unittest.skipUnless(TestClient, "fastapi is not installed")

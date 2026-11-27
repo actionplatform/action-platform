@@ -55,8 +55,9 @@ action_platform/
     protection/   git-flow on the code host: github (rulesets), gitlab (protected branches, push rules), bitbucket (branch restrictions); build_branch_protection(kind, …)
   abc/            SourceHost, CIRunner, DeployTarget, WorkingCopy, TemplateStore contracts
   remote/         client (urllib): device-flow login, scoped token exchange, every /api/v1 call; credentials file
-  mcp/            server (local or --remote), tools/{matrix,project,flow,lifecycle,remote}, prompts, annotations
-  cli/            Typer commands: init install branch gitflow pr release deploy rollback diagnose destroy cloud service mcp login logout whoami
+  mcp/            server (local or --remote), tools/{matrix,project,flow,lifecycle,ci,remote}, prompts, annotations
+  cli/            Typer commands: init install branch gitflow pr release deploy rollback diagnose destroy cloud service ci mcp login logout whoami
+  plugins/        discovery, on/off state, options; ci: the runner of a CI server a plugin brings and the plain answers of the `ci_*` tools and `action-platform ci`
   observability.py   Sentry init shared by the CLI and the API (docs/concept_observability.md)
   options.py      configuration slices, one frozen dataclass per concern (TemplatesConfig, WorkspacesConfig, GitConfig, SourceTokens, ApiConfig, DatabaseConfig, ObservabilityConfig), each parsed by `from_env(mapping)`
   settings.py     `settings`: those slices read from the process environment when asked for (`settings.git`, `settings.database`…); `Settings.from_env(mapping)` for a fixed one

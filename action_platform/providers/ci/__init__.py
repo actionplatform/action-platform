@@ -5,7 +5,15 @@ from action_platform.providers.ci.factory import (
     CI_KINDS,
     EMBEDDED_CI,
     build_ci_runner,
+    ci_kinds,
     embedded_ci_kind,
 )
 
-__all__ = ["CI_KINDS", "EMBEDDED_CI", "CIRunner", "build_ci_runner", "embedded_ci_kind"]
+__all__ = [
+    "CI_KINDS",
+    "EMBEDDED_CI",
+    "CIRunner",
+    "build_ci_runner",
+    "ci_kinds",
+    "embedded_ci_kind",
+]

@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 import unittest
+from unittest import mock
 
-from action_platform.core.exception import ConfigError, ProviderError
-from action_platform.providers.ci.factory import CI_KINDS, CI_RUNNERS, build_ci_runner
+from action_platform.core.exception import ConfigError
+from action_platform.providers.ci.factory import (
+    CI_KINDS,
+    CI_RUNNERS,
+    build_ci_runner,
+    ci_kinds,
+)
 from action_platform.providers.registry import ProviderRegistry
 from action_platform.providers.source.factory import (
     SOURCE_HOST_KINDS,
@@ -70,19 +76,35 @@ class SourceFactoryTest(unittest.TestCase):
 class CiFactoryTest(unittest.TestCase):
     def test_kinds_and_the_empty_kind(self):
         self.assertEqual(
-            CI_KINDS,
-            ("github_actions", "gitlab_ci", "bitbucket_pipelines", "jenkins", "none"),
+            CI_KINDS, ("github_actions", "gitlab_ci", "bitbucket_pipelines", "none")
         )
         self.assertEqual(build_ci_runner("").name, "none")
         self.assertEqual(build_ci_runner(None).name, "none")
 
-    def test_servers_take_their_own_url(self):
-        runner = build_ci_runner("jenkins", base_url="https://ci/", username="ada")
+    def test_a_server_comes_from_the_plugin_entry_point(self):
+        class Server(Plain):
+            name = "acme_ci"
 
+            def __init__(self, base_url, token=None, username=None):
+                self.base_url, self.username = base_url, username
+
+        with mock.patch(
+            "action_platform.core.module.load_ci_runners",
+            return_value={"acme_ci": Server},
+        ):
+            runner = build_ci_runner("acme_ci", base_url="https://ci", username="ada")
+            kinds = ci_kinds()
+
+        self.assertIsInstance(runner, Server)
         self.assertEqual((runner.base_url, runner.username), ("https://ci", "ada"))
+        self.assertIn("acme_ci", kinds)
 
-        with self.assertRaises(ProviderError):
-            build_ci_runner("jenkins")
+    def test_a_missing_server_names_its_plugin(self):
+        with mock.patch("action_platform.core.module.load_ci_runners", return_value={}):
+            with self.assertRaises(ConfigError) as raised:
+                build_ci_runner("jenkins", base_url="https://ci")
+
+        self.assertIn("install apx-jenkins", str(raised.exception))
 
     def test_a_new_runner_registers_without_editing_the_factory(self):
         class Custom(Plain):
@@ -98,4 +120,4 @@ class CiFactoryTest(unittest.TestCase):
         with self.assertRaises(ConfigError) as raised:
             build_ci_runner("travis")
 
-        self.assertIn("unknown ci kind: travis", str(raised.exception))
+        self.assertIn("no CI runner 'travis' is installed", str(raised.exception))

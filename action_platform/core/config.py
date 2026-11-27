@@ -135,29 +135,27 @@ class Config:
     def dispatched(
         self, keep: Callable[[TargetSpec], bool] | None = None
     ) -> list[DeployTarget]:
-        """The targets a CI runs for the platform — `run_by = "github_actions"`, a Jenkins job with `observe = false` and the like — each wrapped so a deploy starts the run and follows it; `keep` picks which before they are built."""
+        """The targets a CI runs for the platform — `run_by = "github_actions"`, a CI server's job with `observe = false` and the like — each wrapped so a deploy starts the run and follows it; `keep` picks which before they are built."""
         return [
             DispatchedTarget(
                 _dispatched_inner(spec),
                 self._runner_for(spec),
-                spec.job if spec.run_by == "jenkins" else spec.workflow,
+                spec.job if spec.server else spec.workflow,
                 str(spec.options.get("registry") or ""),
-                version_parameter=spec.version_parameter
-                if spec.run_by == "jenkins"
-                else "",
+                version_parameter=spec.version_parameter if spec.server else "",
             )
             for spec in self.targets
             if spec.dispatched and (keep is None or keep(spec))
         ]
 
     def _runner_for(self, spec: TargetSpec) -> CIRunner:
-        """A server of its own (Jenkins) comes from `ci`, connected with its own credentials; an embedded CI from the source host."""
-        if spec.run_by == "jenkins":
-            runner = next((r for r in self.ci if r.name == "jenkins"), None)
+        """A CI server of its own comes from `ci`, connected with its own credentials; an embedded CI from the source host."""
+        if spec.server:
+            runner = next((r for r in self.ci if r.name == spec.run_by), None)
 
             if runner is None:
                 raise ConfigError(
-                    f"{spec.name} is run by jenkins, but no Jenkins server is connected to the app"
+                    f"{spec.name} is run by {spec.run_by}, but no {spec.run_by} server is connected to the app"
                 )
 
             return runner
@@ -178,10 +176,10 @@ class Config:
         )
 
     def runs_with(self, name: str) -> list[TargetSpec]:
-        """The other targets one dispatch of target `name` deploys: Jenkins targets started on the same job that take no stage parameter share its build."""
+        """The other targets one dispatch of target `name` deploys: targets of the same CI server started on the same job that take no stage parameter share its build."""
         spec = next((t for t in self.targets if t.name == name), None)
 
-        if spec is None or spec.run_by != "jenkins" or not spec.dispatched:
+        if spec is None or not spec.server or not spec.dispatched:
             return []
 
         if not spec.job or spec.stage_parameter:
@@ -191,7 +189,7 @@ class Config:
             t
             for t in self.targets
             if t.name != spec.name
-            and t.run_by == "jenkins"
+            and t.run_by == spec.run_by
             and t.dispatched
             and t.job == spec.job
             and not t.stage_parameter

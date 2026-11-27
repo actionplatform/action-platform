@@ -1,3 +1,3 @@
-from action_platform.mcp.tools import flow, lifecycle, matrix, project
+from action_platform.mcp.tools import ci, flow, lifecycle, matrix, project
 
-__all__ = ["flow", "lifecycle", "matrix", "project"]
+__all__ = ["ci", "flow", "lifecycle", "matrix", "project"]

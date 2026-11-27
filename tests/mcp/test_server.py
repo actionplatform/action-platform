@@ -42,6 +42,10 @@ class ToolSurfaceTest(McpCase):
                 "readiness",
                 "job_logs",
                 "record_deployment",
+                "ci_runs",
+                "ci_run",
+                "ci_log",
+                "ci_queue",
             },
         )
 

@@ -12,7 +12,7 @@ from action_platform.bootstrap import bootstrap
 from action_platform.mcp import annotations, prompts
 from action_platform.mcp.tools import remote as remote_tools
 from action_platform.remote.client import Remote
-from action_platform.mcp.tools import flow, lifecycle, matrix, project
+from action_platform.mcp.tools import ci, flow, lifecycle, matrix, project
 from action_platform.plugins import registry
 
 INSTRUCTIONS = """Scaffold, deploy and operate projects on the Action Platform.
@@ -113,6 +113,7 @@ def build(remote: Optional[str] = None) -> MCPServer:
     project.register(mcp)
     flow.register(mcp)
     lifecycle.register(mcp)
+    ci.register(mcp)
     prompts.register(mcp)
     registry.installed().register(mcp, None, annotations.tool)
 

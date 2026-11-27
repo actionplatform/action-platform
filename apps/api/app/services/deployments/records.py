@@ -323,20 +323,20 @@ class DeploymentRecords:
                 spec.workflow,
             )
 
-        if spec.run_by == "jenkins":
+        if spec.server:
             creds = self.directory.ci_credentials_for(organization_id, app.ci_host_id)
 
-            if creds is None or creds.kind != "jenkins":
+            if creds is None or creds.kind != spec.run_by:
                 raise ProviderError(
-                    f"{spec.name}: run by Jenkins, but the app is not connected to a Jenkins server"
+                    f"{spec.name}: run by {spec.run_by}, but the app is not connected to a {spec.run_by} server"
                 )
 
             if not spec.job:
-                raise ProviderError(f"{spec.name}: a Jenkins target needs a job")
+                raise ProviderError(f"{spec.name}: a {spec.run_by} target needs a job")
 
             return (
                 build_ci_runner(
-                    "jenkins",
+                    spec.run_by,
                     base_url=creds.base_url,
                     token=creds.token,
                     username=creds.username,

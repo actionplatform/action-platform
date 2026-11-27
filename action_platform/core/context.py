@@ -79,9 +79,26 @@ RUN_STATUSES = (
 )
 
 
+@dataclass(frozen=True)
+class Cause:
+    """What started a run: `description` as the CI words it, `user` when a person did."""
+
+    description: str
+    user: str | None = None
+
+
+@dataclass(frozen=True)
+class Change:
+    """A commit a run built that the previous one had not."""
+
+    sha: str
+    author: str | None = None
+    message: str = ""
+
+
 @dataclass
 class Run:
-    """One CI run (a Jenkins build, an Actions workflow run, a GitLab pipeline) in the platform's shape."""
+    """One CI run (a server's build, an Actions workflow run, a GitLab pipeline) in the platform's shape. `params` are its parameters, also read as `parameters`."""
 
     number: int
     status: str
@@ -93,6 +110,12 @@ class Run:
     duration_ms: int | None = None
     name: str | None = None
     params: dict[str, str] = field(default_factory=dict)
+    causes: list[Cause] = field(default_factory=list)
+    changes: list[Change] = field(default_factory=list)
+
+    @property
+    def parameters(self) -> dict[str, str]:
+        return self.params
 
 
 @dataclass

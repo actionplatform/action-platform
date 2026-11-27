@@ -1,4 +1,4 @@
-"""The CI server an app is connected to, as a runner with its own credentials — what a deploy starts a dispatched Jenkins target with."""
+"""The CI server an app is connected to, as a runner with its own credentials — what a deploy starts a dispatched target of a CI server with, through the runner its plugin registers."""
 
 from __future__ import annotations
 
