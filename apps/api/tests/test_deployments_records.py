@@ -248,7 +248,7 @@ class DeploymentRecordsTest(GateCase):
 
         with (
             mock.patch(
-                "action_platform.providers.ci.jenkins.CIJenkins.runs",
+                "tests.support.ServerRunner.runs",
                 return_value=builds,
             ) as listed,
             mock.patch(
@@ -314,7 +314,7 @@ class DeploymentRecordsTest(GateCase):
 
         with (
             mock.patch(
-                "action_platform.providers.ci.jenkins.CIJenkins.runs",
+                "tests.support.ServerRunner.runs",
                 side_effect=lambda job, limit=50: builds[job],
             ),
             mock.patch(
@@ -366,7 +366,7 @@ class DeploymentRecordsTest(GateCase):
     def _sync(self, builds):
         with (
             mock.patch(
-                "action_platform.providers.ci.jenkins.CIJenkins.runs",
+                "tests.support.ServerRunner.runs",
                 return_value=builds,
             ),
             mock.patch(

@@ -6,6 +6,7 @@ import unittest
 
 from action_platform.settings import settings
 from action_platform.testing.fixtures import TempCase, git, platform_repo
+from tests.support import plug_ci_server
 
 try:
     from fastapi.testclient import TestClient
@@ -19,6 +20,8 @@ class GateCase(TempCase):
         super().setUp()
         from app.api.app import build
         from app.api.routes.auth.support import LIMITS
+
+        plug_ci_server(self)
 
         self.setenv("AP_HOME", str(self.tmp_path / "home"))
         self.setenv(

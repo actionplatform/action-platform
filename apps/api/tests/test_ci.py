@@ -8,6 +8,7 @@ from unittest import mock
 
 from action_platform.core.context import Run
 from action_platform.core.exception import ProviderError
+from tests.support import ServerRunner
 from tests.test_access import GateCase
 
 try:
@@ -77,16 +78,17 @@ class CiTest(GateCase):
     def test_test_reaches_the_server_with_the_sealed_token(self):
         host_id = self.add_jenkins()
 
-        with mock.patch("action_platform.providers.ci.jenkins.rest.call") as call:
-            call.return_value = {"mode": "NORMAL"}
+        with mock.patch.object(ServerRunner, "test", autospec=True) as call:
             res = self.client.post(f"/api/v1/ci-hosts/{host_id}/test", headers=self.h())
 
         self.assertEqual(res.json(), {"ok": True, "error": None})
-        url, headers = call.call_args.args[1], call.call_args.args[2]
-        self.assertEqual(url, "https://ci.acme.io/api/json?tree=mode")
-        self.assertTrue(headers["authorization"].startswith("Basic "))
+        runner = call.call_args.args[0]
+        self.assertEqual(
+            (runner.base_url, runner.username, runner.token),
+            ("https://ci.acme.io", "ada", "tok"),
+        )
 
-        with mock.patch("action_platform.providers.ci.jenkins.rest.call") as call:
+        with mock.patch.object(ServerRunner, "test") as call:
             call.side_effect = ProviderError("GET … → 401: bad token")
             res = self.client.post(f"/api/v1/ci-hosts/{host_id}/test", headers=self.h())
 
@@ -114,7 +116,7 @@ class CiTest(GateCase):
         )
 
         with mock.patch(
-            "action_platform.providers.ci.jenkins.CIJenkins.runs", return_value=RUNS
+            "tests.support.ServerRunner.runs", return_value=RUNS
         ) as runs:
             res = self.client.post(f"{base}/sync", headers=self.h())
 
@@ -128,7 +130,7 @@ class CiTest(GateCase):
         self.assertEqual(body["runs"][0]["duration_ms"], 12_000)
 
         with mock.patch(
-            "action_platform.providers.ci.jenkins.CIJenkins.runs",
+            "tests.support.ServerRunner.runs",
             return_value=[Run(number=7, status="failure", branch="main")],
         ):
             self.client.post(f"{base}/sync", headers=self.h())
@@ -148,7 +150,7 @@ class CiTest(GateCase):
         )
 
         with mock.patch(
-            "action_platform.providers.ci.jenkins.rest.call",
+            "tests.support.ServerRunner.runs",
             side_effect=ProviderError("cannot reach https://ci.acme.io: refused"),
         ):
             res = self.client.post(f"{base}/sync", headers=self.h())

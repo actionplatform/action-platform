@@ -478,8 +478,8 @@ class CiToolsTest(AppToolsCase):
         )
 
         with mock.patch(
-            "action_platform.providers.ci.jenkins.rest.call",
-            return_value={"mode": "NORMAL"},
+            "tests.support.ServerRunner.test",
+            return_value=None,
         ):
             self.assertEqual(
                 self.call(server, "test_ci_host", id=host["id"]),
@@ -499,13 +499,13 @@ class CiToolsTest(AppToolsCase):
 
         with (
             mock.patch(
-                "action_platform.providers.ci.jenkins.CIJenkins.start",
+                "tests.support.ServerRunner.start",
                 return_value=RunRef(
                     id="8", url="https://ci.acme.io/job/team/job/app/8/"
                 ),
             ) as start,
             mock.patch(
-                "action_platform.providers.ci.jenkins.CIJenkins.runs",
+                "tests.support.ServerRunner.runs",
                 return_value=[Run(number=8, status="running", branch="main")],
             ),
         ):
