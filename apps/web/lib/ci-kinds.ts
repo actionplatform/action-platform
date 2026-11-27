@@ -173,3 +173,9 @@ export function bytes(size: number | null): string {
   while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit++; }
   return `${value < 10 ? value.toFixed(1) : Math.round(value)} ${units[unit]}`;
 }
+
+export type CiDeployRun = { target: string; run: PipelineRun };
+
+export function deployRuns(row: Schemas["CiDeployRuns"]): CiDeployRun[] {
+  return row.runs.map((r) => ({ target: r.target, run: pipelineRun(r.run) }));
+}

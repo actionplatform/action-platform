@@ -1,54 +1,21 @@
 "use client";
 
 import { Cloud, MoreHorizontal, RotateCcw } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { Cell, DataTable } from "@/components/ui/data-table";
-import type { DeployResult } from "@/lib/api";
 import type { Paged } from "@/lib/page";
 import type { JobRow } from "@/lib/v1";
 import { startDeploy } from "@/features/deployments/actions";
-import { RunDialog, type Status } from "./run-dialog";
+import { canRedeploy, deploymentHref, elapsed, statusOf, typeOf, versionOf, when } from "./job-state";
 
-function rowsOf(job: JobRow): DeployResult[] {
-  return Array.isArray(job.result) ? (job.result as DeployResult[]) : [];
-}
-
-function statusOf(job: JobRow): Status {
-  if (job.status === "queued" && job.no_worker) return { tone: "warning", label: "No worker running" };
-  if (job.status === "queued") return { tone: "neutral", label: "Queued" };
-  if (job.status === "running") return { tone: "warning", label: "Running" };
-  if (job.status === "failed" || rowsOf(job).some((r) => !r.ok)) return { tone: "danger", label: "Failed" };
-  return { tone: "success", label: "Successful" };
-}
-
-function errorOf(job: JobRow): string | null {
-  return job.error ?? rowsOf(job).find((r) => r.error)?.error ?? null;
-}
-
-function when(d: string | null | undefined): string {
-  if (!d) return "—";
-  const t = new Date(d);
-  return Number.isNaN(t.getTime()) ? d : t.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-}
-
-function duration(job: JobRow, now: number): string {
-  const from = new Date(job.started_at ?? job.created_at).getTime();
-  const to = job.finished_at ? new Date(job.finished_at).getTime() : job.status === "running" ? now : null;
-  if (!to || Number.isNaN(from)) return "—";
-  const s = Math.max(0, Math.round((to - from) / 1000));
-  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
-}
-
-const versionOf = (job: JobRow): string | null => rowsOf(job)[0]?.version || job.version || null;
-
-export function DeploymentsTable({ page, registryId, canDeploy, newHref }: { page: Paged<JobRow>; registryId: string; canDeploy: boolean; newHref?: string | null }) {
+export function DeploymentsTable({ page, registryId, canDeploy, base, newHref }: { page: Paged<JobRow>; registryId: string; canDeploy: boolean; base: string; newHref?: string | null }) {
   const jobs = page.items;
   const router = useRouter();
-  const [details, setDetails] = useState<JobRow | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [pending, start] = useTransition();
   const live = jobs.some((j) => j.status === "running" || j.status === "queued");
@@ -59,55 +26,40 @@ export function DeploymentsTable({ page, registryId, canDeploy, newHref }: { pag
     return () => clearInterval(timer);
   }, [live, router]);
 
-  const redeploy = (job: JobRow, close = false) => {
+  const redeploy = (job: JobRow) => {
     if (pending) return;
     start(async () => {
       const r = await startDeploy(registryId, job.stage ?? "", !!job.dry_run, job.version ?? versionOf(job) ?? "");
-      if (r.ok) { if (close) setDetails(null); router.refresh(); }
+      if (r.ok) router.refresh();
     });
   };
 
   const actions = (job: JobRow) => [
-    { label: "View details", onSelect: () => setDetails(job) },
-    ...(canDeploy && job.kind !== "destroy" && (job.version || versionOf(job)) ? [{ label: job.dry_run ? "Run preflight again" : "Redeploy", icon: <RotateCcw className="size-3.5" strokeWidth={1.75} />, onSelect: () => redeploy(job) }] : []),
+    { label: "View details", onSelect: () => router.push(deploymentHref(base, job.id)) },
+    ...(canRedeploy(job, canDeploy) ? [{ label: job.dry_run ? "Run preflight again" : "Redeploy", icon: <RotateCcw className="size-3.5" strokeWidth={1.75} />, onSelect: () => redeploy(job) }] : []),
   ];
-  const type = (job: JobRow) => (job.kind === "destroy" ? "Tear down" : job.dry_run ? "Preflight" : "Deploy");
 
   return (
-    <>
-      <DataTable
-        title="Deployments"
-        rows={jobs}
-        paging={page}
-        rowKey={(j) => j.id}
-        noun={["run", "runs"]}
-        newHref={canDeploy ? newHref : null}
-        newLabel="New deployment"
-        empty={{ icon: Cloud, title: "No deployments yet", text: "Run a preflight or deploy from New deployment; every run lands here." }}
-        columns={[
-          { key: "status", label: "Status", width: 14, render: (job) => { const s = statusOf(job); return <Badge tone={s.tone}>{s.label}</Badge>; } },
-          { key: "stage", label: "Stage", width: 9, render: (job) => <Cell mono>{job.stage ?? "—"}</Cell> },
-          { key: "type", label: "Type", width: 9, hideBelow: "md", render: (job) => <Cell muted>{type(job)}</Cell> },
-          { key: "version", label: "Version", width: 15, render: (job) => <Cell mono>{versionOf(job) ?? "—"}</Cell> },
-          { key: "duration", label: "Duration", width: 10, numeric: true, hideBelow: "md", render: (job) => <Cell muted>{duration(job, now)}</Cell> },
-          { key: "by", label: "By", width: 20, hideBelow: "lg", render: (job) => <Cell muted title={job.by ?? undefined}>{job.by ?? "—"}</Cell> },
-          { key: "started", label: "Started", width: 18, hideBelow: "md", render: (job) => <Cell muted>{when(job.created_at)}</Cell> },
-          { key: "actions", label: "Actions", width: 5, actions: true, render: (job) => <Menu label="Run actions" items={actions(job)} trigger={({ toggle, open, id }) => <Button size="icon" variant="ghost" aria-label="More actions" aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle}><MoreHorizontal className="size-4" strokeWidth={1.75} /></Button>} /> },
-        ]}
-      />
-
-      <RunDialog
-        job={details}
-        status={details ? statusOf(details) : null}
-        error={details ? errorOf(details) : null}
-        rows={details ? rowsOf(details) : []}
-        kindLabel={details ? type(details) : ""}
-        canRedeploy={!!details && canDeploy && details.kind !== "destroy" && !!(details.version || versionOf(details))}
-        redeploying={pending}
-        onRedeploy={() => { if (details) redeploy(details, true); }}
-        onClose={() => setDetails(null)}
-      />
-    </>
+    <DataTable
+      title="Deployments"
+      rows={jobs}
+      paging={page}
+      rowKey={(j) => j.id}
+      rowHref={(j) => deploymentHref(base, j.id)}
+      noun={["run", "runs"]}
+      newHref={canDeploy ? newHref : null}
+      newLabel="New deployment"
+      empty={{ icon: Cloud, title: "No deployments yet", text: "Run a preflight or deploy from New deployment; every run lands here." }}
+      columns={[
+        { key: "status", label: "Status", width: 14, render: (job) => { const s = statusOf(job); return <Link href={deploymentHref(base, job.id)} aria-label={`Open run ${job.id.slice(0, 8)}`} className="rounded-full focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground"><Badge tone={s.tone}>{s.label}</Badge></Link>; } },
+        { key: "stage", label: "Stage", width: 9, render: (job) => <Cell mono>{job.stage ?? "—"}</Cell> },
+        { key: "type", label: "Type", width: 9, hideBelow: "md", render: (job) => <Cell muted>{typeOf(job)}</Cell> },
+        { key: "version", label: "Version", width: 15, render: (job) => <Cell mono>{versionOf(job) ?? "—"}</Cell> },
+        { key: "duration", label: "Duration", width: 10, numeric: true, hideBelow: "md", render: (job) => <Cell muted>{elapsed(job, now)}</Cell> },
+        { key: "by", label: "By", width: 20, hideBelow: "lg", render: (job) => <Cell muted title={job.by ?? undefined}>{job.by ?? "—"}</Cell> },
+        { key: "started", label: "Started", width: 18, hideBelow: "md", render: (job) => <Cell muted>{when(job.created_at)}</Cell> },
+        { key: "actions", label: "Actions", width: 5, actions: true, render: (job) => <Menu label="Run actions" items={actions(job)} trigger={({ toggle, open, id }) => <Button size="icon" variant="ghost" aria-label="More actions" aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle}><MoreHorizontal className="size-4" strokeWidth={1.75} /></Button>} /> },
+      ]}
+    />
   );
 }
-

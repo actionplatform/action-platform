@@ -26,6 +26,8 @@ export const projects = {
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/ci/sync", { params: { path: { project_id: projectId, app_id: appId }, query: { page, per } } })),
   pipelines: async (projectId: string, appId: string, job: string | null, status: string | null, limit = 50) =>
     unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/ci/runs", { params: { path: { project_id: projectId, app_id: appId }, query: { job: job ?? undefined, status: status ?? undefined, limit } } })),
+  deployRuns: async (projectId: string, appId: string, q: { stage: string | null; version: string; since: string | null; until: string | null; urls: string[] }) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/ci/deploy-runs", { params: { path: { project_id: projectId, app_id: appId }, query: { stage: q.stage ?? undefined, version: q.version, since: q.since ?? undefined, until: q.until ?? undefined, url: q.urls } } })),
   pipelineRun: async (projectId: string, appId: string, job: string, number: number) =>
     unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/ci/runs/{number}", { params: { path: { project_id: projectId, app_id: appId, number }, query: { job } } })),
   pipelineLog: async (projectId: string, appId: string, job: string, number: number, start: number, node: string | null) =>

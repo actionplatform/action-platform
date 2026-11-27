@@ -1279,6 +1279,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/apps/{app_id}/ci/deploy-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["deploy_runs_api_v1_projects__project_id__apps__app_id__ci_deploy_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/apps/{app_id}/ci/runs/{number}": {
         parameters: {
             query?: never;
@@ -2696,6 +2712,13 @@ export interface components {
             sha: string;
             author?: string | null;
             message: string;
+        };
+        CiDeployRun: {
+            target: string;
+            run: components["schemas"]["CiPipelineRun"];
+        };
+        CiDeployRuns: {
+            runs: components["schemas"]["CiDeployRun"][];
         };
         CiExecutorRow: {
             node: string;
@@ -7085,6 +7108,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CiPipelines"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deploy_runs_api_v1_projects__project_id__apps__app_id__ci_deploy_runs_get: {
+        parameters: {
+            query: {
+                version: string;
+                stage?: string | null;
+                since?: string | null;
+                until?: string | null;
+                url?: string[];
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CiDeployRuns"];
                 };
             };
             422: {

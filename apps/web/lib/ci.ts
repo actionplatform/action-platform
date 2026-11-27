@@ -1,5 +1,5 @@
 import { v1 } from "./v1";
-import { type CiHost, type CiHostActivity, type CiState, type PipelineRunDetail, type Pipelines, ciActivity, ciHost, ciState, pipelineRunDetail, pipelines } from "./ci-kinds";
+import { type CiHost, type CiHostActivity, type CiState, type PipelineRunDetail, type Pipelines, ciActivity, ciHost, type CiDeployRun, deployRuns, ciState, pipelineRunDetail, pipelines } from "./ci-kinds";
 
 export * from "./ci-kinds";
 
@@ -21,4 +21,8 @@ export async function pipelineRunOf(projectId: string, appId: string, job: strin
 
 export async function ciActivityOf(): Promise<CiHostActivity[]> {
   return ciActivity(await v1.ciActivity());
+}
+
+export async function deployRunsOf(projectId: string, appId: string, q: { stage: string | null; version: string; since: string | null; until: string | null; urls: string[] }): Promise<CiDeployRun[]> {
+  return deployRuns(await v1.deployRuns(projectId, appId, q));
 }

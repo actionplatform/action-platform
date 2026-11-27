@@ -15,12 +15,15 @@ import { StageGraph } from "./stage-graph";
 import { TestsPanel } from "./tests-panel";
 
 const REFRESH_MS = 5000;
+const TAB = "-mb-px flex h-11 items-center border-b-2 px-3 text-sm";
+const TAB_ON = "border-foreground text-foreground";
+const TAB_OFF = "border-transparent text-secondary hover:text-foreground";
 
 type Tab = "log" | "tests" | "artifacts" | "details";
 
 export type RunTab = Tab;
 
-type Props = { projectId: string; appId: string; base: string; repositoryUrl: string | null; detail: PipelineRunDetail; tab: Tab };
+type Props = { projectId: string; appId: string; base: string; repositoryUrl: string | null; detail: PipelineRunDetail; tab: Tab; embedded?: boolean };
 
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -31,11 +34,13 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-export function RunView({ projectId, appId, base, repositoryUrl, detail, tab }: Props) {
+export function RunView({ projectId, appId, base, repositoryUrl, detail, tab: initial, embedded = false }: Props) {
   const router = useRouter();
   const { run } = detail;
   const live = run.status === "running" || run.status === "queued";
   const [node, setNode] = useState<string | null>(null);
+  const [picked, setPicked] = useState<Tab>(initial);
+  const tab = embedded ? picked : initial;
   const stage = detail.stages?.find((s) => s.id === node) ?? null;
 
   useEffect(() => {
@@ -56,7 +61,12 @@ export function RunView({ projectId, appId, base, repositoryUrl, detail, tab }: 
       <Panel>
         <PanelHeader
           title={<><RunBadge status={run.status} /><span className="font-mono">#{run.number}</span><span className="truncate font-normal text-secondary">{detail.job.label}{detail.job.name && <span className="font-mono"> · {detail.job.name}</span>}</span></>}
-          aside={live ? <span className="inline-flex items-center gap-1.5 text-xs text-secondary"><RefreshCw className="size-3.5 animate-spin" strokeWidth={2} /> Live</span> : undefined}
+          aside={
+            <div className="flex items-center gap-3">
+              {live && <span className="inline-flex items-center gap-1.5 text-xs text-secondary"><RefreshCw className="size-3.5 animate-spin" strokeWidth={2} /> Live</span>}
+              {embedded && <Link href={runHref(base, run.job, run.number)} className="text-[13px] underline-offset-4 hover:underline">Open the run</Link>}
+            </div>
+          }
         />
         <PanelBody>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-3 md:grid-cols-4">
@@ -90,7 +100,11 @@ export function RunView({ projectId, appId, base, repositoryUrl, detail, tab }: 
         <ul role="tablist" className="flex gap-1">
           {tabs.filter((t) => t.shown).map((t) => (
             <li key={t.id} role="presentation">
-              <Link href={runHref(base, run.job, run.number, t.id)} scroll={false} role="tab" aria-selected={t.id === tab} className={cn("-mb-px flex h-11 items-center border-b-2 px-3 text-sm", t.id === tab ? "border-foreground text-foreground" : "border-transparent text-secondary hover:text-foreground")}>{t.label}</Link>
+              {embedded ? (
+                <button type="button" onClick={() => setPicked(t.id)} role="tab" aria-selected={t.id === tab} className={cn(TAB, t.id === tab ? TAB_ON : TAB_OFF)}>{t.label}</button>
+              ) : (
+                <Link href={runHref(base, run.job, run.number, t.id)} scroll={false} role="tab" aria-selected={t.id === tab} className={cn(TAB, t.id === tab ? TAB_ON : TAB_OFF)}>{t.label}</Link>
+              )}
             </li>
           ))}
         </ul>
