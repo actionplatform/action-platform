@@ -9,7 +9,7 @@
 
 `deploy` starts `workflow` on the release tag with `version` and `registry` as inputs — the registry the kind pairs with the scope's criticality (`testpypi` for a `test` scope, `pypi` otherwise), or the target's `registry` option — follows the run to its end and asks the registry whether the version arrived. No credential of the registry reaches the platform: the pipeline holds them (trusted publishing, OIDC).
 
-A job that takes the release as a parameter (`version_parameter`, a Jenkins job) is started with that parameter alone, set to the tag; its result is the deploy's, and the row links to the build — the destination is asked later, on Sync."""
+A job that takes the release as a parameter (`version_parameter`, a CI server's job) is started with that parameter alone, set to the tag; its result is the deploy's, and the row links to the build — the destination is asked later, on Sync."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ import time
 from dataclasses import replace
 from datetime import datetime, timezone
 
-from action_platform.abc.ci_runner import CIRunner
+from action_platform.abc.ci_runner import CIRunner, stage_tuples
 from action_platform.abc.deploy_target import DeployTarget
 from action_platform.core.context import (
     Check,
@@ -27,6 +27,7 @@ from action_platform.core.context import (
     Run,
     RunRef,
 )
+from action_platform.core.targets import EMBEDDED_EXECUTORS
 from action_platform.core.exception import (
     ActionPlatformError,
     DeployError,
@@ -64,9 +65,9 @@ class DispatchedTarget(DeployTarget):
                 f"{self.name}: run by {self.runner.name} but no workflow or job named"
             )
 
-        if self.runner.name == "jenkins" and not self.version_parameter:
+        if self.runner.name not in EMBEDDED_EXECUTORS and not self.version_parameter:
             raise DeployError(
-                f"{self.name}: a Jenkins job takes the release through a parameter; set version_parameter"
+                f"{self.name}: a {self.runner.name} job takes the release through a parameter; set version_parameter"
             )
 
         try:
@@ -191,7 +192,7 @@ class DispatchedTarget(DeployTarget):
         except (NotImplementedError, ProviderError):
             return
 
-        for name, status in stages:
+        for name, status in stage_tuples(stages):
             if seen.get(name) != status:
                 logger.info("run %s: stage %s %s", run.number, name, status)
                 seen[name] = status

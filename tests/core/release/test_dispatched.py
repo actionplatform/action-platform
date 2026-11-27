@@ -256,7 +256,7 @@ def test_jenkins_targets_need_a_connected_server():
 
     from action_platform.core.exception import ConfigError
 
-    with pytest.raises(ConfigError, match="no Jenkins server is connected"):
+    with pytest.raises(ConfigError, match="no jenkins server is connected"):
         jenkins_config().dispatched()
 
 

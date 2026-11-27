@@ -227,7 +227,7 @@ class OnlyTheChosenTargetsAreBuiltTest(TempCase):
         with self.assertRaises(ConfigError) as caught:
             self.deployer.runnable(stage="dev")
 
-        self.assertIn("no Jenkins server is connected", str(caught.exception))
+        self.assertIn("no jenkins server is connected", str(caught.exception))
 
 
 class OneRunForTargetsOnOneJobTest(TempCase):

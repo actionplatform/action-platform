@@ -53,7 +53,7 @@ class ParseTargetsTest(unittest.TestCase):
             parse_targets({"targets": [{"name": "x"}]})
 
         with self.assertRaises(ConfigError):
-            parse_targets({"targets": [{"kind": "pypi", "run_by": "cron"}]})
+            parse_targets({"targets": [{"kind": "pypi", "run_by": "Cron Job"}]})
 
         with self.assertRaises(ConfigError):
             parse_targets(
