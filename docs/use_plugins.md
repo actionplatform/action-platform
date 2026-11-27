@@ -22,7 +22,7 @@ State lives in `~/.action-platform/plugins.json` (`AP_HOME` moves it): which plu
 | MCP tools | `action-platform mcp` lists them as `<slug>_<name>`, with input and output schemas like the core's; a disabled plugin's tool answers `plugin <slug> is disabled` |
 | CLI commands | `action-platform <slug> …` |
 | Cloud overlays | `list_matrix` / `action-platform cloud set <name>`; a plugin's cloud replaces the templates repository's of the same name, since the code that deploys it lives in the plugin |
-| Deploy targets, CI runners | `[deploy] target = "<name>"` in platform.toml finds them; `action-platform deploy` says which package is missing otherwise |
+| Deploy targets, CI runners | `[deploy] target = "<name>"` and `run_by = "<runner>"` in platform.toml find them; `action-platform deploy` says which package is missing otherwise. The core carries only the CIs that live in a code host (GitHub Actions, GitLab CI, Bitbucket Pipelines); a CI server of its own comes from its plugin (Jenkins from `apx-jenkins`), and the core's read-only `ci_runs`, `ci_run`, `ci_log`, `ci_queue` tools and `action-platform ci runs/run/log/queue` read it through the runner |
 | Release strategy, changelog | `[release] strategy = "<name>"`, `[release] changelog = "<name>"` |
 | Replaced core processes | `action-platform plugin list` shows `replaces`; `gitflow_rules`, `gitflow`, `releaser`, `deployer`, `installer`, `scaffolder` |
 | Access on its service (`Plugin.access`) | the platform's `access_*` tools, `action-platform access …` and `/api/v1/access/*` cover the service once the plugin is bundled in the API image and its options are filled in — see [service access](concept_service_access.md); `plugin list` shows `access` |

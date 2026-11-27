@@ -56,7 +56,7 @@ version_parameter = "RELEASE_TAG"
 |---|---|
 | `name` | unique within the app; defaults to `kind` |
 | `kind` | where the version goes: `aws/lambda`, `pypi`, `npm`, `docker`, `packagist`, `go`, or a kind a plugin adds |
-| `run_by` | who deploys: `platform` (default), `github_actions`, `gitlab_ci`, `bitbucket_pipelines`, `jenkins`, `manual` |
+| `run_by` | who deploys: `platform` (default), `github_actions`, `gitlab_ci`, `bitbucket_pipelines`, `manual`, or a CI server by its runner's name — `jenkins`, which `apx-jenkins` brings |
 | `stages` | the scopes the target serves; empty means every one. With exactly one entry it is also the scope of every observed build |
 | `observe` | `true` or `false`. `jenkins` and `manual` are observed by default (`observe = false` makes a Jenkins job dispatched); `observe = true` makes a `github_actions`, `gitlab_ci` or `bitbucket_pipelines` target observed. Refused on `run_by = "platform"` |
 | `workflow` | the workflow file a dispatched or observed `github_actions` target runs |
