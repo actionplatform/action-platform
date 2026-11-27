@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ciState, duration, runOfRelease } from "./ci-kinds";
+import { artifactHref, bytes, ciState, duration, logDownloadHref, pipelineRunDetail, runHref, runOfRelease } from "./ci-kinds";
 
 describe("duration", () => {
   it("says it the way a person would", () => {
@@ -39,5 +39,34 @@ describe("runOfRelease", () => {
   it("finds nothing rather than guessing", () => {
     expect(runOfRelease([run("r1", "main", "abc")], { tag: "v2.0.0", version: "2.0.0", sha: null })).toBeNull();
     expect(runOfRelease([run("r1", "main", null)], { tag: "v2.0.0", version: "", sha: null })).toBeNull();
+  });
+});
+
+describe("pipelines", () => {
+  it("shapes a run detail and the links to it", () => {
+    const detail = pipelineRunDetail({
+      run: { job: "team/app", number: 8, status: "running" },
+      job: { name: "team/app", kind: "ci", label: "CI" },
+      parameters: {},
+      causes: [],
+      changes: [],
+      stages: [{ id: "1", name: "Build", status: "weird" }],
+      pending_inputs: null,
+      supports: { log: true, tests: false, artifacts: true },
+    });
+    expect(detail.run).toMatchObject({ number: 8, status: "running", branch: null });
+    expect(detail.stages?.[0]).toMatchObject({ status: "unknown", parentId: null });
+    expect(detail.pendingInputs).toBeNull();
+    expect(detail.parameters).toEqual({});
+    expect(runHref("/projects/p/apps/a", "team/app", 8, "tests")).toBe("/projects/p/apps/a/pipelines/8?job=team%2Fapp&tab=tests");
+    expect(artifactHref("p", "a", "team/app", 8, "dist/x y.tgz")).toBe("/api/v1/projects/p/apps/a/ci/runs/8/artifacts/download?job=team%2Fapp&path=dist%2Fx+y.tgz");
+    expect(logDownloadHref("p", "a", "", 3)).toBe("/api/v1/projects/p/apps/a/ci/runs/3/log/download?job=");
+  });
+
+  it("says sizes the way a person would", () => {
+    expect(bytes(null)).toBe("—");
+    expect(bytes(512)).toBe("512 B");
+    expect(bytes(1536)).toBe("1.5 KB");
+    expect(bytes(50 * 1024 * 1024)).toBe("50 MB");
   });
 });

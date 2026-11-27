@@ -24,6 +24,16 @@ export const projects = {
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/ci/run", { params: { path: { project_id: projectId, app_id: appId } }, body: { ref } })),
   syncCi: async (projectId: string, appId: string, page = 1, per = 10) =>
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/ci/sync", { params: { path: { project_id: projectId, app_id: appId }, query: { page, per } } })),
+  pipelines: async (projectId: string, appId: string, job: string | null, status: string | null, limit = 50) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/ci/runs", { params: { path: { project_id: projectId, app_id: appId }, query: { job: job ?? undefined, status: status ?? undefined, limit } } })),
+  pipelineRun: async (projectId: string, appId: string, job: string, number: number) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/ci/runs/{number}", { params: { path: { project_id: projectId, app_id: appId, number }, query: { job } } })),
+  pipelineLog: async (projectId: string, appId: string, job: string, number: number, start: number, node: string | null) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/ci/runs/{number}/log", { params: { path: { project_id: projectId, app_id: appId, number }, query: { job, start, node: node ?? undefined } } })),
+  pipelineTests: async (projectId: string, appId: string, job: string, number: number) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/ci/runs/{number}/tests", { params: { path: { project_id: projectId, app_id: appId, number }, query: { job } } })),
+  pipelineArtifacts: async (projectId: string, appId: string, job: string, number: number) =>
+    unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/ci/runs/{number}/artifacts", { params: { path: { project_id: projectId, app_id: appId, number }, query: { job } } })),
   imports: async (projectId: string, appId: string) =>
     unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/imports", { params: { path: { project_id: projectId, app_id: appId } } })),
   syncImports: async (projectId: string, appId: string) =>

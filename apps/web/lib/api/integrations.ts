@@ -26,6 +26,7 @@ export const integrations = {
   ciHosts: async () => unwrap(await client.GET("/api/v1/ci-hosts")),
   addCiHost: async (body: Schemas["AddCiHostRequest"]) => unwrap(await client.POST("/api/v1/ci-hosts", { body })),
   removeCiHost: async (id: string) => unwrap(await client.DELETE("/api/v1/ci-hosts/{host_id}", { params: { path: { host_id: id } } })),
+  ciActivity: async () => unwrap(await client.GET("/api/v1/ci-hosts/activity")),
   testCiHost: async (id: string) => unwrap(await client.POST("/api/v1/ci-hosts/{host_id}/test", { params: { path: { host_id: id } } })),
   templateSources: async () => unwrap(await client.GET("/api/v1/template-sources")),
   addTemplateSource: async (name: string, url: string, ref: string) => unwrap(await client.POST("/api/v1/template-sources", { body: { name, url, ref } })),

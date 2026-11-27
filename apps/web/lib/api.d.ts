@@ -879,6 +879,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ci-hosts/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ci_activity_api_v1_ci_hosts_activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/oauth/apps": {
         parameters: {
             query?: never;
@@ -1241,6 +1257,118 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["start_ci_api_v1_projects__project_id__apps__app_id__ci_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/ci/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pipeline_runs_api_v1_projects__project_id__apps__app_id__ci_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/ci/runs/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pipeline_run_api_v1_projects__project_id__apps__app_id__ci_runs__number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/ci/runs/{number}/log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pipeline_log_api_v1_projects__project_id__apps__app_id__ci_runs__number__log_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/ci/runs/{number}/log/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pipeline_log_download_api_v1_projects__project_id__apps__app_id__ci_runs__number__log_download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/ci/runs/{number}/tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pipeline_tests_api_v1_projects__project_id__apps__app_id__ci_runs__number__tests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/ci/runs/{number}/artifacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pipeline_artifacts_api_v1_projects__project_id__apps__app_id__ci_runs__number__artifacts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/ci/runs/{number}/artifacts/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pipeline_artifact_api_v1_projects__project_id__apps__app_id__ci_runs__number__artifacts_download_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2548,6 +2676,41 @@ export interface components {
         CheckoutRequest: {
             branch: string;
         };
+        CiActivity: {
+            hosts: components["schemas"]["CiHostActivity"][];
+        };
+        CiAppRef: {
+            project_id: string;
+            app_id: string;
+            name: string;
+            job: string;
+        };
+        CiArtifact: {
+            path: string;
+            size?: number | null;
+        };
+        CiArtifacts: {
+            artifacts: components["schemas"]["CiArtifact"][];
+        };
+        CiChange: {
+            sha: string;
+            author?: string | null;
+            message: string;
+        };
+        CiExecutorRow: {
+            node: string;
+            busy: boolean;
+            number?: number | null;
+            app?: components["schemas"]["CiAppRef"] | null;
+        };
+        CiHostActivity: {
+            id: string;
+            name: string;
+            kind: string;
+            queue?: components["schemas"]["CiQueueRow"][] | null;
+            executors?: components["schemas"]["CiExecutorRow"][] | null;
+            error?: string | null;
+        };
         CiHostRow: {
             id: string;
             kind: string;
@@ -2555,6 +2718,15 @@ export interface components {
             base_url: string;
             username?: string | null;
             created_at: string;
+        };
+        CiJob: {
+            name: string;
+            kind: string;
+            label: string;
+        };
+        CiJobError: {
+            job: string;
+            error: string;
         };
         CiLink: {
             kind: string;
@@ -2564,6 +2736,52 @@ export interface components {
         CiLinkRequest: {
             ci_host_id?: string | null;
             job: string;
+        };
+        CiLogChunk: {
+            text: string;
+            next_start: number;
+            more: boolean;
+            truncated: boolean;
+        };
+        CiPendingInput: {
+            id: string;
+            message: string;
+        };
+        CiPipelineRun: {
+            job: string;
+            number: number;
+            status: string;
+            name?: string | null;
+            url?: string | null;
+            branch?: string | null;
+            sha?: string | null;
+            trigger?: string | null;
+            started_at?: string | null;
+            duration_ms?: number | null;
+        };
+        CiPipelines: {
+            kind: string;
+            jobs: components["schemas"]["CiJob"][];
+            runs: components["schemas"]["CiPipelineRun"][];
+            errors: components["schemas"]["CiJobError"][];
+        };
+        CiQueueRow: {
+            since?: string | null;
+            why?: string | null;
+            app?: components["schemas"]["CiAppRef"] | null;
+        };
+        CiRunDetail: {
+            run: components["schemas"]["CiPipelineRun"];
+            job: components["schemas"]["CiJob"];
+            parameters: {
+                [key: string]: string;
+            };
+            causes: string[];
+            changes: components["schemas"]["CiChange"][];
+            stages?: components["schemas"]["CiStage"][] | null;
+            pending_inputs?: components["schemas"]["CiPendingInput"][] | null;
+            waiting?: string | null;
+            supports: components["schemas"]["CiSupports"];
         };
         CiRunRow: {
             id: string;
@@ -2587,6 +2805,14 @@ export interface components {
             page: number;
             per: number;
         };
+        CiStage: {
+            id: string;
+            name: string;
+            status: string;
+            started_at?: string | null;
+            duration_ms?: number | null;
+            parent_id?: string | null;
+        };
         CiStartRequest: {
             ref: string;
         };
@@ -2594,6 +2820,27 @@ export interface components {
             id: string;
             url?: string | null;
             ref: string;
+        };
+        CiSupports: {
+            log: boolean;
+            tests: boolean;
+            artifacts: boolean;
+        };
+        CiTestFailure: {
+            name: string;
+            class_name: string;
+            message: string;
+            stack: string;
+        };
+        CiTestReport: {
+            total: number;
+            passed: number;
+            failed: number;
+            skipped: number;
+            failures: components["schemas"]["CiTestFailure"][];
+        };
+        CiTests: {
+            report?: components["schemas"]["CiTestReport"] | null;
         };
         CloudRequest: {
             target: string;
@@ -5903,6 +6150,35 @@ export interface operations {
             };
         };
     };
+    ci_activity_api_v1_ci_hosts_activity_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CiActivity"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     oauth_apps_api_v1_oauth_apps_get: {
         parameters: {
             query?: never;
@@ -6774,6 +7050,251 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CiStarted"];
                 };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pipeline_runs_api_v1_projects__project_id__apps__app_id__ci_runs_get: {
+        parameters: {
+            query?: {
+                job?: string | null;
+                status?: string | null;
+                limit?: number;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CiPipelines"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pipeline_run_api_v1_projects__project_id__apps__app_id__ci_runs__number__get: {
+        parameters: {
+            query?: {
+                job?: string;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CiRunDetail"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pipeline_log_api_v1_projects__project_id__apps__app_id__ci_runs__number__log_get: {
+        parameters: {
+            query?: {
+                job?: string;
+                start?: number;
+                node?: string | null;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CiLogChunk"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pipeline_log_download_api_v1_projects__project_id__apps__app_id__ci_runs__number__log_download_get: {
+        parameters: {
+            query?: {
+                job?: string;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pipeline_tests_api_v1_projects__project_id__apps__app_id__ci_runs__number__tests_get: {
+        parameters: {
+            query?: {
+                job?: string;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CiTests"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pipeline_artifacts_api_v1_projects__project_id__apps__app_id__ci_runs__number__artifacts_get: {
+        parameters: {
+            query?: {
+                job?: string;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CiArtifacts"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pipeline_artifact_api_v1_projects__project_id__apps__app_id__ci_runs__number__artifacts_download_get: {
+        parameters: {
+            query: {
+                path: string;
+                job?: string;
+            };
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             422: {
                 headers: {

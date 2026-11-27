@@ -3,7 +3,7 @@
 import { failed, type Result } from "@/lib/result";
 import { revalidatePath } from "next/cache";
 import { refreshProject } from "@/lib/revalidate";
-import { CI_HOST_KINDS, type CiHostKind, type CiState, ciState } from "@/lib/ci";
+import { CI_HOST_KINDS, type CiArtifact, type CiHostKind, type CiLogChunk, type CiState, type CiTestReport, ciState, logChunk, testReport } from "@/lib/ci";
 import { requireOrg } from "@/lib/session";
 import { v1 } from "@/lib/v1";
 
@@ -71,6 +71,34 @@ export async function startCi(projectId: string, appId: string, ref: string): Pr
     const r = await v1.startCi(projectId, appId, ref);
     refreshProject(projectId);
     return { ok: true, data: { id: r.id, url: r.url ?? null, ref: r.ref } };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
+export async function readCiLog(projectId: string, appId: string, job: string, number: number, start: number, node: string | null): Promise<Result<CiLogChunk>> {
+  await requireOrg();
+  try {
+    return { ok: true, data: logChunk(await v1.pipelineLog(projectId, appId, job, number, start, node)) };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
+export async function readCiTests(projectId: string, appId: string, job: string, number: number): Promise<Result<CiTestReport | null>> {
+  await requireOrg();
+  try {
+    return { ok: true, data: testReport(await v1.pipelineTests(projectId, appId, job, number)) };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
+export async function readCiArtifacts(projectId: string, appId: string, job: string, number: number): Promise<Result<CiArtifact[]>> {
+  await requireOrg();
+  try {
+    const r = await v1.pipelineArtifacts(projectId, appId, job, number);
+    return { ok: true, data: r.artifacts.map((a) => ({ path: a.path, size: a.size ?? null })) };
   } catch (e) {
     return failed(e);
   }
