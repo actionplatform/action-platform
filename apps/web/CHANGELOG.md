@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.40.0 — 2026-11-27
+
+### Features
+- **web:** a page per deployment with the CI run it dispatched (#675)
+- **ci:** find the CI run a deploy dispatched (#675)
+- **web:** pipelines tab, run page and CI activity (#675)
+
 ## v0.39.1 — 2026-11-26
 
 ### Bug Fixes
