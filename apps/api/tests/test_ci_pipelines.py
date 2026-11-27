@@ -65,6 +65,8 @@ class FakeRunner(CIRunner):
                 number=3,
                 status="success",
                 trigger="platform deploy",
+                url="https://ci.acme.io/job/demo-deploy/3/",
+                params={"VERSION": "v1.2.0"},
                 started_at=datetime(2026, 11, 25, 12, tzinfo=timezone.utc),
             )
         ]
@@ -206,6 +208,7 @@ class PipelinesTest(GateCase):
                     "kind": "aws-lambda",
                     "run_by": "jenkins",
                     "job": CD_JOB,
+                    "version_parameter": "VERSION",
                     "stages": ["dev"],
                 },
                 {
@@ -447,3 +450,40 @@ class PipelinesTest(GateCase):
             ],
         )
         self.assertNotIn("other-team", res.text)
+
+    def test_a_deploy_finds_the_run_it_dispatched(self):
+        self.as_viewer()
+        url = "/api/v1/projects/p1/apps/a1/ci/deploy-runs"
+        found = self.client.get(
+            url,
+            params={
+                "stage": "dev",
+                "version": "1.2.0",
+                "since": "2026-11-25T11:59:00Z",
+            },
+            headers=self.h(),
+        ).json()["runs"]
+
+        self.assertEqual(
+            [(r["target"], r["run"]["job"], r["run"]["number"]) for r in found],
+            [("dev", CD_JOB, 3)],
+        )
+
+        for params in (
+            {"stage": "dev", "version": "9.9.9"},
+            {"stage": "dev", "version": "1.2.0", "since": "2026-11-26T00:00:00Z"},
+            {"stage": "prod", "version": "1.2.0"},
+        ):
+            res = self.client.get(url, params=params, headers=self.h())
+            self.assertEqual(res.json()["runs"], [], params)
+
+        by_link = self.client.get(
+            url,
+            params={
+                "stage": "dev",
+                "version": "0.0.1",
+                "url": "https://ci.acme.io/job/demo-deploy/3/",
+            },
+            headers=self.h(),
+        ).json()["runs"]
+        self.assertEqual([r["run"]["number"] for r in by_link], [3])

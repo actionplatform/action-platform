@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Callable, Iterator, Optional, TypeVar
 
 from action_platform.abc.ci_runner import CIRunner
@@ -23,6 +23,7 @@ MAX_FAILURES = 200
 MAX_STACK = 16 * 1024
 LIVE = ("queued", "running")
 EPOCH = datetime.min.replace(tzinfo=timezone.utc)
+SLACK = timedelta(minutes=2)
 
 T = TypeVar("T")
 
@@ -82,14 +83,12 @@ def run_row(job: str, run: Run) -> schemas.CiPipelineRun:
     )
 
 
+def utc(value: datetime) -> datetime:
+    return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
+
+
 def started(row: schemas.CiPipelineRun) -> datetime:
-    if row.started_at is None:
-        return EPOCH
-
-    if row.started_at.tzinfo is None:
-        return row.started_at.replace(tzinfo=timezone.utc)
-
-    return row.started_at
+    return EPOCH if row.started_at is None else utc(row.started_at)
 
 
 class Pipelines:
@@ -188,6 +187,82 @@ class Pipelines:
             runs=rows[: max(1, min(limit, MAX_RUNS))],
             errors=errors,
         )
+
+    def deploy_runs(
+        self,
+        organization_id: str,
+        app: App,
+        stage: Optional[str],
+        version: str,
+        since: Optional[datetime] = None,
+        until: Optional[datetime] = None,
+        urls: Optional[list[str]] = None,
+    ) -> schemas.CiDeployRuns:
+        """The run each CI-run target of `stage` made for one deploy of `version`: the run a result links to, else the one that shipped that version within the deploy's time."""
+        kind = self.ci.kind_of(organization_id, app)
+        version = version.lstrip("v")
+        links = set(urls or [])
+
+        try:
+            targets = self.context.config_of(app).targets
+        except ActionPlatformError:
+            targets = []
+
+        specs = [
+            s
+            for s in targets
+            if s.run_by == kind
+            and not s.platform
+            and (s.job or s.workflow)
+            and (not stage or s.serves(stage))
+        ]
+
+        if kind == "none" or not specs:
+            return schemas.CiDeployRuns(runs=[])
+
+        runner = self.runner(organization_id, app)
+        low = utc(since) - SLACK if since else None
+        high = utc(until) + SLACK if until else None
+        found: list[schemas.CiDeployRun] = []
+
+        for spec in specs:
+            job = spec.job or spec.workflow
+
+            try:
+                runs = runner.runs(job, RUNS_PER_JOB)
+            except (NotImplementedError, ActionPlatformError):
+                continue
+
+            def ships(run: Run) -> bool:
+                if spec.run_version(run.branch, run.params) != version:
+                    return False
+
+                ran = spec.run_stage(run.params)
+
+                if stage and ran and ran != stage:
+                    return False
+
+                at = utc(run.started_at) if run.started_at else None
+
+                return at is None or (
+                    (low is None or at >= low) and (high is None or at <= high)
+                )
+
+            match = next((r for r in runs if r.url and r.url in links), None)
+
+            if match is None:
+                candidates = sorted(
+                    (r for r in runs if ships(r)),
+                    key=lambda r: (utc(r.started_at) if r.started_at else EPOCH),
+                )
+                match = candidates[0] if candidates else None
+
+            if match is not None:
+                found.append(
+                    schemas.CiDeployRun(target=spec.name, run=run_row(job, match))
+                )
+
+        return schemas.CiDeployRuns(runs=found)
 
     def run(
         self, organization_id: str, app: App, job: str, number: int

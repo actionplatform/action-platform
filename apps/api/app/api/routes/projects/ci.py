@@ -1,9 +1,10 @@
 """The CI of an app inside a project: which runner it reads, the runs imported from it, and its pipelines read live — runs, stages, logs, tests and artifacts — for any member who can read the app."""
 
 import re
+from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 from app.core.errors import Invalid
@@ -138,6 +139,25 @@ def pipeline_runs(
     app = app_of(writes, caller, project_of(writes, org, project_id), app_id)
 
     return pipelines.runs(org.id, app, job, status or None, limit)
+
+
+@router.get("/projects/{project_id}/apps/{app_id}/ci/deploy-runs")
+def deploy_runs(
+    project_id: str,
+    app_id: str,
+    version: str,
+    org: OrgDep,
+    caller: CallerDep,
+    writes: ProjectsRepoDep,
+    pipelines: PipelinesDep,
+    stage: Optional[str] = None,
+    since: Optional[datetime] = None,
+    until: Optional[datetime] = None,
+    url: list[str] = Query(default=[]),
+) -> schemas.CiDeployRuns:
+    app = app_of(writes, caller, project_of(writes, org, project_id), app_id)
+
+    return pipelines.deploy_runs(org.id, app, stage, version, since, until, url)
 
 
 @router.get("/projects/{project_id}/apps/{app_id}/ci/runs/{number}")

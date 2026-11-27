@@ -204,3 +204,12 @@ class CiHostActivity(BaseModel):
 
 class CiActivity(BaseModel):
     hosts: list[CiHostActivity]
+
+
+class CiDeployRun(BaseModel):
+    target: str
+    run: CiPipelineRun
+
+
+class CiDeployRuns(BaseModel):
+    runs: list[CiDeployRun]
