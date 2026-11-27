@@ -54,7 +54,7 @@ class AccessGate:
         method = scope["method"]
 
         if method == "POST" and WEBHOOK.match(path):
-            await self.app(scope, self._replay(body), send)
+            await self.app(scope, self._replay(body, receive), send)
 
             return
 
@@ -87,7 +87,7 @@ class AccessGate:
         scope.setdefault("state", {})["caller"] = caller
 
         if plan is None:
-            await self.app(scope, self._replay(body), send)
+            await self.app(scope, self._replay(body, receive), send)
 
             return
 
@@ -95,7 +95,7 @@ class AccessGate:
         creds = SourceCredentials(**plan.credentials) if plan.credentials else None
 
         with git_auth(creds):
-            status = await self._pass(scope, plan.body, send)
+            status = await self._pass(scope, plan.body, receive, send)
 
         if plan.target.rule.imports and 200 <= status < 300:
             await run_in_threadpool(
@@ -143,14 +143,15 @@ class AccessGate:
         return b"".join(chunks)
 
     @staticmethod
-    def _replay(body: bytes) -> Receive:
+    def _replay(body: bytes, upstream: Receive) -> Receive:
+        """The body already read, then the connection itself: a streamed response hears of a disconnect only when the client leaves."""
         sent = False
 
         async def receive() -> Message:
             nonlocal sent
 
             if sent:
-                return {"type": "http.disconnect"}
+                return await upstream()
 
             sent = True
 
@@ -158,7 +159,9 @@ class AccessGate:
 
         return receive
 
-    async def _pass(self, scope: Scope, body: bytes, send: Send) -> int:
+    async def _pass(
+        self, scope: Scope, body: bytes, receive: Receive, send: Send
+    ) -> int:
         status = 500
 
         async def sender(message: Message) -> None:
@@ -169,7 +172,7 @@ class AccessGate:
 
             await send(message)
 
-        await self.app(scope, self._replay(body), sender)
+        await self.app(scope, self._replay(body, receive), sender)
 
         return status
 
