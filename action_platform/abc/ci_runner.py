@@ -94,6 +94,9 @@ class PendingInput:
     message: str
 
 
+LOG_WINDOW = 256 * 1024
+
+
 def stage_tuples(stages: Iterable[Stage | tuple[str, str]]) -> list[tuple[str, str]]:
     """`(name, status)` for each stage, whether the runner answered `Stage`s or the earlier tuples."""
     return [s.as_tuple() if isinstance(s, Stage) else (s[0], s[1]) for s in stages]
@@ -145,10 +148,35 @@ class CIRunner(ABC):
         raise NotImplementedError(f"{self.name} cannot read logs")
 
     def log(
-        self, job: str, number: int, start: int = 0, node: str | None = None
+        self,
+        job: str,
+        number: int,
+        start: int = 0,
+        node: str | None = None,
+        limit: int | None = None,
     ) -> LogChunk:
-        """The log of one run from offset `start` — the whole console, or one stage or step when `node` names it; read again from `next_start` while `more`."""
+        """At most `limit` bytes (`LOG_WINDOW` when None) of one run's log from offset `start`, ending on a line break where one falls inside — the console, or one stage or step when `node` names it; read again from `next_start` while `more`. A runner never holds more than the window."""
         raise NotImplementedError(f"{self.name} cannot read a log")
+
+    def log_stream(
+        self,
+        job: str,
+        number: int,
+        start: int = 0,
+        node: str | None = None,
+        limit: int | None = None,
+    ) -> Iterator[LogChunk]:
+        """The log as it stands, window by window through `log`, without holding more than one; it ends when the run has nothing more written. NotImplementedError when the runner cannot read a log."""
+        while True:
+            chunk = self.log(job, number, start, node, limit)
+
+            if chunk.text:
+                yield chunk
+
+            if not chunk.text or not chunk.more or chunk.next_start <= start:
+                return
+
+            start = chunk.next_start
 
     def tests(self, job: str, number: int) -> TestReport | None:
         """The test report of one run; None when it published none."""
@@ -181,6 +209,7 @@ __all__ = [
     "Cause",
     "Change",
     "Executor",
+    "LOG_WINDOW",
     "LogChunk",
     "PendingInput",
     "QueueItem",
