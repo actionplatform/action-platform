@@ -177,7 +177,7 @@ class HelpersTest(unittest.TestCase):
 
 
 @unittest.skipUnless(TestClient, "fastapi is not installed")
-class PipelinesTest(GateCase):
+class PipelinesCase(GateCase):
     def setUp(self):
         super().setUp()
         from app.core.db.models import App, CiHost
@@ -242,6 +242,9 @@ class PipelinesTest(GateCase):
         with self.app.state.db.session() as s:
             s.query(Member).update({"role": "viewer"})
 
+
+@unittest.skipUnless(TestClient, "fastapi is not installed")
+class PipelinesTest(PipelinesCase):
     def test_runs_list_every_job_newest_first(self):
         self.as_viewer()
         res = self.client.get(self.base, headers=self.h())
@@ -487,3 +490,93 @@ class PipelinesTest(GateCase):
             headers=self.h(),
         ).json()["runs"]
         self.assertEqual([r["run"]["number"] for r in by_link], [3])
+
+
+SECRET = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"
+BIG = "".join(f"line {i:07d} {'x' * 40}\n" for i in range(60_000)) + f"token {SECRET}\n"
+
+
+class Windowed(FakeRunner):
+    def __init__(self) -> None:
+        super().__init__()
+        self.data = BIG.encode()
+        self.reads: list[tuple[int, int]] = []
+
+    def log(
+        self,
+        job: str,
+        number: int,
+        start: int = 0,
+        node: str | None = None,
+        limit: int = 1024,
+    ) -> LogChunk:
+        piece = self.data[start : start + limit]
+        self.reads.append((start, len(piece)))
+
+        return LogChunk(
+            text=piece.decode(),
+            next_start=start + len(piece),
+            more=start + len(piece) < len(self.data),
+        )
+
+
+class Streamed(FakeRunner):
+    def __init__(self) -> None:
+        super().__init__()
+        self.pieces = 0
+
+    def log_stream(self, job: str, number: int) -> Iterator[bytes]:
+        data = BIG.encode()
+
+        for at in range(0, len(data), 100_000):
+            self.pieces += 1
+            yield data[at : at + 100_000]
+
+
+@unittest.skipUnless(TestClient, "fastapi is not installed")
+class LargeLogTest(PipelinesCase):
+    def test_download_reads_window_by_window(self):
+        windowed = Windowed()
+        with mock.patch(
+            "app.services.ci.service.CiService.runner_for", return_value=windowed
+        ):
+            res = self.client.get(
+                f"{self.base}/7/log/download", params={"job": CI_JOB}, headers=self.h()
+            )
+
+        self.assertEqual(res.status_code, 200)
+        self.assertGreater(len(windowed.reads), 2)
+        self.assertLessEqual(max(n for _, n in windowed.reads), 1024 * 1024)
+        self.assertEqual(
+            [s for s, _ in windowed.reads][1:],
+            [s + n for s, n in windowed.reads][:-1],
+        )
+        self.assertEqual(res.text.replace("****", SECRET), BIG)
+        self.assertNotIn(SECRET, res.text)
+
+    def test_the_json_log_asks_the_runner_for_at_most_the_cap(self):
+        windowed = Windowed()
+        with mock.patch(
+            "app.services.ci.service.CiService.runner_for", return_value=windowed
+        ):
+            body = self.client.get(
+                f"{self.base}/7/log", params={"job": CI_JOB}, headers=self.h()
+            ).json()
+
+        self.assertEqual(windowed.reads, [(0, MAX_LOG_BYTES)])
+        self.assertEqual(body["next_start"], MAX_LOG_BYTES)
+        self.assertTrue(body["more"])
+        self.assertFalse(body["truncated"])
+
+    def test_download_uses_the_runners_stream(self):
+        streamed = Streamed()
+        with mock.patch(
+            "app.services.ci.service.CiService.runner_for", return_value=streamed
+        ):
+            res = self.client.get(
+                f"{self.base}/7/log/download", params={"job": CI_JOB}, headers=self.h()
+            )
+
+        self.assertGreater(streamed.pieces, 10)
+        self.assertEqual(res.text.replace("****", SECRET), BIG)
+        self.assertNotIn(("log", CI_JOB, 7, 0, None), streamed.calls)

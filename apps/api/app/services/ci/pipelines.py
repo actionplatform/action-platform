@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from typing import Callable, Iterator, Optional, TypeVar
+import inspect
+from typing import Any, Callable, Iterable, Iterator, Optional, TypeVar
 
 from action_platform.abc.ci_runner import CIRunner
 from action_platform.core.context import Run
@@ -16,7 +17,10 @@ from app.services.ci.service import CiService
 from app.services.workspace.app_context import AppContext
 
 MAX_LOG_BYTES = 256 * 1024
-MAX_DOWNLOAD_READS = 10_000
+DOWNLOAD_WINDOW = 1024 * 1024
+MAX_PENDING_LINE = 64 * 1024
+MAX_DOWNLOAD_READS = 100_000
+WINDOW_PARAMETERS = ("limit", "max_bytes", "window")
 RUNS_PER_JOB = 25
 MAX_RUNS = 100
 MAX_FAILURES = 200
@@ -30,7 +34,13 @@ T = TypeVar("T")
 
 def supports(runner: CIRunner, method: str) -> bool:
     """Whether the runner answers `method` at all, without calling the CI."""
-    return getattr(type(runner), method, None) is not getattr(CIRunner, method)
+    own = getattr(type(runner), method, None)
+
+    return callable(own) and own is not getattr(CIRunner, method, None)
+
+
+def text_of(piece: str | bytes) -> str:
+    return piece.decode("utf-8", "replace") if isinstance(piece, bytes) else piece
 
 
 def optional(read: Callable[[], T]) -> Optional[T]:
@@ -48,6 +58,51 @@ def upstream(read: Callable[[], T]) -> T:
         raise NotFound(str(e)) from e
     except ActionPlatformError as e:
         raise Upstream(str(e)) from e
+
+
+def window_parameter(runner: CIRunner) -> Optional[str]:
+    """The name under which the runner's `log` takes the most it may read at once, when it takes one."""
+    try:
+        parameters = inspect.signature(runner.log).parameters
+    except (TypeError, ValueError):
+        return None
+
+    return next((p for p in WINDOW_PARAMETERS if p in parameters), None)
+
+
+def read_log(
+    runner: CIRunner,
+    job: str,
+    number: int,
+    start: int,
+    node: Optional[str],
+    limit: int,
+):
+    """One chunk of the log, bounded by the runner itself when it can be told how much to read."""
+    name = window_parameter(runner)
+    extra: dict[str, Any] = {name: limit} if name else {}
+
+    return runner.log(job, number, start, node, **extra)
+
+
+def masked_lines(chunks: Iterable[str]) -> Iterator[bytes]:
+    """Chunks re-cut on line ends, so a secret split across two reads is still masked; a line longer than the bound is let through as it is."""
+    pending = ""
+
+    for text in chunks:
+        pending += text
+        cut = pending.rfind("\n")
+
+        if cut == -1 and len(pending) < MAX_PENDING_LINE:
+            continue
+
+        head, pending = (
+            (pending[: cut + 1], pending[cut + 1 :]) if cut != -1 else (pending, "")
+        )
+        yield redact(head).encode("utf-8")
+
+    if pending:
+        yield redact(pending).encode("utf-8")
 
 
 def capped(text: str, limit: int = MAX_LOG_BYTES) -> tuple[str, bool]:
@@ -233,7 +288,7 @@ class Pipelines:
             except (NotImplementedError, ActionPlatformError):
                 continue
 
-            def ships(run: Run) -> bool:
+            def ships(run: Run, spec=spec) -> bool:
                 if spec.run_version(run.branch, run.params) != version:
                     return False
 
@@ -334,7 +389,9 @@ class Pipelines:
 
         self.job_of(organization_id, app, job)
         runner = self.runner(organization_id, app)
-        chunk = upstream(lambda: runner.log(job, number, start, node or None))
+        chunk = upstream(
+            lambda: read_log(runner, job, number, start, node or None, MAX_LOG_BYTES)
+        )
         text, truncated = capped(chunk.text)
 
         return schemas.CiLogChunk(
@@ -347,24 +404,42 @@ class Pipelines:
     def log_download(
         self, organization_id: str, app: App, job: str, number: int
     ) -> Iterator[bytes]:
-        """The whole console as it stands, read chunk by chunk and handed on as it arrives."""
+        """The whole console as it stands, read window by window from the CI and handed on as each arrives — never held whole."""
         self.job_of(organization_id, app, job)
         runner = self.runner(organization_id, app)
-        first = upstream(lambda: runner.log(job, number, 0, None))
 
-        def chunks() -> Iterator[bytes]:
-            chunk = first
+        if supports(runner, "log_stream"):
+            stream = upstream(lambda: iter(runner.log_stream(job, number)))
+            first = upstream(lambda: next(stream, ""))
+
+            def streamed() -> Iterator[str]:
+                if first:
+                    yield text_of(first)
+
+                for piece in stream:
+                    yield text_of(piece)
+
+            return masked_lines(streamed())
+
+        first = upstream(
+            lambda: read_log(runner, job, number, 0, None, DOWNLOAD_WINDOW)
+        )
+
+        def windows() -> Iterator[str]:
+            chunk, start = first, 0
 
             for _ in range(MAX_DOWNLOAD_READS):
-                if chunk.text:
-                    yield redact(chunk.text).encode("utf-8")
+                if not chunk.text or chunk.next_start <= start:
+                    if chunk.text:
+                        yield chunk.text
 
-                if not chunk.more or not chunk.text:
                     return
 
-                chunk = runner.log(job, number, chunk.next_start, None)
+                yield chunk.text
+                start = chunk.next_start
+                chunk = read_log(runner, job, number, start, None, DOWNLOAD_WINDOW)
 
-        return chunks()
+        return masked_lines(windows())
 
     def tests(
         self, organization_id: str, app: App, job: str, number: int
