@@ -53,6 +53,12 @@ def register(mcp: Any, remote: Remote) -> None:
                 description="Release from this branch instead of the current one; the clone must be clean. main/master cut a stable version, anything else an rc"
             ),
         ] = None,
+        component: Annotated[
+            Optional[str],
+            Field(
+                description="Release one component of the app's platform.toml (tag <component>/vX.Y.Z) instead of the repository; default the repository"
+            ),
+        ] = None,
     ) -> Union[schemas.ReleasePreview, schemas.JobQueued]:
         """Bump, changelog, tag and publish a release on the platform.
 
@@ -62,7 +68,7 @@ def register(mcp: Any, remote: Remote) -> None:
         as a job on the platform's worker and is followed until it ends;
         one still running after 15 minutes answers with its job id.
         """
-        return remote.release(id, level, dry_run, branch)
+        return remote.release(id, level, dry_run, branch, component)
 
     @tool(mcp, annotations=REACHES_OUT)
     def start_branch(

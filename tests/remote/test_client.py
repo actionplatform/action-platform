@@ -347,7 +347,8 @@ class RemoteClientTest(TempCase):
         self.assertEqual(self.seen["method"], "POST")
         self.assertEqual(self.seen["url"], "https://p.example/api/v1/apps/p1/release")
         self.assertEqual(
-            self.seen["body"], {"level": "minor", "dry_run": True, "branch": None}
+            self.seen["body"],
+            {"level": "minor", "dry_run": True, "branch": None, "component": None},
         )
         self.assertEqual(self.seen["token"], "tok")
         self.assertEqual(self.seen["client"], "action-platform-cli")
