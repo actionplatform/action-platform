@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.47.0 — 2026-11-27
+
+### Breaking Changes
+- **ci:** move the Jenkins runner to apx-jenkins; extend the CIRunner contract; ci_* tools (#678)
+
+### Features
+- **ci:** find the CI run a deploy dispatched (#675)
+- **ci:** read every pipeline of an app live from its CI runner (#675)
+
+### Bug Fixes
+- **ci:** stream the log download window by window (#675)
+- **api:** keep a streamed response open through the gate (#675)
+- **api:** ask GitHub for organization projects so the import can read them (#667)
+
+### Refactoring
+- **ci:** read logs through the contract's limit and log_stream (#675)
+
 ## v0.46.1 — 2026-11-26
 
 ### Bug Fixes
