@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.39.0 — 2026-11-27
+
+### Features
+- **mcp:** remote release takes a component (#681)
+- **ci:** find the CI run a deploy dispatched (#675)
+- **ci:** read every pipeline of an app live from its CI runner (#675)
+
+### Bug Fixes
+- **ci:** stream the log download window by window (#675)
+
+### Refactoring
+- **ci:** read logs through the contract's limit and log_stream (#675)
+
+### Docs
+- **mcp:** remote release takes a component (#681)
+- the deployment page and its CI run (#675)
+- pipelines and CI activity (#675)
+
+### Tests
+- **api:** the bundled Jenkins runner resolves through the entry point
+
+### Build
+- **api:** apx-jenkins 0.2.0 and action-platform 0.38.0 in the image
+
 ## v0.38.0 — 2026-11-27
 
 ### Breaking Changes
