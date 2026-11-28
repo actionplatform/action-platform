@@ -91,8 +91,7 @@ def assign_project_team(
 
 @router.delete(
     "/projects/{project_id}",
-    status_code=204,
-    response_model=None,
+    response_model=common.Removed,
     responses={202: {"model": common.Removed}},
 )
 def delete_project(
@@ -105,7 +104,7 @@ def delete_project(
     response: Response,
     repositories: bool = False,
     cloud: bool = False,
-) -> Union[Response, common.Removed]:
+) -> common.Removed:
     """`cloud` tears every app's deploy stacks down first, on the worker; the project leaves the platform when that job is done (202 with the job id)."""
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
@@ -118,6 +117,6 @@ def delete_project(
             job=JobDispatcher(queue).destroy_project(org, project, caller, repositories)
         )
 
-    projects.delete(org, project, repositories)
+    removed, deleted = projects.delete(org, project, repositories)
 
-    return Response(status_code=204)
+    return common.Removed(removed=removed, repositories=deleted)

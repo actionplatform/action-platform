@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Optional
 
 from action_platform.abc.source_host import SupportsRepoDeletion
-from action_platform.core.exception import ActionPlatformError, ProviderError
+from action_platform.core.exception import ProviderError
 from action_platform.providers.source import build_source_host
 from app.core.shared.urls import GitUrl
 from app.schemas import SourceCredentials
@@ -16,18 +17,22 @@ from app.core.errors import Conflict, ServiceError, Upstream
 
 class AppRemote(AppsBase):
     def repository_of(self, id: str) -> Optional[tuple[str, str]]:
-        """(kind, owner/name) of the remote this app was pushed to or added from; None when it has none."""
-        entry, root = self.workspace(id)
+        """(kind, owner/name) of the remote this app was pushed to or added from; None when it has none. Never clones."""
+        entry = self.registry.get(id)
 
         if not entry.url:
             return None
 
-        try:
-            host = AppManifest(root, self.configs.resolve(id, root) or None).as_dict()[
-                "source_host"
-            ]
-        except ServiceError:
-            host = {}
+        root = Path(entry.path)
+        host: dict = {}
+
+        if root.is_dir():
+            try:
+                host = AppManifest(
+                    root, self.configs.resolve(id, root) or None
+                ).as_dict()["source_host"]
+            except ServiceError:
+                host = {}
 
         repo = host.get("repo") or GitUrl(entry.url).repo
         kind = host.get("kind") or GitUrl(entry.url).kind
@@ -71,10 +76,7 @@ class AppRemote(AppsBase):
 
     def delete_through_host(self, writes, organization_id: str, app) -> Optional[str]:
         """Delete the repository behind `app` with the host attached to it; None when the app has no remote."""
-        try:
-            remote = self.repository_of(app.registry_id)
-        except ActionPlatformError:
-            return None
+        remote = self.repository_of(app.registry_id)
 
         if remote is None:
             return None
