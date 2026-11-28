@@ -136,6 +136,27 @@ class LoginTest(LoginCase):
         self.assertEqual(caught.exception.code, "authorization_pending")
         self.assertEqual(caught.exception.detail, "Authorization pending")
 
+    def test_a_failure_while_reading_the_answer_names_the_url(self):
+        import http.client
+
+        for raised in (
+            TimeoutError(),
+            ConnectionResetError(),
+            http.client.RemoteDisconnected(),
+        ):
+            with self.subTest(raised=type(raised).__name__):
+                self.patch(
+                    client.destination,
+                    "urlopen",
+                    lambda *a, e=raised, **k: (_ for _ in ()).throw(e),
+                )
+
+                with self.assertRaises(ActionPlatformError) as caught:
+                    client._request("POST", "https://p.example/x", {})
+
+                self.assertIn("https://p.example/x", str(caught.exception))
+                self.assertIn(type(raised).__name__, str(caught.exception))
+
     def test_gives_up_after_repeated_network_failures(self):
         self.answers(*[ActionPlatformError("cannot reach") for _ in range(7)])
 
