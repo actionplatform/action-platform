@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import unittest
+from datetime import datetime
 from unittest import mock
 
 from action_platform.abc.source_host import ListsPullRequests, PublishesReleases
 from action_platform.core.context import PullRequestRow, ReleaseRow
+from action_platform.providers.source import rest
 from action_platform.providers.source.bitbucket import SourceBitbucket
 from action_platform.providers.source.generic import SourceGeneric
 from action_platform.providers.source.github import SourceGithub
@@ -155,3 +157,69 @@ class GenericTest(unittest.TestCase):
         self.assertNotIsInstance(host, PublishesReleases)
         self.assertNotIsInstance(host, ListsPullRequests)
         self.assertFalse(hasattr(host, "releases"))
+
+
+class IncrementalPullRequestsTest(unittest.TestCase):
+    def page(self, start, stamp):
+        return [
+            {
+                "number": n,
+                "title": "t",
+                "html_url": "u",
+                "user": {"login": "ada"},
+                "head": {"ref": "feature/1"},
+                "base": {"ref": "develop"},
+                "state": "open",
+                "draft": False,
+                "created_at": stamp,
+                "updated_at": stamp,
+            }
+            for n in range(start, start + 100)
+        ]
+
+    def test_paging_stops_at_the_first_page_older_than_the_last_sync(self):
+        pages = [
+            self.page(0, "2026-11-28T10:00:00Z"),
+            self.page(100, "2026-11-01T10:00:00Z"),
+            self.page(200, "2026-10-01T10:00:00Z"),
+        ]
+
+        with mock.patch.object(rest, "call", side_effect=pages) as call:
+            rows = SourceGithub(repo="acme/x", token="ghp").pull_requests(
+                "acme/x", since=datetime(2026, 11, 20)
+            )
+
+        self.assertEqual(call.call_count, 2)
+        self.assertEqual(len(rows), 200)
+
+        with mock.patch.object(rest, "call", side_effect=pages + [[]]) as call:
+            SourceGithub(repo="acme/x", token="ghp").pull_requests("acme/x")
+
+        self.assertEqual(call.call_count, 4)
+
+    def test_bitbucket_stops_following_next(self):
+        old = {
+            "id": 1,
+            "title": "t",
+            "links": {"html": {"href": "u"}},
+            "author": {"display_name": "ada"},
+            "source": {"branch": {"name": "feature/1"}},
+            "destination": {"branch": {"name": "develop"}},
+            "state": "OPEN",
+            "created_on": "2026-10-01T10:00:00+00:00",
+            "updated_on": "2026-10-01T10:00:00+00:00",
+        }
+
+        with mock.patch.object(
+            rest,
+            "call",
+            return_value={
+                "values": [old],
+                "next": "https://api.bitbucket.org/2.0/x?page=2",
+            },
+        ) as call:
+            SourceBitbucket(repo="acme/x", token="t").pull_requests(
+                "acme/x", since=datetime(2026, 11, 20)
+            )
+
+        self.assertEqual(call.call_count, 1)

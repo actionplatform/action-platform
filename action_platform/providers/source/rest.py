@@ -6,7 +6,7 @@ import json
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from action_platform.core import destination
 from action_platform.core.exception import ProviderError
@@ -117,8 +117,13 @@ def location(
         raise ProviderError(f"cannot reach {url}: {e.reason}") from e
 
 
-def get_pages(url: str, headers: dict[str, str], limit: int = 20) -> list[Any]:
-    """Every row of a `per_page`/`page` paginated listing (GitHub, GitLab), up to `limit` pages."""
+def get_pages(
+    url: str,
+    headers: dict[str, str],
+    limit: int = 20,
+    enough: Optional[Callable[[list[Any]], bool]] = None,
+) -> list[Any]:
+    """Every row of a `per_page`/`page` paginated listing (GitHub, GitLab), up to `limit` pages, or until `enough` says a page was the last one needed."""
     out: list[Any] = []
     separator = "&" if "?" in url else "?"
 
@@ -130,21 +135,26 @@ def get_pages(url: str, headers: dict[str, str], limit: int = 20) -> list[Any]:
 
         out.extend(rows)
 
-        if len(rows) < 100:
+        if len(rows) < 100 or (enough is not None and enough(rows)):
             break
 
     return out
 
 
-def get_values(url: str, headers: dict[str, str]) -> list[Any]:
-    """Every row of a `values`/`next` paginated listing (Bitbucket); a `next` off the listing's origin is refused."""
+def get_values(
+    url: str,
+    headers: dict[str, str],
+    enough: Optional[Callable[[list[Any]], bool]] = None,
+) -> list[Any]:
+    """Every row of a `values`/`next` paginated listing (Bitbucket), or until `enough` says a page was the last one needed; a `next` off the listing's origin is refused."""
     out: list[Any] = []
     next_url: Optional[str] = url
 
     while next_url:
         data = call("GET", destination.same_origin(next_url, url), headers) or {}
-        out.extend(data.get("values", []))
-        next_url = data.get("next")
+        rows = data.get("values", [])
+        out.extend(rows)
+        next_url = None if enough is not None and enough(rows) else data.get("next")
 
     return out
 
@@ -161,3 +171,18 @@ def parse_utc(value: Optional[str]) -> Optional[datetime]:
         if parsed.tzinfo
         else parsed
     )
+
+
+def older_than(
+    since: Optional[datetime], field: str
+) -> Optional[Callable[[list[Any]], bool]]:
+    """For a listing sorted by `field` newest first: a page whose last row is older than `since` is the last one needed."""
+    if since is None:
+        return None
+
+    def enough(rows: list[Any]) -> bool:
+        last = parse_utc((rows[-1] or {}).get(field)) if rows else None
+
+        return last is not None and last < since
+
+    return enough

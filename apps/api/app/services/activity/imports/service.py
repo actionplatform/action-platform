@@ -1,10 +1,11 @@
 """Releases and pull requests of an app, imported from its code host into the `release` and `pull_request` tables; the clone's tags land in `release` too, so every tag has a row."""
 
 import uuid
+from datetime import datetime
 from dataclasses import asdict
 from typing import Any, Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
 from action_platform.abc.source_host import (
@@ -49,14 +50,14 @@ class ActivityService:
         return source.releases(repo)
 
     def remote_pull_requests(
-        self, creds: Credentials, repo: str
+        self, creds: Credentials, repo: str, since: Optional[datetime] = None
     ) -> list[PullRequestRow]:
         source = self.source_for(creds, repo)
 
         if not isinstance(source, ListsPullRequests):
             return []
 
-        return source.pull_requests(repo)
+        return source.pull_requests(repo, since=since)
 
     def sync_releases(
         self, app_id: str, creds: Optional[Credentials], repo: Optional[str]
@@ -94,7 +95,10 @@ class ActivityService:
         if creds is None or not repo:
             raise ProviderError("no source host")
 
-        remote = self.remote_pull_requests(creds, repo)
+        since = self.db.scalar(
+            select(func.max(PullRequest.updated_at)).where(PullRequest.app_id == app_id)
+        )
+        remote = self.remote_pull_requests(creds, repo, since)
         by_number = {
             r.number: r
             for r in self.db.scalars(

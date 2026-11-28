@@ -7,6 +7,8 @@ logged in as.
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import base64
 import json
 import shutil
@@ -301,7 +303,9 @@ class SourceGithub(SourceHost):
             )
         ]
 
-    def pull_requests(self, repo: str) -> list[PullRequestRow]:
+    def pull_requests(
+        self, repo: str, since: datetime | None = None
+    ) -> list[PullRequestRow]:
         return [
             PullRequestRow(
                 number=r["number"],
@@ -325,6 +329,7 @@ class SourceGithub(SourceHost):
                 f"{self.api}/repos/{repo}/pulls?state=all&sort=updated&direction=desc",
                 self._read_headers(),
                 10,
+                enough=rest.older_than(since, "updated_at"),
             )
         ]
 

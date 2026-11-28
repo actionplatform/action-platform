@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import base64
 import re
 
@@ -189,7 +191,9 @@ class SourceGitlab(SourceHost):
             )
         ]
 
-    def pull_requests(self, repo: str) -> list[PullRequestRow]:
+    def pull_requests(
+        self, repo: str, since: datetime | None = None
+    ) -> list[PullRequestRow]:
         headers = {"authorization": f"Bearer {self.token}"} if self.token else {}
 
         return [
@@ -215,6 +219,7 @@ class SourceGitlab(SourceHost):
                 f"{self.api}/projects/{urllib.parse.quote(repo, safe='')}/merge_requests?state=all&order_by=updated_at",
                 headers,
                 10,
+                enough=rest.older_than(since, "updated_at"),
             )
         ]
 
