@@ -24,13 +24,13 @@ export function SourceCard({ view, base }: { view: AppView; base: string }) {
   const deploy = targetNamesOf(view.deploy);
   return (
     <Panel>
-      <PanelHeader title="Source & automation" aside={<Link href={`${base}/settings?tab=general`} className="text-[13px] text-secondary hover:text-foreground focus-visible:outline-none focus-visible:text-foreground">Open settings</Link>} />
+      <PanelHeader title="Source & automation" aside={<Link href={`${base}/settings`} className="text-[13px] text-secondary hover:text-foreground focus-visible:outline-none focus-visible:text-foreground">Open settings</Link>} />
       <div className="divide-y divide-border-subtle py-1">
         <Row icon={GitBranch} label="Source" value={sourceLabel(view.sourceKind)} muted={!view.sourceKind} />
         <Row icon={Package} label="Repository" value={view.repository ?? "None"} mono={!!view.repository} muted={!view.repository} />
         <Row icon={Tag} label="Release" value={release || "Not configured"} muted={!release} />
         <Row icon={Workflow} label="CI" value={ciLabel(view.ci) ?? "Not configured"} muted={!view.ci} />
-        <Row icon={Cloud} label="Deploy target" value="Not configured" muted names={deploy} noun="deploy target" href={`${base}/settings?tab=general`} />
+        <Row icon={Cloud} label="Deploy target" value="Not configured" muted names={deploy} noun="deploy target" href={`${base}/settings?tab=deploy`} />
         <Row icon={Boxes} label="Services" value="No services" muted names={view.services} noun="service" />
       </div>
     </Panel>

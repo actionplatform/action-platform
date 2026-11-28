@@ -9,7 +9,7 @@ import { DangerZone, RepositoryPanel } from "@/features/projects";
 import { loadApp } from "@/features/projects/load";
 import { ProtectionPanel } from "@/features/protection";
 
-const TABS = [{ id: "general", label: "General" }, { id: "ci", label: "CI" }];
+const TABS = [{ id: "git", label: "Git" }, { id: "deploy", label: "Deploy" }, { id: "ci", label: "CI" }, { id: "danger", label: "Danger zone" }];
 
 export default async function SettingsPage({ params, searchParams }: { params: Promise<{ project: string; app: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { project, app } = await params;
@@ -28,9 +28,29 @@ export default async function SettingsPage({ params, searchParams }: { params: P
     );
   }
 
+  if (tab === "deploy") {
+    await requireOrg();
+    const matrix = await api.matrix();
+    const clouds = matrix.clouds.filter((c) => (c.types.length === 0 || c.types.includes(view.type ?? "")) && (c.languages.length === 0 || c.languages.includes(view.language ?? "")));
+    return (
+      <>
+        <PageTabs label="App settings" tabs={TABS} active={tab} />
+        <ConfigurationPanels view={view} clouds={clouds.map((c) => ({ name: c.name, description: c.description, source: c.source }))} />
+      </>
+    );
+  }
+
+  if (tab === "danger") {
+    return (
+      <>
+        <PageTabs label="App settings" tabs={TABS} active={tab} />
+        <DangerZone view={view} />
+      </>
+    );
+  }
+
   await requireOrg();
-  const [matrix, protection] = await Promise.all([api.matrix(), protectionOf(view.projectId, view.appId)]);
-  const clouds = matrix.clouds.filter((c) => (c.types.length === 0 || c.types.includes(view.type ?? "")) && (c.languages.length === 0 || c.languages.includes(view.language ?? "")));
+  const protection = await protectionOf(view.projectId, view.appId);
 
   return (
     <>
@@ -38,8 +58,6 @@ export default async function SettingsPage({ params, searchParams }: { params: P
       <div className="space-y-4">
         <RepositoryPanel view={view} hosts={loaded.hosts} currentHost={loaded.currentHost} />
         {protection && <ProtectionPanel projectId={view.projectId} appId={view.appId} initial={protection} canEdit={!!view.can["app.configure"]} />}
-        <ConfigurationPanels view={view} clouds={clouds.map((c) => ({ name: c.name, description: c.description, source: c.source }))} />
-        <DangerZone view={view} />
       </div>
     </>
   );
