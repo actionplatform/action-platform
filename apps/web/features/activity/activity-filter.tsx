@@ -6,8 +6,6 @@ export const ACTIVITY_FILTERS: { kind: EventKind | null; label: string }[] = [
   { kind: null, label: "All" },
   { kind: "release", label: "Releases" },
   { kind: "deployment", label: "Deployments" },
-  { kind: "ci_run", label: "CI runs" },
-  { kind: "pull_request", label: "Pull requests" },
   { kind: "protection", label: "Branch protection" },
 ];
 
