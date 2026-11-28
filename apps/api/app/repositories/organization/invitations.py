@@ -104,9 +104,7 @@ class InvitationsWrites(InvitationsReads):
             ):
                 self.add_invitation_teams(invitation, team_ids or [])
 
-                if host_user_id and not invitation.host_user_id:
-                    invitation.host_user_id = host_user_id
-                    self.db.flush()
+                self.bind_invitation_host_user(invitation, host_user_id)
 
                 return invitation
 
@@ -150,6 +148,16 @@ class InvitationsWrites(InvitationsReads):
         self.db.flush()
 
         return invitation
+
+    def bind_invitation_host_user(
+        self, invitation: Invitation, host_user_id: Optional[str]
+    ) -> None:
+        """Bind a login invitation that has no host account id yet to `host_user_id`; one already bound keeps its id."""
+        if not host_user_id or not invitation.host_login or invitation.host_user_id:
+            return
+
+        invitation.host_user_id = host_user_id
+        self.db.flush()
 
     def add_invitation_teams(self, invitation: Invitation, team_ids: list[str]) -> None:
         """The teams the person joins on accepting, added to those already waiting."""

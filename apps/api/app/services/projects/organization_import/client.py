@@ -247,6 +247,7 @@ class GithubDirectory(HostDirectory):
             rows.append(
                 {
                     "login": m["login"],
+                    "user_id": _user_id(m, profile),
                     "name": profile.get("name") or m["login"],
                     "email": (profile.get("email") or "").strip().lower() or None,
                     "avatar": m.get("avatar_url"),
@@ -276,3 +277,9 @@ class GithubDirectory(HostDirectory):
             roles[m["login"].lower()] = "org_admin"
 
         return roles
+
+
+def _user_id(member: dict[str, Any], profile: dict[str, Any]) -> str | None:
+    found = member.get("id", profile.get("id"))
+
+    return str(found) if found is not None else None
