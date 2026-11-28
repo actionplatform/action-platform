@@ -132,6 +132,16 @@ class FakeRemote:
         self.apps_rows: list[dict] = []
         self.projects_rows: list[dict] = []
         self.readiness_rows: list[dict] = []
+        self.hosts_rows: list[dict] = [
+            {
+                "id": "h1",
+                "kind": "github",
+                "name": "GitHub · me",
+                "default_owner": "acme",
+                "auth_kind": "oauth",
+                "created_at": "2026-11-28T00:00:00Z",
+            }
+        ]
 
     def __getattr__(self, name: str):
         answers = TypeAdapter(get_type_hints(getattr(Remote, name))["return"])
@@ -164,6 +174,9 @@ class FakeRemote:
 
         if name == "readiness" and self.readiness_rows:
             return self.readiness_rows
+
+        if name == "hosts":
+            return self.hosts_rows
 
         if name in LISTS:
             return []
@@ -628,6 +641,57 @@ class RemoteToolsTest(TempCase):
             self.call("current_context", {"project": str(elsewhere)})["hint"],
         )
 
+    def test_init_app_picks_the_host_whose_default_owner_is_the_owner(self):
+        second = {
+            **self.fake.hosts_rows[0],
+            "id": "h2",
+            "name": "GitHub · play",
+            "default_owner": "play",
+        }
+        self.fake.hosts_rows.append(second)
+
+        self.call(
+            "init_app",
+            {"project": "shop", "type": "web", "name": "Orders", "owner": "play"},
+        )
+
+        self.assertEqual(self.fake.calls[-1][1][1]["source_host_id"], "h2")
+
+    def test_init_app_names_the_hosts_when_it_cannot_choose(self):
+        second = {
+            **self.fake.hosts_rows[0],
+            "id": "h2",
+            "name": "GitHub · play",
+            "default_owner": "play",
+        }
+        self.fake.hosts_rows.append(second)
+
+        with self.assertRaises(Exception) as caught:
+            self.call("init_app", {"project": "shop", "type": "web", "name": "Orders"})
+
+        self.assertIn("h2", str(caught.exception))
+
+    def test_init_app_takes_the_host_by_name(self):
+        second = {
+            **self.fake.hosts_rows[0],
+            "id": "h2",
+            "name": "GitHub · play",
+            "default_owner": "play",
+        }
+        self.fake.hosts_rows.append(second)
+
+        self.call(
+            "init_app",
+            {
+                "project": "shop",
+                "type": "web",
+                "name": "Orders",
+                "host": "GitHub · play",
+            },
+        )
+
+        self.assertEqual(self.fake.calls[-1][1][1]["source_host_id"], "h2")
+
     def test_init_app_sends_the_whole_request(self):
         self.call(
             "init_app",
@@ -649,6 +713,7 @@ class RemoteToolsTest(TempCase):
         self.assertEqual(
             args[1],
             {
+                "source_host_id": "h1",
                 "type": "web",
                 "stack": "python",
                 "template": None,
@@ -722,6 +787,7 @@ class RemoteToolsTest(TempCase):
 
 
 CONCERNS = {
+    "protection": {"protection_status", "apply_protection"},
     "directory": {
         "whoami",
         "list_organizations",

@@ -16,6 +16,7 @@ from action_platform.mcp.tools.remote.common import (
     project_of,
     app_in_project,
 )
+from action_platform.core.exception import ActionPlatformError
 from action_platform.remote.client import Remote
 
 
@@ -129,13 +130,21 @@ def register(mcp: Any, remote: Remote) -> None:
                 description="Account or organization on the code host that owns the new repository; default the host's default owner"
             ),
         ] = None,
+        host: Annotated[
+            Optional[str],
+            Field(
+                description="Code host id or name from list_hosts that creates the repository; default the organization's only host, or the one whose default owner is `owner`"
+            ),
+        ] = None,
     ) -> schemas.Initialized:
         """Generate a new app inside a project from a template: the repository is created on the code host attached to the organization and pushed right away — confirm with the user first."""
         row = project_of(remote, project)
+        source_host = source_host_of(remote, row, host, owner)
 
         return remote.init(
             row.id,
             {
+                "source_host_id": source_host,
                 "type": type,
                 "stack": stack,
                 "template": template,
@@ -150,3 +159,27 @@ def register(mcp: Any, remote: Remote) -> None:
             },
             org_of(row),
         )
+
+
+def source_host_of(
+    remote: Remote,
+    project: schemas.ProjectRow,
+    host: Optional[str],
+    owner: Optional[str],
+) -> str:
+    hosts = remote.hosts(organization=org_of(project))
+
+    if host:
+        match = [h for h in hosts if host in (h.id, h.name)]
+    elif len(hosts) == 1:
+        match = hosts
+    else:
+        match = [h for h in hosts if owner and h.default_owner == owner]
+
+    if len(match) != 1:
+        names = ", ".join(f"{h.name} ({h.id})" for h in hosts) or "none"
+        raise ActionPlatformError(
+            f"pick the code host that creates the repository with `host`: {names}"
+        )
+
+    return match[0].id
