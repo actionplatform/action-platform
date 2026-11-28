@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Response
 
 from app.core.db.models import Organization
 from app.services.access.caller import Caller
@@ -82,3 +82,8 @@ def manageable(caller: Caller, org: Organization, path: str) -> None:
         raise HTTPException(
             403, "a token limited to a project or app cannot manage the organization"
         )
+
+
+def legacy_surface(request: Request, response: Response) -> None:
+    if not getattr(request.state, "nested", False):
+        response.headers["Deprecation"] = "true"

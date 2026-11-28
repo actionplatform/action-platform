@@ -2,12 +2,17 @@
 
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
-from app.api.dependencies import DeploymentsDep
+from app.api.dependencies import DeploymentsDep, legacy_surface
 from app.schemas import deployments as schemas
 
-router = APIRouter(prefix="/api/apps", tags=["deployments"])
+router = APIRouter(
+    prefix="/api/apps",
+    tags=["deployments"],
+    deprecated=True,
+    dependencies=[Depends(legacy_surface)],
+)
 
 
 @router.post("/{id}/deploy")

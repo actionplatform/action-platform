@@ -1,13 +1,19 @@
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from app.schemas import activity as schemas
 from app.api.dependencies import (
+    legacy_surface,
     FlowDep,
 )
 
-router = APIRouter(prefix="/api/apps", tags=["flow"])
+router = APIRouter(
+    prefix="/api/apps",
+    tags=["flow"],
+    deprecated=True,
+    dependencies=[Depends(legacy_surface)],
+)
 
 
 @router.post("/{id}/branches", status_code=201)

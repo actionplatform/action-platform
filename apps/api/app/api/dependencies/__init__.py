@@ -3,6 +3,7 @@
 from app.api.dependencies.access import (
     allowed,
     get_caller,
+    legacy_surface,
     manageable,
     org_of,
     requested_org,
@@ -134,6 +135,7 @@ __all__ = [
     "imports_of",
     "pull_requests_page",
     "releases_page",
+    "legacy_surface",
     "manageable",
     "org_dict",
     "org_of",
