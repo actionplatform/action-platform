@@ -16,6 +16,7 @@ from action_platform.core.context import (
     PullRequestRow,
     ReleaseRef,
     ReleaseRow,
+    TagRow,
 )
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import rest
@@ -223,10 +224,13 @@ class SourceGitlab(SourceHost):
     def _project_api(self, repo: str) -> str:
         return f"{self.api}/projects/{urllib.parse.quote(repo, safe='')}/repository"
 
-    def commits(self, repo: str, ref: str, limit: int = 50) -> list[CommitRow]:
+    def commits(
+        self, repo: str, ref: str, limit: int = 50, path: str | None = None
+    ) -> list[CommitRow]:
+        only = f"&path={urllib.parse.quote(path)}" if path else ""
         rows = rest.call(
             "GET",
-            f"{self._project_api(repo)}/commits?ref_name={urllib.parse.quote(ref, safe='')}&per_page={max(1, min(limit, 100))}",
+            f"{self._project_api(repo)}/commits?ref_name={urllib.parse.quote(ref, safe='')}&per_page={max(1, min(limit, 100))}{only}",
             self._read_headers(),
         )
 
@@ -255,6 +259,26 @@ class SourceGitlab(SourceHost):
             return None
 
         return base64.b64decode(data.get("content") or "").decode(errors="replace")
+
+    def tags(self, repo: str) -> list[TagRow]:
+        return [
+            TagRow(
+                name=r["name"],
+                sha=(r.get("commit") or {}).get("id") or r.get("target") or "",
+                date=rest.parse_utc(
+                    r.get("created_at") or (r.get("commit") or {}).get("created_at")
+                ),
+                subject=(
+                    r.get("message") or (r.get("commit") or {}).get("title") or ""
+                ).split("\n", 1)[0]
+                or None,
+            )
+            for r in rest.get_pages(
+                f"{self._project_api(repo)}/tags?order_by=updated&sort=desc",
+                self._read_headers(),
+                2,
+            )
+        ]
 
 
 def _commit(r: dict) -> CommitRow:

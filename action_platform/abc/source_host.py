@@ -18,6 +18,7 @@ if TYPE_CHECKING:
         PullRequestRow,
         ReleaseRef,
         ReleaseRow,
+        TagRow,
     )
 
 
@@ -99,11 +100,16 @@ class ListsPullRequests(Protocol):
 class ReadsRepository(Protocol):
     """A host that answers what a clone would: commits and files at a ref."""
 
-    def commits(self, repo: str, ref: str, limit: int = 50) -> "list[CommitRow]":
-        """The last `limit` commits reachable from `ref`, newest first."""
+    def commits(
+        self, repo: str, ref: str, limit: int = 50, path: str | None = None
+    ) -> "list[CommitRow]":
+        """The last `limit` commits reachable from `ref`, newest first; with `path`, only those that touch it."""
 
     def compare(self, repo: str, base: str, head: str) -> "list[CommitRow]":
         """The commits on `head` that `base` does not have, newest first."""
 
     def file(self, repo: str, ref: str, path: str) -> str | None:
         """The text of `path` at `ref`; None when it is not there."""
+
+    def tags(self, repo: str) -> "list[TagRow]":
+        """Every tag, newest first."""
