@@ -84,6 +84,8 @@ MAX_POLL_FAILURES = 5
 JOB_FINISHED = ("done", "failed")
 JOB_POLL_SECONDS = 3.0
 JOB_WAIT_SECONDS = 900.0
+REQUEST_SECONDS = 60.0
+INIT_SECONDS = 600.0
 
 
 TOKEN_RE = re.compile(r"[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}")
@@ -109,7 +111,7 @@ def _request(
     url: str,
     body: Optional[dict] = None,
     token: Optional[str] = None,
-    timeout: float = 60,
+    timeout: float = REQUEST_SECONDS,
     client: Optional[str] = None,
     organization: Optional[str] = None,
 ) -> Any:
@@ -204,6 +206,7 @@ class Remote:
         path: str,
         body: Optional[dict] = None,
         organization: Optional[str] = None,
+        timeout: float = REQUEST_SECONDS,
         **query: Any,
     ) -> Any:
         q = {k: v for k, v in query.items() if v is not None}
@@ -217,6 +220,7 @@ class Remote:
             url,
             body,
             self.token,
+            timeout=timeout,
             client=self.client,
             organization=organization,
         )
@@ -448,7 +452,13 @@ class Remote:
     ) -> Initialized:
         return _as(
             Initialized,
-            self._call("POST", f"projects/{project}/apps/init", body, organization),
+            self._call(
+                "POST",
+                f"projects/{project}/apps/init",
+                body,
+                organization,
+                timeout=INIT_SECONDS,
+            ),
         )
 
     def deploy(

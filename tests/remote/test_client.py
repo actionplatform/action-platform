@@ -181,6 +181,7 @@ class RemoteClientTest(TempCase):
                 url=url,
                 body=body,
                 token=token,
+                timeout=timeout,
                 client=client,
                 organization=organization,
             )
@@ -192,6 +193,21 @@ class RemoteClientTest(TempCase):
             return self.answer
 
         self.patch(client, "_request", fake_request)
+
+    def test_generating_an_app_waits_longer_than_other_calls(self):
+        remote = client.Remote("https://p.example", "tok")
+        self.answer = {
+            "id": "a1",
+            "registry_id": "r1",
+            "name": "orders",
+            "pushed": True,
+        }
+
+        remote.init("p1", {"type": "web", "name": "Orders"})
+        self.assertEqual(self.seen["timeout"], client.INIT_SECONDS)
+
+        remote.remove_app("p1", "d1")
+        self.assertEqual(self.seen["timeout"], client.REQUEST_SECONDS)
 
     def test_a_delete_answered_without_a_body_is_an_empty_removal(self):
         remote = client.Remote("https://p.example", "tok")
