@@ -8,7 +8,7 @@ import type { AppWizard } from "../use-app-wizard";
 
 export function TemplateStep({ w }: { w: AppWizard }) {
   return (
-    <Section title="Choose a template" description="Select the foundation that best fits your project.">
+    <Section title="Choose a template" description="Select the foundation that best fits your app.">
       <div className="grid gap-3 sm:grid-cols-2">
         {w.templates.map((t) => {
           const icon = templateIcon(w.matrix, t);

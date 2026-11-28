@@ -10,14 +10,14 @@ import type { AppWizard } from "../use-app-wizard";
 export function ConfigurationStep({ w }: { w: AppWizard }) {
   const { config, setConfig, host, hosts } = w;
   return (
-    <Section title="Configure your project" description="Set the project details before generating the files.">
+    <Section title="Configure your app" description="Set the app details before generating the files.">
       <div className="grid gap-4 sm:grid-cols-2">
         {!w.projectId && (
           <Field label="Project" hint="Which project this app belongs to." className="sm:col-span-2">
             <Select value={w.project} onChange={w.setProject} placeholder="Select a project…" options={w.projects.map((p) => ({ value: p.id, label: p.name }))} />
           </Field>
         )}
-        <Field label="Project name" hint="Human name; the slug is derived from it." className="sm:col-span-2">
+        <Field label="App name" hint="Human name; the slug is derived from it." className="sm:col-span-2">
           <Input value={config.name} onChange={(e) => setConfig({ ...config, name: e.target.value })} placeholder="Orders API" autoFocus />
         </Field>
         <Field label="Directory" hint="Workspace folder on the platform.">
