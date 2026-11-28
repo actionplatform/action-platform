@@ -71,7 +71,12 @@ class Device(AuthBase):
                 self.device_status(code), f"this code is {self.device_status(code)}"
             )
 
-        if grant.organization_id:
+        everywhere = grant.organization_id == "*"
+
+        if everywhere and (grant.project_id or grant.app_id):
+            raise AuthError("invalid", "a project or app belongs to one organization")
+
+        if grant.organization_id and not everywhere:
             role = self.role_in(session.user_id, grant.organization_id)
 
             if role is None:
@@ -104,6 +109,9 @@ class Device(AuthBase):
         if "read" not in scope:
             raise Forbidden("your role does not allow any of the requested scopes")
 
+        if grant.organization_id == "*":
+            return Grant(scope, "*")
+
         if grant.project_id and not self.db.scalar(
             select(Project.id).where(
                 Project.id == grant.project_id,
@@ -134,7 +142,9 @@ class Device(AuthBase):
 
         grant = Grant.parse(code.scope)
 
-        if grant.organization_id is None and not self.organizations_of(session.user_id):
+        if grant.organization_id in (None, "*") and not self.organizations_of(
+            session.user_id
+        ):
             raise Forbidden("join an organization before approving a device")
 
         code.status = "approved"
