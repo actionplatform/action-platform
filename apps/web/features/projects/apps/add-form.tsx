@@ -33,7 +33,7 @@ export function AddForm({ projectId, types, stacks }: { projectId: string; types
   const [report, setReport] = useState<{ appId: string; report: InstallReport } | null>(null);
   const [pending, start] = useTransition();
 
-  const configuration = (appId: string) => `/projects/${projectId}/apps/${appId}/settings?tab=general`;
+  const configuration = (appId: string) => `/projects/${projectId}/apps/${appId}/settings?tab=deploy`;
   const finish = (r: Awaited<ReturnType<typeof addApp>>, installed: boolean) => {
     if (r.ok) {
       setUrl("");

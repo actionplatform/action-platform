@@ -21,7 +21,7 @@ function Row({ icon: Icon, label, value, mono, muted, names, noun }: { icon: Luc
 export function SourceCard({ view, base }: { view: AppView; base: string }) {
   return (
     <Panel>
-      <PanelHeader title="Source & automation" aside={<Link href={`${base}/settings?tab=general`} className="text-[13px] text-secondary hover:text-foreground focus-visible:outline-none focus-visible:text-foreground">Open settings</Link>} />
+      <PanelHeader title="Source & automation" aside={<Link href={`${base}/settings`} className="text-[13px] text-secondary hover:text-foreground focus-visible:outline-none focus-visible:text-foreground">Open settings</Link>} />
       <div className="divide-y divide-border-subtle py-1">
         <Row icon={GitBranch} label="Source" value={sourceLabel(view.sourceKind)} muted={!view.sourceKind} />
         <Row icon={Package} label="Repository" value={view.repository ?? "None"} mono={!!view.repository} muted={!view.repository} />
