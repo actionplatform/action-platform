@@ -67,10 +67,13 @@ class ConfigStore:
         """On sync: when the clone's platform.toml differs from the one last imported or exported, it replaces what the platform keeps. Returns whether it did."""
         file = root / CONFIG_FILE
 
-        if not file.exists():
+        return self.adopt_text(registry_id, file.read_text() if file.exists() else None)
+
+    def adopt_text(self, registry_id: str, text: Optional[str]) -> bool:
+        """`adopt` for a platform.toml read from the host instead of a clone."""
+        if text is None:
             return False
 
-        text = file.read_text()
         digest = _digest(text)
 
         with self.database.session() as s:
@@ -102,17 +105,21 @@ class ConfigStore:
 
     def resolve(self, registry_id: str, root: Path) -> dict:
         """The stored configuration; on first sight, what the clone's platform.toml says, remembered from then on."""
+        file = root / CONFIG_FILE
+
+        return self.resolve_text(
+            registry_id, file.read_text() if file.exists() else None
+        )
+
+    def resolve_text(self, registry_id: str, text: Optional[str]) -> dict:
+        """`resolve` for a platform.toml read from the host instead of a clone."""
         stored = self.get(registry_id)
 
         if stored is not None:
             return stored
 
-        file = root / CONFIG_FILE
-
-        if not file.exists():
+        if text is None:
             return {}
-
-        text = file.read_text()
 
         return self.set(registry_id, tomllib.loads(text), _digest(text))
 

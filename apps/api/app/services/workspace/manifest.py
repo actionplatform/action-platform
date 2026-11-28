@@ -1,12 +1,34 @@
 """`platform.toml` and `LAST_VERSION` of a clone, as the API answers them."""
 
 from pathlib import Path
+from typing import Callable
 
 import tomllib
 
 from action_platform.core.flow.repository import Repository
 from action_platform.core.files import CONFIG_FILE, LAST_VERSION_FILE
 from app.core.errors import Invalid
+
+
+def describe(data: dict, last_version: Callable[[str], str | None]) -> dict:
+    """The tables the app page shows, with what LAST_VERSION says at the root and at each `[components.<name>] path`."""
+    return {
+        "project": dict(data.get("project", {})),
+        "source_host": data.get("source_host", {}),
+        "deploy": data.get("deploy", {}),
+        "release": data.get("release", {}),
+        "services": data.get("services", {}),
+        "last_version": last_version(""),
+        "components": [
+            {
+                "name": name,
+                "path": str(spec.get("path") or ""),
+                "last_version": last_version(str(spec.get("path") or "")),
+            }
+            for name, spec in data.get("components", {}).items()
+            if isinstance(spec, dict)
+        ],
+    }
 
 
 class AppManifest:
@@ -24,29 +46,7 @@ class AppManifest:
         else:
             raise Invalid(f"{CONFIG_FILE} not found in {self.root}")
 
-        return {
-            "project": dict(data.get("project", {})),
-            "source_host": data.get("source_host", {}),
-            "deploy": data.get("deploy", {}),
-            "release": data.get("release", {}),
-            "services": data.get("services", {}),
-            "last_version": self.last_version(),
-            "components": self.components(data.get("components", {})),
-        }
-
-    def components(self, table: dict) -> list[dict]:
-        """`[components.<name>] path = …` of platform.toml, each with what its own LAST_VERSION says."""
-        return [
-            {
-                "name": name,
-                "path": str(spec.get("path") or ""),
-                "last_version": self.last_version(
-                    self.root / str(spec.get("path") or "")
-                ),
-            }
-            for name, spec in table.items()
-            if isinstance(spec, dict)
-        ]
+        return describe(data, lambda path: self.last_version(self.root / path))
 
     def last_version(self, root: Path | None = None) -> str | None:
         """What LAST_VERSION says — 0.0.0 while the repository has no version tag."""

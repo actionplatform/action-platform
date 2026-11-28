@@ -145,7 +145,7 @@ The Planner (`services/access/planner.py`) is the one place the gate reads the d
 
 | Kind | Queued by | Handler does |
 |---|---|---|
-| `sync` | `POST apps/{id}/sync` (async) | fetch and rebuild the clone, then import the host's activity |
+| `sync` | `POST apps/{id}/sync` (async) | `git ls-remote`, and when a ref moved the snapshot from the host's API (`ReadsRepository`) with the drafts laid over it — no clone; a host without it, or one that fails, fetches the clone instead — then import the host's activity |
 | `release` | `POST apps/{id}/release` (async) | `Releaser.plan → apply` on the clone, push, publish on the host |
 | `deploy` | `POST apps/{id}/deploy` (async) | `Deployer` on the tagged release with the app's identity token and the plugin options as env |
 | `readiness` | after a `release` cut here, one per stage; `POST projects/{p}/apps/{a}/releases/{tag}/readiness` | `Readiness.check` at the tag with the app's identity token and env, the verdict and checks stored in `release_readiness`; `POST apps/{id}/deploy` refuses a blocked stage unless `force` |

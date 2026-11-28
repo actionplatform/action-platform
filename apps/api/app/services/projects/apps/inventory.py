@@ -8,7 +8,12 @@ from pathlib import Path
 from typing import Optional
 
 
+from action_platform.abc.source_host import ReadsRepository
+from action_platform.core.exception import ConfigError, ProviderError
+from action_platform.core.flow.remote import remote_refs
 from action_platform.core.scaffold.installer import InstallError, install
+from action_platform.providers.source import build_source_host
+from app.core.shared.urls import GitUrl
 from action_platform.core.files import CONFIG_FILE
 from app.services.workspace import git_auth as auth
 from app.repositories.workspace.registry import Entry, MissingManifest
@@ -17,6 +22,7 @@ from app.schemas import InstallSpec, SourceCredentials
 from app.services.projects.apps.base import AppsBase
 from app.services.workspace.checkout import Workspaces
 from app.services.workspace.facts import AppFacts
+from app.services.workspace.remote_snapshot import RemoteSnapshot
 from app.services.workspace.snapshot import SnapshotService
 from app.services.workspace.manifest import AppManifest
 from app.core.errors import Invalid, NeedsInstall
@@ -128,6 +134,11 @@ class AppInventory(AppsBase):
         if reset:
             self.registry.drafts.clear(id)
 
+        remote = self._remote(id, credentials)
+
+        if remote is not None:
+            return remote
+
         with auth.git_auth(credentials):
             entry, root = Workspaces(self.registry).refresh(id)
 
@@ -137,6 +148,34 @@ class AppInventory(AppsBase):
         self._snapshot(id)
 
         return asdict(entry)
+
+    def _remote(
+        self, id: str, credentials: Optional[SourceCredentials]
+    ) -> Optional[dict]:
+        """Sync without a clone when the host answers what one would; None leaves it to the clone."""
+        entry = self.registry.get(id)
+        repo = GitUrl(entry.url).repo if entry.url else None
+        reader = _reader(credentials, repo) if repo else None
+
+        if reader is None or repo is None:
+            return None
+
+        try:
+            with auth.git_auth(credentials):
+                refs = remote_refs(entry.url)
+
+            snapshot = RemoteSnapshot(self.registry, reader, repo, self.configs)
+
+            if not snapshot.unchanged(id, refs):
+                snapshot.take(id, refs)
+        except ProviderError:
+            log.warning(
+                "sync of %s from the host failed; using the clone", id, exc_info=True
+            )
+
+            return None
+
+        return asdict(self.registry.get(id))
 
     def _snapshot(self, id: str) -> None:
         try:
@@ -152,3 +191,23 @@ class AppInventory(AppsBase):
 
     def detail(self, id: str) -> dict:
         return AppFacts(self.registry, self.configs).detail(id)
+
+
+def _reader(
+    credentials: Optional[SourceCredentials], repo: str
+) -> Optional[ReadsRepository]:
+    if credentials is None or not credentials.kind:
+        return None
+
+    try:
+        source = build_source_host(
+            credentials.kind,
+            repo,
+            base_url=credentials.base_url,
+            token=credentials.token,
+            username=credentials.username,
+        )
+    except ConfigError:
+        return None
+
+    return source if isinstance(source, ReadsRepository) else None
