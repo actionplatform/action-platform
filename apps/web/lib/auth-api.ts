@@ -43,7 +43,7 @@ export const authApi = {
   session: async (session: Session) => unwrap(await client.GET("/api/auth/session", { headers: sessionHeaders(session) })),
   setActiveOrganization: async (session: Session, organizationId: string) =>
     unwrap(await client.POST("/api/auth/session/organization", { body: { organization_id: organizationId }, headers: sessionHeaders(session) })),
-  sessions: async (session: Session) => unwrap(await client.GET("/api/auth/sessions", { headers: sessionHeaders(session) })),
+  sessions: async (session: Session) => unwrap(await client.GET("/api/auth/sessions", { headers: sessionHeaders(session) })) as Schemas["BrowserSessionOut"][],
   revokeSession: async (session: Session, id: string) => unwrap(await client.DELETE("/api/auth/sessions/{id}", { params: { path: { id } }, headers: sessionHeaders(session) })),
   createOrganization: async (session: Session, body: { name: string; slug: string; git_author_name?: string | null; git_author_email?: string | null }) =>
     unwrap(await client.POST("/api/auth/organizations", { body, headers: sessionHeaders(session) })),
@@ -68,7 +68,7 @@ export const authApi = {
   issueToken: async (session: Session, body: { name: string; scope: string; organization_id?: string | null; project_id?: string | null; app_id?: string | null }) =>
     unwrap(await client.POST("/api/auth/tokens", { body, headers: sessionHeaders(session) })),
   tokens: async (session: Session, organizationId: string | null = null) =>
-    unwrap(await client.GET("/api/auth/tokens", { params: { query: organizationId ? { organization_id: organizationId } : {} }, headers: sessionHeaders(session) })),
+    unwrap(await client.GET("/api/auth/tokens", { params: { query: organizationId ? { organization_id: organizationId } : {} }, headers: sessionHeaders(session) })) as Schemas["TokenOut"][],
   revokeToken: async (session: Session, id: string) => unwrap(await client.DELETE("/api/auth/tokens/{id}", { params: { path: { id } }, headers: sessionHeaders(session) })),
   verifyToken: async (token: string, clientName: string | null) => unwrap(await client.POST("/api/auth/tokens/verify", { body: { token, client: clientName } })),
 };

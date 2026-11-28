@@ -2652,6 +2652,14 @@ export interface components {
             imported?: string[];
             services: components["schemas"]["ServiceAudit"][];
         };
+        AuditPage: {
+            organization_members: number;
+            imported?: string[];
+            services: components["schemas"]["ServiceAudit"][];
+            total: number;
+            page: number;
+            per: number;
+        };
         AuthStatus: {
             configured: boolean;
             users: number;
@@ -2710,6 +2718,12 @@ export interface components {
         };
         CiActivity: {
             hosts: components["schemas"]["CiHostActivity"][];
+        };
+        CiActivityPage: {
+            hosts: components["schemas"]["CiHostActivity"][];
+            total: number;
+            page: number;
+            per: number;
         };
         CiAppRef: {
             project_id: string;
@@ -2996,6 +3010,14 @@ export interface components {
             targets: components["schemas"]["TargetRow"][];
             deployments: components["schemas"]["DeploymentRow"][];
             error?: string | null;
+        };
+        DeploymentsPage: {
+            targets: components["schemas"]["TargetRow"][];
+            deployments: components["schemas"]["DeploymentRow"][];
+            error?: string | null;
+            total: number;
+            page: number;
+            per: number;
         };
         DeviceCodeOut: {
             device_code: string;
@@ -3607,6 +3629,54 @@ export interface components {
                 [key: string]: boolean;
             };
             grantable_scopes: string[];
+        };
+        Page_BrowserSessionOut_: {
+            items: components["schemas"]["BrowserSessionOut"][];
+            total: number;
+            page: number;
+            per: number;
+        };
+        Page_CiHostRow_: {
+            items: components["schemas"]["CiHostRow"][];
+            total: number;
+            page: number;
+            per: number;
+        };
+        Page_HostRow_: {
+            items: components["schemas"]["HostRow"][];
+            total: number;
+            page: number;
+            per: number;
+        };
+        Page_InvitationRow_: {
+            items: components["schemas"]["InvitationRow"][];
+            total: number;
+            page: number;
+            per: number;
+        };
+        Page_MemberRow_: {
+            items: components["schemas"]["MemberRow"][];
+            total: number;
+            page: number;
+            per: number;
+        };
+        Page_ProjectRow_: {
+            items: components["schemas"]["ProjectRow"][];
+            total: number;
+            page: number;
+            per: number;
+        };
+        Page_TeamRow_: {
+            items: components["schemas"]["TeamRow"][];
+            total: number;
+            page: number;
+            per: number;
+        };
+        Page_TokenOut_: {
+            items: components["schemas"]["TokenOut"][];
+            total: number;
+            page: number;
+            per: number;
         };
         PermissionInfo: {
             id: string;
@@ -4383,7 +4453,10 @@ export interface operations {
     };
     sessions_api_auth_sessions_get: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number | null;
+                per?: number;
+            };
             header?: {
                 "x-session-token"?: string | null;
                 "x-session-cookie"?: string | null;
@@ -4398,7 +4471,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrowserSessionOut"][];
+                    "application/json": components["schemas"]["BrowserSessionOut"][] | components["schemas"]["Page_BrowserSessionOut_"];
                 };
             };
             422: {
@@ -4962,6 +5035,8 @@ export interface operations {
         parameters: {
             query?: {
                 organization_id?: string | null;
+                page?: number | null;
+                per?: number;
             };
             header?: {
                 "x-session-token"?: string | null;
@@ -4977,7 +5052,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenOut"][];
+                    "application/json": components["schemas"]["TokenOut"][] | components["schemas"]["Page_TokenOut_"];
                 };
             };
             422: {
@@ -5177,6 +5252,8 @@ export interface operations {
         parameters: {
             query?: {
                 organization?: string | null;
+                page?: number | null;
+                per?: number;
             };
             header?: {
                 "x-organization"?: string | null;
@@ -5191,7 +5268,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TeamRow"][];
+                    "application/json": components["schemas"]["TeamRow"][] | components["schemas"]["Page_TeamRow_"];
                 };
             };
             422: {
@@ -5241,6 +5318,8 @@ export interface operations {
         parameters: {
             query?: {
                 organization?: string | null;
+                page?: number | null;
+                per?: number;
             };
             header?: {
                 "x-organization"?: string | null;
@@ -5255,7 +5334,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MemberRow"][];
+                    "application/json": components["schemas"]["MemberRow"][] | components["schemas"]["Page_MemberRow_"];
                 };
             };
             422: {
@@ -5465,7 +5544,10 @@ export interface operations {
     };
     invitations_api_v1_invitations_get: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number | null;
+                per?: number;
+            };
             header?: {
                 "X-Organization"?: string | null;
             };
@@ -5479,7 +5561,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InvitationRow"][];
+                    "application/json": components["schemas"]["InvitationRow"][] | components["schemas"]["Page_InvitationRow_"];
                 };
             };
             422: {
@@ -5781,7 +5863,10 @@ export interface operations {
     };
     hosts_api_v1_hosts_get: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number | null;
+                per?: number;
+            };
             header?: {
                 "X-Organization"?: string | null;
             };
@@ -5795,7 +5880,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HostRow"][];
+                    "application/json": components["schemas"]["HostRow"][] | components["schemas"]["Page_HostRow_"];
                 };
             };
             422: {
@@ -6139,7 +6224,10 @@ export interface operations {
     };
     ci_hosts_api_v1_ci_hosts_get: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number | null;
+                per?: number;
+            };
             header?: {
                 "X-Organization"?: string | null;
             };
@@ -6153,7 +6241,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CiHostRow"][];
+                    "application/json": components["schemas"]["CiHostRow"][] | components["schemas"]["Page_CiHostRow_"];
                 };
             };
             422: {
@@ -6263,7 +6351,10 @@ export interface operations {
     };
     ci_activity_api_v1_ci_hosts_activity_get: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number | null;
+                per?: number;
+            };
             header?: {
                 "X-Organization"?: string | null;
             };
@@ -6277,7 +6368,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CiActivity"];
+                    "application/json": components["schemas"]["CiActivity"] | components["schemas"]["CiActivityPage"];
                 };
             };
             422: {
@@ -6628,6 +6719,8 @@ export interface operations {
         parameters: {
             query?: {
                 organization?: string | null;
+                page?: number | null;
+                per?: number;
             };
             header?: {
                 "x-organization"?: string | null;
@@ -6642,7 +6735,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectRow"][];
+                    "application/json": components["schemas"]["ProjectRow"][] | components["schemas"]["Page_ProjectRow_"];
                 };
             };
             422: {
@@ -7471,7 +7564,10 @@ export interface operations {
     };
     deployments_api_v1_projects__project_id__apps__app_id__deployments_get: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number | null;
+                per?: number;
+            };
             header?: {
                 "X-Organization"?: string | null;
             };
@@ -7488,7 +7584,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Deployments"];
+                    "application/json": components["schemas"]["Deployments"] | components["schemas"]["DeploymentsPage"];
                 };
             };
             422: {
@@ -9614,6 +9710,8 @@ export interface operations {
         parameters: {
             query?: {
                 service?: string | null;
+                page?: number | null;
+                per?: number;
             };
             header?: {
                 "X-Organization"?: string | null;
@@ -9628,7 +9726,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Audit"];
+                    "application/json": components["schemas"]["Audit"] | components["schemas"]["AuditPage"];
                 };
             };
             422: {

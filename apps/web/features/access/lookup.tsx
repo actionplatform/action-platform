@@ -89,10 +89,7 @@ export function AccessLookup({ services }: { services: string[] }) {
               !who.errors?.length && <p className="text-secondary">No grants found.</p>
             )}
             {drift.length > 0 && (
-              <div className="rounded-lg border border-border">
-                <div className="px-4 pt-3 text-xs text-secondary">Drift ({drift.length})</div>
-                <ChangeTable changes={drift} />
-              </div>
+              <ChangeTable title="Drift" changes={drift} pageKey="drift" />
             )}
           </div>
         )}

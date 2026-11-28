@@ -9,7 +9,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
-import { Cell, DataTable, Inline } from "@/components/ui/data-table";
+import { Cell, DataTable, Inline, type PageState } from "@/components/ui/data-table";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { addMemberToTeam, editTeam, removeMemberFromTeam, removeTeam, setProjectTeam } from "./teams-actions";
 
@@ -18,17 +18,17 @@ type Candidate = { userId: string; name: string; email: string };
 type Project = { id: string; name: string; slug: string; description: string | null };
 type CandidateProject = { id: string; name: string; teamName: string | null };
 
-export function TeamDetail({ team, members, candidates, projects, candidatesProjects, canManage }: { team: { id: string; name: string; description: string }; members: Member[]; candidates: Candidate[]; projects: Project[]; candidatesProjects: CandidateProject[]; canManage: boolean }) {
+export function TeamDetail({ team, members, membersPaging, candidates, projects, candidatesProjects, canManage }: { team: { id: string; name: string; description: string }; members: Member[]; membersPaging: PageState; candidates: Candidate[]; projects: Project[]; candidatesProjects: CandidateProject[]; canManage: boolean }) {
   return (
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <MembersPanel team={team} members={members} candidates={candidates} canManage={canManage} />
+      <MembersPanel team={team} members={members} paging={membersPaging} candidates={candidates} canManage={canManage} />
       <ProjectsPanel team={team} projects={projects} candidates={candidatesProjects} canManage={canManage} />
       {canManage && <SettingsPanel team={team} />}
     </div>
   );
 }
 
-function MembersPanel({ team, members, candidates, canManage }: { team: { id: string }; members: Member[]; candidates: Candidate[]; canManage: boolean }) {
+function MembersPanel({ team, members, paging, candidates, canManage }: { team: { id: string }; members: Member[]; paging: PageState; candidates: Candidate[]; canManage: boolean }) {
   const [adding, setAdding] = useState(false);
   const [userId, setUserId] = useState(candidates[0]?.userId ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +40,8 @@ function MembersPanel({ team, members, candidates, canManage }: { team: { id: st
       <DataTable
         title="Members"
         rows={members}
+        paging={paging}
+        pageKey="members"
         rowKey={(m) => m.id}
         noun={["member", "members"]}
         action={canManage ? <Button size="sm" variant="outline" disabled={candidates.length === 0} onClick={() => { setUserId(candidates[0]?.userId ?? ""); setAdding(true); }}><Plus className="size-3.5" strokeWidth={2} /> Add member</Button> : undefined}

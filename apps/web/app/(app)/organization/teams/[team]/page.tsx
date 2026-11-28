@@ -4,14 +4,16 @@ import Link from "next/link";
 import { membersOf } from "@/lib/orgs";
 import { projectsOf } from "@/lib/projects";
 
+import { pageQuery, paginate } from "@/lib/page";
 import { requireOrg } from "@/lib/session";
 import { projectsOfTeam, teamById, teamMembersOf } from "@/lib/teams";
 import { TeamDetail } from "@/features/organization";
 
 export const dynamic = "force-dynamic";
 
-export default async function TeamPage({ params }: { params: Promise<{ team: string }> }) {
+export default async function TeamPage({ params, searchParams }: { params: Promise<{ team: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { team: teamId } = await params;
+  const query = pageQuery(await searchParams, "members");
   const { session, org } = await requireOrg();
   const team = await teamById(org.id, teamId);
   if (!team) notFound();
@@ -29,7 +31,8 @@ export default async function TeamPage({ params }: { params: Promise<{ team: str
       </div>
       <TeamDetail
         team={{ id: team.id, name: team.name, description: team.description ?? "" }}
-        members={members.map((m) => ({ id: m.id, userId: m.userId, name: m.name, email: m.email }))}
+        members={paginate(members, query).items.map((m) => ({ id: m.id, userId: m.userId, name: m.name, email: m.email }))}
+        membersPaging={{ total: members.length, page: query.page, per: query.per }}
         candidates={orgMembers.filter((m) => !inTeam.has(m.userId)).map((m) => ({ userId: m.userId, name: m.name, email: m.email }))}
         projects={projects.map((p) => ({ id: p.id, name: p.name, slug: "", description: null }))}
         candidatesProjects={allProjects.filter((p) => p.teamId !== team.id).map((p) => ({ id: p.id, name: p.name, teamName: p.teamName }))}

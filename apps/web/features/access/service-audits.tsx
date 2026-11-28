@@ -50,9 +50,8 @@ function ServiceCard({ row }: { row: ServiceAuditRow }) {
         <List title="Outside accounts" items={row.outside_accounts ?? []} />
       </div>
       {drift.length > 0 && (
-        <div className="border-t border-border">
-          <div className="px-4 pt-3 text-xs text-secondary">Drift: what a sync would change ({drift.length})</div>
-          <ChangeTable changes={drift} />
+        <div className="border-t border-border p-4">
+          <ChangeTable title="Drift" changes={drift} pageKey={`drift_${row.service}`} />
         </div>
       )}
       {row.ok && row.imported && drift.length === 0 && <div className="border-t border-border px-4 py-3 text-[13px] text-secondary">No drift.</div>}

@@ -7,7 +7,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
-import { Cell, DataTable, Inline } from "@/components/ui/data-table";
+import { Cell, DataTable, Inline, type PageState } from "@/components/ui/data-table";
 import { type Role, type RoleInfo } from "@/lib/permissions";
 import { addMember, changeRole, inviteMember, kickMember, resendInvitation, revokeInvitation, type InvitationSent } from "./actions";
 import { invitationEmail, invitationEmailNotice } from "./invitation-email";
@@ -21,7 +21,7 @@ function roleOptions(roles: RoleInfo[]): RoleOption[] {
   return roles.map((r) => ({ value: r.id, label: r.label, hint: r.description }));
 }
 
-export function MembersPanel({ org, members, invitations, me, canManage, origin, roles }: { org: { name: string; slug: string }; members: Member[]; invitations: Pending[]; me: string; canManage: boolean; origin: string; roles: RoleInfo[] }) {
+export function MembersPanel({ org, members, paging, invitations, me, canManage, origin, roles }: { org: { name: string; slug: string }; members: Member[]; paging: PageState; invitations: Pending[]; me: string; canManage: boolean; origin: string; roles: RoleInfo[] }) {
   const ROLE_OPTIONS = roleOptions(roles);
   const [inviting, setInviting] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -42,6 +42,8 @@ export function MembersPanel({ org, members, invitations, me, canManage, origin,
       <DataTable
         title="Members"
         rows={members}
+        paging={paging}
+        pageKey="members"
         rowKey={(m) => m.id}
         noun={["member", "members"]}
         meta={<span className="font-mono">{org.slug}</span>}
