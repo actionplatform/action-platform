@@ -94,9 +94,10 @@ class JobHandlers:
             ctx.registry_id, credentials, reset=request.reset
         )
 
-        if ctx.app is not None and (
-            not payload.get("scheduled") or self._digest(ctx.registry_id) != before
-        ):
+        if payload.get("scheduled") and self._digest(ctx.registry_id) == before:
+            return result
+
+        if ctx.app is not None:
             SyncSweep(self.database, JobQueue(self.database)).changed(ctx.app.id)
 
         self.import_activity(payload)

@@ -54,9 +54,7 @@ class SyncSweepTest(GateCase):
 
             self.assertEqual(len(jobs), 1)
             self.assertTrue(json.loads(jobs[0].payload)["scheduled"])
-            self.assertGreater(
-                app.next_sync_at, now() + timedelta(minutes=55)
-            )
+            self.assertGreater(app.next_sync_at, now() + timedelta(minutes=55))
             self.assertEqual(
                 len(
                     s.scalars(
@@ -81,3 +79,26 @@ class SyncSweepTest(GateCase):
             self.assertLessEqual(
                 app.next_sync_at - app.last_change_at, timedelta(minutes=2)
             )
+
+    def test_a_scheduled_sync_with_no_moved_ref_imports_nothing(self):
+        from unittest import mock
+
+        from app.repositories.workspace.source import get_registry
+        from app.services.jobs.handlers import JobHandlers
+        from app.services.projects.sync_sweep import sync_payload
+
+        registry_id = self.register()
+        payload = sync_payload(self.org["id"], "a1", registry_id)
+
+        with (
+            mock.patch(
+                "app.services.projects.apps.service.AppService.sync", return_value={}
+            ),
+            mock.patch.object(JobHandlers, "_digest", return_value="same"),
+            mock.patch.object(JobHandlers, "import_activity") as imported,
+        ):
+            JobHandlers(self.app.state.db, self.app.state.sealer, get_registry()).sync(
+                payload
+            )
+
+        self.assertFalse(imported.called)
