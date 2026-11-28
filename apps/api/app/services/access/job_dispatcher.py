@@ -70,6 +70,13 @@ class JobDispatcher:
 
         if kind == "deploy":
             stage = body.get("stage") or ""
+            held = self.queue.held_rollout(app.id, stage)
+
+            if held is not None:
+                raise Conflict(
+                    f"a deployment to {stage} is {held.replace('_', ' ')}; promote, resume or abort it first"
+                )
+
             running = self.queue.live_deploy(app.id, stage)
 
             if running is not None:

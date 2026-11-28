@@ -1423,6 +1423,134 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/deploy-strategies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["deploy_strategies_api_v1_deploy_strategies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/scopes/{scope}/strategies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["scope_strategies_api_v1_projects__project_id__apps__app_id__scopes__scope__strategies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/deployments/{deployment_id}/steps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["deployment_steps_api_v1_projects__project_id__apps__app_id__deployments__deployment_id__steps_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/deployments/{deployment_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["deployment_events_api_v1_projects__project_id__apps__app_id__deployments__deployment_id__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/deployments/{deployment_id}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["promote_deployment_api_v1_projects__project_id__apps__app_id__deployments__deployment_id__promote_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/deployments/{deployment_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["pause_deployment_api_v1_projects__project_id__apps__app_id__deployments__deployment_id__pause_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/deployments/{deployment_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resume_deployment_api_v1_projects__project_id__apps__app_id__deployments__deployment_id__resume_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/apps/{app_id}/deployments/{deployment_id}/abort": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["abort_deployment_api_v1_projects__project_id__apps__app_id__deployments__deployment_id__abort_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/apps/{app_id}/releases/{tag}/readiness": {
         parameters: {
             query?: never;
@@ -3298,6 +3426,13 @@ export interface components {
             dry_run: boolean;
             version?: string | null;
             force: boolean;
+            strategy?: string | null;
+            strategy_config?: {
+                [key: string]: unknown;
+            } | null;
+            safety?: {
+                [key: string]: unknown;
+            } | null;
         };
         DeployResult: {
             target: string;
@@ -3305,6 +3440,26 @@ export interface components {
             version: string;
             url?: string | null;
             error?: string | null;
+        };
+        DeployStrategies: {
+            strategies: components["schemas"]["StrategyRow"][];
+            safety_schema: {
+                [key: string]: unknown;
+            };
+        };
+        DeploymentControl: {
+            deployment: components["schemas"]["DeploymentRow"];
+            steps: components["schemas"]["StepRow"][];
+            queued: boolean;
+            live?: string | null;
+        };
+        DeploymentEventRow: {
+            id: string;
+            kind: string;
+            title: string;
+            detail?: string | null;
+            actor?: string | null;
+            at: string;
         };
         DeploymentRow: {
             id: string;
@@ -3325,6 +3480,14 @@ export interface components {
             finished_at?: string | null;
             verified_at?: string | null;
             synced_at: string;
+            strategy: string;
+            strategy_config?: {
+                [key: string]: unknown;
+            } | null;
+            safety?: {
+                [key: string]: unknown;
+            } | null;
+            operations?: string[] | null;
         };
         Deployments: {
             targets: components["schemas"]["TargetRow"][];
@@ -4177,6 +4340,7 @@ export interface components {
         };
         ReadinessRequest: {
             stage?: string | null;
+            strategy?: string | null;
         };
         ReadinessRow: {
             stage: string;
@@ -4305,6 +4469,13 @@ export interface components {
             criticality: string;
             created_at: string;
         };
+        ScopeStrategy: {
+            id: string;
+            supported: boolean;
+            native: boolean;
+            missing: string[];
+            reason?: string | null;
+        };
         Scopes: {
             items: components["schemas"]["ScopeRow"][];
             kinds: string[];
@@ -4399,6 +4570,31 @@ export interface components {
             slug?: string | null;
             push: boolean;
             credentials?: components["schemas"]["SourceCredentials"] | null;
+        };
+        StepRow: {
+            id: string;
+            position: number;
+            kind: string;
+            params: {
+                [key: string]: unknown;
+            };
+            status: string;
+            attempts: number;
+            not_before?: string | null;
+            started_at?: string | null;
+            finished_at?: string | null;
+            result?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        StrategyRow: {
+            id: string;
+            label: string;
+            description: string;
+            config_schema: {
+                [key: string]: unknown;
+            };
+            needs: string[];
         };
         TargetRow: {
             name: string;
@@ -7990,6 +8186,288 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Deployments"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deploy_strategies_api_v1_deploy_strategies_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeployStrategies"];
+                };
+            };
+        };
+    };
+    scope_strategies_api_v1_projects__project_id__apps__app_id__scopes__scope__strategies_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                scope: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScopeStrategy"][];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deployment_steps_api_v1_projects__project_id__apps__app_id__deployments__deployment_id__steps_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StepRow"][];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deployment_events_api_v1_projects__project_id__apps__app_id__deployments__deployment_id__events_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentEventRow"][];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    promote_deployment_api_v1_projects__project_id__apps__app_id__deployments__deployment_id__promote_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentControl"];
+                };
+            };
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentControl"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pause_deployment_api_v1_projects__project_id__apps__app_id__deployments__deployment_id__pause_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentControl"];
+                };
+            };
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentControl"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_deployment_api_v1_projects__project_id__apps__app_id__deployments__deployment_id__resume_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentControl"];
+                };
+            };
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentControl"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    abort_deployment_api_v1_projects__project_id__apps__app_id__deployments__deployment_id__abort_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                project_id: string;
+                app_id: string;
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentControl"];
+                };
+            };
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentControl"];
                 };
             };
             422: {

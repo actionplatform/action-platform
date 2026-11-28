@@ -203,6 +203,48 @@ On the platform a deploy never runs on the request: the API answers `202` with a
 
 A job is one row in `job`: kind, status (`queued` → `running` → `done` or `failed`), payload, attempts, result or error. On PostgreSQL the enqueue sends `NOTIFY ap_jobs` and a worker listening on that channel claims within milliseconds; elsewhere it polls every two seconds. A live worker refreshes its job's lock every minute; one that dies mid-deploy leaves the job `running` until the reaper, 30 minutes after the last refresh, puts it back in the queue with `worker lost`; a job that crashes is tried at most three times, 30 s and then 60 s apart; a job the platform refused — a missing tag, a target that said no — fails at once. The status the web shows is the row's. The tables are in [database](concept_database.md), the code path in [architecture](contribute_architecture.md#a-deploy-end-to-end).
 
+## Strategies
+
+A deploy picks a **strategy**: how the new release replaces the one running. The core owns the strategies and the plan of each; the target only does the small steps. `POST …/deploy` takes `strategy`, `strategy_config` and `safety`; without them the strategy is `recreate`, which is the deploy described above, unchanged.
+
+| Strategy | Config (defaults) | Plan | Needs |
+|---|---|---|---|
+| `recreate` | — | `deploy_new` (the target's own `deploy`) → `retire_old` (skipped when the target has no such operation) | nothing |
+| `rolling` | `batch_percent` 25 (1–100), `pause_seconds` 60 | `replace` a batch, pause, … until 100% | `replace` |
+| `blue_green` | `bake_seconds` 300, `keep_old_seconds` 0 | `deploy_new` at weight 0 → `health` → `shift` 100 → bake → keep old → `retire_old` | `deploy_new`, `health`, `shift`, `retire_old` |
+| `canary` | `steps` `[{weight, pause_seconds}]`, default 5/300, 25/300, 50/300, 100/0; the last weight is 100 | `deploy_new` at weight 0 → per step `shift` weight → pause → `health` → `retire_old` | `deploy_new`, `shift`, `health`, `retire_old` |
+| `shadow` | `duration_seconds` 600 | `deploy_new` at weight 0 → `mirror` on → pause → `health` → `mirror` off → `retire_old` with `retire = "new"`: the shadow copy goes, the old version keeps serving | `deploy_new`, `mirror`, `health`, `retire_old` |
+
+**Safety** applies to any strategy: `auto_rollback` (true) runs `rollback` when a `health` step fails and the target offers it; `manual_approval` (false) adds an `approval` step before the first traffic step (`shift`, `replace` or `mirror`; before `deploy_new` for `recreate`); `bake_seconds` (0) waits before the old version is retired. `GET /api/v1/deploy-strategies` serves every strategy with its `config_schema` and `needs`, and the `safety_schema`.
+
+A target supports a strategy when it runs it natively or offers every operation the plan needs ([operations](contribute_plugins.md#deployment-strategies)). A target that offers nothing supports `recreate` only. `GET …/scopes/{scope}/strategies` answers per strategy `supported`, `native`, `missing` and `reason` for the targets the platform runs on the scope. The readiness check `deploy.strategy` blocks a strategy the targets cannot run, naming the missing operations; a re-check with `strategy` in the body runs it, and the deploy job refuses the same case before anything changes.
+
+### Step by step
+
+A deploy that is not plain `recreate` stores its plan on the deployment when it starts — one `deployment_step` row per step (`position`, `kind`, `params`, `status`, `attempts`, `not_before`, `started_at`, `finished_at`, `result`) — and the deploy worker runs one `deploy_step` job per step. Each job runs the current step, stores its result and queues the next. A pause sets `not_before` and queues the next job for then; no worker sleeps. A step whose worker died while it was `running` is asked for its `status` first and the operation is called again only when the target cannot say. A target that runs the strategy natively gets one `native` step: `run_native` once, then `status` every 15 s until it ends.
+
+| Deployment status | When |
+|---|---|
+| `running` | a step runs or a pause waits |
+| `awaiting_approval` | the `approval` step waits for someone |
+| `paused` | someone paused it; nothing runs until resume |
+| `rolling_back` | a health check failed with `auto_rollback`, or an abort, and the target rolls back |
+| `success`, `failure` | the plan ended, or a step failed without a rollback |
+| `rolled_back` | the rollback after a failed health check ended |
+| `aborted` | someone aborted it: rolled back when the target can, otherwise stopped as it was, with what is live in the answer |
+
+Step statuses: `pending`, `running`, `waiting`, `succeeded`, `failed`, `skipped`, `cancelled`. While a deployment is running, paused, waiting for approval or rolling back it holds its scope: another deploy there answers `409`.
+
+| Route (under `/api/v1/projects/{p}/apps/{a}`) | Does |
+|---|---|
+| `GET deployments/{id}/steps` | the steps in order |
+| `GET deployments/{id}/events` | what happened and who did it — started, awaiting approval, approved, promoted, paused, resumed, rolling back, and the end; the same events are in the app's activity |
+| `POST deployments/{id}/promote` | approve the waiting `approval`, or skip the current pause |
+| `POST deployments/{id}/pause`, `…/resume` | hold and continue the plan |
+| `POST deployments/{id}/abort` | stop: roll back when the target offers `rollback` and something changed, otherwise stop and say what is live |
+
+The controls need the same permission as a deploy (`app.release`) and answer `202` when they queued a step, `200` otherwise, with the deployment and its steps.
+
 ## History
 
 **Deployment history** lists the app's deployments newest first, one block per target: status, scope, type (Deploy, Tear down), version, executor, duration, who, when. For targets the platform runs it is the list of `deploy` and `destroy` jobs; for the others it is what the importers recorded, linked to the run that did it. A row expands into the summary, the full log, the run id, timestamps and **Redeploy**, which queues the same release to the same scope again. A failed row keeps the error and the log; nothing is deleted from the history when a stack goes away. `GET /api/v1/jobs?app=<registry id>&kinds=deploy,destroy&page=&per=` is the same list, paged (`jobs/page` answers too, deprecated). From a terminal, `action-platform deployments [--app <id or name>] [--sync]` prints each target with what arrived at it (`--sync` asks the observed pipelines first), and `action-platform logs <job> [--follow]` prints what the worker wrote for a job.

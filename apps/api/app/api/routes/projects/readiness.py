@@ -79,6 +79,7 @@ def check_readiness(
         release_tag,
         stages=stages,
         user_id=caller.user.id,
+        strategy=body.strategy,
     )
 
     return schemas.ReadinessQueued(

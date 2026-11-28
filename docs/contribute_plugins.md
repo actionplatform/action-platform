@@ -181,6 +181,52 @@ Log through `self.logger` (the plugin's own logger, wired at load to the platfor
 
 `readiness` is optional — the default answers nothing and the release is checked statically only. Keep it read-only and cheap: it runs on the worker right after every release, for every scope, and again whenever someone asks. Name checks `<area>.<what>` (`aws.permissions`, `stack.state`, `destination.version`), put the way out in `fix`, and never let it build — that is what `deploy` is for. `apx-aws-lambda`'s `LambdaTarget.readiness` is the reference: tooling, template present, stack name, credentials, stack state, `iam:SimulatePrincipalPolicy` for the actions the template needs, `sam validate --lint`.
 
+## Deployment strategies
+
+The core owns the strategies (`recreate`, `rolling`, `blue_green`, `canary`, `shadow`) and their plans ([deployments](concept_deployments.md#strategies)). A deploy target takes part by returning a `TargetOperations` from `DeployTarget.operations()`; the default `None` keeps the target on `recreate`, its `deploy` as before.
+
+```python
+from action_platform.abc import DeployTarget, TargetOperations
+from action_platform.core.rollout import OperationContext, OperationResult
+
+
+class LambdaOperations(TargetOperations):
+    name = "aws/lambda"
+
+    def supports(self) -> set[str]:
+        return {"deploy_new", "shift", "health", "retire_old", "rollback", "status"}
+
+    def native_strategies(self) -> set[str]:
+        return set()
+
+    def shift(self, ctx: OperationContext) -> OperationResult:
+        weight = ctx.params["weight"]
+        ...
+        return OperationResult(True, f"{weight}% on {ctx.version}", external_ref=alias)
+
+
+class LambdaTarget(DeployTarget):
+    def operations(self) -> TargetOperations:
+        return LambdaOperations()
+```
+
+| Member | Contract |
+|---|---|
+| `supports()` | operation ids among `deploy_new`, `shift`, `mirror`, `replace`, `retire_old`, `rollback`, `health`, `status` |
+| `native_strategies()` | strategy ids the target runs itself; the platform calls `run_native(ctx, strategy, config)` once and follows `status` |
+| `deploy_new(ctx)` | start the release beside the running one; `ctx.params["weight"]` is the traffic it gets (0, or 100 for recreate) |
+| `shift(ctx)` | send `ctx.params["weight"]` percent of traffic to the new version |
+| `mirror(ctx)` | `ctx.params["on"]`: copy live traffic to the new version without serving its answers, or stop |
+| `replace(ctx)` | replace the running version on `ctx.params["upto"]` percent of the instances, `batch_percent` at a time |
+| `retire_old(ctx)` | remove the version that no longer serves; with `ctx.params["retire"] == "new"` (shadow) remove the new one instead |
+| `rollback(ctx)` | put the previous version back on all traffic |
+| `health(ctx)` | whether the new version is healthy; `ok=False` fails the step, and with `auto_rollback` rolls back |
+| `status(ctx)` | how the operation `ctx.operation` of step `ctx.step` stands: `data["state"]` `running`, `succeeded` or `failed` |
+
+Every call gets an `OperationContext` — `app` (`<org>/<project>/<app>`), `tag`, `version`, `scope`, `strategy`, `config` (the strategy's, validated), `params` (the step's), `operation`, `deployment_id`, `step`, `external_ref` and `data` (what earlier steps answered), and `deploy`, the `Context` a deploy receives, checked out at the tag, with `env` and `identity_token(audience)` — and answers an `OperationResult(ok, detail, external_ref=None, data={})`. Never raise for an expected refusal: answer `ok=False` with the reason; an unexpected exception is retried by the job, which then asks `status` first. An operation that only starts something answers `data={"state": "running"}` and is followed with `status`. Keep each operation idempotent: a call is repeated when `status` cannot answer. A `data["url"]` becomes the deployment's URL.
+
+A strategy is supported when it is native or `supports()` covers every operation its plan needs. Test with `action_platform.testing.operations`: `MockOperations` and `MockTarget` for the platform side, and `contract_problems(ops, operation_context())` — empty when a target's operations keep the contract (it calls every operation, so point it at a sandbox).
+
 ## Rules for the official index
 
 - No side effects at import; nothing outside `register` and the tools themselves.

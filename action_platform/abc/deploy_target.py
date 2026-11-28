@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from action_platform.abc.target_operations import TargetOperations
     from action_platform.core.context import Check, Context, DeployResult, Diagnosis
 
 
@@ -56,4 +57,8 @@ class DeployTarget(ABC):
 
     def url(self, version: str, stage: str | None = None) -> str | None:
         """Where `version` can be seen at the destination, when the target knows."""
+        return None
+
+    def operations(self) -> "TargetOperations | None":
+        """The steps a deployment strategy may ask of this target; None runs `recreate` only, through `deploy`."""
         return None

@@ -148,6 +148,7 @@ The Planner (`services/access/planner.py`) is the one place the gate reads the d
 | `sync` | `POST apps/{id}/sync` (async) | `git ls-remote`, and when a ref moved the snapshot from the host's API (`ReadsRepository`) with the drafts laid over it — no clone; a host without it, or one that fails, fetches the clone instead — then import the host's activity |
 | `release` | `POST apps/{id}/release` (async) | `Releaser.plan → apply` on the clone, push, publish on the host |
 | `deploy` | `POST apps/{id}/deploy` (async) | `Deployer` on the tagged release with the app's identity token and the plugin options as env |
+| `deploy_step` | a `deploy` with a strategy other than plain `recreate`, then itself; `promote`, `resume`, `abort` on a deployment | the deployment's current step ([strategies](concept_deployments.md#strategies)): a wait reschedules the job for `not_before`, an operation is called on the target (after a `status` check when its worker died), the next step is queued |
 | `readiness` | after a `release` cut here, one per stage; `POST projects/{p}/apps/{a}/releases/{tag}/readiness` | `Readiness.check` at the tag with the app's identity token and env, the verdict and checks stored in `release_readiness`; `POST apps/{id}/deploy` refuses a blocked stage unless `force` |
 | `push` | `POST apps/{id}/push` (async) | push the clone's branch, then import activity |
 | `import` | after a sync, release or push | releases and pull requests copied into the platform's tables |

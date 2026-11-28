@@ -16,6 +16,7 @@ from .source_host import (
     SupportsRepoCreation,
     SupportsRepoDeletion,
 )
+from .target_operations import TargetOperations
 from .template_store import TemplateStore
 from .working_copy import WorkingCopy
 
@@ -36,6 +37,7 @@ __all__ = [
     "SupportsRepoCreation",
     "SupportsRepoDeletion",
     "Surface",
+    "TargetOperations",
     "TemplateStore",
     "WorkingCopy",
 ]

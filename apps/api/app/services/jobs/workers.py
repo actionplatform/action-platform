@@ -17,6 +17,7 @@ FORGET_AFTER = timedelta(days=1)
 NO_WORKER_AFTER = timedelta(minutes=2)
 DEPLOY_KINDS = (
     "deploy",
+    "deploy_step",
     "readiness",
     "destroy",
     "destroy_project",

@@ -144,8 +144,11 @@ class ActionPlatform:
         version: str | None = None,
         target: str | None = None,
         shape: str | None = None,
+        strategy: str | None = None,
     ) -> list[Check]:
-        return self.readiness.check(stage, version=version, target=target, shape=shape)
+        return self.readiness.check(
+            stage, version=version, target=target, shape=shape, strategy=strategy
+        )
 
     def rollback(
         self,

@@ -110,6 +110,11 @@ def delete_scope(
     project = project_of(writes, org, project_id)
     app = app_of(writes, caller, project, app_id)
     service = ScopesService(db, configs)
-    service.delete(app, name, live=queue.live_deploy(app.id, name) is not None)
+    service.delete(
+        app,
+        name,
+        live=queue.live_deploy(app.id, name) is not None
+        or queue.held_rollout(app.id, name) is not None,
+    )
 
     return Response(status_code=204)

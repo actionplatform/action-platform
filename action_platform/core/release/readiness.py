@@ -14,6 +14,7 @@ from action_platform.core.context import Check, Context
 from action_platform.core.exception import ActionPlatformError, DeployError
 from action_platform.core.release.deploy import missing_target
 from action_platform.core.release.versioning import VERSION_PATTERNS
+from action_platform.core.rollout.support import strategy_check
 from action_platform.core.scopes import ScopeSpec, shape_check, shape_of
 from action_platform.core.targets import VERSION, TargetSpec
 from action_platform.core.wiring import slot, wired
@@ -42,6 +43,7 @@ class Readiness:
         version: str | None = None,
         target: str | None = None,
         shape: str | None = None,
+        strategy: str | None = None,
     ) -> list[Check]:
         checks: list[Check] = []
         scope = self._scope(stage)
@@ -98,6 +100,9 @@ class Readiness:
             )
         )
 
+        if strategy:
+            checks.append(self._strategy(targets, strategy))
+
         with self.deployer.at_release(tag):
             checks.extend(self._manifests(shipped))
             checks.extend(self._lockfiles())
@@ -113,6 +118,12 @@ class Readiness:
                 checks.extend(self._observed(spec, replace(ctx, observed=True)))
 
         return checks
+
+    def _strategy(self, targets: list[DeployTarget], strategy: str) -> Check:
+        try:
+            return strategy_check(targets, strategy)
+        except ActionPlatformError as e:
+            return Check("deploy.strategy", False, str(e), level="static")
 
     def _observed(self, spec: TargetSpec, ctx: Context) -> list[Check]:
         """An observed target's own checks, when its kind has a provider: they inform and never block, since the platform does not run it."""
@@ -283,7 +294,8 @@ def readiness(
     stage: str,
     version: str | None = None,
     target: str | None = None,
+    strategy: str | None = None,
 ) -> list[Check]:
     return wired.readiness(config, repo_root, wired.deployer(config, repo_root)).check(
-        stage, version=version, target=target
+        stage, version=version, target=target, strategy=strategy
     )
