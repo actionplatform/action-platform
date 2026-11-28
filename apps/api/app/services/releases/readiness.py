@@ -46,6 +46,7 @@ class ReadinessService:
         stage: str,
         shape: Optional[str] = None,
         scopes: Optional[list[dict[str, Any]]] = None,
+        strategy: Optional[str] = None,
     ) -> list[Check]:
         _, root = Workspaces(self.registry).checkout(id)
         config = auth.apply(self.configs.config(id, root), self.credentials)
@@ -62,7 +63,7 @@ class ReadinessService:
             env=self.env,
         )
 
-        return tool.check_readiness(stage, version=tag, shape=shape)
+        return tool.check_readiness(stage, version=tag, shape=shape, strategy=strategy)
 
 
 class ReadinessRequests:
@@ -89,6 +90,7 @@ class ReadinessRequests:
         tag: str,
         stages: tuple[str, ...],
         user_id: Any = None,
+        strategy: Optional[str] = None,
     ) -> list[str]:
         ids: list[str] = []
 
@@ -98,7 +100,11 @@ class ReadinessRequests:
                 {
                     "path": f"apps/{app.registry_id}/readiness",
                     "method": "POST",
-                    "body": {"tag": tag, "stage": stage},
+                    "body": {
+                        "tag": tag,
+                        "stage": stage,
+                        **({"strategy": strategy} if strategy else {}),
+                    },
                     "registry_id": app.registry_id,
                     "organization_id": organization_id,
                     "app_id": app.id,

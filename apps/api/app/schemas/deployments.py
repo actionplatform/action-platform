@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Optional
+import json
+from typing import Any, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.schemas.common import UtcDateTime
 
@@ -13,6 +14,19 @@ class DeployRequest(BaseModel):
     dry_run: bool = True
     version: Optional[str] = None
     force: bool = False
+    strategy: Optional[str] = None
+    strategy_config: Optional[dict[str, Any]] = None
+    safety: Optional[dict[str, Any]] = None
+
+
+def _json(value: Any) -> Any:
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except ValueError:
+            return None
+
+    return value
 
 
 class DeployResult(BaseModel):
@@ -60,6 +74,20 @@ class DeploymentRow(BaseModel):
     finished_at: Optional[UtcDateTime] = None
     verified_at: Optional[UtcDateTime] = None
     synced_at: UtcDateTime
+    strategy: str = "recreate"
+    strategy_config: Optional[dict[str, Any]] = None
+    safety: Optional[dict[str, Any]] = None
+    operations: Optional[list[str]] = None
+
+    @field_validator("strategy_config", "safety", "operations", mode="before")
+    @classmethod
+    def _decoded(cls, value: Any) -> Any:
+        return _json(value)
+
+    @field_validator("strategy", mode="before")
+    @classmethod
+    def _recreate(cls, value: Any) -> Any:
+        return value or "recreate"
 
 
 class Deployments(BaseModel):
@@ -81,3 +109,58 @@ class RecordDeploymentRequest(BaseModel):
     url: Optional[str] = None
     sha: Optional[str] = None
     ok: bool = True
+
+
+class StrategyRow(BaseModel):
+    id: str
+    label: str
+    description: str
+    config_schema: dict[str, Any]
+    needs: list[str]
+
+
+class DeployStrategies(BaseModel):
+    strategies: list[StrategyRow]
+    safety_schema: dict[str, Any]
+
+
+class ScopeStrategy(BaseModel):
+    id: str
+    supported: bool
+    native: bool = False
+    missing: list[str] = []
+    reason: Optional[str] = None
+
+
+class StepRow(BaseModel):
+    id: str
+    position: int
+    kind: str
+    params: dict[str, Any] = {}
+    status: str
+    attempts: int = 0
+    not_before: Optional[UtcDateTime] = None
+    started_at: Optional[UtcDateTime] = None
+    finished_at: Optional[UtcDateTime] = None
+    result: Optional[dict[str, Any]] = None
+
+    @field_validator("params", "result", mode="before")
+    @classmethod
+    def _decoded(cls, value: Any) -> Any:
+        return _json(value)
+
+
+class DeploymentEventRow(BaseModel):
+    id: str
+    kind: str
+    title: str
+    detail: Optional[str] = None
+    actor: Optional[str] = None
+    at: UtcDateTime
+
+
+class DeploymentControl(BaseModel):
+    deployment: DeploymentRow
+    steps: list[StepRow]
+    queued: bool = False
+    live: Optional[str] = None

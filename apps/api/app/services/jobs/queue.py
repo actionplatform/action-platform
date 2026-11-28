@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session as DbSession
 from app.core.db.database import Database
 from app.core.db.models import Job
 from app.core.shared.clock import now
+from app.repositories.deployments import RolloutStore
 from app.services.jobs.workers import Workers, lacks_worker
 
 MAX_ATTEMPTS = 3
@@ -79,6 +80,7 @@ STALE_AFTER = timedelta(minutes=30)
 BACKOFF = timedelta(seconds=30)
 BUSY_AGAIN = timedelta(seconds=5)
 LIVE = ("queued", "running")
+DEPLOYING = ("deploy", "deploy_step")
 
 
 class JobQueue:
@@ -128,6 +130,62 @@ class JobQueue:
                 dedupe_key=dedupe_key,
                 payload=json.dumps(payload),
                 run_after=run_after or now(),
+            )
+            s.add(job)
+            s.flush()
+            self._notify(s)
+
+            return job
+
+    def ensure(
+        self,
+        kind: str,
+        payload: dict[str, Any],
+        dedupe_key: str,
+        organization_id: Optional[str] = None,
+        app_id: Optional[str] = None,
+        run_after: Optional[datetime] = None,
+    ) -> Job:
+        """One queued job of `kind` under `dedupe_key`, due at `run_after` or sooner: a queued one is brought forward, never pushed back; a running one keeps running and a new one is queued after it."""
+        moment = run_after or now()
+
+        with self.database.session() as s:
+            queued = s.scalar(
+                select(Job).where(
+                    Job.kind == kind,
+                    Job.app_id == app_id,
+                    Job.dedupe_key == dedupe_key,
+                    Job.status == "queued",
+                )
+            )
+
+            if queued is not None:
+                if moment < queued.run_after:
+                    queued.run_after = moment
+                    queued.updated_at = now()
+                    self._notify(s)
+
+                return queued
+
+            for other in s.scalars(
+                select(Job).where(
+                    Job.kind == kind,
+                    Job.app_id == app_id,
+                    Job.dedupe_key == dedupe_key,
+                )
+            ):
+                other.dedupe_key = None
+
+            s.flush()
+            job = Job(
+                id=str(uuid.uuid4()),
+                kind=kind,
+                status="queued",
+                organization_id=organization_id,
+                app_id=app_id,
+                dedupe_key=dedupe_key,
+                payload=json.dumps(payload),
+                run_after=moment,
             )
             s.add(job)
             s.flush()
@@ -200,7 +258,7 @@ class JobQueue:
         with self.database.session() as s:
             for job in s.scalars(
                 select(Job).where(
-                    Job.kind == "deploy",
+                    Job.kind.in_(DEPLOYING),
                     Job.app_id == app_id,
                     Job.status.in_(LIVE),
                 )
@@ -211,6 +269,13 @@ class JobQueue:
                     return job
 
             return None
+
+    def held_rollout(self, app_id: str, stage: str) -> Optional[str]:
+        """The status of a deployment run step by step that still holds `stage` — paused or waiting for approval holds it as much as running."""
+        with self.database.session() as s:
+            found = RolloutStore(s).held(app_id, stage)
+
+            return found.status if found is not None else None
 
     def projects_being_destroyed(self, organization_id: str) -> set[str]:
         """The projects of the organization with a `destroy_project` job still queued or running."""

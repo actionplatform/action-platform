@@ -201,6 +201,7 @@ class ReadinessRow(BaseModel):
 
 class ReadinessRequest(BaseModel):
     stage: Optional[str] = None
+    strategy: Optional[str] = None
 
 
 class ReadinessQueued(BaseModel):

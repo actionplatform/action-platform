@@ -7,6 +7,8 @@ import re
 from dataclasses import dataclass
 from typing import Any, Optional
 
+from action_platform.core.exception import ConfigError
+from action_platform.core.rollout import strategy as strategy_of, validate_safety
 from app.core.access.rules import (
     DIRECTORY,
     WORKSPACE_ROOTS,
@@ -105,6 +107,7 @@ class Planner:
                         else "a deploy names a scope — no scope, no deploy"
                     )
 
+                self._strategy(parsed)
                 ReadinessRequests(
                     self.state.db, JobQueue(self.state.db)
                 ).assert_deployable(
@@ -181,6 +184,15 @@ class Planner:
             raise Refused(404, "app not found")
 
         return f"apps/{app.registry_id}" + (f"/{rest}" if rest else "")
+
+    @staticmethod
+    def _strategy(parsed: dict[str, Any]) -> None:
+        """A deploy's strategy, its config and its safety, refused before anything is queued when they do not hold."""
+        try:
+            strategy_of(parsed.get("strategy")).validate(parsed.get("strategy_config"))
+            validate_safety(parsed.get("safety"))
+        except ConfigError as e:
+            raise Invalid(str(e)) from e
 
     def _scope_names(self, app: Any) -> list[str]:
         with self.state.db.session() as db:

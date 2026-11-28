@@ -12,6 +12,7 @@ from app.core.db.models import (
     App,
     CiRun,
     Deployment,
+    DeploymentEvent,
     Project,
     ProtectionEvent,
     PullRequest,
@@ -21,7 +22,13 @@ from app.core.db.models import (
 from app.core.shared.clock import now
 
 EMBEDDED_CI_HOSTS = ("github", "gitlab", "bitbucket")
-ACTIVE_DEPLOYMENT = ("queued", "running")
+ACTIVE_DEPLOYMENT = (
+    "queued",
+    "running",
+    "paused",
+    "awaiting_approval",
+    "rolling_back",
+)
 EVENT_KINDS = ("deployment", "release", "pull_request", "ci_run", "protection")
 
 
@@ -216,6 +223,24 @@ class Insights:
                         "status": d.status,
                         "detail": d.stage,
                         "url": d.url,
+                    }
+                )
+
+            for e in self.db.scalars(
+                select(DeploymentEvent)
+                .where(DeploymentEvent.app_id.in_(ids))
+                .order_by(DeploymentEvent.at.desc())
+                .limit(limit)
+            ):
+                events.append(
+                    {
+                        **names[e.app_id],
+                        "kind": "deployment",
+                        "at": e.at,
+                        "title": e.title,
+                        "status": e.kind,
+                        "detail": " · ".join(x for x in (e.detail, e.actor) if x),
+                        "url": None,
                     }
                 )
 

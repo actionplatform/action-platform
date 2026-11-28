@@ -30,7 +30,14 @@ from app.schemas import (
 from app.services.activity import ActivityService
 from app.services.ci import CiService
 from app.services.projects.apps import AppService
-from app.services.deployments import AppCiRunners, DeployEnv, DeploymentRecords
+from action_platform.core.rollout import strategy as strategy_of, validate_safety
+from app.services.deployments import (
+    AppCiRunners,
+    DeployEnv,
+    DeploymentRecords,
+    Rollout,
+    stepped,
+)
 from app.services.integrations.hosts.directory import IntegrationsDirectory
 from app.services.projects.organization_import.directory import ImportDirectory
 from app.services.projects.adoption import BulkInstall, InstallOptions
@@ -300,7 +307,12 @@ class JobHandlers:
         try:
             with auth.git_auth(credentials):
                 checks = service.check(
-                    ctx.registry_id, tag, stage, shape=shape, scopes=scopes
+                    ctx.registry_id,
+                    tag,
+                    stage,
+                    shape=shape,
+                    scopes=scopes,
+                    strategy=ctx.body.get("strategy") or None,
                 )
         except Exception as e:
             with self.database.session() as db:
@@ -325,18 +337,28 @@ class JobHandlers:
                 "checks": ReadinessStore.checks_of(row),
             }
 
-    def deploy(self, payload: dict[str, Any]) -> Any:
-        ctx = self.context(payload)
+    def _deploy_service(
+        self, ctx: JobContext, stage: Optional[str], credentials: Any
+    ) -> DeploymentsService:
         identity = AppIdentity(self.database, self.sealer, settings.api.public_url)
-        request = DeployRequest(**ctx.body)
-        credentials = self._host_credentials(ctx)
-        service = DeploymentsService(
+
+        return DeploymentsService(
             self.registry,
-            identity=identity.minter(ctx.organization, ctx.app, request.stage),
+            identity=identity.minter(ctx.organization, ctx.app, stage),
             **self._deploy_env(ctx.organization, ctx.app),
             credentials=credentials,
             ci=self._ci_runners(ctx),
         )
+
+    def deploy(self, payload: dict[str, Any]) -> Any:
+        ctx = self.context(payload)
+        request = DeployRequest(**ctx.body)
+        credentials = self._host_credentials(ctx)
+        service = self._deploy_service(ctx, request.stage, credentials)
+
+        if not request.dry_run and stepped(request.strategy, request.safety):
+            return self._rollout(ctx, payload, request, service, credentials)
+
         started = now()
         recorded = request
 
@@ -363,6 +385,95 @@ class JobHandlers:
             self._record_deploy(ctx, payload, request, started, results)
 
         return results
+
+    def _rollout(
+        self,
+        ctx: JobContext,
+        payload: dict[str, Any],
+        request: DeployRequest,
+        service: DeploymentsService,
+        credentials: Any,
+    ) -> Any:
+        """A deploy run step by step: the plan of each target stored on its deployment, then the first `deploy_step` queued."""
+        chosen = strategy_of(request.strategy)
+        config = chosen.validate(request.strategy_config)
+        safety = validate_safety(request.safety)
+        started = now()
+
+        with auth.git_auth(credentials):
+            version = service.release_of(ctx.registry_id, request.version)
+            recorded = request.model_copy(update={"version": version})
+
+            try:
+                plans = service.plans(ctx.registry_id, request)
+            except ActionPlatformError as e:
+                self._record_deploy_failure(ctx, payload, recorded, started, str(e))
+
+                raise
+
+        if not version:
+            raise ActionPlatformError(
+                "a deploy ships a release: pass the version to deploy"
+            )
+
+        if ctx.app is None or not payload.get("job_id"):
+            raise ActionPlatformError("a deployment run step by step needs its app")
+
+        with self.database.session() as db:
+            records = DeploymentRecords(db, self.sealer)
+            actor = records.actor_name(payload.get("user_id"))
+            rows = {
+                row.target: row.id
+                for row in records.record_start(
+                    db.get(App, ctx.app.id),
+                    self.configs.config_of(ctx.registry_id),
+                    request.stage,
+                    version,
+                    payload["job_id"],
+                    actor,
+                    started,
+                )
+            }
+
+        base = {
+            "path": payload.get("path"),
+            "method": payload.get("method", "POST"),
+            "body": {**(payload.get("body") or {}), "version": version},
+            "registry_id": payload.get("registry_id"),
+            "organization_id": payload.get("organization_id"),
+            "app_id": payload.get("app_id"),
+            "user_id": payload.get("user_id"),
+        }
+        rollout = Rollout(self.database, JobQueue(self.database))
+        started_rows = []
+
+        for target, steps, operations in plans:
+            if target not in rows:
+                continue
+
+            rollout.start(
+                rows[target], chosen.id, config, safety, operations, steps, base, actor
+            )
+            started_rows.append(
+                {"id": rows[target], "target": target, "steps": len(steps)}
+            )
+
+        return {"strategy": chosen.id, "version": version, "deployments": started_rows}
+
+    def deploy_step(self, payload: dict[str, Any]) -> Any:
+        """The current step of one deployment run step by step; it queues the next one itself."""
+        ctx = self.context(payload)
+        request = DeployRequest(**ctx.body)
+        credentials = self._host_credentials(ctx)
+        service = self._deploy_service(ctx, request.stage, credentials)
+        rollout = Rollout(
+            self.database,
+            JobQueue(self.database),
+            runner=lambda call: service.run_step(ctx.registry_id, call),
+        )
+
+        with auth.git_auth(credentials):
+            return rollout.advance(payload)
 
     def _scopes(self, app: Optional[App]) -> list[dict]:
         if app is None:
@@ -653,6 +764,7 @@ register("destroy_organization", lambda s: JobHandlers.of(s).destroy_organizatio
 register("readiness", lambda s: JobHandlers.of(s).readiness)
 register("release", lambda s: JobHandlers.of(s).release)
 register("deploy", lambda s: JobHandlers.of(s).deploy)
+register("deploy_step", lambda s: JobHandlers.of(s).deploy_step)
 register("push", lambda s: JobHandlers.of(s).push)
 register("destroy", lambda s: JobHandlers.of(s).destroy)
 register("destroy_project", lambda s: JobHandlers.of(s).destroy_project)
