@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.52.1 — 2026-11-28
+
+### Bug Fixes
+- **api:** deleting a project or an app with its repositories no longer clones them first, and the delete routes answer with what was removed (#780)
+
 ## v0.52.0 — 2026-11-28
 
 ### Features
