@@ -101,7 +101,7 @@ function Results({ rows }: { rows: DeployResult[] }) {
   );
 }
 
-export function DeploymentView({ job, base, registryId, canDeploy, children }: { job: JobRow; base: string; registryId: string; canDeploy: boolean; children?: ReactNode }) {
+export function DeploymentView({ job, base, projectId, registryId, canDeploy, children }: { job: JobRow; base: string; projectId: string; registryId: string; canDeploy: boolean; children?: ReactNode }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -123,7 +123,7 @@ export function DeploymentView({ job, base, registryId, canDeploy, children }: {
   const redeploy = () =>
     start(async () => {
       setError(null);
-      const r = await startDeploy(registryId, job.stage ?? "", !!job.dry_run, job.version ?? version ?? "");
+      const r = await startDeploy(projectId, registryId, job.stage ?? "", !!job.dry_run, job.version ?? version ?? "");
       if (!r.ok) { setError(r.error); return; }
       router.push(`${base}/deployments${"job" in r.data ? `/${encodeURIComponent(r.data.job)}` : ""}`);
     });

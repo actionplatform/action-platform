@@ -54,9 +54,9 @@ function CommitBar({ view }: { view: AppView }) {
   useEffect(() => {
     if (!newBranch) return;
     let live = true;
-    const timer = setTimeout(() => { planBranch(view.registryId, kind, code, slug).then((r) => { if (live && r.ok) setPlan(r.data); }); }, 150);
+    const timer = setTimeout(() => { planBranch(view.projectId, view.registryId, kind, code, slug).then((r) => { if (live && r.ok) setPlan(r.data); }); }, 150);
     return () => { live = false; clearTimeout(timer); };
-  }, [view.registryId, kind, code, slug, newBranch]);
+  }, [view.projectId, view.registryId, kind, code, slug, newBranch]);
   const branchName = plan?.branch ?? `${kind}/…`;
   const canSubmit = message.trim() && (!newBranch || code.trim());
 

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 
 from app.schemas.projects import (
     AddAppRequest,
@@ -20,11 +20,17 @@ from app.schemas.apps import (
     Release,
 )
 from app.api.dependencies import (
+    legacy_surface,
     AppsDep,
     SnapshotDep,
 )
 
-router = APIRouter(prefix="/api/apps", tags=["apps"])
+router = APIRouter(
+    prefix="/api/apps",
+    tags=["apps"],
+    deprecated=True,
+    dependencies=[Depends(legacy_surface)],
+)
 
 
 @router.get("")

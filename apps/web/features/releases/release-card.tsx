@@ -62,11 +62,11 @@ export function ReleaseCard({ view }: { view: AppView }) {
   useEffect(() => {
     let live = true;
     setComputed(null);
-    nextVersion(view.registryId, level, switching ? branch : null, component || null).then((r) => {
+    nextVersion(view.projectId, view.registryId, level, switching ? branch : null, component || null).then((r) => {
       if (live && r.ok) setComputed({ next: r.data.next, prerelease: r.data.prerelease });
     });
     return () => { live = false; };
-  }, [view.registryId, view.version, level, branch, switching, component]);
+  }, [view.projectId, view.registryId, view.version, level, branch, switching, component]);
   const next = computed?.next ?? bump(current, level);
   const tagExists = view.tags.includes(`${tagPrefix}${next}`);
 
@@ -86,7 +86,7 @@ export function ReleaseCard({ view }: { view: AppView }) {
   );
 
   const action = useAction<ReleasePreview, ReleasePreview>({
-    preview: () => previewRelease(view.registryId, level, switching ? branch : null, component || null),
+    preview: () => previewRelease(view.projectId, view.registryId, level, switching ? branch : null, component || null),
     run: () => runRelease(view.projectId, view.appId, view.registryId, level, switching ? branch : null, { name: name.trim() || null, notes: notes.trim() || null, component: component || null }),
     poll,
     whileAway: "The release runs on the platform: check the Releases list in a moment.",

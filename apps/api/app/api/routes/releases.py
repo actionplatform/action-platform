@@ -2,14 +2,20 @@
 
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from app.schemas import releases as schemas
 from app.api.dependencies import (
+    legacy_surface,
     ReleasesDep,
 )
 
-router = APIRouter(prefix="/api/apps", tags=["releases"])
+router = APIRouter(
+    prefix="/api/apps",
+    tags=["releases"],
+    deprecated=True,
+    dependencies=[Depends(legacy_surface)],
+)
 
 
 @router.post("/{id}/release")

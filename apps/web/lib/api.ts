@@ -75,59 +75,57 @@ export const api = {
   matrix: async () => unwrap(await client.GET("/api/matrix")),
   gitflowRules: async () => unwrap(await client.GET("/api/gitflow/rules")),
   apps: {
-    list: async () => unwrap(await client.GET("/api/apps")),
-    sync: async (id: string, reset = false) =>
-      unwrap(await client.POST("/api/apps/{id}/sync", { params: { path: { id } }, body: { reset } })) as unknown as Queued,
-    remove: async (id: string) =>
-      unwrap(await client.DELETE("/api/apps/{id}", { params: { path: { id } } })),
-    get: async (id: string) =>
-      unwrap(await client.GET("/api/apps/{id}", { params: { path: { id } } })),
-    gitflow: async (id: string) =>
-      unwrap(await client.GET("/api/apps/{id}/gitflow", { params: { path: { id } } })),
-    commits: async (id: string, limit = 20) =>
-      unwrap(await client.GET("/api/apps/{id}/commits", { params: { path: { id }, query: { limit } } })),
-    tags: async (id: string) =>
-      unwrap(await client.GET("/api/apps/{id}/tags", { params: { path: { id } } })),
-    startBranch: async (id: string, body: { kind: string; code: string; slug: string | null; push: boolean }) =>
-      unwrap(await client.POST("/api/apps/{id}/branches", { params: { path: { id } }, body })),
-    planBranch: async (id: string, kind: string, code: string, slug: string | null) =>
-      unwrap(await client.GET("/api/apps/{id}/branches/plan", { params: { path: { id }, query: { kind, code, slug: slug ?? undefined } } })),
-    checkout: async (id: string, branch: string) =>
-      unwrap(await client.POST("/api/apps/{id}/checkout", { params: { path: { id } }, body: { branch } })),
-    proposePullRequest: async (id: string, base?: string, title?: string) =>
-      unwrap(await client.GET("/api/apps/{id}/pull-request", { params: { path: { id }, query: { base, title } } })),
-    openPullRequest: async (id: string, body: { base: string | null; title: string | null; body: string | null; draft: boolean }) =>
-      unwrap(await client.POST("/api/apps/{id}/pull-request", { params: { path: { id } }, body })),
-    manifest: async (id: string) =>
-      unwrap(await client.GET("/api/apps/{id}/manifest", { params: { path: { id } } })),
-    writeManifest: async (id: string, content: string) =>
-      unwrap(await client.PUT("/api/apps/{id}/manifest", { params: { path: { id } }, body: { content } })),
-    exportManifest: async (id: string) =>
-      unwrap(await client.POST("/api/apps/{id}/manifest/export", { params: { path: { id } } })),
-    setCloud: async (id: string, target: string, source: string | null = null) =>
-      unwrap(await client.PUT("/api/apps/{id}/cloud", { params: { path: { id } }, body: { target, source: source as never } })),
-    addService: async (id: string, name: string, provider: string | null, source: string | null = null) =>
-      unwrap(await client.POST("/api/apps/{id}/services", { params: { path: { id } }, body: { name, provider, source: source as never } })),
-    changes: async (id: string) => unwrap(await client.GET("/api/apps/{id}/changes", { params: { path: { id } } })),
-    install: async (id: string, spec: { type: string; language?: string | null; ci?: string | null } = { type: "web" }) => unwrap(await client.POST("/api/apps/{id}/install", { params: { path: { id } }, body: spec })),
-    discard: async (id: string) => unwrap(await client.POST("/api/apps/{id}/discard", { params: { path: { id } } })),
-    commit: async (id: string, body: { message: string; push: boolean; branch: { kind: string; code: string; slug: string | null } | null; pull_request: boolean }) =>
-      unwrap(await client.POST("/api/apps/{id}/commit", { params: { path: { id } }, body })),
-    releases: async (id: string) =>
-      unwrap(await client.GET("/api/apps/{id}/releases", { params: { path: { id } } })),
-    branches: async (id: string) =>
-      unwrap(await client.GET("/api/apps/{id}/branches", { params: { path: { id } } })),
-    nextVersion: async (id: string, level: string, branch: string | null = null, component: string | null = null) =>
-      unwrap(await client.GET("/api/apps/{id}/next-version", { params: { path: { id }, query: { level, branch: branch ?? undefined, component: component ?? undefined } } })),
-    release: async (id: string, level: string, dry_run: boolean, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean; component?: string | null } = {}) =>
-      unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run, branch, latest: true, ...extra } })),
-    releaseAsync: async (id: string, level: string, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean; component?: string | null } = {}) =>
-      unwrap(await client.POST("/api/apps/{id}/release", { params: { path: { id } }, body: { level, dry_run: false, branch, latest: true, ...extra } })) as unknown as Queued,
-    preflight: async (id: string, stage: string | null, version: string | null = null, force = false) =>
-      unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run: true, version, force } })),
-    deployAsync: async (id: string, stage: string | null, version: string | null = null, force = false) =>
-      unwrap(await client.POST("/api/apps/{id}/deploy", { params: { path: { id } }, body: { stage, dry_run: false, version, force } })) as unknown as Queued,
-    diagnose: async (id: string, stage?: string) =>
-      unwrap(await client.GET("/api/apps/{id}/diagnose", { params: { path: { id }, query: stage ? { stage } : {} } })),
+    list: async (projectId: string) => unwrap(await client.GET("/api/v1/projects/{project_id}/apps", { params: { path: { project_id: projectId } } })),
+    sync: async (projectId: string, id: string, reset = false) =>
+      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/sync", { params: { path: { project_id: projectId, app_id: id } }, body: { reset } })) as unknown as Queued,
+    get: async (projectId: string, id: string) =>
+      unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}", { params: { path: { project_id: projectId, app_id: id } } })),
+    gitflow: async (projectId: string, id: string) =>
+      unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/gitflow", { params: { path: { project_id: projectId, app_id: id } } })),
+    commits: async (projectId: string, id: string, limit = 20) =>
+      unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/commits", { params: { path: { project_id: projectId, app_id: id }, query: { limit } } })),
+    tags: async (projectId: string, id: string) =>
+      unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/tags", { params: { path: { project_id: projectId, app_id: id } } })),
+    startBranch: async (projectId: string, id: string, body: { kind: string; code: string; slug: string | null; push: boolean }) =>
+      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/branches", { params: { path: { project_id: projectId, app_id: id } }, body })),
+    planBranch: async (projectId: string, id: string, kind: string, code: string, slug: string | null) =>
+      unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/branches/plan", { params: { path: { project_id: projectId, app_id: id }, query: { kind, code, slug: slug ?? undefined } } })),
+    checkout: async (projectId: string, id: string, branch: string) =>
+      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/checkout", { params: { path: { project_id: projectId, app_id: id } }, body: { branch } })),
+    proposePullRequest: async (projectId: string, id: string, base?: string, title?: string) =>
+      unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/pull-request", { params: { path: { project_id: projectId, app_id: id }, query: { base, title } } })),
+    openPullRequest: async (projectId: string, id: string, body: { base: string | null; title: string | null; body: string | null; draft: boolean }) =>
+      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/pull-request", { params: { path: { project_id: projectId, app_id: id } }, body })),
+    manifest: async (projectId: string, id: string) =>
+      unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/manifest", { params: { path: { project_id: projectId, app_id: id } } })),
+    writeManifest: async (projectId: string, id: string, content: string) =>
+      unwrap(await client.PUT("/api/v1/projects/{project_id}/apps/{app_id}/manifest", { params: { path: { project_id: projectId, app_id: id } }, body: { content } })),
+    exportManifest: async (projectId: string, id: string) =>
+      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/manifest/export", { params: { path: { project_id: projectId, app_id: id } } })),
+    setCloud: async (projectId: string, id: string, target: string, source: string | null = null) =>
+      unwrap(await client.PUT("/api/v1/projects/{project_id}/apps/{app_id}/cloud", { params: { path: { project_id: projectId, app_id: id } }, body: { target, source: source as never } })),
+    addService: async (projectId: string, id: string, name: string, provider: string | null, source: string | null = null) =>
+      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/services", { params: { path: { project_id: projectId, app_id: id } }, body: { name, provider, source: source as never } })),
+    changes: async (projectId: string, id: string) => unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/changes", { params: { path: { project_id: projectId, app_id: id } } })),
+    install: async (projectId: string, id: string, spec: { type: string; language?: string | null; ci?: string | null } = { type: "web" }) => unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/install", { params: { path: { project_id: projectId, app_id: id } }, body: spec })),
+    discard: async (projectId: string, id: string) => unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/discard", { params: { path: { project_id: projectId, app_id: id } } })),
+    commit: async (projectId: string, id: string, body: { message: string; push: boolean; branch: { kind: string; code: string; slug: string | null } | null; pull_request: boolean }) =>
+      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/commit", { params: { path: { project_id: projectId, app_id: id } }, body })),
+    releases: async (projectId: string, id: string) =>
+      unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/versions", { params: { path: { project_id: projectId, app_id: id } } })),
+    branches: async (projectId: string, id: string) =>
+      unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/branches", { params: { path: { project_id: projectId, app_id: id } } })),
+    nextVersion: async (projectId: string, id: string, level: string, branch: string | null = null, component: string | null = null) =>
+      unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/next-version", { params: { path: { project_id: projectId, app_id: id }, query: { level, branch: branch ?? undefined, component: component ?? undefined } } })),
+    release: async (projectId: string, id: string, level: string, dry_run: boolean, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean; component?: string | null } = {}) =>
+      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/release", { params: { path: { project_id: projectId, app_id: id } }, body: { level, dry_run, branch, latest: true, ...extra } })),
+    releaseAsync: async (projectId: string, id: string, level: string, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean; component?: string | null } = {}) =>
+      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/release", { params: { path: { project_id: projectId, app_id: id } }, body: { level, dry_run: false, branch, latest: true, ...extra } })) as unknown as Queued,
+    preflight: async (projectId: string, id: string, stage: string | null, version: string | null = null, force = false) =>
+      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/deploy", { params: { path: { project_id: projectId, app_id: id } }, body: { stage, dry_run: true, version, force } })),
+    deployAsync: async (projectId: string, id: string, stage: string | null, version: string | null = null, force = false) =>
+      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/deploy", { params: { path: { project_id: projectId, app_id: id } }, body: { stage, dry_run: false, version, force } })) as unknown as Queued,
+    diagnose: async (projectId: string, id: string, stage?: string) =>
+      unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/diagnose", { params: { path: { project_id: projectId, app_id: id }, query: stage ? { stage } : {} } })),
   },
 };

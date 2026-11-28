@@ -48,7 +48,7 @@ export default async function DeploymentPage({ params }: { params: Promise<{ pro
   return (
     <div className="space-y-4">
       <Link href={appPath(view.projectId, view.appId, "deployments")} className="inline-flex items-center gap-1.5 text-[13px] text-secondary hover:text-foreground"><ArrowLeft className="size-3.5" strokeWidth={1.75} /> Deployments</Link>
-      <DeploymentView job={job} base={base} registryId={view.registryId} canDeploy={!!view.can["app.release"] && !!view.repositoryUrl}>
+      <DeploymentView job={job} base={base} projectId={view.projectId} registryId={view.registryId} canDeploy={!!view.can["app.release"] && !!view.repositoryUrl}>
         {ci.error && <Panel><PanelBody className="text-[13px] text-secondary">CI run: {ci.error}</PanelBody></Panel>}
         {ci.runs.map(({ run, detail, error }) => (
           <section key={`${run.run.job}#${run.run.number}`} aria-label={`CI run of ${run.target}`} className="space-y-2">

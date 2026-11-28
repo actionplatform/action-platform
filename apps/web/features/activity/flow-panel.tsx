@@ -20,9 +20,9 @@ export function NewBranchDialog({ view, open, onClose }: { view: AppView; open: 
   const [plan, setPlan] = useState<{ branch: string; base: string } | null>(null);
   useEffect(() => {
     let live = true;
-    const timer = setTimeout(() => { planBranch(view.registryId, kind, code, slug).then((r) => { if (live && r.ok) setPlan(r.data); }); }, 150);
+    const timer = setTimeout(() => { planBranch(view.projectId, view.registryId, kind, code, slug).then((r) => { if (live && r.ok) setPlan(r.data); }); }, 150);
     return () => { live = false; clearTimeout(timer); };
-  }, [view.registryId, kind, code, slug]);
+  }, [view.projectId, view.registryId, kind, code, slug]);
   const name = plan?.branch ?? `${kind}/…`;
   const base = plan?.base ?? "…";
 

@@ -8,7 +8,7 @@ import { requireOrg } from "@/lib/session";
 export async function saveManifest(projectId: string, registryId: string, content: string): Promise<Result<{ content: string; mirrored?: boolean | null }>> {
   await requireOrg();
   try {
-    const data = await api.apps.writeManifest(registryId, content);
+    const data = await api.apps.writeManifest(projectId, registryId, content);
     refreshProject(projectId);
     return { ok: true, data };
   } catch (e) {
@@ -20,7 +20,7 @@ export async function saveManifest(projectId: string, registryId: string, conten
 export async function exportManifest(projectId: string, registryId: string): Promise<Result<{ content: string; mirrored?: boolean | null }>> {
   await requireOrg();
   try {
-    const data = await api.apps.exportManifest(registryId);
+    const data = await api.apps.exportManifest(projectId, registryId);
     refreshProject(projectId);
     return { ok: true, data };
   } catch (e) {
@@ -32,7 +32,7 @@ export async function exportManifest(projectId: string, registryId: string): Pro
 export async function setCloudTarget(projectId: string, registryId: string, target: string, source: string | null = null): Promise<Result<{ target: string }>> {
   await requireOrg();
   try {
-    const data = (await api.apps.setCloud(registryId, target, source)) as { target: string };
+    const data = (await api.apps.setCloud(projectId, registryId, target, source)) as { target: string };
     refreshProject(projectId);
     return { ok: true, data };
   } catch (e) {
@@ -44,7 +44,7 @@ export async function setCloudTarget(projectId: string, registryId: string, targ
 export async function addService(projectId: string, registryId: string, name: string, provider: string | null, source: string | null = null): Promise<Result<{ name: string }>> {
   await requireOrg();
   try {
-    const data = (await api.apps.addService(registryId, name, provider, source)) as { name: string };
+    const data = (await api.apps.addService(projectId, registryId, name, provider, source)) as { name: string };
     refreshProject(projectId);
     return { ok: true, data };
   } catch (e) {
@@ -59,7 +59,7 @@ export type CommitInput = { message: string; push: boolean; branch: { kind: stri
 export async function commitChanges(projectId: string, _appId: string, registryId: string, input: CommitInput): Promise<Result<{ sha: string; branch: string; pushed: boolean; pull_request?: { number: number; url: string } | null }>> {
   await requireOrg();
   try {
-    const data = await api.apps.commit(registryId, {
+    const data = await api.apps.commit(projectId, registryId, {
       message: input.message,
       push: input.push,
       branch: input.branch ? { kind: input.branch.kind, code: input.branch.code, slug: input.branch.slug || null } : null,
@@ -76,7 +76,7 @@ export async function commitChanges(projectId: string, _appId: string, registryI
 export async function discardChanges(projectId: string, registryId: string): Promise<Result<{ files: string[]; clean: boolean }>> {
   await requireOrg();
   try {
-    const data = await api.apps.discard(registryId);
+    const data = await api.apps.discard(projectId, registryId);
     refreshProject(projectId);
     return { ok: true, data };
   } catch (e) {

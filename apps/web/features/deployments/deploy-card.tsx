@@ -65,7 +65,7 @@ export function DeployCard({ view, liveStages = [], scopes = [] }: { view: AppVi
   );
 
   const action = useAction<never, Outcome>({
-    run: () => startDeploy(view.registryId, stage, dry.current, versionOf(tag), force),
+    run: () => startDeploy(view.projectId, view.registryId, stage, dry.current, versionOf(tag), force),
     poll,
     onDone: () => router.refresh(),
   });

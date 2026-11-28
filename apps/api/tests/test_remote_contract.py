@@ -17,6 +17,7 @@ except ImportError:
 
 CALL = re.compile(r'self\._call\(\s*"(GET|POST|PUT|DELETE|PATCH)",\s*f?"([^"]+)"', re.S)
 PARAM = re.compile(r"\{[^}]+\}")
+ANY_PROJECT = re.compile(r"/projects/-(/|$)")
 
 SHARED = {
     "AppDetail": "AppDetail",
@@ -96,7 +97,10 @@ class RemoteContractTest(TempCase):
         missing = []
 
         for method, path in CALL.findall(source):
-            template = PARAM.sub("{}", "/" + path.split("?")[0].lstrip("/"))
+            template = ANY_PROJECT.sub(
+                r"/projects/{}\1",
+                PARAM.sub("{}", "/" + path.split("?")[0].lstrip("/")),
+            )
 
             if template not in known:
                 missing.append(f"{method} {path}")

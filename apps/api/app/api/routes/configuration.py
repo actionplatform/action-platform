@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from app.schemas.configuration import (
     AppConfigBody,
@@ -12,12 +12,18 @@ from app.schemas.configuration import (
 )
 from app.schemas.projects import InstallSpec, Installed
 from app.api.dependencies import (
+    legacy_surface,
     CommitsDep,
     ConfigurationDep,
     SnapshotDep,
 )
 
-router = APIRouter(prefix="/api/apps", tags=["configuration"])
+router = APIRouter(
+    prefix="/api/apps",
+    tags=["configuration"],
+    deprecated=True,
+    dependencies=[Depends(legacy_surface)],
+)
 
 
 @router.get("/{id}/manifest")

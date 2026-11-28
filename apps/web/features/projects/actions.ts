@@ -55,7 +55,7 @@ export async function removeApp(projectId: string, appId: string, repository = f
 export async function syncApp(projectId: string, appId: string, registryId: string): Promise<{ ok: true } | { ok: false; error: string }> {
   await requireOrg();
   try {
-    const queued = await api.apps.sync(registryId);
+    const queued = await api.apps.sync(projectId, registryId);
     const job = await settled(queued.job);
     if (!job) return { ok: false, error: `sync still running (job ${queued.job}): reload in a moment` };
     if (job.status === "failed") return { ok: false, error: job.error ?? "sync failed" };

@@ -581,3 +581,102 @@ class CatalogAndPreviewTest(GateCase):
             headers=self.h(),
         ).json()
         self.assertEqual(hotfix["base"], "main")
+
+
+class AppUnderProjectTest(GateCase):
+    def test_workspace_routes_answer_under_the_project(self):
+        registry_id = self.register()
+
+        nested = self.client.get("/api/v1/projects/p1/apps/a1", headers=self.h())
+        by_registry = self.client.get(
+            f"/api/v1/projects/p1/apps/{registry_id}/gitflow", headers=self.h()
+        )
+        legacy = self.client.get(f"/api/v1/apps/{registry_id}", headers=self.h())
+
+        self.assertEqual(nested.status_code, 200, nested.text)
+        self.assertEqual(nested.json()["id"], registry_id)
+        self.assertNotIn("deprecation", nested.headers)
+        self.assertEqual(by_registry.status_code, 200, by_registry.text)
+        self.assertEqual(legacy.status_code, 200, legacy.text)
+        self.assertEqual(legacy.headers["deprecation"], "true")
+        self.assertEqual(
+            self.client.get(
+                f"/api/apps/{registry_id}", headers={"authorization": "Bearer shared"}
+            ).headers["deprecation"],
+            "true",
+        )
+
+    def test_a_sync_under_the_project_is_queued(self):
+        registry_id = self.register()
+
+        nested = self.client.post(
+            "/api/v1/projects/p1/apps/a1/sync", json={}, headers=self.h()
+        )
+        legacy = self.client.post(
+            f"/api/v1/apps/{registry_id}/sync", json={}, headers=self.h()
+        )
+
+        self.assertEqual(nested.status_code, 202, nested.text)
+        self.assertNotIn("deprecation", nested.headers)
+        self.assertEqual(legacy.headers["deprecation"], "true")
+
+    def test_the_project_lists_its_own_apps(self):
+        registry_id = self.register()
+
+        mine = self.client.get("/api/v1/projects/p1/apps", headers=self.h())
+        other = self.client.get("/api/v1/projects/p2/apps", headers=self.h())
+
+        every = self.client.get("/api/v1/projects/-/apps", headers=self.h())
+
+        self.assertEqual([r["id"] for r in mine.json()], [registry_id])
+        self.assertEqual([r["id"] for r in every.json()], [registry_id])
+        self.assertNotIn("deprecation", mine.headers)
+        self.assertEqual(other.json(), [])
+
+    def test_a_dash_stands_for_the_project_of_the_registry_id(self):
+        registry_id = self.register()
+
+        found = self.client.get(
+            f"/api/v1/projects/-/apps/{registry_id}/tags", headers=self.h()
+        )
+
+        self.assertEqual(found.status_code, 200, found.text)
+        self.assertNotIn("deprecation", found.headers)
+
+    def test_an_app_of_another_project_is_not_found(self):
+        self.register()
+
+        self.assertEqual(
+            self.client.get(
+                "/api/v1/projects/p2/apps/a1/gitflow", headers=self.h()
+            ).status_code,
+            404,
+        )
+
+    def test_the_project_routes_keep_their_own_handlers(self):
+        self.register()
+
+        releases = self.client.get(
+            "/api/v1/projects/p1/apps/a1/releases", headers=self.h()
+        )
+
+        versions = self.client.get(
+            "/api/v1/projects/p1/apps/a1/versions", headers=self.h()
+        )
+
+        self.assertEqual(releases.status_code, 200, releases.text)
+        self.assertIn("items", releases.json())
+        self.assertEqual(versions.status_code, 200, versions.text)
+        self.assertIsInstance(versions.json(), list)
+
+    def test_the_schema_lists_each_app_route_under_its_project(self):
+        paths = self.client.get("/openapi.json").json()["paths"]
+        nested = "/api/v1/projects/{project_id}/apps/{app_id}"
+
+        self.assertTrue(paths["/api/apps/{id}/gitflow"]["get"]["deprecated"])
+        self.assertNotIn("deprecated", paths[nested + "/gitflow"]["get"])
+        self.assertEqual(
+            [p["name"] for p in paths[nested + "/commits"]["get"]["parameters"]][:2],
+            ["project_id", "app_id"],
+        )
+        self.assertEqual(set(paths[nested]), {"get", "delete"})

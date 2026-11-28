@@ -23,17 +23,17 @@ export const loadApp = cache(async (projectId: string, appId: string): Promise<L
 
   try {
     const [detail, health, commits, branches, tags, hosts, releases, manifest, rules] = await Promise.all([
-      api.apps.get(app.registryId),
-      api.apps.gitflow(app.registryId),
-      api.apps.commits(app.registryId, 50),
-      api.apps.branches(app.registryId),
-      api.apps.tags(app.registryId),
+      api.apps.get(projectId, app.registryId),
+      api.apps.gitflow(projectId, app.registryId),
+      api.apps.commits(projectId, app.registryId, 50),
+      api.apps.branches(projectId, app.registryId),
+      api.apps.tags(projectId, app.registryId),
       hostsOf(org.id),
-      api.apps.releases(app.registryId),
-      api.apps.manifest(app.registryId),
+      api.apps.releases(projectId, app.registryId),
+      api.apps.manifest(projectId, app.registryId),
       api.gitflowRules(),
     ]);
-    const changes = detail.clean ? [] : (await api.apps.changes(app.registryId).catch(() => ({ files: [] as string[] }))).files;
+    const changes = detail.clean ? [] : (await api.apps.changes(projectId, app.registryId).catch(() => ({ files: [] as string[] }))).files;
     const view = toView({ projectId, projectName: project.name, projectSlug: project.slug, orgSlug: org.slug, appId: app.id, appName: app.name, detail, health, commits, branches, tags, lastSyncedAt: app.lastSyncedAt, manifest: manifest.content, manifestMirrored: manifest.mirrored ?? true, changes, grants: session.grants as Grants, rules: { kinds: rules.kinds, protected: rules.protected } });
     return { ok: true, view, hosts: hosts.map((h) => ({ id: h.id, name: h.name, kind: h.kind, defaultOwner: h.defaultOwner })), currentHost: app.sourceHostId, releases };
   } catch (e) {

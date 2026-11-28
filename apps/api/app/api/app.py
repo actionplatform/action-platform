@@ -16,6 +16,7 @@ from action_platform.core.destination import NetworkPolicy, guard_networks
 from action_platform.plugins import registry
 from action_platform.settings import settings
 from app import api_version
+from app.api import openapi
 from app.api.gate import AccessGate
 from app.api.routes import router as routes
 from app.services.integrations.plugins import DbOptions, reseal
@@ -169,6 +170,7 @@ def build(
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
     app.include_router(routes)
+    openapi.install(app)
 
     def repo_of(registry_id: str) -> Optional[str]:
         try:

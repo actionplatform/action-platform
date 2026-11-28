@@ -7,7 +7,13 @@ import re
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from app.core.access.rules import DIRECTORY, WORKSPACE_ROOTS
+from app.core.access.rules import (
+    DIRECTORY,
+    WORKSPACE_ROOTS,
+    nested_app,
+    project_listing,
+)
+from app.core.db.models import Project
 from app.services.auth.service import AuthService
 from app.core.errors import Invalid, Refused
 from app.repositories.configuration.config_store import ConfigStore
@@ -20,6 +26,7 @@ from app.services.access.directory import AccessDirectory
 from app.services.jobs import JobQueue
 from app.services.releases import ReadinessRequests
 
+ANY_PROJECT = "-"
 DEPLOY_PATH = re.compile(r"^apps/[^/]+/deploy$")
 
 
@@ -30,6 +37,8 @@ class Plan:
     method: str
     allowed_registry_ids: Optional[set[str]] = None
     credentials: Optional[dict[str, Any]] = None
+    path: str = ""
+    nested: bool = False
 
 
 class Queued(Exception):
@@ -56,10 +65,19 @@ class Planner:
             if caller.organization is None and not caller.all_organizations:
                 raise Refused(403, "no organization")
 
+            directory = AccessDirectory(db, self.state.sealer)
+            nested = nested_app(method, path)
+            listed = project_listing(method, path)
+
+            if nested is not None:
+                path = self._workspace_path(directory, *nested)
+
+            if listed is not None:
+                path = "apps"
+
             if path in DIRECTORY or path.split("/")[0] not in WORKSPACE_ROOTS:
                 return caller, None
 
-            directory = AccessDirectory(db, self.state.sealer)
             authorizer = Authorizer(directory)
             target = authorizer.target(caller, method, path, headers)
             parsed = self._parse(method, body)
@@ -127,9 +145,42 @@ class Planner:
                 if method == "GET" and path == "apps"
                 else None
             )
+
+            if listed not in (None, ANY_PROJECT) and allowed is not None:
+                project = directory.db.get(Project, listed)
+                allowed &= (
+                    directory.registry_ids_of(project.organization_id, listed)
+                    if project
+                    else set()
+                )
             new_body = json.dumps(parsed).encode() if parsed is not None else b""
 
-            return caller, Plan(target, new_body, new_method, allowed, credentials)
+            return caller, Plan(
+                target,
+                new_body,
+                new_method,
+                allowed,
+                credentials,
+                path,
+                nested is not None or listed is not None,
+            )
+
+    @staticmethod
+    def _workspace_path(
+        directory: AccessDirectory, project_id: str, app_id: str, rest: Optional[str]
+    ) -> str:
+        app = directory.app(project_id, app_id) if project_id != ANY_PROJECT else None
+
+        if app is None:
+            found = directory.app_by_registry_id(app_id)
+            app = (
+                found[0] if found and project_id in (ANY_PROJECT, found[1].id) else None
+            )
+
+        if app is None:
+            raise Refused(404, "app not found")
+
+        return f"apps/{app.registry_id}" + (f"/{rest}" if rest else "")
 
     def _scope_names(self, app: Any) -> list[str]:
         with self.state.db.session() as db:
