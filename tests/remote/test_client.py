@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+import unittest
 
 from pydantic import ValidationError
 
 from action_platform.core.exception import ActionPlatformError
 from action_platform.remote import client, credentials, schemas
+from tests.core.test_destination import Server
 from tests.support import TempCase
 
 DEVICE_CODE = {
@@ -123,7 +125,7 @@ class LoginTest(LoginCase):
         ).encode()
         err = urllib.error.HTTPError("u", 400, "Bad Request", {}, io.BytesIO(body))
         self.patch(
-            client.urllib.request,
+            client.destination,
             "urlopen",
             lambda *a, **k: (_ for _ in ()).throw(err),
         )
@@ -588,3 +590,37 @@ class NaiveTimestampTest(TempCase):
 
         self.assertIsNotNone(row.created_at.tzinfo)
         self.assertTrue(row.model_dump(mode="json")["created_at"].endswith("Z"))
+
+
+class RedirectCredentialsTest(unittest.TestCase):
+    def setUp(self):
+        self.platform = Server()
+        self.elsewhere = Server()
+        self.addCleanup(self.platform.close)
+        self.addCleanup(self.elsewhere.close)
+        self.remote = client.Remote(self.platform.url, "tok")
+
+    def headers_at(self, server: Server, path: str) -> dict[str, str]:
+        return next(h for p, h in server.seen if p == path)
+
+    def test_a_redirect_on_the_platform_keeps_the_token(self):
+        self.platform.redirect("/api/v1/apps", f"{self.platform.url}/api/v1/moved")
+        self.platform.json("/api/v1/moved", [])
+
+        self.remote._call("GET", "apps", organization="acme")
+        seen = self.headers_at(self.platform, "/api/v1/moved")
+
+        self.assertEqual(seen["authorization"], "Bearer tok")
+        self.assertEqual(seen["x-organization"], "acme")
+
+    def test_a_redirect_to_another_port_drops_the_token(self):
+        self.platform.redirect("/api/v1/apps", f"{self.elsewhere.url}/landing")
+        self.elsewhere.json("/landing", [])
+
+        self.remote._call("GET", "apps", organization="acme")
+        seen = self.headers_at(self.elsewhere, "/landing")
+
+        self.assertNotIn("authorization", seen)
+        self.assertNotIn("x-organization", seen)
+        self.assertNotIn("x-action-platform-client", seen)
+        self.assertNotIn("cookie", seen)

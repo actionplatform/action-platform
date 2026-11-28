@@ -22,6 +22,7 @@ from typing import Any, Optional, Union
 from pydantic import TypeAdapter
 
 from action_platform import __version__
+from action_platform.core import destination
 from action_platform.core.exception import ActionPlatformError
 from action_platform.core.service_access.models import Audit, Plan, Who
 from action_platform.providers.access.github.models import BranchProtection, OrgSettings
@@ -133,7 +134,7 @@ def _request(
     req = urllib.request.Request(url, data=data, method=method, headers=headers)
 
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as res:
+        with destination.urlopen(req, timeout=timeout) as res:
             raw = res.read()
             return json.loads(raw) if raw else None
     except urllib.error.HTTPError as e:
