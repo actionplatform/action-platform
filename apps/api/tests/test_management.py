@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from unittest import mock
+
+from app.services.integrations.hosts import GithubProvider
 from tests.test_access import GateCase
 
 
@@ -502,12 +505,15 @@ class HostsAndSettingsTest(GateCase):
             IntegrationsDirectory(s, self.app.state.sealer).save_oauth_app(
                 "github", "gh-cid", "gh-sec", None, "ap", app_id="1", private_key="pem"
             )
-        self.assertEqual(
-            self.client.post(
-                "/api/v1/oauth/github/manifest", json=manifest_request, headers=self.h()
-            ).status_code,
-            409,
-        )
+        with mock.patch.object(GithubProvider, "app_exists", return_value=True):
+            self.assertEqual(
+                self.client.post(
+                    "/api/v1/oauth/github/manifest",
+                    json=manifest_request,
+                    headers=self.h(),
+                ).status_code,
+                409,
+            )
         self.assertEqual(
             self.client.delete(
                 "/api/v1/oauth/apps/github", headers=self.h()

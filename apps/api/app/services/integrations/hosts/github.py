@@ -153,6 +153,20 @@ class GithubProvider(HostProvider):
 
         return data
 
+    def app_exists(self, slug: str) -> Optional[bool]:
+        """Whether the GitHub App is still on GitHub: None when GitHub cannot say."""
+        status, _ = Probe(
+            {
+                "accept": "application/vnd.github+json",
+                "x-github-api-version": API_VERSION,
+            }
+        ).get(f"https://api.github.com/apps/{quote(slug, safe='')}")
+
+        if status == 200:
+            return True
+
+        return False if status == 404 else None
+
     def owner(self, access_token: str, installation_id: Optional[str]) -> Optional[str]:
         if not installation_id:
             return None
