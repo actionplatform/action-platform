@@ -5,7 +5,7 @@ export const projects = {
   createProject: async (name: string, description = "") => unwrap(await client.POST("/api/v1/projects", { body: { name, description } })),
   deleteProject: async (id: string, repositories = false, cloud = false) =>
     unwrap(await client.DELETE("/api/v1/projects/{project_id}", { params: { path: { project_id: id }, query: { repositories, cloud } } })),
-  assignProjectTeam: async (projectId: string, teamId: string | null) => unwrap(await client.POST("/api/v1/projects/team", { body: { project_id: projectId, team_id: teamId } })),
+  assignProjectTeam: async (projectId: string, teamId: string | null) => unwrap(await client.PUT("/api/v1/projects/{project_id}/team", { params: { path: { project_id: projectId } }, body: { team_id: teamId } })),
   addApp: async (projectId: string, url: string, install: { type: string; language?: string | null; ci?: string | null } | null) =>
     unwrap(await client.POST("/api/v1/projects/{project_id}/apps", { params: { path: { project_id: projectId } }, body: { url, install } })),
   initApp: async (projectId: string, body: Schemas["InitAppInProject"]) =>
