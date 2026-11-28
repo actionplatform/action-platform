@@ -141,6 +141,8 @@ Lists that grow are paged on the API: `GET /api/v1/projects/{p}/apps/{a}/release
 
 `POST /api/webhooks/{host_id}` (the web app forwards it to `POST /api/v1/webhooks/{host_id}`) takes the code host's deliveries. No session: the request is verified against the host's secret — GitHub `X-Hub-Signature-256`, Bitbucket `X-Hub-Signature` (HMAC-SHA256 of the body), GitLab `X-Gitlab-Token`. A delivery whose repository matches an app of the host's organization queues one `sync` job for it (deduplicated while one is live); other events and repositories answer `202` with nothing queued. `GET`/`POST /api/v1/hosts/{id}/webhook` read the URL and rotate the secret (`org.manage`).
 
+`POST /api/webhooks/github-app` (forwarded to `POST /api/v1/webhooks/github-app`) takes the deliveries of the platform's GitHub App: one URL for every installation, verified against the secret GitHub generated when the App was created from the manifest. The repository finds the apps on a GitHub host in every organization that tracks it, and each gets one `sync` job; without a stored secret it answers `404`.
+
 
 ## Readiness
 

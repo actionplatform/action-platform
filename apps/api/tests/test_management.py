@@ -533,6 +533,11 @@ class HostsAndSettingsTest(GateCase):
             ["https://ap.example.com/api/oauth/github/callback"],
         )
         self.assertTrue(manifest["manifest"]["setup_on_update"])
+        self.assertEqual(
+            manifest["manifest"]["hook_attributes"],
+            {"url": "https://ap.example.com/api/webhooks/github-app", "active": True},
+        )
+        self.assertIn("push", manifest["manifest"]["default_events"])
 
     def test_oauth_callback_connects_a_host(self):
         from app.services.integrations.hosts import GitlabProvider

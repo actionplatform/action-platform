@@ -18,6 +18,20 @@ from app.services.integrations.webhooks import Webhooks
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
 
+@router.post("/webhooks/github-app", status_code=202)
+async def receive_app(
+    request: Request, db: DbDep, queue: QueueDep
+) -> schemas.WebhookReceived:
+    """The platform's GitHub App calls this for every installation; the signature is the only credential."""
+    body = await request.body()
+    headers = {k.lower(): v for k, v in request.headers.items()}
+    result = Webhooks(db, request.app.state.sealer, get_registry(), queue).receive_app(
+        headers, body
+    )
+
+    return schemas.WebhookReceived(**result)
+
+
 @router.post("/webhooks/{host_id}", status_code=202)
 async def receive(
     host_id: str, request: Request, db: DbDep, queue: QueueDep

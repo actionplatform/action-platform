@@ -41,6 +41,14 @@ class OAuthAppsReads(DirectoryBase):
 
         return AppKey(row.app_id, self.sealer.open(row.private_key_encrypted), row.slug)
 
+    def app_webhook_secret(self, provider: str) -> Optional[str]:
+        row = self.db.get(OAuthAppRow, provider)
+
+        if row is None or self.sealer is None or not row.webhook_secret_encrypted:
+            return None
+
+        return self.sealer.open(row.webhook_secret_encrypted)
+
     def oauth_apps(self) -> dict[str, Optional[OAuthApp]]:
         return {provider: self.oauth_app(provider) for provider in PROVIDERS}
 
@@ -55,6 +63,7 @@ class OAuthAppsWrites(OAuthAppsReads):
         slug: Optional[str] = None,
         app_id: Optional[str] = None,
         private_key: Optional[str] = None,
+        webhook_secret: Optional[str] = None,
     ) -> OAuthApp:
         if provider not in PROVIDERS:
             raise DirectoryError("unknown provider")
@@ -79,6 +88,11 @@ class OAuthAppsWrites(OAuthAppsReads):
             self.sealer.seal(private_key)
             if private_key
             else (row.private_key_encrypted if same_app else None)
+        )
+        row.webhook_secret_encrypted = (
+            self.sealer.seal(webhook_secret)
+            if webhook_secret
+            else (row.webhook_secret_encrypted if same_app else None)
         )
         row.updated_at = now()
         self.db.add(row)
