@@ -1,10 +1,11 @@
+import Image from "next/image";
 import type { SimpleIcon } from "simple-icons";
 import { cn } from "@/lib/utils";
 
 type Props = { icon?: SimpleIcon; src?: string; className?: string; title?: string; mono?: boolean };
 
 export function BrandIcon({ icon, src, className, title, mono }: Props) {
-  if (src) return <img src={src} alt={title ?? ""} className={cn("size-5 shrink-0 object-contain", className)} loading="lazy" />;
+  if (src) return <Image src={src} alt={title ?? ""} width={20} height={20} unoptimized className={cn("size-5 shrink-0 object-contain", className)} />;
   if (!icon) return null;
 
   const fill = mono || !readable(icon.hex) ? "currentColor" : `#${icon.hex}`;

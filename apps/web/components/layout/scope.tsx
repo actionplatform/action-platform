@@ -20,9 +20,10 @@ export function useScope() {
 
 export function AppScopeMarker(scope: AppScope) {
   const { setScope } = useScope();
+  const { projectId, projectName, appId, appName } = scope;
   useEffect(() => {
-    setScope(scope);
+    setScope({ projectId, projectName, appId, appName });
     return () => setScope(null);
-  }, [scope.projectId, scope.projectName, scope.appId, scope.appName, setScope]);
+  }, [projectId, projectName, appId, appName, setScope]);
   return null;
 }

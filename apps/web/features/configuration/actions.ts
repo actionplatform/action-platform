@@ -2,9 +2,8 @@
 
 import { failed, type Result } from "@/lib/result";
 import { refreshProject } from "@/lib/revalidate";
-import { api, ApiError, type DeployResult, type ReleasePreview } from "@/lib/api";
+import { api } from "@/lib/api";
 import { requireOrg } from "@/lib/session";
-import { v1 } from "@/lib/v1";
 
 export async function saveManifest(projectId: string, registryId: string, content: string): Promise<Result<{ content: string; mirrored?: boolean | null }>> {
   await requireOrg();

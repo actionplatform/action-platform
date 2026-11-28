@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Copy, Eye, PenLine, Rocket, Shield, ShieldCheck, Terminal, X } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
@@ -100,9 +100,18 @@ export function DeviceApprove({ initialCode }: { initialCode: string }) {
     setState("ready");
   });
 
+  const autoVerified = useRef(false);
+  const latestVerify = useRef(verify);
+
   useEffect(() => {
-    if (state === "loading" && initialCode.length >= 8) verify();
-  }, []);
+    latestVerify.current = verify;
+  });
+
+  useEffect(() => {
+    if (autoVerified.current) return;
+    autoVerified.current = true;
+    if (state === "loading" && initialCode.length >= 8) latestVerify.current();
+  }, [state, initialCode.length]);
 
   const approve = () => start(async () => {
     setError(null);

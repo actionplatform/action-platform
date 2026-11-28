@@ -2,9 +2,8 @@
 
 import { failed, type Result } from "@/lib/result";
 import { refreshProject } from "@/lib/revalidate";
-import { api, ApiError, type DeployResult, type ReleasePreview } from "@/lib/api";
+import { api } from "@/lib/api";
 import { requireOrg } from "@/lib/session";
-import { v1 } from "@/lib/v1";
 
 export async function startBranch(projectId: string, _appId: string, registryId: string, input: { kind: string; code: string; slug: string; push: boolean }): Promise<Result<{ branch: string; base: string; pushed: boolean }>> {
   await requireOrg();

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Cell, DataTable, Inline } from "@/components/ui/data-table";
+import { Cell, DataTable } from "@/components/ui/data-table";
 import { Dialog } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
 import type { CiRun } from "@/lib/ci-kinds";

@@ -6,7 +6,6 @@ import { sessionCookie } from "@/lib/auth";
 import { authApi } from "@/lib/auth-api";
 import { type Role, ROLES, setActiveOrg } from "@/lib/orgs";
 import { requireOrg } from "@/lib/session";
-import { HOST_KINDS, type HostKind } from "@/lib/source-hosts";
 import { v1 } from "@/lib/v1";
 
 export type InvitationSent = { id: string; emailState: string; emailError: string | null };
