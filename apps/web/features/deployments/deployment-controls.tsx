@@ -4,13 +4,13 @@ import { Pause, Play, SkipForward, Square } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
-import { type Control, controlsFor } from "./strategies";
+import { type Control, type DeploymentStep, controlsFor } from "./strategies";
 
 const LABELS: Record<Control, string> = { promote: "Promote", pause: "Pause", resume: "Resume", abort: "Abort" };
 
-export function DeploymentControls({ state, canDeploy, pending, onAct }: { state: string; canDeploy: boolean; pending?: Control | null; onAct: (control: Control) => void }) {
+export function DeploymentControls({ state, steps, canDeploy, pending, onAct }: { state: string; steps?: DeploymentStep[]; canDeploy: boolean; pending?: Control | null; onAct: (control: Control) => void }) {
   const [confirming, setConfirming] = useState(false);
-  const controls = controlsFor(state, canDeploy);
+  const controls = controlsFor(state, canDeploy, steps);
   if (controls.length === 0) return null;
 
   const icon = (c: Control) => (c === "promote" ? <SkipForward className="size-3.5" strokeWidth={1.75} /> : c === "pause" ? <Pause className="size-3.5" strokeWidth={1.75} /> : c === "resume" ? <Play className="size-3.5" strokeWidth={1.75} /> : <Square className="size-3.5" strokeWidth={1.75} />);

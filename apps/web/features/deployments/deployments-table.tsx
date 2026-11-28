@@ -11,14 +11,17 @@ import { Cell, DataTable } from "@/components/ui/data-table";
 import type { Paged } from "@/lib/page";
 import type { JobRow } from "@/lib/v1";
 import { startDeploy } from "@/features/deployments/actions";
+import { ACTIVE_STATES, STATE_LABELS, STATE_TONES, labelOf } from "./strategies";
+import type { RunRollout } from "./load";
 import { canRedeploy, deploymentHref, elapsed, statusOf, typeOf, versionOf, when } from "./job-state";
 
-export function DeploymentsTable({ page, projectId, registryId, canDeploy, base, newHref }: { page: Paged<JobRow>; projectId: string; registryId: string; canDeploy: boolean; base: string; newHref?: string | null }) {
+export function DeploymentsTable({ page, projectId, registryId, canDeploy, base, newHref, rollouts = {} }: { page: Paged<JobRow>; projectId: string; registryId: string; canDeploy: boolean; base: string; newHref?: string | null; rollouts?: Record<string, RunRollout> }) {
   const jobs = page.items;
   const router = useRouter();
   const [now, setNow] = useState(() => Date.now());
   const [pending, start] = useTransition();
-  const live = jobs.some((j) => j.status === "running" || j.status === "queued");
+  const live = jobs.some((j) => j.status === "running" || j.status === "queued" || ACTIVE_STATES.includes(rollouts[j.id]?.status ?? ""));
+  const stateOf = (job: JobRow) => { const r = rollouts[job.id]; return r && r.strategy !== "recreate" ? { tone: STATE_TONES[r.status] ?? "neutral", label: STATE_LABELS[r.status] ?? r.status } : statusOf(job); };
 
   useEffect(() => {
     if (!live) return;
@@ -51,8 +54,9 @@ export function DeploymentsTable({ page, projectId, registryId, canDeploy, base,
       newLabel="New deployment"
       empty={{ icon: Cloud, title: "No deployments yet", text: "Run a preflight or deploy from New deployment; every run lands here." }}
       columns={[
-        { key: "status", label: "Status", width: 14, render: (job) => { const s = statusOf(job); return <Link href={deploymentHref(base, job.id)} aria-label={`Open run ${job.id.slice(0, 8)}`} className="rounded-full focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground"><Badge tone={s.tone}>{s.label}</Badge></Link>; } },
+        { key: "status", label: "Status", width: 14, render: (job) => { const s = stateOf(job); return <Link href={deploymentHref(base, job.id)} aria-label={`Open run ${job.id.slice(0, 8)}`} className="rounded-full focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground"><Badge tone={s.tone}>{s.label}</Badge></Link>; } },
         { key: "stage", label: "Stage", width: 9, render: (job) => <Cell mono>{job.stage ?? "—"}</Cell> },
+        { key: "strategy", label: "Strategy", width: 10, hideBelow: "md", render: (job) => <Badge className="h-5 px-1.5 text-[11px]">{labelOf(rollouts[job.id]?.strategy)}</Badge> },
         { key: "type", label: "Type", width: 9, hideBelow: "md", render: (job) => <Cell muted>{typeOf(job)}</Cell> },
         { key: "version", label: "Version", width: 15, render: (job) => <Cell mono>{versionOf(job) ?? "—"}</Cell> },
         { key: "duration", label: "Duration", width: 10, numeric: true, hideBelow: "md", render: (job) => <Cell muted>{elapsed(job, now)}</Cell> },

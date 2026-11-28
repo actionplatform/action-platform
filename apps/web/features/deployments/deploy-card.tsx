@@ -16,11 +16,13 @@ import { ACCEPTS, CRITICALITY, type Criticality, type Scope, shapeOf } from "@/l
 import { CriticalityBadge } from "@/features/scopes";
 import { relativeTime } from "@/lib/time";
 import { useAction } from "@/lib/use-action";
-import { deployJob, startDeploy } from "@/features/deployments/actions";
+import { deployJob, scopeStrategies, startDeploy, strategyCatalog } from "@/features/deployments/actions";
 import type { AppView } from "@/features/projects";
 import { readiness as fetchReadiness } from "@/features/readiness/actions";
 import { LiveLog } from "@/features/jobs";
 import { RunAlert, summarize } from "./run-alert";
+import { type Config, type JsonSchema, type Safety, type StrategyDef, type StrategySupport, DEFAULT_STRATEGY, FALLBACK_SAFETY, FALLBACK_STRATEGIES, configError, defaultsOf, labelOf, rolloutOf, safetyDefaults, safetyError, supportOf } from "./strategies";
+import { SafetyFields, SchemaForm, StrategyPicker } from "./strategy-form";
 
 type Outcome = { dryRun: boolean; rows: DeployResult[] };
 
@@ -38,6 +40,32 @@ export function DeployCard({ view, liveStages = [], scopes = [] }: { view: AppVi
   const [force, setForce] = useState(false);
   const [readiness, setReadiness] = useState<ReadinessRow[] | null>(null);
   const dry = useRef(false);
+  const [strategies, setStrategies] = useState<StrategyDef[]>(FALLBACK_STRATEGIES);
+  const [safetySchema, setSafetySchema] = useState<JsonSchema>(FALLBACK_SAFETY);
+  const [support, setSupport] = useState<StrategySupport[] | null>(null);
+  const [strategy, setStrategy] = useState(DEFAULT_STRATEGY);
+  const [config, setConfig] = useState<Config>({});
+  const [safety, setSafety] = useState<Safety>(() => safetyDefaults(FALLBACK_SAFETY));
+
+  useEffect(() => {
+    let alive = true;
+    strategyCatalog().then((r) => {
+      if (!alive || !r.ok) return;
+      setStrategies(r.data.strategies);
+      setSafetySchema(r.data.safety);
+      setSafety(safetyDefaults(r.data.safety));
+    });
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!stage) { setSupport(null); return; }
+    let alive = true;
+    setSupport(null);
+    scopeStrategies(view.projectId, view.appId, stage).then((r) => { if (alive) setSupport(r.ok ? r.data : null); });
+    return () => { alive = false; };
+  }, [stage, view.projectId, view.appId]);
+
 
   useEffect(() => {
     if (!tag) { setReadiness(null); return; }
@@ -65,16 +93,31 @@ export function DeployCard({ view, liveStages = [], scopes = [] }: { view: AppVi
   );
 
   const action = useAction<never, Outcome>({
-    run: () => startDeploy(view.projectId, view.registryId, stage, dry.current, versionOf(tag), force),
+    run: () => startDeploy(view.projectId, view.registryId, stage, dry.current, versionOf(tag), force, rollout),
     poll,
     onDone: () => router.refresh(),
   });
 
+  const chosen = strategies.find((s) => s.id === strategy) ?? null;
+  const defaults = safetyDefaults(safetySchema);
+  const rollout = rolloutOf(strategy, config, safety, defaults);
+  const formError = configError(chosen?.config_schema, config) ?? safetyError(safety);
+
+  const pick = useCallback((id: string) => {
+    setStrategy(id);
+    setConfig(defaultsOf(strategies.find((s) => s.id === id)?.config_schema));
+    action.clearOutcome();
+  }, [strategies, action]);
+
+  useEffect(() => {
+    if (strategy !== DEFAULT_STRATEGY && !supportOf(support, strategy).supported) pick(DEFAULT_STRATEGY);
+  }, [support, strategy, pick]);
+
   const live = liveStages.includes(stage);
   const shape = tag ? shapeOf(tag) : null;
   const refused = !!scope && !!shape && !ACCEPTS[scope.criticality as Criticality]?.includes(shape);
-  const canDeploy = !!target && !!scope && view.can["app.release"] && !!view.repositoryUrl && !!tag && !live && !refused && (!blocked || force);
-  const blocker = scopes.length === 0 ? "No scope, no deploy: create one under Scopes." : !target ? "Pick a deploy target in the app Settings first." : !view.can["app.release"] ? "Your role cannot deploy." : !view.repositoryUrl ? "This app has no remote." : releases.length === 0 ? "A deploy ships a release: create one in Releases first." : live ? `A deploy to ${stage} is running — one at a time per scope.` : refused ? `${tag} is a ${shape} release; ${stage} is ${scope!.criticality} and takes ${ACCEPTS[scope!.criticality as Criticality].join(", ")} only.` : blocked && !force ? `${tag} is not deployable to ${stage}: fix the checks below, re-check on the release page, or deploy anyway.` : null;
+  const canDeploy = !!target && !!scope && view.can["app.release"] && !!view.repositoryUrl && !!tag && !live && !refused && (!blocked || force) && !formError;
+  const blocker = scopes.length === 0 ? "No scope, no deploy: create one under Scopes." : !target ? "Pick a deploy target in the app Settings first." : !view.can["app.release"] ? "Your role cannot deploy." : !view.repositoryUrl ? "This app has no remote." : releases.length === 0 ? "A deploy ships a release: create one in Releases first." : live ? `A deploy to ${stage} is running — one at a time per scope.` : refused ? `${tag} is a ${shape} release; ${stage} is ${scope!.criticality} and takes ${ACCEPTS[scope!.criticality as Criticality].join(", ")} only.` : formError ? formError : blocked && !force ? `${tag} is not deployable to ${stage}: fix the checks below, re-check on the release page, or deploy anyway.` : null;
   const timelineHref = `/projects/${view.projectId}/apps/${view.appId}/releases/${encodeURIComponent(tag)}`;
 
   const launch = (asDryRun: boolean) => {
@@ -93,7 +136,7 @@ export function DeployCard({ view, liveStages = [], scopes = [] }: { view: AppVi
       primary={{ label: `Deploy to ${stage}`, icon: Rocket, onClick: () => launch(false), disabled: !canDeploy, busy: action.busy && !dryRun, busyLabel: "Deploying…" }}
       secondary={{ label: "Run preflight", icon: ListChecks, onClick: () => launch(true), disabled: !canDeploy, busy: action.busy && dryRun, busyLabel: "Checking…" }}
       blocker={action.error ? null : blocker}
-      summary={[{ label: "Target", value: target ?? "—" }, { label: "Release", value: tag ? `${tag} · ${shapeOf(tag)}` : "—" }, { label: "Scope", value: scope ? `${scope.name} · ${CRITICALITY[scope.criticality as Criticality]?.label ?? scope.criticality}` : "—" }, { label: "Version", value: tag ? versionOf(tag) : "—" }]}
+      summary={[{ label: "Target", value: target ?? "—" }, { label: "Release", value: tag ? `${tag} · ${shapeOf(tag)}` : "—" }, { label: "Scope", value: scope ? `${scope.name} · ${CRITICALITY[scope.criticality as Criticality]?.label ?? scope.criticality}` : "—" }, { label: "Version", value: tag ? versionOf(tag) : "—" }, { label: "Strategy", value: labelOf(strategy) }]}
       alerts={
         <>
           {tag && readiness !== null && (
@@ -137,7 +180,7 @@ export function DeployCard({ view, liveStages = [], scopes = [] }: { view: AppVi
       }
       dialogs={
         <ConfirmDialog open={action.step === "confirming"} onClose={action.cancel} title={`Deploy ${view.name} ${versionOf(tag)} to ${stage}?`} confirmLabel={`Deploy ${versionOf(tag)}`} pending={action.busy} onConfirm={action.execute}>
-          <ActionSummary items={[{ label: "Target", value: target ?? "—" }, { label: "Scope", value: stage }, { label: "Release", value: tag }, { label: "Version", value: versionOf(tag) }]} />
+          <ActionSummary items={[{ label: "Target", value: target ?? "—" }, { label: "Scope", value: stage }, { label: "Release", value: tag }, { label: "Version", value: versionOf(tag) }, { label: "Strategy", value: labelOf(strategy) }]} />
           <p className="mt-4 text-sm text-secondary">Checks out the tag, builds and runs the target for real on the platform&apos;s worker. Run preflight first to check credentials and the template without changing anything.</p>
         </ConfirmDialog>
       }
@@ -159,6 +202,15 @@ export function DeployCard({ view, liveStages = [], scopes = [] }: { view: AppVi
           {scope && <div className="mt-1.5 flex items-center gap-2 text-xs text-secondary"><CriticalityBadge value={scope.criticality} className="h-5 px-1.5 text-[11px]" /> accepts {ACCEPTS[scope.criticality as Criticality]?.join(" · ")}</div>}
         </ActionField>
       </ActionFields>
+      <section className="space-y-3 border-t border-border-subtle pt-4" aria-label="Deployment strategy">
+        <div className="text-sm font-medium">Deployment strategy</div>
+        <StrategyPicker strategies={strategies} support={support} value={strategy} onChange={pick} />
+        {chosen && Object.keys(chosen.config_schema.properties ?? {}).length > 0 && (
+          <SchemaForm schema={chosen.config_schema} value={config} onChange={(v) => { setConfig(v); action.clearOutcome(); }} />
+        )}
+        <div className="pt-1 text-sm font-medium">Deployment safety</div>
+        <SafetyFields schema={safetySchema} value={safety} onChange={(v) => { setSafety(v); action.clearOutcome(); }} />
+      </section>
     </ActionForm>
   );
 }

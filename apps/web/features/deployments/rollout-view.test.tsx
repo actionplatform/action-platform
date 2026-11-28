@@ -7,14 +7,14 @@ import { TrafficBar } from "./traffic-bar";
 
 afterEach(cleanup);
 
-const step = (index: number, kind: string, status: string, extra: Partial<DeploymentStep> = {}): DeploymentStep => ({ index, kind, status, ...extra });
+const step = (position: number, kind: string, status: string, extra: Partial<DeploymentStep> = {}): DeploymentStep => ({ id: `s${position}`, position, kind, status, ...extra });
 
 const steps: DeploymentStep[] = [
   step(0, "deploy_new", "succeeded", { started_at: "2026-11-28T10:00:00Z", finished_at: "2026-11-28T10:00:20Z", params: { weight: 0 } }),
-  step(1, "shift", "succeeded", { params: { weight: 5 }, detail: "5% routed" }),
+  step(1, "shift", "succeeded", { params: { weight: 5 }, result: { ok: true, detail: "5% routed" } }),
   step(2, "pause", "running", { params: { seconds: 300 } }),
   step(3, "shift", "pending", { params: { weight: 25 } }),
-  step(4, "health", "failed", { detail: "p95 above budget" }),
+  step(4, "health", "failed", { result: { ok: false, detail: "p95 above budget" } }),
 ];
 
 describe("StepTimeline", () => {
@@ -59,10 +59,11 @@ describe("TrafficBar", () => {
 
 describe("controls per state", () => {
   it("offers only what is valid for the state", () => {
-    expect(controlsFor("running", true)).toEqual(["pause", "abort"]);
-    expect(controlsFor("paused", true)).toEqual(["resume", "promote", "abort"]);
-    expect(controlsFor("awaiting_approval", true)).toEqual(["promote", "abort"]);
-    for (const s of ["queued", "done", "failed", "rolling_back", "rolled_back", "aborted"]) expect(controlsFor(s, true)).toEqual([]);
+    expect(controlsFor("running", true, steps)).toEqual(["pause", "abort"]);
+    expect(controlsFor("running", true, [step(0, "pause", "waiting")])).toEqual(["promote", "pause", "abort"]);
+    expect(controlsFor("paused", true)).toEqual(["resume", "abort"]);
+    expect(controlsFor("awaiting_approval", true)).toEqual(["promote", "pause", "abort"]);
+    for (const s of ["success", "verified", "failure", "rolling_back", "rolled_back", "aborted"]) expect(controlsFor(s, true)).toEqual([]);
   });
 
   it("offers nothing without the deploy permission", () => {
@@ -74,9 +75,9 @@ describe("controls per state", () => {
   it("renders the buttons of a paused deployment and acts", () => {
     const act = vi.fn();
     render(<DeploymentControls state="paused" canDeploy onAct={act} />);
-    expect(screen.getAllByRole("button").map((b) => b.textContent?.trim())).toEqual(["Resume", "Promote", "Abort"]);
-    fireEvent.click(screen.getByRole("button", { name: "Promote" }));
-    expect(act).toHaveBeenCalledWith("promote");
+    expect(screen.getAllByRole("button").map((b) => b.textContent?.trim())).toEqual(["Resume", "Abort"]);
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+    expect(act).toHaveBeenCalledWith("resume");
   });
 
   it("confirms before aborting", () => {
