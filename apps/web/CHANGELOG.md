@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.42.0 — 2026-11-28
+
+### Features
+- **web:** Connect, Team, Settings and Admin replace the single Settings page; Connect and Team are collapsible groups in the sidebar (#710)
+- **web:** app Settings split into Git, Deploy, CI and Danger zone (#713)
+- **web:** project settings page with team and delete (#715)
+- **web:** members, team members, access drift and project apps are paged (#717)
+
+### Bug Fixes
+- **web:** app delete is called Delete app and lives only in Settings; CI back link fixed (#712)
+- **web:** each app fact shows in one place; Activity is the event feed (#714)
+- **web:** old configuration paths open the Deploy settings tab (#743)
+- **web:** calls follow the new API routes and status codes (#716, #718, #719, #720)
+
 ## v0.41.0 — 2026-11-28
 
 ### Features
