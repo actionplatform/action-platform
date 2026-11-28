@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.42.1 — 2026-11-28
+
+### Features
+- **github:** remove the stored GitHub App even without a connected account (#754)
+
 ## v0.42.0 — 2026-11-28
 
 ### Features
