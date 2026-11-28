@@ -18,6 +18,8 @@ from app.core.shared.clock import now
 from app.core.shared.urls import GitUrl
 from app.repositories.configuration.config_store import ConfigStore
 from app.repositories.workspace.registry import Registry
+from app.repositories.workspace.snapshots import SnapshotStore
+from app.services.projects.sync_sweep import SyncSweep
 from app.schemas import (
     DeployRequest,
     PushRequest,
@@ -87,12 +89,27 @@ class JobHandlers:
         ctx = self.context(payload)
         request = SyncRequest(**ctx.body)
         credentials = request.credentials or self._host_credentials(ctx)
+        before = self._digest(ctx.registry_id)
         result = AppService(self.registry).sync(
             ctx.registry_id, credentials, reset=request.reset
         )
+
+        if ctx.app is not None and (
+            not payload.get("scheduled") or self._digest(ctx.registry_id) != before
+        ):
+            SyncSweep(self.database, JobQueue(self.database)).changed(ctx.app.id)
+
         self.import_activity(payload)
 
         return result
+
+    def _digest(self, registry_id: str) -> Optional[str]:
+        found = SnapshotStore(self.database).get(registry_id)
+
+        return found[0].get("refs_digest") if found else None
+
+    def sync_sweep(self, payload: dict[str, Any]) -> Any:
+        return SyncSweep(self.database, JobQueue(self.database)).run()
 
     def _host_credentials(self, ctx: JobContext) -> Optional[SourceCredentials]:
         """The app's source host token, for jobs nobody signed — a webhook's sync, a deploy or a tear-down whose clone is gone."""
@@ -133,6 +150,9 @@ class JobHandlers:
 
         if not request.dry_run:
             self._snapshot(ctx.registry_id)
+
+            if ctx.app is not None:
+                SyncSweep(self.database, JobQueue(self.database)).changed(ctx.app.id)
 
         self.import_activity(payload)
 
@@ -511,6 +531,10 @@ class JobHandlers:
         result = AppService(self.registry).push(
             ctx.registry_id, PushRequest(**ctx.body)
         )
+
+        if ctx.app is not None:
+            SyncSweep(self.database, JobQueue(self.database)).changed(ctx.app.id)
+
         self.import_activity(payload)
 
         self._snapshot(ctx.registry_id)
@@ -637,3 +661,4 @@ register("import_github", lambda s: JobHandlers.of(s).import_organization)
 register("install", lambda s: JobHandlers.of(s).install)
 register("protection", lambda s: JobHandlers.of(s).protection)
 register("protection_sweep", lambda s: JobHandlers.of(s).protection_sweep)
+register("sync_sweep", lambda s: JobHandlers.of(s).sync_sweep)
