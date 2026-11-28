@@ -79,6 +79,7 @@ class PeopleImporter(ImportStep):
                 found.users[key] = user
             elif invitation:
                 found.invitations[key] = invitation
+                self.writes.bind_invitation_host_user(invitation, person.get("user_id"))
 
             if key not in wanted or (user and user.id in members) or invitation:
                 continue

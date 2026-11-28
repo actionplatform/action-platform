@@ -111,6 +111,13 @@ class GithubProvider(HostProvider):
 
         return user["login"], user.get("name")
 
+    def subject(self, app: OAuthApp, access_token: str) -> Optional[str]:
+        user = http.get_json(
+            f"{self.api_base(app)}/user", {"authorization": f"Bearer {access_token}"}
+        )
+
+        return str(user["id"]) if user.get("id") is not None else None
+
     def manifest(self, origin: str, host: str, return_to: str) -> dict[str, Any]:
         """The GitHub App manifest the setup wizard sends to GitHub."""
         return {

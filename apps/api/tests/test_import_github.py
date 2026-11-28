@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import unittest
+from unittest import mock
+
 from app.core.abc import HostDirectory
 from tests.test_access import GateCase
 
@@ -88,6 +91,7 @@ class FakeGithub(HostDirectory):
             },
             {
                 "login": "ghost",
+                "user_id": "583231",
                 "name": "Ghost",
                 "email": None,
                 "avatar": None,
@@ -360,7 +364,7 @@ class LoginInvitationTest(ImportCase):
 
         return {"X-Session-Token": res.json()["session"]["token"]}
 
-    def prove(self, login: str) -> None:
+    def prove(self, login: str, user_id: str | None = "583231") -> None:
         from app.services.integrations.hosts import github
 
         self.patch(
@@ -373,6 +377,32 @@ class LoginInvitationTest(ImportCase):
             "identity",
             lambda self, app, token: (login, login.title()),
         )
+        self.patch(github.GithubProvider, "subject", lambda self, app, token: user_id)
+
+    def start_verify(self, invitation: str) -> tuple[dict, str]:
+        from urllib.parse import unquote
+
+        session = self.sign_up("Ghost", "ghost@elsewhere.dev", invitation)
+        url = self.client.post(
+            f"/api/auth/invitations/{invitation}/verify",
+            json={"origin": "https://ap.example.com"},
+            headers=session,
+        ).json()["url"]
+
+        return session, unquote(url.split("state=")[1].split("&")[0])
+
+    def callback(self, invitation: str, session: dict, state: str):
+        return self.client.post(
+            f"/api/auth/invitations/{invitation}/verify/callback",
+            json={"origin": "https://ap.example.com", "code": "c", "state": state},
+            headers=session,
+        )
+
+    def stored_user_id(self, invitation: str) -> str | None:
+        from app.core.db.models import Invitation
+
+        with self.app.state.db.session() as s:
+            return s.get(Invitation, invitation).host_user_id
 
     def test_preview_offers_a_login_invitation_and_host_roles(self):
         preview = self.client.get(
@@ -468,7 +498,7 @@ class LoginInvitationTest(ImportCase):
         state = unquote(state)
         self.assertTrue(state.startswith(f"invite.{ghost['id']}."))
 
-        self.prove("someone-else")
+        self.prove("someone-else", "999")
         wrong = self.client.post(
             f"/api/auth/invitations/{ghost['id']}/verify/callback",
             json={"origin": "https://ap.example.com", "code": "c", "state": state},
@@ -498,6 +528,75 @@ class LoginInvitationTest(ImportCase):
         )
         teams = self.client.get("/api/v1/teams", headers=self.h()).json()
         self.assertIn("ghost@elsewhere.dev", [m["email"] for m in teams[0]["members"]])
+
+    def test_the_import_binds_a_github_invitation_to_the_numeric_id(self):
+        self.run_import(people=["ghost"])
+
+        self.assertEqual(self.stored_user_id(self.invitation("ghost")["id"]), "583231")
+
+    def test_a_reclaimed_login_with_another_id_is_refused(self):
+        self.run_import(people=["ghost"])
+        ghost = self.invitation("ghost")
+        session, state = self.start_verify(ghost["id"])
+
+        self.prove("ghost", "999")
+        refused = self.callback(ghost["id"], session, state)
+
+        self.assertEqual(refused.status_code, 400)
+        self.assertIn("@ghost", refused.json()["detail"])
+        self.assertEqual(self.invitation("ghost")["status"], "pending")
+
+    def test_an_account_without_an_id_is_refused(self):
+        self.run_import(people=["ghost"])
+        ghost = self.invitation("ghost")
+        session, state = self.start_verify(ghost["id"])
+
+        self.prove("ghost", None)
+
+        self.assertEqual(self.callback(ghost["id"], session, state).status_code, 400)
+
+    def test_a_renamed_account_with_the_same_id_joins(self):
+        self.run_import(people=["ghost"])
+        ghost = self.invitation("ghost")
+        session, state = self.start_verify(ghost["id"])
+
+        self.prove("ghost-renamed", "583231")
+        joined = self.callback(ghost["id"], session, state)
+
+        self.assertEqual(joined.status_code, 200, joined.text)
+
+    def legacy_invitation(self) -> str:
+        from app.repositories.organization import OrganizationRepository
+
+        with self.app.state.db.session() as s:
+            invitation = OrganizationRepository(
+                s, self.app.state.sealer
+            ).create_login_invitation(
+                self.org["id"], self.user_id, "github", "ghost", "developer"
+            )
+
+            return invitation.id
+
+    def test_an_invitation_from_before_the_id_still_matches_the_login(self):
+        legacy = self.legacy_invitation()
+        self.assertIsNone(self.stored_user_id(legacy))
+        session, state = self.start_verify(legacy)
+
+        self.prove("someone-else", "999")
+        self.assertEqual(self.callback(legacy, session, state).status_code, 400)
+
+        self.prove("Ghost", "583231")
+        joined = self.callback(legacy, session, state)
+
+        self.assertEqual(joined.status_code, 200, joined.text)
+
+    def test_importing_again_binds_an_invitation_from_before_the_id(self):
+        legacy = self.legacy_invitation()
+
+        self.run_import(people=["ghost"])
+
+        self.assertEqual(self.invitation("ghost")["id"], legacy)
+        self.assertEqual(self.stored_user_id(legacy), "583231")
 
     def test_role_mapping_is_checked_before_queueing(self):
         for body in (
@@ -544,3 +643,56 @@ class LoginInvitationTest(ImportCase):
         self.assertEqual(accepted.status_code, 200, accepted.text)
         teams = self.client.get("/api/v1/teams", headers=self.h()).json()
         self.assertEqual([m["email"] for m in teams[0]["members"]], ["cy@example.com"])
+
+
+class GithubUserIdTest(unittest.TestCase):
+    def test_the_directory_reads_each_member_numeric_id(self):
+        from app.core.shared.credentials import Credentials
+        from app.services.projects.organization_import import client
+
+        directory = client.GithubDirectory(Credentials("github", "t", None, None, None))
+        pages = {
+            "https://api.github.com/orgs/acme/members": [
+                {"login": "ghost", "id": 583231},
+                {"login": "ana"},
+            ],
+        }
+        profiles = {
+            "https://api.github.com/user": {"login": "boss", "id": 1},
+            "https://api.github.com/users/ghost": {"login": "ghost", "id": 583231},
+            "https://api.github.com/users/ana": {"login": "ana", "id": 7},
+        }
+
+        with (
+            mock.patch.object(
+                client.http,
+                "get_pages",
+                side_effect=lambda url, headers: pages.get(url.split("?")[0], []),
+            ),
+            mock.patch.object(
+                client.http,
+                "get_json",
+                side_effect=lambda url, headers: profiles[url],
+            ),
+        ):
+            people = directory.people("acme")
+
+        self.assertEqual(
+            {p["login"]: p["user_id"] for p in people}, {"ghost": "583231", "ana": "7"}
+        )
+
+    def test_the_provider_proves_the_numeric_id(self):
+        from app.core.shared.credentials import OAuthApp
+        from app.services.integrations.hosts import github
+
+        app = OAuthApp("cid", "secret", None)
+
+        with mock.patch.object(
+            github.http, "get_json", return_value={"login": "ghost", "id": 583231}
+        ) as called:
+            self.assertEqual(github.GithubProvider().subject(app, "tok"), "583231")
+
+        self.assertEqual(called.call_args.args[0], "https://api.github.com/user")
+
+        with mock.patch.object(github.http, "get_json", return_value={"login": "x"}):
+            self.assertIsNone(github.GithubProvider().subject(app, "tok"))
