@@ -67,7 +67,7 @@ class LoginTest(LoginCase):
                 "token_type": "Bearer",
                 "scope": "read write",
             },
-            {"token": "jwt-token", "scope": "read write"},
+            {"token": "jwt-token", "scope": ["read", "write"]},
         )
         shown: list[str] = []
 
@@ -85,7 +85,7 @@ class LoginTest(LoginCase):
         self.assertEqual(
             self.calls[0], ("POST", "https://p.example/api/auth/device/code")
         )
-        self.assertEqual(self.calls[-1], ("POST", "https://p.example/api/v1/tokens"))
+        self.assertEqual(self.calls[-1], ("POST", "https://p.example/api/auth/tokens"))
         self.assertEqual(len(self.calls), 6)
 
     def test_scope_is_validated_before_anything_is_sent(self):
