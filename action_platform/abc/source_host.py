@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from action_platform.core.context import (
         CommitRow,
         Context,
@@ -92,8 +94,10 @@ class PublishesReleases(Protocol):
 class ListsPullRequests(Protocol):
     """A host that lists pull (merge) requests."""
 
-    def pull_requests(self, repo: str) -> "list[PullRequestRow]":
-        """The pull (merge) requests of `repo`."""
+    def pull_requests(
+        self, repo: str, since: "datetime | None" = None
+    ) -> "list[PullRequestRow]":
+        """The pull (merge) requests of `repo`, most recently updated first; with `since`, the host may stop at the first one not updated since."""
 
 
 @runtime_checkable

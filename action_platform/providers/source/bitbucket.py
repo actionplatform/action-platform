@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import re
 
 import base64
@@ -159,7 +161,9 @@ class SourceBitbucket(SourceHost):
             )
         ]
 
-    def pull_requests(self, repo: str) -> list[PullRequestRow]:
+    def pull_requests(
+        self, repo: str, since: datetime | None = None
+    ) -> list[PullRequestRow]:
         return [
             PullRequestRow(
                 number=r["id"],
@@ -185,6 +189,7 @@ class SourceBitbucket(SourceHost):
             for r in rest.get_values(
                 f"{self.api}/repositories/{repo}/pullrequests?state=OPEN&state=MERGED&state=DECLINED&sort=-updated_on&pagelen=50",
                 self._headers(),
+                enough=rest.older_than(since, "updated_on"),
             )
         ]
 
