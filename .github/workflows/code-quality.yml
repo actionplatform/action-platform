@@ -52,7 +52,7 @@ jobs:
           key: api-py-${{ runner.os }}-${{ hashFiles('poetry.lock', 'apps/api/pyproject.toml') }}
           restore-keys: api-py-${{ runner.os }}-
       - uses: actionplatform/ci-github/setup@v1
-      - run: poetry run pip install -e apps/api httpx httpx2 import-linter pytest-xdist
+      - run: poetry run pip install -e apps/api httpx httpx2 import-linter pytest-xdist "mcp>=2.0"
       - run: |
           python="$(poetry run python -c 'import sys; print(sys.executable)')"
           cd apps/api && "$python" -m pytest -q -n auto --durations=10
