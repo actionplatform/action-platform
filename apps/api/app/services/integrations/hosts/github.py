@@ -111,6 +111,7 @@ class GithubProvider(HostProvider):
             "redirect_url": f"{origin}/api/oauth/github/manifest/callback",
             "callback_urls": [self.callback_url(origin)],
             "setup_url": f"{origin}{return_to}",
+            "setup_on_update": True,
             "public": True,
             "request_oauth_on_install": True,
             "default_permissions": permissions_for(self.kind, MANIFEST_PERMISSIONS),
