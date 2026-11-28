@@ -151,7 +151,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
                 <div className="flex h-6 items-center justify-between text-[13px] text-muted-foreground">
                   {ready ? <button type="button" onClick={() => setSetup(p)} className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">Change OAuth app</button> : <span />}
                   {ready && p === "github" && githubApp && <button type="button" onClick={() => setAppWebhook(true)} className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">Webhook…</button>}
-                  {isConnected && <button type="button" onClick={() => setConfirmRemove(p)} className="rounded-sm hover:text-[#e07070] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">Remove connection</button>}
+                  {ready && <button type="button" onClick={() => setConfirmRemove(p)} className="rounded-sm hover:text-[#e07070] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">{p === "github" && githubApp ? "Remove GitHub App" : "Remove connection"}</button>}
                 </div>
               </div>
             </section>
@@ -165,8 +165,10 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
       <ConfirmDialog
         open={confirmRemove !== null}
         onClose={() => setConfirmRemove(null)}
-        title={`Remove the ${confirmRemove ? META[confirmRemove].label : ""} connection?`}
-        description="The platform forgets the OAuth app's client id and secret. Connected accounts stop refreshing their tokens; delete the app at the provider too."
+        title={confirmRemove === "github" && githubApp ? "Remove the GitHub App?" : `Remove the ${confirmRemove ? META[confirmRemove].label : ""} connection?`}
+        description={confirmRemove === "github" && githubApp
+          ? "The platform forgets the GitHub App's id, private key and client secret. The app itself stays on GitHub; delete it there too if you no longer need it. Afterwards create the GitHub App again and connect your accounts."
+          : "The platform forgets the OAuth app's client id and secret. Connected accounts stop refreshing their tokens; delete the app at the provider too."}
         confirmLabel="Remove"
         danger
         pending={pending}
