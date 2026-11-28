@@ -6,6 +6,31 @@ on:
   workflow_dispatch:
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      api: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.api == 'true' }}
+      web: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.web == 'true' }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            api:
+              - "apps/api/**"
+              - "action_platform/**"
+              - "pyproject.toml"
+              - "poetry.lock"
+              - ".importlinter"
+              - ".github/workflows/code-quality.yml"
+            web:
+              - "apps/web/**"
+              - ".github/workflows/code-quality.yml"
+
   code-quality:
     runs-on: ubuntu-latest
     steps:
@@ -14,19 +39,23 @@ jobs:
       - uses: actionplatform/ci-github/check@v1
 
   api:
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: actionplatform/ci-github/setup@v1
-      - run: poetry run pip install -e apps/api httpx httpx2 import-linter
+      - run: poetry run pip install -e apps/api httpx httpx2 import-linter pytest-xdist
       - run: |
           python="$(poetry run python -c 'import sys; print(sys.executable)')"
-          cd apps/api && "$python" -m pytest -q
+          cd apps/api && "$python" -m pytest -q -n auto --durations=10
       - run: |
           python="$(poetry run python -c 'import sys; print(sys.executable)')"
           cd apps/api && PYTHONPATH=.:../.. "$python" -c "import sys; from importlinter.cli import lint_imports_command; sys.argv = ['lint-imports', '--config', '../../.importlinter']; sys.exit(lint_imports_command())"
 
   web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -42,6 +71,11 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
+      - uses: actions/cache@v4
+        with:
+          path: apps/web/.next/cache
+          key: next-${{ hashFiles('apps/web/package-lock.json') }}-${{ hashFiles('apps/web/**/*.ts', 'apps/web/**/*.tsx') }}
+          restore-keys: next-${{ hashFiles('apps/web/package-lock.json') }}-
       - run: npm run build
         env:
           AP_API: http://127.0.0.1:7788
