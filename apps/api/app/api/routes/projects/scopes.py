@@ -1,6 +1,6 @@
 """The scopes of an app: where its releases are deployed, each with a kind and a criticality."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 
 from app.api.dependencies import (
     CallerDep,
@@ -94,7 +94,7 @@ def update_scope(
     return _page(service, app)
 
 
-@router.delete("/projects/{project_id}/apps/{app_id}/scopes/{name}")
+@router.delete("/projects/{project_id}/apps/{app_id}/scopes/{name}", status_code=204)
 def delete_scope(
     project_id: str,
     app_id: str,
@@ -105,11 +105,11 @@ def delete_scope(
     db: DbDep,
     queue: QueueDep,
     configs: ConfigStore = Depends(get_config_store),
-) -> schemas.Scopes:
+) -> Response:
     allowed(caller, org, "app.configure", whole_org=False)
     project = project_of(writes, org, project_id)
     app = app_of(writes, caller, project, app_id)
     service = ScopesService(db, configs)
     service.delete(app, name, live=queue.live_deploy(app.id, name) is not None)
 
-    return _page(service, app)
+    return Response(status_code=204)

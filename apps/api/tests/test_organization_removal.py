@@ -38,8 +38,7 @@ class OrganizationRemovalTest(GateCase):
             headers=self.h(),
         )
 
-        self.assertEqual(res.status_code, 200, res.text)
-        self.assertEqual(res.json()["removed"], [registry_id])
+        self.assertEqual(res.status_code, 204, res.text)
 
         with self.app.state.db.session() as s:
             self.assertIsNone(s.get(Organization, org_id))

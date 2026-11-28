@@ -361,5 +361,5 @@ class RevocationTest(TemplateIsolationCase):
             params={"confirm": "acme"},
             headers=self.h(),
         )
-        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual(res.status_code, 204, res.text)
         self.assertFalse(owner_dir.exists())

@@ -63,7 +63,7 @@ def webhook(
     )
 
 
-@router.post("/hosts/{host_id}/webhook")
+@router.post("/hosts/{host_id}/webhook", status_code=201)
 def rotate_webhook(
     host_id: str,
     org: OrgDep,
@@ -97,7 +97,7 @@ def app_webhook(
     )
 
 
-@router.post("/oauth/apps/github/webhook")
+@router.post("/oauth/apps/github/webhook", status_code=201)
 def rotate_app_webhook(
     org: OrgDep,
     caller: CallerDep,

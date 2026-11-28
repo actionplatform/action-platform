@@ -43,7 +43,7 @@ export async function removeApp(projectId: string, appId: string, repository = f
   let job: string | null = null;
   try {
     const r = await v1.deleteApp(projectId, appId, repository, cloud);
-    job = r.job ?? null;
+    job = r?.job ?? null;
   } catch (e) {
     return failed(e);
   }

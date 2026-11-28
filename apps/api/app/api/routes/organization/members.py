@@ -83,7 +83,7 @@ def create_team(
     return common.Created(id=team.id, name=team.name, slug=team.slug)
 
 
-@router.post("/teams/members")
+@router.post("/teams/members", status_code=201)
 def add_team_member(
     body: schemas.TeamMemberRequest,
     caller: CallerDep,

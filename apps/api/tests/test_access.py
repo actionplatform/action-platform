@@ -101,7 +101,7 @@ class GateCase(TempCase):
         res = self.client.post(
             "/api/v1/tokens", json={"scope": scope, "name": "t"}, headers=self.h()
         )
-        assert res.status_code == 200, res.text
+        assert res.status_code == 201, res.text
         return res.json()["token"]
 
 
@@ -162,7 +162,7 @@ class IdentityTest(GateCase):
                 json={"team_id": team["id"], "user_id": self.user_id},
                 headers=self.h(),
             ).status_code,
-            200,
+            201,
         )
         self.assertEqual(
             self.client.post(

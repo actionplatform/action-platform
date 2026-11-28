@@ -38,7 +38,7 @@ class OperatorCase(AuthCase):
             json={"scope": "read write", "name": "cli"},
             headers={"Authorization": f"Bearer {session}"},
         )
-        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual(res.status_code, 201, res.text)
 
         return res.json()["token"]
 
