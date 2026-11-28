@@ -1,8 +1,8 @@
 """Jobs the API queued for the worker."""
 
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from app.api.dependencies import (
@@ -45,7 +45,7 @@ class JobPage(BaseModel):
     per: int
 
 
-@router.get("/jobs/page")
+@router.get("/jobs/page", include_in_schema=False)
 def jobs_page(
     app: str,
     caller: CallerDep,
@@ -55,28 +55,7 @@ def jobs_page(
     page: int = 1,
     per: int = 10,
 ) -> JobPage:
-    found = directory.app_by_registry_id(app)
-
-    if (
-        found is None
-        or caller.member_of(found[1].organization_id) is None
-        or not caller.within_reach(found[0].id, found[1].id)
-    ):
-        raise HTTPException(404, "app not found")
-
-    wanted = [k.strip() for k in kinds.split(",") if k.strip()]
-    live = queue.live_kinds()
-    page, per, offset = page_bounds(page, per)
-
-    return JobPage(
-        items=[
-            _out(directory, JobQueue.view(j, live))
-            for j in queue.for_app(found[0].id, limit=per, kinds=wanted, offset=offset)
-        ],
-        total=queue.count_for_app(found[0].id, kinds=wanted),
-        page=page,
-        per=per,
-    )
+    return jobs(app, caller, directory, queue, kinds, page, per)
 
 
 @router.get("/jobs/{id}")
@@ -150,9 +129,12 @@ def jobs(
     caller: CallerDep,
     directory: ProjectsRepoDep,
     queue: QueueDep,
-    kind: Optional[str] = None,
-    limit: int = 20,
-) -> list[JobOut]:
+    kinds: Optional[str] = None,
+    page: int = 1,
+    per: int = 10,
+    kind: Annotated[Optional[str], Query(include_in_schema=False)] = None,
+    limit: Annotated[Optional[int], Query(include_in_schema=False)] = None,
+) -> JobPage:
     found = directory.app_by_registry_id(app)
 
     if (
@@ -162,9 +144,16 @@ def jobs(
     ):
         raise HTTPException(404, "app not found")
 
+    wanted = [k.strip() for k in (kinds or kind or "").split(",") if k.strip()]
     live = queue.live_kinds()
+    page, per, offset = page_bounds(page, limit or per)
 
-    return [
-        _out(directory, JobQueue.view(j, live))
-        for j in queue.for_app(found[0].id, limit=max(1, min(limit, 500)), kind=kind)
-    ]
+    return JobPage(
+        items=[
+            _out(directory, JobQueue.view(j, live))
+            for j in queue.for_app(found[0].id, limit=per, kinds=wanted, offset=offset)
+        ],
+        total=queue.count_for_app(found[0].id, kinds=wanted),
+        page=page,
+        per=per,
+    )

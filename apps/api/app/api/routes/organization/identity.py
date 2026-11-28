@@ -11,8 +11,10 @@ from action_platform.core.access import (
 from app.api.dependencies import (
     AuthDep,
     CallerDep,
+    OrganizationHeader,
     ProjectsRepoDep,
     org_dict,
+    requested_org,
 )
 from app.schemas import common
 from app.schemas import organization as schemas
@@ -26,8 +28,9 @@ router = APIRouter(prefix="/api/v1", tags=["identity"])
 def me(
     caller: CallerDep,
     directory: ProjectsRepoDep,
+    x_organization: OrganizationHeader = None,
 ) -> schemas.Me:
-    org = caller.organization
+    org = requested_org(caller, x_organization, None)
     role = caller.role_in(org.id) if org else None
     project = (
         directory.project(org.id, caller.project_id)
@@ -85,7 +88,7 @@ def organizations(
     ]
 
 
-@router.post("/tokens", status_code=201)
+@router.post("/tokens", status_code=201, include_in_schema=False)
 def issue(
     body: schemas.IssueRequest,
     caller: CallerDep,

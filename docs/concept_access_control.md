@@ -45,7 +45,7 @@ Also chosen at approval.
 | Reach | Effect on `/api/v1` |
 |---|---|
 | one organization | every call acts there; the role is that organization's |
-| **all organizations** | the role is checked in the organization each call touches — the app's own for app routes, `X-Organization: <id or slug>` (or `?organization=`) for organization-level routes; `GET /apps` and `GET /projects` answer across all of them |
+| **all organizations** | the role is checked in the organization each call touches — the app's own for app routes, `X-Organization: <id or slug>` for organization-level routes (`?organization=` on `GET teams`, `members` and `projects` still works, deprecated); `GET /apps` and `GET /projects` answer across all of them |
 | one project | only that project's apps are visible; the token cannot add apps or manage the organization |
 | one app | only that app |
 

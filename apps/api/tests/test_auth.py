@@ -397,6 +397,10 @@ class TokensTest(AuthCase):
         self.assertEqual(issued.status_code, 201, issued.text)
         raw = issued.json()["token"]
         self.assertEqual(raw.count("."), 2)
+        self.assertEqual(
+            (issued.json()["token_type"], issued.json()["organization"]["id"]),
+            ("Bearer", owner["org"]["id"]),
+        )
         claims = self.client.post(
             "/api/auth/tokens/verify", json={"token": raw, "client": "Claude Code/1.2"}
         )

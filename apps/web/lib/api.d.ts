@@ -479,22 +479,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tokens": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["issue_api_v1_tokens_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/teams": {
         parameters: {
             query?: never;
@@ -2063,22 +2047,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/jobs/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["jobs_page_api_v1_jobs_page_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/jobs/{id}": {
         parameters: {
             query?: never;
@@ -3387,31 +3355,12 @@ export interface components {
             role: string;
             team_ids: string[];
         };
-        IssueRequest: {
-            scope: string;
-            name?: string | null;
-        };
         IssueTokenRequest: {
             name: string;
             scope: string;
             organization_id?: string | null;
             project_id?: string | null;
             app_id?: string | null;
-        };
-        Issued: {
-            token: string;
-            token_type: string;
-            id: string;
-            scope: string;
-            expires_at: string;
-            organization?: {
-                [key: string]: unknown;
-            } | null;
-            organizations?: {
-                [key: string]: unknown;
-            }[] | null;
-            project?: components["schemas"]["Named"] | null;
-            app?: components["schemas"]["app__schemas__common__AppRef"] | null;
         };
         JobLogsOut: {
             lines: components["schemas"]["LogLine"][];
@@ -4166,8 +4115,17 @@ export interface components {
         TokenIssued: {
             id: string;
             token: string;
+            token_type: string;
             scope: string[];
             expires_at: string;
+            organization?: {
+                [key: string]: unknown;
+            } | null;
+            organizations?: {
+                [key: string]: unknown;
+            }[] | null;
+            project?: components["schemas"]["Named"] | null;
+            app?: components["schemas"]["app__schemas__common__AppRef"] | null;
         };
         TokenOut: {
             id: string;
@@ -5163,7 +5121,9 @@ export interface operations {
     me_api_v1_me_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5175,6 +5135,14 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Me"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -5217,46 +5185,14 @@ export interface operations {
             };
         };
     };
-    issue_api_v1_tokens_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IssueRequest"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Issued"];
-                };
-            };
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     teams_api_v1_teams_get: {
         parameters: {
             query?: {
-                organization?: string | null;
                 page?: number | null;
                 per?: number;
             };
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -5285,7 +5221,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -5317,12 +5253,11 @@ export interface operations {
     members_api_v1_members_get: {
         parameters: {
             query?: {
-                organization?: string | null;
                 page?: number | null;
                 per?: number;
             };
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -5351,7 +5286,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 team_id: string;
@@ -5415,7 +5350,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 user_id: string;
@@ -6718,12 +6653,11 @@ export interface operations {
     projects_api_v1_projects_get: {
         parameters: {
             query?: {
-                organization?: string | null;
                 page?: number | null;
                 per?: number;
             };
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -6752,7 +6686,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -6785,7 +6719,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "x-organization"?: string | null;
+                "X-Organization"?: string | null;
             };
             path: {
                 project_id: string;
@@ -9149,38 +9083,6 @@ export interface operations {
             };
         };
     };
-    jobs_page_api_v1_jobs_page_get: {
-        parameters: {
-            query: {
-                app: string;
-                kinds?: string;
-                page?: number;
-                per?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["JobPage"];
-                };
-            };
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     job_api_v1_jobs__id__get: {
         parameters: {
             query?: never;
@@ -9246,8 +9148,9 @@ export interface operations {
         parameters: {
             query: {
                 app: string;
-                kind?: string | null;
-                limit?: number;
+                kinds?: string | null;
+                page?: number;
+                per?: number;
             };
             header?: never;
             path?: never;
@@ -9260,7 +9163,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["JobOut"][];
+                    "application/json": components["schemas"]["JobPage"];
                 };
             };
             422: {

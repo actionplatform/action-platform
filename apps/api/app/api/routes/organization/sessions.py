@@ -7,6 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from action_platform.core.access import Grant, parse_scopes
 from app.api.dependencies import (
     AuthDep,
+    ProjectsRepoDep,
+    org_dict,
 )
 from app.api.routes.auth.support import (
     current_session,
@@ -19,7 +21,8 @@ from app.core.db.models import (
     Session,
 )
 from app.schemas import auth as schemas
-from app.schemas.common import Page, paged
+from app.schemas.common import AppRef, Named, Page, paged
+from app.services.organization.sessions import TokenMinter
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -28,6 +31,7 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 def issue_token(
     body: schemas.IssueTokenRequest,
     auth: AuthDep,
+    directory: ProjectsRepoDep,
     session: Session = Depends(current_session),
 ) -> schemas.TokenIssued:
     grant = Grant.parse(body.scope)
@@ -38,12 +42,24 @@ def issue_token(
         body.app_id or grant.app_id,
     )
     token, raw = auth.issue_token(session, grant, body.name)
+    minted = TokenMinter(auth, directory).minted(
+        token, raw, auth.organizations_of(session.user_id)
+    )
+    organization, project, app = minted.organization, minted.project, minted.app
 
     return schemas.TokenIssued(
         id=token.id,
         token=raw,
         scope=parse_scopes(token.scope),
         expires_at=token.expires_at,
+        organization=org_dict(organization) if organization else None,
+        organizations=None
+        if organization
+        else [org_dict(o) for o in auth.organizations_of(session.user_id)],
+        project=Named(id=project.id, name=project.name) if project else None,
+        app=AppRef(id=app.id, name=app.name, registry_id=app.registry_id)
+        if app
+        else None,
     )
 
 

@@ -1183,14 +1183,15 @@ def login(
         granted = (token.get("scope") or " ".join(scopes)).replace(",", " ")
         minted = _request(
             "POST",
-            f"{server}/api/v1/tokens",
+            f"{server}/api/auth/tokens",
             {"scope": granted, "name": name or _device_name()},
             token=access,
         )
+        scope = minted.get("scope")
         creds = Credentials(
             server=server,
             token=minted["token"],
-            scope=minted.get("scope") or granted,
+            scope=(" ".join(scope) if isinstance(scope, list) else scope) or granted,
         )
         save(creds)
 

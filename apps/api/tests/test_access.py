@@ -106,6 +106,32 @@ class GateCase(TempCase):
 
 
 class IdentityTest(GateCase):
+    def test_the_organization_header_picks_the_organization(self):
+        other = self.client.post(
+            "/api/auth/organizations",
+            json={"name": "Beta", "slug": "beta"},
+            headers=self.h(),
+        ).json()
+        self.client.post(
+            "/api/v1/teams",
+            json={"name": "Core"},
+            headers={**self.h(), "X-Organization": self.org["id"]},
+        )
+
+        me = self.client.get(
+            "/api/v1/me", headers={**self.h(), "X-Organization": other["id"]}
+        ).json()
+        by_header = self.client.get(
+            "/api/v1/teams", headers={**self.h(), "X-Organization": other["id"]}
+        ).json()
+        by_query = self.client.get(
+            f"/api/v1/teams?organization={self.org['id']}", headers=self.h()
+        ).json()
+
+        self.assertEqual(me["organization"]["id"], other["id"])
+        self.assertEqual(by_header, [])
+        self.assertEqual([t["name"] for t in by_query], ["Core"])
+
     def test_unauthenticated_and_shared_secret_do_not_pass(self):
         self.assertEqual(self.client.get("/api/v1/me").status_code, 401)
         self.assertEqual(

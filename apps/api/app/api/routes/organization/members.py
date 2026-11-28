@@ -2,10 +2,12 @@
 
 from typing import Optional, Union
 
-from fastapi import APIRouter, Header
+from fastapi import APIRouter
 
 from action_platform.core.access import ROLE_LABELS
 from app.api.dependencies import (
+    LegacyOrganizationQuery,
+    OrganizationHeader,
     CallerDep,
     OrgDep,
     OrganizationRepoDep,
@@ -25,8 +27,8 @@ router = APIRouter(prefix="/api/v1", tags=["management"])
 def teams(
     caller: CallerDep,
     directory: OrganizationRepoDep,
-    x_organization: Optional[str] = Header(default=None),
-    organization: Optional[str] = None,
+    x_organization: OrganizationHeader = None,
+    organization: LegacyOrganizationQuery = None,
     page: Optional[int] = None,
     per: int = 10,
 ) -> Union[list[schemas.TeamRow], Page[schemas.TeamRow]]:
@@ -59,8 +61,8 @@ def teams(
 def members(
     caller: CallerDep,
     directory: OrganizationRepoDep,
-    x_organization: Optional[str] = Header(default=None),
-    organization: Optional[str] = None,
+    x_organization: OrganizationHeader = None,
+    organization: LegacyOrganizationQuery = None,
     page: Optional[int] = None,
     per: int = 10,
 ) -> Union[list[schemas.MemberRow], Page[schemas.MemberRow]]:
@@ -87,7 +89,7 @@ def create_team(
     body: schemas.CreateTeamRequest,
     caller: CallerDep,
     directory: OrganizationRepoDep,
-    x_organization: Optional[str] = Header(default=None),
+    x_organization: OrganizationHeader = None,
 ) -> common.Created:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "teams")
@@ -102,7 +104,7 @@ def add_member_to_team(
     body: schemas.TeamMemberAdd,
     caller: CallerDep,
     directory: OrganizationRepoDep,
-    x_organization: Optional[str] = Header(default=None),
+    x_organization: OrganizationHeader = None,
 ) -> common.Ok:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "teams/members")
@@ -116,7 +118,7 @@ def add_team_member(
     body: schemas.TeamMemberRequest,
     caller: CallerDep,
     directory: OrganizationRepoDep,
-    x_organization: Optional[str] = Header(default=None),
+    x_organization: OrganizationHeader = None,
 ) -> common.Ok:
     return add_member_to_team(
         body.team_id,
@@ -133,7 +135,7 @@ def update_member(
     body: schemas.MemberUpdate,
     caller: CallerDep,
     directory: OrganizationRepoDep,
-    x_organization: Optional[str] = Header(default=None),
+    x_organization: OrganizationHeader = None,
 ) -> common.Ok:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "members/role")
@@ -154,7 +156,7 @@ def set_member_role(
     body: schemas.MemberRoleRequest,
     caller: CallerDep,
     directory: OrganizationRepoDep,
-    x_organization: Optional[str] = Header(default=None),
+    x_organization: OrganizationHeader = None,
 ) -> common.Ok:
     return update_member(
         body.user_id,
