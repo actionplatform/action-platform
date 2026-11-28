@@ -85,7 +85,7 @@ def organizations(
     ]
 
 
-@router.post("/tokens", status_code=200)
+@router.post("/tokens", status_code=201)
 def issue(
     body: schemas.IssueRequest,
     caller: CallerDep,

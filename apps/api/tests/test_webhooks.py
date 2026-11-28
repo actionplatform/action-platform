@@ -67,9 +67,9 @@ class WebhooksTest(GateCase):
         self.assertFalse(info["configured"])
         self.assertTrue(info["url"].endswith(f"/api/webhooks/{host_id}"))
 
-        secret = self.client.post(
-            f"/api/v1/hosts/{host_id}/webhook", headers=self.h()
-        ).json()["secret"]
+        rotated = self.client.post(f"/api/v1/hosts/{host_id}/webhook", headers=self.h())
+        self.assertEqual(rotated.status_code, 201, rotated.text)
+        secret = rotated.json()["secret"]
         self.assertTrue(secret)
         self.assertTrue(
             self.client.get(
@@ -227,9 +227,11 @@ class WebhooksTest(GateCase):
         self.assertFalse(info["configured"])
         self.assertTrue(info["url"].endswith("/api/webhooks/github-app"))
 
-        secret = self.client.post(
+        rotated = self.client.post(
             "/api/v1/oauth/apps/github/webhook", headers=self.h()
-        ).json()["secret"]
+        )
+        self.assertEqual(rotated.status_code, 201, rotated.text)
+        secret = rotated.json()["secret"]
         self.assertTrue(
             self.client.get(
                 "/api/v1/oauth/apps/github/webhook", headers=self.h()

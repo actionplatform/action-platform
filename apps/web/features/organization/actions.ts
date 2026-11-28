@@ -109,7 +109,7 @@ export async function deleteOrganization(confirm: string, repositories: boolean,
     const next = session.organizations.find((o) => o.id !== org.id);
     if (next) await setActiveOrg(next.id);
     revalidatePath("/", "layout");
-    return { ok: true, data: { job: data.job ?? null } };
+    return { ok: true, data: { job: data?.job ?? null } };
   } catch (e) {
     return failed(e);
   }

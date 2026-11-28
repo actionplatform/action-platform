@@ -249,7 +249,8 @@ class Remote:
                 None,
                 organization,
                 repository="true" if repository else None,
-            ),
+            )
+            or {},
         )
 
     def delete_project(
@@ -266,7 +267,8 @@ class Remote:
                 None,
                 organization,
                 repositories="true" if repositories else None,
-            ),
+            )
+            or {},
         )
 
     def sync_app(
@@ -538,15 +540,14 @@ class Remote:
     def delete_scope(
         self, project: str, app: str, name: str, organization: Optional[str] = None
     ) -> Scopes:
-        return _as(
-            Scopes,
-            self._call(
-                "DELETE",
-                f"projects/{project}/apps/{app}/scopes/{name}",
-                None,
-                organization,
-            ),
+        self._call(
+            "DELETE",
+            f"projects/{project}/apps/{app}/scopes/{name}",
+            None,
+            organization,
         )
+
+        return self.scopes(project, app, organization)
 
     def readiness(
         self, project: str, app: str, tag: str, organization: Optional[str] = None

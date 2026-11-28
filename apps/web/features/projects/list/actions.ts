@@ -26,7 +26,7 @@ export async function removeProject(id: string, repositories = false, cloud = fa
   let job: string | null = null;
   try {
     const r = await v1.deleteProject(id, repositories, cloud);
-    job = r.job ?? null;
+    job = r?.job ?? null;
   } catch (e) {
     return failed(e);
   }

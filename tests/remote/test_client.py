@@ -191,6 +191,22 @@ class RemoteClientTest(TempCase):
 
         self.patch(client, "_request", fake_request)
 
+    def test_a_delete_answered_without_a_body_is_an_empty_removal(self):
+        remote = client.Remote("https://p.example", "tok")
+        self.answer = None
+
+        self.assertEqual(remote.remove_app("p1", "d1").removed, [])
+        self.assertEqual(remote.delete_project("p1").repositories, [])
+
+    def test_deleting_a_scope_answers_with_the_scopes_left(self):
+        remote = client.Remote("https://p.example", "tok")
+        self.answer = {"items": [], "kinds": [], "criticalities": []}
+
+        remote.delete_scope("p1", "a1", "dev")
+
+        self.assertEqual(self.seen["method"], "GET")
+        self.assertTrue(self.seen["url"].endswith("/projects/p1/apps/a1/scopes"))
+
     def test_a_background_deploy_answers_with_its_job(self):
         remote = client.Remote("https://p.example", "tok")
         self.answer = {"job": "j1", "poll": "/api/v1/jobs/j1", "status": "queued"}

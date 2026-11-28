@@ -100,7 +100,7 @@ class ReleaseStoreTest(GateCase):
     def test_sync_imports_the_clones_tags(self):
         res = self.client.post("/api/v1/projects/p1/apps/a1/imports", headers=self.h())
 
-        self.assertEqual(res.status_code, 200, res.text)
+        self.assertEqual(res.status_code, 201, res.text)
         tags = [r["tag"] for r in res.json()["releases"]]
         self.assertTrue(tags, "the fixture repository carries a tag")
         self.assertTrue(all(r["source"] == "git" for r in res.json()["releases"]))

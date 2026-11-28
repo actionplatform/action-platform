@@ -28,12 +28,12 @@ export async function updateScope(projectId: string, appId: string, name: string
   }
 }
 
-export async function deleteScope(projectId: string, appId: string, name: string): Promise<Result<Scopes>> {
+export async function deleteScope(projectId: string, appId: string, name: string): Promise<Result<null>> {
   await requireOrg();
   try {
-    const data = await v1.deleteScope(projectId, appId, name);
+    await v1.deleteScope(projectId, appId, name);
     refreshProject(projectId);
-    return { ok: true, data };
+    return { ok: true, data: null };
   } catch (e) {
     return failed(e);
   }

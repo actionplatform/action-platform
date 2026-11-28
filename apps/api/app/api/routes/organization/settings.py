@@ -1,6 +1,6 @@
 """Organization settings."""
 
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import APIRouter, Depends, Request, Response
 
@@ -47,7 +47,12 @@ def set_git_author(
     return schemas.GitAuthor(name=name, email=email)
 
 
-@router.delete("/organizations/{organization_id}")
+@router.delete(
+    "/organizations/{organization_id}",
+    status_code=204,
+    response_model=None,
+    responses={202: {"model": common.Removed}},
+)
 def delete_organization(
     organization_id: str,
     request: Request,
@@ -60,7 +65,7 @@ def delete_organization(
     confirm: Optional[str] = None,
     repositories: bool = False,
     cloud: bool = False,
-) -> common.Removed:
+) -> Union[Response, common.Removed]:
     """The organization leaves the platform with everything it owned. `confirm` must be its slug; only an owner may. `cloud` tears every app's deploy stacks down first, on the worker (202 with the job id)."""
     allowed(caller, org, "org.manage")
     target = caller.member_of(organization_id)
@@ -80,8 +85,6 @@ def delete_organization(
             )
         )
 
-    result = removal.delete(org, caller.user.id, confirm, repositories)
+    removal.delete(org, caller.user.id, confirm, repositories)
 
-    return common.Removed(
-        removed=result["removed"], repositories=result["repositories"]
-    )
+    return Response(status_code=204)

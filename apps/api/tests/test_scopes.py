@@ -72,11 +72,13 @@ class ScopesTest(GateCase):
         self.assertEqual((row["kind"], row["criticality"]), ("job", "medium"))
 
         gone = self.client.delete(f"{self.base}/staging", headers=self.h())
-        self.assertEqual([s["name"] for s in gone.json()["items"]], ["dev", "prod"])
+        self.assertEqual(gone.status_code, 204, gone.text)
+        listed = self.client.get(self.base, headers=self.h()).json()["items"]
+        self.assertEqual([s["name"] for s in listed], ["dev", "prod"])
 
         self.client.delete(f"{self.base}/dev", headers=self.h())
         none_left = self.client.delete(f"{self.base}/prod", headers=self.h())
-        self.assertEqual(none_left.json()["items"], [])
+        self.assertEqual(none_left.status_code, 204, none_left.text)
         self.assertEqual(
             self.client.get(self.base, headers=self.h()).json()["items"], []
         )
