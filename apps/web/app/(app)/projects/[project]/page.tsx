@@ -3,22 +3,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApiOffline } from "@/components/api-offline";
 import { PageHeader } from "@/components/layout/page";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Cell } from "@/components/ui/data-table";
-import { TBody, Table, Td, Th, Tr } from "@/components/ui/table";
 import { api, type AppRow } from "@/lib/api";
 import { appsOf, projectById } from "@/lib/projects";
 
 
+import { pageQuery, paginate } from "@/lib/page";
 import { requireOrg } from "@/lib/session";
-import { AppCards } from "@/features/projects";
-import { LiveList, RemoveButton } from "@/features/projects";
+import { AppsTable, LiveList } from "@/features/projects";
 import { v1 } from "@/lib/v1";
 
-export default async function ProjectPage({ params }: { params: Promise<{ project: string }> }) {
+export default async function ProjectPage({ params, searchParams }: { params: Promise<{ project: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { project: projectId } = await params;
+  const query = pageQuery(await searchParams, "apps");
   const { session, org } = await requireOrg();
   const project = await projectById(org.id, projectId);
   const manage = !!session.grants["project.manage"];
@@ -46,45 +43,13 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
 
       <LiveList active={tearing.size > 0} />
 
-      <div className="md:hidden">
-        <AppCards projectId={project.id} apps={apps.map((a) => ({ id: a.id, name: a.name, registryId: a.registryId, tearing: tearing.has(a.id) }))} rows={rows} manage={manage} />
-      </div>
-
-      <Card className="hidden md:block">
-        <Table columns={[{ width: 24 }, { width: 9, hideBelow: "lg" }, { width: 11, hideBelow: "lg" }, { width: 14 }, { width: 12 }, { width: 24, hideBelow: "lg" }, ...(manage ? [{ width: "56px" }] : [])]}>
-          <thead>
-            <tr><Th>Name</Th><Th hideBelow="lg">Type</Th><Th hideBelow="lg">Language</Th><Th>Branch</Th><Th>Version</Th><Th hideBelow="lg">Repository</Th>{manage && <Th><span className="sr-only">Actions</span></Th>}</tr>
-          </thead>
-          <TBody>
-            {apps.length === 0 && (
-              <tr><Td colSpan={manage ? 7 : 6} className="py-8 text-center text-secondary">No apps yet. Create one with New app, from a template or an existing repository.</Td></tr>
-            )}
-            {apps.map((a) => {
-              const r = rows.get(a.registryId);
-              return (
-                <Tr key={a.id}>
-                  <Td>
-                    <Cell title={[a.name, tearing.has(a.id) && "tearing down", r && !r.exists && "missing", !r && "not on API"].filter(Boolean).join(" · ")}>
-                      <span className="inline-flex items-center gap-2 align-middle">
-                        <Link href={`/projects/${project.id}/apps/${a.id}`} className="font-medium hover:underline underline-offset-4">{a.name}</Link>
-                        {tearing.has(a.id) && <Badge tone="warning">tearing down</Badge>}
-                        {r && !r.exists && <Badge tone="bad">missing</Badge>}
-                        {!r && <Badge>not on API</Badge>}
-                      </span>
-                    </Cell>
-                  </Td>
-                  <Td hideBelow="lg"><Cell muted>{r?.type ?? "—"}</Cell></Td>
-                  <Td hideBelow="lg"><Cell muted>{r?.language ?? "—"}</Cell></Td>
-                  <Td><Cell mono muted>{r?.branch ?? "—"}</Cell></Td>
-                  <Td><Cell mono>{r?.last_version ?? "—"}</Cell></Td>
-                  <Td hideBelow="lg"><Cell mono muted>{r?.url || "no remote"}</Cell></Td>
-                  {manage && <Td align="right" className="py-1">{!tearing.has(a.id) && <RemoveButton projectId={project.id} appId={a.id} name={a.name} repositoryUrl={r?.url || null} />}</Td>}
-                </Tr>
-              );
-            })}
-          </TBody>
-        </Table>
-      </Card>
+      <AppsTable
+        projectId={project.id}
+        apps={paginate(apps, query).items.map((a) => ({ id: a.id, name: a.name, registryId: a.registryId, tearing: tearing.has(a.id) }))}
+        paging={{ total: apps.length, page: query.page, per: query.per }}
+        rows={Object.fromEntries(rows)}
+        manage={manage}
+      />
     </>
   );
 }

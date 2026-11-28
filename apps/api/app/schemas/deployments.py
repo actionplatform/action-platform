@@ -68,6 +68,12 @@ class Deployments(BaseModel):
     error: Optional[str] = None
 
 
+class DeploymentsPage(Deployments):
+    total: int
+    page: int
+    per: int
+
+
 class RecordDeploymentRequest(BaseModel):
     target: str
     version: str

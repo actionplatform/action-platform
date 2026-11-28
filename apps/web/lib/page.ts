@@ -3,6 +3,11 @@ export type Paged<T> = { items: T[]; total: number; page: number; per: number };
 
 export const DEFAULT_PER = 10;
 
+export function paginate<T>(items: T[], { page, per }: PageQuery): Paged<T> {
+  const start = (page - 1) * per;
+  return { items: items.slice(start, start + per), total: items.length, page, per };
+}
+
 export function pageQuery(params: Record<string, string | string[] | undefined>, key = ""): PageQuery {
   const pageKey = key ? `${key}_page` : "page";
   const perKey = key ? `${key}_per` : "per";

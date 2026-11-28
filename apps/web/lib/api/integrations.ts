@@ -1,7 +1,7 @@
 import { client, type Schemas, unwrap } from "@/lib/api";
 
 export const integrations = {
-  hosts: async () => unwrap(await client.GET("/api/v1/hosts")),
+  hosts: async () => unwrap(await client.GET("/api/v1/hosts")) as Schemas["HostRow"][],
   addHost: async (body: Schemas["AddHostRequest"]) => unwrap(await client.POST("/api/v1/hosts", { body })),
   removeHost: async (id: string) => unwrap(await client.DELETE("/api/v1/hosts/{host_id}", { params: { path: { host_id: id } } })),
   rotateHostToken: async (id: string, token: string) => unwrap(await client.PUT("/api/v1/hosts/{host_id}/token", { params: { path: { host_id: id } }, body: { token } })),
@@ -25,7 +25,7 @@ export const integrations = {
   githubManifest: async (body: Schemas["GitHubAppManifestRequest"]) => unwrap(await client.POST("/api/v1/oauth/github/manifest", { body })),
   githubManifestCallback: async (body: Schemas["ManifestCallbackRequest"]) => unwrap(await client.POST("/api/v1/oauth/github/manifest/callback", { body })),
   githubInstall: async (origin: string, returnTo: string) => unwrap(await client.POST("/api/v1/oauth/github/install", { body: { origin, return_to: returnTo } })),
-  ciHosts: async () => unwrap(await client.GET("/api/v1/ci-hosts")),
+  ciHosts: async () => unwrap(await client.GET("/api/v1/ci-hosts")) as Schemas["CiHostRow"][],
   addCiHost: async (body: Schemas["AddCiHostRequest"]) => unwrap(await client.POST("/api/v1/ci-hosts", { body })),
   removeCiHost: async (id: string) => unwrap(await client.DELETE("/api/v1/ci-hosts/{host_id}", { params: { path: { host_id: id } } })),
   ciActivity: async () => unwrap(await client.GET("/api/v1/ci-hosts/activity")),

@@ -2,6 +2,7 @@ import { type Session, sessionCookie } from "./auth";
 import { authApi } from "./auth-api";
 import { type Role, ROLES } from "./permissions";
 import { getSession } from "./session";
+import type { Paged, PageQuery } from "./page";
 import type { Org } from "./types";
 import { v1 } from "./v1";
 import { slugify } from "./utils";
@@ -48,6 +49,11 @@ export type Member = { id: string; userId: string; role: string; name: string; e
 
 export async function membersOf(): Promise<Member[]> {
   return (await v1.members()).map((m) => ({ id: m.user_id, userId: m.user_id, role: m.role, name: m.name, email: m.email }));
+}
+
+export async function membersPageOf(q: PageQuery): Promise<Paged<Member>> {
+  const page = await v1.membersPage(q);
+  return { ...page, items: page.items.map((m) => ({ id: m.user_id, userId: m.user_id, role: m.role, name: m.name, email: m.email })) };
 }
 
 export type Invitation = { id: string; email: string | null; login: string | null; hostKind: string | null; teams: string[]; role: string | null; status: string; expiresAt: Date; createdAt: Date; inviter: string; emailState: string; emailError: string | null };

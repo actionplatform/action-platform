@@ -1,7 +1,7 @@
 import { client, type Schemas, unwrap } from "@/lib/api";
 
 export const projects = {
-  projects: async (organizationId: string | null = null) => unwrap(await client.GET("/api/v1/projects", { headers: organizationId ? { "X-Organization": organizationId } : {} })),
+  projects: async (organizationId: string | null = null) => unwrap(await client.GET("/api/v1/projects", { headers: organizationId ? { "X-Organization": organizationId } : {} })) as Schemas["ProjectRow"][],
   createProject: async (name: string, description = "") => unwrap(await client.POST("/api/v1/projects", { body: { name, description } })),
   deleteProject: async (id: string, repositories = false, cloud = false) =>
     unwrap(await client.DELETE("/api/v1/projects/{project_id}", { params: { path: { project_id: id }, query: { repositories, cloud } } })),

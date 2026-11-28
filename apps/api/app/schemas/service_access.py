@@ -9,6 +9,7 @@ from action_platform.providers.access.github import BranchProtection, OrgSetting
 
 __all__ = [
     "Audit",
+    "AuditPage",
     "BranchProtection",
     "GrantRequest",
     "OrgSettings",
@@ -19,6 +20,12 @@ __all__ = [
     "SyncRequest",
     "Who",
 ]
+
+
+class AuditPage(Audit):
+    total: int
+    page: int
+    per: int
 
 
 class SyncRequest(BaseModel):

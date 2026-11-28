@@ -18,7 +18,7 @@ export function PlanView({ plan }: { plan: AccessPlan }) {
           {plan.errors.map((e) => <li key={e} className="whitespace-pre-wrap break-words">{e}</li>)}
         </ul>
       )}
-      {plan.changes && plan.changes.length > 0 && <ChangeTable changes={plan.changes} />}
+      {plan.changes && plan.changes.length > 0 && <div className="p-4"><ChangeTable title="Changes" changes={plan.changes} pageKey="changes" /></div>}
     </div>
   );
 }

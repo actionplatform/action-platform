@@ -1,5 +1,7 @@
 """Code hosts connected to the organization."""
 
+from typing import Optional, Union
+
 from fastapi import APIRouter
 
 from action_platform.core.exception import ActionPlatformError
@@ -12,6 +14,7 @@ from app.api.dependencies import (
     host_row,
 )
 from app.schemas import integrations as schemas
+from app.schemas.common import Page, paged
 from app.services.templates import TemplateRepos
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
@@ -22,8 +25,10 @@ def hosts(
     org: OrgDep,
     caller: CallerDep,
     writes: IntegrationsDep,
-) -> list[schemas.HostRow]:
-    return [host_row(h) for h in writes.hosts_of(org.id)]
+    page: Optional[int] = None,
+    per: int = 10,
+) -> Union[list[schemas.HostRow], Page[schemas.HostRow]]:
+    return paged([host_row(h) for h in writes.hosts_of(org.id)], page, per)
 
 
 @router.post("/hosts", status_code=201)

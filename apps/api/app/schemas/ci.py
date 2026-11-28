@@ -206,6 +206,12 @@ class CiActivity(BaseModel):
     hosts: list[CiHostActivity]
 
 
+class CiActivityPage(CiActivity):
+    total: int
+    page: int
+    per: int
+
+
 class CiDeployRun(BaseModel):
     target: str
     run: CiPipelineRun

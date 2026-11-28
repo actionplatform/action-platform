@@ -71,6 +71,23 @@ class ServiceAccessApiTest(GateCase):
             [("vault", False, "vault: set token")],
         )
 
+    def test_the_audit_keeps_its_shape_and_pages_the_services_on_request(self):
+        self.configure({"url": "https://v.test"})
+
+        audit = self.client.get("/api/v1/access/audit", headers=self.h()).json()
+        paged = self.client.get(
+            "/api/v1/access/audit?page=1&per=1", headers=self.h()
+        ).json()
+        beyond = self.client.get(
+            "/api/v1/access/audit?page=2&per=1", headers=self.h()
+        ).json()
+
+        self.assertNotIn("total", audit)
+        self.assertEqual((paged["total"], paged["page"], paged["per"]), (1, 1, 1))
+        self.assertEqual(paged["services"], audit["services"])
+        self.assertEqual(beyond["services"], [])
+        self.assertEqual(paged["organization_members"], audit["organization_members"])
+
     def test_first_sync_imports_with_the_sealed_secret_and_changes_nothing(self):
         self.configure({"url": "https://v.test", "token": "tok-1"})
 

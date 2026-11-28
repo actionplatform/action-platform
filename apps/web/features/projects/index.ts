@@ -10,7 +10,7 @@ export { SourceCard } from "./source-card";
 export { PendingChangesBanner, SummaryGrid } from "./summary-grid";
 export { Wizard } from "./wizard/wizard";
 export { AddForm } from "./apps/add-form";
-export { AppCards } from "./apps/app-cards";
+export { AppsTable } from "./apps/apps-table";
 export { RemoveButton } from "./apps/remove-button";
 export { LiveList } from "./apps/live-list";
 export { NewProjectDialog, NewProjectForm } from "./list/new-project-form";
