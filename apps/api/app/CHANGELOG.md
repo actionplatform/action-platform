@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.49.0 — 2026-11-28
+
+### Features
+- **sync:** build the snapshot from the host instead of a clone (#705)
+- **flow:** the git-flow audit from the host, without a clone (#704)
+- **source:** tags with their dates, and commits touching a path (#702)
+- **source:** read a repository from its host without a clone (#698)
+
 ## v0.48.0 — 2026-11-28
 
 ### Features
