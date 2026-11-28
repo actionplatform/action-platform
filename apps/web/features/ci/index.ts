@@ -5,4 +5,3 @@ export { PipelinesTable } from "./pipelines-table";
 export { RunBadge, RunIcon } from "./run-badge";
 export { RunCiButton } from "./run-ci-button";
 export { RunView, type RunTab } from "./run-view";
-export { RunsTable } from "./runs-table";
