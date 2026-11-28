@@ -90,7 +90,7 @@ def diagnose(target: str | None = TARGET, stage: str | None = STAGE) -> None:
 
 
 def scopes() -> None:
-    """Where this repository's releases are deployed: `[[scopes]]`, or the `[deploy]` targets read as scopes."""
+    """Where this repository's releases are deployed, from `[[scopes]]`; none means it does not deploy."""
     config = Config.from_toml(Path.cwd() / CONFIG_FILE)
 
     for scope in config.scopes:
