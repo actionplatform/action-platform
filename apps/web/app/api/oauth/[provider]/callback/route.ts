@@ -44,7 +44,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ provider: strin
     return Response.json({ detail: (e as Error).message }, { status: 400 });
   }
 
-  const target = new URL(safePath(finished.return_to, "/settings"), publicOrigin(req.headers));
+  const target = new URL(safePath(finished.return_to, "/connect/git"), publicOrigin(req.headers));
   for (const [k, v] of Object.entries(finished.query)) target.searchParams.set(k, v);
   redirect(target.pathname + target.search);
 }

@@ -1,10 +1,5 @@
-import { ciActivityOf } from "@/lib/ci";
-import { requireOrg } from "@/lib/session";
-import { CiActivityView } from "@/features/ci";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default async function CiActivityPage() {
-  await requireOrg();
-  return <CiActivityView hosts={await ciActivityOf()} />;
+export default function CiActivityPage() {
+  redirect("/connect/ci?tab=activity");
 }

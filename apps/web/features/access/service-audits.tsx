@@ -32,7 +32,7 @@ function ServiceCard({ row }: { row: ServiceAuditRow }) {
         {row.error && (
           <div className="rounded-md border border-status-bad/30 bg-status-bad/5 px-3 py-2 text-status-bad">
             <p className="whitespace-pre-wrap break-words">{row.error}</p>
-            {needsConnection(row.error) && <Link href="/settings" className="mt-1 inline-block font-medium underline">Open Settings to connect it</Link>}
+            {needsConnection(row.error) && <Link href="/connect/git" className="mt-1 inline-block font-medium underline">Open Git to connect it</Link>}
           </div>
         )}
         {row.ok && !row.imported && <p className="text-secondary">Not imported yet: no drift is reported until a sync imports what this service holds today.</p>}
