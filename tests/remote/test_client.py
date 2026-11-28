@@ -281,7 +281,7 @@ class RemoteClientTest(TempCase):
         self.assertEqual(
             calls,
             [
-                ("POST", "apps/a1/deploy"),
+                ("POST", "projects/-/apps/a1/deploy"),
                 ("GET", "jobs/j1"),
                 ("GET", "jobs/j1"),
                 ("GET", "jobs/j1"),
@@ -338,7 +338,7 @@ class RemoteClientTest(TempCase):
         )
 
         self.assertEqual((preview.next, preview.dry_run), ("1.1.0", False))
-        self.assertEqual(calls[0], ("POST", "apps/a1/release"))
+        self.assertEqual(calls[0], ("POST", "projects/-/apps/a1/release"))
 
     def test_a_sync_runs_as_a_job_and_answers_the_entry(self):
         calls = self.followed(
@@ -356,14 +356,18 @@ class RemoteClientTest(TempCase):
         entry = client.Remote("https://p.example", "tok").sync_app("a1")
 
         self.assertEqual(entry.id, "a1")
-        self.assertEqual(calls, [("POST", "apps/a1/sync"), ("GET", "jobs/j1")])
+        self.assertEqual(
+            calls, [("POST", "projects/-/apps/a1/sync"), ("GET", "jobs/j1")]
+        )
 
     def test_calls_v1_with_bearer(self):
         remote = client.Remote("https://p.example", "tok")
 
         remote.release("p1", "minor")
         self.assertEqual(self.seen["method"], "POST")
-        self.assertEqual(self.seen["url"], "https://p.example/api/v1/apps/p1/release")
+        self.assertEqual(
+            self.seen["url"], "https://p.example/api/v1/projects/-/apps/p1/release"
+        )
         self.assertEqual(
             self.seen["body"],
             {"level": "minor", "dry_run": True, "branch": None, "component": None},
@@ -377,7 +381,8 @@ class RemoteClientTest(TempCase):
 
         remote.commits("p1", limit=5)
         self.assertEqual(
-            self.seen["url"], "https://p.example/api/v1/apps/p1/commits?limit=5"
+            self.seen["url"],
+            "https://p.example/api/v1/projects/-/apps/p1/commits?limit=5",
         )
 
         remote.write_manifest("p1", "[project]\n")
@@ -505,7 +510,9 @@ class RemoteClientTest(TempCase):
         self.answer = {}
         remote.set_cloud("p1", "docker")
         self.assertEqual(self.seen["method"], "PUT")
-        self.assertEqual(self.seen["url"], "https://p.example/api/v1/apps/p1/cloud")
+        self.assertEqual(
+            self.seen["url"], "https://p.example/api/v1/projects/-/apps/p1/cloud"
+        )
 
     def test_github_checks_reach_the_access_routes(self):
         remote = client.Remote("https://p.example", "tok")

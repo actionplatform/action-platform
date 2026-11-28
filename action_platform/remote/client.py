@@ -223,7 +223,8 @@ class Remote:
 
     def apps(self, organization: Optional[str] = None) -> list[AppRow]:
         return _as(
-            list[AppRow], self._call("GET", "apps", None, organization=organization)
+            list[AppRow],
+            self._call("GET", "projects/-/apps", None, organization=organization),
         )
 
     def add_app(
@@ -284,22 +285,27 @@ class Remote:
         self, id: str, wait: float = JOB_WAIT_SECONDS
     ) -> Union[AppEntry, JobQueued]:
         """The sync runs as a job on the platform's worker, followed until it ends or `wait` seconds pass."""
-        return self._followed(self._queue(f"apps/{id}/sync", {}), AppEntry, wait)
+        return self._followed(
+            self._queue(f"projects/-/apps/{id}/sync", {}), AppEntry, wait
+        )
 
     def app(self, id: str) -> AppDetail:
-        return _as(AppDetail, self._call("GET", f"apps/{id}"))
+        return _as(AppDetail, self._call("GET", f"projects/-/apps/{id}"))
 
     def gitflow(self, id: str) -> GitflowReport:
-        return _as(GitflowReport, self._call("GET", f"apps/{id}/gitflow"))
+        return _as(GitflowReport, self._call("GET", f"projects/-/apps/{id}/gitflow"))
 
     def commits(self, id: str, limit: int = 20) -> list[Commit]:
-        return _as(list[Commit], self._call("GET", f"apps/{id}/commits", limit=limit))
+        return _as(
+            list[Commit],
+            self._call("GET", f"projects/-/apps/{id}/commits", limit=limit),
+        )
 
     def branches(self, id: str) -> list[BranchRow]:
-        return _as(list[BranchRow], self._call("GET", f"apps/{id}/branches"))
+        return _as(list[BranchRow], self._call("GET", f"projects/-/apps/{id}/branches"))
 
     def tags(self, id: str) -> list[str]:
-        return _as(list[str], self._call("GET", f"apps/{id}/tags"))
+        return _as(list[str], self._call("GET", f"projects/-/apps/{id}/tags"))
 
     def release(
         self,
@@ -319,14 +325,19 @@ class Remote:
         }
 
         if dry_run:
-            return _as(ReleasePreview, self._call("POST", f"apps/{id}/release", body))
+            return _as(
+                ReleasePreview,
+                self._call("POST", f"projects/-/apps/{id}/release", body),
+            )
 
         return self._followed(
-            self._queue(f"apps/{id}/release", body), ReleasePreview, wait
+            self._queue(f"projects/-/apps/{id}/release", body), ReleasePreview, wait
         )
 
     def releases(self, id: str) -> list[ReleaseRow]:
-        return _as(list[ReleaseRow], self._call("GET", f"apps/{id}/releases"))
+        return _as(
+            list[ReleaseRow], self._call("GET", f"projects/-/apps/{id}/versions")
+        )
 
     def start_branch(
         self, id: str, kind: str, code: str, slug: Optional[str], push: bool
@@ -335,14 +346,15 @@ class Remote:
             BranchStarted,
             self._call(
                 "POST",
-                f"apps/{id}/branches",
+                f"projects/-/apps/{id}/branches",
                 {"kind": kind, "code": code, "slug": slug, "push": push},
             ),
         )
 
     def checkout(self, id: str, branch: str) -> AppEntry:
         return _as(
-            AppEntry, self._call("POST", f"apps/{id}/checkout", {"branch": branch})
+            AppEntry,
+            self._call("POST", f"projects/-/apps/{id}/checkout", {"branch": branch}),
         )
 
     def propose_pr(
@@ -350,7 +362,9 @@ class Remote:
     ) -> PullRequestPlan:
         return _as(
             PullRequestPlan,
-            self._call("GET", f"apps/{id}/pull-request", base=base, title=title),
+            self._call(
+                "GET", f"projects/-/apps/{id}/pull-request", base=base, title=title
+            ),
         )
 
     def open_pr(
@@ -365,18 +379,18 @@ class Remote:
             PullRequestOpened,
             self._call(
                 "POST",
-                f"apps/{id}/pull-request",
+                f"projects/-/apps/{id}/pull-request",
                 {"base": base, "title": title, "body": body, "draft": draft},
             ),
         )
 
     def manifest(self, id: str) -> ManifestText:
-        return _as(ManifestText, self._call("GET", f"apps/{id}/manifest"))
+        return _as(ManifestText, self._call("GET", f"projects/-/apps/{id}/manifest"))
 
     def write_manifest(self, id: str, content: str) -> ConfigurationChanged:
         return _as(
             ConfigurationChanged,
-            self._call("PUT", f"apps/{id}/manifest", {"content": content}),
+            self._call("PUT", f"projects/-/apps/{id}/manifest", {"content": content}),
         )
 
     def set_cloud(
@@ -384,7 +398,11 @@ class Remote:
     ) -> ConfigurationChanged:
         return _as(
             ConfigurationChanged,
-            self._call("PUT", f"apps/{id}/cloud", {"target": target, "source": source}),
+            self._call(
+                "PUT",
+                f"projects/-/apps/{id}/cloud",
+                {"target": target, "source": source},
+            ),
         )
 
     def add_service(
@@ -398,7 +416,7 @@ class Remote:
             ConfigurationChanged,
             self._call(
                 "POST",
-                f"apps/{id}/services",
+                f"projects/-/apps/{id}/services",
                 {"name": name, "provider": provider, "source": source},
             ),
         )
@@ -415,7 +433,7 @@ class Remote:
             Committed,
             self._call(
                 "POST",
-                f"apps/{id}/commit",
+                f"projects/-/apps/{id}/commit",
                 {
                     "message": message,
                     "push": push,
@@ -447,7 +465,7 @@ class Remote:
                 list[DeployResult],
                 self._call(
                     "POST",
-                    f"apps/{id}/deploy",
+                    f"projects/-/apps/{id}/deploy",
                     {"stage": stage, "dry_run": True, "version": version},
                 ),
             )
@@ -461,7 +479,7 @@ class Remote:
     ) -> JobQueued:
         """The deploy as a job on the platform's worker; follow it with `job` and `job_logs`."""
         return self._queue(
-            f"apps/{id}/deploy",
+            f"projects/-/apps/{id}/deploy",
             {"stage": stage, "dry_run": False, "version": version},
         )
 
@@ -500,7 +518,8 @@ class Remote:
 
     def diagnose(self, id: str, stage: Optional[str] = None) -> list[Diagnosis]:
         return _as(
-            list[Diagnosis], self._call("GET", f"apps/{id}/diagnose", stage=stage)
+            list[Diagnosis],
+            self._call("GET", f"projects/-/apps/{id}/diagnose", stage=stage),
         )
 
     def job(self, id: str) -> Job:
