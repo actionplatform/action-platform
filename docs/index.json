@@ -3,47 +3,75 @@
   "source": "https://github.com/actionplatform/action-platform/tree/master/docs",
   "groups": [
     {
-      "title": "Start",
+      "title": "Getting Started",
       "pages": [
-        { "slug": "start_getting_started", "title": "Getting started" },
-        { "slug": "start_self_hosting", "title": "Self-hosting" },
-        { "slug": "start_operations", "title": "Operations" },
-        { "slug": "start_troubleshooting", "title": "Troubleshooting" }
+        { "slug": "start_introduction", "title": "Introduction", "description": "Action Platform creates projects from templates, enforces git-flow, cuts versioned releases and deploys them to your cloud, from a web app, a CLI or MCP." },
+        { "slug": "start_why", "title": "Why Action Platform", "description": "Open source and self-hosted, deploys that always ship a tagged release, git-flow enforced in three places, AWS deploys without access keys." },
+        { "slug": "start_concepts", "title": "Core concepts", "description": "Organization, team, project, app, template, manifest, git-flow, release, scope, deploy target, deployment, readiness, job and plugin, and how they relate." },
+        { "slug": "start_getting_started", "title": "Quickstart", "description": "Install the Action Platform CLI, create a project from a template, open a pull request through git-flow and cut a first release in minutes." }
       ]
     },
     {
-      "title": "Use",
+      "title": "Platform",
       "pages": [
-        { "slug": "use_adopting", "title": "Adopting repositories" },
-        { "slug": "use_web", "title": "Web" },
-        { "slug": "use_cli", "title": "CLI" },
-        { "slug": "use_mcp", "title": "MCP" },
-        { "slug": "use_api", "title": "API" },
-        { "slug": "use_plugins", "title": "Plugins" }
+        { "slug": "concept_templates", "title": "Templates", "description": "Project types, stacks and templates, cloud overlays and services, and how an organization adds its own template repositories." },
+        { "slug": "concept_git_flow", "title": "Git-flow", "description": "Branch kinds, base branches, pull request targets and Conventional Commits, enforced by git hooks, CI and branch protection on the code host." },
+        { "slug": "concept_releases", "title": "Releases", "description": "How a release is cut: version from LAST_VERSION, release candidates, changelog from Conventional Commits, tag and host release, per component." },
+        { "slug": "concept_scopes", "title": "Scopes", "description": "Scopes are the named destinations of an app. Their criticality decides which release candidates, stable releases and hotfixes they accept." },
+        { "slug": "concept_deployments", "title": "Deployments", "description": "Deploy targets and executors, readiness checks, preflight, deploy jobs, verification at the destination, history, rollback and tear-down." },
+        { "slug": "concept_identity", "title": "Cloud identity", "description": "The platform as an OpenID Connect issuer: short-lived tokens per app that AWS trusts, so deploys need no stored access keys." },
+        { "slug": "concept_access_control", "title": "Access control", "description": "Roles, permissions, token scopes and reach in Action Platform, and the commit identity the platform uses." },
+        { "slug": "concept_service_access", "title": "Service access", "description": "Keep access on GitHub and other services in line with platform roles and teams: audit, grant, revoke, offboard and sync." },
+        { "slug": "concept_observability", "title": "Observability", "description": "Instance health, worker heartbeats and Sentry error reporting for the API, web app, CLI and MCP server." },
+        { "slug": "use_plugins", "title": "Plugins", "description": "What an Action Platform plugin adds or replaces, its options per organization, the plugin index and how the hosted platform bundles plugins." }
       ]
     },
     {
-      "title": "Concept",
+      "title": "Use Cases",
       "pages": [
-        { "slug": "concept_access_control", "title": "Access control" },
-        { "slug": "concept_service_access", "title": "Service access" },
-        { "slug": "concept_git_flow", "title": "Git-flow" },
-        { "slug": "concept_manifest", "title": "Manifest" },
-        { "slug": "concept_templates", "title": "Templates" },
-        { "slug": "concept_releases", "title": "Releases" },
-        { "slug": "concept_deployments", "title": "Deployments" },
-        { "slug": "concept_scopes", "title": "Scopes" },
-        { "slug": "concept_identity", "title": "Identity" },
-        { "slug": "concept_observability", "title": "Observability" },
-        { "slug": "concept_database", "title": "Database" }
+        { "slug": "usecase_scaffolding", "title": "Project scaffolding", "description": "Start every service, library or job from the same tested template with tests, lint, CI and deploy files in place." },
+        { "slug": "usecase_standards", "title": "Development standards", "description": "Enforce one git-flow and Conventional Commits across every repository with git hooks, CI checks and branch protection." },
+        { "slug": "usecase_delivery", "title": "Delivery automation", "description": "From merged work to a versioned release, readiness checks, a deploy and verification at the destination." },
+        { "slug": "usecase_self_service", "title": "Self-service deployments", "description": "Let developers and AI agents deploy within roles, scopes and readiness checks, with no cloud credentials to hand out." },
+        { "slug": "usecase_platform_engineering", "title": "Platform engineering", "description": "Run a self-hosted internal developer platform with your templates, deploy targets, access rules and existing repositories." }
+      ]
+    },
+    {
+      "title": "Guides",
+      "pages": [
+        { "slug": "guide_first_deploy", "title": "Deploy from the web", "description": "Step by step from a fresh Action Platform instance to a verified deployment: code host, app, deploy target, scopes, release, deploy." },
+        { "slug": "guide_aws_lambda", "title": "Deploy to AWS Lambda", "description": "Connect an AWS account with an IAM-only stack, apply the aws/lambda overlay and deploy web apps without access keys." },
+        { "slug": "guide_custom_templates", "title": "Add your own templates", "description": "Register a plain repository or a template catalog with index.json as templates for your organization." },
+        { "slug": "use_adopting", "title": "Adopting repositories", "description": "Bring existing repositories onto Action Platform: import, install the platform files, keep their CI, tags and deploy history." },
+        { "slug": "start_self_hosting", "title": "Self-hosting", "description": "Install Action Platform with one command or on Dokploy: services, environment variables, first run, backups and upgrades." },
+        { "slug": "start_operations", "title": "Operations", "description": "Run an Action Platform instance: what holds state, backups, restore into a fresh host, losing and rotating secrets." }
+      ]
+    },
+    {
+      "title": "Reference",
+      "pages": [
+        { "slug": "concept_manifest", "title": "platform.toml", "description": "Every table and key of platform.toml: project, source host, release, deploy targets, scopes, services, components and branch protection." },
+        { "slug": "use_cli", "title": "CLI", "description": "Every action-platform command, its flags and the environment variables it reads." },
+        { "slug": "use_web", "title": "Web app", "description": "Every screen of the Action Platform web app: setup, projects, apps, releases, scopes, deployments, pipelines, connections, team and settings." },
+        { "slug": "use_mcp", "title": "MCP", "description": "The Action Platform MCP server for AI agents: local and remote tools, prompts, skills and the rules the server states." },
+        { "slug": "use_api", "title": "API", "description": "The JSON API behind the Action Platform web app: authentication, routes, jobs, webhooks, readiness and errors." },
+        { "slug": "reference_security", "title": "Security", "description": "How Action Platform authenticates people and programs, seals secrets, verifies webhooks and reaches the cloud without stored keys." },
+        { "slug": "concept_database", "title": "Database", "description": "The Postgres database the API owns: connecting, migrations, adopting an existing schema, tables and the job queue." },
+        { "slug": "contribute_architecture", "title": "Architecture", "description": "Packages, contexts and layers of Action Platform, how a call passes the gate, how a deploy runs end to end and how credentials travel." }
       ]
     },
     {
       "title": "Contribute",
       "pages": [
-        { "slug": "contribute_architecture", "title": "Architecture" },
-        { "slug": "contribute_development", "title": "Development" },
-        { "slug": "contribute_plugins", "title": "Writing a plugin" }
+        { "slug": "contribute_development", "title": "Development", "description": "Run Action Platform locally, run the tests, regenerate the API client, and how this repository releases itself." },
+        { "slug": "contribute_plugins", "title": "Writing a plugin", "description": "Write an Action Platform plugin: the package, the class, providers, options, access providers and the rules of the official index." }
+      ]
+    },
+    {
+      "title": "Resources",
+      "pages": [
+        { "slug": "start_troubleshooting", "title": "Troubleshooting", "description": "What each message the platform refuses with means and what to do: releases, deploys, git hosts, git-flow, access, self-hosting." },
+        { "slug": "resource_glossary", "title": "Glossary", "description": "Short definitions of every Action Platform term, from app and scope to readiness, executor and connected account." }
       ]
     }
   ]
