@@ -14,6 +14,8 @@ import { LiveLog } from "@/features/jobs";
 import { startDeploy } from "./actions";
 import { canRedeploy, elapsed, errorOf, releaseTag, rowsOf, statusOf, typeOf, versionOf, when } from "./job-state";
 import { summarize } from "./run-alert";
+import { RolloutPanel, type RolloutView } from "./rollout-panel";
+import { ACTIVE_STATES, STATE_LABELS, STATE_TONES } from "./strategies";
 
 function Field({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   return (
@@ -101,17 +103,18 @@ function Results({ rows }: { rows: DeployResult[] }) {
   );
 }
 
-export function DeploymentView({ job, base, projectId, registryId, canDeploy, children }: { job: JobRow; base: string; projectId: string; registryId: string; canDeploy: boolean; children?: ReactNode }) {
+export function DeploymentView({ job, base, projectId, appId, registryId, canDeploy, rollouts = [], children }: { job: JobRow; base: string; projectId: string; appId: string; registryId: string; canDeploy: boolean; rollouts?: RolloutView[]; children?: ReactNode }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const rows = rowsOf(job);
-  const status = statusOf(job);
+  const headline = rollouts.find((r) => ACTIVE_STATES.includes(r.status)) ?? rollouts[0] ?? null;
+  const status = headline ? { tone: STATE_TONES[headline.status] ?? "neutral", label: STATE_LABELS[headline.status] ?? headline.status } : statusOf(job);
   const failure = errorOf(job);
   const kind = typeOf(job);
   const version = versionOf(job);
-  const live = job.status === "queued" || job.status === "running";
+  const live = job.status === "queued" || job.status === "running" || rollouts.some((r) => ACTIVE_STATES.includes(r.status));
   const first = rows[0] ?? null;
 
   useEffect(() => {
@@ -161,6 +164,7 @@ export function DeploymentView({ job, base, projectId, registryId, canDeploy, ch
           {first?.url && !failure && <Endpoint url={first.url} />}
         </PanelBody>
       </Panel>
+      {rollouts.map((r) => <RolloutPanel key={r.id} projectId={projectId} appId={appId} rollout={r} canDeploy={canDeploy} />)}
       {rows.length > 0 && <Results rows={rows} />}
       {children}
       <Panel>

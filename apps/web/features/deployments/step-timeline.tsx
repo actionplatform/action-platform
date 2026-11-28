@@ -26,12 +26,14 @@ function timing(step: DeploymentStep): string | null {
 function Row({ step }: { step: DeploymentStep }) {
   const [open, setOpen] = useState(false);
   const tone = stepTone(step.status);
-  const idle = step.status === "pending" || step.status === "queued";
+  const idle = step.status === "pending";
   const { icon: Icon, className, spin } = idle ? { icon: CircleDashed, className: "border-border text-muted-foreground", spin: false } : ICONS[tone];
   const weight = stepWeight(step);
   const note = stepDetail(step);
   const time = timing(step);
-  const expandable = !!step.detail || (!!step.data && Object.keys(step.data).length > 0);
+  const detail = step.result?.detail || null;
+  const data = step.result?.data ?? null;
+  const expandable = !!detail || (!!data && Object.keys(data).length > 0);
 
   return (
     <li className="relative pl-9" data-status={step.status}>
@@ -50,8 +52,8 @@ function Row({ step }: { step: DeploymentStep }) {
       </button>
       {open && expandable && (
         <div className="mb-2 ml-2 space-y-2 rounded-md border border-border bg-background p-3 text-[13px]">
-          {step.detail && <p className="whitespace-pre-wrap break-words font-mono text-xs leading-5 text-secondary">{step.detail}</p>}
-          {step.data && Object.keys(step.data).length > 0 && <pre className="overflow-auto font-mono text-xs leading-5 text-secondary">{JSON.stringify(step.data, null, 2)}</pre>}
+          {detail && <p className="whitespace-pre-wrap break-words font-mono text-xs leading-5 text-secondary">{detail}</p>}
+          {data && Object.keys(data).length > 0 && <pre className="overflow-auto font-mono text-xs leading-5 text-secondary">{JSON.stringify(data, null, 2)}</pre>}
         </div>
       )}
     </li>
@@ -62,7 +64,7 @@ export function StepTimeline({ steps }: { steps: DeploymentStep[] }) {
   if (steps.length === 0) return <p className="text-[13px] text-secondary">No steps recorded yet.</p>;
   return (
     <ol aria-label="Deployment steps" className="space-y-0.5">
-      {steps.map((s) => <Row key={s.index} step={s} />)}
+      {steps.map((s) => <Row key={s.id} step={s} />)}
     </ol>
   );
 }

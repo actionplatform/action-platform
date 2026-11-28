@@ -8,6 +8,7 @@ import { type CiDeployRun, type PipelineRunDetail, deployRunsOf, pipelineRunOf }
 import { v1 } from "@/lib/v1";
 import { RunView } from "@/features/ci";
 import { DeploymentView } from "@/features/deployments";
+import { rolloutsOf } from "@/features/deployments/load";
 import { loadApp } from "@/features/projects/load";
 
 type Found = { run: CiDeployRun; detail: PipelineRunDetail | null; error: string | null };
@@ -44,11 +45,11 @@ export default async function DeploymentPage({ params }: { params: Promise<{ pro
   });
   if (job.app_id !== view.appId || (job.kind !== "deploy" && job.kind !== "destroy")) notFound();
   const base = appPath(view.projectId, view.appId, "");
-  const ci = await ciRunsOf(view.projectId, view.appId, job);
+  const [ci, rollouts] = await Promise.all([ciRunsOf(view.projectId, view.appId, job), rolloutsOf(view.projectId, view.appId, job.id)]);
   return (
     <div className="space-y-4">
       <Link href={appPath(view.projectId, view.appId, "deployments")} className="inline-flex items-center gap-1.5 text-[13px] text-secondary hover:text-foreground"><ArrowLeft className="size-3.5" strokeWidth={1.75} /> Deployments</Link>
-      <DeploymentView job={job} base={base} projectId={view.projectId} registryId={view.registryId} canDeploy={!!view.can["app.release"] && !!view.repositoryUrl}>
+      <DeploymentView job={job} base={base} projectId={view.projectId} appId={view.appId} rollouts={rollouts} registryId={view.registryId} canDeploy={!!view.can["app.release"] && !!view.repositoryUrl}>
         {ci.error && <Panel><PanelBody className="text-[13px] text-secondary">CI run: {ci.error}</PanelBody></Panel>}
         {ci.runs.map(({ run, detail, error }) => (
           <section key={`${run.run.job}#${run.run.number}`} aria-label={`CI run of ${run.target}`} className="space-y-2">

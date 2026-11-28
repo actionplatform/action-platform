@@ -12,20 +12,20 @@ export type JsonSchema = {
 };
 
 export type StrategyDef = { id: string; label: string; description: string; config_schema: JsonSchema; needs?: string[] };
-export type StrategySupport = { id: string; supported: boolean; reason?: string | null };
+export type StrategySupport = { id: string; supported: boolean; reason?: string | null; native?: boolean; missing?: string[] };
 export type Safety = { auto_rollback: boolean; manual_approval: boolean; bake_seconds: number };
 export type Config = Record<string, unknown>;
 export type CanaryStep = { weight: number; pause_seconds: number };
 
 export type DeploymentStep = {
-  index: number;
+  id: string;
+  position: number;
   kind: string;
   status: string;
   params?: Record<string, unknown> | null;
-  detail?: string | null;
   started_at?: string | null;
   finished_at?: string | null;
-  data?: Record<string, unknown> | null;
+  result?: { ok?: boolean; detail?: string; data?: Record<string, unknown> } | null;
 };
 
 export const DEFAULT_STRATEGY = "recreate";
@@ -138,11 +138,10 @@ export function stepWeight(step: DeploymentStep): number | null {
 export type StepTone = "done" | "active" | "failed" | "waiting" | "skipped";
 
 export function stepTone(status: string): StepTone {
-  if (["succeeded", "done", "ok", "completed"].includes(status)) return "done";
-  if (["running", "in_progress", "rolling_back"].includes(status)) return "active";
-  if (["failed", "error", "rolled_back"].includes(status)) return "failed";
-  if (["paused", "awaiting_approval"].includes(status)) return "waiting";
-  if (["skipped", "aborted", "cancelled"].includes(status)) return "skipped";
+  if (status === "succeeded") return "done";
+  if (status === "running") return "active";
+  if (status === "failed") return "failed";
+  if (status === "waiting") return "waiting";
   return "skipped";
 }
 
@@ -166,38 +165,65 @@ export function currentWeight(steps: DeploymentStep[]): number | null {
   return found;
 }
 
-export const ACTIVE_STATES = ["queued", "running", "paused", "awaiting_approval", "rolling_back"];
+export const ACTIVE_STATES = ["running", "paused", "awaiting_approval", "rolling_back"];
 
 export const STATE_TONES: Record<string, "danger" | "warning" | "success" | "neutral" | "info"> = {
-  queued: "neutral",
   running: "warning",
   paused: "info",
   awaiting_approval: "info",
   rolling_back: "warning",
   rolled_back: "danger",
   aborted: "neutral",
-  failed: "danger",
-  done: "success",
-  succeeded: "success",
+  failure: "danger",
+  success: "success",
+  verified: "success",
 };
 
 export const STATE_LABELS: Record<string, string> = {
+  running: "Running",
   paused: "Paused",
   awaiting_approval: "Awaiting approval",
   rolling_back: "Rolling back",
   rolled_back: "Rolled back",
   aborted: "Aborted",
+  failure: "Failed",
+  success: "Successful",
+  verified: "Verified",
 };
 
 export type Control = "promote" | "pause" | "resume" | "abort";
 
-export function controlsFor(state: string, canDeploy: boolean): Control[] {
+export function controlsFor(state: string, canDeploy: boolean, steps: DeploymentStep[] = []): Control[] {
   if (!canDeploy) return [];
+  const waiting = steps.some((s) => s.status === "waiting");
   switch (state) {
-    case "running": return ["pause", "abort"];
-    case "paused": return ["resume", "promote", "abort"];
-    case "awaiting_approval": return ["promote", "abort"];
-    case "rolling_back": return [];
+    case "running": return waiting ? ["promote", "pause", "abort"] : ["pause", "abort"];
+    case "awaiting_approval": return ["promote", "pause", "abort"];
+    case "paused": return ["resume", "abort"];
     default: return [];
   }
+}
+
+export function configError(schema: JsonSchema | undefined, config: Config): string | null {
+  for (const [name, spec] of Object.entries(schema?.properties ?? {})) {
+    const value = config[name];
+    if (spec.type === "array" && name === "steps") {
+      const found = canaryError((value as CanaryStep[]) ?? []);
+      if (found) return found;
+    } else if (spec.type === "integer" || spec.type === "number") {
+      if (typeof value !== "number" || !Number.isFinite(value)) return `${name.replace(/_/g, " ")} needs a number.`;
+      if (spec.minimum !== undefined && value < spec.minimum) return `${name.replace(/_/g, " ")} must be at least ${spec.minimum}.`;
+      if (spec.maximum !== undefined && value > spec.maximum) return `${name.replace(/_/g, " ")} must be at most ${spec.maximum}.`;
+    }
+  }
+  return null;
+}
+
+export function safetyError(safety: Safety): string | null {
+  return Number.isInteger(safety.bake_seconds) && safety.bake_seconds >= 0 ? null : "Bake time must be zero or more seconds.";
+}
+
+export function rolloutOf(strategy: string, config: Config, safety: Safety, defaults: Safety): { strategy?: string; strategy_config?: Config; safety?: Safety } {
+  const plain = strategy === DEFAULT_STRATEGY && safety.auto_rollback === defaults.auto_rollback && safety.manual_approval === defaults.manual_approval && safety.bake_seconds === defaults.bake_seconds;
+  return plain ? {} : { strategy, strategy_config: config, safety };
 }

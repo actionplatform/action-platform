@@ -1,6 +1,7 @@
 import { v1 } from "@/lib/v1";
 import { pageQuery } from "@/lib/page";
 import { DeploymentsTable } from "@/features/deployments";
+import { runRolloutsOf } from "@/features/deployments/load";
 import { loadApp } from "@/features/projects/load";
 
 export default async function DeploymentsPage({ params, searchParams }: { params: Promise<{ project: string; app: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -11,6 +12,7 @@ export default async function DeploymentsPage({ params, searchParams }: { params
   const { view } = loaded;
   const base = `/projects/${view.projectId}/apps/${view.appId}`;
   const jobs = await v1.jobsPage(view.registryId, "deploy,destroy", page, per).catch(() => ({ items: [], total: 0, page, per }));
+  const rollouts = await runRolloutsOf(view.projectId, view.appId);
   const canDeploy = !!view.can["app.release"] && !!view.repositoryUrl;
-  return <DeploymentsTable page={jobs} projectId={view.projectId} registryId={view.registryId} canDeploy={canDeploy} base={base} newHref={`${base}/deployments/new`} />;
+  return <DeploymentsTable page={jobs} projectId={view.projectId} registryId={view.registryId} canDeploy={canDeploy} base={base} newHref={`${base}/deployments/new`} rollouts={rollouts} />;
 }
