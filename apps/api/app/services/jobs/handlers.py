@@ -53,7 +53,6 @@ from app.repositories.scopes import ScopeStore
 from app.services.jobs.queue import MAX_ATTEMPTS, JobQueue
 from app.services.workspace.snapshot import SnapshotService
 from app.services.workspace import git_auth as auth
-from app.services.workspace.state import GitStateService
 from app.services.workspace.app_context import AppContext
 from app.services.protection import ProtectionService, ProtectionSweep
 from app.core.db.models import AppProtection
@@ -535,7 +534,9 @@ class JobHandlers:
                 payload["organization_id"], app.source_host_id
             )
             try:
-                tags = GitStateService(self.registry).releases(payload["registry_id"])
+                tags = SnapshotService(self.registry, self.configs).releases(
+                    payload["registry_id"]
+                )
             except ActionPlatformError:
                 tags = []
 
