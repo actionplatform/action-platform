@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.43.0 — 2026-11-28
+
+### Features
+- **deploy:** choose a strategy when deploying, configure it, and follow its steps with promote, pause, resume and abort (#761)
+
+### Bug Fixes
+- **auth:** "All organizations" on the device approval page grants every organization (#766)
+
 ## v0.42.2 — 2026-11-28
 
 ### Bug Fixes
