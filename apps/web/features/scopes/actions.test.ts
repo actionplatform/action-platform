@@ -47,8 +47,8 @@ describe("updateScope", () => {
 
 describe("deleteScope", () => {
   it("deletes by name and refreshes the project", async () => {
-    v1.deleteScope.mockResolvedValue(scopes);
-    expect(await deleteScope("p1", "a1", "prod")).toEqual({ ok: true, data: scopes });
+    v1.deleteScope.mockResolvedValue(undefined);
+    expect(await deleteScope("p1", "a1", "prod")).toEqual({ ok: true, data: null });
     expect(v1.deleteScope).toHaveBeenCalledWith("p1", "a1", "prod");
     expect(refreshProject).toHaveBeenCalledWith("p1");
   });
