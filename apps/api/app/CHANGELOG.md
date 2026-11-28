@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.48.0 — 2026-11-28
+
+### Features
+- **github:** set the webhook secret of an existing GitHub App (#695)
+- **github:** the platform's GitHub App delivers webhooks from the start (#693)
+- **github:** the App returns to the platform when an installation changes (#692)
+
 ## v0.47.1 — 2026-11-28
 
 ### Chores
