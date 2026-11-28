@@ -20,7 +20,7 @@ Sentry reports what went wrong; the instance also answers whether it is able to 
 - **`POST /api/v1/instance/test-email`** — owners only. Sends a message to the signed-in owner and answers `{sent, to, error}`; on failure `error` carries the SMTP server's text.
 - **Admin → Instance** in the web shows all of it, refreshed every ten seconds, with **Send test email**.
 
-Workers write a heartbeat (table `worker`: name, kinds, host, started, last seen; the host stays in the database and is not served) every fifteen seconds, also while a long job runs; one silent for sixty seconds does not count, and rows older than a day are dropped when a worker starts. `action-platform-api worker --check --name <name>` exits `0` when the worker of that name is alive and `1` otherwise; it is the healthcheck of `worker` (`--name worker`) and `worker-deploy` (`--name deploy`) in the compose files. A job queued for more than two minutes with no live worker for its kind carries `no_worker: true`, and the web says "No worker is running for <kind> jobs" instead of waiting.
+Workers write a heartbeat (table `worker`: name, kinds, host, started, last seen; the host stays in the database and is not served) every fifteen seconds, also while a long job runs; one silent for sixty seconds does not count, and rows older than a day are dropped when a worker starts. `action-platform-api worker --check --name <name>` exits `0` when the worker of that name is alive and `1` otherwise; it is the healthcheck of `worker` (`--name worker`) and `worker-deploy` (`--name deploy`) in the compose files. A job queued for more than two minutes with no live worker for its kind carries `no_worker: true`, and the web says `No worker is running for <kind> jobs` instead of waiting.
 
 ## What is sent
 
