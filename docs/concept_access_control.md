@@ -1,6 +1,6 @@
 # Access control
 
-Who may do what, in one place: **roles** say what a person can do in an organization, **scopes** say what a token may do on that person's behalf, **reach** says where. A request through `/api/v1` passes only when all three agree; the web app checks the role alone (a browser session has no token).
+Who may do what, in one place: **roles** say what a person can do in an organization, **token scopes** say what a token may do on that person's behalf, **reach** says where. A request through `/api/v1` passes only when all three agree; the web app checks the role alone (a browser session has no token).
 
 ## Roles
 
@@ -8,7 +8,7 @@ Assigned per organization under Team → **Members**.
 
 | Role | Permissions |
 |---|---|
-| `owner` | everything; at least one per organization, the last one cannot be demoted |
+| `owner` | the six permissions of `admin`, plus what only an owner may do: give or take the `owner` role, invite or remove an owner, delete the organization, see the instance's health under Admin → Instance. At least one per organization; the last one cannot be demoted or removed |
 | `admin` | `org.manage`, `project.manage`, `app.release`, `app.configure`, `app.flow`, `app.sync` |
 | `deployer` | `app.release`, `app.configure`, `app.flow`, `app.sync` |
 | `developer` | `app.configure`, `app.flow`, `app.sync` |
@@ -18,16 +18,16 @@ Assigned per organization under Team → **Members**.
 |---|---|
 | `org.manage` | members, invitations, teams, source hosts, commit identity, settings |
 | `project.manage` | create and delete projects, add and remove apps |
-| `app.release` | create releases |
+| `app.release` | create releases and deploy them |
 | `app.configure` | edit `platform.toml`, deploy target and services, install the platform files, commit the changes |
 | `app.flow` | start branches, check out, push, open pull requests |
 | `app.sync` | sync the workspace with the source host |
 
 The rules are code in the library, applied by the API in front of every call, which answers 403 naming the missing permission. The web app holds no copy: it reads the table from the API to hide or disable what the role lacks.
 
-## Scopes
+## Token scopes
 
-Chosen when a device code is approved — `action-platform login` asks for every scope unless `--scope` narrows it; the page pre-selects what the role allows — and stored on the token.
+A token's scope is unrelated to a deploy [scope](concept_scopes.md). It is chosen when a device code is approved — `action-platform login` asks for every scope unless `--scope` narrows it; the page pre-selects what the role allows — and stored on the token.
 
 | Scope | Unlocks |
 |---|---|
