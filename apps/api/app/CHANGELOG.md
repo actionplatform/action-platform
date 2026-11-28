@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.52.0 — 2026-11-28
+
+### Features
+- **deploy:** deployment strategies (recreate, rolling, blue-green, canary, shadow) with safety (manual approval, bake time, automatic rollback), run step by step on the job queue, with promote, pause, resume and abort (#760)
+- **deploy:** deploy targets declare the operations they support; a strategy the target cannot run is refused at readiness (#760)
+
+### Bug Fixes
+- **auth:** a device login approved for all organizations spans every organization (#766)
+
 ## v0.51.1 — 2026-11-28
 
 ### Bug Fixes
