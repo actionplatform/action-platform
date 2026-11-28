@@ -17,6 +17,8 @@ from app.services.integrations.hosts import HostConnectError, HostConnector
 
 GITHUB_LOGIN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$")
 
+GITHUB_APP_DELETED = "the GitHub App was deleted on GitHub; create it again"
+
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
 
@@ -27,12 +29,19 @@ def github_install(
     org: OrgDep,
     caller: CallerDep,
     writes: IntegrationsDep,
+    providers: HostProvidersDep,
 ) -> schemas.OAuthStarted:
     allowed(caller, org, "org.manage")
     app = writes.oauth_app("github")
 
     if app is None or not app.slug:
         raise HTTPException(400, "GitHub App is not configured")
+
+    if providers.github.app_exists(app.slug) is False:
+        writes.clear_oauth_app("github")
+        writes.db.commit()
+
+        raise HTTPException(409, GITHUB_APP_DELETED)
 
     state = get_state_signer(request).sign(
         org.id, body.return_to or "/settings", caller.user.id
@@ -55,7 +64,16 @@ def github_manifest(
     allowed(caller, org, "org.manage")
 
     if writes.app_key("github") is not None:
-        raise HTTPException(409, "a GitHub app is already configured")
+        app = writes.oauth_app("github")
+
+        if (
+            app is None
+            or not app.slug
+            or providers.github.app_exists(app.slug) is not False
+        ):
+            raise HTTPException(409, "a GitHub app is already configured")
+
+        writes.clear_oauth_app("github")
 
     return_to = body.return_to or "/settings"
     state = get_state_signer(request).sign(org.id, return_to, caller.user.id)

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { ApiError } from "@/lib/api";
 import { publicOrigin } from "@/lib/origin";
 import { safePath } from "@/lib/safe-path";
 import { getSession } from "@/lib/session";
@@ -9,10 +10,12 @@ export async function GET(req: Request) {
   const session = await getSession();
   if (!session) redirect("/login?next=/settings");
 
+  const back = safePath(url.searchParams.get("return"), "/connect/git");
   let target: string;
   try {
-    target = (await v1.githubInstall(publicOrigin(req.headers), safePath(url.searchParams.get("return"), "/connect/git"))).url;
+    target = (await v1.githubInstall(publicOrigin(req.headers), back)).url;
   } catch (e) {
+    if (e instanceof ApiError && e.status === 409) redirect(`/api/oauth/github/manifest?${new URLSearchParams({ return: back })}`);
     return Response.json({ detail: (e as Error).message }, { status: 400 });
   }
   redirect(target);
