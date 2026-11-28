@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.47.1 — 2026-11-28
+
+### Chores
+- **api:** require apx-aws-lambda 1.3.1 (#690)
+
 ## v0.47.0 — 2026-11-27
 
 ### Breaking Changes
