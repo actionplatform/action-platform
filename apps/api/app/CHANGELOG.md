@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.51.0 — 2026-11-28
+
+### Features
+- **api:** resource routes for access, members, teams, project team and cloud; the old paths stay as hidden aliases (#718)
+- **api:** list endpoints take page and per (#717)
+- **api:** every app route lives under its project in /api/v1; /api/apps is deprecated and answers Deprecation: true (#720)
+- **api:** X-Organization is the one way to pick the organization; one route to mint tokens and one jobs collection (#719)
+
+### Bug Fixes
+- **api:** status codes match the call: 204 on delete, 201 on create (#716)
+- **invitations:** GitHub login invitations are bound to the numeric user id (#621)
+- **cli:** the platform token stays on its origin across redirects (#618)
+- **deploy:** the compose worker runs sync_sweep, so scheduled syncs happen (#741)
+- **cli:** scopes help names only [[scopes]] (#744)
+
 ## v0.50.0 — 2026-11-28
 
 ### Features
