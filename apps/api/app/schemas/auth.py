@@ -2,7 +2,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from app.schemas.common import Named, UtcDateTime
+from app.schemas.common import AppRef, Named, UtcDateTime
 
 
 class SignUpRequest(BaseModel):
@@ -163,8 +163,13 @@ class IssueTokenRequest(BaseModel):
 class TokenIssued(BaseModel):
     id: str
     token: str
+    token_type: str = "Bearer"
     scope: list[str]
     expires_at: UtcDateTime
+    organization: Optional[dict] = None
+    organizations: Optional[list[dict]] = None
+    project: Optional[Named] = None
+    app: Optional[AppRef] = None
 
 
 class TokenClientOut(BaseModel):

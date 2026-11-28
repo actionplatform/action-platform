@@ -50,8 +50,14 @@ class TokenMinter:
         token, raw = self.auth.issue_token(
             session, grant, (name or "").strip()[:80] or "cli"
         )
-        organization = (
-            caller.member_of(token.organization_id) if token.organization_id else None
+
+        return self.minted(token, raw, [o for o, _ in caller.organizations])
+
+    def minted(
+        self, token: ApiToken, raw: str, organizations: list[Organization]
+    ) -> MintedToken:
+        organization = next(
+            (o for o in organizations if o.id == token.organization_id), None
         )
         project = (
             self.directory.project(organization.id, token.project_id)
