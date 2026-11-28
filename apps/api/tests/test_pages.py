@@ -122,11 +122,15 @@ class PagesTest(GateCase):
         queue.enqueue("sync", {}, organization_id=self.org["id"], app_id="a1")
 
         body = self.client.get(
+            f"/api/v1/jobs?app={self.registry_id}&per=5", headers=self.h()
+        ).json()
+        self.assertEqual((body["total"], body["page"], len(body["items"])), (8, 1, 5))
+        legacy = self.client.get(
             f"/api/v1/jobs/page?app={self.registry_id}&per=5", headers=self.h()
         ).json()
-        self.assertEqual((body["total"], body["page"], len(body["items"])), (7, 1, 5))
+        self.assertEqual((legacy["total"], len(legacy["items"])), (7, 5))
         only = self.client.get(
-            f"/api/v1/jobs/page?app={self.registry_id}&kinds=deploy&per=10",
+            f"/api/v1/jobs?app={self.registry_id}&kinds=deploy&per=10",
             headers=self.h(),
         ).json()
         self.assertEqual(only["total"], 3)

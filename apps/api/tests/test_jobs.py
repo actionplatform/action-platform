@@ -156,7 +156,7 @@ class AsyncRouteTest(GateCase):
         self.assertEqual(done["result"]["id"], registry_id)
         listed = self.client.get(
             "/api/v1/jobs", params={"app": registry_id}, headers=self.h()
-        ).json()
+        ).json()["items"]
         self.assertEqual([j["id"] for j in listed], [job_id])
 
     def test_a_token_queues_a_job_on_sqlite(self):
@@ -321,7 +321,7 @@ class AsyncRouteTest(GateCase):
             j["kind"]: j["status"]
             for j in self.client.get(
                 "/api/v1/jobs", params={"app": registry_id}, headers=self.h()
-            ).json()
+            ).json()["items"]
         }
         self.assertEqual(jobs, {"sync": "done"})
 
@@ -337,14 +337,14 @@ class AsyncRouteTest(GateCase):
 
         deploys = self.client.get(
             "/api/v1/jobs",
-            params={"app": registry_id, "kind": "deploy"},
+            params={"app": registry_id, "kinds": "deploy"},
             headers=self.h(),
-        ).json()
+        ).json()["items"]
         syncs = self.client.get(
             "/api/v1/jobs",
             params={"app": registry_id, "kind": "sync"},
             headers=self.h(),
-        ).json()
+        ).json()["items"]
 
         self.assertEqual(len(deploys), 1)
         self.assertEqual(
@@ -576,8 +576,8 @@ class ShippingDeployTest(GateCase):
             ("queued", f"/api/v1/jobs/{queued['job']}"),
         )
         jobs = self.client.get(
-            "/api/v1/jobs/page",
-            params={"app": self.registry_id},
+            "/api/v1/jobs",
+            params={"app": self.registry_id, "kinds": "deploy,destroy"},
             headers=self.h(),
         ).json()["items"]
         self.assertEqual(
