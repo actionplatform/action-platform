@@ -70,6 +70,7 @@ class OAuthApp(Base):
     slug: Mapped[Optional[str]] = mapped_column(Text)
     app_id: Mapped[Optional[str]] = mapped_column(Text)
     private_key_encrypted: Mapped[Optional[str]] = mapped_column(Text)
+    webhook_secret_encrypted: Mapped[Optional[str]] = mapped_column(Text)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=now, server_default=func.now()
     )

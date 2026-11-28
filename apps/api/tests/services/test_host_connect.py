@@ -87,6 +87,7 @@ class CreateGithubAppTest(unittest.TestCase):
                 "client_secret": "s",
                 "slug": "ap",
                 "pem": "-----BEGIN RSA PRIVATE KEY-----",
+                "webhook_secret": "wh",
             },
         ):
             self.assertEqual(
@@ -104,6 +105,7 @@ class CreateGithubAppTest(unittest.TestCase):
                     "ap",
                     "4242",
                     "-----BEGIN RSA PRIVATE KEY-----",
+                    "wh",
                 )
             ],
         )

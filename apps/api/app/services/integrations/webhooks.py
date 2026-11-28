@@ -11,7 +11,7 @@ from typing import Any, Optional
 from sqlalchemy.orm import Session as DbSession
 
 from app.core.auth.crypto import Sealer
-from app.core.db.models import App
+from app.core.db.models import App, SourceHost
 from app.core.errors import Forbidden, NotFound
 from app.core.shared.urls import GitUrl
 from app.repositories.projects import ProjectsRepository
@@ -70,12 +70,28 @@ class Webhooks:
         self._verify(host.kind, secret or "", headers, body)
         delivery = self._parse(host.kind, headers, body)
 
+        return self._queue(delivery, host.organization_id)
+
+    def receive_app(self, headers: dict[str, str], body: bytes) -> dict[str, Any]:
+        """A delivery from the platform's GitHub App: one URL for every installation, so the repository finds the apps in every organization that tracks it."""
+        secret = self.directory.app_webhook_secret("github")
+
+        if not secret:
+            raise NotFound("no webhook for the GitHub App")
+
+        self._verify("github", secret, headers, body)
+
+        return self._queue(self._parse("github", headers, body), None)
+
+    def _queue(
+        self, delivery: Delivery, organization_id: Optional[str]
+    ) -> dict[str, Any]:
         if not delivery.accepted or not delivery.repo:
             return {"event": delivery.event, "repo": delivery.repo, "queued": []}
 
         queued = []
 
-        for app in self._apps_for(host.organization_id, delivery.repo):
+        for app, org in self._apps_for(organization_id, delivery.repo, delivery.kind):
             job = self.queue.enqueue(
                 "sync",
                 {
@@ -83,12 +99,12 @@ class Webhooks:
                     "method": "POST",
                     "body": {},
                     "registry_id": app.registry_id,
-                    "organization_id": host.organization_id,
+                    "organization_id": org,
                     "app_id": app.id,
                     "user_id": None,
-                    "webhook": {"kind": host.kind, "event": delivery.event},
+                    "webhook": {"kind": delivery.kind, "event": delivery.event},
                 },
-                organization_id=host.organization_id,
+                organization_id=org,
                 app_id=app.id,
                 dedupe_key="sync",
             )
@@ -144,20 +160,39 @@ class Webhooks:
 
         return Delivery(kind, event, repo, event in BITBUCKET_EVENTS)
 
-    def _apps_for(self, organization_id: str, repo: str) -> list[App]:
+    def _apps_for(
+        self, organization_id: Optional[str], repo: str, kind: str
+    ) -> list[tuple[App, str]]:
         wanted = repo.lower().removesuffix(".git")
         matches = []
 
         for entry in self.registry.list():
             found = GitUrl(entry.url).repo if entry.url else None
 
-            if found and found.lower() == wanted:
-                pair = self.projects.app_by_registry_id(entry.id)
+            if not found or found.lower() != wanted:
+                continue
 
-                if pair and pair[1].organization_id == organization_id:
-                    matches.append(pair[0])
+            pair = self.projects.app_by_registry_id(entry.id)
+
+            if pair is None:
+                continue
+
+            app, project = pair
+
+            if organization_id is not None:
+                if project.organization_id == organization_id:
+                    matches.append((app, organization_id))
+            elif self._hosted_on(app, kind):
+                matches.append((app, project.organization_id))
 
         return matches
+
+    def _hosted_on(self, app: App, kind: str) -> bool:
+        host = (
+            self.db.get(SourceHost, app.source_host_id) if app.source_host_id else None
+        )
+
+        return host is not None and host.kind == kind
 
 
 __all__ = ["Delivery", "Webhooks"]

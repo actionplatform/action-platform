@@ -70,6 +70,7 @@ class HostConnector:
             app.get("slug"),
             app_id=str(app["id"]) if app.get("id") else None,
             private_key=app.get("pem") or None,
+            webhook_secret=app.get("webhook_secret") or None,
         )
 
         return app.get("slug") or "created"

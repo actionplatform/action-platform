@@ -132,6 +132,75 @@ class WebhooksTest(GateCase):
             [],
         )
 
+    def app_secret(self, secret: str) -> None:
+        from app.core.db.models import OAuthApp
+
+        with self.app.state.db.session() as s:
+            s.add(
+                OAuthApp(
+                    provider="github",
+                    client_id="Iv1",
+                    client_secret_encrypted=self.app.state.sealer.seal("sec"),
+                    slug="ap",
+                    webhook_secret_encrypted=self.app.state.sealer.seal(secret),
+                )
+            )
+
+    def test_the_github_app_delivery_finds_the_app_by_repository(self):
+        from app.core.db.models import Job
+
+        registry_id = self.register()
+        self.github_host()
+        self.point_registry_at(registry_id, "https://github.com/acme/demo.git")
+        self.app_secret("hook")
+
+        bad = self.client.post(
+            "/api/v1/webhooks/github-app",
+            content=b"{}",
+            headers={"x-github-event": "push", "x-hub-signature-256": "sha256=nope"},
+        )
+        self.assertEqual(bad.status_code, 403)
+
+        ok = self.send(
+            "github-app",
+            "hook",
+            "push",
+            {"repository": {"full_name": "acme/demo"}, "installation": {"id": 7}},
+        )
+        self.assertEqual(ok.status_code, 202, ok.text)
+        self.assertEqual(len(ok.json()["queued"]), 1)
+
+        with self.app.state.db.session() as s:
+            job = s.get(Job, ok.json()["queued"][0])
+            self.assertEqual((job.kind, job.app_id), ("sync", "a1"))
+            self.assertEqual(job.organization_id, self.org["id"])
+
+        self.assertEqual(
+            self.send(
+                "github-app", "hook", "push", {"repository": {"full_name": "acme/x"}}
+            ).json()["queued"],
+            [],
+        )
+
+    def test_the_github_app_skips_apps_on_another_host(self):
+        registry_id = self.register()
+        self.point_registry_at(registry_id, "https://github.com/acme/demo.git")
+        self.app_secret("hook")
+
+        res = self.send(
+            "github-app", "hook", "push", {"repository": {"full_name": "acme/demo"}}
+        )
+        self.assertEqual(res.status_code, 202, res.text)
+        self.assertEqual(res.json()["queued"], [])
+
+    def test_a_github_app_without_a_webhook_secret_takes_nothing(self):
+        res = self.client.post(
+            "/api/v1/webhooks/github-app",
+            content=b"{}",
+            headers={"x-github-event": "push", "x-hub-signature-256": "sha256=x"},
+        )
+        self.assertEqual(res.status_code, 404)
+
     def test_a_host_without_a_secret_takes_nothing(self):
         self.register()
         host_id = self.github_host()

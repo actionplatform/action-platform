@@ -30,6 +30,14 @@ MANIFEST_PERMISSIONS = {
     "statuses": "read",
     "organization_projects": "read",
 }
+MANIFEST_EVENTS = [
+    "create",
+    "delete",
+    "pull_request",
+    "push",
+    "release",
+    "workflow_run",
+]
 API_VERSION = "2022-11-28"
 
 
@@ -114,6 +122,11 @@ class GithubProvider(HostProvider):
             "setup_on_update": True,
             "public": True,
             "request_oauth_on_install": True,
+            "hook_attributes": {
+                "url": f"{origin}/api/webhooks/github-app",
+                "active": True,
+            },
+            "default_events": MANIFEST_EVENTS,
             "default_permissions": permissions_for(self.kind, MANIFEST_PERMISSIONS),
         }
 
