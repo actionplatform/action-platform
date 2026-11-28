@@ -50,6 +50,8 @@ class App(Base):
         Text, nullable=False, default="", server_default=""
     )
     last_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    next_sync_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    last_change_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, default=now, server_default=func.now()
     )

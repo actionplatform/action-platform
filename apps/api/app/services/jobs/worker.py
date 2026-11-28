@@ -31,6 +31,7 @@ from app.services.jobs.registry import JobServices, handlers
 from app.services.jobs.workers import BEAT_EVERY, Workers
 from app.services.protection import ProtectionSweep
 from app.services.protection.sweep import SWEEP
+from app.services.projects.sync_sweep import SWEEP as SYNC_SWEEP, SyncSweep
 
 log = logging.getLogger("action_platform.worker")
 
@@ -44,6 +45,7 @@ ASYNC_ROUTES = {
 
 HEARTBEAT_SECONDS = 60.0
 FIRST_SWEEP = timedelta(minutes=5)
+FIRST_SYNC_SWEEP = timedelta(minutes=1)
 
 
 def worker_name() -> str:
@@ -97,6 +99,9 @@ class Worker:
         if not once and SWEEP in wanted:
             self._schedule_sweep()
 
+        if not once and SYNC_SWEEP in wanted:
+            self._schedule_sync_sweep()
+
         with self.beating(wanted):
             if concurrency <= 1:
                 return self._run_serial(interval, once, wanted)
@@ -108,6 +113,12 @@ class Worker:
             ProtectionSweep(self.database, self.queue).schedule(FIRST_SWEEP)
         except Exception:
             log.warning("protection sweep not scheduled", exc_info=True)
+
+    def _schedule_sync_sweep(self) -> None:
+        try:
+            SyncSweep(self.database, self.queue).schedule(FIRST_SYNC_SWEEP)
+        except Exception:
+            log.warning("sync sweep not scheduled", exc_info=True)
 
     def beat(self, kinds: list[str]) -> None:
         try:
