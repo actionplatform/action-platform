@@ -8,7 +8,7 @@ import type { AppWizard } from "../use-app-wizard";
 
 export function StackStep({ w }: { w: AppWizard }) {
   return (
-    <Section title="Choose your stack" description="Select the language or runtime for your project.">
+    <Section title="Choose your stack" description="Select the language or runtime for your app.">
       <div className="grid gap-3 sm:grid-cols-3">
         {w.stacks.map((id) => {
           const m = stackMeta(w.matrix, id);

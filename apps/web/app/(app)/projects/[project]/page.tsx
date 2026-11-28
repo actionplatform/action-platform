@@ -1,4 +1,4 @@
-import { GitPullRequestArrow, Plus } from "lucide-react";
+import { GitPullRequestArrow, Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApiOffline } from "@/components/api-offline";
@@ -13,7 +13,6 @@ import { appsOf, projectById } from "@/lib/projects";
 
 
 import { requireOrg } from "@/lib/session";
-import { AddForm } from "@/features/projects";
 import { AppCards } from "@/features/projects";
 import { LiveList, RemoveButton } from "@/features/projects";
 import { v1 } from "@/lib/v1";
@@ -31,11 +30,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
   );
 
   let rows: Map<string, AppRow>;
-  let catalog: { types: { id: string; label: string; description: string }[]; stacks: { id: string; label: string }[] };
   try {
-    const [list, matrix] = await Promise.all([api.apps.list(), api.matrix()]);
-    rows = new Map(list.map((r) => [r.id, r]));
-    catalog = { types: matrix.types.filter((t) => t.id !== "empty"), stacks: matrix.stacks };
+    rows = new Map((await api.apps.list()).map((r) => [r.id, r]));
   } catch (e) {
     return <ApiOffline error={e} />;
   }
@@ -45,10 +41,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
       <PageHeader
         title={project.name}
         description={project.description || `Apps in ${project.name}.`}
-        actions={<><Link href={`/projects/${project.id}/adoption`}><Button variant="outline"><GitPullRequestArrow className="size-4" /> Adoption</Button></Link>{manage && <Link href={`/projects/${project.id}/apps/new`}><Button><Plus className="size-4" /> New app</Button></Link>}</>}
+        actions={<><Link href={`/projects/${project.id}/adoption`}><Button variant="outline"><GitPullRequestArrow className="size-4" /> Adoption</Button></Link>{manage && <Link href={`/projects/${project.id}/settings`}><Button variant="outline"><Settings className="size-4" /> Settings</Button></Link>}{manage && <Link href={`/projects/${project.id}/apps/new`}><Button><Plus className="size-4" /> New app</Button></Link>}</>}
       />
 
-      {manage && <div className="mb-6"><AddForm projectId={project.id} types={catalog.types} stacks={catalog.stacks} /></div>}
       <LiveList active={tearing.size > 0} />
 
       <div className="md:hidden">
@@ -62,7 +57,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
           </thead>
           <TBody>
             {apps.length === 0 && (
-              <tr><Td colSpan={manage ? 7 : 6} className="py-8 text-center text-secondary">No apps yet. Create one from a template or add a repository.</Td></tr>
+              <tr><Td colSpan={manage ? 7 : 6} className="py-8 text-center text-secondary">No apps yet. Create one with New app, from a template or an existing repository.</Td></tr>
             )}
             {apps.map((a) => {
               const r = rows.get(a.registryId);

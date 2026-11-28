@@ -10,13 +10,13 @@ import type { AppWizard } from "../use-app-wizard";
 export function ReviewStep({ w }: { w: AppWizard }) {
   const { config, host } = w;
   return (
-    <Section title="Review your project" description="Confirm the configuration before creating the project.">
+    <Section title="Review your app" description="Confirm the configuration before creating the app.">
       <Card>
         <CardContent className="grid gap-x-8 gap-y-3 sm:grid-cols-2 text-sm">
           <Row k="Type" v={w.type ? typeMeta(w.matrix, w.type).label : "—"} />
           <Row k="Stack" v={w.stack ? stackMeta(w.matrix, w.stack).label : "—"} />
           <Row k="Template" v={w.template ?? "—"} mono />
-          <Row k="Project name" v={config.name || "—"} />
+          <Row k="App name" v={config.name || "—"} />
           <Row k="Directory" v={config.directory || "—"} mono />
           <Row k="Package name" v={config.packageName || "—"} mono />
           <Row k="Description" v={config.description || "—"} />

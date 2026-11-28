@@ -14,6 +14,7 @@ export { AppCards } from "./apps/app-cards";
 export { RemoveButton } from "./apps/remove-button";
 export { LiveList } from "./apps/live-list";
 export { NewProjectDialog, NewProjectForm } from "./list/new-project-form";
+export { ProjectSettings } from "./list/project-settings";
 export { ProjectsView } from "./list/projects-view";
 export { ProjectCardSkeleton } from "./list/project-card-skeleton";
 export { AdoptionView } from "./adoption/adoption-view";

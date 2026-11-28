@@ -7,14 +7,14 @@ import { projectById, projectsOf } from "@/lib/projects";
 import { requireOrg } from "@/lib/session";
 import { hostsOf } from "@/lib/source-hosts";
 import { hostAccess } from "@/lib/host-access";
-import { Wizard } from "@/features/projects";
+import { AddForm, Wizard } from "@/features/projects";
 
 type Search = { type?: string; stack?: string; template?: string; source?: string };
 
 export default async function NewAppPage({ params, searchParams }: { params: Promise<{ project: string }>; searchParams: Promise<Search> }) {
   const { project: projectId } = await params;
   const query = await searchParams;
-  const { org } = await requireOrg();
+  const { session, org } = await requireOrg();
 
   const fixed = projectId !== "_";
   const project = fixed ? await projectById(org.id, projectId) : null;
@@ -51,7 +51,12 @@ export default async function NewAppPage({ params, searchParams }: { params: Pro
         {project && <> / <Link href={`/projects/${project.id}`} className="hover:text-foreground">{project.name}</Link></>}
         {" / "}<span className="text-foreground">New app</span>
       </div>
-      <PageHeader title="Create project" description="Choose a foundation and configure your new project." />
+      <PageHeader title="Create app" description="Choose a foundation and configure your new app." />
+      {project && session.grants["project.manage"] && (
+        <div className="mb-6 rounded-lg border border-border bg-surface p-4">
+          <AddForm projectId={project.id} types={matrix.types.filter((t) => t.id !== "empty")} stacks={matrix.stacks} />
+        </div>
+      )}
       <Wizard matrix={matrix} preset={preset} projectId={project?.id ?? null} projects={projects.map((p) => ({ id: p.id, name: p.name }))} hosts={hosts.map((h) => ({ id: h.id, name: h.name, kind: h.kind, defaultOwner: h.defaultOwner, owners: [...owners[h.id].accounts], installUrl: owners[h.id].installUrl, problem: owners[h.id].problem }))} />
     </>
   );

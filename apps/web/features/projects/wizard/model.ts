@@ -27,7 +27,7 @@ export const LICENSES = [
 export function licenseLabel(value: string): string {
   return LICENSES.find((l) => l.value === value)?.label ?? value;
 }
-export const CONTINUE = ["Continue to stack", "Continue to template", "Continue to configuration", "Continue to review", "Create project"];
+export const CONTINUE = ["Continue to stack", "Continue to template", "Continue to configuration", "Continue to review", "Create app"];
 
 export function ownerOf(host: HostOption | null): string | null {
   if (!host) return null;
