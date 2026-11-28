@@ -18,15 +18,15 @@ function view(targets: number, services: number): AppView {
 describe("SourceCard", () => {
   afterEach(cleanup);
 
-  it("collapses many targets and services into chips", () => {
+  it("collapses many services into chips", () => {
     render(<SourceCard view={view(10, 10)} base="/projects/p/apps/a" />);
-    expect(screen.getAllByText("+7")).toHaveLength(2);
-    expect(screen.queryByText("t5")).not.toBeInTheDocument();
+    expect(screen.getAllByText("+7")).toHaveLength(1);
+    expect(screen.queryByText("svc5")).not.toBeInTheDocument();
   });
 
   it("keeps the empty states", () => {
     render(<SourceCard view={view(0, 0)} base="/projects/p/apps/a" />);
-    expect(screen.getByText("Not configured", { selector: "span.min-w-0" })).toBeInTheDocument();
+    expect(screen.queryByText("Deploy target")).not.toBeInTheDocument();
     expect(screen.getByText("No services")).toBeInTheDocument();
   });
 });

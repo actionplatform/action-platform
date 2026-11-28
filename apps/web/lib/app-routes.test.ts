@@ -15,7 +15,7 @@ function redirect(path: string): string | null {
 describe("app redirects", () => {
   it("send the old app tabs to their new homes", () => {
     expect(redirect("/projects/p1/apps/a1/settings/ci")).toBe("/projects/p1/apps/a1/settings?tab=ci");
-    expect(redirect("/projects/p1/apps/a1/ci")).toBe("/projects/p1/apps/a1/activity?kind=ci_run");
+    expect(redirect("/projects/p1/apps/a1/ci")).toBe("/projects/p1/apps/a1/pipelines");
     expect(redirect("/projects/p1/apps/a1/ci/connect")).toBe("/projects/p1/apps/a1/settings?tab=ci");
     expect(redirect("/projects/p1/apps/a1/settings/configuration")).toBe("/projects/p1/apps/a1/settings?tab=general");
     expect(redirect("/projects/p1/apps/a1/settings/scopes")).toBe("/projects/p1/apps/a1/scopes");
