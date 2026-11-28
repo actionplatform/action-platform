@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.41.0 — 2026-11-28
+
+### Features
+- **github:** set the webhook secret of an existing GitHub App (#695)
+
 ## v0.40.0 — 2026-11-27
 
 ### Features
