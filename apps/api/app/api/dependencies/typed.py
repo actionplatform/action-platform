@@ -2,7 +2,7 @@
 
 from typing import Annotated, Optional
 
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Query
 from sqlalchemy.orm import Session as DbSession
 
 from app.api.dependencies.access import get_caller, org_of
@@ -93,6 +93,9 @@ FlowDep = Annotated[FlowService, Depends(get_flow)]
 ConfigurationDep = Annotated[ConfigurationService, Depends(get_configuration)]
 CommitsDep = Annotated[CommitService, Depends(get_commits)]
 OrganizationHeader = Annotated[Optional[str], Header(alias="X-Organization")]
+LegacyOrganizationQuery = Annotated[
+    Optional[str], Query(alias="organization", include_in_schema=False)
+]
 
 
 def current_org(

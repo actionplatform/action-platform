@@ -2,9 +2,11 @@
 
 from typing import Optional, Union
 
-from fastapi import APIRouter, Header, Response
+from fastapi import APIRouter, Response
 
 from app.api.dependencies import (
+    LegacyOrganizationQuery,
+    OrganizationHeader,
     CallerDep,
     OrgDep,
     ProjectsDep,
@@ -29,8 +31,8 @@ router = APIRouter(prefix="/api/v1", tags=["management"])
 def projects(
     caller: CallerDep,
     view: ProjectViewDep,
-    x_organization: Optional[str] = Header(default=None),
-    organization: Optional[str] = None,
+    x_organization: OrganizationHeader = None,
+    organization: LegacyOrganizationQuery = None,
     page: Optional[int] = None,
     per: int = 10,
 ) -> Union[list[schemas.ProjectRow], Page[schemas.ProjectRow]]:
@@ -47,7 +49,7 @@ def create_project(
     body: schemas.CreateProjectRequest,
     caller: CallerDep,
     directory: ProjectsRepoDep,
-    x_organization: Optional[str] = Header(default=None),
+    x_organization: OrganizationHeader = None,
 ) -> common.Created:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "projects")
@@ -62,7 +64,7 @@ def set_project_team(
     body: schemas.ProjectTeam,
     caller: CallerDep,
     directory: ProjectsRepoDep,
-    x_organization: Optional[str] = Header(default=None),
+    x_organization: OrganizationHeader = None,
 ) -> common.Ok:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "projects/team")
@@ -76,7 +78,7 @@ def assign_project_team(
     body: schemas.ProjectTeamRequest,
     caller: CallerDep,
     directory: ProjectsRepoDep,
-    x_organization: Optional[str] = Header(default=None),
+    x_organization: OrganizationHeader = None,
 ) -> common.Ok:
     return set_project_team(
         body.project_id,
