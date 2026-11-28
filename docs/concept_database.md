@@ -1,6 +1,6 @@
 # Database
 
-One Postgres (or MySQL, or SQLite) holds every organization, project, app, token and session. Today the web app created it and owns most writes; the Python API now connects to the same database, runs its own migrations and keeps the schema — the first step of moving every business rule into the API (see [architecture](contribute_architecture.md)).
+One Postgres (or MySQL, or SQLite) holds every organization, project, app, token and session. The Python API is the only process with a connection besides its workers: it runs the migrations, keeps the schema and holds every business rule ([architecture](contribute_architecture.md)). The web app reads and writes through the API.
 
 ## Connecting the API
 
@@ -12,7 +12,7 @@ One Postgres (or MySQL, or SQLite) holds every organization, project, app, token
 
 Postgres and MySQL drivers ship with the API; SQLite needs nothing.
 
-On boot the API migrates to the latest revision before it serves a request. The compose files start the API and the worker only after Postgres is healthy.
+On boot the API migrates to the latest revision before it serves a request, unless `AP_DATABASE_AUTO_MIGRATE=0`; then `GET /api/version` reports `ready: false` until `action-platform-api db migrate` runs. The compose files set it to `0` and migrate once in the `migrate` service. The compose files start the API and the worker only after Postgres is healthy.
 
 ## Migrations
 
@@ -45,6 +45,11 @@ Alembic, shipped with the API — one revision per change:
 | `0025` | `invitation`: `email` may be empty when the invitation is bound to a code-host login (`host_kind`, `host_login`); `team_ids` are the teams the person joins on accepting |
 | `0026` | `invitation.emailed_at` and `email_error`: when the invitation email last went out and why the last send failed |
 | `0027` | `worker`: the heartbeat each worker process writes, so the API can tell whether anyone is taking jobs |
+| `0028` | `invitation`: the code-host account's immutable id a login invitation is bound to |
+| `0029` | `app_protection`, `protection_event`, `protection_default`: what each app's code host enforces of git-flow, the events that changed it, the organization's default |
+| `0030` | `oauth_app`: the id and sealed private key of a GitHub App created from the manifest |
+| `0031` | `oauth_app`: the sealed secret GitHub signs a manifest App's webhook deliveries with |
+| `0032` | `app`: when the next scheduled sync is due, and when one last found a change |
 
 A database the web app created has no `alembic_version` table but does have `user`; the API recognises that, stamps it at `0001` and applies only what follows. Nothing is recreated, nothing is copied: pointing the API at the web app's database is the whole data migration.
 
@@ -60,11 +65,11 @@ Both read `AP_DATABASE_URL` unless `--url` is given.
 
 ## Tables
 
-`user`, `session`, `account`, `verification`, `device_code` — accounts and sign-ins. `organization`, `member`, `invitation`, `team`, `team_member` — who belongs where. `project`, `app`, `source_host`, `template_source`, `organization_setting` — what each organization runs. `release`, `pull_request` — the platform's releases (any source) and pull requests imported from the source host; `release_readiness` — per release and stage, whether it can be deployed there, as the worker last checked. `api_token`, `api_token_client` — tokens from `action-platform login` and the clients seen using them. `registry` — the apps the API manages. `job_log` — what each job wrote, one row per line. `job` — queued work with `kind`, `status` (`queued` → `running` → `done` | `failed`), `attempts`, `run_after`, `locked_at` / `locked_by` and a `dedupe_key` unique per app and kind so the same sync is never queued twice.
+`user`, `session`, `account`, `verification`, `device_code` — accounts and sign-ins. `organization`, `member`, `invitation`, `team`, `team_member` — who belongs where. `project`, `app`, `source_host`, `template_source`, `organization_setting` — what each organization runs. `release`, `pull_request` — the platform's releases (any source) and pull requests imported from the source host; `release_readiness` — per release and scope (`stage`), whether it can be deployed there, as the worker last checked. `scope`, `deployment` — the app's scopes and every delivery. `ci_host`, `ci_run` — CI servers and imported runs. `app_config`, `app_snapshot`, `app_adoption`, `draft` — the app's configuration, what its pages read, its adoption state and its pending edits. `oauth_app`, `service_connection`, `plugin_option`, `signing_key` — connections, plugin settings and the OIDC key, secrets sealed. `app_protection`, `protection_event`, `protection_default` — branch protection. `worker` — heartbeats. `api_token`, `api_token_client` — tokens from `action-platform login` and the clients seen using them. `registry` — the apps the API manages. `job_log` — what each job wrote, one row per line. `job` — queued work with `kind`, `status` (`queued` → `running` → `done` | `failed`), `attempts`, `run_after`, `locked_at` / `locked_by` and a `dedupe_key` unique per app and kind so the same sync is never queued twice.
 
 ## Jobs
 
-The queue claims with `SELECT … FOR UPDATE SKIP LOCKED` on Postgres and a compare-and-set update elsewhere, so several workers share one queue without taking the same row. `action-platform-api worker [--once] [--interval]` loops: reap jobs whose worker vanished (running for over thirty minutes), claim, run, `done` with the result or `failed` with the error — a refusal from the platform's own rules fails at once, anything else retries up to three times with a 30 s · 2ⁿ backoff. Payloads never hold credentials; the worker reads them from `source_host` when it runs, exactly as the gate does for inline calls ([API](use_api.md#jobs)).
+The queue claims with `SELECT … FOR UPDATE SKIP LOCKED` on Postgres and a compare-and-set update elsewhere, so several workers share one queue without taking the same row. `action-platform-api worker [--once] [--interval]` loops: reap jobs whose worker vanished (running for over thirty minutes), claim, run, `done` with the result or `failed` with the error — a refusal from the platform's own rules fails at once, anything else is tried at most three times, 30 s and then 60 s apart. Payloads never hold credentials; the worker reads them from `source_host` when it runs, exactly as the gate does for inline calls ([API](use_api.md#jobs)).
 
 One model per table, grouped by context (auth, organization, projects, configuration, activity, integrations, jobs); every request runs in one session that commits on success and rolls back on any exception. Ids are 36-character strings, valid on every dialect.
 

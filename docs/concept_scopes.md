@@ -78,7 +78,7 @@ flowchart LR
 ```
 
 
-Releases come in three shapes: **candidates** (`1.4.0-rc.2`, cut off `main`), **stable** (`1.4.0`, cut on `main`) and **hotfixes** (a release cut from a `hotfix/<code>` branch, which git-flow starts from `main`). The default policy:
+Releases come in three shapes: **candidates** (`1.4.0-rc.2`, cut on any branch other than `main` or `master`), **stable** (`1.4.0`, cut on `main` or `master`) and **hotfixes** (a release cut from a `hotfix/<code>` branch, which git-flow starts from `main`; the platform records it as `hotfix` even when its version is `-rc.N`). The default policy:
 
 | Criticality | Candidates | Stable | Hotfix |
 |---|---|---|---|
@@ -180,7 +180,7 @@ An app has no scopes until someone creates them.
 
 Three ways, all producing the same name, kind and criticality (kind defaults to `web`, criticality to `low`):
 
-- **Web**: the app's **Settings › Scopes**, **New scope**.
+- **Web**: the app's **Scopes** tab, **New scope**.
 - **MCP**: the `create_scope` tool on the hosted platform.
 - **`platform.toml`**: `[[scopes]]` for a repository that deploys on its own (below).
 
@@ -200,7 +200,7 @@ POST   projects/{p}/apps/{a}/releases/{tag}/readiness    {stage?}: queue the che
 
 ## Web
 
-- **Settings › Scopes** on the app: the table of scopes — name, kind, criticality, what each accepts — and **New scope** (Name, Kind, Criticality). A scope's menu edits or deletes it.
+- The app's **Scopes** tab: the table of scopes — name, kind, criticality, what each accepts — and **New scope** (Name, Kind, Criticality). A scope's menu edits or deletes it.
 - **Deploy**: pick the release and the scope; the form refuses a release the scope does not accept and a blocked readiness unless *Deploy anyway* is ticked.
 - **Releases**: the release page lists the verdict and the checks per scope.
 - Criticality badge tones: `test` and `low` neutral, `medium` warning, `high` and `critical` danger.

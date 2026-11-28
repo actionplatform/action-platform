@@ -1,24 +1,29 @@
 # Templates
 
+A template is the skeleton a new app starts from, chosen by type, stack and template. Overlays add a cloud or a service on top of an app. The official catalog lives in [actionplatform/templates](https://github.com/actionplatform/templates); an organization adds its own repositories next to it.
+
 ```
 action-platform init --list
 ```
 
 | Type | Stacks | Ready with |
 |------|--------|-----------|
-| `web` | python (FastAPI, FastMCP, remote MCP with OAuth bearer auth), go (Gin), node (Fastify, React), java (Spring), kotlin (Spring), ruby (Sinatra) | `/health` (never `/ping` — API Gateway keeps that path on `execute-api`), versioned API, tests, lint, CI |
+| `web` | python (FastAPI, FastMCP, remote MCP with OAuth bearer auth), go (Gin), node (Fastify, React, React + Vite), java (Spring), kotlin (Spring), ruby (Sinatra) | `/health` (never `/ping` — API Gateway keeps that path on `execute-api`), versioned API, tests, lint, CI |
 | `library` | python, go, php, node, java, rust | packaging, version test, publish workflow |
 | `automation` | python (basic, scheduled) | `python -m app` entrypoints, tests per task |
-| `job` | python | runs once and exits with a status code, logs to stdout, config from env, tests; cron, Dokploy and Jenkinsfile schedule examples |
+| `job` | python (basic) | runs once and exits with a status code, logs to stdout, config from env, tests; cron, Dokploy and Jenkinsfile schedule examples |
 | `docs` | mkdocs, markdown | mkdocs: Material theme, strict build in CI; markdown: plain pages, `AGENTS.md`/`CLAUDE.md`, an example agent skill, link and format checks in CI, no build |
 | `plugin` | chrome | Manifest V3, popup, background, tests, store zip |
 | `empty` | — | `platform.toml` + code quality only |
 
-| Cloud | Adds |
-|-------|------|
-| `aws/lambda` | SAM template, HTTP API, custom domain, deploy workflow, IAM policy — for every `web` language: Mangum for Python, the Lambda Web Adapter for Node and Spring (Java, Kotlin), `aws-lambda-go-api-proxy` for Go, a Rack call for Ruby; the plugin `apx-aws-lambda` carries the canonical copy |
-| `aws/amplify` | `amplify.yml`, security headers, start-job workflow, IAM policy |
-| `docker` | Dockerfile per language, compose |
+| Cloud | Comes from | For | Adds |
+|-------|------------|-----|------|
+| `aws/lambda` | the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) plugin | `web` in Python, Node, Go, Java, Kotlin, Ruby | `template.yaml` (SAM, HTTP API, the Lambda Web Adapter layer), `samconfig.toml`, a `Makefile`, example IAM policies, an optional deploy workflow ([Deploy to AWS Lambda](guide_aws_lambda.md)) |
+| `dokploy` | the [apx-dokploy](https://github.com/actionplatform/apx-dokploy) plugin | `web` in Python, Node, Go, Java, Kotlin, Ruby | a Dockerfile, compose file, `DEPLOY.md` and a GitHub workflow that publishes the image on every release |
+| `aws/amplify` | the templates repository | `web` in Node | `amplify.yml`, security headers, start-job workflow, IAM policy |
+| `docker` | the templates repository | `web` in Python, Node, Go, Java, Kotlin, Ruby | Dockerfile per language, compose |
+
+An installed plugin's overlays join the catalog next to the repository's.
 
 | Service | Providers |
 |---------|-----------|
@@ -28,19 +33,19 @@ action-platform init --list
 
 [actionplatform/templates](https://github.com/actionplatform/templates): plain cookiecutters indexed by `index.json`.
 
-```toml
-[projects.web.python.fastapi]
-default = true
-description = "FastAPI + uvicorn + pydantic"
-
-[cloud.aws.lambda]
-description = "SAM, HTTP API, custom domain"
-types = ["web"]
-languages = ["python", "go", "node"]
-
-[service.postgres]
-description = "PostgreSQL"
-providers = ["docker", "aws-rds"]
+```json
+{
+  "projects": [
+    { "id": "web/python/fastapi", "type": "web", "stack": "python", "template": "fastapi",
+      "framework": "FastAPI", "language": "python", "description": "FastAPI + uvicorn + pydantic", "default": true }
+  ],
+  "clouds": [
+    { "id": "docker", "description": "Dockerfile on the build/runtime images + docker-compose", "types": ["web"], "languages": ["python", "node", "go", "java", "kotlin", "ruby"] }
+  ],
+  "services": [
+    { "id": "postgres", "description": "PostgreSQL database", "providers": ["docker", "aws-rds"] }
+  ]
+}
 ```
 
 `action-platform init` clones (and caches) the repository, reads the index, renders `projects/<type>/<stack>/<template>` with cookiecutter and, with `--cloud`, overlays `cloud/<provider>/<service>` on top. The web app's **Templates** catalog and **Create project** wizard read the same index through the API's `/api/matrix`.
@@ -89,7 +94,7 @@ Only the official repository (`ACTION_PLATFORM_TEMPLATES` or its clone) and the 
 ## Adding one
 
 1. In the templates repository, add `projects/<type>/<stack>/<name>/` with a `cookiecutter.json` (`project_name`, `project_slug`, `description`, `package_name`, `github_owner`, `author`, `license`, `source_host`, `ci` — owner and author empty, licence `none` by default) and a `{{cookiecutter.project_slug}}/` tree.
-2. Register it in `index.json`.
+2. Register it in `index.json` (the fields are in [Add your own templates](guide_custom_templates.md#build-a-catalog)).
 3. `ACTION_PLATFORM_TEMPLATES=/path/to/checkout action-platform init <type> <stack> <name> --no-push` to try it.
 
 Nothing to redeploy: the CLI and the API read the repository at `main`.

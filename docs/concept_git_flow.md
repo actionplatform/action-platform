@@ -1,5 +1,7 @@
 # Git-flow, enforced
 
+One branch and commit model for every repository, checked by machines instead of reviewers.
+
 Every project follows the same flow. Git hooks refuse the wrong move before it exists; CI refuses it on the pull request; the CLI and the MCP tools guide the right one.
 
 ```mermaid
@@ -38,6 +40,8 @@ gitGraph
 | `feature/<code>`, `bugfix/…`, `chore/…`, `docs/…`, `refactor/…`, `test/…`, `ci/…`, `perf/…` | `develop` (or the default branch when there is no `develop`) | `develop` | `X.Y.Z-rc.N` pre-release |
 | `release/<version>` | `develop` | `main` and `develop` | `X.Y.Z-rc.N` until merged |
 | `hotfix/<code>` | `main` | `main` and `develop` | `X.Y.Z-rc.N` until merged |
+| `support/<code>` | `main` | — (no pull request target) | `X.Y.Z-rc.N` |
+| `develop` | — | `main` | `X.Y.Z-rc.N` pre-release |
 | `main` / `master` | — | — | stable `X.Y.Z` → PyPI / npm / … |
 
 Rules the hooks, CI and the code host apply: branch names are `<kind>/<code>[-slug]`; commits are [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/); no direct commits on `main`, `master` or `develop` except `chore(release):`, `chore(platform):` and the bootstrap commit; a pull request may only target what the table allows.
@@ -62,13 +66,13 @@ One implementation, four enforcers:
 | Where | What |
 |---|---|
 | the code host (`[gitflow.protection]`) | GitHub, GitLab or Bitbucket itself refuses a direct push, a force push and a deletion on `main`, `master` and `develop`, and a merge whose checks did not pass — see below |
-| the git hooks (`action-platform install`) | `commit-msg` refuses a non-conventional subject or a direct commit on a protected branch; `pre-push` refuses pushing a protected branch with non-release commits |
+| the git hooks (`action-platform install`) | `pre-commit` refuses a branch name that is not git-flow; `commit-msg` refuses a non-conventional subject or a direct commit on a protected branch; `pre-push` refuses pushing a branch with a wrong name, or a protected branch with non-release commits |
 | [ci-scripts](https://github.com/actionplatform/ci-scripts) `gitflow.sh` | the same checks on every pull request, from GitHub Actions, GitLab CI or Jenkins |
 | the library | the rules as Python for the CLI, the MCP tools and the web app's audit |
 
 Hooks you already had are kept: an existing `pre-commit`, `commit-msg` or `pre-push` that is not ours is renamed to `<name>.pre-action-platform` and still runs after the platform's check. When `core.hooksPath` points at an unversioned directory the hooks go there instead of `.git/hooks`; when it points at a versioned one (Husky's `.husky/`, lefthook) nothing is touched and git-flow is enforced by CI only — the CLI says so.
 
-Commits allowed on protected branches: `chore(release): …`, `chore(platform): …`, `chore: bootstrap …`, merges and reverts.
+Commits allowed on protected branches: `chore(release): …`, `chore(platform): …` and `chore: bootstrap …`. Merge and revert commits are exempt from the Conventional Commit check, not from this rule.
 
 ## Enforced on the code host
 
@@ -100,6 +104,8 @@ Each rule is reported as **native** (the host refuses it), **check** (a required
 
 Nobody else bypasses, owners and admins included.
 
-**New apps** created on the platform get `enforce = true`. **Existing apps** — added, imported or adopted — stay off until enabled: per app in Settings › General, or for every app that does not say otherwise with the organization's default (Settings → Git rules, `PUT /api/v1/settings/protection`). A deploy never turns it on.
+**New apps** created on the platform get `enforce = true`. **Existing apps** — added, imported or adopted — stay off until enabled: per app in the app's Settings › Git (Branch protection), or for every app that does not say otherwise with the organization's default (Settings → Git rules, `PUT /api/v1/settings/protection`). A deploy never turns it on.
 
 **Drift.** Every hour the worker reads the host of each enforced app; when the rules differ (a bypass actor added, a rule removed, a branch unprotected) it puts them back and writes an event in the app's Activity with what changed and, when the host says, who. Turning enforcement off stops that; what the host has stays until it is removed there.
+
+Related: [Development standards](usecase_standards.md) · [Releases](concept_releases.md) · [platform.toml](concept_manifest.md) · [CLI › Git-flow](use_cli.md#git-flow)

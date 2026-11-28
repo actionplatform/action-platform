@@ -55,8 +55,8 @@ action-platform scopes                                    # the repository's [[s
 action-platform readiness [--version X.Y.Z] [--target name] [--stage|--scope name]
 action-platform deploy [--version X.Y.Z] [--target name] [--stage|--scope name] [--dry-run]   # a dispatched Jenkins target needs the app's connected server: deploy it from the platform
 action-platform rollback [X.Y.Z] [--target name] [--stage|--scope name]
-action-platform diagnose [--target name]
-action-platform destroy [--target name]
+action-platform diagnose [--target name] [--stage|--scope name]
+action-platform destroy [--target name] [--stage|--scope name] [--yes]
 action-platform deployments [--app id|name] [--sync]      # on the hosted platform: every target, what arrived at each; --sync asks the observed pipelines first
 action-platform logs <job-id> [--follow]                  # on the hosted platform: what the worker wrote for a job, live with -f
 action-platform deploy-record <target> <version> [--stage|--scope s] [--url u] [--failed] [--app id|name]   # on the hosted platform: write down a delivery made outside it
@@ -64,9 +64,35 @@ action-platform deploy-record <target> <version> [--stage|--scope s] [--url u] [
 
 `release` plans first (refuses a dirty tree, an existing version or tag), then bumps `LAST_VERSION`, prepends `CHANGELOG.md`, syncs `pyproject.toml` / `package.json` / `Cargo.toml` / `composer.json` / `pom.xml`, `__version__` and version constants, commits `chore(release): X.Y.Z`, tags, pushes, publishes the release on the source host and triggers CI runners. A push the remote refuses undoes the commit and the tag. Off `main`/`master` the version is `X.Y.Z-rc.N`. `--component <name>` releases one [component](concept_releases.md).
 
-`readiness` says whether a release can reach a stage without building or changing anything: the static checks (stage, tag shape, manifests at the tag's version, lockfiles) and what the `[deploy]` targets can verify (credentials, permissions, the destination's state); one line per check with its fix, a verdict per stage, exit `1` when something blocks. The same checks the hosted platform runs after every release — see [deployments › readiness](concept_deployments.md#readiness).
+`--scope` defaults to `prod` on `main`/`master` and `dev` on any other branch; `--stage` is the same option. The scope must be one of the `[[scopes]]` in `platform.toml`.
+
+`readiness` says whether a release can reach a scope without building or changing anything: the static checks (stage, tag shape, manifests at the tag's version, lockfiles) and what the `[deploy]` targets can verify (credentials, permissions, the destination's state); one line per check with its fix, a verdict per scope, exit `1` when something blocks. The same checks the hosted platform runs after every release — see [deployments › readiness](concept_deployments.md#readiness).
 
 `deploy` ships a release, never a working tree: `--version X.Y.Z` names the tag `vX.Y.Z` (or pass the tag itself); without it, HEAD must sit on a release tag, otherwise the command refuses. The tag is checked out for the duration and the branch put back afterwards. It runs the `[deploy]` target's `preflight`, then `create` / `deploy` / `switch_traffic`; `--dry-run` stops after preflight.
+
+## Overlays, services and plugins
+
+```bash
+action-platform cloud list [-p path]                       # cloud overlays, or only those that fit the project
+action-platform cloud set <name> [-p path] [--update] [--source url@ref]   # apply an overlay and set [deploy] target
+action-platform service list                               # services and their providers
+action-platform service add <name> [--provider p] [-p path] [--update] [--source url@ref]
+action-platform plugin list | search <name> | install <name> [--package spec] [-y] | remove | enable | disable <name>
+action-platform plugin index list | add <url>              # the indexes search and install read
+```
+
+Installed plugins add their own command groups, for example `action-platform aws-lambda connect|stacks|functions` and `action-platform dokploy projects|applications|deployments`. See [plugins](use_plugins.md).
+
+## CI servers
+
+```bash
+action-platform ci runs <job> [--limit 20] [--kind jenkins]    # the latest runs of a job
+action-platform ci run <job> [number]                          # one run: parameters, causes, changes; the latest when 0
+action-platform ci log <job> <number> [--start n] [--node id] [-f]   # the log, window by window, secrets masked
+action-platform ci queue                                       # what waits and why
+```
+
+`--kind` picks the CI server plugin; with one installed it can be left out.
 
 ## Platform services
 
@@ -123,7 +149,11 @@ Names take letters, digits, `-` and `_`; `plugins`, `workspaces` and `hooks` are
 | `ACTION_PLATFORM_GITLAB_TOKEN` / `GITLAB_TOKEN` | GitLab |
 | `ACTION_PLATFORM_BITBUCKET_TOKEN`, `ACTION_PLATFORM_BITBUCKET_USERNAME` | Bitbucket |
 | `ACTION_PLATFORM_TEMPLATES`, `ACTION_PLATFORM_TEMPLATES_REPO` | local checkout / repository of the templates matrix |
-| `AP_HOME` | where the API keeps its workspaces and the CLI its credentials (default `~/.action-platform`) |
+| `ACTION_PLATFORM_TEMPLATES_REF`, `ACTION_PLATFORM_TEMPLATES_INDEX`, `ACTION_PLATFORM_TEMPLATES_INDEX_TTL` | branch, raw `index.json` URL and its revalidation interval in seconds ([templates](concept_templates.md#other-repositories)) |
+| `ACTION_PLATFORM_PLUGINS_INDEX` | the plugin index `plugin search` and `plugin install` read |
+| `ACTION_PLATFORM_GIT_HOSTS` | hosts that may be cloned from ([self-hosting › environment](start_self_hosting.md#environment)) |
+| `AP_HOME` (else `XDG_CONFIG_HOME`) | parent of the CLI's `action-platform/` config directory; without either it is `~/.action-platform` |
+| `AP_WORKSPACES` | where the API and the worker keep their clones |
 | `AP_PROFILE` | the CLI's credentials and plugin settings under `~/.action-platform/<profile>` (same as `--profile`) |
 | `AP_SERVER`, `AP_TOKEN` | use this platform and token instead of the credentials file |
 | `AP_GIT_AUTHOR_NAME`, `AP_GIT_AUTHOR_EMAIL` | identity for commits when the request carries none (default `Action Platform <cloud@actionplatform.io>`) |
@@ -131,7 +161,7 @@ Names take letters, digits, `-` and `_`; `plugins`, `workspaces` and `hooks` are
 
 ## Tokens and scopes
 
-`action-platform login <server> [--scope …] [--name label]` runs the device flow. Without `--scope` it asks for every scope and every organization; the browser page shows that selection already made, cut to what your role allows, and you can narrow it before approving. `--scope read,write` narrows from the command line instead. In the browser you pick what the token may do — `read` (always), `write` (configuration, branches, pull requests, commits, sync), `release`, `admin` (projects, members, hosts, settings) — and where it may act — one organization or all of them, optionally one project, optionally one app inside it — and the CLI swaps the approved session for a bearer JWT with that scope and reach, valid 90 days, kept in `~/.action-platform/credentials.json`. Scope narrows your role; it never widens it, and the browser only offers what your role can grant. `action-platform whoami` prints server, account, scope and reach; tokens are listed and revoked under **Connected apps** (key icon next to your name in the web app), together with the programs that used them. `AP_SERVER` / `AP_TOKEN` (and `AP_SCOPE` for display) override the file.
+`action-platform login <server> [--scope …] [--name label]` runs the device flow. Without `--scope` it asks for every scope and every organization; the browser page shows that selection already made, cut to what your role allows, and you can narrow it before approving. `--scope read,write` narrows from the command line instead. In the browser you pick what the token may do — `read` (always), `write` (configuration, branches, pull requests, commits, sync), `release`, `admin` (projects, members, hosts, settings) — and where it may act — one organization or all of them, optionally one project, optionally one app inside it — and the CLI swaps the approved session for a bearer JWT with that scope and reach, valid 90 days, kept in `~/.action-platform/credentials.json`. Scope narrows your role; it never widens it, and the browser only offers what your role can grant. `action-platform whoami` prints server, account, scope and reach; tokens are listed and revoked under **Team → Sessions** (the key icon *Connected apps* next to your name in the web app), together with the programs that used them. `AP_SERVER` / `AP_TOKEN` (and `AP_SCOPE` for display) override the file.
 
 Without a browser, `action-platform login <server> --token` keeps a token made elsewhere: **New token** under Team → Sessions in the web app (name, scope and reach picked there, shown once), or `action-platform-api tokens issue` run by an operator ([operations](start_operations.md#users-and-tokens)). The token is read from `AP_TOKEN` when set, otherwise from stdin (a hidden prompt in a terminal); it is never printed. The CLI checks it against `/api/v1/me` and writes `credentials.json` as the device flow does, so `whoami`, every remote command and `action-platform mcp --remote` use it. Changing or resetting the password revokes the account's tokens: log in again afterwards.
 

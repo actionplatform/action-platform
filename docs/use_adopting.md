@@ -82,7 +82,7 @@ kind = "worker"
 criticality = "critical"
 ```
 
-The same list is under the app's Settings › Scopes, `POST …/apps/{id}/scopes` and the `create_scope` tool; `action-platform scopes` prints the file's. `kind` is `web`, `job`, `worker`, `static` or `library`; `criticality` is `test` to `critical` and decides which releases the scope takes (candidates only reach `test` and `low`).
+The same list is on the app's **Scopes** tab, `POST …/apps/{id}/scopes` and the `create_scope` tool; `action-platform scopes` prints the file's. `kind` is `web`, `job`, `worker`, `static` or `library`; `criticality` is `test` to `critical` and decides which releases the scope takes (candidates only reach `test` and `low`).
 
 Several targets may observe the same pipeline job. A job that deploys two places is two targets, each with a single-entry `stages` — one build then yields one deployment per target, each on its own scope. Parts shipped together by one deploy, such as the functions of one stack, can each be a scope observed from the same job.
 
@@ -130,8 +130,8 @@ observe = true
 **Manual**: `run_by = "manual"` for something a person does. After doing it, write it down:
 
 ```bash
-action-platform deploy-record api-prod 1.4.0 --stage prod-eu --url https://api.example.com
-action-platform deploy-record api-prod 1.3.9 --stage prod-eu --failed
+action-platform deploy-record api-prod 1.4.0 --scope prod-eu --url https://api.example.com
+action-platform deploy-record api-prod 1.3.9 --scope prod-eu --failed
 ```
 
 `--app` names the app when the command does not run inside its repository. It needs `action-platform login`. `POST /api/v1/projects/{p}/apps/{a}/deployments` and the `record_deployment` tool do the same; use them to backfill what each scope runs today so Deployments starts truthful.
@@ -147,10 +147,10 @@ A Jenkins job the platform should also be able to start is a dispatched target (
 ## Connect Jenkins
 
 1. Connect → **CI** → Servers → add a server: name, base URL, username and API token (Jenkins → your user → Security → API Token), or `POST /api/v1/ci-hosts {kind: "jenkins", name, base_url, username, token}`. *Test* (`POST /api/v1/ci-hosts/{id}/test`) reaches it with the sealed token.
-2. On the app's **CI** tab choose the server and the job path as Jenkins shows it in the URL (`team/api`, or `team/api/main` for a multibranch branch), or `PUT /api/v1/projects/{p}/apps/{a}/ci {"ci_host_id": "<id>", "job": "team/api"}`. **Sync** (`POST …/ci/sync`) imports the runs.
+2. On the app's **Settings › CI** choose the server and the job path as Jenkins shows it in the URL (`team/api`, or `team/api/main` for a multibranch branch), or `PUT /api/v1/projects/{p}/apps/{a}/ci {"ci_host_id": "<id>", "job": "team/api"}`. **Sync** (`POST …/ci/sync`) imports the runs.
 3. Put the same job path in the target's `job`, then **Sync** the app's deployments.
 
-The Jenkins account needs only read on the jobs it observes: *Overall/Read* and *Job/Read* on their folders. A `404` from Jenkins on a job that exists usually means the account cannot see that folder — Jenkins answers not found where it would otherwise say forbidden — so grant it read on the folder rather than checking the path first. Starting a job needs more, only for dispatched targets ([web](use_web.md#ci-servers)).
+The Jenkins account needs only read on the jobs it observes: *Overall/Read* and *Job/Read* on their folders. A `404` from Jenkins on a job that exists usually means the account cannot see that folder — Jenkins answers not found where it would otherwise say forbidden — so grant it read on the folder rather than checking the path first. Starting a job needs more, only for dispatched targets ([web](use_web.md#ci)).
 
 For GitHub Actions, GitLab CI and Bitbucket Pipelines nothing is connected here: the app's source host token is used.
 
@@ -170,7 +170,7 @@ For an observed target a version already at the destination is the expected stat
 
 ## Checklist
 
-- [ ] Repositories imported (`POST /api/v1/import/github`) or added one by one; their releases appear in the Releases tab.
+- [ ] Repositories imported (`POST /api/v1/import`) or added one by one; their releases appear in the Releases tab.
 - [ ] `action-platform install --dry-run` (or the Adoption preview) read; `--ci`, `--type` and `--language` chosen on purpose, `--ci none` where the pipelines stay yours.
 - [ ] `LAST_VERSION` equals the newest release tag.
 - [ ] Hooks installed only where the team works through branches and pull requests.
@@ -178,6 +178,6 @@ For an observed target a version already at the destination is the expected stat
 - [ ] A `[[deploy.targets]]` per place a pipeline deploys, with `run_by`, `job` or `workflow`, `stages` and, for Jenkins, `version_parameter` and, when the job serves several scopes, `stage_parameter`.
 - [ ] Jenkins connected, the account able to read every observed folder, the app's CI linked.
 - [ ] What each scope runs today recorded with `deploy-record`.
-- [ ] `action-platform deployments --sync` lists the targets and their latest versions; `action-platform readiness --version X.Y.Z --stage <scope>` shows the observed targets as warnings at most.
+- [ ] `action-platform deployments --sync` lists the targets and their latest versions; `action-platform readiness --version X.Y.Z --scope <scope>` shows the observed targets as warnings at most.
 
-Related: [getting started](start_getting_started.md) · [deployments](concept_deployments.md) · [scopes](concept_scopes.md) · [manifest](concept_manifest.md) · [git-flow](concept_git_flow.md) · [troubleshooting](start_troubleshooting.md).
+Related: [deploy from the web](guide_first_deploy.md) · [deployments](concept_deployments.md) · [scopes](concept_scopes.md) · [manifest](concept_manifest.md) · [git-flow](concept_git_flow.md) · [troubleshooting](start_troubleshooting.md).

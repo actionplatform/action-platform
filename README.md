@@ -22,7 +22,7 @@ Three doors, one core:
 |---|---|
 | **Web app** | Organizations › teams › projects › apps, with roles (`owner`, `admin`, `deployer`, `developer`, `viewer`). Create an app from a template or import any repository, connect GitHub / GitLab / Bitbucket, edit `platform.toml`, open pull requests, cut releases, see whether each one can reach `dev` and `prod`, deploy it, follow the CI runs and every deployment — wherever it ran — from a dashboard, a release timeline and paged tables. One command to self-host. |
 | **CLI** | `pipx install action-platform` and the same verbs on your machine: `init`, `branch`, `pr`, `release`, `readiness`, `deploy`, `rollback`, `diagnose`, `deployments`. |
-| **MCP server** | The same operations as tools for Claude Code, Codex, Cursor — locally, or against your hosted platform after `action-platform login`: 71 remote tools that know who you are, which app the current directory is, what your token may do, and can manage projects, teams and members. |
+| **MCP server** | The same operations as tools for Claude Code, Codex, Cursor — locally, or against your hosted platform after `action-platform login`: 73 remote tools that know who you are, which app the current directory is, what your token may do, and can manage projects, teams and members. |
 
 ## Self-host in one command
 
@@ -69,7 +69,7 @@ Thirty seconds later you have a FastAPI service with tests, lint, CI wired, a SA
 | `plugin` | chrome |
 | `empty` | `platform.toml` + code quality only |
 
-Cloud overlays `aws/lambda`, `aws/amplify`, `docker`; services `postgres` (docker, aws-rds). Every template comes with tests, lint, CI and `AGENTS.md`. Your organization can add **any git repository** as a template — a plain starter becomes one template, a repository with an `index.toml` a whole catalog. Existing repositories join with one click: the platform installs `platform.toml`, code quality, CI and hooks, and opens the pull request. → [Templates](docs/concept_templates.md)
+Cloud overlays `aws/lambda`, `aws/amplify`, `docker`; services `postgres` (docker, aws-rds). Every template comes with tests, lint, CI and `AGENTS.md`. Your organization can add **any git repository** as a template — a plain starter becomes one template, a repository with an `index.json` a whole catalog. Existing repositories join with one click: the platform installs `platform.toml`, code quality, CI and hooks, and opens the pull request. → [Templates](docs/concept_templates.md)
 
 ## Git-flow, enforced
 
@@ -93,14 +93,15 @@ flowchart LR
 
 ## Documentation
 
-[`docs/`](docs/README.md) is organized by what you want to do — **start**, **use**, **concept**, **contribute**:
+Read it at [actionplatform.io/docs](https://actionplatform.io/docs/) or in [`docs/`](docs/README.md):
 
 | | |
 |---|---|
-| Start | [Getting started](docs/start_getting_started.md) · [Self-hosting](docs/start_self_hosting.md) · [Operations](docs/start_operations.md) · [Troubleshooting](docs/start_troubleshooting.md) |
-| Use | [Adopting repositories](docs/use_adopting.md) · [Web](docs/use_web.md) · [CLI](docs/use_cli.md) · [MCP](docs/use_mcp.md) · [API](docs/use_api.md) · [Plugins](docs/use_plugins.md) |
-| Concept | [Access control](docs/concept_access_control.md) · [Git-flow](docs/concept_git_flow.md) · [Manifest](docs/concept_manifest.md) · [Templates](docs/concept_templates.md) · [Releases](docs/concept_releases.md) · [Deployments](docs/concept_deployments.md) · [Identity](docs/concept_identity.md) · [Observability](docs/concept_observability.md) · [Database](docs/concept_database.md) |
-| Contribute | [Architecture](docs/contribute_architecture.md) · [Development](docs/contribute_development.md) · [Writing a plugin](docs/contribute_plugins.md) |
+| Getting started | [Introduction](docs/start_introduction.md) · [Why Action Platform](docs/start_why.md) · [Core concepts](docs/start_concepts.md) · [Quickstart](docs/start_getting_started.md) |
+| Platform | [Templates](docs/concept_templates.md) · [Git-flow](docs/concept_git_flow.md) · [Releases](docs/concept_releases.md) · [Scopes](docs/concept_scopes.md) · [Deployments](docs/concept_deployments.md) · [Cloud identity](docs/concept_identity.md) · [Access control](docs/concept_access_control.md) · [Plugins](docs/use_plugins.md) |
+| Guides | [Deploy from the web](docs/guide_first_deploy.md) · [Deploy to AWS Lambda](docs/guide_aws_lambda.md) · [Adopting repositories](docs/use_adopting.md) · [Self-hosting](docs/start_self_hosting.md) · [Operations](docs/start_operations.md) |
+| Reference | [platform.toml](docs/concept_manifest.md) · [CLI](docs/use_cli.md) · [Web](docs/use_web.md) · [MCP](docs/use_mcp.md) · [API](docs/use_api.md) · [Security](docs/reference_security.md) · [Architecture](docs/contribute_architecture.md) |
+| Resources | [Troubleshooting](docs/start_troubleshooting.md) · [Glossary](docs/resource_glossary.md) · [Development](docs/contribute_development.md) · [Writing a plugin](docs/contribute_plugins.md) |
 
 Versions and history: [`LAST_VERSION`](LAST_VERSION) / [`CHANGELOG.md`](CHANGELOG.md) for the library and CLI, [`apps/web`](apps/web/CHANGELOG.md) and [`apps/api`](apps/api/app/CHANGELOG.md) for the web app and the API.
 

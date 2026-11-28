@@ -24,7 +24,7 @@ State lives in `~/.action-platform/plugins.json` (`AP_HOME` moves it): which plu
 | Cloud overlays | `list_matrix` / `action-platform cloud set <name>`; a plugin's cloud replaces the templates repository's of the same name, since the code that deploys it lives in the plugin |
 | Deploy targets, CI runners | `[deploy] target = "<name>"` and `run_by = "<runner>"` in platform.toml find them; `action-platform deploy` says which package is missing otherwise. The core carries only the CIs that live in a code host (GitHub Actions, GitLab CI, Bitbucket Pipelines); a CI server of its own comes from its plugin (Jenkins from `apx-jenkins`), and the core's read-only `ci_runs`, `ci_run`, `ci_log`, `ci_queue` tools and `action-platform ci runs/run/log/queue` read it through the runner |
 | Release strategy, changelog | `[release] strategy = "<name>"`, `[release] changelog = "<name>"` |
-| Replaced core processes | `action-platform plugin list` shows `replaces`; `gitflow_rules`, `gitflow`, `releaser`, `deployer`, `installer`, `scaffolder` |
+| Replaced core processes | declared by the plugin (`replaces`); `gitflow_rules`, `gitflow`, `releaser`, `deployer`, `installer`, `scaffolder` |
 | Access on its service (`Plugin.access`) | the platform's `access_*` tools, `action-platform access …` and `/api/v1/access/*` cover the service once the plugin is bundled in the API image and its options are filled in — see [service access](concept_service_access.md); `plugin list` shows `access` |
 | Lifecycle hooks | run after a real release, deploy or pull request — never on dry runs |
 
@@ -60,7 +60,7 @@ A plugin's options are one connection: an organization reads one owner's set who
 
 ## Index
 
-The web app lists the plugins the platform runs under **Plugins** — one card each, the settings a plugin declares behind **Configure**; the index stays a CLI matter (`action-platform plugin search`).
+The web app lists the plugins the platform runs under **Admin → Plugins**, and each kind's page under **Connect** (Deploy, CI, Observability…) shows the cards of its plugins — the settings a plugin declares behind **Configure**. The index stays a CLI matter (`action-platform plugin search`, `plugin index list`, `plugin index add`).
 
 An index is a directory of `<slug>.json` files served over HTTPS — the official one is `actionplatform/plugins-index` on GitHub raw. Each file names the PyPI package, the latest version, the repository, `min_core`, a `verified` flag (someone read the code) and what the plugin `needs` (hosts it talks to, environment variables it reads — shown before you accept). Anyone can publish another index and add it with `plugin index add`.
 
