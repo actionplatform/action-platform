@@ -4,7 +4,7 @@ Who may do what, in one place: **roles** say what a person can do in an organiza
 
 ## Roles
 
-Assigned per organization under Settings → **Members**.
+Assigned per organization under Team → **Members**.
 
 | Role | Permissions |
 |---|---|
@@ -57,6 +57,6 @@ Also chosen at approval.
 
 ## Commit identity
 
-Commits the platform makes (releases, configuration changes) use the organization's commit identity — Settings → **Commit identity**, default `Action Platform <cloud@actionplatform.io>` — sent with every request that may commit. The API's `AP_GIT_AUTHOR_*` apply only when nothing arrives.
+Commits the platform makes (releases, configuration changes) use the organization's commit identity — Settings → **General** (commit identity), default `Action Platform <cloud@actionplatform.io>` — sent with every request that may commit. The API's `AP_GIT_AUTHOR_*` apply only when nothing arrives.
 
 See also: [service access](concept_service_access.md) for access on the services a team uses (code host, CI, error tracking), [web app](use_web.md) for the screens, [CLI](use_cli.md) for `login`, [MCP](use_mcp.md) for `whoami` and the organization tools, [architecture](contribute_architecture.md) for how credentials travel.

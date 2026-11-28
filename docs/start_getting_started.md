@@ -35,7 +35,7 @@ Open the instance. Until an account exists `/setup` is open, and the first accou
 
 ### 2. Connect a code host and the webhook
 
-Settings → **Git**. For GitHub, *Create GitHub App* opens GitHub with the manifest filled in; confirm, install the app on the account or organization whose repositories it should manage, then connect. The app is created with *Actions: Read and write*, which the platform needs to start workflows. GitLab and Bitbucket connect with an OAuth app or *Add with a token*. [Web › Git](use_web.md#git).
+Connect → **Git**. For GitHub, *Create GitHub App* opens GitHub with the manifest filled in; confirm, install the app on the account or organization whose repositories it should manage, then connect. The app is created with *Actions: Read and write*, which the platform needs to start workflows. GitLab and Bitbucket connect with an OAuth app or *Add with a token*. [Web › Git](use_web.md#git).
 
 Then **Webhook…** on the connected account shows the payload URL and a secret (shown once) to paste on the host: every push, pull request, release and pipeline run then syncs the app within seconds. Without it, the **Sync** button is the only way new activity arrives.
 
@@ -49,7 +49,7 @@ The app's **Settings › CI** picks the runner and the job:
 
 | Runner | Job |
 |---|---|
-| **CI server** the organization added under Settings → **CI servers** (Jenkins: base URL, user, API token) | the path in the Jenkins URL: `team/app`, or `team/app/main` for a multibranch branch |
+| **CI server** the organization added under Connect → **CI** → Servers (Jenkins: base URL, user, API token) | the path in the Jenkins URL: `team/app`, or `team/app/main` for a multibranch branch |
 | the one embedded in the source host: GitHub Actions, GitLab CI, Bitbucket Pipelines (the host's own token, nothing to add under CI servers) | a workflow file such as `ci.yml` for GitHub Actions (empty is every workflow); nothing for GitLab and Bitbucket |
 
 Connected, the app's **Activity › CI runs** lists the runs (**Sync** imports the latest), Overview shows the latest run of the current branch and Releases the run of each release, and **Run CI** on Overview starts the job on a branch or tag. This is the *observed* side: the platform reads what the CI does. A deploy can also be *dispatched* through CI — a workflow or Jenkins job the platform starts on a release tag — and that is declared as a deploy target, not here: [observed and dispatched deployments](concept_deployments.md#targets-and-executors).
@@ -58,9 +58,9 @@ Connected, the app's **Activity › CI runs** lists the runs (**Sync** imports t
 
 The platform runs a target itself through a plugin bundled in its image. Configuration → **Deploy target** applies the cloud overlay to the app (the files become pending edits and `[deploy] target` is recorded; commit them as in step 3). The plugin's settings are per organization under **Plugins** → the plugin → **Configure** ([plugins](use_plugins.md#on-the-hosted-platform)).
 
-**AWS Lambda** (`aws/lambda`). Connect your AWS account once with the plugin's IAM-only stack and paste its `DeployRoleArn` under Plugins → AWS Lambda → Configure; no cloud key reaches the platform. The stack and the role: the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README; why it holds no key: [identity](concept_identity.md).
+**AWS Lambda** (`aws/lambda`). Connect your AWS account once with the plugin's IAM-only stack and paste its account ID (or the `DeployRoleArn`) under Connect → Deploy → AWS Lambda → Configure; no cloud key reaches the platform. The stack and the role: the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README; why it holds no key: [identity](concept_identity.md).
 
-**Dokploy** (`dokploy`). Under Plugins → Dokploy → Configure:
+**Dokploy** (`dokploy`). Under Connect → Deploy → Dokploy → Configure:
 
 | Option | What |
 |---|---|
@@ -94,7 +94,7 @@ The Deployments tab lists every deploy with its status. A deployment moves `queu
 
 ### The same, from the terminal
 
-Inside the project's repository, with the plugin's settings in the environment (`DOKPLOY_URL`, `DOKPLOY_API_KEY`) or its options file:
+Inside the project's repository, with the plugin's settings in the environment (`DOKPLOY_URL`, `DOKPLOY_API_KEY`) or its options file. The platform's worker does not read these variables: it takes the options saved for the organization under Connect → Deploy → Dokploy.
 
 ```bash
 action-platform plugin install dokploy   # once; aws-lambda for aws/lambda

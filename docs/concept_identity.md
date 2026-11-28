@@ -63,7 +63,7 @@ What the account enforces:
 - **Stack names** follow the prefix: the target passes `--stack-name ap-<org>-<project>-<app>-<dev|prod>` itself; `samconfig.toml`'s `stack_name` only matters for a deploy with a repository's own role or the AWS CLI's chain.
 - **Who may deploy which app** is the platform's decision: it signs a token about an app only for a job or a caller allowed to release it.
 
-The deploy role's ARN is the one setting the plugin asks for (Plugins → AWS Lambda → Configure → *Deploy role ARN*), stored per organization in `plugin_option` and handed to every deploy job as `AP_AWS_LAMBDA_ROLE_ARN` with `AP_APP=<org>/<project>/<app>`.
+The deploy role's ARN is the one setting the plugin asks for (Connect → Deploy → AWS Lambda → Configure → *AWS account ID*, which also takes the role's ARN), stored per organization in `plugin_option` and handed to every deploy job as `AP_AWS_LAMBDA_ROLE_ARN` with `AP_APP=<org>/<project>/<app>`.
 
 `[deploy] role_arn = "…"` in a repository still works for a role of its own: the platform registered once per account as an identity provider, a trust policy on `aud` and `sub`, `sts:AssumeRoleWithWebIdentity` with the same token.
 

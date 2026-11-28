@@ -70,8 +70,8 @@ On Dokploy: stop `ap-web`, `ap-worker`, `ap-worker-deploy` and `ap-api` with `do
 
 - `GET /api/version` (or the sidebar footer) shows the versions and `ready: true`.
 - Sign in with an existing account; the organizations, projects and apps are there.
-- Settings → **Git**: a connected host lists its account; an app's **Sync** succeeds (the stored token opens).
-- Settings → **CI servers**: *Test* reaches the server.
+- Connect → **Git**: a connected host lists its account; an app's **Sync** succeeds (the stored token opens).
+- Connect → **CI** → Servers: *Test* reaches the server.
 - **Plugins** → a plugin → **Configure** opens with its saved options.
 
 If those last three fail with a decryption error, the secret is not the one the backup was taken with: go back to step 2, or follow [losing the auth secret](#losing-the-auth-secret).
@@ -84,10 +84,10 @@ If those last three fail with a decryption error, the secret is not the one the 
 |---|---|---|
 | Browser sessions | signed out | sign in again; passwords are hashed without the secret and keep working |
 | CLI and MCP tokens (`action-platform login`) | `401` | `action-platform login <url>` again; the old tokens can be revoked under **Sessions** (the key icon next to your name) |
-| Source host tokens, refresh tokens and webhook secrets | sync, push, release and import fail | Settings → **Git**: *Remove host*, then **Connect with …** again; generate the *Webhook…* secret again and paste it on the host |
-| Service connections (Settings → **Services**, e.g. Sentry) | the plugins that read them fail | *Connect* the service again under Settings → **Services** |
-| CI server tokens (Jenkins) | *Test* and dispatched deploys fail | Settings → **CI servers**: remove the server and add it again with its API token |
-| OAuth apps stored in the database (*Set up OAuth app*, the GitHub App manifest) | *Connect with …* fails | enter the client id and secret again with *Set up OAuth app* in Settings → **Git** or **Services** (for the GitHub App the manifest made, generate a new client secret in its settings on GitHub), or set `GITHUB_*` / `GITLAB_*` / `BITBUCKET_*` in `.env` |
+| Source host tokens, refresh tokens and webhook secrets | sync, push, release and import fail | Connect → **Git**: *Remove host*, then **Connect with …** again; generate the *Webhook…* secret again and paste it on the host |
+| Service connections (Connect → **Observability**, e.g. Sentry) | the plugins that read them fail | *Connect* the service again under Connect → **Observability** |
+| CI server tokens (Jenkins) | *Test* and dispatched deploys fail | Connect → **CI** → Servers: remove the server and add it again with its API token |
+| OAuth apps stored in the database (*Set up OAuth app*, the GitHub App manifest) | *Connect with …* fails | enter the client id and secret again with *Set up OAuth app* in Connect → **Git** or **Observability** (for the GitHub App the manifest made, generate a new client secret in its settings on GitHub), or set `GITHUB_*` / `GITLAB_*` / `BITBUCKET_*` in `.env` |
 | Plugin options marked secret | the plugin's **Configure** and its jobs fail | type those options again in **Plugins** → **Configure** |
 | The OIDC signing key (deploys into a connected cloud account) | deploys that exchange the platform's token fail | delete the sealed key so the API makes a new one on the next deploy: `docker compose exec -T postgres psql -U action_platform action_platform -c 'DELETE FROM signing_key'`; the clouds read the new key from `<PUBLIC_URL>/.well-known/jwks.json` |
 | Google sign-in and OAuth round trips in flight | expire | start them again |

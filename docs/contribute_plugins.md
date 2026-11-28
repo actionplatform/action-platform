@@ -163,15 +163,15 @@ class VaultPlugin(Plugin):
         found = options.credential("sentry")
 
         if found is None:
-            raise AccessError("vault: connect Sentry under Settings → Services")
+            raise AccessError("vault: connect Sentry under Connect → Observability")
 
         return VaultAccess(found.api_url or "https://sentry.io/api/0", found.token)
 ```
 
 | Kind | The connection | What the declaration adds |
 |---|---|---|
-| `github`, `gitlab`, `bitbucket` | the code host the organization connected under **Settings → Git** — the OAuth host first, then one added with a token | its `scopes` join what connecting asks the provider for; a GitHub App created from the platform's manifest also carries its `permissions`, and **Settings → Git** names an installation that lacks one |
-| `sentry` | **Settings → Services → Connect Sentry**, an OAuth connection of its own | its `scopes` join what connecting asks Sentry for |
+| `github`, `gitlab`, `bitbucket` | the code host the organization connected under **Connect → Git** — the OAuth host first, then one added with a token | its `scopes` join what connecting asks the provider for; a GitHub App created from the platform's manifest also carries its `permissions`, and **Connect → Git** names an installation that lacks one |
+| `sentry` | **Connect → Observability → Connect Sentry**, an OAuth connection of its own | its `scopes` join what connecting asks Sentry for |
 
 `credential(kind)` answers a `Credential` — `token`, `login`, `api_url` (None for the public service), `scopes` (what was granted, when the provider says), `app` (the GitHub App slug when the token comes from one) — or `None`: on a machine, for a kind the plugin did not declare, or while nothing is connected. The token is refreshed before it is handed over and is the caller's for that call only; never log it, never put it in an error. When it lacks a scope or a permission the plugin needs, raise an `AccessError` that names the missing one and the click that grants it (reconnect, accept the app's new permissions). A token option may stay for platforms without the connection; read it first and fall back to the connection.
 
