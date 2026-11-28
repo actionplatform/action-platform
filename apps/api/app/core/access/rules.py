@@ -80,6 +80,41 @@ DIRECTORY = {
 }
 
 
+NESTED = re.compile(r"^projects/([^/]+)/apps/([^/]+)(?:/(.+))?$")
+PROJECT_APPS = re.compile(r"^projects/([^/]+)/apps$")
+SERVED_BY_PROJECTS = {"releases"}
+RENAMED = {"versions": "releases"}
+
+
+def nested_app(method: str, path: str) -> Optional[tuple[str, str, Optional[str]]]:
+    """(project, app, rest) when `path` is an app route under its project that the workspace routes serve."""
+    found = NESTED.match(path)
+
+    if found is None:
+        return None
+
+    project, app, rest = found.groups()
+
+    if rest is None:
+        return (project, app, None) if method == "GET" else None
+
+    if rest in SERVED_BY_PROJECTS:
+        return None
+
+    rest = RENAMED.get(rest, rest)
+
+    if rule_for(method, f"apps/{app}/{rest}") is None:
+        return None
+
+    return project, app, rest
+
+
+def project_listing(method: str, path: str) -> Optional[str]:
+    found = PROJECT_APPS.match(path) if method == "GET" else None
+
+    return found.group(1) if found else None
+
+
 def rule_for(method: str, path: str) -> Optional[Rule]:
     return next(
         (r for r in RULES if r.method == method and r.pattern.match(path)), None

@@ -15,6 +15,7 @@ from app.services.workspace.git_auth import git_auth
 
 WEBHOOK = re.compile(r"^webhooks/[A-Za-z0-9_-]{1,64}$")
 PREFIX = "/api/v1/"
+DEPRECATION = [(b"deprecation", b"true")]
 MAX_BODY = 2 * 1024 * 1024
 
 
@@ -58,6 +59,8 @@ class AccessGate:
 
             return
 
+        legacy = path == "apps" or path.startswith("apps/")
+
         try:
             caller, plan = await run_in_threadpool(
                 self.planner.decide, headers, method, path, body
@@ -71,6 +74,7 @@ class AccessGate:
                     "status": "queued",
                     "poll": f"/api/v1/jobs/{e.job_id}",
                 },
+                DEPRECATION if legacy else [],
             )
 
             return
@@ -91,7 +95,8 @@ class AccessGate:
 
             return
 
-        self._rewrite(scope, path, plan)
+        self._rewrite(scope, plan.path, plan)
+        scope["state"]["nested"] = plan.nested
         creds = SourceCredentials(**plan.credentials) if plan.credentials else None
 
         with git_auth(creds):
@@ -99,7 +104,7 @@ class AccessGate:
 
         if plan.target.rule.imports and 200 <= status < 300:
             await run_in_threadpool(
-                self.planner.import_later, plan, caller, path, method
+                self.planner.import_later, plan, caller, plan.path, method
             )
 
     @staticmethod
@@ -177,7 +182,12 @@ class AccessGate:
         return status
 
     @staticmethod
-    async def _json(send: Send, status: int, payload: Any) -> None:
+    async def _json(
+        send: Send,
+        status: int,
+        payload: Any,
+        extra: Optional[list[tuple[bytes, bytes]]] = None,
+    ) -> None:
         data = json.dumps(payload).encode()
         await send(
             {
@@ -186,6 +196,7 @@ class AccessGate:
                 "headers": [
                     (b"content-type", b"application/json"),
                     (b"content-length", str(len(data)).encode()),
+                    *(extra or []),
                 ],
             }
         )
