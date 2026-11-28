@@ -671,6 +671,31 @@ class RemoteToolsTest(TempCase):
 
         self.assertIn("h2", str(caught.exception))
 
+    def test_init_app_picks_the_only_host_of_the_ci_kind(self):
+        gitlab = {
+            **self.fake.hosts_rows[0],
+            "id": "h2",
+            "kind": "gitlab",
+            "name": "GitLab · me",
+            "default_owner": "me",
+        }
+        self.fake.hosts_rows.append(gitlab)
+
+        for ci, expected in (("github", "h1"), ("gitlab", "h2")):
+            with self.subTest(ci=ci):
+                self.call(
+                    "init_app",
+                    {
+                        "project": "shop",
+                        "type": "web",
+                        "name": "Orders",
+                        "owner": "playground",
+                        "ci": ci,
+                    },
+                )
+
+                self.assertEqual(self.fake.calls[-1][1][1]["source_host_id"], expected)
+
     def test_init_app_takes_the_host_by_name(self):
         second = {
             **self.fake.hosts_rows[0],
