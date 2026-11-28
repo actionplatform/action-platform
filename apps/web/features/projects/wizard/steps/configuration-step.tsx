@@ -29,7 +29,7 @@ export function ConfigurationStep({ w }: { w: AppWizard }) {
         <Field label="Description">
           <Input value={config.description} onChange={(e) => setConfig({ ...config, description: e.target.value })} placeholder={w.leaf?.description ?? ""} />
         </Field>
-        <Field label="Source host" hint={hosts.length ? "Where the repository will live." : "None configured — Settings → Source hosts."}>
+        <Field label="Source host" hint={hosts.length ? "Where the repository will live." : "None configured — Connect → Git."}>
           <Select value={w.hostId} onChange={w.setHostId} disabled={hosts.length === 0} placeholder="No source host" options={hosts.map((h) => ({ value: h.id, label: h.name }))} />
         </Field>
         <Field label={host?.kind === "gitlab" ? "Namespace" : host?.kind === "bitbucket" ? "Workspace" : "Organization"} hint={host?.owners.length ? (host.kind === "gitlab" ? "Your user or a group where you can create projects." : host.kind === "bitbucket" ? "A workspace where you can create repositories." : "Where the repository is created — an account or organization the GitHub App is installed on.") : "Account or organization that owns the repository."}>
@@ -76,7 +76,7 @@ export function ConfigurationStep({ w }: { w: AppWizard }) {
           )}
           <div className="rounded-md border border-border px-3 py-2 text-sm">
             <div className="font-medium">Repository</div>
-            <div className="text-[13px] text-secondary">{host ? `Created ${config.visibility} on ${host.name} as ${config.githubOwner || host.defaultOwner || "the token's user"}/${config.directory || "<directory>"} and pushed right away: apps on the platform always live on a code host.` : "Connect a code host in Settings first: the app is created on it and pushed right away."}</div>
+            <div className="text-[13px] text-secondary">{host ? `Created ${config.visibility} on ${host.name} as ${config.githubOwner || host.defaultOwner || "the token's user"}/${config.directory || "<directory>"} and pushed right away: apps on the platform always live on a code host.` : "Connect a code host under Connect → Git first: the app is created on it and pushed right away."}</div>
           </div>
         </div>
       </div>

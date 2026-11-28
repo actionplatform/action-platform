@@ -31,7 +31,7 @@ export function ConnectCi({ projectId, appId, state, hosts, sourceKind, backHref
     onDone: () => router.push(backHref),
   });
 
-  const blocker = !canEdit ? "Your role cannot change the CI of this app." : hosts.length === 0 && !embeddedLabel ? "Add a CI server under Settings first, or connect a GitHub source host." : hostId === EMBEDDED && !embeddedLabel ? "The source host has no CI of its own — pick a server." : null;
+  const blocker = !canEdit ? "Your role cannot change the CI of this app." : hosts.length === 0 && !embeddedLabel ? "Add a CI server under Connect → CI first, or connect a GitHub source host." : hostId === EMBEDDED && !embeddedLabel ? "The source host has no CI of its own — pick a server." : null;
 
   return (
     <ActionForm
@@ -43,7 +43,7 @@ export function ConnectCi({ projectId, appId, state, hosts, sourceKind, backHref
       alerts={action.error ? <RunAlert tone="danger" title="Could not save" summary={summarize(action.error)} log={action.error} /> : null}
     >
       <ActionFields>
-        <ActionField label="Runner" hint={<Hint text="A CI server the organization connected under Settings, or the CI embedded in the source host — GitHub Actions reads with the host's own token." />}>
+        <ActionField label="Runner" hint={<Hint text="A CI server the organization connected under Connect → CI, or the CI embedded in the source host — GitHub Actions reads with the host's own token." />}>
           <Select
             size="lg"
             icon={<Server className="size-4" strokeWidth={1.75} />}
