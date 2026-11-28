@@ -146,7 +146,7 @@ A Jenkins job the platform should also be able to start is a dispatched target (
 
 ## Connect Jenkins
 
-1. Settings → **CI servers** → add a server: name, base URL, username and API token (Jenkins → your user → Security → API Token), or `POST /api/v1/ci-hosts {kind: "jenkins", name, base_url, username, token}`. *Test* (`POST /api/v1/ci-hosts/{id}/test`) reaches it with the sealed token.
+1. Connect → **CI** → Servers → add a server: name, base URL, username and API token (Jenkins → your user → Security → API Token), or `POST /api/v1/ci-hosts {kind: "jenkins", name, base_url, username, token}`. *Test* (`POST /api/v1/ci-hosts/{id}/test`) reaches it with the sealed token.
 2. On the app's **CI** tab choose the server and the job path as Jenkins shows it in the URL (`team/api`, or `team/api/main` for a multibranch branch), or `PUT /api/v1/projects/{p}/apps/{a}/ci {"ci_host_id": "<id>", "job": "team/api"}`. **Sync** (`POST …/ci/sync`) imports the runs.
 3. Put the same job path in the target's `job`, then **Sync** the app's deployments.
 

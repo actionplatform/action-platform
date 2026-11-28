@@ -31,7 +31,7 @@ What the platform says when it refuses something, what it means and what to do. 
 
 **`no deploy target configured — run action-platform cloud set <cloud>`** — `platform.toml` has no `[deploy] target`. In the web: Configuration → **Deploy target**; from the CLI: `action-platform cloud set aws/lambda`.
 
-**`AccessDenied` on `AssumeRoleWithWebIdentity`, or `AP_AWS_LAMBDA_ROLE_ARN` is missing** — the organization has not connected its AWS account, or the role's trust does not match: Plugins → **AWS Lambda** → **Configure** → *Deploy role ARN* must be the connect stack's `DeployRoleArn`, and the stack's `IssuerUrl` and `Organization` must be this platform's public url and the organization's slug. Connecting the account is in the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README.
+**`AccessDenied` on `AssumeRoleWithWebIdentity`, or `AP_AWS_LAMBDA_ROLE_ARN` is missing** — the organization has not connected its AWS account, or the role's trust does not match: Connect → Deploy → **AWS Lambda** → **Configure** → *AWS account ID* must be the connect stack's account (or its `DeployRoleArn`), and the stack's `IssuerUrl` and `Organization` must be this platform's public url and the organization's slug. Connecting the account is in the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README.
 
 **Readiness says `template.yaml has no PermissionsBoundaryArn parameter`** — the app's overlay predates connected accounts. Apply it again: Configuration → **Deploy target**, or `action-platform cloud set aws/lambda`.
 
@@ -45,7 +45,7 @@ What the platform says when it refuses something, what it means and what to do. 
 
 ## Git hosts
 
-**`token rejected by GitHub (401); reconnect the host`** — the stored token expired or was revoked. Settings → **Git**: *Remove host* on that account, then **Connect with …** again.
+**`token rejected by GitHub (401); reconnect the host`** — the stored token expired or was revoked. Connect → **Git**: *Remove host* on that account, then **Connect with …** again.
 
 **A deploy fails with `401: Requires authentication`** — the app points at no source host and no connected host matches its repository's URL (a public repository still syncs, git needs no token there). A host that was removed and reconnected is taken over by itself: the app moves to the connected host its repository's URL belongs to. Otherwise App › Settings › Source host: pick the connection; the deploy dispatches the workflow with its token.
 
@@ -53,9 +53,9 @@ What the platform says when it refuses something, what it means and what to do. 
 
 **Deleting a repository is refused** — a GitHub OAuth host connected before the `delete_repo` scope existed cannot delete; remove the host and connect it again. A GitHub App needs *Administration* (the one created by the wizard has it). Bitbucket needs the *repositories: delete* permission on the consumer. Nothing on the platform is removed when the host refuses.
 
-**The wizard offers no organization to own the repository** — the GitHub App is installed on no account, or on one without permission to create repositories. *Install on another organization* under Settings → Git; an app created as private must be made public under GitHub → Developer settings → GitHub Apps → Advanced.
+**The wizard offers no organization to own the repository** — the GitHub App is installed on no account, or on one without permission to create repositories. *Install on another organization* under Connect → Git; an app created as private must be made public under GitHub → Developer settings → GitHub Apps → Advanced.
 
-**`cannot read owner/name: the code host refused the connected account`** when adding a repository — the connected account cannot read it, often a private repository of an organization while public ones work. With a GitHub OAuth host, the organization may restrict third-party OAuth apps: an owner approves the app under the organization › Settings › Third-party access. With the GitHub App, install it on that organization with access to the repository (*Install on another organization* under Settings → Git). Otherwise remove the host and connect it again with an account that can read private repositories.
+**`cannot read owner/name: the code host refused the connected account`** when adding a repository — the connected account cannot read it, often a private repository of an organization while public ones work. With a GitHub OAuth host, the organization may restrict third-party OAuth apps: an owner approves the app under the organization › Settings › Third-party access. With the GitHub App, install it on that organization with access to the repository (*Install on another organization* under Connect → Git). Otherwise remove the host and connect it again with an account that can read private repositories.
 
 **Import lists no teams or people** — the GitHub App lacks *Organization › Members (read)* (add it under the app's settings on GitHub and accept it in the organization), or the OAuth token has no `read:org`.
 
@@ -77,7 +77,7 @@ What the platform says when it refuses something, what it means and what to do. 
 
 **A token sees one app only** — its reach was limited to a project or an app when approved. Log in again and approve **All organizations** or the organization alone.
 
-**Invitation link does not work** — links live seven days and are bound to the invited email; sign in with that address, or ask for a new invitation from Organization → Members.
+**Invitation link does not work** — links live seven days and are bound to the invited email; sign in with that address, or ask for a new invitation from Team → Members.
 
 ## Platform
 
@@ -95,11 +95,11 @@ What the platform says when it refuses something, what it means and what to do. 
 
 **`docker compose up` (or a Dokploy deploy) stops with `dependency failed to start: container …postgres… is unhealthy`** — Postgres never became healthy, so `migrate`, `api` and the workers never start. On a first start it refuses an empty password: `POSTGRES_PASSWORD` on Dokploy, `secrets/postgres_password` with the compose file (its log says `superuser password is not specified`). A full disk stops it too. `docker compose logs postgres` names the cause; fix it and run `docker compose up -d` again.
 
-**`email is not configured: set AP_SMTP_HOST`** (`503` from `POST /api/auth/password/forgot`) — the API has no SMTP server, so it cannot send the reset link; the login page also hides *Forgot your password?* in that case. Set `AP_SMTP_HOST` and the other `AP_SMTP_*` variables ([environment](start_self_hosting.md#environment)) and recreate the `api` container. With SMTP set, a reset that cannot be sent still answers `202` so the form does not reveal which emails have accounts; the failure is logged by the API, and Settings → Instance has **Send test email** to check the server.
+**`email is not configured: set AP_SMTP_HOST`** (`503` from `POST /api/auth/password/forgot`) — the API has no SMTP server, so it cannot send the reset link; the login page also hides *Forgot your password?* in that case. Set `AP_SMTP_HOST` and the other `AP_SMTP_*` variables ([environment](start_self_hosting.md#environment)) and recreate the `api` container. With SMTP set, a reset that cannot be sent still answers `202` so the form does not reveal which emails have accounts; the failure is logged by the API, and Admin → Instance has **Send test email** to check the server.
 
 **Google answers `Error 400: redirect_uri_mismatch`** — the OAuth client's *Authorized redirect URIs* do not contain the exact address the platform sends: `${PUBLIC_URL}/api/sign-in/google/callback`, built from `PUBLIC_URL` (scheme, host and port included, no trailing slash). Add that URI to the client in Google Cloud, or fix `PUBLIC_URL` and recreate `api` and `web`.
 
-**Jobs stay `queued`** — no worker takes them: the `worker` and `worker-deploy` containers are stopped or crash on start. Syncs, releases, pushes and imports wait for `worker`; deploys, readiness and tear-downs wait for `worker-deploy`. `GET /api/health` answers `503` with `workers.light` or `workers.deploy` false while one of them is missing, owners see each worker and the queue under Settings → Instance, and the job row in the web says "No worker is running for <kind> jobs" after two minutes. `docker compose ps` (a worker without a recent heartbeat is `unhealthy`) and `docker compose logs worker worker-deploy`; on Dokploy the `ap-worker` and `ap-worker-deploy` services.
+**Jobs stay `queued`** — no worker takes them: the `worker` and `worker-deploy` containers are stopped or crash on start. Syncs, releases, pushes and imports wait for `worker`; deploys, readiness and tear-downs wait for `worker-deploy`. `GET /api/health` answers `503` with `workers.light` or `workers.deploy` false while one of them is missing, owners see each worker and the queue under Admin → Instance, and the job row in the web says "No worker is running for <kind> jobs" after two minutes. `docker compose ps` (a worker without a recent heartbeat is `unhealthy`) and `docker compose logs worker worker-deploy`; on Dokploy the `ap-worker` and `ap-worker-deploy` services.
 
 ## Still stuck
 

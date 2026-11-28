@@ -40,11 +40,11 @@ Every route needs `org.manage` and a token that is not limited to a project or a
 
 The operations run on the API, with the organization's GitHub connection, the plugins the image bundles and each plugin's options of the caller's organization — credentials stay sealed on the platform and never reach the client. The two GitHub checks only read.
 
-**No personal token to paste.** GitHub access reads the organization's own GitHub connection under **Settings → Git** — the OAuth host first, then one added with a token — and nothing else: never the platform's environment, never another organization's connection. A plugin reads the organization's own connections the same way: the services connected under **Settings → Services** (*Connect Sentry*, for apx-sentry). Connecting asks for the scopes the platform and the plugins need; when a connection lacks one, the audit names it and the click that grants it. A plugin's token option, where it has one, still wins when set. The CLI commands and the remote MCP tools call these routes; the local MCP server, which acts on files on one machine, has none of them.
+**No personal token to paste.** GitHub access reads the organization's own GitHub connection under **Connect → Git** — the OAuth host first, then one added with a token — and nothing else: never the platform's environment, never another organization's connection. A plugin reads the organization's own connections the same way: the services connected under **Connect → Observability** (*Connect Sentry*, for apx-sentry). Connecting asks for the scopes the platform and the plugins need; when a connection lacks one, the audit names it and the click that grants it. A plugin's token option, where it has one, still wins when set. The CLI commands and the remote MCP tools call these routes; the local MCP server, which acts on files on one machine, has none of them.
 
 ## GitHub
 
-The `github` service covers the organization the GitHub connection's default owner names (Settings → Git); the connected account must be an owner of it.
+The `github` service covers the organization the GitHub connection's default owner names (Connect → Git); the connected account must be an owner of it.
 
 | Resource | Levels |
 |---|---|

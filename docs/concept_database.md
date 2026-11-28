@@ -25,7 +25,7 @@ Alembic, shipped with the API — one revision per change:
 | `0003` | `registry`: the apps the API manages (id, name, url, default branch), shared by every instance and worker |
 | `0004` | `oauth_app`: the OAuth apps used to connect code hosts (client id, sealed secret, base URL, GitHub App slug) |
 | `0005` | `registry.branch` and `draft`: the checked-out branch per app and pending edits as rows — clones are disposable |
-| `0006`, `0009` | `plugin_option`: what a plugin remembers, keyed by organization, plugin and key (the values behind Plugins → Configure) |
+| `0006`, `0009` | `plugin_option`: what a plugin remembers, keyed by organization, plugin and key (the values behind a plugin's Configure under Connect or Admin → Plugins) |
 | `0007` | `signing_key`: the RSA pair behind the platform's OIDC issuer, private half sealed |
 | `0008` | `app_config`: the app's `platform.toml` as the platform keeps it — the database is the source of truth, the file in the repository a mirror |
 | `0010`, `0011` | `ci_host`, `ci_run`, `app.ci_host_id` and `app.ci_job`: the CI servers an organization connected (token sealed), the runner and job each app reads, and the runs imported from it (`number` a big integer: GitHub run ids) |

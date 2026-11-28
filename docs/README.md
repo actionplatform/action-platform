@@ -82,7 +82,7 @@ Action Platform standardizes how a project is born, versioned and shipped — fr
 | team | a group of organization members that looks after projects; a project belongs to at most one |
 | workspace | the platform's disposable clone of an app, rebuilt from the remote whenever a request needs its files |
 | pending edits | changes the platform holds for an app (rows in `draft`), written onto the clone until **Commit changes** or **Discard changes** |
-| source host | GitHub, GitLab, Bitbucket or a generic remote, connected per organization under Settings → Git |
+| source host | GitHub, GitLab, Bitbucket or a generic remote, connected per organization under Connect → Git |
 | manifest | `platform.toml`, the file that declares a project: type, language, git-flow rules, `[deploy]` |
 | template · overlay | a project skeleton (type › stack › template); an overlay adds a cloud or Docker on top of it |
 | template source | a repository of templates; the official one plus any the organization adds |
