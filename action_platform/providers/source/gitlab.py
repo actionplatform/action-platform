@@ -90,7 +90,9 @@ class SourceGitlab(SourceHost):
         except ProviderError as e:
             if "has already been taken" not in str(e):
                 raise
-            data = {}
+            raise ProviderError(
+                f"{repo} already exists on GitLab: generate the app under another name or owner, or add the existing repository instead"
+            ) from e
 
         return data.get("http_url_to_repo") or f"{self.web}/{repo}.git"
 

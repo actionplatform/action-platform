@@ -304,3 +304,43 @@ class TagsTest(unittest.TestCase):
             )
 
         self.assertIn("&path=platform.toml", call.call_args[0][1])
+
+
+class CreateRepositoryTest(unittest.TestCase):
+    def test_a_repository_that_already_exists_is_refused(self):
+        cases = (
+            (
+                SourceGithub(repo="acme/x", token="ghp"),
+                [{"login": "acme"}],
+                "→ 422: name already exists on this account",
+                "GitHub",
+            ),
+            (
+                SourceGitlab(repo="acme/x", token="glp"),
+                [{"username": "acme"}],
+                "→ 400: has already been taken",
+                "GitLab",
+            ),
+            (
+                SourceBitbucket(repo="acme/x", token="bb", username="me"),
+                [],
+                "→ 400: Repository with this Slug and Owner already exists.",
+                "Bitbucket",
+            ),
+        )
+
+        for host, answers, refusal, name in cases:
+            with self.subTest(host=name):
+                replies = iter([*answers, ProviderError(refusal)])
+
+                def answer(*args, **kwargs):
+                    reply = next(replies)
+                    if isinstance(reply, Exception):
+                        raise reply
+                    return reply
+
+                with mock.patch.object(rest, "call", side_effect=answer):
+                    with self.assertRaises(ProviderError) as caught:
+                        host.create_repository("acme/x")
+
+                self.assertIn(f"acme/x already exists on {name}", str(caught.exception))
