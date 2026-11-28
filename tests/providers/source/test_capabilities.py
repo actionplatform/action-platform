@@ -8,6 +8,7 @@ from pathlib import Path
 from action_platform.abc.source_host import (
     ListsPullRequests,
     PublishesReleases,
+    ReadsRepository,
     SupportsRepoCreation,
     SupportsRepoDeletion,
 )
@@ -20,6 +21,7 @@ CAPABILITIES = (
     SupportsRepoDeletion,
     PublishesReleases,
     ListsPullRequests,
+    ReadsRepository,
 )
 
 

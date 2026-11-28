@@ -7,14 +7,17 @@ logged in as.
 
 from __future__ import annotations
 
+import base64
 import json
 import shutil
 import re
 import subprocess
 from pathlib import Path
+from urllib.parse import quote
 
 from action_platform.abc.source_host import SourceHost
 from action_platform.core.context import (
+    CommitRow,
     Context,
     PRRef,
     PullRequestRow,
@@ -323,3 +326,48 @@ class SourceGithub(SourceHost):
                 10,
             )
         ]
+
+    def commits(self, repo: str, ref: str, limit: int = 50) -> list[CommitRow]:
+        rows = rest.call(
+            "GET",
+            f"{self.api}/repos/{repo}/commits?sha={quote(ref, safe='')}&per_page={max(1, min(limit, 100))}",
+            self._read_headers(),
+        )
+
+        return [_commit(r) for r in rows or []][:limit]
+
+    def compare(self, repo: str, base: str, head: str) -> list[CommitRow]:
+        data = rest.call(
+            "GET",
+            f"{self.api}/repos/{repo}/compare/{quote(base, safe='')}...{quote(head, safe='')}",
+            self._read_headers(),
+        )
+
+        return [_commit(r) for r in reversed((data or {}).get("commits") or [])]
+
+    def file(self, repo: str, ref: str, path: str) -> str | None:
+        try:
+            data = rest.call(
+                "GET",
+                f"{self.api}/repos/{repo}/contents/{quote(path)}?ref={quote(ref, safe='')}",
+                self._read_headers(),
+            )
+        except rest.Missing:
+            return None
+
+        if not isinstance(data, dict) or data.get("type") != "file":
+            return None
+
+        return base64.b64decode(data.get("content") or "").decode(errors="replace")
+
+
+def _commit(r: dict) -> CommitRow:
+    commit = r.get("commit") or {}
+    author = commit.get("author") or {}
+
+    return CommitRow(
+        sha=r["sha"],
+        subject=(commit.get("message") or "").split("\n", 1)[0],
+        author=author.get("name") or (r.get("author") or {}).get("login"),
+        date=rest.parse_utc(author.get("date")),
+    )

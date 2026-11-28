@@ -11,6 +11,7 @@ from .release_strategy import ReleaseStrategy
 from .source_host import (
     ListsPullRequests,
     PublishesReleases,
+    ReadsRepository,
     SourceHost,
     SupportsRepoCreation,
     SupportsRepoDeletion,
@@ -29,6 +30,7 @@ __all__ = [
     "Option",
     "Plugin",
     "PublishesReleases",
+    "ReadsRepository",
     "ReleaseStrategy",
     "SourceHost",
     "SupportsRepoCreation",

@@ -38,6 +38,16 @@ class ReleaseRow:
 
 
 @dataclass
+class CommitRow:
+    """One commit as a source host reports it, in the platform's shape."""
+
+    sha: str
+    subject: str
+    author: str | None
+    date: Optional[datetime]
+
+
+@dataclass
 class PullRequestRow:
     """One pull (merge) request of a source host, in the platform's shape."""
 
