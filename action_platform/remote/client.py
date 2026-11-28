@@ -8,6 +8,7 @@ as the models in `remote.schemas`, the same ones the MCP tools declare.
 from __future__ import annotations
 
 import getpass
+import http.client
 import json
 import re
 import socket
@@ -157,6 +158,10 @@ def _request(
         raise RemoteError(e.code, str(detail), code) from e
     except urllib.error.URLError as e:
         raise ActionPlatformError(f"cannot reach {url}: {e.reason}") from e
+    except (OSError, http.client.HTTPException) as e:
+        raise ActionPlatformError(
+            f"no answer from {url}: {str(e) or type(e).__name__}"
+        ) from e
 
 
 def _segment(value: str) -> str:
