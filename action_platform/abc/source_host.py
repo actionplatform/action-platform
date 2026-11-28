@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from action_platform.core.context import (
+        CommitRow,
         Context,
         PRRef,
         PullRequestRow,
@@ -92,3 +93,17 @@ class ListsPullRequests(Protocol):
 
     def pull_requests(self, repo: str) -> "list[PullRequestRow]":
         """The pull (merge) requests of `repo`."""
+
+
+@runtime_checkable
+class ReadsRepository(Protocol):
+    """A host that answers what a clone would: commits and files at a ref."""
+
+    def commits(self, repo: str, ref: str, limit: int = 50) -> "list[CommitRow]":
+        """The last `limit` commits reachable from `ref`, newest first."""
+
+    def compare(self, repo: str, base: str, head: str) -> "list[CommitRow]":
+        """The commits on `head` that `base` does not have, newest first."""
+
+    def file(self, repo: str, ref: str, path: str) -> str | None:
+        """The text of `path` at `ref`; None when it is not there."""

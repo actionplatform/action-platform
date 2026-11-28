@@ -12,6 +12,10 @@ from action_platform.core import destination
 from action_platform.core.exception import ProviderError
 
 
+class Missing(ProviderError):
+    """The host answered 404."""
+
+
 def call(
     method: str,
     url: str,
@@ -54,7 +58,29 @@ def call(
         except ValueError:
             detail = raw or e.reason
 
-        raise ProviderError(f"{method} {url} → {e.code}: {detail}") from e
+        error = Missing if e.code == 404 else ProviderError
+
+        raise error(f"{method} {url} → {e.code}: {detail}") from e
+    except urllib.error.URLError as e:
+        raise ProviderError(f"cannot reach {url}: {e.reason}") from e
+
+
+def text(url: str, headers: dict[str, str]) -> Optional[str]:
+    """The body of a GET as text, for endpoints that answer a file as it is; None on 404."""
+    req = urllib.request.Request(
+        url, method="GET", headers={"user-agent": "action-platform", **headers}
+    )
+
+    try:
+        with destination.urlopen(req, timeout=60) as res:
+            return res.read().decode(errors="replace")
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return None
+
+        raise ProviderError(
+            f"GET {url} → {e.code}: {e.read().decode(errors='replace')[:300] or e.reason}"
+        ) from e
     except urllib.error.URLError as e:
         raise ProviderError(f"cannot reach {url}: {e.reason}") from e
 

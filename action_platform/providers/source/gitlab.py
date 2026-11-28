@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import re
 
 import urllib.parse
@@ -9,6 +10,7 @@ from pathlib import Path
 
 from action_platform.abc.source_host import SourceHost
 from action_platform.core.context import (
+    CommitRow,
     Context,
     PRRef,
     PullRequestRow,
@@ -214,6 +216,54 @@ class SourceGitlab(SourceHost):
                 10,
             )
         ]
+
+    def _read_headers(self) -> dict[str, str]:
+        return {"authorization": f"Bearer {self.token}"} if self.token else {}
+
+    def _project_api(self, repo: str) -> str:
+        return f"{self.api}/projects/{urllib.parse.quote(repo, safe='')}/repository"
+
+    def commits(self, repo: str, ref: str, limit: int = 50) -> list[CommitRow]:
+        rows = rest.call(
+            "GET",
+            f"{self._project_api(repo)}/commits?ref_name={urllib.parse.quote(ref, safe='')}&per_page={max(1, min(limit, 100))}",
+            self._read_headers(),
+        )
+
+        return [_commit(r) for r in rows or []][:limit]
+
+    def compare(self, repo: str, base: str, head: str) -> list[CommitRow]:
+        data = rest.call(
+            "GET",
+            f"{self._project_api(repo)}/compare?from={urllib.parse.quote(base, safe='')}&to={urllib.parse.quote(head, safe='')}",
+            self._read_headers(),
+        )
+
+        return [_commit(r) for r in reversed((data or {}).get("commits") or [])]
+
+    def file(self, repo: str, ref: str, path: str) -> str | None:
+        try:
+            data = rest.call(
+                "GET",
+                f"{self._project_api(repo)}/files/{urllib.parse.quote(path, safe='')}?ref={urllib.parse.quote(ref, safe='')}",
+                self._read_headers(),
+            )
+        except rest.Missing:
+            return None
+
+        if not isinstance(data, dict):
+            return None
+
+        return base64.b64decode(data.get("content") or "").decode(errors="replace")
+
+
+def _commit(r: dict) -> CommitRow:
+    return CommitRow(
+        sha=r["id"],
+        subject=r.get("title") or (r.get("message") or "").split("\n", 1)[0],
+        author=r.get("author_name"),
+        date=rest.parse_utc(r.get("authored_date") or r.get("created_at")),
+    )
 
 
 RC = re.compile(r"-rc\.")

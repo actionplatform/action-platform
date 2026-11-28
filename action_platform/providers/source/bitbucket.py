@@ -5,10 +5,12 @@ from __future__ import annotations
 import re
 
 import base64
+import urllib.parse
 from pathlib import Path
 
 from action_platform.abc.source_host import SourceHost
 from action_platform.core.context import (
+    CommitRow,
     Context,
     PRRef,
     PullRequestRow,
@@ -184,6 +186,43 @@ class SourceBitbucket(SourceHost):
                 self._headers(),
             )
         ]
+
+    def commits(self, repo: str, ref: str, limit: int = 50) -> list[CommitRow]:
+        data = rest.call(
+            "GET",
+            f"{self.api}/repositories/{repo}/commits/{urllib.parse.quote(ref, safe='')}?pagelen={max(1, min(limit, 100))}",
+            self._headers(),
+        )
+
+        return [_commit(r) for r in (data or {}).get("values") or []][:limit]
+
+    def compare(self, repo: str, base: str, head: str) -> list[CommitRow]:
+        return [
+            _commit(r)
+            for r in rest.get_values(
+                f"{self.api}/repositories/{repo}/commits/{urllib.parse.quote(head, safe='')}?exclude={urllib.parse.quote(base, safe='')}&pagelen=100",
+                self._headers(),
+            )
+        ]
+
+    def file(self, repo: str, ref: str, path: str) -> str | None:
+        return rest.text(
+            f"{self.api}/repositories/{repo}/src/{urllib.parse.quote(ref, safe='')}/{urllib.parse.quote(path)}",
+            self._headers(),
+        )
+
+
+def _commit(r: dict) -> CommitRow:
+    author = r.get("author") or {}
+
+    return CommitRow(
+        sha=r["hash"],
+        subject=(r.get("message") or "").split("\n", 1)[0],
+        author=(author.get("user") or {}).get("display_name")
+        or (author.get("raw") or "").split(" <", 1)[0]
+        or None,
+        date=rest.parse_utc(r.get("date")),
+    )
 
 
 RC = re.compile(r"-rc\.")
