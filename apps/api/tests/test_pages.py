@@ -130,3 +130,89 @@ class PagesTest(GateCase):
             headers=self.h(),
         ).json()
         self.assertEqual(only["total"], 3)
+
+
+@unittest.skipUnless(TestClient, "fastapi is not installed")
+class ListPagesTest(GateCase):
+    def get(self, path: str):
+        res = self.client.get(path, headers=self.h())
+        self.assertEqual(res.status_code, 200, res.text)
+
+        return res.json()
+
+    def assertPaged(self, path: str, total: int, per: int = 2):
+        plain = self.get(path)
+        self.assertIsInstance(plain, list)
+        self.assertEqual(len(plain), total)
+
+        sep = "&" if "?" in path else "?"
+        pages = -(-total // per)
+        first = self.get(f"{path}{sep}page=1&per={per}")
+        self.assertEqual(
+            (first["total"], first["page"], first["per"], len(first["items"])),
+            (total, 1, per, min(per, total)),
+        )
+        last = self.get(f"{path}{sep}page={pages}&per={per}")
+        self.assertEqual(len(last["items"]), total - per * (pages - 1))
+        self.assertEqual(
+            self.get(f"{path}{sep}page={pages + 1}&per={per}")["items"], []
+        )
+
+    def test_teams_members_and_invitations(self):
+        for name in ("A", "B", "C"):
+            self.client.post("/api/v1/teams", json={"name": name}, headers=self.h())
+
+        self.assertPaged("/api/v1/teams", 3)
+        self.assertPaged("/api/v1/members", 1, per=1)
+        for email in ("x@example.com", "y@example.com", "z@example.com"):
+            res = self.client.post(
+                "/api/v1/invitations",
+                json={"email": email, "role": "viewer"},
+                headers=self.h(),
+            )
+            self.assertEqual(res.status_code, 201, res.text)
+
+        self.assertPaged("/api/v1/invitations", 3)
+
+    def test_projects_hosts_and_ci_hosts(self):
+        for name in ("A", "B", "C"):
+            self.client.post("/api/v1/projects", json={"name": name}, headers=self.h())
+        for i in range(3):
+            self.client.post(
+                "/api/v1/hosts",
+                json={"kind": "github", "name": f"gh{i}", "token": "t"},
+                headers=self.h(),
+            )
+            self.client.post(
+                "/api/v1/ci-hosts",
+                json={
+                    "kind": "jenkins",
+                    "name": f"ci{i}",
+                    "base_url": "https://ci.example.com",
+                    "token": "t",
+                    "username": "u",
+                },
+                headers=self.h(),
+            )
+
+        self.assertPaged("/api/v1/projects", 3)
+        self.assertPaged("/api/v1/hosts", 3)
+        self.assertPaged("/api/v1/ci-hosts", 3)
+
+    def test_tokens_and_sessions(self):
+        for _ in range(2):
+            self.client.post(
+                "/api/auth/tokens",
+                json={"scope": "read", "name": "t"},
+                headers=self.h(),
+            )
+
+        self.assertPaged("/api/auth/tokens", 2, per=1)
+        listed = self.get("/api/auth/sessions")
+        self.assertPaged("/api/auth/sessions", len(listed), per=1)
+
+    def test_ci_activity_keeps_its_shape_and_adds_the_page(self):
+        activity = self.get("/api/v1/ci-hosts/activity")
+        self.assertNotIn("total", activity)
+        paged = self.get("/api/v1/ci-hosts/activity?page=1")
+        self.assertEqual((paged["total"], paged["page"], paged["hosts"]), (0, 1, []))

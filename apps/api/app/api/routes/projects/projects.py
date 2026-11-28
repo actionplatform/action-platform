@@ -18,6 +18,7 @@ from app.api.dependencies import (
     required_org,
 )
 from app.schemas import common
+from app.schemas.common import Page, paged
 from app.schemas import projects as schemas
 from app.services.access.job_dispatcher import JobDispatcher
 
@@ -30,13 +31,15 @@ def projects(
     view: ProjectViewDep,
     x_organization: Optional[str] = Header(default=None),
     organization: Optional[str] = None,
-) -> list[schemas.ProjectRow]:
+    page: Optional[int] = None,
+    per: int = 10,
+) -> Union[list[schemas.ProjectRow], Page[schemas.ProjectRow]]:
     org = requested_org(caller, x_organization, organization)
 
     if org is None:
-        return view.across(caller)
+        return paged(view.across(caller), page, per)
 
-    return view.rows(caller, org)
+    return paged(view.rows(caller, org), page, per)
 
 
 @router.post("/projects", status_code=201)

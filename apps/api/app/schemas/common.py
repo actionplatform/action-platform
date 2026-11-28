@@ -1,7 +1,7 @@
 """Shapes many routes share."""
 
 from datetime import datetime, timezone
-from typing import Annotated, Optional
+from typing import Annotated, Generic, Optional, TypeVar, Union
 
 from pydantic import BaseModel, PlainSerializer
 
@@ -82,3 +82,23 @@ def page_bounds(page: int, per: int) -> tuple[int, int, int]:
     page = max(1, int(page))
 
     return page, per, (page - 1) * per
+
+
+T = TypeVar("T")
+
+
+class Page(BaseModel, Generic[T]):
+    items: list[T]
+    total: int
+    page: int
+    per: int
+
+
+def paged(rows: list[T], page: Optional[int], per: int) -> Union[list[T], Page[T]]:
+    """The rows as they are, or one `Page` of them when the caller asks for a `page`."""
+    if page is None:
+        return rows
+
+    page, per, offset = page_bounds(page, per)
+
+    return Page(items=rows[offset : offset + per], total=len(rows), page=page, per=per)

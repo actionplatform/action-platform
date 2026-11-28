@@ -615,6 +615,24 @@ class DeploymentRecordsTest(GateCase):
         pypi = [d for d in body["deployments"] if d["target"] == "pypi"][0]
         self.assertIsNone(pypi["ci_run_id"])
 
+    def test_deployments_come_in_pages_when_asked(self):
+        for version in ("1.0.0", "1.1.0", "1.2.0"):
+            res = self.client.post(
+                self.base,
+                json={"target": "pypi", "version": version},
+                headers=self.h(),
+            )
+            self.assertEqual(res.status_code, 201, res.text)
+
+        whole = self.client.get(self.base, headers=self.h()).json()
+        paged = self.client.get(f"{self.base}?page=2&per=2", headers=self.h()).json()
+
+        self.assertNotIn("total", whole)
+        self.assertEqual(len(whole["deployments"]), 3)
+        self.assertEqual((paged["total"], paged["page"], paged["per"]), (3, 2, 2))
+        self.assertEqual(paged["deployments"], whole["deployments"][2:])
+        self.assertEqual(paged["targets"], whole["targets"])
+
     def test_a_manual_record_needs_a_known_target_and_a_version(self):
         res = self.client.post(
             self.base,

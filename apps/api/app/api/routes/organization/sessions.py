@@ -1,6 +1,6 @@
 """API tokens: issued, listed, revoked, verified."""
 
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 
@@ -19,6 +19,7 @@ from app.core.db.models import (
     Session,
 )
 from app.schemas import auth as schemas
+from app.schemas.common import Page, paged
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -50,12 +51,14 @@ def issue_token(
 def tokens(
     auth: AuthDep,
     organization_id: Optional[str] = None,
+    page: Optional[int] = None,
+    per: int = 10,
     session: Session = Depends(current_session),
-) -> list[schemas.TokenOut]:
+) -> Union[list[schemas.TokenOut], Page[schemas.TokenOut]]:
     rows = auth.tokens_of(session.user_id, organization_id)
     clients = auth.clients_of(rows)
 
-    return [token_out(auth, t, clients.get(t.id, [])) for t in rows]
+    return paged([token_out(auth, t, clients.get(t.id, [])) for t in rows], page, per)
 
 
 @router.delete("/tokens/{id}", status_code=204)

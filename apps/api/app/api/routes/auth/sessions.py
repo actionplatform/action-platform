@@ -1,5 +1,7 @@
 """Sign up, sign in, sign out, the current session and the browser sessions of a user."""
 
+from typing import Optional, Union
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import func, select
 
@@ -21,6 +23,7 @@ from app.core.db.models import (
     Session,
 )
 from app.schemas import auth as schemas
+from app.schemas.common import Page, paged
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -100,11 +103,13 @@ def set_active_organization(
 @router.get("/sessions")
 def sessions(
     auth: AuthDep,
+    page: Optional[int] = None,
+    per: int = 10,
     session: Session = Depends(current_session),
-) -> list[schemas.BrowserSessionOut]:
+) -> Union[list[schemas.BrowserSessionOut], Page[schemas.BrowserSessionOut]]:
     rows = auth.sessions_of(session.user_id)
 
-    return sorted(
+    ordered = sorted(
         (
             schemas.BrowserSessionOut(
                 id=s.id,
@@ -119,6 +124,8 @@ def sessions(
         ),
         key=lambda s: (not s.current, -s.updated_at.timestamp()),
     )
+
+    return paged(ordered, page, per)
 
 
 @router.delete("/sessions/{id}", status_code=204)

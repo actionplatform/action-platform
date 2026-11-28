@@ -1,5 +1,7 @@
 """CI servers connected to the organization."""
 
+from typing import Optional, Union
+
 from fastapi import APIRouter
 
 from action_platform.core.exception import ActionPlatformError
@@ -12,6 +14,7 @@ from app.api.dependencies import (
     allowed,
 )
 from app.schemas import ci as schemas
+from app.schemas.common import Page, page_bounds, paged
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -32,8 +35,10 @@ def ci_hosts(
     org: OrgDep,
     caller: CallerDep,
     writes: IntegrationsDep,
-) -> list[schemas.CiHostRow]:
-    return [ci_host_row(h) for h in writes.ci_hosts_of(org.id)]
+    page: Optional[int] = None,
+    per: int = 10,
+) -> Union[list[schemas.CiHostRow], Page[schemas.CiHostRow]]:
+    return paged([ci_host_row(h) for h in writes.ci_hosts_of(org.id)], page, per)
 
 
 @router.post("/ci-hosts", status_code=201)
@@ -98,7 +103,21 @@ def ci_activity(
     org: OrgDep,
     caller: CallerDep,
     activity: CiActivityDep,
-) -> schemas.CiActivity:
-    return activity.of(
+    page: Optional[int] = None,
+    per: int = 10,
+) -> Union[schemas.CiActivity, schemas.CiActivityPage]:
+    answer = activity.of(
         org.id, lambda app, project: caller.within_reach(app.id, project.id)
+    )
+
+    if page is None:
+        return answer
+
+    page, per, offset = page_bounds(page, per)
+
+    return schemas.CiActivityPage(
+        hosts=answer.hosts[offset : offset + per],
+        total=len(answer.hosts),
+        page=page,
+        per=per,
     )

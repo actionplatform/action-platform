@@ -1,6 +1,6 @@
 """Teams and members."""
 
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import APIRouter, Header
 
@@ -15,6 +15,7 @@ from app.api.dependencies import (
 )
 from app.core.errors import Forbidden
 from app.schemas import common
+from app.schemas.common import Page, paged
 from app.schemas import organization as schemas
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
@@ -26,26 +27,32 @@ def teams(
     directory: OrganizationRepoDep,
     x_organization: Optional[str] = Header(default=None),
     organization: Optional[str] = None,
-) -> list[schemas.TeamRow]:
+    page: Optional[int] = None,
+    per: int = 10,
+) -> Union[list[schemas.TeamRow], Page[schemas.TeamRow]]:
     org = required_org(caller, x_organization, organization)
 
-    return [
-        schemas.TeamRow(
-            id=t.id,
-            name=t.name,
-            slug=t.slug,
-            description=t.description,
-            members=[
-                schemas.TeamMemberRow(userId=u.id, name=u.name, email=u.email)
-                for u in directory.team_members_of(t.id)
-            ],
-            projects=[
-                common.Named(id=p.id, name=p.name)
-                for p in directory.team_projects_of(t.id)
-            ],
-        )
-        for t in directory.teams_of(org.id)
-    ]
+    return paged(
+        [
+            schemas.TeamRow(
+                id=t.id,
+                name=t.name,
+                slug=t.slug,
+                description=t.description,
+                members=[
+                    schemas.TeamMemberRow(userId=u.id, name=u.name, email=u.email)
+                    for u in directory.team_members_of(t.id)
+                ],
+                projects=[
+                    common.Named(id=p.id, name=p.name)
+                    for p in directory.team_projects_of(t.id)
+                ],
+            )
+            for t in directory.teams_of(org.id)
+        ],
+        page,
+        per,
+    )
 
 
 @router.get("/members")
@@ -54,19 +61,25 @@ def members(
     directory: OrganizationRepoDep,
     x_organization: Optional[str] = Header(default=None),
     organization: Optional[str] = None,
-) -> list[schemas.MemberRow]:
+    page: Optional[int] = None,
+    per: int = 10,
+) -> Union[list[schemas.MemberRow], Page[schemas.MemberRow]]:
     org = required_org(caller, x_organization, organization)
 
-    return [
-        schemas.MemberRow(
-            user_id=u.id,
-            name=u.name,
-            email=u.email,
-            role=m.role,
-            role_label=ROLE_LABELS.get(m.role, m.role),
-        )
-        for m, u in directory.members_of(org.id)
-    ]
+    return paged(
+        [
+            schemas.MemberRow(
+                user_id=u.id,
+                name=u.name,
+                email=u.email,
+                role=m.role,
+                role_label=ROLE_LABELS.get(m.role, m.role),
+            )
+            for m, u in directory.members_of(org.id)
+        ],
+        page,
+        per,
+    )
 
 
 @router.post("/teams", status_code=201)

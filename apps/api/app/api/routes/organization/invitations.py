@@ -1,5 +1,7 @@
 """Invitations into the organization."""
 
+from typing import Optional, Union
+
 from app.core.shared import people
 from fastapi import APIRouter
 
@@ -15,6 +17,7 @@ from app.core.errors import Conflict, Forbidden, NotFound
 from app.repositories.organization import OrganizationRepository
 from app.repositories.organization.invitations import invitation_team_ids
 from app.schemas import organization as schemas
+from app.schemas.common import Page, paged
 from app.services.organization import email_state
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
@@ -48,10 +51,16 @@ def invitations(
     caller: CallerDep,
     writes: OrganizationRepoDep,
     sender: InvitationSenderDep,
-) -> list[schemas.InvitationRow]:
+    page: Optional[int] = None,
+    per: int = 10,
+) -> Union[list[schemas.InvitationRow], Page[schemas.InvitationRow]]:
     allowed(caller, org, "org.manage")
 
-    return [row(writes, i, u, sender.enabled) for i, u in writes.invitations_of(org.id)]
+    return paged(
+        [row(writes, i, u, sender.enabled) for i, u in writes.invitations_of(org.id)],
+        page,
+        per,
+    )
 
 
 @router.post("/invitations", status_code=201)

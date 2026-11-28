@@ -1,11 +1,12 @@
 """Access on the organization's services — GitHub, built in, and those the bundled plugins own — who, audit, sync, grant, revoke, offboard, and the read-only GitHub checks, for the caller's organization; every route needs `org.manage`, every change is a dry run unless `apply`."""
 
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import APIRouter, Request
 
 from app.api.dependencies import CallerDep, OrgDep, OrganizationRepoDep, allowed
 from app.schemas import service_access as schemas
+from app.schemas.common import page_bounds
 from app.services.service_access import ServiceAccess
 
 router = APIRouter(prefix="/api/v1/access", tags=["access"])
@@ -28,8 +29,27 @@ def audit(
     caller: CallerDep,
     repo: OrganizationRepoDep,
     service: Optional[str] = None,
-) -> schemas.Audit:
-    return _service(request, org, caller, repo).audit(service)
+    page: Optional[int] = None,
+    per: int = 10,
+) -> Union[schemas.Audit, schemas.AuditPage]:
+    answer = _service(request, org, caller, repo).audit(service)
+
+    if page is None:
+        return answer
+
+    page, per, offset = page_bounds(page, per)
+
+    return schemas.AuditPage(
+        **{
+            **answer.model_dump(),
+            "services": [
+                s.model_dump() for s in answer.services[offset : offset + per]
+            ],
+        },
+        total=len(answer.services),
+        page=page,
+        per=per,
+    )
 
 
 @router.get("/grants")

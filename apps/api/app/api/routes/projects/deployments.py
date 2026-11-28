@@ -1,5 +1,7 @@
 """The deployments of an app inside a project: its targets, what arrived at each, whoever executed it."""
 
+from typing import Optional, Union
+
 from fastapi import APIRouter
 
 from action_platform.core.exception import ActionPlatformError
@@ -15,6 +17,7 @@ from app.api.dependencies import (
 from app.core.errors import Invalid
 from app.core.shared import people
 from app.schemas import deployments as schemas
+from app.schemas.common import page_bounds
 
 router = APIRouter(prefix="/api/v1", tags=["management"])
 
@@ -27,11 +30,26 @@ def deployments(
     caller: CallerDep,
     writes: ProjectsRepoDep,
     records: DeploymentRecordsDep,
-) -> schemas.Deployments:
+    page: Optional[int] = None,
+    per: int = 10,
+) -> Union[schemas.Deployments, schemas.DeploymentsPage]:
     project = project_of(writes, org, project_id)
     app = app_of(writes, caller, project, app_id)
+    answer = records.page(app)
 
-    return records.page(app)
+    if page is None:
+        return answer
+
+    page, per, offset = page_bounds(page, per)
+
+    return schemas.DeploymentsPage(
+        targets=answer.targets,
+        deployments=answer.deployments[offset : offset + per],
+        error=answer.error,
+        total=len(answer.deployments),
+        page=page,
+        per=per,
+    )
 
 
 @router.post("/projects/{project_id}/apps/{app_id}/deployments/sync")
