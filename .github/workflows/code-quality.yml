@@ -44,6 +44,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/pypoetry
+          key: api-py-${{ runner.os }}-${{ hashFiles('poetry.lock', 'apps/api/pyproject.toml') }}
+          restore-keys: api-py-${{ runner.os }}-
       - uses: actionplatform/ci-github/setup@v1
       - run: poetry run pip install -e apps/api httpx httpx2 import-linter pytest-xdist
       - run: |
