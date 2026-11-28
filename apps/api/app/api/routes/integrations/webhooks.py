@@ -80,3 +80,34 @@ def rotate_webhook(
         secret=secret,
         kind=host.kind if host else "",
     )
+
+
+@router.get("/oauth/apps/github/webhook")
+def app_webhook(
+    org: OrgDep,
+    caller: CallerDep,
+    writes: IntegrationsDep,
+) -> schemas.WebhookInfo:
+    allowed(caller, org, "org.manage")
+
+    return schemas.WebhookInfo(
+        url=f"{settings.api.public_url.rstrip('/')}/api/webhooks/github-app",
+        configured=writes.app_webhook_secret("github") is not None,
+        kind="github",
+    )
+
+
+@router.post("/oauth/apps/github/webhook")
+def rotate_app_webhook(
+    org: OrgDep,
+    caller: CallerDep,
+    writes: IntegrationsDep,
+) -> schemas.WebhookSecret:
+    """A new secret for the platform's GitHub App; the old one stops verifying at once. Shown this once."""
+    allowed(caller, org, "org.manage")
+
+    return schemas.WebhookSecret(
+        url=f"{settings.api.public_url.rstrip('/')}/api/webhooks/github-app",
+        secret=writes.rotate_app_webhook_secret("github"),
+        kind="github",
+    )

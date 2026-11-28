@@ -1,12 +1,17 @@
 "use client";
 
 import { Check, Copy, RefreshCw } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { hostWebhook, rotateHostWebhook } from "./actions";
+import type { Result } from "@/lib/result";
+import { githubAppWebhook, hostWebhook, rotateGithubAppWebhook, rotateHostWebhook } from "./actions";
 
-const WHERE: Record<string, { path: string; events: string; secret: string }> = {
+type Where = { path: string; events: string; secret: string };
+
+const GITHUB_APP: Where = { path: "GitHub → Settings → Developer settings → GitHub Apps → the app → General → Webhook: Active, this URL as Webhook URL", events: "Then Permissions & events → Subscribe to events: Push, Pull request, Release, Workflow run, Create, Delete.", secret: "Secret" };
+
+const WHERE: Record<string, Where> = {
   github: { path: "Repository → Settings → Webhooks → Add webhook", events: "Content type application/json. Events: Pushes, Pull requests, Releases, Workflow runs.", secret: "Secret" },
   gitlab: { path: "Project → Settings → Webhooks", events: "Triggers: Push, Tag push, Merge request, Release, Pipeline events.", secret: "Secret token" },
   bitbucket: { path: "Repository → Settings → Webhooks → Add webhook", events: "Triggers: Repository push; Pull request created, updated, merged, declined.", secret: "Secret" },
@@ -27,28 +32,37 @@ function Field({ label, value, mono = true }: { label: string; value: string; mo
 }
 
 export function WebhookDialog({ hostId, hostName, kind, open, onClose }: { hostId: string; hostName: string; kind: string; open: boolean; onClose: () => void }) {
+  return <SecretDialog open={open} onClose={onClose} title={`Webhook for ${hostName}`} description="The host calls the platform on every push, pull request, release and pipeline; the app syncs within seconds instead of waiting for Sync." where={WHERE[kind]} load={() => hostWebhook(hostId)} rotate={() => rotateHostWebhook(hostId)} />;
+}
+
+export function GithubAppWebhookDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return <SecretDialog open={open} onClose={onClose} title="Webhook for the GitHub App" description="One webhook for every installation: each push, pull request, release and workflow run syncs the app within seconds. An App created here already has it; one created before needs it set once." where={GITHUB_APP} load={githubAppWebhook} rotate={rotateGithubAppWebhook} />;
+}
+
+function SecretDialog({ open, onClose, title, description, where, load, rotate: rotateSecret }: { open: boolean; onClose: () => void; title: string; description: string; where?: Where; load: () => Promise<Result<{ url: string; configured: boolean }>>; rotate: () => Promise<Result<{ url: string; secret: string }>> }) {
   const [info, setInfo] = useState<{ url: string; configured: boolean } | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const where = WHERE[kind];
+  const loader = useRef(load);
+  loader.current = load;
 
   useEffect(() => {
     if (!open) return;
     setSecret(null);
     setError(null);
-    hostWebhook(hostId).then((r) => { if (r.ok) setInfo(r.data); else setError(r.error); });
-  }, [open, hostId]);
+    loader.current().then((r) => { if (r.ok) setInfo(r.data); else setError(r.error); });
+  }, [open]);
 
   const rotate = () =>
     start(async () => {
       setError(null);
-      const r = await rotateHostWebhook(hostId);
+      const r = await rotateSecret();
       if (r.ok) { setSecret(r.data.secret); setInfo({ url: r.data.url, configured: true }); } else setError(r.error);
     });
 
   return (
-    <Dialog open={open} onClose={onClose} title={`Webhook for ${hostName}`} description="The host calls the platform on every push, pull request, release and pipeline; the app syncs within seconds instead of waiting for Sync." className="max-w-xl" footer={<Button onClick={onClose}>Done</Button>}>
+    <Dialog open={open} onClose={onClose} title={title} description={description} className="max-w-xl" footer={<Button onClick={onClose}>Done</Button>}>
       <div className="space-y-4 text-sm">
         {info && <Field label="Payload URL" value={info.url} />}
         {secret ? (

@@ -84,3 +84,23 @@ export async function rotateHostWebhook(id: string): Promise<Result<{ url: strin
     return failed(e);
   }
 }
+
+
+export async function githubAppWebhook(): Promise<Result<{ url: string; configured: boolean; kind: string }>> {
+  await requireOrg();
+  try {
+    return { ok: true, data: await v1.githubAppWebhook() };
+  } catch (e) {
+    return failed(e);
+  }
+}
+
+
+export async function rotateGithubAppWebhook(): Promise<Result<{ url: string; secret: string; kind: string }>> {
+  await requireOrg();
+  try {
+    return { ok: true, data: await v1.rotateGithubAppWebhook() };
+  } catch (e) {
+    return failed(e);
+  }
+}

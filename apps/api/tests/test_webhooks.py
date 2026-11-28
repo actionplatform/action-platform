@@ -210,3 +210,38 @@ class WebhooksTest(GateCase):
             headers={"x-github-event": "push", "x-hub-signature-256": "sha256=x"},
         )
         self.assertEqual(res.status_code, 404)
+
+    def test_the_github_app_secret_is_generated_once_and_verifies_deliveries(self):
+        registry_id = self.register()
+        self.github_host()
+        self.point_registry_at(registry_id, "https://github.com/acme/demo.git")
+        self.client.put(
+            "/api/v1/oauth/apps/github",
+            json={"client_id": "Iv1", "client_secret": "sec"},
+            headers=self.h(),
+        )
+
+        info = self.client.get(
+            "/api/v1/oauth/apps/github/webhook", headers=self.h()
+        ).json()
+        self.assertFalse(info["configured"])
+        self.assertTrue(info["url"].endswith("/api/webhooks/github-app"))
+
+        secret = self.client.post(
+            "/api/v1/oauth/apps/github/webhook", headers=self.h()
+        ).json()["secret"]
+        self.assertTrue(
+            self.client.get(
+                "/api/v1/oauth/apps/github/webhook", headers=self.h()
+            ).json()["configured"]
+        )
+
+        ok = self.send(
+            "github-app", secret, "push", {"repository": {"full_name": "acme/demo"}}
+        )
+        self.assertEqual(ok.status_code, 202, ok.text)
+        self.assertEqual(len(ok.json()["queued"]), 1)
+
+    def test_no_github_app_no_webhook_secret(self):
+        res = self.client.post("/api/v1/oauth/apps/github/webhook", headers=self.h())
+        self.assertEqual(res.status_code, 400, res.text)
