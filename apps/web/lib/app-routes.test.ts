@@ -17,11 +17,11 @@ describe("app redirects", () => {
     expect(redirect("/projects/p1/apps/a1/settings/ci")).toBe("/projects/p1/apps/a1/settings?tab=ci");
     expect(redirect("/projects/p1/apps/a1/ci")).toBe("/projects/p1/apps/a1/pipelines");
     expect(redirect("/projects/p1/apps/a1/ci/connect")).toBe("/projects/p1/apps/a1/settings?tab=ci");
-    expect(redirect("/projects/p1/apps/a1/settings/configuration")).toBe("/projects/p1/apps/a1/settings?tab=general");
+    expect(redirect("/projects/p1/apps/a1/settings/configuration")).toBe("/projects/p1/apps/a1/settings?tab=deploy");
     expect(redirect("/projects/p1/apps/a1/settings/scopes")).toBe("/projects/p1/apps/a1/scopes");
     expect(redirect("/projects/p1/apps/a1/settings/scopes/new")).toBe("/projects/p1/apps/a1/scopes/new");
     expect(redirect("/projects/p1/apps/a1/settings/scopes/prod")).toBe("/projects/p1/apps/a1/scopes/prod");
-    expect(redirect("/projects/p1/apps/a1/configuration")).toBe("/projects/p1/apps/a1/settings?tab=general");
+    expect(redirect("/projects/p1/apps/a1/configuration")).toBe("/projects/p1/apps/a1/settings?tab=deploy");
     expect(redirect("/projects/p1/apps/a1/activity/new")).toBe("/projects/p1/apps/a1/pull-requests/new");
   });
 

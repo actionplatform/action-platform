@@ -12,9 +12,9 @@ export const APP_REDIRECTS: { source: string; destination: string; permanent: bo
   { source: `${APP}/settings/ci`, destination: `${APP}/settings?tab=ci`, permanent: true },
   { source: `${APP}/ci`, destination: `${APP}/pipelines`, permanent: true },
   { source: `${APP}/ci/connect`, destination: `${APP}/settings?tab=ci`, permanent: true },
-  { source: `${APP}/settings/configuration`, destination: `${APP}/settings?tab=general`, permanent: true },
+  { source: `${APP}/settings/configuration`, destination: `${APP}/settings?tab=deploy`, permanent: true },
   { source: `${APP}/settings/scopes`, destination: `${APP}/scopes`, permanent: true },
   { source: `${APP}/settings/scopes/:path+`, destination: `${APP}/scopes/:path+`, permanent: true },
-  { source: `${APP}/configuration`, destination: `${APP}/settings?tab=general`, permanent: true },
+  { source: `${APP}/configuration`, destination: `${APP}/settings?tab=deploy`, permanent: true },
   { source: `${APP}/activity/new`, destination: `${APP}/pull-requests/new`, permanent: true },
 ];
