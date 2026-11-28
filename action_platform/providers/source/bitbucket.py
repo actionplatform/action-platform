@@ -89,6 +89,9 @@ class SourceBitbucket(SourceHost):
         except ProviderError as e:
             if "already" not in str(e):
                 raise
+            raise ProviderError(
+                f"{repo} already exists on Bitbucket: generate the app under another name or owner, or add the existing repository instead"
+            ) from e
 
         return f"{self.web}/{repo}.git"
 

@@ -137,6 +137,10 @@ class SourceGithub(SourceHost):
                 if "already exists" not in str(e):
                     raise
 
+                raise ProviderError(
+                    f"{repo} already exists on GitHub: generate the app under another name or owner, or add the existing repository instead"
+                ) from e
+
             return f"{self.web}/{repo}.git"
 
         if not REPO_NAME.match(repo):
