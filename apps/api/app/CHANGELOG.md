@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.50.0 — 2026-11-28
+
+### Features
+- **sync:** sync runs on its own, more often for active apps (#707)
+- **source:** pull requests stop at the first one not updated since the last sync (#708)
+
+### Bug Fixes
+- **sync:** a scheduled sync that moved no ref imports nothing (#707)
+
 ## v0.49.0 — 2026-11-28
 
 ### Features
