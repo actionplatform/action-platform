@@ -5,8 +5,8 @@ from __future__ import annotations
 import unittest
 
 from action_platform.settings import settings
-from action_platform.testing.fixtures import TempCase, git, platform_repo
-from tests.support import plug_ci_server
+from action_platform.testing.fixtures import TempCase, git
+from tests.support import migrated_url, plug_ci_server, seeded_repo
 
 try:
     from fastapi.testclient import TestClient
@@ -35,12 +35,12 @@ class GateCase(TempCase):
             limiter.hits.clear()
         self.app = build(
             token="shared",
-            database_url=f"sqlite:///{self.tmp_path / 'gate.db'}",
+            database_url=migrated_url(self.tmp_path / "gate.db"),
             auth_secret="s3cret",
             public_url="https://ap.example.com",
         )
         self.client = TestClient(self.app)
-        self.repo = platform_repo(self.tmp_path)
+        self.repo = seeded_repo(self.tmp_path)
         git(self.repo, "checkout", "-q", "main")
         self.url = self.repo.as_uri()
         from app.core.auth.secrets import Secrets

@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from action_platform.testing.fixtures import git
-from tests.support import ApiCase
+from tests.support import ApiCase, migrated_url
 
 
 class RegistryTest(ApiCase):
@@ -15,8 +15,7 @@ class RegistryTest(ApiCase):
         from app.repositories.workspace.registry import DbStore, Registry
         from app.services.workspace.checkout import Workspaces
 
-        database = Database(f"sqlite:///{self.tmp_path / 'registry.db'}")
-        database.migrate()
+        database = Database(migrated_url(self.tmp_path / "registry.db"))
         self.registry = Registry(DbStore(database), self.tmp_path / "home")
         self.adopter = Workspaces(self.registry)
 

@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import atexit
+import functools
+import shutil
+import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from action_platform.abc.ci_runner import CIRunner
@@ -10,6 +15,50 @@ from action_platform.core.exception import ProviderError
 from action_platform.core.flow.repository import Repository
 from action_platform.core.scaffold.scaffolder import Scaffolder
 from action_platform.testing.fixtures import TempCase, git, platform_repo
+
+
+@functools.cache
+def _template_root() -> Path:
+    root = Path(tempfile.mkdtemp(prefix="ap-test-template-")).resolve()
+    atexit.register(shutil.rmtree, root, ignore_errors=True)
+
+    return root
+
+
+@functools.cache
+def _database_template() -> Path:
+    from app.core.db import Database
+
+    probe = Database("sqlite://")
+    head = probe.head_revision()
+    probe.dispose()
+    path = _template_root() / f"migrated-{head}.db"
+    database = Database(f"sqlite:///{path}")
+    database.migrate()
+    database.dispose()
+
+    return path
+
+
+def migrated_url(path: Path) -> str:
+    """A `sqlite:///` url for `path`, a copy of a database migrated once per process."""
+    shutil.copyfile(_database_template(), path)
+
+    return f"sqlite:///{path}"
+
+
+@functools.cache
+def _repo_template() -> Path:
+    root = _template_root() / "repo"
+    root.mkdir()
+
+    return platform_repo(root)
+
+
+def seeded_repo(root: Path) -> Path:
+    """What `platform_repo(root)` builds, copied from one built once per process."""
+    return Path(shutil.copytree(_repo_template(), root / "demo", symlinks=True))
+
 
 try:
     from fastapi.testclient import TestClient
@@ -62,10 +111,10 @@ class ApiCase(TempCase):
         self.setenv("AP_WORKSPACE_TTL", "0")
         self.setenv("AP_ALLOW_UNAUTHENTICATED", "1")
         self.setenv("AP_ALLOW_FILE_URLS", "1")
-        self.repo = platform_repo(self.tmp_path)
+        self.repo = seeded_repo(self.tmp_path)
         self.url = self.repo.as_uri()
         self.client = TestClient(
-            build(database_url=f"sqlite:///{self.tmp_path / 'api.db'}")
+            build(database_url=migrated_url(self.tmp_path / "api.db"))
         )
 
     def add_app(self, on_main: bool = True) -> str:

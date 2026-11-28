@@ -6,6 +6,7 @@ import unittest
 from datetime import timedelta
 
 from action_platform.testing.fixtures import TempCase
+from tests.support import migrated_url
 
 try:
     from fastapi.testclient import TestClient
@@ -27,7 +28,7 @@ class AuthCase(TempCase):
         for limiter in LIMITS.values():
             limiter.hits.clear()
         self.app = build(
-            database_url=f"sqlite:///{self.tmp_path / 'auth.db'}",
+            database_url=migrated_url(self.tmp_path / "auth.db"),
             auth_secret="s3cret",
             public_url="https://ap.example.com",
         )

@@ -6,6 +6,7 @@ import unittest
 from unittest import mock
 
 from action_platform.testing.fixtures import TempCase
+from tests.support import migrated_url
 from tests.test_access import GateCase
 
 
@@ -14,8 +15,7 @@ class QueueTest(TempCase):
         from app.core.db import Database
         from app.services.jobs import JobQueue
 
-        db = Database(f"sqlite:///{self.tmp_path / 'q.db'}")
-        db.migrate()
+        db = Database(migrated_url(self.tmp_path / "q.db"))
 
         return JobQueue(db)
 
@@ -783,8 +783,7 @@ class AppLockTest(TempCase):
     def database(self):
         from app.core.db import Database
 
-        db = Database(f"sqlite:///{self.tmp_path / 'l.db'}")
-        db.migrate()
+        db = Database(migrated_url(self.tmp_path / "l.db"))
 
         return db
 
