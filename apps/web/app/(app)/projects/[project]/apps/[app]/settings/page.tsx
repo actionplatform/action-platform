@@ -23,7 +23,7 @@ export default async function SettingsPage({ params, searchParams }: { params: P
     return (
       <>
         <PageTabs label="App settings" tabs={TABS} active={tab} />
-        <ConnectCi projectId={view.projectId} appId={view.appId} state={state} hosts={hosts} sourceKind={view.sourceKind} backHref={`/projects/${view.projectId}/apps/${view.appId}/ci`} canEdit={!!view.can["app.configure"]} />
+        <ConnectCi projectId={view.projectId} appId={view.appId} state={state} hosts={hosts} sourceKind={view.sourceKind} backHref={`/projects/${view.projectId}/apps/${view.appId}/pipelines`} canEdit={!!view.can["app.configure"]} />
       </>
     );
   }

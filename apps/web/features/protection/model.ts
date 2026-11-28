@@ -29,7 +29,7 @@ export function summaryOf(p: Protection | null): Summary {
     if (state?.active) return { tone: "neutral", label: "Not enforced", detail: "The host still has rules applied earlier; the platform no longer keeps them." };
     return { tone: "neutral", label: "Not enforced", detail: "The code host does not enforce git-flow for this app; hooks and CI checks only." };
   }
-  if (!state) return { tone: "warning", label: "Pending", detail: "Enforced but not applied yet: the next hourly check applies it, or Apply now in Settings." };
+  if (!state) return { tone: "warning", label: "Pending", detail: "Enforced but not applied yet: the next hourly check applies it, or Apply now in the app Settings." };
   if (state.error && !state.active) return { tone: "danger", label: "Not active", detail: state.error };
   if (state.error) return { tone: "warning", label: "Not kept", detail: `Rules are on the host, but the platform cannot keep them: ${state.error}` };
   const n = counts(state);
