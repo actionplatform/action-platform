@@ -329,6 +329,75 @@ class DeviceFlowTest(AuthCase):
             self.poll(start["device_code"]).json()["error"], "invalid_grant"
         )
 
+    def approve_and_token(self, owner, organization_id):
+        start = self.start()
+        grant = {"scope": ["read", "write"]}
+        if organization_id is not None:
+            grant["organization_id"] = organization_id
+        approved = self.client.post(
+            "/api/auth/device/approve",
+            json={"user_code": start["user_code"], "grant": grant},
+            headers=self.h(owner["token"]),
+        )
+        self.assertEqual(approved.status_code, 200, approved.text)
+        with self.app.state.db.session() as s:
+            from app.core.db.models import DeviceCode
+
+            s.query(DeviceCode).update({"polling_interval": 0})
+        scope = self.poll(start["device_code"]).json()["scope"]
+        issued = self.client.post(
+            "/api/auth/tokens",
+            json={"name": "cli", "scope": scope},
+            headers=self.h(owner["token"]),
+        )
+        self.assertEqual(issued.status_code, 201, issued.text)
+        claims = self.client.post(
+            "/api/auth/tokens/verify", json={"token": issued.json()["token"]}
+        ).json()
+        return scope, claims
+
+    def test_everywhere_spans_every_organization(self):
+        owner = self.owner()
+        self.client.post(
+            "/api/auth/organizations",
+            json={"name": "Beta", "slug": "beta"},
+            headers=self.h(owner["token"]),
+        )
+        scope, claims = self.approve_and_token(owner, "*")
+        self.assertEqual(scope, "read write org:*")
+        self.assertTrue(claims["all_organizations"])
+
+    def test_explicit_organization_is_that_organization(self):
+        owner = self.owner()
+        scope, claims = self.approve_and_token(owner, owner["org"]["id"])
+        self.assertEqual(scope, f"read write org:{owner['org']['id']}")
+        self.assertFalse(claims["all_organizations"])
+        self.assertEqual(claims["organization"]["id"], owner["org"]["id"])
+
+    def test_no_organization_is_the_active_one(self):
+        owner = self.owner()
+        scope, claims = self.approve_and_token(owner, None)
+        self.assertEqual(scope, "read write")
+        self.assertFalse(claims["all_organizations"])
+        self.assertEqual(claims["organization"]["id"], owner["org"]["id"])
+
+    def test_everywhere_refuses_a_project(self):
+        owner = self.owner()
+        start = self.start()
+        refused = self.client.post(
+            "/api/auth/device/approve",
+            json={
+                "user_code": start["user_code"],
+                "grant": {
+                    "scope": ["read"],
+                    "organization_id": "*",
+                    "project_id": "p1",
+                },
+            },
+            headers=self.h(owner["token"]),
+        )
+        self.assertEqual(refused.status_code, 400, refused.text)
+
     def test_denied(self):
         owner = self.owner()
         start = self.start()

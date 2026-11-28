@@ -56,7 +56,7 @@ export async function approveDeviceRequest(userCode: string, input: { scope: str
   try {
     await requireSession();
     const everywhere = input.organizationId === "*";
-    const grant: Grant = { scope: input.scope as Scope[], organizationId: everywhere ? null : input.organizationId, projectId: everywhere ? null : input.projectId || null, appId: !everywhere && input.projectId ? input.appId || null : null };
+    const grant: Grant = { scope: input.scope as Scope[], organizationId: input.organizationId, projectId: everywhere ? null : input.projectId || null, appId: !everywhere && input.projectId ? input.appId || null : null };
     await approveDevice(userCode.trim().toUpperCase(), grant);
     return { ok: true, data: null };
   } catch (e) {
