@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.51.1 — 2026-11-28
+
+### Bug Fixes
+- **github:** a GitHub App deleted on GitHub is forgotten, so it can be created again (#753)
+
 ## v0.51.0 — 2026-11-28
 
 ### Features
