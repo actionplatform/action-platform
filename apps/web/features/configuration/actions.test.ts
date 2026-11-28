@@ -18,7 +18,7 @@ describe("saveManifest", () => {
   it("writes the manifest and refreshes the project", async () => {
     api.apps.writeManifest.mockResolvedValue({ content: "[project]", mirrored: true });
     expect(await saveManifest("p1", "r1", "[project]")).toEqual({ ok: true, data: { content: "[project]", mirrored: true } });
-    expect(api.apps.writeManifest).toHaveBeenCalledWith("r1", "[project]");
+    expect(api.apps.writeManifest).toHaveBeenCalledWith("p1", "r1", "[project]");
     expect(refreshProject).toHaveBeenCalledWith("p1");
   });
 
@@ -40,7 +40,7 @@ describe("setCloudTarget", () => {
   it("sets the target with no source by default", async () => {
     api.apps.setCloud.mockResolvedValue({ target: "aws" });
     expect(await setCloudTarget("p1", "r1", "aws")).toEqual({ ok: true, data: { target: "aws" } });
-    expect(api.apps.setCloud).toHaveBeenCalledWith("r1", "aws", null);
+    expect(api.apps.setCloud).toHaveBeenCalledWith("p1", "r1", "aws", null);
   });
 });
 
@@ -48,7 +48,7 @@ describe("addService", () => {
   it("adds the service with its provider and source", async () => {
     api.apps.addService.mockResolvedValue({ name: "db" });
     expect(await addService("p1", "r1", "db", "postgres", "acme")).toEqual({ ok: true, data: { name: "db" } });
-    expect(api.apps.addService).toHaveBeenCalledWith("r1", "db", "postgres", "acme");
+    expect(api.apps.addService).toHaveBeenCalledWith("p1", "r1", "db", "postgres", "acme");
   });
 });
 
@@ -58,13 +58,13 @@ describe("commitChanges", () => {
   it("sends the branch with an empty slug as null", async () => {
     api.apps.commit.mockResolvedValue({ sha: "abc", branch: "feature/12", pushed: true });
     await commitChanges("p1", "a1", "r1", input);
-    expect(api.apps.commit).toHaveBeenCalledWith("r1", { message: "feat: x", push: true, branch: { kind: "feature", code: "12", slug: null }, pull_request: true });
+    expect(api.apps.commit).toHaveBeenCalledWith("p1", "r1", { message: "feat: x", push: true, branch: { kind: "feature", code: "12", slug: null }, pull_request: true });
   });
 
   it("commits on the current branch when none is given", async () => {
     api.apps.commit.mockResolvedValue({ sha: "abc", branch: "main", pushed: false });
     await commitChanges("p1", "a1", "r1", { ...input, branch: null });
-    expect(api.apps.commit).toHaveBeenCalledWith("r1", expect.objectContaining({ branch: null }));
+    expect(api.apps.commit).toHaveBeenCalledWith("p1", "r1", expect.objectContaining({ branch: null }));
   });
 
   it("shows a protected-branch refusal", async () => {

@@ -13,7 +13,7 @@ import type { JobRow } from "@/lib/v1";
 import { startDeploy } from "@/features/deployments/actions";
 import { canRedeploy, deploymentHref, elapsed, statusOf, typeOf, versionOf, when } from "./job-state";
 
-export function DeploymentsTable({ page, registryId, canDeploy, base, newHref }: { page: Paged<JobRow>; registryId: string; canDeploy: boolean; base: string; newHref?: string | null }) {
+export function DeploymentsTable({ page, projectId, registryId, canDeploy, base, newHref }: { page: Paged<JobRow>; projectId: string; registryId: string; canDeploy: boolean; base: string; newHref?: string | null }) {
   const jobs = page.items;
   const router = useRouter();
   const [now, setNow] = useState(() => Date.now());
@@ -29,7 +29,7 @@ export function DeploymentsTable({ page, registryId, canDeploy, base, newHref }:
   const redeploy = (job: JobRow) => {
     if (pending) return;
     start(async () => {
-      const r = await startDeploy(registryId, job.stage ?? "", !!job.dry_run, job.version ?? versionOf(job) ?? "");
+      const r = await startDeploy(projectId, registryId, job.stage ?? "", !!job.dry_run, job.version ?? versionOf(job) ?? "");
       if (r.ok) router.refresh();
     });
   };

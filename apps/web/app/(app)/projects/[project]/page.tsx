@@ -28,7 +28,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
 
   let rows: Map<string, AppRow>;
   try {
-    rows = new Map((await api.apps.list()).map((r) => [r.id, r]));
+    rows = new Map((await api.apps.list(project.id)).map((r) => [r.id, r]));
   } catch (e) {
     return <ApiOffline error={e} />;
   }

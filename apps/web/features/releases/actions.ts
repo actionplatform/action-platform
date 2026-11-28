@@ -6,20 +6,20 @@ import { api, type ReleasePreview } from "@/lib/api";
 import { requireOrg } from "@/lib/session";
 import { v1 } from "@/lib/v1";
 
-export async function nextVersion(registryId: string, level: string, branch: string | null = null, component: string | null = null): Promise<Result<{ current: string; next: string; branch: string; prerelease: boolean }>> {
+export async function nextVersion(projectId: string, registryId: string, level: string, branch: string | null = null, component: string | null = null): Promise<Result<{ current: string; next: string; branch: string; prerelease: boolean }>> {
   await requireOrg();
   try {
-    return { ok: true, data: await api.apps.nextVersion(registryId, level, branch, component) };
+    return { ok: true, data: await api.apps.nextVersion(projectId, registryId, level, branch, component) };
   } catch (e) {
     return failed(e);
   }
 }
 
 
-export async function previewRelease(registryId: string, level: string, branch: string | null = null, component: string | null = null): Promise<Result<ReleasePreview>> {
+export async function previewRelease(projectId: string, registryId: string, level: string, branch: string | null = null, component: string | null = null): Promise<Result<ReleasePreview>> {
   await requireOrg();
   try {
-    return { ok: true, data: await api.apps.release(registryId, level, true, branch, { component }) };
+    return { ok: true, data: await api.apps.release(projectId, registryId, level, true, branch, { component }) };
   } catch (e) {
     return failed(e);
   }
@@ -32,7 +32,7 @@ export type ReleaseExtra = { name?: string | null; notes?: string | null; latest
 export async function runRelease(projectId: string, _appId: string, registryId: string, level: string, branch: string | null = null, extra: ReleaseExtra = {}): Promise<Result<{ job: string }>> {
   await requireOrg();
   try {
-    const data = await api.apps.releaseAsync(registryId, level, branch, extra);
+    const data = await api.apps.releaseAsync(projectId, registryId, level, branch, extra);
     return { ok: true, data: { job: data.job } };
   } catch (e) {
     return failed(e);
