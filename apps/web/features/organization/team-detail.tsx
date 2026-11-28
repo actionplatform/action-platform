@@ -54,7 +54,7 @@ function MembersPanel({ team, members, candidates, canManage }: { team: { id: st
         open={adding}
         onClose={() => !pending && setAdding(false)}
         title="Add member"
-        description="Only organization members can join a team. Invite people under Settings."
+        description="Only organization members can join a team. Invite people under Team → Members."
         footer={<><Button variant="ghost" onClick={() => setAdding(false)} disabled={pending}>Cancel</Button><Button disabled={pending || !userId} onClick={() => start(async () => { setError(null); const r = await addMemberToTeam(team.id, userId); if (r.ok) setAdding(false); else setError(r.error); })}>{pending ? "Adding…" : "Add"}</Button></>}
       >
         <label className="block text-sm"><span className="mb-1 block text-xs text-secondary">Member</span>

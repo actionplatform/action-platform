@@ -30,7 +30,7 @@ export function TeamsView({ teams, canManage }: { teams: TeamItem[]; canManage: 
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 py-16 text-center">
           <div className="flex size-12 items-center justify-center rounded-lg border border-[#303030]"><Users className="size-[22px] text-secondary" strokeWidth={1.5} /></div>
           <h2 className="mt-4 text-[17px] font-semibold">No teams yet</h2>
-          <p className="mt-1 max-w-sm text-sm text-secondary">Teams group organization members and own projects. Members are invited under Settings.</p>
+          <p className="mt-1 max-w-sm text-sm text-secondary">Teams group organization members and own projects. Members are invited under Team → Members.</p>
           {canManage && <Button className="mt-5" onClick={() => setCreating(true)}><Plus className="size-4" strokeWidth={2} /> New team</Button>}
         </div>
       ) : (

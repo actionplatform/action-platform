@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, ArrowLeft, Building2, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Puzzle, Rocket, Settings, Target, Workflow, X } from "lucide-react";
+import { Activity, ArrowLeft, ChevronRight, Cloud, FolderGit2, LayoutDashboard, LayoutTemplate, Menu, Plug, Rocket, Settings, Shield, Target, Users, Workflow, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -9,18 +9,32 @@ import { appPath } from "@/lib/app-routes";
 import type { Org } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { OrgSwitcher } from "./org-switcher";
-import { ORGANIZATION_PAGES, pageActive, type SubPage } from "./nav";
+import { CONNECT_PAGES, ORGANIZATION_PAGES, pageActive, type SubPage } from "./nav";
 import { useScope } from "./scope";
 import { UserMenu } from "./user-menu";
 
-const items: { href: string; label: string; icon: typeof FolderGit2; children?: SubPage[] }[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/projects", label: "Projects", icon: FolderGit2 },
-  { href: "/templates", label: "Templates", icon: LayoutTemplate },
-  { href: "/organization", label: "Organization", icon: Building2, children: ORGANIZATION_PAGES },
-  { href: "/plugins", label: "Plugins", icon: Puzzle },
-  { href: "/settings", label: "Settings", icon: Settings },
+type Item = { href: string; label: string; icon: typeof FolderGit2; children?: SubPage[] };
+
+const groups: { label: string; items: Item[] }[] = [
+  {
+    label: "Build",
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/projects", label: "Projects", icon: FolderGit2 },
+      { href: "/templates", label: "Templates", icon: LayoutTemplate },
+    ],
+  },
+  {
+    label: "Organization",
+    items: [
+      { href: "/connect", label: "Connect", icon: Plug, children: CONNECT_PAGES },
+      { href: "/organization", label: "Team", icon: Users, children: ORGANIZATION_PAGES },
+      { href: "/settings", label: "Settings", icon: Settings },
+    ],
+  },
 ];
+
+const admin: Item = { href: "/admin", label: "Admin", icon: Shield };
 
 export const appItems: { tab: string; label: string; icon: typeof FolderGit2 }[] = [
   { tab: "", label: "Overview", icon: LayoutDashboard },
@@ -36,9 +50,9 @@ const link = "mx-3 my-0.5 flex h-10 min-h-10 items-center gap-3 rounded-[7px] bo
 const on = "border-border bg-surface-selected text-foreground";
 const off = "border-transparent text-secondary hover:bg-surface-hover hover:text-foreground";
 
-type Props = { versions: { web: string; api: string; lib: string }; user: { name: string; email: string }; org: Org; orgs: Org[] };
+type Props = { versions: { web: string; api: string; lib: string }; user: { name: string; email: string }; org: Org; orgs: Org[]; showAdmin?: boolean };
 
-export function Sidebar({ versions, user, org, orgs }: Props) {
+export function Sidebar({ versions, user, org, orgs, showAdmin = false }: Props) {
   const pathname = usePathname();
   const { scope } = useScope();
   const [open, setOpen] = useState(false);
@@ -89,36 +103,20 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
           })}
         </nav>
       ) : (
-        <nav aria-label="Main" className="flex-1 py-2">
-          {items.map(({ href, label, icon: Icon, children }) => (
-            <div key={href}>
-              <Link
-                href={href}
-                aria-current={isActive(href) ? "page" : undefined}
-                className={cn(link, isActive(href) ? on : off)}
-              >
-                <Icon className="size-[18px]" strokeWidth={1.75} />
-                {label}
-              </Link>
-              {children && isActive(href) && (
-                <div className="mb-1 ml-[38px] border-l border-border-subtle">
-                  {children.map((page) => {
-                    const active = pageActive(pathname, page.href, page.exact);
-                    return (
-                      <Link
-                        key={page.href}
-                        href={page.href}
-                        aria-current={active ? "page" : undefined}
-                        className={cn("-ml-px flex h-9 items-center border-l pl-4 pr-3 text-[13px] transition-colors", active ? "border-foreground text-foreground" : "border-transparent text-secondary hover:text-foreground")}
-                      >
-                        {page.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
+        <nav aria-label="Main" className="flex-1 overflow-y-auto py-2">
+          {groups.map((group) => (
+            <div key={group.label} className="mb-2">
+              <div className="px-6 pb-1 pt-3 font-mono text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground">{group.label}</div>
+              {group.items.map((item) => (
+                <NavItem key={item.href} item={item} pathname={pathname} isActive={isActive} />
+              ))}
             </div>
           ))}
+          {showAdmin && (
+            <div className="mt-2 border-t border-border-subtle pt-2">
+              <NavItem item={admin} pathname={pathname} isActive={isActive} />
+            </div>
+          )}
         </nav>
       )}
       <UserMenu name={user.name} email={user.email} />
@@ -149,5 +147,62 @@ export function Sidebar({ versions, user, org, orgs }: Props) {
         </div>
       )}
     </>
+  );
+}
+
+function NavItem({ item, pathname, isActive }: { item: Item; pathname: string; isActive: (href: string) => boolean }) {
+  const { href, label, icon: Icon, children } = item;
+
+  if (!children) {
+    return (
+      <Link href={href} aria-current={isActive(href) ? "page" : undefined} className={cn(link, isActive(href) ? on : off)}>
+        <Icon className="size-[18px]" strokeWidth={1.75} />
+        {label}
+      </Link>
+    );
+  }
+
+  return <NavGroup item={item} pages={children} pathname={pathname} active={isActive(href)} />;
+}
+
+function NavGroup({ item: { href, label, icon: Icon }, pages, pathname, active }: { item: Item; pages: SubPage[]; pathname: string; active: boolean }) {
+  const [expanded, setExpanded] = useState(active);
+  const id = `nav-${href.slice(1)}`;
+
+  useEffect(() => {
+    if (active) setExpanded(true);
+  }, [active, pathname]);
+
+  return (
+    <div>
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={id}
+        onClick={() => setExpanded((v) => !v)}
+        className={cn(link, "w-[calc(100%-1.5rem)] border-transparent text-left", active ? "bg-surface-selected text-foreground" : "text-secondary hover:bg-surface-hover hover:text-foreground")}
+      >
+        <Icon className="size-[18px]" strokeWidth={1.75} />
+        <span className="flex-1">{label}</span>
+        <ChevronRight className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform duration-150", expanded && "rotate-90")} strokeWidth={1.75} />
+      </button>
+      {expanded && (
+        <div id={id} className="mb-1 ml-[37px] mr-3 mt-0.5 border-l border-border-subtle pl-2">
+          {pages.map((page) => {
+            const current = pageActive(pathname, page.href, page.exact);
+            return (
+              <Link
+                key={page.href}
+                href={page.href}
+                aria-current={current ? "page" : undefined}
+                className={cn("flex h-8 items-center rounded-[6px] px-2.5 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground", current ? "bg-surface-hover text-foreground" : "text-secondary hover:text-foreground")}
+              >
+                {page.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
