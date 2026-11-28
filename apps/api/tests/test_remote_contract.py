@@ -9,6 +9,7 @@ import unittest
 from action_platform.remote import client as remote_client
 from action_platform.remote import schemas
 from action_platform.testing.fixtures import TempCase
+from tests.support import migrated_url
 
 try:
     from fastapi.testclient import TestClient
@@ -80,7 +81,7 @@ class RemoteContractTest(TempCase):
         self.setenv("AP_HOME", str(self.tmp_path / "home"))
         self.spec = build(
             token="shared",
-            database_url=f"sqlite:///{self.tmp_path / 'c.db'}",
+            database_url=migrated_url(self.tmp_path / "c.db"),
             auth_secret="s3cret",
             public_url="https://ap.example.com",
         ).openapi()
