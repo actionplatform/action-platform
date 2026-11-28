@@ -10,7 +10,6 @@ from app.core.db.models.base import KEY, SHORT, Base, now
 from app.core.db.models.projects import App
 
 DEPLOYMENT_STATUSES = ("queued", "running", "success", "failure", "verified")
-EXECUTORS = ("platform", "github_actions", "jenkins", "manual")
 
 
 class Deployment(Base):
