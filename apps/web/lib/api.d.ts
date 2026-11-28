@@ -7314,7 +7314,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            202: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7322,11 +7322,13 @@ export interface operations {
                     "application/json": components["schemas"]["Removed"];
                 };
             };
-            204: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Removed"];
+                };
             };
             422: {
                 headers: {
@@ -7476,7 +7478,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            202: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7484,11 +7486,13 @@ export interface operations {
                     "application/json": components["schemas"]["Removed"];
                 };
             };
-            204: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Removed"];
+                };
             };
             422: {
                 headers: {
