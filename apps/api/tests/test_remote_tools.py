@@ -59,7 +59,7 @@ class RemoteToolsCase(GateCase):
 
             return Answer(res.content)
 
-        self.patch(client.urllib.request, "urlopen", urlopen)
+        self.patch(client.destination, "urlopen", urlopen)
 
     def server(self, scope: str = FULL, token: str | None = None):
         from action_platform.mcp.server import REMOTE_INSTRUCTIONS, MCPServer
