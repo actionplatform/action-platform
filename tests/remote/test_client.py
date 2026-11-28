@@ -427,12 +427,12 @@ class RemoteClientTest(TempCase):
 
         self.answer = {"dry_run": True}
 
-        for call, path, body in (
+        for call, method, path, body in (
             (
                 lambda: remote.access_grant("ana@x.dev", "github", "repo/api", "push"),
-                "grant",
+                "POST",
+                "people/ana%40x.dev/grants",
                 {
-                    "person": "ana@x.dev",
                     "service": "github",
                     "resource": "repo/api",
                     "level": "push",
@@ -442,26 +442,20 @@ class RemoteClientTest(TempCase):
             ),
             (
                 lambda: remote.access_revoke("ana@x.dev", "github", "repo/api"),
-                "revoke",
-                {
-                    "person": "ana@x.dev",
-                    "service": "github",
-                    "resource": "repo/api",
-                    "apply": False,
-                },
+                "DELETE",
+                "people/ana%40x.dev/grants/github/repo/api?apply=false",
+                None,
             ),
             (
                 lambda: remote.access_offboard("ana@x.dev", apply=True),
-                "offboard",
-                {
-                    "person": "ana@x.dev",
-                    "apply": True,
-                    "remove_from_platform": False,
-                },
+                "DELETE",
+                "people/ana%40x.dev?apply=true&remove_from_platform=false",
+                None,
             ),
             (
                 lambda: remote.access_sync(links={"a@x.dev": {"github": "a"}}),
-                "sync",
+                "POST",
+                "syncs",
                 {
                     "service": None,
                     "apply": False,
@@ -472,11 +466,46 @@ class RemoteClientTest(TempCase):
         ):
             with self.subTest(path=path):
                 self.assertTrue(call().dry_run)
-                self.assertEqual(self.seen["method"], "POST")
+                self.assertEqual(self.seen["method"], method)
                 self.assertEqual(
                     self.seen["url"], f"https://p.example/api/v1/access/{path}"
                 )
                 self.assertEqual(self.seen["body"], body)
+
+    def test_organization_changes_reach_the_resource_routes(self):
+        remote = client.Remote("https://p.example", "tok")
+        self.answer = {"ok": True}
+
+        for call, method, path, body in (
+            (
+                lambda: remote.add_team_member("t1", "u1"),
+                "POST",
+                "teams/t1/members",
+                {"user_id": "u1"},
+            ),
+            (
+                lambda: remote.assign_project_team("p1", None),
+                "PUT",
+                "projects/p1/team",
+                {"team_id": None},
+            ),
+            (
+                lambda: remote.set_member_role("u1", "viewer"),
+                "PATCH",
+                "members/u1",
+                {"role": "viewer"},
+            ),
+        ):
+            with self.subTest(path=path):
+                call()
+                self.assertEqual(self.seen["method"], method)
+                self.assertEqual(self.seen["url"], f"https://p.example/api/v1/{path}")
+                self.assertEqual(self.seen["body"], body)
+
+        self.answer = {}
+        remote.set_cloud("p1", "docker")
+        self.assertEqual(self.seen["method"], "PUT")
+        self.assertEqual(self.seen["url"], "https://p.example/api/v1/apps/p1/cloud")
 
     def test_github_checks_reach_the_access_routes(self):
         remote = client.Remote("https://p.example", "tok")
