@@ -9,6 +9,7 @@ import urllib.error
 from unittest import mock
 
 from action_platform.core.context import CommitRow
+from action_platform.core.exception import ProviderError
 from action_platform.providers.source import rest
 from action_platform.providers.source.bitbucket import SourceBitbucket
 from action_platform.providers.source.github import SourceGithub
@@ -184,3 +185,122 @@ class RestMissingTest(unittest.TestCase):
                 rest.call("GET", "https://x", {})
 
             self.assertIsNone(rest.text("https://x", {}))
+
+
+class TagsTest(unittest.TestCase):
+    def test_github_reads_annotated_and_lightweight_tags_in_one_query(self):
+        answer = {
+            "data": {
+                "repository": {
+                    "refs": {
+                        "nodes": [
+                            {
+                                "name": "v1.1.0",
+                                "target": {
+                                    "__typename": "Tag",
+                                    "oid": "tagobj",
+                                    "message": "chore(release): 1.1.0\n",
+                                    "tagger": {"date": "2026-11-27T12:00:00Z"},
+                                    "target": {"oid": "c2"},
+                                },
+                            },
+                            {
+                                "name": "v1.0.0",
+                                "target": {
+                                    "__typename": "Commit",
+                                    "oid": "c1",
+                                    "committedDate": "2026-11-20T09:00:00Z",
+                                    "message": "fix: x\n\nbody",
+                                },
+                            },
+                        ]
+                    }
+                }
+            }
+        }
+
+        with mock.patch.object(rest, "call", return_value=answer) as call:
+            tags = SourceGithub(repo="acme/x", token="ghp").tags("acme/x")
+
+        self.assertEqual(
+            call.call_args[0][:2], ("POST", "https://api.github.com/graphql")
+        )
+        self.assertEqual(
+            call.call_args[0][3]["variables"], {"owner": "acme", "name": "x"}
+        )
+        self.assertEqual(
+            [(t.name, t.sha, t.subject, t.date.day) for t in tags],
+            [
+                ("v1.1.0", "c2", "chore(release): 1.1.0", 27),
+                ("v1.0.0", "c1", "fix: x", 20),
+            ],
+        )
+
+    def test_github_graphql_errors_raise(self):
+        with mock.patch.object(
+            rest, "call", return_value={"errors": [{"message": "no"}]}
+        ):
+            with self.assertRaises(ProviderError):
+                SourceGithub(repo="acme/x", token="ghp").tags("acme/x")
+
+    def test_gitlab_and_bitbucket_tags(self):
+        gitlab = [
+            {
+                "name": "v1.0.0",
+                "message": "",
+                "created_at": None,
+                "commit": {
+                    "id": "c1",
+                    "title": "fix: x",
+                    "created_at": "2026-11-20T09:00:00Z",
+                },
+            }
+        ]
+
+        with mock.patch.object(rest, "get_pages", return_value=gitlab) as pages:
+            tags = SourceGitlab(repo="acme/x", token="t").tags("acme/x")
+
+        self.assertIn(
+            "/repository/tags?order_by=updated&sort=desc", pages.call_args[0][0]
+        )
+        self.assertEqual(
+            (tags[0].sha, tags[0].subject, tags[0].date.day), ("c1", "fix: x", 20)
+        )
+
+        bitbucket = [
+            {
+                "name": "v1.0.0",
+                "target": {
+                    "hash": "c1",
+                    "date": "2026-11-20T09:00:00+00:00",
+                    "message": "fix: x\n",
+                },
+            }
+        ]
+
+        with mock.patch.object(rest, "get_values", return_value=bitbucket):
+            tags = SourceBitbucket(repo="acme/x", token="t").tags("acme/x")
+
+        self.assertEqual((tags[0].sha, tags[0].subject), ("c1", "fix: x"))
+
+    def test_commits_touching_a_path(self):
+        with mock.patch.object(rest, "call", return_value=[]) as call:
+            SourceGithub(repo="acme/x", token="ghp").commits(
+                "acme/x", "master", 100, path="platform.toml"
+            )
+
+        self.assertIn("&path=platform.toml", call.call_args[0][1])
+
+        with mock.patch.object(rest, "call", return_value=[]) as call:
+            SourceGitlab(repo="acme/x", token="t").commits(
+                "acme/x", "master", 100, path="platform.toml"
+            )
+
+        self.assertIn("&path=platform.toml", call.call_args[0][1])
+
+        with mock.patch.object(rest, "call", return_value={"values": []}) as call:
+            SourceBitbucket(repo="acme/x", token="t").commits(
+                "acme/x", "master", 100, path="platform.toml"
+            )
+
+        self.assertIn("&path=platform.toml", call.call_args[0][1])

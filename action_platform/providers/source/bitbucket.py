@@ -16,6 +16,7 @@ from action_platform.core.context import (
     PullRequestRow,
     ReleaseRef,
     ReleaseRow,
+    TagRow,
 )
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import rest
@@ -187,10 +188,13 @@ class SourceBitbucket(SourceHost):
             )
         ]
 
-    def commits(self, repo: str, ref: str, limit: int = 50) -> list[CommitRow]:
+    def commits(
+        self, repo: str, ref: str, limit: int = 50, path: str | None = None
+    ) -> list[CommitRow]:
+        only = f"&path={urllib.parse.quote(path)}" if path else ""
         data = rest.call(
             "GET",
-            f"{self.api}/repositories/{repo}/commits/{urllib.parse.quote(ref, safe='')}?pagelen={max(1, min(limit, 100))}",
+            f"{self.api}/repositories/{repo}/commits/{urllib.parse.quote(ref, safe='')}?pagelen={max(1, min(limit, 100))}{only}",
             self._headers(),
         )
 
@@ -210,6 +214,25 @@ class SourceBitbucket(SourceHost):
             f"{self.api}/repositories/{repo}/src/{urllib.parse.quote(ref, safe='')}/{urllib.parse.quote(path)}",
             self._headers(),
         )
+
+    def tags(self, repo: str) -> list[TagRow]:
+        return [
+            TagRow(
+                name=r["name"],
+                sha=(r.get("target") or {}).get("hash") or "",
+                date=rest.parse_utc(
+                    r.get("date") or (r.get("target") or {}).get("date")
+                ),
+                subject=(
+                    r.get("message") or (r.get("target") or {}).get("message") or ""
+                ).split("\n", 1)[0]
+                or None,
+            )
+            for r in rest.get_values(
+                f"{self.api}/repositories/{repo}/refs/tags?sort=-target.date&pagelen=100",
+                self._headers(),
+            )
+        ]
 
 
 def _commit(r: dict) -> CommitRow:

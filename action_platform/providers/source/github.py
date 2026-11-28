@@ -23,6 +23,7 @@ from action_platform.core.context import (
     PullRequestRow,
     ReleaseRef,
     ReleaseRow,
+    TagRow,
 )
 from action_platform.core.exception import ProviderError
 from action_platform.providers.source import rest
@@ -327,10 +328,13 @@ class SourceGithub(SourceHost):
             )
         ]
 
-    def commits(self, repo: str, ref: str, limit: int = 50) -> list[CommitRow]:
+    def commits(
+        self, repo: str, ref: str, limit: int = 50, path: str | None = None
+    ) -> list[CommitRow]:
+        only = f"&path={quote(path)}" if path else ""
         rows = rest.call(
             "GET",
-            f"{self.api}/repos/{repo}/commits?sha={quote(ref, safe='')}&per_page={max(1, min(limit, 100))}",
+            f"{self.api}/repos/{repo}/commits?sha={quote(ref, safe='')}&per_page={max(1, min(limit, 100))}{only}",
             self._read_headers(),
         )
 
@@ -359,6 +363,68 @@ class SourceGithub(SourceHost):
             return None
 
         return base64.b64decode(data.get("content") or "").decode(errors="replace")
+
+    def tags(self, repo: str) -> list[TagRow]:
+        owner, name = repo.split("/", 1)
+        data = rest.call(
+            "POST",
+            self.graphql,
+            self._read_headers(),
+            {"query": TAGS_QUERY, "variables": {"owner": owner, "name": name}},
+        )
+
+        if not isinstance(data, dict) or data.get("errors"):
+            raise ProviderError(
+                f"GitHub could not list the tags of {repo}: {(data or {}).get('errors')}"
+            )
+
+        refs = ((data.get("data") or {}).get("repository") or {}).get("refs") or {}
+
+        return [_tag(node) for node in refs.get("nodes") or []]
+
+    @property
+    def graphql(self) -> str:
+        if self.api == "https://api.github.com":
+            return "https://api.github.com/graphql"
+
+        return f"{self.api.removesuffix('/v3')}/graphql"
+
+
+TAGS_QUERY = """
+query($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    refs(refPrefix: "refs/tags/", first: 100, orderBy: {field: TAG_COMMIT_DATE, direction: DESC}) {
+      nodes {
+        name
+        target {
+          __typename
+          oid
+          ... on Commit { committedDate message }
+          ... on Tag { message tagger { date } target { oid } }
+        }
+      }
+    }
+  }
+}
+"""
+
+
+def _tag(node: dict) -> TagRow:
+    target = node.get("target") or {}
+
+    if target.get("__typename") == "Tag":
+        sha = (target.get("target") or {}).get("oid") or target.get("oid") or ""
+        date = (target.get("tagger") or {}).get("date")
+    else:
+        sha = target.get("oid") or ""
+        date = target.get("committedDate")
+
+    return TagRow(
+        name=node["name"],
+        sha=sha,
+        date=rest.parse_utc(date),
+        subject=(target.get("message") or "").split("\n", 1)[0] or None,
+    )
 
 
 def _commit(r: dict) -> CommitRow:

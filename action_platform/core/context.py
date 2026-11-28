@@ -48,6 +48,16 @@ class CommitRow:
 
 
 @dataclass
+class TagRow:
+    """One tag as a source host reports it: the commit it points at, its date and subject (the tag's own for an annotated tag)."""
+
+    name: str
+    sha: str
+    date: Optional[datetime]
+    subject: str | None
+
+
+@dataclass
 class PullRequestRow:
     """One pull (merge) request of a source host, in the platform's shape."""
 
