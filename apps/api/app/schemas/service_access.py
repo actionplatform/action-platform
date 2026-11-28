@@ -13,6 +13,7 @@ __all__ = [
     "GrantRequest",
     "OrgSettings",
     "OffboardRequest",
+    "PersonGrant",
     "Plan",
     "RevokeRequest",
     "SyncRequest",
@@ -32,6 +33,14 @@ class SyncRequest(BaseModel):
 
 class GrantRequest(BaseModel):
     person: str
+    service: str
+    resource: str
+    level: str
+    account: Optional[str] = None
+    apply: bool = False
+
+
+class PersonGrant(BaseModel):
     service: str
     resource: str
     level: str

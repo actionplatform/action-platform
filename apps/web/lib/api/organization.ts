@@ -9,11 +9,11 @@ export const organization = {
   createTeam: async (name: string, description = "") => unwrap(await client.POST("/api/v1/teams", { body: { name, description } })),
   updateTeam: async (id: string, name: string, description = "") => unwrap(await client.PUT("/api/v1/teams/{team_id}", { params: { path: { team_id: id } }, body: { name, description } })),
   deleteTeam: async (id: string) => unwrap(await client.DELETE("/api/v1/teams/{team_id}", { params: { path: { team_id: id } } })),
-  addTeamMember: async (teamId: string, userId: string) => unwrap(await client.POST("/api/v1/teams/members", { body: { team_id: teamId, user_id: userId } })),
+  addTeamMember: async (teamId: string, userId: string) => unwrap(await client.POST("/api/v1/teams/{team_id}/members", { params: { path: { team_id: teamId } }, body: { user_id: userId } })),
   removeTeamMember: async (teamId: string, userId: string) =>
     unwrap(await client.DELETE("/api/v1/teams/{team_id}/members/{user_id}", { params: { path: { team_id: teamId, user_id: userId } } })),
   members: async () => unwrap(await client.GET("/api/v1/members")),
-  setMemberRole: async (userId: string, role: string) => unwrap(await client.POST("/api/v1/members/role", { body: { user_id: userId, role } })),
+  setMemberRole: async (userId: string, role: string) => unwrap(await client.PATCH("/api/v1/members/{user_id}", { params: { path: { user_id: userId } }, body: { role } })),
   removeMember: async (userId: string) => unwrap(await client.DELETE("/api/v1/members/{user_id}", { params: { path: { user_id: userId } } })),
   invitations: async () => unwrap(await client.GET("/api/v1/invitations")),
   invite: async (email: string, role: string, teamIds: string[] = []) => unwrap(await client.POST("/api/v1/invitations", { body: { email, role, team_ids: teamIds } })),

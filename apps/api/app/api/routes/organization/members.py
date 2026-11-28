@@ -83,39 +83,73 @@ def create_team(
     return common.Created(id=team.id, name=team.name, slug=team.slug)
 
 
-@router.post("/teams/members", status_code=201)
-def add_team_member(
-    body: schemas.TeamMemberRequest,
+@router.post("/teams/{team_id}/members", status_code=201)
+def add_member_to_team(
+    team_id: str,
+    body: schemas.TeamMemberAdd,
     caller: CallerDep,
     directory: OrganizationRepoDep,
     x_organization: Optional[str] = Header(default=None),
 ) -> common.Ok:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "teams/members")
-    directory.add_team_member(org.id, body.team_id, body.user_id)
+    directory.add_team_member(org.id, team_id, body.user_id)
 
     return common.Ok()
 
 
-@router.post("/members/role")
-def set_member_role(
-    body: schemas.MemberRoleRequest,
+@router.post("/teams/members", status_code=201, include_in_schema=False)
+def add_team_member(
+    body: schemas.TeamMemberRequest,
+    caller: CallerDep,
+    directory: OrganizationRepoDep,
+    x_organization: Optional[str] = Header(default=None),
+) -> common.Ok:
+    return add_member_to_team(
+        body.team_id,
+        schemas.TeamMemberAdd(user_id=body.user_id),
+        caller,
+        directory,
+        x_organization,
+    )
+
+
+@router.patch("/members/{user_id}")
+def update_member(
+    user_id: str,
+    body: schemas.MemberUpdate,
     caller: CallerDep,
     directory: OrganizationRepoDep,
     x_organization: Optional[str] = Header(default=None),
 ) -> common.Ok:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "members/role")
-    current = directory.role_in(body.user_id, org.id)
+    current = directory.role_in(user_id, org.id)
 
     if (body.role == "owner" or current == "owner") and directory.role_in(
         caller.user.id, org.id
     ) != "owner":
         raise Forbidden("only an owner may give or take the owner role")
 
-    directory.set_member_role(org.id, body.user_id, body.role)
+    directory.set_member_role(org.id, user_id, body.role)
 
     return common.Ok()
+
+
+@router.post("/members/role", include_in_schema=False)
+def set_member_role(
+    body: schemas.MemberRoleRequest,
+    caller: CallerDep,
+    directory: OrganizationRepoDep,
+    x_organization: Optional[str] = Header(default=None),
+) -> common.Ok:
+    return update_member(
+        body.user_id,
+        schemas.MemberUpdate(role=body.role),
+        caller,
+        directory,
+        x_organization,
+    )
 
 
 @router.put("/teams/{team_id}")

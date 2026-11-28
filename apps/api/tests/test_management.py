@@ -241,8 +241,8 @@ class TeamsAndMembersTest(GateCase):
             "core-2",
         )
         added = self.client.post(
-            "/api/v1/teams/members",
-            json={"team_id": team["id"], "user_id": self.user_id},
+            f"/api/v1/teams/{team['id']}/members",
+            json={"user_id": self.user_id},
             headers=self.h(),
         )
         self.assertEqual(added.status_code, 201, added.text)
@@ -307,16 +307,16 @@ class TeamsAndMembersTest(GateCase):
             ).status_code,
             400,
         )
-        promoted = self.client.post(
-            "/api/v1/members/role",
-            json={"user_id": bob["user"]["id"], "role": "admin"},
+        promoted = self.client.patch(
+            f"/api/v1/members/{bob['user']['id']}",
+            json={"role": "admin"},
             headers=self.h(),
         )
         self.assertEqual(promoted.status_code, 200, promoted.text)
         bob_h = {"Authorization": f"Bearer {bob['session']['token']}"}
-        self_promotion = self.client.post(
-            "/api/v1/members/role",
-            json={"user_id": bob["user"]["id"], "role": "owner"},
+        self_promotion = self.client.patch(
+            f"/api/v1/members/{bob['user']['id']}",
+            json={"role": "owner"},
             headers=bob_h,
         )
         self.assertEqual(self_promotion.status_code, 403, self_promotion.text)

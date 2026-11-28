@@ -25,16 +25,16 @@ flowchart LR
 
 ## Operations
 
-Every route needs `org.manage` and a token that is not limited to a project or app.
+Every route needs `org.manage` and a token that is not limited to a project or app. The verb routes `GET access/who` and `POST access/sync|grant|revoke|offboard` still answer, as deprecated aliases.
 
 | MCP tool (remote) | Command | Route | Does |
 |---|---|---|---|
 | `access_audit` | `action-platform access audit` | `GET /api/v1/access/audit` | drift per service, members without an account, accounts that belong to no member, the resources and levels each service grants |
-| `access_who` | `action-platform access who --person <email>` / `--service <name>` | `GET /api/v1/access/who` | a person's accounts, live grants and drift; or every account on a service and the member it belongs to |
-| `access_grant` | `action-platform access grant <email> <service> <resource> <level>` | `POST /api/v1/access/grant` | one grant to one person, recorded in the mapping; only that person's account is touched; the grants the service needs beside it are added |
-| `access_revoke` | `action-platform access revoke <email> <service> <resource>` | `POST /api/v1/access/revoke` | takes it away; says when the role or a team still grants it |
-| `access_offboard` | `action-platform access offboard <email>` | `POST /api/v1/access/offboard` | every grant of every linked account, the mapping entries, optionally the platform membership |
-| `access_sync` | `action-platform access sync` | `POST /api/v1/access/sync` | imports a service the first time; then adds, changes and removes to close the drift |
+| `access_who` | `action-platform access who --person <email>` / `--service <name>` | `GET /api/v1/access/grants?person=&service=` | a person's accounts, live grants and drift; or every account on a service and the member it belongs to |
+| `access_grant` | `action-platform access grant <email> <service> <resource> <level>` | `POST /api/v1/access/people/{person}/grants` | one grant to one person, recorded in the mapping; only that person's account is touched; the grants the service needs beside it are added |
+| `access_revoke` | `action-platform access revoke <email> <service> <resource>` | `DELETE /api/v1/access/people/{person}/grants/{service}/{resource}` | takes it away; says when the role or a team still grants it |
+| `access_offboard` | `action-platform access offboard <email>` | `DELETE /api/v1/access/people/{person}` | every grant of every linked account, the mapping entries, optionally the platform membership |
+| `access_sync` | `action-platform access sync` | `POST /api/v1/access/syncs` | imports a service the first time; then adds, changes and removes to close the drift |
 | `github_branch_protection` | `action-platform github branch-protection [--repo <name>]` | `GET /api/v1/access/github/branch-protection` | per repository of the GitHub organization: default branch; whether a protection rule or an active ruleset applies to it; the ruleset rule types; required approving reviews; required status checks; whether force pushes are allowed. A repository whose protection GitHub does not return (a private repository on a plan without protection) carries the reason in `note` and null values |
 | `github_repo_settings` | `action-platform github repo-settings [--repo <name>]` | `GET /api/v1/access/github/repo-settings` | per repository: visibility, default branch, archived, delete branch on merge, allow auto-merge, secret scanning, secret scanning push protection, Dependabot alerts, Dependabot security updates; a value the connection cannot see is null |
 

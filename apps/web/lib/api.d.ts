@@ -527,7 +527,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/teams/members": {
+    "/api/v1/teams/{team_id}/members": {
         parameters: {
             query?: never;
             header?: never;
@@ -536,14 +536,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["add_team_member_api_v1_teams_members_post"];
+        post: operations["add_member_to_team_api_v1_teams__team_id__members_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/members/role": {
+    "/api/v1/members/{user_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -552,11 +552,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["set_member_role_api_v1_members_role_post"];
-        delete?: never;
+        post?: never;
+        delete: operations["remove_member_api_v1_members__user_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        patch: operations["update_member_api_v1_members__user_id__patch"];
         trace?: never;
     };
     "/api/v1/teams/{team_id}": {
@@ -586,22 +586,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["remove_team_member_api_v1_teams__team_id__members__user_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/members/{user_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["remove_member_api_v1_members__user_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1103,7 +1087,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/projects/team": {
+    "/api/v1/projects/{project_id}/team": {
         parameters: {
             query?: never;
             header?: never;
@@ -1111,8 +1095,8 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
-        post: operations["assign_project_team_api_v1_projects_team_post"];
+        put: operations["set_project_team_api_v1_projects__project_id__team_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1943,8 +1927,8 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
-        post: operations["set_cloud_api_apps__id__cloud_post"];
+        put: operations["set_cloud_api_apps__id__cloud_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2335,14 +2319,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/access/who": {
+    "/api/v1/access/grants": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["who_api_v1_access_who_get"];
+        get: operations["grants_api_v1_access_grants_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2351,7 +2335,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/access/sync": {
+    "/api/v1/access/syncs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2360,14 +2344,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["sync_api_v1_access_sync_post"];
+        post: operations["run_sync_api_v1_access_syncs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/access/grant": {
+    "/api/v1/access/people/{person}/grants": {
         parameters: {
             query?: never;
             header?: never;
@@ -2376,14 +2360,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["grant_api_v1_access_grant_post"];
+        post: operations["grant_person_api_v1_access_people__person__grants_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/access/revoke": {
+    "/api/v1/access/people/{person}/grants/{service}/{resource}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2392,14 +2376,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["revoke_api_v1_access_revoke_post"];
-        delete?: never;
+        post?: never;
+        delete: operations["revoke_person_api_v1_access_people__person__grants__service___resource__delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/access/offboard": {
+    "/api/v1/access/people/{person}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2408,8 +2392,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["offboard_api_v1_access_offboard_post"];
-        delete?: never;
+        post?: never;
+        delete: operations["offboard_person_api_v1_access_people__person__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3133,14 +3117,6 @@ export interface components {
             project_id?: string | null;
             app_id?: string | null;
         };
-        GrantRequest: {
-            person: string;
-            service: string;
-            resource: string;
-            level: string;
-            account?: string | null;
-            apply: boolean;
-        };
         GrantRow: {
             service: string;
             account: string;
@@ -3537,16 +3513,15 @@ export interface components {
             user_id: string;
             existed: boolean;
         };
-        MemberRoleRequest: {
-            user_id: string;
-            role: string;
-        };
         MemberRow: {
             user_id: string;
             name: string;
             email: string;
             role: string;
             role_label: string;
+        };
+        MemberUpdate: {
+            role: string;
         };
         Named: {
             id: string;
@@ -3599,11 +3574,6 @@ export interface components {
         OAuthStarted: {
             url: string;
         };
-        OffboardRequest: {
-            person: string;
-            apply: boolean;
-            remove_from_platform: boolean;
-        };
         Ok: {
             ok: boolean;
         };
@@ -3641,6 +3611,13 @@ export interface components {
         PermissionInfo: {
             id: string;
             description: string;
+        };
+        PersonGrant: {
+            service: string;
+            resource: string;
+            level: string;
+            account?: string | null;
+            apply: boolean;
         };
         PersonOut: {
             email: string;
@@ -3718,8 +3695,7 @@ export interface components {
             updated_at?: string | null;
             tearing_down: boolean;
         };
-        ProjectTeamRequest: {
-            project_id: string;
+        ProjectTeam: {
             team_id?: string | null;
         };
         Protection: {
@@ -3933,12 +3909,6 @@ export interface components {
             token: string;
             password: string;
         };
-        RevokeRequest: {
-            person: string;
-            service: string;
-            resource: string;
-            apply: boolean;
-        };
         RoleInfo: {
             id: string;
             label: string;
@@ -4067,8 +4037,7 @@ export interface components {
             workflow?: string | null;
             job?: string | null;
         };
-        TeamMemberRequest: {
-            team_id: string;
+        TeamMemberAdd: {
             user_id: string;
         };
         TeamMemberRow: {
@@ -5299,18 +5268,20 @@ export interface operations {
             };
         };
     };
-    add_team_member_api_v1_teams_members_post: {
+    add_member_to_team_api_v1_teams__team_id__members_post: {
         parameters: {
             query?: never;
             header?: {
                 "x-organization"?: string | null;
             };
-            path?: never;
+            path: {
+                team_id: string;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TeamMemberRequest"];
+                "application/json": components["schemas"]["TeamMemberAdd"];
             };
         };
         responses: {
@@ -5332,18 +5303,49 @@ export interface operations {
             };
         };
     };
-    set_member_role_api_v1_members_role_post: {
+    remove_member_api_v1_members__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_member_api_v1_members__user_id__patch: {
         parameters: {
             query?: never;
             header?: {
                 "x-organization"?: string | null;
             };
-            path?: never;
+            path: {
+                user_id: string;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MemberRoleRequest"];
+                "application/json": components["schemas"]["MemberUpdate"];
             };
         };
         responses: {
@@ -5439,35 +5441,6 @@ export interface operations {
             };
             path: {
                 team_id: string;
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_member_api_v1_members__user_id__delete: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Organization"?: string | null;
-            };
-            path: {
                 user_id: string;
             };
             cookie?: never;
@@ -6715,18 +6688,20 @@ export interface operations {
             };
         };
     };
-    assign_project_team_api_v1_projects_team_post: {
+    set_project_team_api_v1_projects__project_id__team_put: {
         parameters: {
             query?: never;
             header?: {
                 "x-organization"?: string | null;
             };
-            path?: never;
+            path: {
+                project_id: string;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProjectTeamRequest"];
+                "application/json": components["schemas"]["ProjectTeam"];
             };
         };
         responses: {
@@ -8796,7 +8771,7 @@ export interface operations {
             };
         };
     };
-    set_cloud_api_apps__id__cloud_post: {
+    set_cloud_api_apps__id__cloud_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -9666,7 +9641,7 @@ export interface operations {
             };
         };
     };
-    who_api_v1_access_who_get: {
+    grants_api_v1_access_grants_get: {
         parameters: {
             query?: {
                 person?: string | null;
@@ -9698,7 +9673,7 @@ export interface operations {
             };
         };
     };
-    sync_api_v1_access_sync_post: {
+    run_sync_api_v1_access_syncs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -9731,18 +9706,20 @@ export interface operations {
             };
         };
     };
-    grant_api_v1_access_grant_post: {
+    grant_person_api_v1_access_people__person__grants_post: {
         parameters: {
             query?: never;
             header?: {
                 "X-Organization"?: string | null;
             };
-            path?: never;
+            path: {
+                person: string;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GrantRequest"];
+                "application/json": components["schemas"]["PersonGrant"];
             };
         };
         responses: {
@@ -9764,20 +9741,22 @@ export interface operations {
             };
         };
     };
-    revoke_api_v1_access_revoke_post: {
+    revoke_person_api_v1_access_people__person__grants__service___resource__delete: {
         parameters: {
-            query?: never;
+            query?: {
+                apply?: boolean;
+            };
             header?: {
                 "X-Organization"?: string | null;
             };
-            path?: never;
+            path: {
+                person: string;
+                service: string;
+                resource: string;
+            };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RevokeRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {
@@ -9797,20 +9776,21 @@ export interface operations {
             };
         };
     };
-    offboard_api_v1_access_offboard_post: {
+    offboard_person_api_v1_access_people__person__delete: {
         parameters: {
-            query?: never;
+            query?: {
+                apply?: boolean;
+                remove_from_platform?: boolean;
+            };
             header?: {
                 "X-Organization"?: string | null;
             };
-            path?: never;
+            path: {
+                person: string;
+            };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OffboardRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {

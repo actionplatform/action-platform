@@ -102,6 +102,10 @@ class CreateProjectRequest(BaseModel):
     description: Optional[str] = ""
 
 
+class ProjectTeam(BaseModel):
+    team_id: Optional[str] = None
+
+
 class ProjectTeamRequest(BaseModel):
     project_id: str
     team_id: Optional[str] = None

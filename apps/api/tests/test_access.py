@@ -174,6 +174,16 @@ class IdentityTest(GateCase):
         )
         projects = self.client.get("/api/v1/projects", headers=self.h()).json()
         self.assertEqual(projects[0]["team"]["name"], "Core")
+        self.assertEqual(
+            self.client.put(
+                f"/api/v1/projects/{created.json()['id']}/team",
+                json={"team_id": None},
+                headers=self.h(),
+            ).status_code,
+            200,
+        )
+        projects = self.client.get("/api/v1/projects", headers=self.h()).json()
+        self.assertIsNone(projects[0]["team"])
         teams = self.client.get("/api/v1/teams", headers=self.h()).json()
         self.assertEqual(teams[0]["members"][0]["email"], "ana@example.com")
         members = self.client.get("/api/v1/members", headers=self.h()).json()

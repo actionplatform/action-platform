@@ -273,7 +273,7 @@ class CrossOrganizationRoutesTest(TemplateIsolationCase):
         registry_id = self.register_in(self.other["org"]["id"], "pb", "ab")
         source = {"name": "private", "url": self.private_url, "ref": "main"}
 
-        cloud = self.client.post(
+        cloud = self.client.put(
             f"/api/v1/apps/{registry_id}/cloud",
             json={"target": "docker", "source": source},
             headers=self.hb(),

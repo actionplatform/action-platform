@@ -32,7 +32,79 @@ def audit(
     return _service(request, org, caller, repo).audit(service)
 
 
-@router.get("/who")
+@router.get("/grants")
+def grants(
+    request: Request,
+    org: OrgDep,
+    caller: CallerDep,
+    repo: OrganizationRepoDep,
+    person: Optional[str] = None,
+    service: Optional[str] = None,
+) -> schemas.Who:
+    return _service(request, org, caller, repo).who(person, service)
+
+
+@router.post("/syncs")
+def run_sync(
+    body: schemas.SyncRequest,
+    request: Request,
+    org: OrgDep,
+    caller: CallerDep,
+    repo: OrganizationRepoDep,
+) -> schemas.Plan:
+    return _service(request, org, caller, repo).sync(body)
+
+
+@router.post("/people/{person}/grants")
+def grant_person(
+    person: str,
+    body: schemas.PersonGrant,
+    request: Request,
+    org: OrgDep,
+    caller: CallerDep,
+    repo: OrganizationRepoDep,
+) -> schemas.Plan:
+    return _service(request, org, caller, repo).grant(
+        schemas.GrantRequest(person=person, **body.model_dump())
+    )
+
+
+@router.delete("/people/{person}/grants/{service}/{resource:path}")
+def revoke_person(
+    person: str,
+    service: str,
+    resource: str,
+    request: Request,
+    org: OrgDep,
+    caller: CallerDep,
+    repo: OrganizationRepoDep,
+    apply: bool = False,
+) -> schemas.Plan:
+    return _service(request, org, caller, repo).revoke(
+        schemas.RevokeRequest(
+            person=person, service=service, resource=resource, apply=apply
+        )
+    )
+
+
+@router.delete("/people/{person}")
+def offboard_person(
+    person: str,
+    request: Request,
+    org: OrgDep,
+    caller: CallerDep,
+    repo: OrganizationRepoDep,
+    apply: bool = False,
+    remove_from_platform: bool = False,
+) -> schemas.Plan:
+    return _service(request, org, caller, repo).offboard(
+        schemas.OffboardRequest(
+            person=person, apply=apply, remove_from_platform=remove_from_platform
+        )
+    )
+
+
+@router.get("/who", include_in_schema=False)
 def who(
     request: Request,
     org: OrgDep,
@@ -44,7 +116,7 @@ def who(
     return _service(request, org, caller, repo).who(person, service)
 
 
-@router.post("/sync")
+@router.post("/sync", include_in_schema=False)
 def sync(
     body: schemas.SyncRequest,
     request: Request,
@@ -55,7 +127,7 @@ def sync(
     return _service(request, org, caller, repo).sync(body)
 
 
-@router.post("/grant")
+@router.post("/grant", include_in_schema=False)
 def grant(
     body: schemas.GrantRequest,
     request: Request,
@@ -66,7 +138,7 @@ def grant(
     return _service(request, org, caller, repo).grant(body)
 
 
-@router.post("/revoke")
+@router.post("/revoke", include_in_schema=False)
 def revoke(
     body: schemas.RevokeRequest,
     request: Request,
@@ -77,7 +149,7 @@ def revoke(
     return _service(request, org, caller, repo).revoke(body)
 
 
-@router.post("/offboard")
+@router.post("/offboard", include_in_schema=False)
 def offboard(
     body: schemas.OffboardRequest,
     request: Request,

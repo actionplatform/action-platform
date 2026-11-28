@@ -159,6 +159,14 @@ def _request(
         raise ActionPlatformError(f"cannot reach {url}: {e.reason}") from e
 
 
+def _segment(value: str) -> str:
+    return urllib.parse.quote(value, safe="")
+
+
+def _flag(value: bool) -> str:
+    return "true" if value else "false"
+
+
 @lru_cache(maxsize=None)
 def _adapter(kind: Any) -> TypeAdapter:
     return TypeAdapter(kind)
@@ -376,9 +384,7 @@ class Remote:
     ) -> ConfigurationChanged:
         return _as(
             ConfigurationChanged,
-            self._call(
-                "POST", f"apps/{id}/cloud", {"target": target, "source": source}
-            ),
+            self._call("PUT", f"apps/{id}/cloud", {"target": target, "source": source}),
         )
 
     def add_service(
@@ -858,8 +864,8 @@ class Remote:
             Ok,
             self._call(
                 "POST",
-                "teams/members",
-                {"team_id": team_id, "user_id": user_id},
+                f"teams/{_segment(team_id)}/members",
+                {"user_id": user_id},
                 organization,
             ),
         )
@@ -873,9 +879,9 @@ class Remote:
         return _as(
             Ok,
             self._call(
-                "POST",
-                "projects/team",
-                {"project_id": project_id, "team_id": team_id},
+                "PUT",
+                f"projects/{_segment(project_id)}/team",
+                {"team_id": team_id},
                 organization,
             ),
         )
@@ -944,7 +950,7 @@ class Remote:
         return _as(
             Ok,
             self._call(
-                "POST", "members/role", {"user_id": user_id, "role": role}, organization
+                "PATCH", f"members/{_segment(user_id)}", {"role": role}, organization
             ),
         )
 
@@ -966,7 +972,7 @@ class Remote:
             Who,
             self._call(
                 "GET",
-                "access/who",
+                "access/grants",
                 None,
                 organization,
                 person=person,
@@ -989,7 +995,7 @@ class Remote:
             "links": links,
         }
 
-        return _as(Plan, self._call("POST", "access/sync", body, organization))
+        return _as(Plan, self._call("POST", "access/syncs", body, organization))
 
     def access_grant(
         self,
@@ -1002,7 +1008,6 @@ class Remote:
         organization: Optional[str] = None,
     ) -> Plan:
         body = {
-            "person": person,
             "service": service,
             "resource": resource,
             "level": level,
@@ -1010,7 +1015,12 @@ class Remote:
             "apply": apply,
         }
 
-        return _as(Plan, self._call("POST", "access/grant", body, organization))
+        return _as(
+            Plan,
+            self._call(
+                "POST", f"access/people/{_segment(person)}/grants", body, organization
+            ),
+        )
 
     def access_revoke(
         self,
@@ -1020,14 +1030,15 @@ class Remote:
         apply: bool = False,
         organization: Optional[str] = None,
     ) -> Plan:
-        body = {
-            "person": person,
-            "service": service,
-            "resource": resource,
-            "apply": apply,
-        }
+        path = (
+            f"access/people/{_segment(person)}/grants/{_segment(service)}/"
+            f"{urllib.parse.quote(resource, safe='/')}"
+        )
 
-        return _as(Plan, self._call("POST", "access/revoke", body, organization))
+        return _as(
+            Plan,
+            self._call("DELETE", path, None, organization, apply=_flag(apply)),
+        )
 
     def access_offboard(
         self,
@@ -1036,13 +1047,17 @@ class Remote:
         remove_from_platform: bool = False,
         organization: Optional[str] = None,
     ) -> Plan:
-        body = {
-            "person": person,
-            "apply": apply,
-            "remove_from_platform": remove_from_platform,
-        }
-
-        return _as(Plan, self._call("POST", "access/offboard", body, organization))
+        return _as(
+            Plan,
+            self._call(
+                "DELETE",
+                f"access/people/{_segment(person)}",
+                None,
+                organization,
+                apply=_flag(apply),
+                remove_from_platform=_flag(remove_from_platform),
+            ),
+        )
 
     def github_branch_protection(
         self, repo: Optional[str] = None, organization: Optional[str] = None
