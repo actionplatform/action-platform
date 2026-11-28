@@ -13,27 +13,45 @@ What the platform says when it refuses something, what it means and what to do. 
 
 ## Releases
 
-**`working tree is dirty — commit or stash first`** — a release and a deploy refuse a clone with uncommitted changes. On the platform this means pending edits: **Commit changes** or **Discard changes** on Configuration, then retry.
+**`working tree is dirty`** (CLI release) / **`working tree is dirty — commit or stash first`** (`branch`) / **`working tree is dirty — commit or discard changes before releasing from another branch`** (platform) — a release or a new branch refuses a clone with uncommitted changes. On the platform this means pending edits: **Commit changes** or **Discard changes** under the app's **Settings › Deploy**, then retry.
 
 **`tag vX.Y.Z already exists`** / **`X.Y.Z is already the current version`** — the version was released before, locally or on `origin`. Pick the next increment, or delete the stale tag on the remote when the earlier release was undone by hand.
 
-**Release refused: branch not on the remote** — the platform releases from a branch the remote knows. Push the branch (Activity → *Push to remote*) or release from `main`/`master`.
+**`branch <name> does not exist on the remote`** — the platform works on branches the remote knows. Push the branch (*Push to remote* in the app header) or release from `main`/`master`.
 
 **The release is `X.Y.Z-rc.N`, not `X.Y.Z`** — you released off `main`/`master`. Pre-releases come from every other branch; merge and release from the default branch for a stable version ([releases](concept_releases.md)).
 
-**`CI <name> failed`** — the release commit was made and pushed but the CI runner the release triggers reported a failure; the tag exists. Fix and release the next patch.
+**`CI <name> failed`** — the release commit was made and pushed but the CI server job the release starts reported a failure; the tag exists. Fix and release the next patch.
+
+**`could not push the release, nothing was published: …`** / **`could not commit the release: …`** — the push or the commit failed; the tag and the commit were undone. Usually the branch moved on the remote meanwhile: sync and retry.
+
+**`unknown component: <name> (available: …)`** — `--component` names a component `platform.toml` does not declare under `[components.<name>]`.
 
 ## Deploys
 
-**`a deploy to <stage> is already queued|running; wait for it to finish`** (`409`) — one deploy per environment at a time; the web disables the button meanwhile. Deploy to the other stage or wait ([deployments](concept_deployments.md#stages)).
+**`a deploy to <scope> is already queued|running; wait for it to finish`** (`409`) — one deploy per scope at a time; the web disables the button meanwhile. Deploy to another scope or wait ([deployments](concept_deployments.md#stages)). Deleting a scope while a deploy to it runs answers `a deploy to <name> is running; wait for it to finish`.
 
 **`a deploy ships a release: pass the version to deploy, or check out a release tag`** / **`no release 'X.Y.Z': tags are … — release first`** — nothing to deploy. Create a release first; the web's Deploy card lists the releases and stays empty until there is one.
 
-**`no deploy target configured — run action-platform cloud set <cloud>`** — `platform.toml` has no `[deploy] target`. In the web: Configuration → **Deploy target**; from the CLI: `action-platform cloud set aws/lambda`.
+**`no deploy target configured (filter=…, stage=…) — run action-platform cloud set <cloud>`** — `platform.toml` has no target for that scope. In the web: the app's **Settings › Deploy → Deploy target**; from the CLI: `action-platform cloud set aws/lambda`.
+
+**`no scope named '<name>' (scopes: …)`** / **`no scope '<name>'; the app has no scopes`** / **`no scope, no readiness — create the app's scopes first`** — the deploy or the check names a scope the app does not have. Create it on the app's **Scopes** tab, or as `[[scopes]]` in `platform.toml` ([scopes](concept_scopes.md#creating-scopes)).
+
+**`<version> is a candidate release; <scope> is high and takes hotfix, stable only`** (`scope.release-shape`) — a release candidate cannot reach a `medium`, `high` or `critical` scope. Deploy it to a `test` or `low` scope, or merge to `main` and cut a stable release.
+
+**`<tag> is not deployable to <scope> — <reasons>. Fix it and re-check, or force the deploy.`** (`409`) — readiness blocked the release for that scope. Each reason names the check; the release's **Timeline & readiness** page lists the fix. **Re-check** after fixing, or tick *Deploy anyway* (`force: true`).
+
+**`<target> is deployed by jenkins; the platform records it, it does not run it`** — every target that matches the scope is observed. Deploy through that pipeline, record what it shipped with `deploy-record`, or set `observe = false` to let the platform dispatch it ([deployments](concept_deployments.md#targets-and-executors)).
+
+**`<target> is published by a pipeline outside the platform; the platform only verifies it`** — the target is an observed registry target. The pipeline publishes; the platform verifies.
+
+**`<target>: run by <ci> but no workflow or job named`** / **`<target>: a jenkins job takes the release through a parameter; set version_parameter`** — a dispatched target lacks `workflow` (GitHub Actions) or `job` (Jenkins), or a dispatched Jenkins target lacks `version_parameter` ([platform.toml › Deploy targets](concept_manifest.md#deploy-targets)).
+
+**`<version> is already at <destination>`** (`destination.version`) — the registry already holds that version, and registries refuse to overwrite it. Cut a new release.
 
 **`AccessDenied` on `AssumeRoleWithWebIdentity`, or `AP_AWS_LAMBDA_ROLE_ARN` is missing** — the organization has not connected its AWS account, or the role's trust does not match: Connect → Deploy → **AWS Lambda** → **Configure** → *AWS account ID* must be the connect stack's account (or its `DeployRoleArn`), and the stack's `IssuerUrl` and `Organization` must be this platform's public url and the organization's slug. Connecting the account is in the [apx-aws-lambda](https://github.com/actionplatform/apx-aws-lambda) README.
 
-**Readiness says `template.yaml has no PermissionsBoundaryArn parameter`** — the app's overlay predates connected accounts. Apply it again: Configuration → **Deploy target**, or `action-platform cloud set aws/lambda`.
+**Readiness says `template.yaml lacks the PermissionsBoundaryArn or RolePath parameter`** (`template.boundary`) — the app's overlay predates connected accounts. Apply it again: the app's **Settings › Deploy → Deploy target**, or `action-platform cloud set aws/lambda` ([Deploy to AWS Lambda](guide_aws_lambda.md)).
 
 **`sam build` fails with a missing tool (`go`, `mvn`, `bundle`…)** — the workers run on the `action-platform-worker` image, which carries Go, Node, JDK + Maven and Ruby; the `api` image has none of them. A worker started on the api image, or a self-built image without them, cannot build that language; use the published image or add the toolchain ([self-hosting](start_self_hosting.md)).
 
@@ -71,7 +89,7 @@ What the platform says when it refuses something, what it means and what to do. 
 
 ## Access
 
-**`403` from `/api/v1`, "not available for your role"** — every call needs your role in the organization *and* the token's scope: a `developer` with a `release` token cannot release; an `owner` with a `read` token can only look. `action-platform whoami` prints both; log in again with a wider scope if your role allows it ([access control](concept_access_control.md)).
+**`403` from `/api/v1`: `your role (<role>) lacks <permission>`** or **`the token's scope (<scopes>) does not allow <permission>`** — every call needs your role in the organization *and* the token's scope: a `developer` with a `release` token cannot release; an `owner` with a `read` token can only look. `action-platform whoami` prints both; log in again with a wider scope if your role allows it ([access control](concept_access_control.md)).
 
 **The device code expired** — codes live ten minutes. Run `action-platform login <url>` again and approve the new code at `/device`.
 
@@ -83,7 +101,7 @@ What the platform says when it refuses something, what it means and what to do. 
 
 **`ready: false` / `database: behind` on `GET /api/version`** — the schema is behind and `AP_DATABASE_AUTO_MIGRATE=0` stops the processes from migrating. Run `action-platform-api db migrate` (the compose files do it in the `migrate` service) — [database](concept_database.md).
 
-**The setup wizard says the API is unreachable or has no auth secret** — the web and the API must share `AP_DATABASE_URL` and `AP_AUTH_SECRET`; the wizard prints the exact values to start the API with when running by hand ([self-hosting](start_self_hosting.md)).
+**The setup wizard says the API is unreachable or has no auth secret** — the web app reaches the API at `AP_API`, and the API needs `AP_DATABASE_URL` (or the `AP_DB_*` variables) and `AP_AUTH_SECRET`; the wizard prints the exact values to start the API with when running by hand ([self-hosting](start_self_hosting.md)).
 
 **The setup wizard refuses the setup token** (`403 setup_token`) — print it again in the API container (`docker compose exec api action-platform-api setup token`; on Dokploy in the `ap-api` terminal). It follows the auth secret: a token printed before `BETTER_AUTH_SECRET` changed no longer works, and `AP_SETUP_TOKEN`, when set, replaces it. `setup is closed` from the command means an account exists: sign in at `/login`.
 

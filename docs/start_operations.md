@@ -72,7 +72,7 @@ On Dokploy: stop `ap-web`, `ap-worker`, `ap-worker-deploy` and `ap-api` with `do
 - Sign in with an existing account; the organizations, projects and apps are there.
 - Connect → **Git**: a connected host lists its account; an app's **Sync** succeeds (the stored token opens).
 - Connect → **CI** → Servers: *Test* reaches the server.
-- **Plugins** → a plugin → **Configure** opens with its saved options.
+- Connect → **Deploy** (or the plugin's kind) → a plugin → **Configure** opens with its saved options.
 
 If those last three fail with a decryption error, the secret is not the one the backup was taken with: go back to step 2, or follow [losing the auth secret](#losing-the-auth-secret).
 
@@ -88,7 +88,7 @@ If those last three fail with a decryption error, the secret is not the one the 
 | Service connections (Connect → **Observability**, e.g. Sentry) | the plugins that read them fail | *Connect* the service again under Connect → **Observability** |
 | CI server tokens (Jenkins) | *Test* and dispatched deploys fail | Connect → **CI** → Servers: remove the server and add it again with its API token |
 | OAuth apps stored in the database (*Set up OAuth app*, the GitHub App manifest) | *Connect with …* fails | enter the client id and secret again with *Set up OAuth app* in Connect → **Git** or **Observability** (for the GitHub App the manifest made, generate a new client secret in its settings on GitHub), or set `GITHUB_*` / `GITLAB_*` / `BITBUCKET_*` in `.env` |
-| Plugin options marked secret | the plugin's **Configure** and its jobs fail | type those options again in **Plugins** → **Configure** |
+| Plugin options marked secret | the plugin's **Configure** and its jobs fail | type those options again in the plugin's **Configure**, under Connect |
 | The OIDC signing key (deploys into a connected cloud account) | deploys that exchange the platform's token fail | delete the sealed key so the API makes a new one on the next deploy: `docker compose exec -T postgres psql -U action_platform action_platform -c 'DELETE FROM signing_key'`; the clouds read the new key from `<PUBLIC_URL>/.well-known/jwks.json` |
 | Google sign-in and OAuth round trips in flight | expire | start them again |
 
