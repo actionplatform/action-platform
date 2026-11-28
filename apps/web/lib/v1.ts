@@ -5,6 +5,7 @@ import { integrations } from "./api/integrations";
 import { jobs } from "./api/jobs";
 import { organization } from "./api/organization";
 import { projects } from "./api/projects";
+import { rollout } from "./api/rollout";
 
 export type ProjectRow = Schemas["ProjectRow"];
 export type TeamRow = Schemas["TeamRow"];
@@ -32,4 +33,4 @@ export type AccessWho = Schemas["Who"];
 export type AccessPlan = Schemas["Plan"];
 export type AccessChange = Schemas["Change"];
 
-export const v1 = { ...organization, ...projects, ...integrations, ...instance, ...jobs, ...serviceAccess };
+export const v1 = { ...organization, ...projects, ...integrations, ...instance, ...jobs, ...serviceAccess, ...rollout };

@@ -68,6 +68,7 @@ export function unwrap<T>(res: { data?: T; error?: unknown; response: Response }
   return res.data as T;
 }
 
+export type Rollout = { strategy?: string; strategy_config?: Record<string, unknown>; safety?: Record<string, unknown> };
 type Queued = { job: string; status: string; poll: string };
 
 export const api = {
@@ -121,10 +122,10 @@ export const api = {
       unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/release", { params: { path: { project_id: projectId, app_id: id } }, body: { level, dry_run, branch, latest: true, ...extra } })),
     releaseAsync: async (projectId: string, id: string, level: string, branch: string | null = null, extra: { name?: string | null; notes?: string | null; latest?: boolean; component?: string | null } = {}) =>
       unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/release", { params: { path: { project_id: projectId, app_id: id } }, body: { level, dry_run: false, branch, latest: true, ...extra } })) as unknown as Queued,
-    preflight: async (projectId: string, id: string, stage: string | null, version: string | null = null, force = false) =>
-      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/deploy", { params: { path: { project_id: projectId, app_id: id } }, body: { stage, dry_run: true, version, force } })),
-    deployAsync: async (projectId: string, id: string, stage: string | null, version: string | null = null, force = false) =>
-      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/deploy", { params: { path: { project_id: projectId, app_id: id } }, body: { stage, dry_run: false, version, force } })) as unknown as Queued,
+    preflight: async (projectId: string, id: string, stage: string | null, version: string | null = null, force = false, rollout: Rollout = {}) =>
+      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/deploy", { params: { path: { project_id: projectId, app_id: id } }, body: { stage, dry_run: true, version, force, ...rollout } })),
+    deployAsync: async (projectId: string, id: string, stage: string | null, version: string | null = null, force = false, rollout: Rollout = {}) =>
+      unwrap(await client.POST("/api/v1/projects/{project_id}/apps/{app_id}/deploy", { params: { path: { project_id: projectId, app_id: id } }, body: { stage, dry_run: false, version, force, ...rollout } })) as unknown as Queued,
     diagnose: async (projectId: string, id: string, stage?: string) =>
       unwrap(await client.GET("/api/v1/projects/{project_id}/apps/{app_id}/diagnose", { params: { path: { project_id: projectId, app_id: id }, query: stage ? { stage } : {} } })),
   },
