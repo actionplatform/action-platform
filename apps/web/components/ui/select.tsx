@@ -40,12 +40,18 @@ export function Select({ value, options, onChange, placeholder = "Select…", di
     setRect({ top: up ? b.top - height - 4 : b.bottom + 4, left: b.left, width: b.width, up });
   };
 
+  const latest = useRef({ place, options, value });
+
+  useLayoutEffect(() => {
+    latest.current = { place, options, value };
+  });
+
   useLayoutEffect(() => {
     if (!open) return;
+    const { place, options, value } = latest.current;
     place();
-    const i = Math.max(0, options.findIndex((o) => o.value === value));
-    setActive(i);
-    const onScroll = () => place();
+    setActive(Math.max(0, options.findIndex((o) => o.value === value)));
+    const onScroll = () => latest.current.place();
     window.addEventListener("resize", onScroll);
     window.addEventListener("scroll", onScroll, true);
     return () => { window.removeEventListener("resize", onScroll); window.removeEventListener("scroll", onScroll, true); };

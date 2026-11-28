@@ -3,7 +3,7 @@
 import { failed, type Result } from "@/lib/result";
 import { revalidatePath } from "next/cache";
 import { refreshProject } from "@/lib/revalidate";
-import { api, ApiError, type DeployResult, type ReleasePreview } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { requireOrg } from "@/lib/session";
 import { v1 } from "@/lib/v1";
 
