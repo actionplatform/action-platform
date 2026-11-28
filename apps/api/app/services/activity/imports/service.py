@@ -96,9 +96,7 @@ class ActivityService:
             raise ProviderError("no source host")
 
         since = self.db.scalar(
-            select(func.max(PullRequest.updated_at)).where(
-                PullRequest.app_id == app_id
-            )
+            select(func.max(PullRequest.updated_at)).where(PullRequest.app_id == app_id)
         )
         remote = self.remote_pull_requests(creds, repo, since)
         by_number = {
