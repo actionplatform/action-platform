@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.40.0 — 2026-11-28
+
+### Features
+- **deploy:** deployment strategies and the target operations contract plugins implement (#760)
+- **source:** read a repository from its code host without a clone: tags with dates, commits touching a path, the git-flow audit (#686)
+- **source:** pull requests stop at the first one not updated since the last sync (#708)
+
+### Bug Fixes
+- **scaffold:** creating a repository that already exists is refused (#773)
+- **mcp:** remote init_app sends the code host that creates the repository, and takes the only host of the ci kind (#763, #770)
+- **remote:** generating an app waits up to ten minutes; a failure while reading the answer is a platform error (#771)
+- **remote:** the platform token stays on its origin across redirects (#618)
+- **remote:** follow the API's resource routes, status codes and project-scoped app routes (#716, #718, #719, #720)
+- **cli:** scopes help names only [[scopes]] (#744)
+
 ## v0.39.0 — 2026-11-27
 
 ### Features
