@@ -107,6 +107,14 @@ class TeamMemberRequest(BaseModel):
     user_id: str
 
 
+class TeamMemberAdd(BaseModel):
+    user_id: str
+
+
+class MemberUpdate(BaseModel):
+    role: str
+
+
 class MemberRoleRequest(BaseModel):
     user_id: str
     role: str

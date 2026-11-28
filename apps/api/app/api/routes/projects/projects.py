@@ -53,18 +53,35 @@ def create_project(
     return common.Created(id=project.id, name=project.name, slug=project.slug)
 
 
-@router.post("/projects/team")
-def assign_project_team(
-    body: schemas.ProjectTeamRequest,
+@router.put("/projects/{project_id}/team")
+def set_project_team(
+    project_id: str,
+    body: schemas.ProjectTeam,
     caller: CallerDep,
     directory: ProjectsRepoDep,
     x_organization: Optional[str] = Header(default=None),
 ) -> common.Ok:
     org = required_org(caller, x_organization, None)
     manageable(caller, org, "projects/team")
-    directory.assign_project_team(org.id, body.project_id, body.team_id or None)
+    directory.assign_project_team(org.id, project_id, body.team_id or None)
 
     return common.Ok()
+
+
+@router.post("/projects/team", include_in_schema=False)
+def assign_project_team(
+    body: schemas.ProjectTeamRequest,
+    caller: CallerDep,
+    directory: ProjectsRepoDep,
+    x_organization: Optional[str] = Header(default=None),
+) -> common.Ok:
+    return set_project_team(
+        body.project_id,
+        schemas.ProjectTeam(team_id=body.team_id),
+        caller,
+        directory,
+        x_organization,
+    )
 
 
 @router.delete(

@@ -251,7 +251,7 @@ class CloudTest(ApiCase):
     def test_applying_a_cloud_records_the_deploy_target(self):
         id = self.add_app()
 
-        res = self.client.post(
+        res = self.client.put(
             f"/api/apps/{id}/cloud", json={"target": "docker", "source": "official"}
         )
 

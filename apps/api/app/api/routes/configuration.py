@@ -53,7 +53,8 @@ def export_manifest(
     return result
 
 
-@router.post("/{id}/cloud")
+@router.put("/{id}/cloud")
+@router.post("/{id}/cloud", include_in_schema=False)
 def set_cloud(
     id: str,
     body: CloudRequest,

@@ -49,7 +49,7 @@ RULES = [
         credentials=True,
         imports=True,
     ),
-    Rule("PUT", re.compile(r"^apps/[^/]+/manifest$"), "app.configure"),
+    Rule("PUT", re.compile(r"^apps/[^/]+/(manifest|cloud)$"), "app.configure"),
     Rule(
         "POST",
         re.compile(r"^apps/[^/]+/(cloud|services|install|discard|manifest/export)$"),

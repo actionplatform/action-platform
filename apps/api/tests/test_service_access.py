@@ -74,13 +74,13 @@ class ServiceAccessApiTest(GateCase):
     def test_first_sync_imports_with_the_sealed_secret_and_changes_nothing(self):
         self.configure({"url": "https://v.test", "token": "tok-1"})
 
-        dry = self.client.post("/api/v1/access/sync", json={}, headers=self.h()).json()
+        dry = self.client.post("/api/v1/access/syncs", json={}, headers=self.h()).json()
 
         self.assertTrue(dry["bootstrap"] and dry["dry_run"])
         self.assertEqual(Vault.seen, ["tok-1"])
 
         stored = self.client.post(
-            "/api/v1/access/sync", json={"apply": True}, headers=self.h()
+            "/api/v1/access/syncs", json={"apply": True}, headers=self.h()
         ).json()
 
         self.assertEqual((stored["imported"], stored["changes"]), (["vault"], []))
@@ -95,19 +95,18 @@ class ServiceAccessApiTest(GateCase):
         self.assertEqual(row["levels"]["org"], ["member", "admin"])
 
         who = self.client.get(
-            "/api/v1/access/who?person=ana@example.com", headers=self.h()
+            "/api/v1/access/grants?person=ana@example.com", headers=self.h()
         ).json()
 
         self.assertEqual(who["person"]["accounts"], {"vault": "ana@example.com"})
 
     def test_grant_and_offboard_change_the_service_only_with_apply(self):
         self.configure({"url": "https://v.test", "token": "tok-1"})
-        self.client.post("/api/v1/access/sync", json={"apply": True}, headers=self.h())
+        self.client.post("/api/v1/access/syncs", json={"apply": True}, headers=self.h())
 
         plan = self.client.post(
-            "/api/v1/access/grant",
+            "/api/v1/access/people/ana@example.com/grants",
             json={
-                "person": "ana@example.com",
                 "service": "vault",
                 "resource": "repo/api",
                 "level": "write",
@@ -122,9 +121,8 @@ class ServiceAccessApiTest(GateCase):
         self.assertEqual(Vault.service.applied, [])
 
         self.client.post(
-            "/api/v1/access/grant",
+            "/api/v1/access/people/ana@example.com/grants",
             json={
-                "person": "ana@example.com",
                 "service": "vault",
                 "resource": "repo/api",
                 "level": "write",
@@ -138,9 +136,8 @@ class ServiceAccessApiTest(GateCase):
             Vault.service.grants,
         )
 
-        gone = self.client.post(
-            "/api/v1/access/offboard",
-            json={"person": "ana@example.com", "apply": True},
+        gone = self.client.delete(
+            "/api/v1/access/people/ana@example.com?apply=true",
             headers=self.h(),
         ).json()
 
@@ -155,6 +152,9 @@ class ServiceAccessApiTest(GateCase):
 
         for method, path in (
             ("GET", "audit"),
+            ("GET", "grants?person=ana@example.com"),
+            ("POST", "syncs"),
+            ("DELETE", "people/ana@example.com"),
             ("GET", "who?person=ana@example.com"),
             ("POST", "sync"),
             ("POST", "offboard"),
@@ -171,18 +171,76 @@ class ServiceAccessApiTest(GateCase):
 
     def test_offboarding_the_last_owner_from_the_platform_changes_nothing(self):
         self.configure({"url": "https://v.test", "token": "tok-1"})
-        self.client.post("/api/v1/access/sync", json={"apply": True}, headers=self.h())
+        self.client.post("/api/v1/access/syncs", json={"apply": True}, headers=self.h())
 
-        refused = self.client.post(
-            "/api/v1/access/offboard",
-            json={
-                "person": "ana@example.com",
-                "apply": True,
-                "remove_from_platform": True,
-            },
+        refused = self.client.delete(
+            "/api/v1/access/people/ana@example.com?apply=true&remove_from_platform=true",
             headers=self.h(),
         )
 
         self.assertEqual(refused.status_code, 400)
         self.assertIn("at least one owner", refused.json()["detail"])
         self.assertEqual(Vault.service.applied, [])
+
+    def test_revoke_takes_the_resource_from_the_path(self):
+        self.configure({"url": "https://v.test", "token": "tok-1"})
+        self.client.post("/api/v1/access/syncs", json={"apply": True}, headers=self.h())
+        self.client.post(
+            "/api/v1/access/people/ana@example.com/grants",
+            json={
+                "service": "vault",
+                "resource": "repo/api",
+                "level": "write",
+                "apply": True,
+            },
+            headers=self.h(),
+        )
+
+        plan = self.client.delete(
+            "/api/v1/access/people/ana%40example.com/grants/vault/repo%2Fapi?apply=true",
+            headers=self.h(),
+        ).json()
+
+        self.assertEqual(
+            [(c["resource"], c["status"]) for c in plan["changes"]],
+            [("repo/api", "applied")],
+        )
+        self.assertNotIn(
+            Grant("vault", "ana@example.com", "repo/api", "write"),
+            Vault.service.grants,
+        )
+
+    def test_the_verb_routes_still_answer(self):
+        self.configure({"url": "https://v.test", "token": "tok-1"})
+
+        self.assertEqual(
+            self.client.post(
+                "/api/v1/access/sync", json={"apply": True}, headers=self.h()
+            ).status_code,
+            200,
+        )
+
+        body = {
+            "person": "ana@example.com",
+            "service": "vault",
+            "resource": "repo/api",
+        }
+
+        for path, payload in (
+            ("grant", {**body, "level": "write", "apply": True}),
+            ("revoke", body),
+            ("offboard", {"person": "ana@example.com"}),
+        ):
+            with self.subTest(path=path):
+                answer = self.client.post(
+                    f"/api/v1/access/{path}", json=payload, headers=self.h()
+                )
+
+                self.assertEqual(answer.status_code, 200, answer.text)
+
+        self.assertEqual(
+            self.client.get(
+                "/api/v1/access/who?person=ana@example.com", headers=self.h()
+            ).status_code,
+            200,
+        )
