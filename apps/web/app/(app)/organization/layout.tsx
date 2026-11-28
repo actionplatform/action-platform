@@ -6,8 +6,8 @@ import { ORGANIZATION_PAGES, subNavPages } from "@/components/layout/nav";
 export default function OrganizationLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <PageHeader title="Organization" description="Who is in it and what is signed in as them." shortDescription="Members, teams, connected apps." />
-      <SubNav label="Organization" pages={subNavPages(ORGANIZATION_PAGES)} />
+      <PageHeader title="Team" description="Who is in the organization, what they can reach and what is signed in as them." shortDescription="Members, teams, access, sessions." />
+      <SubNav label="Team" pages={subNavPages(ORGANIZATION_PAGES)} />
       {children}
     </>
   );
