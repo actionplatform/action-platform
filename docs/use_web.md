@@ -63,7 +63,7 @@ The organization's projects: search, sort, **Import** ([Import](#import)) and **
 
 ### The project page
 
-A table of the project's apps: name, type, language, branch, version and repository, with a remove action per row for who may manage the project. The header has **Adoption**, which opens the install pull requests for many apps at once ([Adoption](#adoption)), **Settings** and **New app**, which opens the wizard; the same page takes a git URL under *Add an existing repository*.
+A table of the project's apps: name, type, language, branch, version and repository, with a remove action per row for who may manage the project. The header has **Adoption**, which opens the install pull requests for many apps at once ([Adoption](#adoption)), **Settings** and **New app**, which opens the wizard; the New app page also takes a git URL under *Add an existing repository*.
 
 **Settings** (`project.manage`) has two panels: **Team**, with **Assign to team**, and **Danger zone**, with **Delete project** ([Deleting](#deleting)).
 
