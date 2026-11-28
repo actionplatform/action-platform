@@ -62,7 +62,7 @@ export function DangerZone({ view }: { view: AppView }) {
         <PanelHeader title="Danger zone" />
         <PanelBody className="space-y-3 text-sm">
           <p className="text-secondary">Deleting removes this app and its pending changes from the platform. The repository on the code host is untouched unless you say so.</p>
-          <Button variant="destructive" onClick={() => setConfirm(true)}>Delete project</Button>
+          <Button variant="destructive" onClick={() => setConfirm(true)}>Delete app</Button>
         </PanelBody>
       </Panel>
       <DeleteAppDialog open={confirm} onClose={() => setConfirm(false)} onDeleted={(queued) => router.push(queued ? `/projects/${view.projectId}/apps/${view.appId}/deployments` : `/projects/${view.projectId}`)} projectId={view.projectId} appId={view.appId} name={view.name} repositoryUrl={view.repositoryUrl} deployTarget={typeof view.deploy.target === "string" ? view.deploy.target : null} />

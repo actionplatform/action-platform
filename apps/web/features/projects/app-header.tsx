@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, Check, ExternalLink, MoreHorizontal, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowUpRight, Check, ExternalLink, MoreHorizontal, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -12,7 +12,6 @@ import { relativeTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { call } from "@/lib/call";
 import { syncApp } from "@/features/projects/actions";
-import { DeleteAppDialog } from "./delete-app-dialog";
 import type { AppView } from "./model";
 
 type SyncStatus = "idle" | "syncing" | "success" | "error";
@@ -24,7 +23,6 @@ export function AppHeader({ view }: { view: AppView }) {
   const [status, setStatus] = useState<SyncStatus>("idle");
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncedAt, setSyncedAt] = useState<number | null>(view.lastSyncedAt ? new Date(view.lastSyncedAt).getTime() : null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [now, setNow] = useState<number | null>(null);
   const [, start] = useTransition();
 
@@ -103,7 +101,6 @@ export function AppHeader({ view }: { view: AppView }) {
             label="Project actions"
             items={[
               ...(view.repositoryUrl ? [{ label: "Open repository", icon: <ArrowUpRight className="size-4" strokeWidth={1.75} />, onSelect: () => window.open(view.repositoryUrl!, "_blank", "noopener,noreferrer") }] : []),
-              ...(view.can["project.manage"] ? ["separator" as const, { label: "Delete project", icon: <Trash2 className="size-4" strokeWidth={1.75} />, danger: true, onSelect: () => setConfirmDelete(true) }] : []),
             ]}
             trigger={({ open, toggle, id }) => (
               <button type="button" aria-label="More actions" aria-haspopup="menu" aria-expanded={open} aria-controls={id} onClick={toggle} className="flex size-[38px] items-center justify-center rounded-[7px] border border-[#303030] text-secondary hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">
@@ -113,8 +110,6 @@ export function AppHeader({ view }: { view: AppView }) {
           />
         </div>
       </div>
-
-      <DeleteAppDialog open={confirmDelete} onClose={() => setConfirmDelete(false)} onDeleted={(queued) => router.push(queued ? `/projects/${view.projectId}/apps/${view.appId}/deployments` : `/projects/${view.projectId}`)} projectId={view.projectId} appId={view.appId} name={view.name} repositoryUrl={view.repositoryUrl} deployTarget={typeof view.deploy.target === "string" ? view.deploy.target : null} />
     </header>
   );
 }
