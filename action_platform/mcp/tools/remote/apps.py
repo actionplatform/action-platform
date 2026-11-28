@@ -133,13 +133,13 @@ def register(mcp: Any, remote: Remote) -> None:
         host: Annotated[
             Optional[str],
             Field(
-                description="Code host id or name from list_hosts that creates the repository; default the organization's only host, or the one whose default owner is `owner`"
+                description="Code host id or name from list_hosts that creates the repository; default the organization's only host, the one whose default owner is `owner`, or the only one of the kind `ci` names"
             ),
         ] = None,
     ) -> schemas.Initialized:
         """Generate a new app inside a project from a template: the repository is created on the code host attached to the organization and pushed right away — confirm with the user first."""
         row = project_of(remote, project)
-        source_host = source_host_of(remote, row, host, owner)
+        source_host = source_host_of(remote, row, host, owner, ci)
 
         return remote.init(
             row.id,
@@ -166,6 +166,7 @@ def source_host_of(
     project: schemas.ProjectRow,
     host: Optional[str],
     owner: Optional[str],
+    ci: Optional[str] = None,
 ) -> str:
     hosts = remote.hosts(organization=org_of(project))
 
@@ -174,7 +175,9 @@ def source_host_of(
     elif len(hosts) == 1:
         match = hosts
     else:
-        match = [h for h in hosts if owner and h.default_owner == owner]
+        match = [h for h in hosts if owner and h.default_owner == owner] or [
+            h for h in hosts if ci and h.kind == ci
+        ]
 
     if len(match) != 1:
         names = ", ".join(f"{h.name} ({h.id})" for h in hosts) or "none"
