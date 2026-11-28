@@ -1,7 +1,5 @@
 """Apps inside a project: added from a repository or generated, their host, their imported activity."""
 
-from typing import Union
-
 from fastapi import APIRouter, HTTPException, Response
 
 from app.api.dependencies import (
@@ -72,8 +70,7 @@ def init_app(
 
 @router.delete(
     "/projects/{project_id}/apps/{app_id}",
-    status_code=204,
-    response_model=None,
+    response_model=common.Removed,
     responses={202: {"model": common.Removed}},
 )
 def delete_app(
@@ -87,14 +84,14 @@ def delete_app(
     response: Response,
     repository: bool = False,
     cloud: bool = False,
-) -> Union[Response, common.Removed]:
+) -> common.Removed:
     """`cloud` tears the deploy stacks down first, on the worker; the app leaves the platform when that job is done (202 with the job id)."""
     allowed(caller, org, "project.manage")
     project = project_of(writes, org, project_id)
     app = writes.app(project.id, app_id)
 
     if app is None:
-        return Response(status_code=204)
+        return common.Removed()
 
     if cloud:
         allowed(caller, org, "app.release", whole_org=False)
@@ -104,9 +101,9 @@ def delete_app(
             job=JobDispatcher(queue).destroy_app(org, app, caller, repository)
         )
 
-    projects.delete_app(org, project, app, repository)
+    removed, repositories = projects.delete_app(org, project, app, repository)
 
-    return Response(status_code=204)
+    return common.Removed(removed=removed, repositories=repositories)
 
 
 @router.put("/projects/{project_id}/apps/{app_id}/host")

@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 from action_platform.providers.source.github import SourceGithub
+from action_platform.core.exception import ActionPlatformError
 from app.core.errors import Conflict
 from app.core.shared.credentials import Credentials
 from app.schemas import SourceCredentials
@@ -61,3 +63,47 @@ class DeleteRepositoryCapabilityTest(unittest.TestCase):
                 )
 
         self.assertIn("generic cannot delete repositories", str(raised.exception))
+
+
+class RepositoryOfTest(unittest.TestCase):
+    def remote(self, entry):
+        remote = AppRemote.__new__(AppRemote)
+        remote.registry = mock.Mock()
+        remote.registry.get.return_value = entry
+        remote.configs = mock.Mock()
+        remote.workspace = mock.Mock(side_effect=AssertionError("cloned"))
+
+        return remote
+
+    def test_a_missing_clone_is_not_created_to_find_the_repository(self):
+        entry = SimpleNamespace(
+            url="https://github.com/acme/x.git", path="/nonexistent/clone"
+        )
+
+        self.assertEqual(self.remote(entry).repository_of("app"), ("github", "acme/x"))
+
+    def test_an_app_without_a_url_has_no_repository(self):
+        entry = SimpleNamespace(url="", path="/nonexistent/clone")
+
+        self.assertIsNone(self.remote(entry).repository_of("app"))
+
+    def test_a_failed_lookup_is_not_swallowed(self):
+        remote = AppRemote.__new__(AppRemote)
+
+        with mock.patch.object(
+            AppRemote, "repository_of", side_effect=ActionPlatformError("boom")
+        ):
+            with self.assertRaises(ActionPlatformError):
+                remote.delete_through_host(
+                    mock.Mock(), "org", SimpleNamespace(registry_id="app")
+                )
+
+    def test_an_app_without_a_remote_is_skipped(self):
+        remote = AppRemote.__new__(AppRemote)
+
+        with mock.patch.object(AppRemote, "repository_of", return_value=None):
+            self.assertIsNone(
+                remote.delete_through_host(
+                    mock.Mock(), "org", SimpleNamespace(registry_id="app")
+                )
+            )

@@ -33,8 +33,9 @@ class ProjectsAndAppsTest(GateCase):
         removed = self.client.delete(
             f"/api/v1/projects/{project['id']}", headers=self.h()
         )
-        self.assertEqual(removed.status_code, 204, removed.text)
-        self.assertEqual(removed.content, b"")
+        self.assertEqual(removed.status_code, 200, removed.text)
+        self.assertEqual(removed.json()["removed"], [registry_id])
+        self.assertEqual(removed.json()["repositories"], [])
         self.assertEqual(
             self.client.get("/api/v1/projects", headers=self.h()).json(), []
         )
@@ -126,7 +127,8 @@ class ProjectsAndAppsTest(GateCase):
         removed = self.client.delete(
             f"/api/v1/projects/{project['id']}/apps/{app['id']}", headers=self.h()
         )
-        self.assertEqual(removed.status_code, 204, removed.text)
+        self.assertEqual(removed.status_code, 200, removed.text)
+        self.assertEqual(removed.json()["removed"], [app["registry_id"]])
         self.assertEqual(
             self.client.get("/api/v1/projects", headers=self.h()).json()[0]["apps"], []
         )
@@ -197,7 +199,8 @@ class ProjectsAndAppsTest(GateCase):
         kept = self.client.delete(
             f"/api/v1/projects/{project['id']}/apps/{app['id']}", headers=self.h()
         )
-        self.assertEqual(kept.status_code, 204, kept.text)
+        self.assertEqual(kept.status_code, 200, kept.text)
+        self.assertEqual(kept.json()["repositories"], [])
         self.assertEqual(deleted, [])
 
         app = self.client.post(
@@ -215,7 +218,9 @@ class ProjectsAndAppsTest(GateCase):
             f"/api/v1/projects/{project['id']}?repositories=true", headers=self.h()
         )
 
-        self.assertEqual(removed.status_code, 204, removed.text)
+        self.assertEqual(removed.status_code, 200, removed.text)
+        self.assertEqual(removed.json()["repositories"], ["acme/x"])
+        self.assertEqual(removed.json()["removed"], [app["registry_id"]])
         self.assertEqual(deleted, [("t", "acme/x")])
         self.assertEqual(
             self.client.get("/api/v1/projects", headers=self.h()).json(), []
