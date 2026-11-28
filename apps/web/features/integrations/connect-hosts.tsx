@@ -4,6 +4,7 @@ import { AlertCircle, Check, ExternalLink, KeyRound, Settings2, Sparkles, UserRo
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { disconnectHost, removeOAuthApp, saveOAuthApp } from "./oauth-actions";
+import { GithubAppWebhookDialog } from "./webhook-dialog";
 import { siBitbucket, siGithub, siGitlab } from "simple-icons";
 import { BrandIcon } from "@/components/ui/brand-icon";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
   const pathname = usePathname();
   const [setup, setSetup] = useState<Provider | null>(null);
   const [createGh, setCreateGh] = useState(false);
+  const [appWebhook, setAppWebhook] = useState(false);
   const [done, setDone] = useState<Record<string, boolean>>({});
   const [removed, setRemoved] = useState<Record<string, boolean>>({});
   const [gone, setGone] = useState<Record<string, boolean>>({});
@@ -148,6 +150,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
                 )}
                 <div className="flex h-6 items-center justify-between text-[13px] text-muted-foreground">
                   {ready ? <button type="button" onClick={() => setSetup(p)} className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">Change OAuth app</button> : <span />}
+                  {ready && p === "github" && githubApp && <button type="button" onClick={() => setAppWebhook(true)} className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">Webhook…</button>}
                   {isConnected && <button type="button" onClick={() => setConfirmRemove(p)} className="rounded-sm hover:text-[#e07070] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground">Remove connection</button>}
                 </div>
               </div>
@@ -157,6 +160,7 @@ export function ConnectHosts({ configured, connected, origin, orgId, returnTo, g
       </div>
 
       {setup && <OAuthAppDialog provider={setup} origin={origin} onClose={() => { setSetup(null); router.refresh(); }} onSaved={() => { setDone({ ...done, [setup]: true }); setSetup(null); router.refresh(); }} />}
+      <GithubAppWebhookDialog open={appWebhook} onClose={() => setAppWebhook(false)} />
       {createGh && <CreateGitHubAppDialog orgId={orgId} returnTo={returnTo} onClose={() => { setCreateGh(false); router.refresh(); }} />}
       <ConfirmDialog
         open={confirmRemove !== null}

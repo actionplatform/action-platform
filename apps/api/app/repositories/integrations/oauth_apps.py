@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 from typing import Optional
 
 from app.core.db.models import OAuthApp as OAuthAppRow
@@ -99,6 +100,22 @@ class OAuthAppsWrites(OAuthAppsReads):
         self.db.flush()
 
         return OAuthApp(client_id, client_secret, row.base_url, row.slug)
+
+    def rotate_app_webhook_secret(self, provider: str) -> str:
+        if self.sealer is None:
+            raise DirectoryError("auth secret is not configured")
+
+        row = self.db.get(OAuthAppRow, provider)
+
+        if row is None:
+            raise DirectoryError(f"no {provider} app is configured")
+
+        secret = secrets.token_urlsafe(32)
+        row.webhook_secret_encrypted = self.sealer.seal(secret)
+        row.updated_at = now()
+        self.db.flush()
+
+        return secret
 
     def clear_oauth_app(self, provider: str) -> None:
         row = self.db.get(OAuthAppRow, provider)

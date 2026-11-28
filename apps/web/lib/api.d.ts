@@ -799,6 +799,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/webhooks/github-app": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["receive_app_api_v1_webhooks_github_app_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/webhooks/{host_id}": {
         parameters: {
             query?: never;
@@ -825,6 +841,22 @@ export interface paths {
         get: operations["webhook_api_v1_hosts__host_id__webhook_get"];
         put?: never;
         post: operations["rotate_webhook_api_v1_hosts__host_id__webhook_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/oauth/apps/github/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["app_webhook_api_v1_oauth_apps_github_webhook_get"];
+        put?: never;
+        post: operations["rotate_app_webhook_api_v1_oauth_apps_github_webhook_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5958,6 +5990,25 @@ export interface operations {
             };
         };
     };
+    receive_app_api_v1_webhooks_github_app_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookReceived"];
+                };
+            };
+        };
+    };
     receive_api_v1_webhooks__host_id__post: {
         parameters: {
             query?: never;
@@ -6027,6 +6078,64 @@ export interface operations {
             path: {
                 host_id: string;
             };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookSecret"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    app_webhook_api_v1_oauth_apps_github_webhook_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookInfo"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rotate_app_webhook_api_v1_oauth_apps_github_webhook_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Organization"?: string | null;
+            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
